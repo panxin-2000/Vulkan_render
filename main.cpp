@@ -4,7 +4,8 @@
 using Eigen::MatrixXd;
 
 int main() {
-
+//如果只是想单纯的进行矩阵计算，我觉得还是octave是最方便的。因为对于octave的输入和输出我还是比较熟悉的，主要看对什么熟悉。
+//然后就是我知道了关于图形学，其实内容是很多很多的。不止有我看到的这些内容。
 
 //    glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f);
 //    std::cout << glm::to_string(vec) << std::endl;
