@@ -4,20 +4,27 @@
 #include <mutex>
 
 std::mutex mtx;
-int shared_resource = 0;
+std::condition_variable cv;
+bool ready = false;
 
-void print_message(const std::string &message, int delay) {
+void print_id(const int id) {
     std::unique_lock<std::mutex> lock(mtx);
-    ++shared_resource;
-    lock.unlock(); //这里其实是稍微法线来一点问题的，那就是如果你不存储临时计算的结果，之后结果是会变的。
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-    std::cout << message << shared_resource << std::endl;
+    cv.wait(lock, [] { return ready; });
+    std::cout << "thread id : " << id << std::endl;
+}
+
+void set_ready() {
+    std::unique_lock<std::mutex> lock(mtx);//我现在不理解这里到底做了什么？
+    ready = true;
+    cv.notify_all();
 }
 
 int main() {
     std::vector<std::thread> tem_threads;
-    tem_threads.push_back(std::thread(print_message, "hello 1 ", 500));
-    tem_threads.push_back(std::thread(print_message, "hello 2 ", 1000));
+    tem_threads.push_back(std::thread(print_id, 1));
+    tem_threads.push_back(std::thread(print_id, 2));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    set_ready();
     for (auto &tem_thread: tem_threads) {
         if (tem_thread.joinable())
             tem_thread.join();
