@@ -1,35 +1,41 @@
 #include <iostream>
-#include <thread>
-#include <chrono>
 #include <mutex>
+#include <string>
+#include <thread>
 
-std::mutex mtx;
-std::condition_variable cv;
-bool ready = false;
+volatile int g_i = 0;
+std::mutex g_i_mutex;
 
-void print_id(const int id) {
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock, [] { return ready; });
-    std::cout << "thread id : " << id << std::endl;
+void safe_increment(int iterations) {
+    const std::lock_guard<std::mutex> lock(g_i_mutex);
+    while (iterations-- > 0) {//这里稍微有个问题，那么就是执行的优先级--先还是>号先执行
+        g_i += 1;
+    }
+    std::cout << "thread #" << std::this_thread::get_id() << ",g_i: " << g_i << std::endl;
+
 }
 
-void set_ready() {
-    std::unique_lock<std::mutex> lock(mtx);//我现在不理解这里到底做了什么？
-    ready = true;
-    cv.notify_all();
+void unsafe_increment(int iterations) {
+    while (iterations-- > 0) {//这里稍微有个问题，那么就是执行的优先级--先还是>号先执行
+        g_i += 1;
+    }
+    std::cout << "thread #" << std::this_thread::get_id() << ",g_i: " << g_i << std::endl;
 }
 
 int main() {
-    std::vector<std::thread> tem_threads;
-    tem_threads.push_back(std::thread(print_id, 1));
-    tem_threads.push_back(std::thread(print_id, 2));
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    set_ready();
-    for (auto &tem_thread: tem_threads) {
-        if (tem_thread.joinable())
-            tem_thread.join();
-    }
-    std::cout << "main thread finish. " << std::endl;
-    return 0;
+    auto test = [](std::string_view fun_name, auto fun) {
+        g_i = 0;
+        std::cout << fun_name << ":\nbefore ,g_i: " << g_i << std::endl;
+
+        std::thread t1(fun, 1'000'000);
+        std::thread t2(fun, 1'000'000);
+        t1.join();
+        t2.join();
+        std::cout << "after,g_i: " << g_i << std::endl;
+
+
+    };
+    test("safe_increment", safe_increment);
+    test("unsafe_increment", unsafe_increment);
 
 }
