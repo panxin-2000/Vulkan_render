@@ -7,7 +7,7 @@ volatile int g_i = 0;
 std::mutex g_i_mutex;
 
 void safe_increment(int iterations) {
-    const std::lock_guard<std::mutex> lock(g_i_mutex);
+    const std::lock_guard<std::mutex> lock(g_i_mutex); //好消息是懂得了这句话是什么意思。
     while (iterations-- > 0) {//这里稍微有个问题，那么就是执行的优先级--先还是>号先执行
         g_i += 1;
     }
