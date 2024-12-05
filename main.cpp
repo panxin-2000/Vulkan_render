@@ -2,40 +2,57 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <filesystem>
+#include <random>
 
-volatile int g_i = 0;
-std::mutex g_i_mutex;
-
-void safe_increment(int iterations) {
-    const std::lock_guard<std::mutex> lock(g_i_mutex); //好消息是懂得了这句话是什么意思。
-    while (iterations-- > 0) {//这里稍微有个问题，那么就是执行的优先级--先还是>号先执行
-        g_i += 1;
-    }
-    std::cout << "thread #" << std::this_thread::get_id() << ",g_i: " << g_i << std::endl;
-
-}
-
-void unsafe_increment(int iterations) {
-    while (iterations-- > 0) {//这里稍微有个问题，那么就是执行的优先级--先还是>号先执行
-        g_i += 1;
-    }
-    std::cout << "thread #" << std::this_thread::get_id() << ",g_i: " << g_i << std::endl;
-}
 
 int main() {
-    auto test = [](std::string_view fun_name, auto fun) {
-        g_i = 0;
-        std::cout << fun_name << ":\nbefore ,g_i: " << g_i << std::endl;
+    std::cout << "current path is " << std::filesystem::current_path() / "asd" << std::endl;
+    std::cout << "temp path is " << std::filesystem::temp_directory_path() << std::endl;
+    std::cout << "temp path is " << std::filesystem::file_size(std::filesystem::current_path() / "main.cpp") << 'B'
+              << std::endl;
 
-        std::thread t1(fun, 1'000'000);
-        std::thread t2(fun, 1'000'000);
-        t1.join();
-        t2.join();
-        std::cout << "after,g_i: " << g_i << std::endl;
+    std::mt19937 generator;
+    std::uniform_int_distribution<int> distribution(1, 100);
 
+    std::vector<int> to_be_sorted;
 
-    };
-    test("safe_increment", safe_increment);
-    test("unsafe_increment", unsafe_increment);
+    for (int i = 0; i < 35; ++i) {
+        int tem = distribution(generator);
+        std::cout  << tem << " ";
+        to_be_sorted.push_back(tem);
+    }
+    std::cout << std::endl;
 
+    for (auto current = to_be_sorted.begin(); current != to_be_sorted.end(); ++current) {
+        for (auto little = current+1; little != to_be_sorted.end(); ++little) {
+            if (*current > *little) {
+//                std::cout  << "前 ";
+//                for (auto a: to_be_sorted) {
+//                    std::cout << a << ' ';
+//                }
+//                std::cout << std::endl;
+                auto tem = *current;
+                *current = *little;
+                *little = tem;
+//                std::cout  << "后 ";
+//                for (auto a: to_be_sorted) {
+//                    std::cout << a << ' ';
+//                }
+//                std::cout << std::endl;
+            }
+        }
+    }
+    for (auto a: to_be_sorted) {
+        std::cout << a << ' ';
+    }
+    std::cout << std::endl;
+
+    // 5 7 2 3 9
+    // 2 7 5 3 9
+    // 2 5 7 3 9
+    // 2 3 7 5 9
+    // 2 3 5 7 9
+
+    return 0;
 }
