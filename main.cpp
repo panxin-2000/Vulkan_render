@@ -10,36 +10,20 @@ const int LIMIT = 10;
 int main() {
     using namespace std;
 
-
-    vector<double> score;
-    for (auto pr = score.begin(); pr != score.end(); ++pr) {
-
+    string letters;
+    cout << "Enter the letter grouping (quit to quit):";
+    while (cin >> letters && letters != "quit") {
+        cout << "Permutations of " << letters << endl;
+        sort(letters.begin(), letters.end());
+        cout << letters << endl;
+        while (next_permutation(letters.begin(), letters.end())) {
+            cout << letters << endl;
+        }
+        cout << "Enter next sequence (quit to quit) :";
     }
-    int ar[LIMIT] = {4, 5, 4, 2, 2, 3, 4, 8, 1, 4};
-    list<int> la(ar, ar + LIMIT);
-    list<int> lb(la);
-    cout << "Original list contents: \n\t";
-    for_each(la.begin(), la.end(), Show);
-    cout << endl;
-    la.remove(4);
-    cout << "After using the remove() mothod:\n";
-    cout << "la:\t";
-    for_each(la.begin(), la.end(), Show);
-    cout << endl;
-    list<int>::iterator last;
-    last = remove(lb.begin(), lb.end(), 4);
-    cout << "after using the remove() function:\n";
-    cout << "lb: \t";
-    for_each(lb.begin(), lb.end(), Show);
-    cout << endl;
-    lb.erase(last, lb.end());
-    cout << " After using the erase() mothod: \n";
-    cout << "lb: \t";
-    for_each(lb.begin(), lb.end(), Show);
-    cout << endl;
+    cout << "Done .\\n";
     return 0;
 }
-
-void Show(int v) {
-    std::cout << v << ' ';
-}
+//我今天才发现字符串原来是能够这么搞的，
+//以前我一只以为的都是尽量以单词为一组，比如在一个句子中查找其中一个单词
+//现在发现，居然能够对其中的每个字符都进行排序。
