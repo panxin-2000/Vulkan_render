@@ -1,6 +1,7 @@
 #include <iostream>
 #include <list>
 #include <algorithm>
+#include <vector>
 
 void Show(int);
 
@@ -8,6 +9,12 @@ const int LIMIT = 10;
 
 int main() {
     using namespace std;
+
+
+    vector<double> score;
+    for (auto pr = score.begin(); pr != score.end(); ++pr) {
+
+    }
     int ar[LIMIT] = {4, 5, 4, 2, 2, 3, 4, 8, 1, 4};
     list<int> la(ar, ar + LIMIT);
     list<int> lb(la);
