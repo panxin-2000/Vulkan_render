@@ -1,68 +1,53 @@
 #include <iostream>
 #include <string>
-#include <vector>
-#include <set>
 #include <map>
-#include <iterator>
 #include <algorithm>
-#include <cctype>
 
-using namespace std;
+typedef int KeyType;
+typedef std::pair<const KeyType, std::string> Pair;
+typedef std::multimap<KeyType, std::string> MapCode;
 
 int main() {
-    const int N = 6;
-    string s1[N] = {"buffoon", "thinkers", "for", "heavy", "can", "for"};
-    string s2[N] = {"metal", "any", "food", "elegant", "deliver", "for"};
+    using namespace std;
+    MapCode codes;
 
-    set<string> A{s1, s1 + N};
-    set<string> B{s2, s2 + N};
+    codes.insert(Pair(415, "San francisco"));
+    codes.insert(Pair(510, "Oakland"));
+    codes.insert(Pair(718, "Brooklyn"));
+    codes.insert(Pair(718, "shanghai"));
+    // 更改为map后第二次插入是插入不进去的
+    codes.insert(Pair(718, "staten Island"));
+    codes.insert(Pair(415, "san rafael"));
+    codes.insert(Pair(510, "Berkeley"));
+    cout << " Number of cities with area code 415: "
+         << codes.count(415) << endl;
+    cout << " Number of cities with area code 718: "
+         << codes.count(718) << endl;
+    cout << " Number of cities with area code 510: "
+         << codes.count(510) << endl;
+    for (auto it = codes.begin(); it != codes.end(); ++it) {
+        cout << "    " << (*it).first
+             << "    " << (*it).second
+             << endl;
+    }
+    pair<MapCode::iterator, MapCode::iterator> range
+            = codes.equal_range(718);
+    for (auto it = range.first; it != range.second; ++it) {
+        cout << (*it).second << endl;
+    }
+    // 这里的first和second是什么意思？
+    // first  对应于键
+    // second 对应于值
+    // map 中如何替换已经存在的键对应的值？
 
-    ostream_iterator<string, char> out(cout, " ");
-    cout << "Set A : ";
-    copy(A.begin(), A.end(), out);
-    cout << endl;
-    cout << "Set B : ";
-    copy(B.begin(), B.end(), out);
-    cout << endl;
+    int32_t tem = 12;
+    char *tem_char = nullptr;
+    cout << tem << endl;
+    cout << &tem << endl;
+    cout << tem_char << endl;
+    cout << (void *) tem_char << endl;
 
-    cout << "Union of A and B:\n";
-    set_union(A.begin(), A.end(), B.begin(), B.end(), out);
-    cout << endl;
-
-    cout << "Intersection of A and B: \n";
-    set_intersection(A.begin(), A.end(), B.begin(), B.end(), out);
-    cout << endl;
-
-    cout << "Difference of A and B :\n";
-    set_difference(A.begin(), A.end(), B.begin(), B.end(), out);
-    cout << endl;
-
-    cout << "Difference of B and A :\n";
-    set_difference(B.begin(), B.end(), A.begin(), A.end(), out);
-    cout << endl;
-
-    set<string> C;
-    cout << "Set c:\n";
-    set_union(A.begin(), A.end(), B.begin(), B.end(),
-              insert_iterator<set<string>>(C, C.begin()));
-    copy(C.begin(), C.end(), out);
-    cout << endl;
-
-    string s3{"grungy"};
-    C.insert(s3);
-    cout << "Set C after insertion:\n";
-    copy(C.begin(), C.end(), out);
-    cout << endl;
-
-    cout << "showing a range :\n";
-    copy(C.lower_bound("ghost"), C.upper_bound("spook"), out);
-    cout << endl;
-    pair
+    long ee = 31415926;
+    cout.write((char *) &ee, sizeof(ee));
     return 0;
 }
-// 这里的主要的问题是使用的less<>
-// template<_Key, _Compare = less<_Key> >
-// 省略了第二个模版参数，只输入了第一个key,应该是可以理解为键的意思
-// 对于最简单的关联容器 set ，其 值和键相同，键是唯一的。
-// map 中值和键的类型不同，其实是可以相同的，只是一般情况下不同。 键唯一。
-// map 可以用来加速搜索吗？
