@@ -2,52 +2,71 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <math.h>
 
 typedef int KeyType;
 typedef std::pair<const KeyType, std::string> Pair;
 typedef std::multimap<KeyType, std::string> MapCode;
+#define  length 11
+
+
+int quick_sort(int *A, int start, int end);
+
+int partition(int *A, int start, int end);
+
+void printf_pi(int *src, int length_tem) {
+    for (int i = 1; i < length_tem; ++i) {
+        std::cout << *(src + i);
+    }
+    std::cout << std::endl;
+}
 
 int main() {
     using namespace std;
-    MapCode codes;
-
-    codes.insert(Pair(415, "San francisco"));
-    codes.insert(Pair(510, "Oakland"));
-    codes.insert(Pair(718, "Brooklyn"));
-    codes.insert(Pair(718, "shanghai"));
-    // 更改为map后第二次插入是插入不进去的
-    codes.insert(Pair(718, "staten Island"));
-    codes.insert(Pair(415, "san rafael"));
-    codes.insert(Pair(510, "Berkeley"));
-    cout << " Number of cities with area code 415: "
-         << codes.count(415) << endl;
-    cout << " Number of cities with area code 718: "
-         << codes.count(718) << endl;
-    cout << " Number of cities with area code 510: "
-         << codes.count(510) << endl;
-    for (auto it = codes.begin(); it != codes.end(); ++it) {
-        cout << "    " << (*it).first
-             << "    " << (*it).second
-             << endl;
+    int pi[length];
+    pi[0] = 0;
+    double PI = acos(-1);
+    for (int i = 1; i < length; ++i) {
+        pi[i] = (int) PI % 10;
+        PI = PI * 10;
     }
-    pair<MapCode::iterator, MapCode::iterator> range
-            = codes.equal_range(718);
-    for (auto it = range.first; it != range.second; ++it) {
-        cout << (*it).second << endl;
-    }
-    // 这里的first和second是什么意思？
-    // first  对应于键
-    // second 对应于值
-    // map 中如何替换已经存在的键对应的值？
+    printf_pi(pi, length);
 
-    int32_t tem = 12;
-    char *tem_char = nullptr;
-    cout << tem << endl;
-    cout << &tem << endl;
-    cout << tem_char << endl;
-    cout << (void *) tem_char << endl;
+    int part = partition(pi, 1, length - 1);
+    printf_pi(pi, length);
 
-    long ee = 31415926;
-    cout.write((char *) &ee, sizeof(ee));
+    part = partition(pi, 1, part - 1);
+    printf_pi(pi, length);
+    part = partition(pi, 1, part - 1);
+    printf_pi(pi, length);
     return 0;
+}
+
+void exchange(int *src, int *des) {
+    int tem = *des;
+    *des = *src;
+    *src = tem;
+}
+
+// 我写for 还是习惯从零开始，实际上算法导论都是从1开始发
+int partition(int *A, int start, int end) {
+    int x = *(A + end);
+    std::cout << x << "  ";
+    int little = start - 1;
+    for (int big = start; big <= end; ++big) {
+        if (*(A + big) <= x) {
+            ++little;
+            exchange(A + big, A + little);
+        }
+    }
+    exchange(A + little + 1, A + end);
+    return little;
+}
+
+int quick_sort(int *A, int start, int end) {
+    if (start < end) {
+        uint part = partition(A, start, end);
+        quick_sort(A, start, part - 1);
+        quick_sort(A, part + 1, end);
+    }
 }
