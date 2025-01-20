@@ -14,8 +14,8 @@ int quick_sort(int *A, int start, int end);
 
 int partition(int *A, int start, int end);
 
-void printf_pi(int *src, int length_tem) {
-    for (int i = 1; i < length_tem; ++i) {
+void printf_pi(int *src, int start, int end) {
+    for (int i = start; i <= end; ++i) {
         std::cout << *(src + i);
     }
     std::cout << std::endl;
@@ -30,15 +30,11 @@ int main() {
         pi[i] = (int) PI % 10;
         PI = PI * 10;
     }
-    printf_pi(pi, length);
+    printf_pi(pi, 1, length - 1);
 
-    int part = partition(pi, 1, length - 1);
-    printf_pi(pi, length);
+    quick_sort(pi, 1, length - 1);
+    printf_pi(pi, 1, length - 1);
 
-    part = partition(pi, 1, part - 1);
-    printf_pi(pi, length);
-    part = partition(pi, 1, part - 1);
-    printf_pi(pi, length);
     return 0;
 }
 
@@ -51,7 +47,6 @@ void exchange(int *src, int *des) {
 // 我写for 还是习惯从零开始，实际上算法导论都是从1开始发
 int partition(int *A, int start, int end) {
     int x = *(A + end);
-    std::cout << x << "  ";
     int little = start - 1;
     for (int big = start; big <= end; ++big) {
         if (*(A + big) <= x) {
@@ -64,7 +59,7 @@ int partition(int *A, int start, int end) {
 }
 
 int quick_sort(int *A, int start, int end) {
-    if (start < end) {
+    if (start + 1 < end) {
         uint part = partition(A, start, end);
         quick_sort(A, start, part - 1);
         quick_sort(A, part + 1, end);
