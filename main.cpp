@@ -45,12 +45,17 @@ void set_color(enum VT_100_color color){
     std::cout << "\033[0m\033["<< color << "m";
 }
 
+void exit_function(int sig){
+    std::cout << "\033[2J\033[?25h\033[0;0H\033[0m";
+    exit(0);
+}
+
 int main(int argc, char **argv) {
     std::forward_list<int> fl;
     fl.push_front(10);
     fl.push_front(20);
     fl.push_front(30);
-
+    signal(SIGINT,exit_function);
 
     auto iteratoe = fl.insert_after(fl.begin(), 10);
     iteratoe = std::find(fl.begin(), fl.end(), 10);
