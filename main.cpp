@@ -1,67 +1,39 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <list>
 #include <algorithm>
 #include <math.h>
+#include <forward_list>
 
-typedef int KeyType;
-typedef std::pair<const KeyType, std::string> Pair;
-typedef std::multimap<KeyType, std::string> MapCode;
-#define  length 11
+struct Node {
+    int value;
+    struct Node *next;
+};
+
+struct Head {
+    struct Node *next;
+};
+
+int main(int argc, char **argv) {
+    std::forward_list<int> fl;
+    fl.push_front(10);
+    fl.push_front(20);
+    fl.push_front(30);
 
 
-int quick_sort(int *A, int start, int end);
-
-int partition(int *A, int start, int end);
-
-void printf_pi(int *src, int start, int end) {
-    for (int i = start; i <= end; ++i) {
-        std::cout << *(src + i);
+    auto iteratoe = fl.insert_after(fl.begin(), 10);
+    iteratoe = std::find(fl.begin(), fl.end(), 10);
+    // 上面执行的是find操作，也就是==操作符被重载了。
+    // 问题是被重载的操作符有时候我根本不知道从哪里看是否被重载了
+    // C++标准库中给出了参考代码，但是呢？和真正的代码是不一样的
+    // cppreference 中确实给出了相应的参考代码
+    fl.insert_after(iteratoe, 50);
+    for (auto iterator = fl.begin(); iterator != fl.end(); ++iterator) {
+        std::cout << *iterator << " ";
     }
     std::cout << std::endl;
-}
 
-int main() {
-    using namespace std;
-    int pi[length];
-    pi[0] = 0;
-    double PI = acos(-1);
-    for (int i = 1; i < length; ++i) {
-        pi[i] = (int) PI % 10;
-        PI = PI * 10;
-    }
-    printf_pi(pi, 1, length - 1);
 
-    quick_sort(pi, 1, length - 1);
-    printf_pi(pi, 1, length - 1);
 
-    return 0;
-}
-
-void exchange(int *src, int *des) {
-    int tem = *des;
-    *des = *src;
-    *src = tem;
-}
-
-// 我写for 还是习惯从零开始，实际上算法导论都是从1开始发
-int partition(int *A, int start, int end) {
-    int x = *(A + end);
-    int little = start - 1;
-    for (int big = start; big <= end; ++big) {
-        if (*(A + big) <= x) {
-            ++little;
-            exchange(A + big, A + little);
-        }
-    }
-    exchange(A + little + 1, A + end);
-    return little;
-}
-
-int quick_sort(int *A, int start, int end) {
-    if (start + 1 < end) {
-        uint part = partition(A, start, end);
-        quick_sort(A, start, part - 1);
-        quick_sort(A, part + 1, end);
-    }
 }
