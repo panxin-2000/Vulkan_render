@@ -7,6 +7,8 @@
 #include <forward_list>
 #include <unistd.h>
 
+#include "curses.h"
+
 struct Node {
     int value;
     struct Node *next;
@@ -17,21 +19,23 @@ struct Head {
 };
 
 
+void up(int n) {
+    std::cout << "\033[" << n << "A";
+}
 
+void down(int n) {
+    std::cout << "\033[" << n << "B";
+}
 
-void up(int n){
-    std::cout << "\033["<< n << "A";
+void right(int n) {
+    std::cout << "\033[" << n << "C";
 }
-void down(int n){
-    std::cout << "\033["<< n << "B";
+
+void left(int n) {
+    std::cout << "\033[" << n << "D";
 }
-void right(int n){
-    std::cout << "\033["<< n << "C";
-}
-void left(int n){
-    std::cout << "\033["<< n << "D";
-}
-enum VT_100_color{
+
+enum VT_100_color {
     black = 40,
     dark_red,
     green,
@@ -41,13 +45,55 @@ enum VT_100_color{
     dark_green,
     white
 };
-void set_color(enum VT_100_color color){
-    std::cout << "\033[0m\033["<< color << "m";
+
+void set_color(enum VT_100_color color) {
+    std::cout << "\033[0m\033[" << color << "m";
 }
 
-void exit_function(int sig){
+void exit_function(int sig) {
     std::cout << "\033[2J\033[?25h\033[0;0H\033[0m";
+    echo();
+    endwin();
     exit(0);
+}
+
+void display_block(int x, int y) {
+    if (x >= 0 && y >= 0) {
+        std::cout << "\033[15A";
+        down(x);
+        right(y);
+        set_color(black);
+        std::cout << "  ";
+        up(x);
+        left(y + 2);
+    }
+}
+
+void deal_key() {
+    int key;
+    key = getchar();
+    std::cout << "getchar();";
+    static int x = 0;
+    static int y = 0;
+
+    if (key != ERR && key != 'q') {
+        clrtoeol();
+        switch (key) {
+            case KEY_UNDO:
+                ++x;
+                break;
+            case KEY_UP:
+                --x;
+                break;
+            case KEY_RIGHT:
+                ++y;
+                break;
+            case KEY_LEFT:
+                --y;
+                break;
+        }
+    }
+    display_block(x, y);
 }
 
 int main(int argc, char **argv) {
@@ -55,7 +101,10 @@ int main(int argc, char **argv) {
     fl.push_front(10);
     fl.push_front(20);
     fl.push_front(30);
-    signal(SIGINT,exit_function);
+    signal(SIGINT, exit_function);
+//    initscr();
+//    noecho();
+
 
     auto iteratoe = fl.insert_after(fl.begin(), 10);
     iteratoe = std::find(fl.begin(), fl.end(), 10);
@@ -69,26 +118,27 @@ int main(int argc, char **argv) {
         std::cout << *iterator << " ";
     }
     std::cout << std::endl;
-    std::cout << "\033[40m 123456 \033[0m";
-    std::cout << "\033[41m 123456 \033[0m";
-    std::cout << std::endl;
-    int a = 0;
     while (1) {
-        ++a;
         for (int i = 0; i < 15; ++i) {
             for (int i = 0; i < 30; ++i)
-                std::cout << "\033[41m"<<' '<<"\033[0m";
-            std::cout << "\n\033[0m";
+                std::cout << "\033[41m" << ' ' << "\033[0m";
+            std::cout << "\r\n\033[0m";
         }
-        std::cout << "\033[15A";
-        down(2);
-        right(4);
-        set_color(black);
-        std::cout << "  ";
-        up(2);
-        left(6);
+
+//        display_block(2, 4);
+//        deal_key();
         std::cout << "\033[2;0H";
         std::cout.flush();
-        sleep(1);
+        char tem[20];
+
+        if (tem[0] == 'q'){
+            std::cout << "12343";
+        }
+
+        //        char tem;
+//        std::cin >> tem;
+//        if (tem == 'w')
+//            std::cout << "\033[0m" << " out w" << std::endl;
     }
+    endwin();
 }
