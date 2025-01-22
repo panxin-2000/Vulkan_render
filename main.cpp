@@ -9,15 +9,9 @@
 #include <curses.h>
 
 void exit_function(int sig) {
-    endwin();
-    echo();
+    endwin();// 刚刚删除的掉的一行没有任何影响
     exit(0);
 }
-
-
-
-
-
 int main(int argc, char **argv) {
     signal(SIGINT, exit_function);
     int key;
