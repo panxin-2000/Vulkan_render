@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
     struct Node *tem = insert_value(head, 5);
     print_list(head);
     delete_node(head, tem);
+    delete_node(head, tem);
     print_list(head);
     tem = find_value(head, 100);
     if (tem != nullptr)
