@@ -13,46 +13,97 @@ void exit_function(int sig) {
     exit(0);
 }
 
-static inline int ImUpperPowerOfTwo(int v) {
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
+struct Node {
+    struct Node *next_node;
+    int value;
+};
+struct Head {
+    struct Node *node;
+};
+
+
+/**
+ * 插入的时候应怎么插入呢？ head 的值 指向插入的值，之前的head 被替换为新插入的值
+ * @param head
+ * @param value
+ */
+struct Node *insert_value(struct Head *head, int value) {
+    struct Node *node = (struct Node *) malloc(sizeof(struct Node));
+    node->next_node = head->node;
+    node->value = value;
+    head->node = node;
+    return node;
 }
 
-static inline int ImLowerPowerOfTwo(int v) {
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v>>1;  // 异或运算符是不行的，因为要把最高位后面全部变成0 最高位左移一位然后得到一个新的数，然后不断或，最好再异或应该是可以的
-    //异或是不行的
+/**
+ * 如何删除呢？传入节点的指针，然后开查找，判断是否为空，不为空判断是否和传入的指针相等，如果找到后应该怎么办
+ * @param head
+ * @param node
+ * @return
+ */
+void delete_node(struct Head *head, struct Node *node) {
+    if (head->node != nullptr && head->node == node) {
+        head->node = node->next_node;
+        std::cout << "已删除对应节点" << std::endl;
+        return;
+    }
+    struct Node *sentinel_node = head->node;
+    while (sentinel_node != nullptr) {
+        if (sentinel_node->next_node == node) {
+            sentinel_node->next_node = node->next_node;
+            std::cout << "已删除对应节点" << std::endl;
+            return;
+        }
+        sentinel_node = sentinel_node->next_node;
+    }
 }
+
+void print_list(struct Head *head) {
+    if (head->node == nullptr) {
+        std::cout << "链表为空" << std::endl;
+        return;
+    }
+    struct Node *node = head->node;
+    std::cout << "node value : " << node->value << std::endl;
+    while (node->next_node != nullptr) {
+        std::cout << "node value : " << node->next_node->value << std::endl;
+        node = node->next_node;
+    }
+    return;
+}
+
+struct Node *find_value(struct Head *head, int value) {
+    struct Node *node = head->node;
+    while (node != nullptr && node->value != value) {// 当节点不是空的时候才可以检索其值
+        node = node->next_node;
+    }
+    return node; // 这里有一个问题就是找不到的时候会返回最后一个值
+    // 刚刚有个导致程序退出的错误，这个错误并不是这里因为的，因为返回了nullptr引起的
+}
+
 
 int main(int argc, char **argv) {
-    std::cout << "ImUpperPowerOfTwo( 0 ) = " << ImUpperPowerOfTwo(0) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 1 ) = " << ImUpperPowerOfTwo(1) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 2 ) = " << ImUpperPowerOfTwo(2) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 3 ) = " << ImUpperPowerOfTwo(3) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 4 ) = " << ImUpperPowerOfTwo(4) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 5 ) = " << ImUpperPowerOfTwo(5) << std::endl;
-    std::cout << "ImUpperPowerOfTwo( 129 ) = " << ImUpperPowerOfTwo(129) << std::endl;
-    // 一个很特殊的例子，129能够充分的演示为什么是这个结果。
-    std::cout << "ImLowerPowerOfTwo( 0 ) = " << ImLowerPowerOfTwo(0) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 1 ) = " << ImLowerPowerOfTwo(1) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 2 ) = " << ImLowerPowerOfTwo(2) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 3 ) = " << ImLowerPowerOfTwo(3) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 4 ) = " << ImLowerPowerOfTwo(4) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 5 ) = " << ImLowerPowerOfTwo(5) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 8 ) = " << ImLowerPowerOfTwo(8) << std::endl;
-    std::cout << "ImLowerPowerOfTwo( 129 ) = " << ImLowerPowerOfTwo(129) << std::endl;
-    // 一个很特殊的例子，129能够充分的演示为什么是这个结果。
+    struct Head *head = (struct Head *) malloc(sizeof(struct Head));
+    head->node = nullptr;
+    print_list(head);
+    insert_value(head, 10);
+    insert_value(head, 2);
+    insert_value(head, 3);
+    insert_value(head, 4);
+    struct Node *tem = insert_value(head, 5);
+    print_list(head);
+    delete_node(head, tem);
+    print_list(head);
+    tem = find_value(head, 100);
+    if (tem != nullptr)
+        std::cout << "tem value : " << tem->value << std::endl;
+    tem = find_value(head, 2);
+    if (tem != nullptr)
+        std::cout << "tem value : " << tem->value << std::endl;
+
+
+//    free(head);
+
 
 
 }
