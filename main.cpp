@@ -17,9 +17,7 @@ struct Node {
     struct Node *next_node;
     int value;
 };
-struct Head {
-    struct Node *node;
-};
+
 
 
 /**
@@ -27,11 +25,11 @@ struct Head {
  * @param head
  * @param value
  */
-struct Node *insert_value(struct Head *head, int value) {
+struct Node *insert_value(struct Node *head, int value) {
     struct Node *node = (struct Node *) malloc(sizeof(struct Node));
-    node->next_node = head->node;
+    node->next_node = head->next_node;
     node->value = value;
-    head->node = node;
+    head->next_node = node;
     return node;
 }
 
@@ -41,13 +39,8 @@ struct Node *insert_value(struct Head *head, int value) {
  * @param node
  * @return
  */
-void delete_node(struct Head *head, struct Node *node) {
-    if (head->node != nullptr && head->node == node) {
-        head->node = node->next_node;
-        std::cout << "已删除对应节点" << std::endl;
-        return;
-    }
-    struct Node *sentinel_node = head->node;
+void delete_node(struct Node *head, struct Node *node) {
+    struct Node *sentinel_node = head;
     while (sentinel_node != nullptr) {
         if (sentinel_node->next_node == node) {
             sentinel_node->next_node = node->next_node;
@@ -58,22 +51,17 @@ void delete_node(struct Head *head, struct Node *node) {
     }
 }
 
-void print_list(struct Head *head) {
-    if (head->node == nullptr) {
-        std::cout << "链表为空" << std::endl;
-        return;
-    }
-    struct Node *node = head->node;
-    std::cout << "node value : " << node->value << std::endl;
-    while (node->next_node != nullptr) {
-        std::cout << "node value : " << node->next_node->value << std::endl;
+void print_list(struct Node *head) {
+    struct Node *node = head->next_node;
+    while (node != nullptr) {
+        std::cout << "node value : " << node->value << std::endl;
         node = node->next_node;
     }
     return;
 }
 
-struct Node *find_value(struct Head *head, int value) {
-    struct Node *node = head->node;
+struct Node *find_value(struct Node *head, int value) {
+    struct Node *node = head->next_node;
     while (node != nullptr && node->value != value) {// 当节点不是空的时候才可以检索其值
         node = node->next_node;
     }
@@ -83,19 +71,23 @@ struct Node *find_value(struct Head *head, int value) {
 
 
 int main(int argc, char **argv) {
-    struct Head *head = (struct Head *) malloc(sizeof(struct Head));
-    head->node = nullptr;
+    struct Node *head = (struct Node *) malloc(sizeof(struct Node));
+    head->next_node = nullptr;
     print_list(head);
-    insert_value(head, 10);
-    insert_value(head, 2);
-    insert_value(head, 3);
-    insert_value(head, 4);
-    struct Node *tem = insert_value(head, 5);
+    struct Node *tem_1 = insert_value(head, 1);
+    struct Node *tem_2 = insert_value(head, 2);
+    struct Node *tem_3 = insert_value(head, 3);
+    struct Node *tem_4 = insert_value(head, 4);
+    struct Node *tem_5 = insert_value(head, 5);
     print_list(head);
-    delete_node(head, tem);
-    delete_node(head, tem);
+    delete_node(head, tem_5);
+    delete_node(head, tem_1);
+    delete_node(head, tem_3);
+    delete_node(head, tem_5);
+    delete_node(head, tem_1);
+    delete_node(head, tem_3);
     print_list(head);
-    tem = find_value(head, 100);
+    struct Node * tem = find_value(head, 100);
     if (tem != nullptr)
         std::cout << "tem value : " << tem->value << std::endl;
     tem = find_value(head, 2);
