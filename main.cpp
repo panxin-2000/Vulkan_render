@@ -45,6 +45,7 @@ struct Node *insert_value(struct Node *head, int value) {
  * @return
  */
 void delete_node(struct Node *head, struct Node *node) {
+    if (node == nullptr)return;
     if (node->next_node != nullptr)
         node->next_node->previous_node = node->previous_node;// 一般情况
     else {
@@ -55,6 +56,7 @@ void delete_node(struct Node *head, struct Node *node) {
     else {
         head->next_node = node->next_node;               //删除的节点的为链表的头节点
     }
+    node = nullptr;
 }
 
 void print_list(struct Node *head) {
@@ -121,6 +123,13 @@ int main(int argc, char **argv) {
     delete_node(head, tem_3);
     delete_node(head, tem_2);
     delete_node(head, tem_4);
+    insert_value(head, 5);
+    insert_value(head, 6);
+    insert_value(head, 7);
+    insert_value(head, 8);
+    delete_node(head, tem_5);
+    print_list(head);
+
 //    print_list(head);
 //    struct Node *tem = find_value(head, 100);
 //    if (tem != nullptr)
