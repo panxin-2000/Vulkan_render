@@ -13,134 +13,192 @@ void exit_function(int sig) {
     exit(0);
 }
 
-struct Node {
-    struct Node *next_node;
-    struct Node *previous_node;
+struct Tree_Node {
+    struct Tree_Node *parent;
+    struct Tree_Node *left;
+    struct Tree_Node *right;
     int value;
 };
 
+void inorder_tree_walk(struct Tree_Node *node) {
+    if (node != nullptr) {
+        inorder_tree_walk(node->left);
+        std::cout << node->value << std::endl;
+        inorder_tree_walk(node->right);
+    }
+}
 
-/**
- * 插入的时候应怎么插入呢？ head 的值 指向插入的值，之前的head 被替换为新插入的值
- * @param head
- * @param value
- */
-struct Node *insert_value(struct Node *head, int value) {
-    struct Node *node = (struct Node *) malloc(sizeof(struct Node));
-    node->previous_node = nullptr; //
-    node->next_node = head->next_node;
-    node->value = value;
-    if (head->next_node != nullptr)
-        head->next_node->previous_node = node;
-    else
-        head->previous_node = node;
-    head->next_node = node;
-    return node;
+void preorder_tree_walk(struct Tree_Node *node) {
+    if (node != nullptr) {
+        std::cout << node->value << std::endl;
+        preorder_tree_walk(node->left);
+        preorder_tree_walk(node->right);
+    }
+}
+
+void postorder_tree_walk(struct Tree_Node *node) {
+    if (node != nullptr) {
+        postorder_tree_walk(node->left);
+        postorder_tree_walk(node->right);
+        std::cout << node->value << std::endl;
+    }
+}
+
+void level_tree_walk(struct Tree_Node *node) {
+    if (node != nullptr) {
+        std::cout << node->value << std::endl;
+        level_tree_walk(node->left);
+        level_tree_walk(node->right);
+    }
 }
 
 /**
- * 如何删除呢？传入节点的指针，然后开查找，判断是否为空，不为空判断是否和传入的指针相等，如果找到后应该怎么办
- * @param head
- * @param node
+ * 递归版本的
+ * @param tree_node
+ * @param value
  * @return
  */
-void delete_node(struct Node *head, struct Node *node) {
-    if (node == nullptr)return;
-    if (node->next_node != nullptr)
-        node->next_node->previous_node = node->previous_node;// 一般情况
-    else {
-        head->previous_node = node->previous_node;       //删除的节点的为链表的尾节点
+struct Tree_Node *tree_search(struct Tree_Node *tree_node, int value) {
+
+    if (tree_node == nullptr || tree_node->value == value) {
+        return tree_node;
     }
-    if (node->previous_node != nullptr)
-        node->previous_node->next_node = node->next_node; // 一般情况
-    else {
-        head->next_node = node->next_node;               //删除的节点的为链表的头节点
+    if (value < tree_node->value) {
+        return tree_search(tree_node->left, value);
     }
-    node = nullptr;
+    return tree_search(tree_node->right, value);
 }
 
-void print_list(struct Node *head) {
-    struct Node *node = head->next_node;
-    while (node != nullptr) {
-        std::cout << "node value : " << node->value << std::endl;
-        node = node->next_node;
+/**
+ * 迭代版本的，迭代版本的一般来说更加快，不需要向栈复制或者储存内容？（是因为这样吗？临时变量）
+ * @param tree_node
+ * @param value
+ * @return
+ */
+struct Tree_Node *iterative_tree_search(struct Tree_Node *tree_node, int value) {
+    while (tree_node != nullptr && tree_node->value != value) {
+        if (value < tree_node->value)
+            tree_node = tree_node->left;
+        else {
+            tree_node = tree_node->right;
+        }
     }
-    return;
+    return tree_node;
 }
 
-
-void print_list_first(struct Node *head) {
-    struct Node *node = head->next_node;
-    if (node != nullptr)
-        std::cout << "first node value : " << node->value << std::endl;
-    return;
-}
-
-void print_list_last(struct Node *head) {
-    struct Node *node = head->previous_node;
-    if (node != nullptr)
-        std::cout << "last node value : " << node->value << std::endl;
-    return;
-}
-
-void inverse_list(struct Node *head) {
-    //单链表翻转有点难，但是基本的图已经绘制完成了
-
-}
-
-struct Node *find_value(struct Node *head, int value) {
-    struct Node *node = head->next_node;
-    while (node != nullptr && node->value != value) {// 当节点不是空的时候才可以检索其值
-        node = node->next_node;
+struct Tree_Node *tree_maximum(struct Tree_Node *tree_node) {
+    while (tree_node != nullptr) {
+        tree_node = tree_node->right;
     }
-    return node; // 这里有一个问题就是找不到的时候会返回最后一个值
-    // 刚刚有个导致程序退出的错误，这个错误并不是这里因为的，因为返回了nullptr引起的
+    return tree_node;
 }
 
+struct Tree_Node *tree_minimum(struct Tree_Node *tree_node) {
+    while (tree_node != nullptr) {
+        tree_node = tree_node->left;
+    }
+    return tree_node;
+}
+
+struct Tree_Node *tree_successor(struct Tree_Node *tree_node) {
+    if (tree_node->right != nullptr) {
+        return tree_minimum(tree_node->right);
+    }
+    struct Tree_Node *y = tree_node->parent;
+    while (y != nullptr && y->right == tree_node) {
+        tree_node = y;
+        y = y->parent;
+    }
+    return tree_node;
+}
+
+/**
+ * 这个函数大概是这个样子，其中最重要的是搜索树的性能，左边的均不大于，右边的均不小于
+ * 重要的是如何插入和删除，因为有特殊的插入和删除，才有搜索树的通用查找算法
+ * @param tree_node
+ * @return
+ */
+struct Tree_Node *tree_predecessor(struct Tree_Node *tree_node) {
+    if (tree_node->left != nullptr) {
+        return tree_minimum(tree_node->left);
+    }
+    struct Tree_Node *y = tree_node->parent;
+    while (y != nullptr && y->left == tree_node) {
+        tree_node = y;
+        y = y->parent;
+    }
+    return tree_node;
+}
+
+
+void tree_insert(struct Tree_Node *root_node, struct Tree_Node *insert_tree_node) {
+    struct Tree_Node *will_insert_node = nullptr;
+    struct Tree_Node *if_tem_equal = root_node;
+    while (if_tem_equal != nullptr) {
+        will_insert_node = if_tem_equal;
+        if (insert_tree_node->value < if_tem_equal->value)
+            if_tem_equal = if_tem_equal->left;
+        else
+            if_tem_equal = if_tem_equal->right;
+    }
+    insert_tree_node->parent = will_insert_node;
+    if (will_insert_node == nullptr) {
+        root_node = insert_tree_node;
+    } else if (insert_tree_node->value < will_insert_node->value) {
+        will_insert_node->left = insert_tree_node;
+    } else {
+        will_insert_node->right = insert_tree_node;
+    }
+}
 
 int main(int argc, char **argv) {
-    struct Node *head = (struct Node *) malloc(sizeof(struct Node));
-    head->next_node = nullptr;
-    head->previous_node = nullptr;
-    print_list(head);
-    struct Node *tem_1 = insert_value(head, 1);
+    struct Tree_Node *root = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    //最先考虑的应该是插入
+    root->value = 5;
+    struct Tree_Node *node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    node->left = nullptr;
+    node->right = nullptr;
+    node->parent = nullptr;
 
-    struct Node *tem_2 = insert_value(head, 2);
-    struct Node *tem_3 = insert_value(head, 3);
-    struct Node *tem_4 = insert_value(head, 4);
-    struct Node *tem_5 = insert_value(head, 5);
-    print_list(head);
-    print_list_first(head);
-    print_list_last(head);
+    node->value = 3;
+    root->left = node;
+    node->parent = root;
+    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    node->left = nullptr;
+    node->right = nullptr;
+    node->parent = nullptr;
 
+    node->value = 2;
+    root->left->left = node;
+    node->parent = root->left;
+    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    node->left = nullptr;
+    node->right = nullptr;
+    node->parent = nullptr;
 
-    delete_node(head, tem_5);
-    delete_node(head, tem_1);
-    delete_node(head, tem_3);
-    print_list(head);
-    delete_node(head, tem_5);
-    delete_node(head, tem_1);
-    delete_node(head, tem_3);
-    delete_node(head, tem_2);
-    delete_node(head, tem_4);
-    insert_value(head, 5);
-    insert_value(head, 6);
-    insert_value(head, 7);
-    insert_value(head, 8);
-    delete_node(head, tem_5);
-    print_list(head);
+    node->value = 4;
+    root->left->right = node;
+    node->parent = root->left;
 
-//    print_list(head);
-//    struct Node *tem = find_value(head, 100);
-//    if (tem != nullptr)
-//        std::cout << "tem value : " << tem->value << std::endl;
-//    tem = find_value(head, 2);
-//    if (tem != nullptr)
-//        std::cout << "tem value : " << tem->value << std::endl;
+    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    node->left = nullptr;
+    node->right = nullptr;
+    node->parent = nullptr;
 
+    node->value = 7;
+    root->right = node;
+    node->parent = root;
+    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
+    node->left = nullptr;
+    node->right = nullptr;
+    node->parent = nullptr;
+    node->value = 8;
+    root->right->right = node;
+    node->parent = root->right;
+    //  5
+    // 3  7
+    //2 4  8
 
-//    free(head);
-
-
+    preorder_tree_walk(root);
 
 }
