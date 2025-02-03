@@ -60,6 +60,11 @@ void print_list(struct Node *head) {
     return;
 }
 
+void inverse_list(struct Node *head) {
+    //单链表翻转有点难，但是基本的图已经绘制完成了
+
+}
+
 struct Node *find_value(struct Node *head, int value) {
     struct Node *node = head->next_node;
     while (node != nullptr && node->value != value) {// 当节点不是空的时候才可以检索其值
@@ -80,6 +85,7 @@ int main(int argc, char **argv) {
     struct Node *tem_4 = insert_value(head, 4);
     struct Node *tem_5 = insert_value(head, 5);
     print_list(head);
+
     delete_node(head, tem_5);
     delete_node(head, tem_1);
     delete_node(head, tem_3);
