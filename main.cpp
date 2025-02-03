@@ -15,9 +15,9 @@ void exit_function(int sig) {
 
 struct Node {
     struct Node *next_node;
+    struct Node *previous_node;
     int value;
 };
-
 
 
 /**
@@ -27,8 +27,13 @@ struct Node {
  */
 struct Node *insert_value(struct Node *head, int value) {
     struct Node *node = (struct Node *) malloc(sizeof(struct Node));
+    node->previous_node = nullptr; //
     node->next_node = head->next_node;
     node->value = value;
+    if (head->next_node != nullptr)
+        head->next_node->previous_node = node;
+    else
+        head->previous_node = node;
     head->next_node = node;
     return node;
 }
@@ -60,6 +65,21 @@ void print_list(struct Node *head) {
     return;
 }
 
+
+void print_list_first(struct Node *head) {
+    struct Node *node = head->next_node;
+    if (node != nullptr)
+        std::cout << "first node value : " << node->value << std::endl;
+    return;
+}
+
+void print_list_last(struct Node *head) {
+    struct Node *node = head->previous_node;
+    if (node != nullptr)
+        std::cout << "last node value : " << node->value << std::endl;
+    return;
+}
+
 void inverse_list(struct Node *head) {
     //单链表翻转有点难，但是基本的图已经绘制完成了
 
@@ -78,6 +98,7 @@ struct Node *find_value(struct Node *head, int value) {
 int main(int argc, char **argv) {
     struct Node *head = (struct Node *) malloc(sizeof(struct Node));
     head->next_node = nullptr;
+    head->previous_node = nullptr;
     print_list(head);
     struct Node *tem_1 = insert_value(head, 1);
     struct Node *tem_2 = insert_value(head, 2);
@@ -85,20 +106,23 @@ int main(int argc, char **argv) {
     struct Node *tem_4 = insert_value(head, 4);
     struct Node *tem_5 = insert_value(head, 5);
     print_list(head);
+    print_list_first(head);
+    print_list_last(head);
 
-    delete_node(head, tem_5);
-    delete_node(head, tem_1);
-    delete_node(head, tem_3);
-    delete_node(head, tem_5);
-    delete_node(head, tem_1);
-    delete_node(head, tem_3);
-    print_list(head);
-    struct Node * tem = find_value(head, 100);
-    if (tem != nullptr)
-        std::cout << "tem value : " << tem->value << std::endl;
-    tem = find_value(head, 2);
-    if (tem != nullptr)
-        std::cout << "tem value : " << tem->value << std::endl;
+
+//    delete_node(head, tem_5);
+//    delete_node(head, tem_1);
+//    delete_node(head, tem_3);
+//    delete_node(head, tem_5);
+//    delete_node(head, tem_1);
+//    delete_node(head, tem_3);
+//    print_list(head);
+//    struct Node *tem = find_value(head, 100);
+//    if (tem != nullptr)
+//        std::cout << "tem value : " << tem->value << std::endl;
+//    tem = find_value(head, 2);
+//    if (tem != nullptr)
+//        std::cout << "tem value : " << tem->value << std::endl;
 
 
 //    free(head);
