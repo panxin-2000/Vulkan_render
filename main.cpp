@@ -45,14 +45,15 @@ struct Node *insert_value(struct Node *head, int value) {
  * @return
  */
 void delete_node(struct Node *head, struct Node *node) {
-    struct Node *sentinel_node = head;
-    while (sentinel_node != nullptr) {
-        if (sentinel_node->next_node == node) {
-            sentinel_node->next_node = node->next_node;
-            std::cout << "已删除对应节点" << std::endl;
-            return;
-        }
-        sentinel_node = sentinel_node->next_node;
+    if (node->next_node != nullptr)
+        node->next_node->previous_node = node->previous_node;// 一般情况
+    else {
+        head->previous_node = node->previous_node;       //删除的节点的为链表的尾节点
+    }
+    if (node->previous_node != nullptr)
+        node->previous_node->next_node = node->next_node; // 一般情况
+    else {
+        head->next_node = node->next_node;               //删除的节点的为链表的头节点
     }
 }
 
@@ -101,6 +102,7 @@ int main(int argc, char **argv) {
     head->previous_node = nullptr;
     print_list(head);
     struct Node *tem_1 = insert_value(head, 1);
+
     struct Node *tem_2 = insert_value(head, 2);
     struct Node *tem_3 = insert_value(head, 3);
     struct Node *tem_4 = insert_value(head, 4);
@@ -110,12 +112,15 @@ int main(int argc, char **argv) {
     print_list_last(head);
 
 
-//    delete_node(head, tem_5);
-//    delete_node(head, tem_1);
-//    delete_node(head, tem_3);
-//    delete_node(head, tem_5);
-//    delete_node(head, tem_1);
-//    delete_node(head, tem_3);
+    delete_node(head, tem_5);
+    delete_node(head, tem_1);
+    delete_node(head, tem_3);
+    print_list(head);
+    delete_node(head, tem_5);
+    delete_node(head, tem_1);
+    delete_node(head, tem_3);
+    delete_node(head, tem_2);
+    delete_node(head, tem_4);
 //    print_list(head);
 //    struct Node *tem = find_value(head, 100);
 //    if (tem != nullptr)
