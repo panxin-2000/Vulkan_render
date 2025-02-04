@@ -131,7 +131,7 @@ struct Tree_Node *tree_predecessor(struct Tree_Node *tree_node) {
 }
 
 
-void tree_insert(struct Tree_Node *root_node, struct Tree_Node *insert_tree_node) {
+struct Tree_Node *tree_insert(struct Tree_Node *root_node, struct Tree_Node *insert_tree_node) {
     struct Tree_Node *will_insert_node = nullptr;
     struct Tree_Node *if_tem_equal = root_node;
     while (if_tem_equal != nullptr) {
@@ -149,56 +149,39 @@ void tree_insert(struct Tree_Node *root_node, struct Tree_Node *insert_tree_node
     } else {
         will_insert_node->right = insert_tree_node;
     }
+    return root_node;
 }
 
-int main(int argc, char **argv) {
-    struct Tree_Node *root = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    //最先考虑的应该是插入
-    root->value = 5;
+struct Tree_Node *tree_insert_value(struct Tree_Node *root_node, int value) {
     struct Tree_Node *node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    node->left = nullptr;
     node->right = nullptr;
-    node->parent = nullptr;
-
-    node->value = 3;
-    root->left = node;
-    node->parent = root;
-    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
     node->left = nullptr;
-    node->right = nullptr;
     node->parent = nullptr;
+    node->value = value;
+    return tree_insert(root_node, node);
+}
 
-    node->value = 2;
-    root->left->left = node;
-    node->parent = root->left;
-    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    node->left = nullptr;
-    node->right = nullptr;
-    node->parent = nullptr;
 
-    node->value = 4;
-    root->left->right = node;
-    node->parent = root->left;
+int main(int argc, char **argv) {
+    struct Tree_Node *root = nullptr;
+    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
+    root = tree_insert_value(root, 5);
+    root = tree_insert_value(root, 3);
+    root = tree_insert_value(root, 2);
+    root = tree_insert_value(root, 4);
+    root = tree_insert_value(root, 7);
+    root = tree_insert_value(root, 8);
+    // 这里的问题是形参和实参的问题，
+    // 能不能用还需要试试。
+    // 引用的意思其实还是传递的指针，只是比较隐蔽。
 
-    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    node->left = nullptr;
-    node->right = nullptr;
-    node->parent = nullptr;
 
-    node->value = 7;
-    root->right = node;
-    node->parent = root;
-    node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    node->left = nullptr;
-    node->right = nullptr;
-    node->parent = nullptr;
-    node->value = 8;
-    root->right->right = node;
-    node->parent = root->right;
+
+
     //  5
     // 3  7
     //2 4  8
-
-    preorder_tree_walk(root);
+    // 输入的以上这些数，但是最后却多了一个零，为什么？
+    inorder_tree_walk(root);
 
 }
