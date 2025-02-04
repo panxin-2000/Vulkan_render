@@ -131,34 +131,34 @@ struct Tree_Node *tree_predecessor(struct Tree_Node *tree_node) {
 }
 
 
-struct Tree_Node *tree_insert(struct Tree_Node *root_node, struct Tree_Node *insert_tree_node) {
+struct Tree_Node *tree_insert(struct Tree_Node *root_node, struct Tree_Node &insert_tree_node) {
     struct Tree_Node *will_insert_node = nullptr;
     struct Tree_Node *if_tem_equal = root_node;
     while (if_tem_equal != nullptr) {
         will_insert_node = if_tem_equal;
-        if (insert_tree_node->value < if_tem_equal->value)
+        if (insert_tree_node.value < if_tem_equal->value)
             if_tem_equal = if_tem_equal->left;
         else
             if_tem_equal = if_tem_equal->right;
     }
-    insert_tree_node->parent = will_insert_node;
+    insert_tree_node.parent = will_insert_node;
     if (will_insert_node == nullptr) {
-        root_node = insert_tree_node;
-    } else if (insert_tree_node->value < will_insert_node->value) {
-        will_insert_node->left = insert_tree_node;
+        root_node = &insert_tree_node;
+    } else if (insert_tree_node.value < will_insert_node->value) {
+        will_insert_node->left = &insert_tree_node;
     } else {
-        will_insert_node->right = insert_tree_node;
+        will_insert_node->right = &insert_tree_node;
     }
     return root_node;
 }
 
 struct Tree_Node *tree_insert_value(struct Tree_Node *root_node, int value) {
-    struct Tree_Node *node = (struct Tree_Node *) malloc(sizeof(struct Tree_Node));
-    node->right = nullptr;
-    node->left = nullptr;
-    node->parent = nullptr;
-    node->value = value;
-    return tree_insert(root_node, node);
+    struct Tree_Node &nodes = *new struct Tree_Node;
+    nodes.right = nullptr;
+    nodes.left = nullptr;
+    nodes.parent = nullptr;
+    nodes.value = value;
+    return tree_insert(root_node, nodes);
 }
 
 
@@ -174,6 +174,8 @@ int main(int argc, char **argv) {
     // 这里的问题是形参和实参的问题，
     // 能不能用还需要试试。
     // 引用的意思其实还是传递的指针，只是比较隐蔽。
+    // 插入的时候改引用还是比较简单的，
+    // 先暂时保存一下，
 
 
 
