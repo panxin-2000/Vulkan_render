@@ -164,6 +164,9 @@ struct Tree_Node *tree_insert_value(struct Tree_Node *root_node, int value) {
 
 int main(int argc, char **argv) {
     struct Tree_Node *root = nullptr;
+//    struct Tree_Node &root = *rootb; //这里编译时能够编译过的，但是实际上问题很大，引用一定是指向了的实际的内容
+//    struct Tree_Node* &root = rootb; //这里编译时能够编译过的实际执行也能通过，但是我不知道自己到底在写什么
+
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = tree_insert_value(root, 5);
     root = tree_insert_value(root, 3);
@@ -176,8 +179,7 @@ int main(int argc, char **argv) {
     // 引用的意思其实还是传递的指针，只是比较隐蔽。
     // 插入的时候改引用还是比较简单的，
     // 先暂时保存一下，
-
-
+    // 想让指向跟结点的指针变成引用是不可能的，也就是指针是不能变成引用的？
 
 
     //  5
