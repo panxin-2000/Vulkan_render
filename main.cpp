@@ -189,3 +189,31 @@ int main(int argc, char **argv) {
     inorder_tree_walk(root);
 
 }
+
+void test_array_add() {
+    int a[6][6];
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6; ++j) {
+            a[j][i] = 0;
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        a[i][i] = 1;
+    }
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 6 - 1 - i; ++j) {
+            a[j][j + i + 1] = a[j][j + i] + a[j + 1][j + i + 1];
+
+            std::cout << "a[" << j << "][" << j + i + 1 << "] = ";
+            std::cout << "a[" << j << "][" << j + i << "] + ";
+            std::cout << "a[" << j + 1 << "][" << j + i + 1 << "]  " << std::endl;
+        }
+    }
+    for (int i = 0; i < 6; ++i) {
+        std::cout << " ";
+        for (int j = 0; j < 6; ++j) {
+            std::cout << a[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }//二维数组都是先行后列
+}
