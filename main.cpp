@@ -44,11 +44,28 @@ void postorder_tree_walk(struct Tree_Node *node) {
     }
 }
 
+/*
+ * 层序遍历，主要的内容是有一个队列，先进先出，
+ * 从树的根开始，找到每一层 然后 添加到 队列
+ * 循环的 从队列中取出一个结点，找到它的左右结点，添加到队列中
+ *       把刚取出的一个结点进行比较
+ *    直到队列未空
+ */
 void level_tree_walk(struct Tree_Node *node) {
+    std::queue<struct Tree_Node *> tem;
     if (node != nullptr) {
-        std::cout << node->value << std::endl;
-        level_tree_walk(node->left);
-        level_tree_walk(node->right);
+        tem.push(node);
+    }
+    while (!tem.empty()) {
+        struct Tree_Node *node_tem = tem.front();
+        if (node_tem->left != nullptr) {
+            tem.push(node_tem->left);
+        }
+        if (node_tem->right != nullptr) {
+            tem.push(node_tem->right);
+        }
+        std::cout << node_tem->value << std::endl;
+        tem.pop();
     }
 }
 
@@ -186,7 +203,8 @@ int main(int argc, char **argv) {
     // 3  7
     //2 4  8
     // 输入的以上这些数，但是最后却多了一个零，为什么？
-    inorder_tree_walk(root);
+//    inorder_tree_walk(root);
+    level_tree_walk(root);
 
 }
 
