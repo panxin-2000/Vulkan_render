@@ -62,6 +62,9 @@ void test_priority_queue() {
         bool operator()(const int l, const int r) const { return l > r; }
     } customLess;
     std::priority_queue custom_priority_queue(data.begin(), data.end(), customLess);
+    // 其实这里引入了一个新的问题，关于是否添加引用 & 符号的问题 ，添加与不添加的区别在哪里，
+    // 也就是是实现上是否有区别，
+    // 这里就是大致知道lambda的一个比较重要的用处
 
     pop_println("custom_priority_queue", custom_priority_queue);
 
