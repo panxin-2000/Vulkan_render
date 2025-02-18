@@ -5,12 +5,12 @@
 #ifndef SET_GRAPH_H
 #define SET_GRAPH_H
 
-struct ee {
-    int a;
-    int b;
+struct vertex_position {
+    int x_position;
+    int y_position;
 
-    bool operator==(const ee &lhs) const {
-        return lhs.a == a && lhs.b == b;
+    bool operator==(const vertex_position &lhs) const {
+        return lhs.x_position == x_position && lhs.y_position == y_position;
     }
 };
 
@@ -23,7 +23,15 @@ enum direction {
     up, down, left, right
 };
 
-void add_edge(std::list<ee> *list, int x, int y, enum direction d);
+struct vertex {
+    vertex_position self_position;
+    vertex_position *parent = nullptr;
+    double distance;
+    double weight;
+    std::list<vertex_position> edge_list;
+};
+
+void add_edge(std::list<vertex_position> &edge_list, int x, int y, enum direction d);
 
 /**
  * 删除其中一条边搞定了，但是删除需要删除相互的两条边
@@ -32,9 +40,9 @@ void add_edge(std::list<ee> *list, int x, int y, enum direction d);
  * @param y
  * @param d
  */
-void delete_edge(std::vector<std::list<ee> *> &graph, int x, int y, enum direction d);
+void delete_edge(std::vector<vertex *> &graph, int x, int y, enum direction d);
 
-std::vector<std::list<ee> *> *init_graph(int square_length);
+std::vector<vertex *> *init_graph(int square_length);
 
-bool delete_graph(const std::vector<std::list<ee> *> &graph);
+bool delete_graph(const std::vector<vertex *> &graph);
 #endif //SET_GRAPH_H
