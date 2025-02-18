@@ -32,7 +32,9 @@ void add_edge(std::list<ee> *list, int x, int y, enum direction d);
  * @param y
  * @param d
  */
-void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum direction d);
+void delete_edge(std::vector<std::list<ee> *> &graph, int x, int y, enum direction d);
 
 std::vector<std::list<ee> *> *init_graph(int square_length);
+
+bool delete_graph(const std::vector<std::list<ee> *> &graph);
 #endif //SET_GRAPH_H

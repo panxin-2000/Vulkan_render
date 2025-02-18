@@ -14,24 +14,24 @@
  */
 void add_edge(std::list<ee> *list, int x, int y, enum direction d) {
     if (d == up) {
-        struct ee tem = {x - 1, y}; // 上
+        const struct ee tem = {x - 1, y}; // 上
         list->push_back(tem);
     } else if (d == down) {
-        struct ee tem = {x + 1, y}; //下
+        const struct ee tem = {x + 1, y}; //下
         list->push_back(tem);
     } else if (d == left) {
-        struct ee tem = {x, y - 1}; // 左
+        const struct ee tem = {x, y - 1}; // 左
         list->push_back(tem);
     } else if (d == right) {
-        struct ee tem = {x, y + 1}; //右
+        const struct ee tem = {x, y + 1}; //右
         list->push_back(tem);
     }
 }
 
-void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum direction d) {
+void delete_edge(std::vector<std::list<ee> *> &graph, int x, int y, enum direction d) {
     auto list = graph.at(x * 10 + y);
     if (d == up) {
-        for (struct ee tem: *list) {
+        for (const auto tem: *list) {
             if (tem.a == x - 1 && tem.b == y) {
                 list->remove(tem);
                 delete_edge(graph, x - 1, y, down);
@@ -39,7 +39,7 @@ void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum directio
             }
         }
     } else if (d == down) {
-        for (struct ee tem: *list) {
+        for (const auto tem: *list) {
             if (tem.a == x + 1 && tem.b == y) {
                 list->remove(tem);
                 delete_edge(graph, x + 1, y, up);
@@ -47,7 +47,7 @@ void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum directio
             }
         }
     } else if (d == left) {
-        for (struct ee tem: *list) {
+        for (const auto tem: *list) {
             if (tem.a == x && tem.b == y - 1) {
                 list->remove(tem);
                 delete_edge(graph, x, y - 1, right);
@@ -55,7 +55,7 @@ void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum directio
             }
         }
     } else if (d == right) {
-        for (struct ee tem: *list) {
+        for (const auto tem: *list) {
             if (tem.a == x && tem.b == y + 1) {
                 list->remove(tem);
                 delete_edge(graph, x, y + 1, left);
@@ -66,7 +66,7 @@ void delete_edge(std::vector<std::list<ee> *> graph, int x, int y, enum directio
 }
 
 std::vector<std::list<ee> *> *init_graph(int square_length) {
-    auto t3 = new std::vector<std::list<ee> *>;
+    const auto t3 = new std::vector<std::list<ee> *>;
     for (int x = 0; x < square_length; ++x) {
         for (int y = 0; y < square_length; ++y) {
             auto list = new std::list<ee>; //这里内存应该是释放了的。
@@ -120,4 +120,11 @@ std::vector<std::list<ee> *> *init_graph(int square_length) {
         }
     }
     return t3;
+}
+
+bool delete_graph(const std::vector<std::list<ee> *> &graph) {
+    for (const auto & it : graph) {
+        delete it;
+    }
+    return true;
 }
