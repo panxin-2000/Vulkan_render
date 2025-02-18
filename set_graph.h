@@ -8,8 +8,8 @@
 struct ee {
     int a;
     int b;
-    bool operator==(const ee& lhs)const
-    {
+
+    bool operator==(const ee &lhs) const {
         return lhs.a == a && lhs.b == b;
     }
 };
