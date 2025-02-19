@@ -5,6 +5,8 @@
 #include <list>
 #include "set_graph.h"
 
+#include <queue>
+
 /**
  * 这里是逻辑，逻辑不变，但是数据的方向是可以改的
  * @param edge_list
@@ -14,22 +16,37 @@
  */
 void add_edge(std::list<vertex_position> &edge_list, int x, int y, enum direction d) {
     if (d == up) {
-        const struct vertex_position tem = {x - 1, y}; // 上
+        const struct vertex_position tem = {x - 1, y, 1}; // 上
         edge_list.push_back(tem);
     } else if (d == down) {
-        const struct vertex_position tem = {x + 1, y}; //下
+        const struct vertex_position tem = {x + 1, y, 1}; //下
         edge_list.push_back(tem);
     } else if (d == left) {
-        const struct vertex_position tem = {x, y - 1}; // 左
+        const struct vertex_position tem = {x, y - 1, 1}; // 左
         edge_list.push_back(tem);
     } else if (d == right) {
-        const struct vertex_position tem = {x, y + 1}; //右
+        const struct vertex_position tem = {x, y + 1, 1}; //右
         edge_list.push_back(tem);
     }
 }
 
+int graph_square_length;
+
+
+vertex &get_vertex(const std::vector<vertex *> &graph, int x, int y) {
+    return *graph.at(x * graph_square_length + y);
+}
+
+vertex &get_vertex(const std::vector<vertex *> &graph, const vertex_position vertex) {
+    return *graph.at(vertex.x_position * graph_square_length + vertex.y_position);
+}
+
+std::list<vertex_position> &get_vertex_edge_list(const std::vector<vertex *> &graph, int x, int y) {
+    return graph.at(x * graph_square_length + y)->edge_list;
+}
+
 void delete_edge(std::vector<vertex *> &graph, int x, int y, enum direction d) {
-    auto &edge_list = graph.at(x * 10 + y)->edge_list;
+    auto &edge_list = get_vertex_edge_list(graph, x, y);
     if (d == up) {
         for (const auto tem: edge_list) {
             if (tem.x_position == x - 1 && tem.y_position == y) {
@@ -65,12 +82,13 @@ void delete_edge(std::vector<vertex *> &graph, int x, int y, enum direction d) {
     }
 }
 
-
 std::vector<vertex *> *init_graph(int square_length) {
+    graph_square_length = square_length;
     const auto t3 = new std::vector<vertex *>;
     for (int x = 0; x < square_length; ++x) {
         for (int y = 0; y < square_length; ++y) {
             const auto list = new vertex; //这里内存应该是释放了的。
+            list->self_position = {x, y};
             // 首先是四个角，只有两个可以到达的结点
             // 然后是四条边不包含四个角，每个有三个
             // 最后是中间的内容，都可以到达
@@ -83,13 +101,13 @@ std::vector<vertex *> *init_graph(int square_length) {
                 add_edge(list->edge_list, x, y, up);
                 add_edge(list->edge_list, x, y, left);
             } else if (x == square_length - 1 && y == 0) {
-                //右上角
-                add_edge(list->edge_list, x, y, down);
-                add_edge(list->edge_list, x, y, left);
-            } else if (x == 0 && y == square_length - 1) {
                 // 左下角
-                add_edge(list->edge_list, x, y, right);
                 add_edge(list->edge_list, x, y, up);
+                add_edge(list->edge_list, x, y, right);
+            } else if (x == 0 && y == square_length - 1) {
+                // 右上角
+                add_edge(list->edge_list, x, y, left);
+                add_edge(list->edge_list, x, y, down);
             } else if (x == 0) {
                 //上边
                 add_edge(list->edge_list, x, y, down);
@@ -169,3 +187,70 @@ bool delete_graph(const std::vector<vertex *> &graph) {
  *
  *
 */
+struct vertex_position start_position;
+struct vertex_position end_position;
+// 写不写结构体struct都是可以的，cppreference中的示例中说明了不写也是可以的
+// CppReference 中称添加了struct 单词的声明为 elaborated (详细说明) type
+
+
+double get_weight(vertex *u, vertex *v) {
+    for (const auto edge: v->edge_list) {
+        if (edge.x_position == u->self_position.x_position && edge.y_position == u->self_position.y_position) {
+            return edge.weight;
+        }
+    }
+    return INFINITY;
+}
+
+void relax(vertex &update_vertex, vertex &vertex_in_path) {
+    auto tem_d = vertex_in_path.distance + get_weight(&update_vertex, &vertex_in_path);
+    if (update_vertex.distance > tem_d) {
+        update_vertex.distance = tem_d;
+        update_vertex.parent = &vertex_in_path;
+    }
+}
+
+void relax(const std::vector<vertex *> &graph, vertex_position u, vertex_position v) {
+    relax(get_vertex(graph, u), get_vertex(graph, v));
+}
+
+/**
+ * 说说步骤，需要把全部的distance都改为无穷大，每个前结点都改为nullptr
+ *
+ *
+ * @param graph
+ * @param start
+ * @param end
+ */
+void dijkstra(const std::vector<vertex *> &graph, vertex_position start, vertex_position end) {
+    start_position = start;
+    end_position = end;
+    int i =0;
+    for (const auto &it: graph) {
+        it->distance = ++i;
+        it->parent = nullptr;
+    }
+    auto &start_vertex = get_vertex(graph, start_position);
+    start_vertex.distance = 0;
+    //创建一个优先队列，把全部的都加入进去。
+    // 这里的问题肯定会有排序的问题
+    // 优先队列 priority 我昨天做了，
+    std::vector<vertex *> vertices_priority_queue;
+    for (auto v: graph) {
+        vertices_priority_queue.push_back(v);
+    }
+
+    std::sort(vertices_priority_queue.begin(), vertices_priority_queue.end(),
+                   [](vertex *left, vertex *right) { return left->distance > right->distance; });
+
+    while (vertices_priority_queue.size() > 0) {
+        std::sort(vertices_priority_queue.begin(), vertices_priority_queue.end(),
+                  [](vertex *left, vertex *right) { return left->distance > right->distance; });
+        auto u = vertices_priority_queue.back();
+        vertices_priority_queue.pop_back();
+        auto edge = u->edge_list;
+        for (auto v: edge) {
+            relax(*u, get_vertex(graph, v.x_position, v.y_position));
+        }
+    }
+}
