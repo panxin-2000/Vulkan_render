@@ -110,3 +110,39 @@ TEST(fibonacci, thread) {
     // 栈中是可以正确返回的
     // 函数能够正确返回，那么async就能够正确返回
 }
+
+int callback_add(int a, int b) {
+    return a + b;
+}
+
+int callback_subtract(int a, int b) {
+    return a - b;
+}
+
+int callback_mult(int a, int b) {
+    return a * b;
+}
+
+int callback_division(int a, int b) {
+    return a / b;
+}
+
+int direct_function_callback(int (*callback_function)(int, int), int l, int r) {
+    return callback_function(l, r);
+}
+
+TEST(function, callback) {
+    struct callback {
+        int id;
+
+        int (*add)(int a, int b);
+    };
+
+
+    callback sr = {1, callback_add};
+    EXPECT_EQ(5, sr.add(2, 3));
+    EXPECT_EQ(5, direct_function_callback(callback_add,2, 3));
+    EXPECT_EQ(5, direct_function_callback(callback_subtract,8, 3));
+    EXPECT_EQ(6, direct_function_callback(callback_mult,2, 3));
+    EXPECT_EQ(5, direct_function_callback(callback_division,15, 3));
+}
