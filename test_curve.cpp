@@ -155,7 +155,7 @@ void direct_connect_two_point_with_speed(T start, T end,
 //然后按照矩阵的形式把结果算出来。
 
 
-bool bezier_cerve(std::vector<Eigen::Vector2d> &positions, Eigen::Vector2d &new_position, float u) {
+bool bezier_cerve(std::vector<Eigen::RowVector2d> &positions, Eigen::Vector2d &new_position, float u) {
     if (positions.size() == 4) {
         Eigen::Matrix4d m{{1, 0, 0, 0}, {-3, 3, 0, 0}, {3, -6, 3, 0}, {-1, 3, -3, 1}};
         Eigen::RowVector4d u_vector{1, u, u * u, u * u * u};
@@ -166,12 +166,13 @@ bool bezier_cerve(std::vector<Eigen::Vector2d> &positions, Eigen::Vector2d &new_
     } else return false;
 }
 
-TEST(bezier,curve) {
-    std::vector<Eigen::Vector2d> positions;
-    positions.push_back(Eigen::Vector2d(0, 0));
-    positions.push_back(Eigen::Vector2d(0, 1));
-    positions.push_back(Eigen::Vector2d(1, 0));
-    positions.push_back(Eigen::Vector2d(1, 2));
+
+TEST(bezier, curve_2d) {
+    std::vector<Eigen::RowVector2d> positions;
+    positions.push_back(Eigen::RowVector2d(0, 0));
+    positions.push_back(Eigen::RowVector2d(0, 1));
+    positions.push_back(Eigen::RowVector2d(1, 0));
+    positions.push_back(Eigen::RowVector2d(1, 2));
     Eigen::Vector2d new_position;
     bezier_cerve(positions, new_position, 0.1);
     std::cout << new_position << std::endl;
@@ -180,3 +181,63 @@ TEST(bezier,curve) {
     bezier_cerve(positions, new_position, 0.75);
     std::cout << new_position << std::endl;
 }
+
+
+//这个函数其实还有一个小问题，就是要不要改为行，这样会少一步 transpose 我这里无所谓，工作的时候看测试结果
+bool bezier_cerve(std::vector<Eigen::RowVector3f> &positions, Eigen::Vector3f &new_position, float u) {
+    if (positions.size() == 4) {
+        Eigen::Matrix4f m{{1, 0, 0, 0}, {-3, 3, 0, 0}, {3, -6, 3, 0}, {-1, 3, -3, 1}};
+        Eigen::RowVector4f u_vector{1, u, u * u, u * u * u};
+        Eigen::Matrix<float, 4, 3> n;
+        n << positions[0], positions[1], positions[2], positions[3];
+        new_position = (u_vector * m * n).transpose();
+        return true;
+    } else return false;
+}
+
+TEST(bezier, curve_3d) {
+    std::vector<Eigen::RowVector3f> positions;
+    positions.push_back(Eigen::Vector3f(0, 0, 0));
+    positions.push_back(Eigen::Vector3f(0, 1, 0));
+    positions.push_back(Eigen::Vector3f(1, 0, 0));
+    positions.push_back(Eigen::Vector3f(1, 1, 0));
+    Eigen::Vector3f new_position;
+    bezier_cerve(positions, new_position, 0.1);
+    std::cout << new_position << std::endl;
+    bezier_cerve(positions, new_position, 0.5);
+    std::cout << new_position << std::endl;
+    bezier_cerve(positions, new_position, 0.75);
+    std::cout << new_position << std::endl;
+}
+
+
+TEST(eigen, fill) {
+    Eigen::Matrix<float, 4, 2> ns;
+    Eigen::Vector2f d(1, 2);
+    ns << Eigen::RowVector2f(1, 2), Eigen::RowVector2f(1, 2), Eigen::RowVector2f(1, 2), Eigen::RowVector2f(1, 2);
+    std::cout << ns << std::endl;
+
+    Eigen::Matrix<float, 4, 4> n;
+    n << Eigen::Vector4f(0, 0, 0, 0), Eigen::Vector4f(0, 1, 0, 0), Eigen::Vector4f(0, 1, 0, 0),
+            Eigen::Vector4f(0, 1, 0, 0);
+    std::cout << n << std::endl;
+
+    std::vector<Eigen::Vector3f> positions;
+    Eigen::Matrix<float, 3, 4> n4;
+    n4 << Eigen::Vector3f(0, 0, 0), Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 1, 0), Eigen::Vector3f(0, 1, 0);
+    std::cout << n4 << std::endl;
+
+    // 结果是填充的时候需要注意，总体的数量应该是相等的
+    // 以及填充的时候还需要注意行列是否相等
+}
+
+// 然后我记得稍微有一个需要注意的情况
+// 就是当两个不同的开始相互转换的时候，是需要注意内存的行列的存储情况的
+// 就是是按照行的顺序来存储元素的还是按照列的顺序来存储元素的。
+// 我记得应该是有一个全局的宏定义来定义是行还是列存储优先的
+// 但是呢，在网络上并没有直接找到这个宏，网上只是说，可以在定义矩阵的时候声明
+// 网上关于行列的内容有的是不对的，但是是没有宏来更改这个事情的，
+// eigen的代码看到最后是一个枚举，用这个枚举来区分行和列的
+// 只能在声明矩阵的时候说明了
+// 虽然功能很简单，或者说数学的逻辑是固定的，但是出问题时候找问题提示其实好像不是很准确
+// 尤其是你需要大范围改动的时候，初期确实不太好找
