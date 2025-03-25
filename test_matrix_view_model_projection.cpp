@@ -82,6 +82,19 @@ Eigen::Matrix4f lookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &center
  * @return
  */
 Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
+    // 简单的一点都做法就是填值就好了
+    float u = tan(fovy / 2.0f) * zNear;
+    float d = -u;
+    float r = aspect * u;
+    float l = -r;
+    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+    transform(0, 0) = zNear / r; // 1.0f / (aspect * (tan(fovy / 2.0f));      // 问题是 zNear 为什么被强制设置为1了
+    transform(1, 1) = zNear / u; // 为什么算法会不一样  = 1.0f / (tan(fovy / 2.0f))  // 原因是什么？
+    transform(2, 2) = -(zFar + zNear) / (zFar - zNear);
+    transform(2, 3) = -2 * zFar * zNear / (zFar - zNear);
+    transform(3, 2) = -1;
+    transform(3, 3) = 0;
+    return transform;
 }
 
 Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, float zFar) {
@@ -92,12 +105,12 @@ Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, f
  * @param matrix
  * @param matrix_3
  */
-void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_3) {
-    Eigen::Matrix<float, 4, 4, Eigen::RowMajor> matrix_2 = matrix_3;
+void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_2) {
+    // Eigen::Matrix<float, 4, 4, Eigen::RowMajor> matrix_2 = matrix_3;
     for (int i = 0; i < 16; i++) {
         float *tem = (float *) &matrix;
         float *tem_2 = (float *) &matrix_2;
-        EXPECT_EQ(*(tem + i), *(tem_2 + i))<< "failed " << i << std::endl;
+        EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
     }
 }
 
@@ -110,17 +123,7 @@ void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_3) {
 // 然后他的展示其实还有一个问题，那就是原本是正视图，需要变成侧视图，中间变化的时候，需要怎么配合摄像机进行旋转呢？
 
 
-TEST(matrix, view) {
-    glm::mat4 matrix2 = glm::lookAt(glm::vec3(0, 0, -4), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    glm::mat4 projection = glm::perspective(
-        glm::radians(45.0f),
-        (float) 800 / (float) 400,
-        0.1f,
-        100.0f);
-
-    glm::mat4 ortho = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
-    //  glm::ortho 有两个版本的参数，一个是四个参数，另一个是六个参数的，估计少的是最后两个参数 ， 设置为零和无穷
-
+void print_matrix(glm::mat4 &matrix2) {
     std::cout << matrix2[0][0] << ' ' << matrix2[1][0] << ' ' << matrix2[2][0] << ' ' << matrix2[3][0] << ' ' <<
             std::endl;
     std::cout << matrix2[0][1] << ' ' << matrix2[1][1] << ' ' << matrix2[2][1] << ' ' << matrix2[3][1] << ' ' <<
@@ -130,13 +133,31 @@ TEST(matrix, view) {
     std::cout << matrix2[0][3] << ' ' << matrix2[1][3] << ' ' << matrix2[2][3] << ' ' << matrix2[3][3] << ' ' <<
             std::endl;
     std::cout << std::endl;
+}
+
+TEST(matrix, view) {
+    glm::mat4 matrix2 = glm::lookAt(glm::vec3(0, 0, -4), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+    glm::mat4 projection = glm::perspective(
+        glm::radians(145.0f),
+        (float) 239 / (float) 400,
+        1.0f,
+        10000.0f);
+
+    glm::mat4 ortho = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
+    //  glm::ortho 有两个版本的参数，一个是四个参数，另一个是六个参数的，估计少的是最后两个参数 ， 设置为零和无穷
+
 
     Eigen::Vector3f eye{0.0f, 0.0f, -4.0f};
     Eigen::Vector3f center{0.0f, 0.0f, 1.0f};
     Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
-    Eigen::Matrix4f view = lookAt(eye, center, up).transpose();  // 需要转置？ 这里需要转置说明了什么呢？
-    std::cout << view << std::endl;
+    Eigen::Matrix4f view = lookAt(eye, center, up); // 需要转置？ 这里需要转置说明了什么呢？
     test_two_matrix(matrix2, view);
+
+    Eigen::Matrix4f matrix_2 = perspective(glm::radians(145.0f),
+                                           (float) 239 / (float) 400,
+                                           1.0f,
+                                           10000.0f);
+    test_two_matrix(projection, matrix_2);
 }
 
 
@@ -144,5 +165,10 @@ TEST(matrix, test_equal) {
     glm::mat4 matrix{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     Eigen::Matrix4f matrix_2;
     matrix_2 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16;
-    test_two_matrix(matrix, matrix_2);
+    std::cout << matrix_2 << std::endl;
+
+    test_two_matrix(matrix, matrix_2.transpose());
 }
+
+
+// 其实行存储和列存储就是一次转置？有两个内容吧，首先是索引方式，是先索引行还是先索引列，之后再是存储方式，先存储行还是先存储列
