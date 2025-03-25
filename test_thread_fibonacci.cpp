@@ -146,3 +146,5 @@ TEST(function, callback) {
     EXPECT_EQ(6, direct_function_callback(callback_mult,2, 3));
     EXPECT_EQ(5, direct_function_callback(callback_division,15, 3));
 }
+
+
