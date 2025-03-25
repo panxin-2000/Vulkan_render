@@ -81,6 +81,8 @@ Eigen::Matrix4f lookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &center
  * @param zFar   远平面的值，大于这个平面不可见
  * @return
  */
+
+
 Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
     // 简单的一点都做法就是填值就好了
     float u = tan(fovy / 2.0f) * zNear;
@@ -97,7 +99,20 @@ Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
     return transform;
 }
 
+
+// 正交抄出来了，但是没有继续做测试
 Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, float zFar) {
+    // 简单的一点都做法就是填值就好了
+    float u = tan(fovy / 2.0f) * zNear;
+    float d = -u;
+    float r = aspect * u;
+    float l = -r;
+    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+    transform(0, 0) = 1 / r; // 问题是 zNear 为什么被强制设置为1了
+    transform(1, 1) = 1 / u;
+    transform(2, 2) = -2.0f / (zFar - zNear);
+    transform(2, 3) = -1 * (zFar + zNear) / (zFar - zNear);
+    return transform;
 }
 
 /**
@@ -105,8 +120,8 @@ Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, f
  * @param matrix
  * @param matrix_3
  */
-void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_2) {
-    // Eigen::Matrix<float, 4, 4, Eigen::RowMajor> matrix_2 = matrix_3;
+void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_3) {
+    Eigen::Matrix<float, 4, 4, Eigen::RowMajor> matrix_2 = matrix_3; // 这里的意义是在存储上更换方向
     for (int i = 0; i < 16; i++) {
         float *tem = (float *) &matrix;
         float *tem_2 = (float *) &matrix_2;
@@ -144,20 +159,41 @@ TEST(matrix, view) {
         10000.0f);
 
     glm::mat4 ortho = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
+    glm::mat4 ortho2 = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f); // 省略掉的两个参数的值是多少？
     //  glm::ortho 有两个版本的参数，一个是四个参数，另一个是六个参数的，估计少的是最后两个参数 ， 设置为零和无穷
 
 
     Eigen::Vector3f eye{0.0f, 0.0f, -4.0f};
     Eigen::Vector3f center{0.0f, 0.0f, 1.0f};
     Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
-    Eigen::Matrix4f view = lookAt(eye, center, up); // 需要转置？ 这里需要转置说明了什么呢？
+    Eigen::Matrix4f view = lookAt(eye, center, up).transpose(); // 需要转置？ 这里需要转置说明了什么呢？
     test_two_matrix(matrix2, view);
 
     Eigen::Matrix4f matrix_2 = perspective(glm::radians(145.0f),
                                            (float) 239 / (float) 400,
                                            1.0f,
-                                           10000.0f);
+                                           10000.0f).transpose(); // 问题还是这里为什么要转置？
+
     test_two_matrix(projection, matrix_2);
+}
+
+TEST(vector, test_equal) {
+    glm::vec4 vector1 = glm::vec4(1, 2, 3, 4);
+    Eigen::Vector4f adcd{1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        float *tem = (float *) &vector1;
+        float *tem_2 = (float *) &adcd;
+        EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
+    }
+}
+TEST(RowVector4f, test_equal) {
+    glm::vec4 vector1 = glm::vec4(1, 2, 3, 4);
+    Eigen::RowVector4f adcd{1, 2, 3, 4};
+    for (int i = 0; i < 4; i++) {
+        float *tem = (float *) &vector1;
+        float *tem_2 = (float *) &adcd;
+        EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
+    }
 }
 
 
@@ -165,9 +201,9 @@ TEST(matrix, test_equal) {
     glm::mat4 matrix{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
     Eigen::Matrix4f matrix_2;
     matrix_2 << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16;
-    std::cout << matrix_2 << std::endl;
+    // std::cout << matrix_2 << std::endl;
 
-    test_two_matrix(matrix, matrix_2.transpose());
+    test_two_matrix(matrix, matrix_2);
 }
 
 
