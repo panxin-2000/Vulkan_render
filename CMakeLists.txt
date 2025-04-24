@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -save-temps=obj")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps=obj")
 
 
 ## 按照googletest官网文档添加了gtest
@@ -47,9 +49,12 @@ add_executable(hello_test
         test_mutex.cpp
         test_cut_rod.cpp)
 
+
+
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
+target_link_libraries(hello_test GTest::gtest_main)
 
 add_executable(test_mutex
 #        test_curve.cpp
@@ -59,9 +64,10 @@ add_executable(test_mutex
         test_mutex.cpp)
 gtest_discover_tests(test_mutex)
 target_link_libraries(test_mutex GTest::gtest_main)
-target_link_libraries(hello_test
-        GTest::gtest_main
-)
+
+add_executable(fixture sample3.cpp include/sample3.h)
+gtest_discover_tests(fixture)
+target_link_libraries(fixture GTest::gtest_main)
 
 #find_package(Eigen3 REQUIRED)
 #INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
