@@ -9,12 +9,15 @@
 
 std::mutex m;
 std::condition_variable cv;
+//  std::condition_variable  状态变量，怎么在线程中传递，
 std::string data;
 bool ready = false;
 bool processed = false;
 
 void worker_thread() {
     // wait until main() sends data
+
+    // 应该是等到通知后再去上锁的，而不应该是先上锁，然后在等待
     std::unique_lock lk(m);
     cv.wait(lk, [] { return ready; });
 

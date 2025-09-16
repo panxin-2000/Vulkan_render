@@ -45,3 +45,8 @@ TEST(ss, struct_eqeue) {
     struct ss sc = {1, 2, 3.0, 4.6};
     EXPECT_EQ(s, sc);  // 其实还是调用了C++中的代码，是不是不知方便显示结果或者组合测试示例？
 }
+
+
+
+
+

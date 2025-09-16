@@ -21,7 +21,8 @@ public:
     const QueueNode *next() const{ return next_; } // 这一行也是必须有的
 
 private:
-    //  explicit 的声明都有什么做用记不得了
+    //  explicit 的声明都有什么做用记不得了  用于禁止构造函数的隐式 自动类型转换，
+    //  比如参数是int，但是输入的是一个float值，这个时候就可能会触发隐式的转换，目前也许没有问题，但是如果某些被继承的类可能就会有问题
     explicit QueueNode(const E &an_element) //这个我知道是构造函数
         : element_(an_element), next_(nullptr) {
     }

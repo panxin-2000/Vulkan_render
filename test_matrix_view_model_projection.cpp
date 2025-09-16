@@ -150,31 +150,49 @@ void print_matrix(glm::mat4 &matrix2) {
     std::cout << std::endl;
 }
 
-TEST(matrix, view) {
-    glm::mat4 matrix2 = glm::lookAt(glm::vec3(0, 0, -4), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+TEST(matrix, view) { {
+        glm::mat4 matrix2 = glm::lookAt(glm::vec3(0, 0, -4), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+        Eigen::Vector3f eye{0.0f, 0.0f, -4.0f};
+        Eigen::Vector3f center{0.0f, 0.0f, 1.0f};
+        Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
+        Eigen::Matrix4f view = lookAt(eye, center, up).transpose(); // 需要转置？ 这里需要转置说明了什么呢？
+        test_two_matrix(matrix2, view);
+    } {
+        glm::mat4 matrix2 = glm::lookAt(glm::vec3(1, 1, -4), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+        Eigen::Vector3f eye{1.0f, 1.0f, -4.0f};
+        Eigen::Vector3f center{0.0f, 0.0f, 1.0f};
+        Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
+        Eigen::Matrix4f view = lookAt(eye, center, up).transpose(); // 需要转置？ 这里需要转置说明了什么呢？
+        test_two_matrix(matrix2, view);
+    } {
+        glm::mat4 matrix2 = glm::lookAt(glm::vec3(1, 1, -4), glm::vec3(1, 2, 1), glm::vec3(0, 1, 0));
+        Eigen::Vector3f eye{1.0f, 1.0f, -4.0f};
+        Eigen::Vector3f center{1.0f, 2.0f, 1.0f};
+        Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
+        Eigen::Matrix4f view = lookAt(eye, center, up).transpose(); // 需要转置？ 这里需要转置说明了什么呢？
+        test_two_matrix(matrix2, view);
+    }
+
+
     glm::mat4 projection = glm::perspective(
         glm::radians(145.0f),
         (float) 239 / (float) 400,
         1.0f,
         10000.0f);
+    print_matrix(projection);
 
     glm::mat4 ortho = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
     glm::mat4 ortho2 = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f); // 省略掉的两个参数的值是多少？
     //  glm::ortho 有两个版本的参数，一个是四个参数，另一个是六个参数的，估计少的是最后两个参数 ， 设置为零和无穷
 
 
-    Eigen::Vector3f eye{0.0f, 0.0f, -4.0f};
-    Eigen::Vector3f center{0.0f, 0.0f, 1.0f};
-    Eigen::Vector3f up{0.0f, 1.0f, 0.0f};
-    Eigen::Matrix4f view = lookAt(eye, center, up).transpose(); // 需要转置？ 这里需要转置说明了什么呢？
-    test_two_matrix(matrix2, view);
-
     Eigen::Matrix4f matrix_2 = perspective(glm::radians(145.0f),
                                            (float) 239 / (float) 400,
                                            1.0f,
-                                           10000.0f).transpose(); // 问题还是这里为什么要转置？
+                                           10000.0f); // 问题还是这里为什么要转置？
 
-    test_two_matrix(projection, matrix_2);
+    std::cout << matrix_2 << std::endl;
+    test_two_matrix(projection, matrix_2.transpose());
 }
 
 TEST(vector, test_equal) {
@@ -186,6 +204,7 @@ TEST(vector, test_equal) {
         EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
     }
 }
+
 TEST(RowVector4f, test_equal) {
     glm::vec4 vector1 = glm::vec4(1, 2, 3, 4);
     Eigen::RowVector4f adcd{1, 2, 3, 4};
