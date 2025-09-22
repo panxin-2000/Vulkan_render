@@ -44,7 +44,12 @@ const operate_symbol_and_function operate_symbol_and_functions[] = {
     {'*', multiply_function},
     {'/', divide_function},
     // 新增下面之后有了一个新的问题，那就是功能不再单一的问题，如果正确的话，是不会执行到后面的
+};
 
+// 确实需要新建立一个这样的符号表，因为确实不一样，因为这里有一个操作，那就是不管前面是什么符号
+// 其实这里的内容都相当于添加一个数字到树中，如果之后碰到相对应的括号之后
+// 再将之前的括号进行消除
+const operate_symbol_and_function bracket_symbols[] = {
     {'(', nullptr},
     {')', nullptr},
     {'[', nullptr},
@@ -57,6 +62,11 @@ int get_operate_symbol_priority(char symbol) {
     for (int i = 0; i < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); i++) {
         if (operate_symbol_and_functions[i].symbol == symbol) {
             return i / 2;
+        }
+    }
+    for (int i = 0; i < sizeof(bracket_symbols) / sizeof(bracket_symbols); i++) {
+        if (bracket_symbols[i].symbol == symbol) {
+            return (i + sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function)) / 2;
         }
     }
 }
@@ -189,6 +199,13 @@ struct tree_node_calculate *init_a_calculate_note(int value, char calculate_oper
 }
 
 
+/**
+ * 这个函数的目的为了将树中列好的数据结构进行计算出结果
+ * 并不是为了之后更加优化的生成计算机能够执行的表达式
+ * 就不去做进一步计算的优化了
+ * @param node
+ * @return
+ */
 int calculate_subtree(struct tree_node_calculate *node) {
     if (node == nullptr) {
         // 添加一个错误打印, 表示在计算什么的出错，需要给出提示
@@ -287,34 +304,61 @@ TEST(calculate, BasicAssertions) {
 // &                &                    &                    &                        &                  5   5
 
 
-struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
+/**
+ * 如果是单个参数输入，那么其左右孩子都为空
+ * @param argc
+ * @param argv
+ * @return
+ */
+struct tree_node_calculate *create_a_node_to_tree(int argc, char *argv) {
     if (argc == 0) {
         return nullptr;
     } else {
         struct tree_node_calculate *root = nullptr;
         for (int i = 0; i < argc; i++) {
-            int string_length = strlen(argv[i]); // 这行为什么一直有问题？// 原来是前面的for的开始位置有问题
+            int string_length = strlen(argv); // 这行为什么一直有问题？// 原来是前面的for的开始位置有问题
             char *pEnd;
-            int li1 = strtol(argv[i], &pEnd, 0);
-            if (*pEnd == ERANGE || !isdigit(argv[i][0])) {
+            int li1 = strtol(argv, &pEnd, 0);
+            if (*pEnd == ERANGE || !isdigit(argv[0])) {
                 // 这里判断是字符的情况
                 // 下面一行的循环走不出来。
                 for (int j = 0; j < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); j++) {
-                    if (operate_symbol_and_functions[j].symbol == argv[i][0]) {
+                    if (operate_symbol_and_functions[j].symbol == argv[0]) {
                         struct tree_node_calculate *new_node =
                                 init_a_calculate_note(0, operate_symbol_and_functions[j].symbol);
-                        root->tree_add_operate_to_tree(root, new_node);
-                        root = new_node->find_root(new_node);
-                        break;
+                        return new_node;
                     }
                 }
             } else {
                 // 这里再判断是否是数字的情况
                 struct tree_node_calculate *new_node =
                         init_a_calculate_note(li1, 0);
-                root->tree_add_after_node(root, new_node);
-                root = new_node->find_root(new_node);
+                return new_node;
                 // 最后如果是非法字符，需要报错，等待更新后重新判断
+            }
+        }
+    }
+}
+
+// 下面这个函数的改动部分稍微有点大
+// 主要是为了表达更加简洁
+// create_a_node_to_tree不能输出更多的形式
+//方便能将将某些内容直接添加到函数
+struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
+    if (argc == 0) {
+        return nullptr;
+    } else {
+        struct tree_node_calculate *root = nullptr;
+        for (int i = 0; i < argc; i++) {
+            struct tree_node_calculate *new_node = create_a_node_to_tree(1, argv[i]);
+            if (new_node != nullptr) {
+                if (new_node->operate_function != nullptr &&
+                    (new_node->left == nullptr || new_node->right == nullptr)) {
+                    root->tree_add_operate_to_tree(root, new_node);
+                } else {
+                    root->tree_add_after_node(root, new_node);
+                }
+                root = new_node->find_root(new_node);
             }
         }
         return root;
@@ -418,4 +462,21 @@ TEST(calculate, string_array_about_number_7) {
     struct tree_node_calculate *root = tem->find_root(tem);
     calculate_subtree(root);
     EXPECT_EQ(root->value, 42);
+}
+
+// 如果添加一个带括号的测试，那么应该怎么算呢？如果添加了一个不同的符号，比如log，应该怎么算呢？
+// 先说括号的部分，应该是有两个解决办法的，第一个是在括号出现的时候就去分词，将全部的内容以括号为标准，分为一个小段
+// 当需要链接括号部分的时候，就去计算括号部分的链接位置
+// 另一个办法是什么呢？将括号也作为一个分割符，如果遇到左括号就添加，如果遇到右括号，就和之前的左括号进行抵消？
+// 这里的括号确实很难解，搞不定，需要去走第二条路了
+
+//
+TEST(calculate, string_array_about_number_8) {
+    char *calculate_expreesion[] = {
+        "(", "30", "+", "50", ")", "/", "20", "-", "1", "*", "2", "+", "3", "*", "4"
+    };
+    // 那么这里就需要首先将括号的部分做为一个完整的表达式了
+    // 括号的部分算什么呢？算是一个数值，需要返回它的根结点
+    // 在这里就进行处理呢？还是在之前就进行处理呢？
+    // 是的，在之前就需要进行处理。
 }
