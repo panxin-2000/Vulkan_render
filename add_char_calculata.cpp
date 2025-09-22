@@ -53,6 +53,14 @@ const operate_symbol_and_function operate_symbol_and_functions[] = {
     {'}', nullptr},
 };
 
+int get_operate_symbol_priority(char symbol) {
+    for (int i = 0; i < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); i++) {
+        if (operate_symbol_and_functions[i].symbol == symbol) {
+            return i / 2;
+        }
+    }
+}
+
 
 struct tree_node_calculate {
     struct tree_node_calculate *parent;
@@ -89,17 +97,35 @@ struct tree_node_calculate {
         }
     }
 
-    int tree_add_after_node(struct tree_node_calculate **root, struct tree_node_calculate *new_node) {
-        if (*root == nullptr) {
-            *root = new_node;
+    int tree_add_after_node(struct tree_node_calculate *root, struct tree_node_calculate *new_node) {
+        if (root == nullptr) {
+            root = new_node; // 这里是添加首个数字的位置
         } else {
-            struct tree_node_calculate *new_root = *root;
+            struct tree_node_calculate *new_root = root;
             struct tree_node_calculate *miximum_leaf = new_node->find_miximum_leaf(new_root);
-            if (miximum_leaf == new_root->find_root(new_root)) {
-                add_new_node_before_parent(miximum_leaf, new_node);
-            } else if (miximum_leaf->parent->right == nullptr) {
-                add_new_node_to_right(miximum_leaf->parent, new_node);
+            while (miximum_leaf->parent->right != nullptr) {
+                miximum_leaf = miximum_leaf->parent;
             }
+            add_new_node_to_right(miximum_leaf->parent, new_node);
+        }
+    }
+
+    int tree_add_operate_to_tree(struct tree_node_calculate *root, struct tree_node_calculate *new_node) {
+        if (root == nullptr) {
+            root = new_node;
+        } else {
+            struct tree_node_calculate *new_root = root;
+            struct tree_node_calculate *miximum_leaf = new_node->find_miximum_leaf(new_root);
+            while (miximum_leaf != new_root->find_root(new_root)) {
+                if (miximum_leaf->parent != nullptr) {
+                    if (get_operate_symbol_priority(new_node->calculate_operation) >
+                        get_operate_symbol_priority(miximum_leaf->parent->calculate_operation)) {
+                        break;
+                    }
+                    miximum_leaf = miximum_leaf->parent;
+                }
+            }
+            add_new_node_before_parent(miximum_leaf, new_node);
         }
     }
 
@@ -268,22 +294,26 @@ struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
         struct tree_node_calculate *root = nullptr;
         for (int i = 0; i < argc; i++) {
             int string_length = strlen(argv[i]); // 这行为什么一直有问题？// 原来是前面的for的开始位置有问题
-            if (string_length == 1 && isascii(argv[i][0])) {
+            char *pEnd;
+            int li1 = strtol(argv[i], &pEnd, 0);
+            if (*pEnd == ERANGE || !isdigit(argv[i][0])) {
                 // 这里判断是字符的情况
                 // 下面一行的循环走不出来。
                 for (int j = 0; j < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); j++) {
                     if (operate_symbol_and_functions[j].symbol == argv[i][0]) {
                         struct tree_node_calculate *new_node =
                                 init_a_calculate_note(0, operate_symbol_and_functions[j].symbol);
-                        root->tree_add_after_node(&root, new_node);
+                        root->tree_add_operate_to_tree(root, new_node);
+                        root = new_node->find_root(new_node);
                         break;
                     }
                 }
             } else {
                 // 这里再判断是否是数字的情况
                 struct tree_node_calculate *new_node =
-                        init_a_calculate_note(atoi(argv[i]), 0);
-                root->tree_add_after_node(&root, new_node);
+                        init_a_calculate_note(li1, 0);
+                root->tree_add_after_node(root, new_node);
+                root = new_node->find_root(new_node);
                 // 最后如果是非法字符，需要报错，等待更新后重新判断
             }
         }
@@ -302,11 +332,90 @@ TEST(tree, tree_root) {
 
 
 TEST(calculate, string_array_about_number) {
-    char *calculate_expreesion[3] = {
+    char *calculate_expreesion[] = {
         "30", "+", "50"
     };
-    struct tree_node_calculate *tem = construction_calulate_tree(3, static_cast<char **>(calculate_expreesion));
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
     struct tree_node_calculate *root = tem->find_root(tem);
     calculate_subtree(root);
     EXPECT_EQ(root->value, 80);
+}
+
+TEST(calculate, string_array_about_number_2) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "-", "20"
+    };
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 60);
+}
+
+TEST(calculate, string_array_about_number_3) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "/", "20"
+    };
+
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 32);
+}
+
+TEST(calculate, string_array_about_number_4) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "/", "20", "-", "1"
+    };
+
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 31);
+}
+
+TEST(calculate, string_array_about_number_5) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "/", "20", "*", "4"
+    };
+
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 38);
+}
+
+TEST(calculate, string_array_about_number_6) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "/", "20", "-", "1", "*", "2"
+    };
+
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 30);
+}
+
+TEST(calculate, string_array_about_number_7) {
+    char *calculate_expreesion[] = {
+        "30", "+", "50", "/", "20", "-", "1", "*", "2", "+", "3", "*", "4"
+    };
+
+    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
+    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
+                                                                 static_cast<char **>(calculate_expreesion));
+    struct tree_node_calculate *root = tem->find_root(tem);
+    calculate_subtree(root);
+    EXPECT_EQ(root->value, 42);
 }
