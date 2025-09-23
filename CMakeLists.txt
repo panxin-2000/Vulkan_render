@@ -47,6 +47,7 @@ add_executable(hello_test
         vector_directed_area.cpp
         hello_test.cpp
         add_char_calculata.cpp
+        bracket.cpp
         cut_rod.cpp
         test_mutex.cpp
         test_cut_rod.cpp)
