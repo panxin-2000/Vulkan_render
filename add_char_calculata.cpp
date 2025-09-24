@@ -315,6 +315,7 @@ TEST(calculate, BasicAssertions) {
 struct number_or_operate {
     int number;
     int operate;
+    char calculate_string[50];
 };
 
 /**
@@ -385,64 +386,23 @@ struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
     }
 }
 
-struct tree_node_calculate *construction_calulate_tree(std::vector<number_or_operate> *number_or_operate_vector_list) {
-    if (number_or_operate_vector_list->size() == 0) {
-        return nullptr;
-    } else {
-        struct tree_node_calculate *root = nullptr;
-        for (auto number_or_operate_vector: *number_or_operate_vector_list) {
-            struct tree_node_calculate *new_node = create_a_node_to_tree(number_or_operate_vector);
-            if (new_node != nullptr) {
-                if (new_node->operate_function != nullptr &&
-                    (new_node->left == nullptr || new_node->right == nullptr)) {
-                    root->tree_add_operate_to_tree(root, new_node);
-                } else {
-                    root->tree_add_after_node(root, new_node);
-                }
-                root = new_node->find_root(new_node);
-            }
-        }
-        return root;
-    }
-}
-
-
-struct tree_node_calculate *construction_calulate_sub_tree(
-    std::vector<number_or_operate> *number_or_operate_vector) {
-    if (number_or_operate_vector->size() == 0) {
-        return nullptr;
-    } else {
-        struct tree_node_calculate *root = nullptr;
-        for (auto number_or_operate_vector: *number_or_operate_vector) {
-            struct tree_node_calculate *new_node = create_a_node_to_tree(number_or_operate_vector);
-            if (new_node != nullptr) {
-                if (new_node->operate_function != nullptr &&
-                    (new_node->left == nullptr || new_node->right == nullptr)) {
-                    root->tree_add_operate_to_tree(root, new_node);
-                } else {
-                    root->tree_add_after_node(root, new_node);
-                }
-                root = new_node->find_root(new_node);
-            }
-        }
-        if (number_or_operate_vector->size() > 1 && root != nullptr) {
-            root->priority = 5;
-        }
-        return root;
-    }
-}
-
-struct tree_node_calculate *construction_calulate_tree(
-    std::vector<std::vector<number_or_operate> *> number_or_operate_vector_list) {
+struct tree_node_calculate *construction_calulate_tree(std::vector<number_or_operate> number_or_operate_vector_list) {
     if (number_or_operate_vector_list.size() == 0) {
         return nullptr;
     } else {
         struct tree_node_calculate *root = nullptr;
+        struct tree_node_calculate *new_node;
         for (auto number_or_operate_vector: number_or_operate_vector_list) {
-            struct tree_node_calculate *new_node = construction_calulate_sub_tree(number_or_operate_vector);
+            if (strlen(number_or_operate_vector.calculate_string) != 0) {
+                std::vector<number_or_operate> number_or_operate_vector_list_new = {};
+
+                // 还是需要在下面一行进行递归，// 问题是需要进行重新解算以及识别
+                new_node = construction_calulate_tree(number_or_operate_vector_list_new);
+            } else {
+                new_node = create_a_node_to_tree(number_or_operate_vector);
+            }
             if (new_node != nullptr) {
-                if (new_node->operate_function != nullptr &&
-                    (new_node->left == nullptr || new_node->right == nullptr)) {
+                if (new_node->operate_function != nullptr) {
                     root->tree_add_operate_to_tree(root, new_node);
                 } else {
                     root->tree_add_after_node(root, new_node);
@@ -453,6 +413,7 @@ struct tree_node_calculate *construction_calulate_tree(
         return root;
     }
 }
+
 
 TEST(tree, tree_root) {
     struct tree_node_calculate *new_node =
@@ -567,30 +528,15 @@ TEST(calculate, string_array_about_number_8) {
     char *calculate_string = {
         "(30+50)/20-1*2+3*4"
     };
-    std::vector<std::vector<number_or_operate> *> number_or_operate_vector_list = {}; {
-        std::vector<number_or_operate> *number_or_operate_vector = new std::vector<number_or_operate>; {
-            struct number_or_operate tem = {30, 0};
-            number_or_operate_vector->push_back(tem);
-        } {
-            struct number_or_operate tem = {0, '+'};
-            number_or_operate_vector->push_back(tem);
-        } {
-            struct number_or_operate tem = {50, 0};
-            number_or_operate_vector->push_back(tem);
-        }
-        number_or_operate_vector_list.push_back(number_or_operate_vector); // 明白是怎么回事了，有临时变量，临时变量被清除了
+    std::vector<number_or_operate> number_or_operate_vector_list = {}; {
+        struct number_or_operate tem = {0, 0, "30+50"};
+        number_or_operate_vector_list.push_back(tem); // 明白是怎么回事了，有临时变量，临时变量被清除了
     } {
-        std::vector<number_or_operate> *number_or_operate_vector2 = new std::vector<number_or_operate>;
         struct number_or_operate tem = {0, '/'};
-        number_or_operate_vector2->push_back(tem);
-
-        number_or_operate_vector_list.push_back(number_or_operate_vector2);
+        number_or_operate_vector_list.push_back(tem);
     } {
-        std::vector<number_or_operate> *number_or_operate_vector2 = new std::vector<number_or_operate>;
         struct number_or_operate tem = {20, 0};
-        number_or_operate_vector2->push_back(tem);
-
-        number_or_operate_vector_list.push_back(number_or_operate_vector2);
+        number_or_operate_vector_list.push_back(tem);
     }
     struct tree_node_calculate *tem = construction_calulate_tree(number_or_operate_vector_list);
     struct tree_node_calculate *root = tem->find_root(tem);
@@ -613,9 +559,3 @@ TEST(calculate, string_array_about_number_8) {
 // 分为两步，第一个只是检查括号是否正确，并且输出每个括号的开始位置和范围
 // 第二次拿到开始位置和范围以及括号的类型之后，再进行相关的树的计算
 // 再之后就是确定括号中间的那些是需要进行分词操作的，那些是可以由一个子过程来进行完成
-
-
-
-
-
-
