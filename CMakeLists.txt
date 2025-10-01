@@ -44,7 +44,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(hello_test
-        vector_directed_area.cpp
+        vector_signed_area.cpp
         hello_test.cpp
         add_char_calculata.cpp
         test_add_char_calculata.cpp
@@ -53,6 +53,8 @@ add_executable(hello_test
         test_class.cpp
         test_template.cpp
         test_mutex.cpp
+        test_intersect.cpp
+        test_signed_area.cpp
         test_cut_rod.cpp)
 
 
