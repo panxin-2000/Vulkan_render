@@ -1,8 +1,12 @@
 //
 // Created by 潘鑫 on 2025/9/15.
 //
-#include  <gtest/gtest.h>
-
+#include <cctype>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
+#include "add_char_calculata.h"
 // 应该怎么分解这部分的内容
 
 // 首先是输入的部分，需要将内容分解为一个逻辑操作树
@@ -32,176 +36,29 @@ int divide_function(int left_value, int right_value) {
     return left_value / right_value;
 }
 
-struct operate_symbol_and_function {
-    char symbol;
-    char priority;
 
-    int (*operate_function)(int left_value, int right_value);
-};
-
-const operate_symbol_and_function operate_symbol_and_functions[] = {
-    {'+', 1, add_function},
-    {'-', 1, reduce_function},
-    {'*', 2, multiply_function},
-    {'/', 2, divide_function},
-    {'{', 3, nullptr},
-    {'}', 3, nullptr},
-    {'[', 4, nullptr},
-    {']', 4, nullptr},
-    {'(', 5, nullptr},
-    {')', 5, nullptr},
-    // 新增下面之后有了一个新的问题，那就是功能不再单一的问题，如果正确的话，是不会执行到后面的
-};
-
-// 确实需要新建立一个这样的符号表，因为确实不一样，因为这里有一个操作，那就是不管前面是什么符号
-// 其实这里的内容都相当于添加一个数字到树中，如果之后碰到相对应的括号之后
-// 再将之前的括号进行消除
-const operate_symbol_and_function bracket_symbols[] = {
-
-};
-
-int get_operate_symbol_priority(char symbol) {
+int get_operate_symbol_priority(const char symbol) {
     for (int i = 0; i < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); i++) {
         if (operate_symbol_and_functions[i].symbol == symbol) {
             return i / 2;
         }
     }
-    for (int i = 0; i < sizeof(bracket_symbols) / sizeof(bracket_symbols); i++) {
-        if (bracket_symbols[i].symbol == symbol) {
-            return (i + sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function)) / 2;
-        }
-    }
+    return -1;
 }
 
 
-struct tree_node_calculate {
-    struct tree_node_calculate *parent;
-    struct tree_node_calculate *left;
-    struct tree_node_calculate *right;
-    int value;
-    char calculate_operation;
-    char priority;
-
-
-    int (*operate_function)(int left_value, int right_value);
-
-    int get_operate_symbol_priority() {
-        return this->priority;
-    }
-
-    struct tree_node_calculate *find_miximum_leaf(struct tree_node_calculate *root) {
-        if (root == nullptr) {
-            return nullptr;
-        } else {
-            while (root->right != nullptr || root->left != nullptr) {
-                if (root->right != nullptr) {
-                    return find_miximum_leaf(root->right);
-                } else {
-                    return find_miximum_leaf(root->left);
-                }
-            }
-            return root;
-        }
-    }
-
-    struct tree_node_calculate *find_root(struct tree_node_calculate *root) {
-        if (root == nullptr) {
-            return nullptr;
-        } else {
-            while (root->parent != nullptr) {
-                return find_root(root->parent);
-            }
-            return root;
-        }
-    }
-
-    int tree_add_after_node(struct tree_node_calculate *root, struct tree_node_calculate *new_node) {
-        if (root == nullptr) {
-            root = new_node; // 这里是添加首个数字的位置
-        } else {
-            struct tree_node_calculate *new_root = root;
-            struct tree_node_calculate *miximum_leaf = new_node->find_miximum_leaf(new_root);
-            while (miximum_leaf->parent->right != nullptr) {
-                miximum_leaf = miximum_leaf->parent;
-            }
-            add_new_node_to_right(miximum_leaf->parent, new_node);
-        }
-    }
-
-    int tree_add_operate_to_tree(struct tree_node_calculate *root, struct tree_node_calculate *new_node) {
-        if (root == nullptr) {
-            root = new_node;
-        } else {
-            struct tree_node_calculate *new_root = root;
-            struct tree_node_calculate *miximum_leaf = new_node->find_miximum_leaf(new_root);
-            while (miximum_leaf != new_root->find_root(new_root)) {
-                if (miximum_leaf->parent != nullptr) {
-                    if (new_node->get_operate_symbol_priority() >
-                        miximum_leaf->parent->get_operate_symbol_priority()) {
-                        break;
-                    }
-                    miximum_leaf = miximum_leaf->parent;
-                }
-            }
-            add_new_node_before_parent(miximum_leaf, new_node);
-        }
-    }
-
-    int add_new_node_to_right(struct tree_node_calculate *node, struct tree_node_calculate *new_node) {
-        new_node->right = node->right; // 新节点的右孩子更新为将要原本的右孩子
-        node->right = new_node; // 更新node的右孩子
-        new_node->parent = node; // 更新新节点的parent
-        if (new_node->right != nullptr) {
-            new_node->right->parent = new_node; // 如果原本的右孩子不为空，更新原本的父节点
-        }
-    }
-
-    int add_new_node_before_parent(struct tree_node_calculate *node, struct tree_node_calculate *new_node) {
-        new_node->parent = node->parent;
-        new_node->left = node;
-        node->parent = new_node;
-        if (new_node->parent != nullptr && new_node->parent->left == node) {
-            new_node->parent->left = new_node;
-        } else if (new_node->parent != nullptr && new_node->parent->right == node) {
-            new_node->parent->right = new_node;
-        }
-    }
-
-    int add_node_to_left_child(struct tree_node_calculate *left) {
-        this->left = left;
-        left->parent = this;
-    }
-
-    int add_node_to_right_child(struct tree_node_calculate *right) {
-        this->right = right;
-        right->parent = this;
-    }
-
-    int update_calculate_operate_function(char operator_char) {
-        for (int i = 0; i < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); i++) {
-            if (operate_symbol_and_functions[i].symbol == operator_char) {
-                this->operate_function = operate_symbol_and_functions[i].operate_function;
-                this->priority = operate_symbol_and_functions[i].priority;
-                break;
-            }
-        }
-    }
-
-    int calculate_function(char operator_char) {
-    }
-};
-
 struct tree_node_calculate *init_a_calculate_note(int value, char calculate_operation) {
-    struct tree_node_calculate *new_node = new struct tree_node_calculate;
+    auto *new_node = new tree_node_calculate;
+    // 这里提示有问题应该是和某些构造函数有关
     if (new_node == nullptr) {
         return nullptr;
     } else {
         new_node->parent = nullptr;
         new_node->left = nullptr;
         new_node->right = nullptr;
-        new_node->calculate_operation = calculate_operation;
-        new_node->operate_function = nullptr;
-        new_node->value = value;
+        new_node->data.calculate_operation = calculate_operation;
+        new_node->data.operate_function = nullptr;
+        new_node->data.value = value;
         new_node->update_calculate_operate_function(calculate_operation);
         return new_node;
     }
@@ -225,41 +82,18 @@ int calculate_subtree(struct tree_node_calculate *node) {
     }
     int left_value = 0;
     if (node->left != nullptr) {
-        int return_error_value = calculate_subtree(node->left);
-        left_value = node->left->value;
+        int return_error_value = calculate_subtree(static_cast<tree_node_calculate *>(node->left));
+        left_value = node->left->data.value;
     }
     int right_value = 0;
     if (node->right != nullptr) {
-        int return_error_value = calculate_subtree(node->right);
-        right_value = node->right->value;
+        int return_error_value = calculate_subtree(static_cast<tree_node_calculate *>(node->right));
+        right_value = node->right->data.value;
     }
-    node->value = node->operate_function(left_value, right_value);
+    node->data.value = node->data.operate_function(left_value, right_value);
+    return 0;
 }
 
-
-TEST(calculate, BasicAssertions) {
-    EXPECT_STRNE("hello", "world");
-
-    struct tree_node_calculate *root = init_a_calculate_note(0, '*');
-    struct tree_node_calculate *new_node = init_a_calculate_note(2, 0);
-    struct tree_node_calculate *new_node_right = init_a_calculate_note(0, '+');
-    root->add_node_to_left_child(new_node);
-    root->add_node_to_right_child(new_node_right); {
-        struct tree_node_calculate *new_node_1 = init_a_calculate_note(5, 0);
-        struct tree_node_calculate *new_node_right_2 = init_a_calculate_note(5, 0);
-        new_node_right->add_node_to_left_child(new_node_1);
-        new_node_right->add_node_to_right_child(new_node_right_2);
-    }
-
-    calculate_subtree(root); // 这个测试的主要作用是测试计算的结果对不对，
-    // 忽然想起来还能做另外一个测试，那就是只更改其中一个值，然后lazy更新，得出结果
-
-    // 2 * (5 + 5)
-    //      *
-    // 2        (+)
-    //        5     5
-    EXPECT_EQ(root->value, 20);
-}
 
 // 2 * (5 + 5) + (5 + 5) 应该如何解析呢？解析的分界线是什么？
 // 先遍历一遍括号，只将最底层的括号合并
@@ -312,11 +146,6 @@ TEST(calculate, BasicAssertions) {
 // &                &                    &                    &                  5     &                    +
 // &                &                    &                    &                        &                  5   5
 
-struct number_or_operate {
-    int number;
-    int operate;
-    char calculate_string[50];
-};
 
 /**
  * 如果是单个参数输入，那么其左右孩子都为空
@@ -330,16 +159,16 @@ struct tree_node_calculate *create_a_node_to_tree(int argc, char *argv) {
     } else {
         struct tree_node_calculate *root = nullptr;
         for (int i = 0; i < argc; i++) {
-            int string_length = strlen(argv); // 这行为什么一直有问题？// 原来是前面的for的开始位置有问题
+            int string_length = std::strlen(argv); // 这行为什么一直有问题？// 原来是前面的for的开始位置有问题
             char *pEnd;
-            int li1 = strtol(argv, &pEnd, 0);
-            if (*pEnd == ERANGE || !isdigit(argv[0])) {
+            const long li1 = std::strtol(argv, &pEnd, 0);
+            if (*pEnd == ERANGE || !std::isdigit(argv[0])) {
                 // 这里判断是字符的情况
                 // 下面一行的循环走不出来。
-                for (int j = 0; j < sizeof(operate_symbol_and_functions) / sizeof(operate_symbol_and_function); j++) {
-                    if (operate_symbol_and_functions[j].symbol == argv[0]) {
+                for (auto j: operate_symbol_and_functions) {
+                    if (j.symbol == argv[0]) {
                         struct tree_node_calculate *new_node =
-                                init_a_calculate_note(0, operate_symbol_and_functions[j].symbol);
+                                init_a_calculate_note(0, j.symbol);
                         return new_node;
                     }
                 }
@@ -373,13 +202,13 @@ struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
         for (int i = 0; i < argc; i++) {
             struct tree_node_calculate *new_node = create_a_node_to_tree(1, argv[i]);
             if (new_node != nullptr) {
-                if (new_node->operate_function != nullptr &&
+                if (new_node->data.operate_function != nullptr &&
                     (new_node->left == nullptr || new_node->right == nullptr)) {
                     root->tree_add_operate_to_tree(root, new_node);
                 } else {
                     root->tree_add_after_node(root, new_node);
                 }
-                root = new_node->find_root(new_node);
+                root = static_cast<tree_node_calculate *>(new_node->find_root(new_node));
             }
         }
         return root;
@@ -387,7 +216,7 @@ struct tree_node_calculate *construction_calulate_tree(int argc, char **argv) {
 }
 
 struct tree_node_calculate *construction_calulate_tree(std::vector<number_or_operate> number_or_operate_vector_list) {
-    if (number_or_operate_vector_list.size() == 0) {
+    if (number_or_operate_vector_list.empty()) {
         return nullptr;
     } else {
         struct tree_node_calculate *root = nullptr;
@@ -402,160 +231,14 @@ struct tree_node_calculate *construction_calulate_tree(std::vector<number_or_ope
                 new_node = create_a_node_to_tree(number_or_operate_vector);
             }
             if (new_node != nullptr) {
-                if (new_node->operate_function != nullptr) {
+                if (new_node->data.operate_function != nullptr) {
                     root->tree_add_operate_to_tree(root, new_node);
                 } else {
                     root->tree_add_after_node(root, new_node);
                 }
-                root = new_node->find_root(new_node);
+                root = static_cast<tree_node_calculate *>(new_node->find_root(new_node));
             }
         }
         return root;
     }
 }
-
-
-TEST(tree, tree_root) {
-    struct tree_node_calculate *new_node =
-            init_a_calculate_note(30, 0);
-    struct tree_node_calculate *new_node_2 =
-            init_a_calculate_note(0, '+');
-    new_node->add_new_node_before_parent(new_node, new_node_2);
-    EXPECT_EQ(new_node_2, new_node->find_root(new_node));
-}
-
-
-TEST(calculate, string_array_about_number) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50"
-    };
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 80);
-}
-
-TEST(calculate, string_array_about_number_2) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "-", "20"
-    };
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 60);
-}
-
-TEST(calculate, string_array_about_number_3) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "/", "20"
-    };
-
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 32);
-}
-
-TEST(calculate, string_array_about_number_4) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "/", "20", "-", "1"
-    };
-
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 31);
-}
-
-TEST(calculate, string_array_about_number_5) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "/", "20", "*", "4"
-    };
-
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 38);
-}
-
-TEST(calculate, string_array_about_number_6) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "/", "20", "-", "1", "*", "2"
-    };
-
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 30);
-}
-
-TEST(calculate, string_array_about_number_7) {
-    char *calculate_expreesion[] = {
-        "30", "+", "50", "/", "20", "-", "1", "*", "2", "+", "3", "*", "4"
-    };
-
-    int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
-    struct tree_node_calculate *tem = construction_calulate_tree(string_number,
-                                                                 static_cast<char **>(calculate_expreesion));
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 42);
-}
-
-// 如果添加一个带括号的测试，那么应该怎么算呢？如果添加了一个不同的符号，比如log，应该怎么算呢？
-// 先说括号的部分，应该是有两个解决办法的，第一个是在括号出现的时候就去分词，将全部的内容以括号为标准，分为一个小段
-// 当需要链接括号部分的时候，就去计算括号部分的链接位置
-// 另一个办法是什么呢？将括号也作为一个分割符，如果遇到左括号就添加，如果遇到右括号，就和之前的左括号进行抵消？
-// 这里的括号确实很难解，搞不定，需要去走第二条路了
-
-//
-TEST(calculate, string_array_about_number_8) {
-    char *calculate_expreesion[] = {
-        "(", "30", "+", "50", ")", "/", "20", "-", "1", "*", "2", "+", "3", "*", "4"
-    };
-    char *calculate_string = {
-        "(30+50)/20-1*2+3*4"
-    };
-    std::vector<number_or_operate> number_or_operate_vector_list = {}; {
-        struct number_or_operate tem = {0, 0, "30+50"};
-        number_or_operate_vector_list.push_back(tem); // 明白是怎么回事了，有临时变量，临时变量被清除了
-    } {
-        struct number_or_operate tem = {0, '/'};
-        number_or_operate_vector_list.push_back(tem);
-    } {
-        struct number_or_operate tem = {20, 0};
-        number_or_operate_vector_list.push_back(tem);
-    }
-    struct tree_node_calculate *tem = construction_calulate_tree(number_or_operate_vector_list);
-    struct tree_node_calculate *root = tem->find_root(tem);
-    calculate_subtree(root);
-    EXPECT_EQ(root->value, 4);
-
-    // 先不着急分词，先将之后的结果计算好
-
-    // 那么这里就需要首先将括号的部分做为一个完整的表达式了
-    // 括号的部分算什么呢？算是一个数值，需要返回它的根结点
-    // 在这里就进行处理呢？还是在之前就进行处理呢？
-    // 是的，在之前就需要进行处理。
-}
-
-// 括号的嵌套想要处理的话，那么首先需要判断括号是否是正确的，之后拿到每个括号的的开始位置和长度长度是由其后括号决定的
-// 主要的内容是方案，确定好方案之后，后续的内容其实怎么做都方便
-// 识别括号是需要先做的，问题是之后是不括号的数据结构应该是什么样子的？
-// 比如我第一个括号里面可能有两个或三个括号，每个括号里面又可能再镶嵌了两套括号
-// 那就需要这样表示，左孩子表示下一层的括号，右孩子表示兄弟，如果右孩子还有右孩子，表示有三个括号，依次向下推
-// 分为两步，第一个只是检查括号是否正确，并且输出每个括号的开始位置和范围
-// 第二次拿到开始位置和范围以及括号的类型之后，再进行相关的树的计算
-// 再之后就是确定括号中间的那些是需要进行分词操作的，那些是可以由一个子过程来进行完成

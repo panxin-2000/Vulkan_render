@@ -34,7 +34,7 @@ public:
      * @param R
      * @return
      */
-    float area(const segment_vector &R) {
+    float single_area(const segment_vector &R) {
         return this->x * R.y - this->y * R.x;
     }
 };
@@ -66,20 +66,22 @@ struct segment_position {
         segment_vector ac = R_segment_position.start_point - this->start_point;
         segment_vector ad = R_segment_position.end_point - this->start_point;
 
-        segment_vector cd = R_segment_position.end_point - R_segment_position.end_point;
+        segment_vector cd = R_segment_position.end_point - R_segment_position.start_point;
         segment_vector ca = this->start_point - R_segment_position.start_point;
         segment_vector cb = this->end_point - R_segment_position.start_point;
 
         // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
-        float f1 = ab.area(ac);
-        float f2 = ab.area(ad);
-        float f3 = cd.area(ca);
-        float f4 = cd.area(cb);
-        if (f1 * f2 < 0 && f3 * f4 > 0) {
+        float f1 = ab.single_area(ac);
+        float f2 = ab.single_area(ad);
+        float f3 = cd.single_area(ca);
+        float f4 = cd.single_area(cb);
+        if (f1 * f2 < 0 && f3 * f4 < 0) {
             // 这个应该是一个比较简单的判断了 // 算法导论上的比较符号太多了
+            // 这里似乎是有问题的，之前写的有问题，之前的符号写的有问题
             return true;
         }
         // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
+        // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
         if (f1 == 0 && on_segment(this->start_point, this->end_point, R_segment_position.start_point))
             return true;
         if (f2 == 0 && on_segment(this->start_point, this->end_point, R_segment_position.end_point))
@@ -97,12 +99,12 @@ struct segment_position {
 TEST(triangle, fsd) { {
         segment_vector ab{1, 1};
         segment_vector ac{2, 0};
-        float area = ab.area(ac);
+        float area = ab.single_area(ac);
         EXPECT_GT(0, area);
     } {
         segment_vector ab{-10, -1};
         segment_vector ac{-2, -0};
-        float area = ab.area(ac);
+        float area = ab.single_area(ac);
         EXPECT_GT(0, area);
     }
 }
@@ -111,12 +113,12 @@ TEST(triangle, fsd) { {
 TEST(triangle, fdsd) { {
         segment_vector ab{2, 0};
         segment_vector ac{1, 1};
-        float area = ab.area(ac);
+        float area = ab.single_area(ac);
         EXPECT_LT(0, area);
     } {
         segment_vector ab{1, 1};
         segment_vector ac{2, 3};
-        float area = ab.area(ac);
+        float area = ab.single_area(ac);
         EXPECT_LT(0, area);
     }
 }
@@ -132,9 +134,20 @@ TEST(triangle, three_point) {
     segment_vector ab = point_b - point_a;
     segment_vector ac = point_c - point_a;
     segment_vector bc = point_c - point_b;
-    EXPECT_GT(0, ab.area(ac));
-    EXPECT_GT(0, ab.area(bc));
-    EXPECT_EQ(ab.area(ac), ab.area(bc));
+    EXPECT_GT(0, ab.single_area(ac)); // 这里并不是为了判断等于，只是为了判断方向
+    EXPECT_GT(0, ab.single_area(bc));
+    EXPECT_EQ(ab.single_area(ac), ab.single_area(bc));
     // 三角形的三个点，只要第三个点在另外两个点的逆时针方向，那么这个三角形就是逆时针的三角形
     // 所以可以通过这个办法来简单的判断顺时针和逆时针，确实只有在做的时候才会更加了解具体相关的细节
+}
+
+TEST(intersect, have_intersect) {
+    segment_vector point_a{1, 1};
+    segment_vector point_b{5, 5};
+    segment_vector point_c{5, 1};
+    segment_vector point_d{1, 5};
+    segment_position segment_1{point_a, point_b};
+    segment_position segment_2{point_c, point_d};
+    EXPECT_EQ(true, segment_1.intersection(segment_2));
+
 }
