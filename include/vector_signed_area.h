@@ -20,6 +20,9 @@ public:
     float single_area(const segment_vector &R);
 };
 
+bool operator==(const segment_vector &L, const segment_vector &R);
+
+
 typedef segment_vector triangle_position;
 
 struct triangle {
@@ -36,5 +39,7 @@ struct segment_position {
 
     bool intersection(struct segment_position &R_segment_position);
 };
+
+bool convex_hull(std::vector<segment_vector> &new_segments);
 
 #endif //VECTOR_SIGNED_AREA_H
