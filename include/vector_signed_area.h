@@ -40,6 +40,7 @@ struct segment_position {
     bool intersection(struct segment_position &R_segment_position);
 };
 
-bool convex_hull(std::vector<segment_vector> &new_segments);
+bool convex_hull_in_order_of_angles(std::vector<segment_vector> &new_segments);
 
+std::vector<segment_vector> &calculate_convex_hull(std::vector<segment_vector> &segments);
 #endif //VECTOR_SIGNED_AREA_H

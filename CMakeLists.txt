@@ -48,6 +48,7 @@ add_executable(hello_test
         hello_test.cpp
         add_char_calculata.cpp
         test_add_char_calculata.cpp
+        convex_hull.cpp
         bracket.cpp
         cut_rod.cpp
         test_class.cpp
