@@ -65,7 +65,7 @@ public:
             root = new_node;
         } else {
             struct tree_node_calculate *new_root = root;
-            struct tree_node_calculate *miximum_leaf = static_cast<tree_node_calculate *>
+            auto miximum_leaf =
                     (new_node->find_miximum_leaf(new_root));
             while (miximum_leaf != new_root->find_root(new_root)) {
                 if (miximum_leaf->parent != nullptr) {

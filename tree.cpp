@@ -1,7 +1,7 @@
 //
 // Created by 潘鑫 on 2025/2/17.
 //
-#include "tree.h"
+#include "include/tree.h"
 #include <iostream>
 
 void inorder_tree_walk(struct Tree_Node *node) {
@@ -102,6 +102,15 @@ struct Tree_Node *tree_minimum(struct Tree_Node *tree_node) {
     return tree_node;
 }
 
+/**
+ * 这里寻找后继有几种不同的情况，
+ * 第一种是要要查找的右子树不为空，那么寻找右子树的最小值就可以了
+ * 第二种情况是，给出的节点已经是叶子结点了，那么找后继的话，就需要便利父结点了
+ * 如果是左叶子结点，那么直接给出返回父结点就好
+ * 如果是右叶子结点，那么需要一路向上，查找出一个为左子树的父结点，返回这个父结点
+ * @param tree_node
+ * @return
+ */
 struct Tree_Node *tree_successor(struct Tree_Node *tree_node) {
     if (tree_node->right != nullptr) {
         return tree_minimum(tree_node->right);
