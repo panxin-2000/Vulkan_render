@@ -13,6 +13,25 @@ public:
     T *parent;
     T *left;
     T *right;
+
+    T *tree_successor(T *tree_node) {
+        if (tree_node->right != nullptr) {
+            return tree_minimum(tree_node->right);
+        }
+        T *y = tree_node->parent;
+        while (y != nullptr && y->right == tree_node) {
+            tree_node = y;
+            y = y->parent;
+        }
+        return tree_node;
+    }
+
+    T *tree_minimum(T *tree_node) {
+        while (tree_node != nullptr) {
+            tree_node = tree_node->left;
+        }
+        return tree_node;
+    }
 };
 
 template<class T>
@@ -83,7 +102,7 @@ public:
      * @return 返回整个树的根结点
      */
     RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
-        if (delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
+        if (&delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
             // 删除的是根结点，那么根结点为空
             // 只有一个结点，这里删除完成之后再去在外面free吧，因为是引用，引用最好不要修改
             // 不是引用不能修改其中的值，只是引用不能修改这个指针
@@ -91,34 +110,34 @@ public:
         }
         if (delete_node.right == nullptr && delete_node.left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
-            if (delete_node.parent->left == delete_node) {
+            if (delete_node.parent->left == &delete_node) {
                 delete_node.parent->left = nullptr;
-            } else if (delete_node.parent->right == delete_node) {
+            } else if (delete_node.parent->right == &delete_node) {
                 delete_node.parent->right = nullptr;
             }
         } else if (delete_node.right == nullptr && delete_node.left != nullptr) {
             // 右子树为空
-            if (delete_node.parent->left == delete_node) {
+            if (delete_node.parent->left == &delete_node) {
                 // 为父亲的左子树
                 delete_node.parent->left = delete_node.left; // 将父亲的左子树更新为删除节点的左子树
                 delete_node.left->parent = delete_node.parent; // 将删除结点的左子树的父亲更新为删除结点的父亲
-            } else if (delete_node.parent->right == delete_node) {
+            } else if (delete_node.parent->right == &delete_node) {
                 // 就不继续注释了
                 delete_node.parent->right = delete_node.left;
                 delete_node.left->parent = delete_node.parent;
             }
         } else if (delete_node.right != nullptr && delete_node.left == nullptr) {
             // 左子树为空
-            if (delete_node.parent->left == delete_node) {
+            if (delete_node.parent->left == &delete_node) {
                 delete_node.parent->left = delete_node.right;
                 delete_node.right->parent = delete_node.parent;
-            } else if (delete_node.parent->right == delete_node) {
+            } else if (delete_node.parent->right == &delete_node) {
                 delete_node.parent->right = delete_node.right;
                 delete_node.right->parent = delete_node.parent;
             }
         } else if (delete_node.right != nullptr && delete_node.left != nullptr) {
             // 寻找后继
-            auto successor = tree_successor(delete_node);
+            auto successor = root->tree_successor(&delete_node); // 这行还是有问题的，还是编译不过，
             if (successor->left == nullptr && successor->right == nullptr) {
                 if (successor->parent->left == successor) {
                     successor->parent->left = nullptr;
@@ -126,7 +145,7 @@ public:
                     successor->parent->right = nullptr;
                 }
             } else if (successor->left == nullptr && successor->right != nullptr) {
-                if (successor->parent == delete_node) {
+                if (successor->parent == &delete_node) {
                     // 后继是删除结点的右孩子， // 想办法跳过就可以了
                     delete_node.right = successor->right;
                 } else {
@@ -137,9 +156,9 @@ public:
             }
             // successor 这个时候是算法一个最小的叶子结点了
             successor->parent = delete_node.parent;
-            if (delete_node.parent->left == delete_node) {
+            if (delete_node.parent->left == &delete_node) {
                 delete_node.parent->left = successor;
-            } else if (delete_node.parent->right == delete_node) {
+            } else if (delete_node.parent->right == &delete_node) {
                 delete_node.parent->right = successor;
             }
             // 清理后继和其父亲的关系
