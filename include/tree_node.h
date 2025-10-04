@@ -43,7 +43,16 @@ public:
         }
     }
 
-    bool insert_node_to_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &new_node) {
+    RB_Tree_Node *tree_insert_value(RB_Tree_Node *root, T data) {
+        RB_Tree_Node &nodes = *new RB_Tree_Node<T>;
+        nodes.right = nullptr;
+        nodes.left = nullptr;
+        nodes.parent = nullptr;
+        nodes.data = data;
+        return insert_node_to_binary_search_tree(root, nodes);
+    }
+
+    RB_Tree_Node *insert_node_to_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &new_node) {
         RB_Tree_Node *new_root = root;
         RB_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
@@ -51,52 +60,34 @@ public:
             if (insert_node->data < new_node.data) {
                 new_root = new_root->right;
             } else {
-                insert_node = new_root->left;
+                new_root = new_root->left;
             }
         }
-        if (insert_node->data < new_node.data) {
-            insert_node->right = new_node;
+        if (insert_node == nullptr) {
+            return &new_node;
+        } else if (insert_node->data < new_node.data) {
+            insert_node->right = &new_node;
             new_node.parent = insert_node;
         } else {
-            insert_node->left = new_node;
+            insert_node->left = &new_node;
             new_node.parent = insert_node;
         }
+        return root;
         // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度
     }
-
 
     /**
-     * 如果返回为 true 的时候，可以将插入的新结点，之后再查到这个树的根结点
+     * 从二叉树中删除一个结点的操作，问题是不应该返回bool或者false，返回false是没有意义的
      * @param root
-     * @param new_node
-     * @return
+     * @param delete_node
+     * @return 返回整个树的根结点
      */
-    bool insert_node_to_binary_search_tree(RB_Tree_Node &root, RB_Tree_Node &new_node) {
-        // 这里是使用递归的方式来
-        if (root.data < new_node.data && root.right == nullptr) {
-            root.right = new_node;
-            new_node.parent = root;
-        } else if (root.data < new_node.data && root.right != nullptr) {
-            insert_node_to_binary_search_tree(root.right, new_node);
-        } else if (root.data > new_node.data && root.left == nullptr) {
-            root.left = new_node;
-            new_node.parent = root;
-        } else if (root.data > new_node.data && root.left != nullptr) {
-            insert_node_to_binary_search_tree(root.right, new_node);
-        }
-        while (root) {
-        }
-        //需要插入一个值，那就需要按照T data 的值进行排序
-        // 如果当前的值大，就去找当前节点的右结点，
-        // 如果当前的值小，那就找当前节点的左结点，
-        // 如果一个左或者右为空的时候，那么就去将这个结点插入
-
-        // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度
-    }
-
-    bool delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
-        if (delete_node.parent == nullptr) {
+    RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
+        if (delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
             // 删除的是根结点，那么根结点为空
+            // 只有一个结点，这里删除完成之后再去在外面free吧，因为是引用，引用最好不要修改
+            // 不是引用不能修改其中的值，只是引用不能修改这个指针
+            return nullptr;
         }
         if (delete_node.right == nullptr && delete_node.left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
@@ -143,21 +134,23 @@ public:
                     successor->parent->left = successor->right;
                     successor->right->parent = successor->parent;
                 }
-                // successor 这个时候是算法一个最小的叶子结点了
-                successor->parent = delete_node.parent;
-                if (delete_node.parent->left == delete_node) {
-                    delete_node.parent->left = successor;
-                } else if (delete_node.parent->right == delete_node) {
-                    delete_node.parent->right = successor;
-                }
-                // 清理后继和其父亲的关系
-                successor->left = delete_node.left;
-                successor->left->parent = successor;
-
-                successor->right = delete_node.right;
-                successor->right->parent = successor;
-                // 将后继与被删除的结点进行替换
             }
+            // successor 这个时候是算法一个最小的叶子结点了
+            successor->parent = delete_node.parent;
+            if (delete_node.parent->left == delete_node) {
+                delete_node.parent->left = successor;
+            } else if (delete_node.parent->right == delete_node) {
+                delete_node.parent->right = successor;
+            }
+            // 清理后继和其父亲的关系
+            successor->left = delete_node.left;
+            successor->left->parent = successor;
+
+            successor->right = delete_node.right;
+            successor->right->parent = successor;
+            // 将后继与被删除的结点进行替换
+            // return find_root(successor);
+            //这里变更了根结点吗？并没有，所以不需要上面那一行
         }
         // 找到需要删除的后继，之后再做相应的操作，
 
@@ -169,6 +162,9 @@ public:
 
         // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度
         // 高度重排是红黑特有的还是二叉平衡树也有的？
+
+        // 因为最后需要返回根结点，
+        return root;
     }
 
     struct RB_Tree_Node *find_root(struct RB_Tree_Node *node) {
