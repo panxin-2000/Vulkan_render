@@ -4,8 +4,6 @@
 
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
-#include "add_char_calculata.h"
-#include "add_char_calculata.h"
 
 template<class T>
 class Tree_Node {
@@ -32,6 +30,17 @@ public:
         }
         return tree_node;
     }
+
+    T *find_root(T *node) {
+        if (node == nullptr) {
+            return nullptr;
+        } else {
+            while (node->parent != nullptr) {
+                return find_root(node->parent);
+            }
+            return node;
+        }
+    }
 };
 
 template<class T>
@@ -47,7 +56,7 @@ public:
     int color_tag;
 
 public:
-    struct RB_Tree_Node<T> *find_miximum_leaf(struct RB_Tree_Node *root) {
+    RB_Tree_Node<T> *find_miximum_leaf(RB_Tree_Node *root) {
         if (root == nullptr) {
             return nullptr;
         } else {
@@ -220,7 +229,7 @@ public:
         right->parent = this;
     }
 
-    int add_new_node_before_parent(struct RB_Tree_Node *node, struct RB_Tree_Node *new_node) {
+    static int add_new_node_before_parent(struct RB_Tree_Node *node, struct RB_Tree_Node *new_node) {
         new_node->parent = node->parent;
         new_node->left = node;
         node->parent = new_node;
