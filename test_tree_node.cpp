@@ -4,9 +4,11 @@
 #include "tree_node.h"
 #include <gtest/gtest.h>
 
+#include "binary_Tree_Node.h"
+
 
 TEST(test_tree, test_tree_insert) {
-    balance_Tree_Node<int> *root = nullptr;
+    binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     root = root->tree_insert_value(root, 3);
@@ -34,7 +36,7 @@ TEST(test_tree, test_tree_insert) {
 //   3      7
 // 2   4      8
 TEST(test_tree, test_tree_delete) {
-    balance_Tree_Node<int> *root = nullptr;
+    binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     EXPECT_EQ(root->data, 5);
@@ -71,7 +73,7 @@ TEST(test_tree, test_tree_delete) {
 //   3      8
 // 2   4
 TEST(test_tree, test_tree_delete_root) {
-    balance_Tree_Node<int> *root = nullptr;
+    binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     root = root->tree_insert_value(root, 3);
@@ -94,7 +96,7 @@ TEST(test_tree, test_tree_delete_root) {
 //            9   11
 
 TEST(test_tree, test_tree_delete_root_2) {
-    balance_Tree_Node<int> *root = nullptr;
+    binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     root = root->tree_insert_value(root, 3);
@@ -121,7 +123,7 @@ TEST(test_tree, test_tree_delete_root_2) {
 //             12
 //              13
 TEST(test_tree, test_tree_delete_root_3) {
-    balance_Tree_Node<int> *root = nullptr;
+    binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     root = root->tree_insert_value(root, 3);

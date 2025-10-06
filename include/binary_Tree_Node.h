@@ -60,20 +60,7 @@ public:
     }
 
 public:
-    binary_Tree_Node<T> *find_miximum_leaf(binary_Tree_Node *root) {
-        if (root == nullptr) {
-            return nullptr;
-        } else {
-            while (root->right != nullptr || root->left != nullptr) {
-                if (root->right != nullptr) {
-                    return find_miximum_leaf(root->right);
-                } else {
-                    return find_miximum_leaf(root->left);
-                }
-            }
-            return root;
-        }
-    }
+
 
     binary_Tree_Node *tree_insert_value(binary_Tree_Node *root, T data) {
         binary_Tree_Node &nodes = *new binary_Tree_Node<T>;
@@ -203,16 +190,7 @@ public:
         return root;
     }
 
-    struct binary_Tree_Node *find_root(struct binary_Tree_Node *node) {
-        if (node == nullptr) {
-            return nullptr;
-        } else {
-            while (node->parent != nullptr) {
-                return find_root(node->parent);
-            }
-            return node;
-        }
-    }
+    // 下面这几个方法移动到基础类中会更好
 
     int tree_add_after_node(struct binary_Tree_Node *root, struct binary_Tree_Node *new_node) {
         if (root == nullptr) {

@@ -63,8 +63,28 @@ public:
             return node;
         }
     }
-};
 
+
+    /**
+     * 这个方法可以从扩展类中移动到基类当中
+     * @param root
+     * @return
+     */
+    T *find_miximum_leaf(T *root) {
+        if (root == nullptr) {
+            return nullptr;
+        } else {
+            while (root->right != nullptr || root->left != nullptr) {
+                if (root->right != nullptr) {
+                    return find_miximum_leaf(root->right);
+                } else {
+                    return find_miximum_leaf(root->left);
+                }
+            }
+            return root;
+        }
+    }
+};
 
 
 #endif //TREE_NODE_H
