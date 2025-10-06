@@ -21,17 +21,17 @@ TEST(class_access, class_access) {
 }
 
 template<class T>
-struct balance_Tree_Node {
+struct binary_Tree_Node {
 public:
-    balance_Tree_Node() {
+    binary_Tree_Node() {
     }
 
-    ~balance_Tree_Node(void) {
+    ~binary_Tree_Node(void) {
     }
 
-    balance_Tree_Node *Left_child; // 因为是64位的，所以指针占据了8个字节
-    balance_Tree_Node *Right_child;
-    balance_Tree_Node *Father_Node;
+    binary_Tree_Node *Left_child; // 因为是64位的，所以指针占据了8个字节
+    binary_Tree_Node *Right_child;
+    binary_Tree_Node *Father_Node;
     T data;
     int color_tag;
 };
@@ -41,7 +41,7 @@ struct tem {
     int number_a;
 };
 
-class class_c : public balance_Tree_Node<tem> {
+class class_c : public binary_Tree_Node<tem> {
 public:
     int number_b;
 };
@@ -51,7 +51,7 @@ TEST(class_access2, class_access) {
     int a = sizeof(class_a);
     int b = sizeof(class_b);
     int f = sizeof(class_c);
-    int r = sizeof(balance_Tree_Node<tem>);
+    int r = sizeof(binary_Tree_Node<tem>);
     ASSERT_EQ(0, (int64_t)&c - (int64_t)&c.Left_child);
     ASSERT_EQ(-8, (int64_t)&c - (int64_t)&c.Right_child);
     ASSERT_EQ(-16, (int64_t)&c - (int64_t)&c.Father_Node);
