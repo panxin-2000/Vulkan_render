@@ -4,6 +4,7 @@
 
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
+#include <iostream>
 
 template<class T>
 class Tree_Node {
@@ -24,9 +25,28 @@ public:
         return tree_node;
     }
 
+    T *tree_predecessor(T *tree_node) {
+        if (tree_node->left != nullptr) {
+            return tree_minimum(tree_node->left);
+        }
+        T *y = tree_node->parent;
+        while (y != nullptr && y->left == tree_node) {
+            tree_node = y;
+            y = y->parent;
+        }
+        return tree_node;
+    }
+
     T *tree_minimum(T *tree_node) {
         while (tree_node != nullptr) {
             tree_node = tree_node->left;
+        }
+        return tree_node;
+    }
+
+    T *tree_maximum(T *tree_node) {
+        while (tree_node != nullptr) {
+            tree_node = tree_node->right;
         }
         return tree_node;
     }
@@ -54,6 +74,48 @@ public:
 
     T data;
     int color_tag;
+
+    void inorder_tree_walk(T *node) {
+        if (node != nullptr) {
+            inorder_tree_walk(node->left);
+            std::cout << node->data << std::endl;
+            inorder_tree_walk(node->right);
+        }
+    }
+
+    void preorder_tree_walk(T *node) {
+        if (node != nullptr) {
+            std::cout << node->data << std::endl;
+            preorder_tree_walk(node->left);
+            preorder_tree_walk(node->right);
+        }
+    }
+
+    void postorder_tree_walk(T *node) {
+        if (node != nullptr) {
+            postorder_tree_walk(node->left);
+            postorder_tree_walk(node->right);
+            std::cout << node->data << std::endl;
+        }
+    }
+
+    void level_tree_walk(T *node) {
+        std::queue<T *> tem;
+        if (node != nullptr) {
+            tem.push(node);
+        }
+        while (!tem.empty()) {
+            T *node_tem = tem.front();
+            if (node_tem->left != nullptr) {
+                tem.push(node_tem->left);
+            }
+            if (node_tem->right != nullptr) {
+                tem.push(node_tem->right);
+            }
+            std::cout << node_tem->data << std::endl;
+            tem.pop();
+        }
+    }
 
 public:
     RB_Tree_Node<T> *find_miximum_leaf(RB_Tree_Node *root) {
