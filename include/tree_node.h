@@ -38,10 +38,12 @@ public:
     }
 
     T *tree_minimum(T *tree_node) {
+        T *return_node = nullptr;
         while (tree_node != nullptr) {
+            return_node = tree_node;
             tree_node = tree_node->left;
         }
-        return tree_node;
+        return return_node;
     }
 
     T *tree_maximum(T *tree_node) {
@@ -64,16 +66,15 @@ public:
 };
 
 template<class T>
-class RB_Tree_Node : public Tree_Node<RB_Tree_Node<T> > {
+class balance_Tree_Node : public Tree_Node<balance_Tree_Node<T> > {
 public:
-    RB_Tree_Node() {
+    balance_Tree_Node() {
     }
 
-    ~RB_Tree_Node(void) {
+    ~balance_Tree_Node(void) {
     }
 
     T data;
-    int color_tag;
 
     void inorder_tree_walk(T *node) {
         if (node != nullptr) {
@@ -118,7 +119,7 @@ public:
     }
 
 public:
-    RB_Tree_Node<T> *find_miximum_leaf(RB_Tree_Node *root) {
+    balance_Tree_Node<T> *find_miximum_leaf(balance_Tree_Node *root) {
         if (root == nullptr) {
             return nullptr;
         } else {
@@ -133,8 +134,8 @@ public:
         }
     }
 
-    RB_Tree_Node *tree_insert_value(RB_Tree_Node *root, T data) {
-        RB_Tree_Node &nodes = *new RB_Tree_Node<T>;
+    balance_Tree_Node *tree_insert_value(balance_Tree_Node *root, T data) {
+        balance_Tree_Node &nodes = *new balance_Tree_Node<T>;
         nodes.right = nullptr;
         nodes.left = nullptr;
         nodes.parent = nullptr;
@@ -142,9 +143,9 @@ public:
         return insert_node_to_binary_search_tree(root, nodes);
     }
 
-    RB_Tree_Node *insert_node_to_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &new_node) {
-        RB_Tree_Node *new_root = root;
-        RB_Tree_Node *insert_node = nullptr;
+    balance_Tree_Node *insert_node_to_binary_search_tree(balance_Tree_Node *root, balance_Tree_Node &new_node) {
+        balance_Tree_Node *new_root = root;
+        balance_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
             insert_node = new_root;
             if (insert_node->data < new_node.data) {
@@ -172,7 +173,7 @@ public:
      * @param delete_node
      * @return 返回整个树的根结点
      */
-    RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
+    balance_Tree_Node *delete_node_from_binary_search_tree(balance_Tree_Node *root, balance_Tree_Node &delete_node) {
         if (&delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
             // 删除的是根结点，那么根结点为空
             // 只有一个结点，这里删除完成之后再去在外面free吧，因为是引用，引用最好不要修改
@@ -227,10 +228,14 @@ public:
             }
             // successor 这个时候是算法一个最小的叶子结点了
             successor->parent = delete_node.parent;
-            if (delete_node.parent->left == &delete_node) {
+
+            if (delete_node.parent != nullptr && delete_node.parent->left == &delete_node) {
                 delete_node.parent->left = successor;
-            } else if (delete_node.parent->right == &delete_node) {
+            } else if (delete_node.parent != nullptr && delete_node.parent->right == &delete_node) {
                 delete_node.parent->right = successor;
+            }
+            if (delete_node.parent == nullptr) {
+                root = successor;
             }
             // 清理后继和其父亲的关系
             successor->left = delete_node.left;
@@ -257,7 +262,7 @@ public:
         return root;
     }
 
-    struct RB_Tree_Node *find_root(struct RB_Tree_Node *node) {
+    struct balance_Tree_Node *find_root(struct balance_Tree_Node *node) {
         if (node == nullptr) {
             return nullptr;
         } else {
@@ -268,12 +273,12 @@ public:
         }
     }
 
-    int tree_add_after_node(struct RB_Tree_Node *root, struct RB_Tree_Node *new_node) {
+    int tree_add_after_node(struct balance_Tree_Node *root, struct balance_Tree_Node *new_node) {
         if (root == nullptr) {
             root = new_node; // 这里是添加首个数字的位置
         } else {
-            struct RB_Tree_Node *new_root = root;
-            struct RB_Tree_Node *miximum_leaf = new_node->find_miximum_leaf(new_root);
+            struct balance_Tree_Node *new_root = root;
+            struct balance_Tree_Node *miximum_leaf = new_node->find_miximum_leaf(new_root);
             while (miximum_leaf->parent->right != nullptr) {
                 miximum_leaf = miximum_leaf->parent;
             }
@@ -281,17 +286,17 @@ public:
         }
     }
 
-    int add_node_to_left_child(struct RB_Tree_Node *left) {
+    int add_node_to_left_child(struct balance_Tree_Node *left) {
         this->left = left;
         left->parent = this;
     }
 
-    int add_node_to_right_child(struct RB_Tree_Node *right) {
+    int add_node_to_right_child(struct balance_Tree_Node *right) {
         this->right = right;
         right->parent = this;
     }
 
-    static int add_new_node_before_parent(struct RB_Tree_Node *node, struct RB_Tree_Node *new_node) {
+    static int add_new_node_before_parent(struct balance_Tree_Node *node, struct balance_Tree_Node *new_node) {
         new_node->parent = node->parent;
         new_node->left = node;
         node->parent = new_node;
@@ -302,7 +307,7 @@ public:
         }
     }
 
-    int add_new_node_to_right(struct RB_Tree_Node *node, struct RB_Tree_Node *new_node) {
+    int add_new_node_to_right(struct balance_Tree_Node *node, struct balance_Tree_Node *new_node) {
         new_node->right = node->right; // 新节点的右孩子更新为将要原本的右孩子
         node->right = new_node; // 更新node的右孩子
         new_node->parent = node; // 更新新节点的parent

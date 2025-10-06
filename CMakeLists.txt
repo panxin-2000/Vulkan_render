@@ -51,7 +51,7 @@ add_executable(hello_test
         convex_hull.cpp
         bracket.cpp
         cut_rod.cpp
-        tree_node.cpp
+        test_tree_node.cpp
         test_class.cpp
         test_template.cpp
         test_mutex.cpp

@@ -56,7 +56,7 @@ struct tree_node_calculate_date {
 
 // using tree_node_calculate_alais = RB_Tree_Node<tree_node_calculate_date>;
 
-class tree_node_calculate : public RB_Tree_Node<tree_node_calculate_date> {
+class tree_node_calculate : public balance_Tree_Node<tree_node_calculate_date> {
 public:
     int tree_add_operate_to_tree(struct tree_node_calculate *root, struct tree_node_calculate *new_node) {
         if (root == nullptr) {
