@@ -54,6 +54,7 @@ add_executable(hello_test
         test_tree_node.cpp
         test_class.cpp
         test_template.cpp
+        test_plane_sweep.cpp
         test_mutex.cpp
         test_intersect.cpp
         test_signed_area.cpp

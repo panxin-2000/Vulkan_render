@@ -137,6 +137,12 @@ TEST(test_tree, test_tree_delete_root_3) {
     root = root->tree_insert_value(root, 12);
     root = root->tree_insert_value(root, 13);
 
+    auto new_node = root->tree_find_value(root,5);
+    EXPECT_EQ(new_node->data, 5);
+    EXPECT_EQ(root->left->data, 3);
+    EXPECT_EQ(root->right->data, 7);
+
+
     root = root->delete_node_from_binary_search_tree(root, *root->right);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);

@@ -60,8 +60,10 @@ public:
     }
 
 public:
-
-
+    // 持久树，持久树的目的是为了保存两个操作 persistent
+    // 其实有一个问题，是否可以只用保存一个新的树到叶子结点的链而保存保存整个树中的内容呢？
+    // 这里是没有问题的，从那个结点向上到根之间是需要保存的
+    //
     binary_Tree_Node *tree_insert_value(binary_Tree_Node *root, T data) {
         binary_Tree_Node &nodes = *new binary_Tree_Node<T>;
         nodes.right = nullptr;
@@ -69,6 +71,21 @@ public:
         nodes.parent = nullptr;
         nodes.data = data;
         return insert_node_to_binary_search_tree(root, nodes);
+    }
+
+    binary_Tree_Node *tree_find_value(binary_Tree_Node *root, T data) {
+        binary_Tree_Node *new_root = root;
+        binary_Tree_Node *result_node = nullptr;
+        while (new_root != nullptr) {
+            if (new_root->data < data) {
+                new_root = new_root->right;
+            } else if (new_root->data > data) {
+                new_root = new_root->left;
+            } else {
+                return new_root;
+            }
+        }
+        return result_node;
     }
 
     binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node &new_node) {
@@ -189,6 +206,14 @@ public:
         // 因为最后需要返回根结点，
         return root;
     }
+
+    // 找到给定的值的结点的指针
+    // 从给定的指针中找到前驱和后继
+
+    // 之后才能用于一些相交的判断
+    // 或者说只有先与最近的前驱或后继相交之后才会与其他的相交
+
+    // 还有一个是寻找叶子结点的前驱和后继
 
     // 下面这几个方法移动到基础类中会更好
 
