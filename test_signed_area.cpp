@@ -53,8 +53,6 @@ TEST(triangle, three_point) {
 }
 
 
-
-
 TEST(sort, sort_segment_vector) {
     std::vector<segment_vector> segments{};
     segments.push_back(segment_vector{1, 1});
@@ -86,3 +84,39 @@ TEST(sort, sort_segment_vector) {
 }
 
 
+TEST(sort, sort_segment_vector_2) {
+    std::vector<segment_vector> segments{};
+    segments.push_back(segment_vector{1, 1});
+    segments.push_back(segment_vector{3, 2});
+    segments.push_back(segment_vector{4, 4});
+    segments.push_back(segment_vector{2, 5}); // 最后这个点会消失掉
+    segments.push_back(segment_vector{-1, 6});
+    segments.push_back(segment_vector{-4, 4});
+    segments.push_back(segment_vector{-3, 2});
+    segments.push_back(segment_vector{-5, 1});
+
+    std::vector<segment_vector> &result_segments = calculate_convex_hull(segments);
+
+    std::vector<segment_vector> expect_segments{};
+    expect_segments.push_back(segment_vector{-5, 1});
+    expect_segments.push_back(segment_vector{1, 1});
+    expect_segments.push_back(segment_vector{3, 2});
+    expect_segments.push_back(segment_vector{4, 4});
+    expect_segments.push_back(segment_vector{2, 5});
+    expect_segments.push_back(segment_vector{-1, 6});
+    expect_segments.push_back(segment_vector{-4, 4});
+    // 这里的顺序变化很大的
+    if (result_segments.size() == expect_segments.size()) {
+        for (int i = 0; i < result_segments.size(); ++i) {
+            EXPECT_EQ(result_segments.at(i), expect_segments.at(i)) << "i value: " << i
+        << " result_segments x: " << result_segments.at(i).x
+        << " result_segments y: " << result_segments.at(i).y
+        << " expect_segments x: " << expect_segments.at(i).x
+        << " expect_segments y: " << expect_segments.at(i).y
+        << std::endl;
+            // 这里的打印也很方便，不出现错误的时候是不需要打印的
+        }
+    }else {
+        FAIL() << "result_segments not equal to expect_segments size.";
+    }
+}

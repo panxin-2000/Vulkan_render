@@ -80,17 +80,28 @@ std::vector<segment_vector> &calculate_convex_hull(std::vector<segment_vector> &
                       return false;
                   }
               });
-    std::vector<segment_vector> new_segments = *new std::vector<segment_vector>;
+    // 是的，之前是有问题，全部排序完成之后还需要将最后一个添加到线段中
+    // 将最开始的点也添加到最后，目的是为了防止最后一部分是凹的
+    // 然后导致了需要检查一些内容
+    if (segments.size() >= 3) {
+        segments.push_back(min);
+    } // 只有在大于三个的时候，才会去添加，不大于三个的时候是没有办法添加的，
+    // 因为添加进入会导致判断角度为零
+
+    std::vector<segment_vector> *new_segments = new std::vector<segment_vector>;
     // 直接用new，之后变换为引用
-    new_segments.push_back(min);
+    new_segments->push_back(min);
     // new_segments.push_back(*segments.begin());
     // segments.erase(segments.begin);
     // 上面这两行是可以被注释的，因为只是被增加了，其他并没有问题
 
     for (auto segment: segments) {
-        new_segments.push_back(segment);
+        new_segments->push_back(segment);
         // segments.erase(segments.begin);  // 这里其实应该也并不应该存在，因上面for导致的是有问题的
-        convex_hull_in_order_of_angles(new_segments);
+        convex_hull_in_order_of_angles(*new_segments);
     }
-    return new_segments;
+    if (new_segments->at(0) == new_segments->at(new_segments->size() - 1)) {
+        new_segments->pop_back();
+    }
+    return *new_segments;
 }
