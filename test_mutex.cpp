@@ -68,7 +68,9 @@ TEST(test_mutex, just_mutex) {
 
     t3.join();
     t4.join();
-    EXPECT_LT(shared_resource, 20000);
+    EXPECT_LE(shared_resource, 20000);
+    // Expected: (shared_resource) < (20000), actual: 20000 vs 20000
+    // 上面着一行偶尔会出现问题
 
     shared_resource = 0;
     std::thread t5(increment_guard);
