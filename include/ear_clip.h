@@ -11,7 +11,7 @@
 
 bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
                                      std::vector<segment_vector> &new_segments,
-                                     binary_Tree_Node<segment_vector> &tree_vertices);
+                                     RB_Tree_Node<segment_vector> &tree_vertices);
 
 
 #endif //EAR_CLIP_H

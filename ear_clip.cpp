@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/10/8.
 //
 #include "include/ear_clip.h"
-
+#include "tree_function.h"
 /**
  * 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
  * @param a
@@ -42,8 +42,8 @@ bool no_point_in_line_clockwise_direction_no_efficient(segment_vector a, segment
 
 bool no_point_in_line_clockwise_direction_binary(segment_vector a, segment_vector c,
                                                  segment_vector do_not_care_point,
-                                                 binary_Tree_Node<segment_vector> &tree_vertices_root) {
-    auto vertices = tree_vertices_root.find_interval(a, c);
+                                                 RB_Tree_Node<segment_vector> &tree_vertices_root) {
+    auto vertices = find_interval(tree_vertices_root, a, c);
     for (auto p_vertice: vertices) {
         auto tree_vertice = p_vertice->data;
         if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
@@ -85,7 +85,7 @@ bool ear_clip_algorithm(std::vector<segment_vector> &new_segments,
 
 bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
                                      std::vector<segment_vector> &new_segments,
-                                     binary_Tree_Node<segment_vector> &tree_vertices) {
+                                     RB_Tree_Node<segment_vector> &tree_vertices) {
     if (new_segments.size() < 3) {
         return false;
     }

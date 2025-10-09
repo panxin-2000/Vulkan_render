@@ -50,7 +50,7 @@ TEST(ear_clip, ear_clip) {
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
-    binary_Tree_Node<segment_vector> *tree_vertices = nullptr;
+    RB_Tree_Node<segment_vector> *tree_vertices = nullptr;
     tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{-2, 3});
     tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{0, 0});
     tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{3, 2});
