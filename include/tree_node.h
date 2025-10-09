@@ -46,6 +46,30 @@ public:
         return return_node;
     }
 
+    bool left_rotate(T *node) {
+        if (node != nullptr && node->right == nullptr) {
+            return false;
+        } else {
+            auto temp_node_right = node->right;
+            node->right = node->right->left;
+            temp_node_right->parent = node->parent;
+            temp_node_right->left = node;
+            node->parent = temp_node_right;
+        }
+    }
+
+    static bool right_rotate(T *node) {
+        if (node != nullptr && node->left == nullptr) {
+            return false;
+        } else {
+            auto temp_node_left = node->left;
+            node->left = temp_node_left->right;
+            temp_node_left->parent = node->parent;
+            temp_node_left->right = node;
+            node->parent = temp_node_left;
+        }
+    }
+
     T *tree_maximum(T *tree_node) {
         T *return_node = nullptr;
         while (tree_node != nullptr) {
@@ -87,6 +111,5 @@ public:
         }
     }
 };
-
 
 #endif //TREE_NODE_H
