@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "binary_Tree_Node.h"
+#include "tree_function.h"
 
 
 TEST(test_tree, test_tree_insert) {
@@ -137,7 +138,7 @@ TEST(test_tree, test_tree_delete_root_3) {
     root = root->tree_insert_value(root, 12);
     root = root->tree_insert_value(root, 13);
 
-    auto new_node = root->tree_find_value(root,5);
+    auto new_node = tree_find_value(root,5);
     EXPECT_EQ(new_node->data, 5);
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 7);
