@@ -68,7 +68,6 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
     if (new_segments.size() < 3) {
         return false;
     }
-
     // 首先拿到前三个，
     while (new_segments.size() > 3) {
         segment_vector a = new_segments.at(0);
@@ -83,11 +82,6 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
             new_segments.erase(new_segments.begin() + 1);
             triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
             result_segments.push_back(t);
-            // std::cout << "  expect_triangles.push_back(triangle{"
-            //         << "{" << a.x << "," << a.y << "},"
-            //         << "{" << b.x << "," << b.y << "},"
-            //         << "{" << c.x << "," << c.y << "}" << "});"
-            //         << std::endl;
         } else {
             // 需要将这三个点作为一个三角形进行输出
             segment_vector set_to_last = *new_segments.begin();
@@ -106,13 +100,6 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
         };
         result_segments.push_back(t);
         return true;
-
-        // std::cout << "  expect_triangles.push_back(triangle{"
-        //         << "{" << new_segments.at(0).x << "," << new_segments.at(0).y << "},"
-        //         << "{" << new_segments.at(1).x << "," << new_segments.at(1).y << "},"
-        //         << "{" << new_segments.at(2).x << "," << new_segments.at(2).y << "}" << "});"
-        //         << std::endl;
     }
-
     return false;
 }
