@@ -50,9 +50,20 @@ TEST(ear_clip, ear_clip) {
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
+    binary_Tree_Node<segment_vector> *tree_vertices = nullptr;
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{-2, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{0, 0});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{3, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{5, 1});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{7, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{5, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{3, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{2, 5});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{1, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{-1, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{0, 5});
 
-
-    if (ear_clip_algorithm_no_efficient(result_segments, segments, copy_vertices) == true &&
+    if (ear_clip_algorithm_no_efficient(result_segments, segments, *tree_vertices) == true &&
         result_segments.size() == expect_triangles.size()) {
         for (int i = 0; i < result_segments.size(); ++i) {
             EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i

@@ -39,6 +39,27 @@ bool no_point_in_line_clockwise_direction_no_efficient(segment_vector a, segment
     return true;
 }
 
+
+bool no_point_in_line_clockwise_direction_binary(segment_vector a, segment_vector c,
+                                                 segment_vector do_not_care_point,
+                                                 binary_Tree_Node<segment_vector> &tree_vertices_root) {
+    auto vertices = tree_vertices_root.find_interval(a, c);
+    for (auto p_vertice: vertices) {
+        auto tree_vertice = p_vertice->data;
+        if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
+            (tree_vertice.x < a.x && tree_vertice.x > c.x && !(do_not_care_point == tree_vertice))) {
+            segment_vector b = tree_vertice;
+            segment_vector ab = b - a;
+            segment_vector ac = c - a;
+            float area = ac.single_area(ab);
+            if (area <= 0) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 bool ear_clip_algorithm(std::vector<segment_vector> &new_segments,
                         RB_Tree_Node<segment_vector> &tree_vertices) {
     // 首先拿到前三个，
@@ -64,7 +85,7 @@ bool ear_clip_algorithm(std::vector<segment_vector> &new_segments,
 
 bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
                                      std::vector<segment_vector> &new_segments,
-                                     std::vector<segment_vector> &tree_vertices) {
+                                     binary_Tree_Node<segment_vector> &tree_vertices) {
     if (new_segments.size() < 3) {
         return false;
     }
@@ -77,11 +98,15 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
         segment_vector ab = b - a;
         segment_vector ac = c - a;
         float area = ab.single_area(ac);
-        if (area >= 0 && no_point_in_line_clockwise_direction_no_efficient(a, c, b, tree_vertices)) {
+        if (area >= 0 && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             new_segments.erase(new_segments.begin() + 1);
             triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
             result_segments.push_back(t);
+            // 应该是需要删除的，之后我看看，怎么写一个需要删除的例子
+            // tree_vertices.delete_node_from_binary_search_tree(&tree_vertices,
+            //                                                   tree_vertices.tree_find_value(
+            //                                                       &tree_vertices, new_segments.at(2)));
         } else {
             // 需要将这三个点作为一个三角形进行输出
             segment_vector set_to_last = *new_segments.begin();

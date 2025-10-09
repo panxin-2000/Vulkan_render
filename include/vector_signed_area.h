@@ -6,10 +6,14 @@
 #define VECTOR_SIGNED_AREA_H
 
 #include <vector>
+
 class segment_vector {
 public:
     float x;
     float y;
+
+    segment_vector() {
+    }
 
     segment_vector(float x1, float y1);
 
@@ -22,6 +26,8 @@ public:
 };
 
 bool operator==(const segment_vector &L, const segment_vector &R);
+
+bool operator<(const segment_vector &L, const segment_vector &R);
 
 
 typedef segment_vector triangle_position;

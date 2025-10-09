@@ -41,6 +41,48 @@ public:
         }
     }
 
+    std::vector<binary_Tree_Node<T> *> find_interval(T &left_node, T &right_node) {
+        //
+        auto new_left_node = left_node;
+        auto new_right_node = right_node;
+        if (right_node < left_node) {
+            std::swap(new_left_node, new_right_node);
+        }
+        auto root = this;
+        std::vector<binary_Tree_Node<T> *> result = *new std::vector<binary_Tree_Node<T> *>;
+        // 找到最小值和最大值
+        auto min_node = root->tree_find_value(root, new_left_node); //其实这里是稍微有点问题的
+        auto max_node = root->tree_find_value(root, new_right_node); //大部分情况是是取一个间隔，并不能准确的对应的值
+        if (min_node == nullptr || max_node == nullptr) {
+            return result;
+        }
+        // 已经拿到最小值了，最小值的向右都比最小值大
+        // 先遍历最小值大右子树，每个都添加到向量中，
+        // 不用那么麻烦，找后继就好，直到找到了最大值，
+        // 这些值都添加到向量中
+        // while (min_node->tree_successor(min_node) != nullptr) {
+        //     // 这里稍微有点死循环
+        //     auto temp = min_node->tree_successor(min_node);
+        //     result.push_back(temp);
+        //     min_node = temp;
+        //     if (temp == max_node) {
+        //         break;
+        //     }
+        // }
+        while (max_node->tree_predecessor(max_node) != nullptr) {
+            // 这里稍微有点死循环
+            auto temp = max_node->tree_predecessor(max_node);
+            result.push_back(temp);
+            max_node = temp;
+            if (temp == min_node) {
+                break;
+            }
+        }
+
+
+        return result;
+    }
+
     void level_tree_walk(T *node) {
         std::queue<T *> tem;
         if (node != nullptr) {
@@ -79,7 +121,7 @@ public:
         while (new_root != nullptr) {
             if (new_root->data < data) {
                 new_root = new_root->right;
-            } else if (new_root->data > data) {
+            } else if (data < new_root->data) {
                 new_root = new_root->left;
             } else {
                 return new_root;
@@ -88,6 +130,12 @@ public:
         return result_node;
     }
 
+    /**
+     * 确定一下返回值，返回值总是返回树的根
+     * @param root
+     * @param new_node
+     * @return
+     */
     binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node &new_node) {
         binary_Tree_Node *new_root = root;
         binary_Tree_Node *insert_node = nullptr;

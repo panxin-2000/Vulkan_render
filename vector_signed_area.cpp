@@ -24,6 +24,15 @@ bool operator==(const segment_vector &L, const segment_vector &R) {
     return false;
 }
 
+// 其实感觉不应该用这个的，但是暂时没有办法，就先用这个吧，应该和sort一样，
+// 增加一个添加函数的接口的
+bool operator<(const segment_vector &L, const segment_vector &R) {
+    if (L.x < R.x) {
+        return true;
+    }
+    return false;
+}
+
 bool operator==(const triangle &L, const triangle &R) {
     if (L.a == R.a && L.b == R.b && L.c == R.c) {
         return true;
