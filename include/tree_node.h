@@ -17,24 +17,24 @@ public:
         if (tree_node->right != nullptr) {
             return tree_minimum(tree_node->right);
         }
-        T *y = tree_node->parent;
-        while (y != nullptr && y->right == tree_node) {
-            tree_node = y;
-            y = y->parent;
+        T *result_node = tree_node->parent;
+        while (result_node != nullptr && result_node->right == tree_node) {
+            tree_node = result_node;
+            result_node = result_node->parent;
         }
-        return tree_node;
+        return result_node;
     }
 
     T *tree_predecessor(T *tree_node) {
         if (tree_node->left != nullptr) {
-            return tree_minimum(tree_node->left);
+            return tree_maximum(tree_node->left);
         }
-        T *y = tree_node->parent;
-        while (y != nullptr && y->left == tree_node) {
-            tree_node = y;
-            y = y->parent;
+        T *result_node = tree_node->parent;
+        while (result_node != nullptr && result_node->left == tree_node) {
+            tree_node = result_node;
+            result_node = result_node->parent;
         }
-        return tree_node;
+        return result_node;
     }
 
     T *tree_minimum(T *tree_node) {
@@ -47,10 +47,12 @@ public:
     }
 
     T *tree_maximum(T *tree_node) {
+        T *return_node = nullptr;
         while (tree_node != nullptr) {
+            return_node = tree_node;
             tree_node = tree_node->right;
         }
-        return tree_node;
+        return return_node;
     }
 
     T *find_root(T *node) {
