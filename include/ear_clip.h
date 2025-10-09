@@ -9,8 +9,9 @@
 #include "vector_signed_area.h"
 #include "RB_tree_node.h"
 
-bool ear_clip_algorithm_no_efficient(std::vector<segment_vector> &new_segments,
-                                    std::vector<segment_vector> &tree_vertices);
+bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
+                                     std::vector<segment_vector> &new_segments,
+                                     std::vector<segment_vector> &tree_vertices);
 
 
 #endif //EAR_CLIP_H

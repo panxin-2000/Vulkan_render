@@ -32,6 +32,9 @@ struct triangle {
     triangle_position c;
 };
 
+bool operator==(const triangle &L, const triangle &R);
+
+
 bool on_segment(const segment_vector &a, segment_vector &b, segment_vector &c);
 
 struct segment_position {

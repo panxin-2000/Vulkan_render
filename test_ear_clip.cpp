@@ -38,5 +38,30 @@ TEST(ear_clip, ear_clip) {
         copy_vertices.push_back(vertice);
     }
 
-    ear_clip_algorithm_no_efficient(segments, copy_vertices);
+
+    std::vector<triangle> expect_triangles{};
+    std::vector<triangle> result_segments{};
+    expect_triangles.push_back(triangle{{3, 2}, {5, 1}, {7, 2}});
+    expect_triangles.push_back(triangle{{3, 2}, {7, 2}, {5, 3}});
+    expect_triangles.push_back(triangle{{3, 2}, {5, 3}, {3, 3}});
+    expect_triangles.push_back(triangle{{3, 2}, {3, 3}, {2, 5}});
+    expect_triangles.push_back(triangle{{3, 2}, {2, 5}, {1, 2}});
+    expect_triangles.push_back(triangle{{-1, 3}, {0, 5}, {-2, 3}});
+    expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
+    expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
+    expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
+
+
+    if (ear_clip_algorithm_no_efficient(result_segments, segments, copy_vertices) == true &&
+        result_segments.size() == expect_triangles.size()) {
+        for (int i = 0; i < result_segments.size(); ++i) {
+            EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i
+        << std::endl;
+            // 这里的打印也很方便，不出现错误的时候是不需要打印的
+        }
+    } else {
+        FAIL() << "ear_clip_algorithm_no_efficient failed "
+        << " or  result_segments.size() != expect_triangles.size()" << std::endl;
+    }
+    // 拿到了正确的输入的结果，只不过是强行拿到的，并不是自己手动计算处理的，所以结果必然是正确的
 }

@@ -17,8 +17,15 @@ segment_vector segment_vector::operator+(const segment_vector &R) {
     return temp;
 }
 
-bool operator==(const segment_vector &L,const segment_vector &R) {
+bool operator==(const segment_vector &L, const segment_vector &R) {
     if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
+        return true;
+    }
+    return false;
+}
+
+bool operator==(const triangle &L, const triangle &R) {
+    if (L.a == R.a && L.b == R.b && L.c == R.c) {
         return true;
     }
     return false;
