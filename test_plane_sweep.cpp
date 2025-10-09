@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "binary_Tree_Node.h"
+#include "tree_function.h"
 
 // 既然我们这里需要使用plane sweep 算法，
 // 那么先说说这个算法是怎么实现的呢？
@@ -106,7 +107,7 @@ TEST(test_edge, test_create_edge) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换还是
-        } else if (root->tree_find_value(root,
+        } else if (tree_find_value(root,
                                          copy_vertices.top().incident_half_edge - (
                                              copy_vertices.top().incident_half_edge % 2))
                    == nullptr) {
