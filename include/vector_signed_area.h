@@ -5,6 +5,7 @@
 #ifndef VECTOR_SIGNED_AREA_H
 #define VECTOR_SIGNED_AREA_H
 
+#include <vector>
 class segment_vector {
 public:
     float x;

@@ -55,6 +55,8 @@ add_executable(hello_test
         test_class.cpp
         test_template.cpp
         test_plane_sweep.cpp
+        ear_clip.cpp
+        test_ear_clip.cpp
         test_mutex.cpp
         test_intersect.cpp
         test_signed_area.cpp
