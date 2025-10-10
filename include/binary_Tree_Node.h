@@ -75,7 +75,6 @@ public:
     }
 
 
-
     /**
      * 确定一下返回值，返回值总是返回树的根
      * @param root
@@ -178,10 +177,13 @@ public:
             }
             // 清理后继和其父亲的关系
             successor->left = delete_node.left;
-            successor->left->parent = successor;
-
+            if (successor->left != nullptr) {
+                successor->left->parent = successor;
+            }
             successor->right = delete_node.right;
-            successor->right->parent = successor;
+            if (successor->right != nullptr) {
+                successor->right->parent = successor;
+            }
             // 将后继与被删除的结点进行替换
             // return find_root(successor);
             //这里变更了根结点吗？并没有，所以不需要上面那一行
@@ -254,8 +256,6 @@ public:
         }
     }
 };
-
-
 
 
 #endif //BALANCE_TREE_NODE_H

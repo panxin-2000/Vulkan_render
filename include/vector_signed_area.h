@@ -41,13 +41,15 @@ struct triangle {
 bool operator==(const triangle &L, const triangle &R);
 
 
-bool on_segment(const segment_vector &a, segment_vector &b, segment_vector &c);
+bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_vector &segment_end_point, segment_vector &test_point);
 
 struct segment_position {
     segment_vector start_point;
     segment_vector end_point;
 
     bool intersection(struct segment_position &R_segment_position);
+
+    bool get_intersection_point(struct segment_position &R_segment_position, segment_vector *result);
 };
 
 bool convex_hull_in_order_of_angles(std::vector<segment_vector> &new_segments);

@@ -57,16 +57,49 @@ float segment_vector::single_area(const segment_vector &R) {
     return this->x * R.y - this->y * R.x;
 }
 
-
-bool on_segment(const segment_vector &a, segment_vector &b, segment_vector &c) {
-    if (std::min(a.x, b.x) <= c.x &&
-        c.x <= std::max(a.x, b.x) &&
-        std::min(a.y, b.y) <= c.y &&
-        c.y <= std::max(a.y, b.y))
+/**
+ * 这里的on_segment 函数名并不是很对，只是判断了 测试点 是否在 线段的包围盒内
+ * @param segment_start_point
+ * @param segment_end_point
+ * @param test_point
+ * @return
+ */
+bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_vector &segment_end_point,
+                             segment_vector &test_point) {
+    if (std::min(segment_start_point.x, segment_end_point.x) <= test_point.x &&
+        test_point.x <= std::max(segment_start_point.x, segment_end_point.x) &&
+        std::min(segment_start_point.y, segment_end_point.y) <= test_point.y &&
+        test_point.y <= std::max(segment_start_point.y, segment_end_point.y))
         return true;
     return false;
 }
 
+bool segment_position::get_intersection_point(struct segment_position &R_segment_position, segment_vector *result) {
+    // 已知两条线段相交怎么求交点？
+    // y_0 = a_0 * x + b_0
+    // y_1 = a_1 * x + b_1
+    // a_0 * x + b_0 = a_1 * x + b_1
+    //  b_0 - b_1  = (a_1 - a_0) * x
+    //  b_0 - b_1
+    // -----------  =  X
+    //  a_1 - a_0
+    //  y = a_0 * x + b_0
+    // a_1 - a_0 == 0 时 为平行线
+    segment_vector ab = this->end_point - this->start_point;
+    float a_0 = ab.y / ab.x;
+    float b_0 = this->start_point.y - a_0 * this->start_point.x;
+    segment_vector cd = R_segment_position.end_point - R_segment_position.start_point;
+    float a_1 = cd.y / cd.x;
+    float b_1 = R_segment_position.start_point.y - a_1 * R_segment_position.start_point.x;
+    if (std::abs(a_1 - a_0) < 0.000001) {
+        //错误的
+        return false;
+    } else {
+        result->x = (b_0 - b_1) / (a_1 - a_0);
+        result->y = a_0 * result->x + b_0;
+        return true;
+    }
+}
 
 bool segment_position::intersection(struct segment_position &R_segment_position) {
     segment_vector ab = this->end_point - this->start_point;
@@ -89,13 +122,15 @@ bool segment_position::intersection(struct segment_position &R_segment_position)
     }
     // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
     // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
-    if (f1 == 0 && on_segment(this->start_point, this->end_point, R_segment_position.start_point))
+    if (f1 == 0 && on_segment_bounding_box(this->start_point, this->end_point, R_segment_position.start_point))
         return true;
-    if (f2 == 0 && on_segment(this->start_point, this->end_point, R_segment_position.end_point))
+    if (f2 == 0 && on_segment_bounding_box(this->start_point, this->end_point, R_segment_position.end_point))
         return true;
-    if (f3 == 0 && on_segment(R_segment_position.start_point, R_segment_position.end_point, this->start_point))
+    if (f3 == 0 && on_segment_bounding_box(R_segment_position.start_point, R_segment_position.end_point,
+                                           this->start_point))
         return true;
-    if (f3 == 0 && on_segment(R_segment_position.start_point, R_segment_position.end_point, this->end_point))
+    if (f4 == 0 && on_segment_bounding_box(R_segment_position.start_point, R_segment_position.end_point,
+                                           this->end_point))
         return true;
     return false;
 }
