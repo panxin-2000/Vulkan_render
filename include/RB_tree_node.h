@@ -20,7 +20,6 @@ public:
 
     T data;
 
-    int color;
 
     // 持久树，持久树的目的是为了保存两个操作 persistent
     // 其实有一个问题，是否可以只用保存一个新的树到叶子结点的链而保存保存整个树中的内容呢？
@@ -31,6 +30,8 @@ public:
         RB_Tree_BLACK = 0,
         RB_Tree_RED = 1,
     };
+
+    RB_Tree_Node_color color;
 
     // static binary_Tree_Node<T> *get_nil(void) {
     //     static binary_Tree_Node<T> *nil = nullptr;
@@ -59,13 +60,14 @@ public:
      */
     bool RB_insert_fix(RB_Tree_Node *root, RB_Tree_Node *new_node) {
         // 问题是什么？nil还是需要清理的？什么时候清理呢？
-        while (new_node->color == RB_Tree_RED && new_node->parent != nullptr && new_node->parent->parent != nullptr &&
-               new_node->parent->color == RB_Tree_RED) {
+
+        while (new_node->color == RB_Tree_RED && new_node->parent != nullptr &&
+               new_node->parent->parent != nullptr && new_node->parent->color == RB_Tree_RED) {
             auto grandfather = new_node->parent->parent;
             if (new_node->parent == grandfather->left) {
                 auto uncle = grandfather->right;
                 if (uncle != nullptr && uncle->color == RB_Tree_RED) {
-                    uncle->color == RB_Tree_BLACK;
+                    uncle->color = RB_Tree_BLACK;
                     grandfather->color = RB_Tree_RED;
                     new_node->parent->color = RB_Tree_BLACK;
                     new_node = grandfather;
@@ -82,9 +84,9 @@ public:
                 auto uncle = grandfather->left;
                 // uncle 为 null 的情况也是需要考虑的
                 if (uncle != nullptr && uncle->color == RB_Tree_RED) {
-                    uncle->color == RB_Tree_BLACK;
+                    uncle->color = RB_Tree_BLACK;
                     grandfather->color = RB_Tree_RED;
-                    new_node->parent->color = RB_Tree_RED;
+                    new_node->parent->color = RB_Tree_BLACK;
                     new_node = grandfather;
                 } else if ((uncle == nullptr || uncle->color == RB_Tree_BLACK) && new_node == new_node->parent->left) {
                     new_node = new_node->parent;
@@ -95,6 +97,9 @@ public:
                     new_node->left_rotate(grandfather);
                 }
             }
+        }
+        if (new_node->color == RB_Tree_RED && new_node->parent == nullptr) {
+            new_node->color = RB_Tree_BLACK;
         }
     }
 
@@ -136,7 +141,7 @@ public:
             // 那么这里就是两个红色结点了，是需要调整的，之后的情况，我已经不能纯粹的记住了
             RB_insert_fix(root, &new_node);
         }
-        return root;
+        return root->find_root(root); // 这里的问题，返回的估计有问题，在去查找一遍根结点，之后再返回吧
     }
 
     RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
