@@ -52,7 +52,16 @@ public:
         } else {
             auto temp_node_right = node->right;
             node->right = node->right->left;
+            if (node->right != nullptr) {
+                node->right->parent = node; // 还需要判空
+            }
             temp_node_right->parent = node->parent;
+            if (node->parent == nullptr) {
+            } else if (node == node->parent->left) {
+                node->parent->left = temp_node_right;
+            } else if (node == node->parent->right) {
+                node->parent->right = temp_node_right;
+            }
             temp_node_right->left = node;
             node->parent = temp_node_right;
         }
@@ -64,7 +73,16 @@ public:
         } else {
             auto temp_node_left = node->left;
             node->left = temp_node_left->right;
+            if (node->left != nullptr) {
+                node->left->parent = node;
+            }
             temp_node_left->parent = node->parent;
+            if (node->parent == nullptr) {
+            } else if (node == node->parent->left) {
+                node->parent->left = temp_node_left;
+            } else if (node == node->parent->right) {
+                node->parent->right = temp_node_left;
+            }
             temp_node_left->right = node;
             node->parent = temp_node_left;
         }
