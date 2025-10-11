@@ -17,6 +17,11 @@ segment_vector segment_vector::operator+(const segment_vector &R) {
     return temp;
 }
 
+bool segment_vector::operator==(const segment_vector &R) {
+    if (this->x == R.x && this->y == R.y) return true;
+    else return false;
+}
+
 bool operator==(const segment_vector &L, const segment_vector &R) {
     if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
         return true;

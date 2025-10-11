@@ -49,6 +49,13 @@ struct vertex_xy {
         }
         return false;
     }
+
+    bool operator==(const vertex_xy &right) const {
+        if (x == right.x && y == right.y && incident_half_edge == right.incident_half_edge) {
+            return true;
+        }
+        return false;
+    }
 };
 
 

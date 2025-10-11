@@ -86,7 +86,7 @@ public:
         binary_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
             insert_node = new_root;
-            if (insert_node->data < new_node.data) {
+            if (insert_node->data < new_node.data) { // 新插入的结点在比较的后面
                 new_root = new_root->right;
             } else {
                 new_root = new_root->left;

@@ -19,6 +19,8 @@ public:
 
     segment_vector operator+(const segment_vector &R);
 
+    bool operator==(const segment_vector &R);
+
 
     segment_vector operator-(const segment_vector &R);
 
@@ -41,7 +43,8 @@ struct triangle {
 bool operator==(const triangle &L, const triangle &R);
 
 
-bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_vector &segment_end_point, segment_vector &test_point);
+bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_vector &segment_end_point,
+                             segment_vector &test_point);
 
 struct segment_position {
     segment_vector start_point;
