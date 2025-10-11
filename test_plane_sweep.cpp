@@ -35,10 +35,10 @@ struct vertex_xy {
     int incident_half_edge;
     int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
     bool operator<(const vertex_xy &right) const {
-        if (x < right.x) {
+        if (y < right.y) {
             // 先比较x轴，x轴小的为小
             return true;
-        } else if (x == right.x && y < right.y) {
+        } else if (y == right.y && x < right.x) {
             // 之后再比较y轴，y轴小的为小
             return true;
         } else if (x == right.x && y == right.y) {
@@ -118,9 +118,8 @@ int get_same_edge_index(int incident_half_edge) {
     return incident_half_edge - (incident_half_edge % 2);
 }
 
-bool if_half_edge_in_tree(binary_Tree_Node<half_edge_index> *root, int incident_half_edge) {
-    if (tree_find_value(root, get_same_edge_index(incident_half_edge))
-        == nullptr) {
+bool if_half_edge_in_tree(binary_Tree_Node<vertex_xy> *root, vertex_xy temp_vertex) {
+    if (tree_find_value(root, temp_vertex) == nullptr) {
         return false;
     } else {
         return true;
@@ -160,6 +159,12 @@ struct half_edge_struct {
         segment_position result{start_point, end_point};
         return result;
     }
+
+    vertex_xy &get_vertex_xy(int incident_half_edge) {
+        int same_edge_index = get_same_edge_index(incident_half_edge);
+        int vertex_index_end_point = half_edges.at(same_edge_index).vertex_index;
+        return vertices.at(vertex_index_end_point);
+    }
 };
 
 // 然后我怎么才能建立这个结构呢？
@@ -186,40 +191,77 @@ TEST(test_edge, test_create_edge) {
         temp.if_intersect = 0;
         event_points.push(temp);
     }
-    binary_Tree_Node<half_edge_index> *root;
+    binary_Tree_Node<vertex_xy> *root; // 忽然发现这里插入的时候是有问题的
     for (; event_points.empty() == false;) {
         auto current_half_edge = event_points.top().incident_half_edge;
+        vertex_xy current_vertex{event_points.top().x, event_points.top().y, current_half_edge};
+        auto temp_vertex_xy = hf.get_vertex_xy(current_half_edge);
         if (event_points.top().if_intersect == true) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
-        } else if (if_half_edge_in_tree(root, current_half_edge) == false) {
-            root = root->tree_insert_value(root, current_half_edge);
-            auto current_half_edge_node = tree_find_value(root, current_half_edge);
+            auto intersect_vertex = event_points.top();
+            auto intersect_half_edge_1_vertex = hf.get_vertex_xy(intersect_vertex.intersect_half_edge_1);
+            auto intersect_half_edge_2_vertex = hf.get_vertex_xy(intersect_vertex.intersect_half_edge_2);
+
+            auto intersect_half_edge_1_vertex_node = tree_find_value(root, intersect_half_edge_1_vertex);
+            auto intersect_half_edge_2_vertex_node = tree_find_value(root, intersect_half_edge_2_vertex);
+            std::swap(intersect_half_edge_1_vertex_node->data, intersect_half_edge_2_vertex_node->data);
+            // 可以交换，但是交换完的时候，索引就是有问题的
+            // 这时候你就不能按照比较去索引了，
+            // 交换完前驱或者后继一定是对的，但是从树中找这个点是有可能找不到的
+            // 用什么去表示呢？ 起点与斜率两个来共同表示，
+            // 是的，只能这么来表示，然后在添加新的线段的时候比较函数需要修改修改
+            // 发现相交之后应该只是交换，应该没有问题，能拿到起点和斜率
+            // 以前想的都是定值的比较，这里开了一个新的大门，就是函数或者说数学形式的比较。
+
+
+        } else if (if_half_edge_in_tree(root, current_vertex) == false) {
+            root = root->tree_insert_value(root, current_vertex);
+            auto current_half_edge_node = tree_find_value(root, current_vertex);
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             if (current_half_edge_node != nullptr && predecessor_half_edge_node != nullptr) {
                 // 两条线段判断是否相交
-                segment_position ab = hf.get_segment_from_node(current_half_edge_node->data);
-                segment_position cd = hf.get_segment_from_node(predecessor_half_edge_node->data);
+                segment_position ab = hf.get_segment_from_node(current_half_edge_node->data.incident_half_edge);
+                segment_position cd = hf.get_segment_from_node(predecessor_half_edge_node->data.incident_half_edge);
 
                 if (ab.intersection(cd) == true) {
                     // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
                     segment_vector result;
                     if (ab.get_intersection_point(cd, &result) == true) {
-                        std::cout << " intersect point" << result.x << "  " << result.y << std::endl;
+                        std::cout << " intersect point :" << result.x << "  " << result.y << std::endl;
+                        event_point temp;
+                        temp.x = result.x;
+                        temp.y = result.y;
+                        temp.incident_half_edge = -1;
+                        temp.intersect_half_edge_1 = current_half_edge_node->data.incident_half_edge;
+                        temp.intersect_half_edge_2 = predecessor_half_edge_node->data.incident_half_edge;
+                        temp.if_intersect = 1;
+                        event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
+                        // 还需要把相交的点插入一个vector中，用于之后的输出
                     }
                 }
             }
             if (current_half_edge_node != nullptr && successor_half_edge_node != nullptr) {
                 // 两条线段判断是否相交
-                segment_position ab = hf.get_segment_from_node(current_half_edge_node->data);
-                segment_position cd = hf.get_segment_from_node(successor_half_edge_node->data); // 这有问题，导致了死机
+                segment_position ab = hf.get_segment_from_node(current_half_edge_node->data.incident_half_edge);
+                segment_position cd = hf.get_segment_from_node(successor_half_edge_node->data.incident_half_edge);
+                // 这有问题，导致了死机
                 if (ab.intersection(cd) == true) {
                     // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
                     segment_vector result;
                     if (ab.get_intersection_point(cd, &result) == true) {
-                        std::cout << " intersect point " << result.x << "  " << result.y << std::endl;
+                        std::cout << " intersect point :" << result.x << "  " << result.y << std::endl;
+                        event_point temp;
+                        temp.x = result.x;
+                        temp.y = result.y;
+                        temp.incident_half_edge = -1;
+                        temp.intersect_half_edge_1 = current_half_edge_node->data.incident_half_edge;
+                        temp.intersect_half_edge_2 = predecessor_half_edge_node->data.incident_half_edge;
+                        temp.if_intersect = 1;
+                        event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
+                        // 还需要把相交的点插入一个vector中，用于之后的输出
                     }
                 }
             }
@@ -227,7 +269,7 @@ TEST(test_edge, test_create_edge) {
             // 如果相交，判断相交点与扫描线的关系，在扫描线下就将新的交点加入队列中
             // 这里会有一个新的问题，原本只需要判断是否是端点，现在还需要判断是否是线段中的交点
         } else {
-            auto delate_node = tree_find_value(root, get_same_edge_index(current_half_edge));
+            auto delate_node = tree_find_value(root, current_vertex);
             root = root->delete_node_from_binary_search_tree(root, *delate_node);
 
 
