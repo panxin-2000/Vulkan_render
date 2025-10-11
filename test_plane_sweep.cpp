@@ -59,6 +59,30 @@ struct vertex_xy {
 };
 
 
+struct segment_start_point_and_gradient {
+    float x, y;
+    float gradient;
+    float compare_x_position;
+    int incident_half_edge;
+    // 只给了点与射线，没有给需要比较多位置
+    bool operator<(const segment_start_point_and_gradient &right) const {
+        float current_segment_y = y + gradient * (right.compare_x_position - x);
+        float right_segment_y = right.y + right.gradient * (right.compare_x_position - right.x);
+        if (current_segment_y < right_segment_y) {
+            return true;
+        }
+        return false;
+    }
+
+    bool operator==(const segment_start_point_and_gradient &right) const {
+        if (x == right.x && y == right.y && gradient == right.gradient) {
+            return true;
+        }
+        return false;
+    }
+};
+
+
 struct event_point {
     float x, y;
     int incident_half_edge;
@@ -118,8 +142,9 @@ int get_same_edge_index(int incident_half_edge) {
     return incident_half_edge - (incident_half_edge % 2);
 }
 
-bool if_half_edge_in_tree(binary_Tree_Node<vertex_xy> *root, vertex_xy temp_vertex) {
-    if (tree_find_value(root, temp_vertex) == nullptr) {
+template<typename T>
+bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
+    if (tree_find_value(root, temp) == nullptr) {
         return false;
     } else {
         return true;
@@ -167,6 +192,21 @@ struct half_edge_struct {
     }
 };
 
+segment_start_point_and_gradient &get_segment_start_point_and_gradient(half_edge_struct &hf, int incident_half_edge) {
+    segment_start_point_and_gradient *temp = new segment_start_point_and_gradient;
+    segment_position current_segment = hf.get_segment_from_node(incident_half_edge);
+    temp->compare_x_position = current_segment.end_point.x;
+    if (current_segment.end_point.x < current_segment.start_point.x) {
+        std::swap(current_segment.start_point, current_segment.end_point);
+    }
+    temp->x = current_segment.start_point.x;
+    temp->y = current_segment.start_point.y;
+    temp->incident_half_edge = incident_half_edge;
+    temp->gradient = (current_segment.end_point.y - current_segment.start_point.y) /
+                     (current_segment.end_point.x - current_segment.start_point.x);
+    return *temp;
+}
+
 // 然后我怎么才能建立这个结构呢？
 //  其实应该先写一个最简单暴力的来，不然不太好玩
 //
@@ -191,19 +231,20 @@ TEST(test_edge, test_create_edge) {
         temp.if_intersect = 0;
         event_points.push(temp);
     }
-    binary_Tree_Node<vertex_xy> *root; // 忽然发现这里插入的时候是有问题的
+    binary_Tree_Node<segment_start_point_and_gradient> *root; // 忽然发现这里插入的时候是有问题的
     for (; event_points.empty() == false;) {
         auto current_half_edge = event_points.top().incident_half_edge;
         vertex_xy current_vertex{event_points.top().x, event_points.top().y, current_half_edge};
-        auto temp_vertex_xy = hf.get_vertex_xy(current_half_edge);
         if (event_points.top().if_intersect == true) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
             auto intersect_vertex = event_points.top();
-            auto intersect_half_edge_1_vertex = hf.get_vertex_xy(intersect_vertex.intersect_half_edge_1);
-            auto intersect_half_edge_2_vertex = hf.get_vertex_xy(intersect_vertex.intersect_half_edge_2);
-
+            auto intersect_half_edge_1_vertex = get_segment_start_point_and_gradient(
+                hf, intersect_vertex.intersect_half_edge_1);
+            auto intersect_half_edge_2_vertex = get_segment_start_point_and_gradient(
+                hf, intersect_vertex.intersect_half_edge_2);
+            // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
             auto intersect_half_edge_1_vertex_node = tree_find_value(root, intersect_half_edge_1_vertex);
             auto intersect_half_edge_2_vertex_node = tree_find_value(root, intersect_half_edge_2_vertex);
             std::swap(intersect_half_edge_1_vertex_node->data, intersect_half_edge_2_vertex_node->data);
@@ -214,11 +255,10 @@ TEST(test_edge, test_create_edge) {
             // 是的，只能这么来表示，然后在添加新的线段的时候比较函数需要修改修改
             // 发现相交之后应该只是交换，应该没有问题，能拿到起点和斜率
             // 以前想的都是定值的比较，这里开了一个新的大门，就是函数或者说数学形式的比较。
-
-
-        } else if (if_half_edge_in_tree(root, current_vertex) == false) {
-            root = root->tree_insert_value(root, current_vertex);
-            auto current_half_edge_node = tree_find_value(root, current_vertex);
+        } else if (if_half_edge_in_tree(root, get_segment_start_point_and_gradient(hf, current_half_edge)) == false) {
+            root = root->tree_insert_value(root, get_segment_start_point_and_gradient(hf, current_half_edge));
+            auto current_half_edge_node = tree_find_value(
+                root, get_segment_start_point_and_gradient(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             if (current_half_edge_node != nullptr && predecessor_half_edge_node != nullptr) {
@@ -258,7 +298,7 @@ TEST(test_edge, test_create_edge) {
                         temp.y = result.y;
                         temp.incident_half_edge = -1;
                         temp.intersect_half_edge_1 = current_half_edge_node->data.incident_half_edge;
-                        temp.intersect_half_edge_2 = predecessor_half_edge_node->data.incident_half_edge;
+                        temp.intersect_half_edge_2 = successor_half_edge_node->data.incident_half_edge;
                         temp.if_intersect = 1;
                         event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
                         // 还需要把相交的点插入一个vector中，用于之后的输出
@@ -269,7 +309,7 @@ TEST(test_edge, test_create_edge) {
             // 如果相交，判断相交点与扫描线的关系，在扫描线下就将新的交点加入队列中
             // 这里会有一个新的问题，原本只需要判断是否是端点，现在还需要判断是否是线段中的交点
         } else {
-            auto delate_node = tree_find_value(root, current_vertex);
+            auto delate_node = tree_find_value(root, get_segment_start_point_and_gradient(hf, current_half_edge));
             root = root->delete_node_from_binary_search_tree(root, *delate_node);
 
 
