@@ -71,10 +71,10 @@ bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
 
 
 void init_all_segments(half_edge_struct &hf) {
-    hf.add_edge({1, 1}, {2, 2});
-    hf.add_edge({3, 3}, {4, 4});
-    hf.add_edge({0, 2}, {2, 0});
-    hf.add_edge({0, 6.5}, {6.5, 0});
+    hf.create_loop({1, 1}, {2, 2});
+    hf.create_loop({3, 3}, {4, 4});
+    hf.create_loop({0, 2}, {2, 0});
+    hf.create_loop({0, 6.5}, {6.5, 0});
 }
 
 

@@ -59,7 +59,8 @@ struct face {
     enum BOUNDARY_TYPE {
         bounding_face,
         hole_face,
-    };;
+    };
+
     BOUNDARY_TYPE boundary_type;
 };
 
@@ -94,6 +95,127 @@ struct half_edge_struct {
         half_edges.push_back({vertices_size + 1, half_edges_size, 0});
         return half_edges_size;
     }
+
+    // 之后再在内部的面上增加顶点，然后就有一个问题，
+    // 如果之前内部的面是空的话，那么不需要创建新的face
+    // 如果不为空的话，那么是什么样子的呢？
+    // 需要新建立一个面，并更改掉一些原本的内容
+    half_edge_index add_edge(half_edge_index current_edge, vertex_xy middle_point) {
+        int half_edges_size = half_edges.size();
+        int vertices_size = vertices.size();
+        int faces_size = faces.size();
+        int middle_point_index = vertices_size + 1;
+        vertices.push_back(middle_point);
+        // 单纯的加点很好加
+
+        int vertex_index_start_point = half_edges.at(current_edge).vertex_index;
+        int vertex_index_end_point = half_edges.at(get_opposite(current_edge)).vertex_index;
+        int red_b = get_opposite(current_edge);
+        int black_a = current_edge;
+        int red_c = half_edges_size;
+        int blue_d = half_edges_size + 1;
+        int red_e = half_edges_size + 2;
+        int blue_f = half_edges_size + 3;
+
+        half_edges.push_back({
+            vertex_index_start_point, blue_d,
+            red_e, red_b, faces_size
+        });
+        half_edges.push_back({
+            middle_point_index, half_edges_size,
+            get_next(red_b), blue_f, faces_size
+        });
+        half_edges.push_back({
+            middle_point_index, blue_f,
+            red_b, red_c, faces_size
+        });
+        half_edges.push_back({
+            vertex_index_end_point, red_e,
+            blue_d, get_pre(red_b), faces_size
+        });
+        // 添加新的四条边也是能够添加的
+        // 问题是原本的边应该怎么动？
+        // 判断一下get_next(get_opposite(current_edge)) == current_edge
+        // 不需要，直接执行就好，能够直接满足两种条件
+        half_edges.at(get_next(red_b)).pre_half_edge = blue_d;
+        half_edges.at(get_pre(red_b)).next_half_edge = blue_f;
+        half_edges.at(red_b).next_half_edge = red_c;
+        half_edges.at(red_b).pre_half_edge = red_e;
+        faces.push_back({red_c, face::BOUNDARY_TYPE::bounding_face});
+        return red_c;
+    }
+
+    // 如果想将原本的half_edge 中，添加一个顶点，将它分为两个edge的操作
+    half_edge_index split_edge(half_edge_index current_edge, vertex_xy middle_point) {
+        int half_edges_size = half_edges.size();
+        int vertices_size = vertices.size();
+        int faces_size = faces.size();
+        int middle_point_index = vertices_size + 1;
+        vertices.push_back(middle_point);
+        // 单纯的加点很好加
+
+        int blue_a = get_opposite(current_edge);
+        int green_b = current_edge;
+        int green_c = get_pre(green_b);
+        int blue_d = get_pre(blue_a);
+        int blue_e = half_edges_size;
+        int green_f = half_edges_size + 1;
+
+        int vertex_index_start_point = half_edges.at(blue_a).vertex_index;
+        int vertex_index_end_point = half_edges.at(green_c).vertex_index;
+
+        // 这里需要做一个判断
+        if (get_next(get_opposite(current_edge)) == current_edge) {
+            half_edges.push_back({
+                middle_point_index, blue_e,
+                blue_e, green_b, faces_size
+            });
+            half_edges.push_back({
+                vertex_index_end_point, green_f,
+                blue_a, green_f, faces_size
+            });
+            half_edges.at(green_b).next_half_edge = green_f;
+            half_edges.at(blue_a).pre_half_edge = blue_e;
+        } else {
+            half_edges.push_back({
+                middle_point_index, blue_e,
+                green_c, green_b, faces_size
+            });
+            half_edges.push_back({
+                vertex_index_end_point, green_f,
+                blue_a, blue_d, faces_size
+            });
+            half_edges.at(green_c).pre_half_edge = green_f;
+            half_edges.at(blue_d).next_half_edge = blue_e;
+            half_edges.at(green_b).next_half_edge = green_f;
+            half_edges.at(blue_a).pre_half_edge = blue_e;
+        }
+        return green_f;
+    }
+
+    // 两个顶点创建一个loop，然后后创建两个面，一个是内部的面，另一个是外部的面，
+    // 创建loop的时候只会创建一个面。，这个退化的线之内全部都是这个面
+    half_edge_index create_loop(vertex_xy start_point,
+                                vertex_xy end_point) {
+        int half_edges_size = half_edges.size();
+        int vertices_size = vertices.size();
+        int faces_size = faces.size();
+        start_point.incident_half_edge = half_edges_size;
+        end_point.incident_half_edge = half_edges_size + 1;
+        vertices.push_back(start_point);
+        vertices.push_back(end_point);
+        half_edges.push_back({
+            vertices_size, half_edges_size + 1,
+            half_edges_size, half_edges_size, faces_size
+        });
+        half_edges.push_back({
+            vertices_size + 1, half_edges_size,
+            half_edges_size + 1, half_edges_size + 1, faces_size
+        });
+        faces.push_back({half_edges_size, face::BOUNDARY_TYPE::hole_face});
+        return half_edges_size;
+    }
+
 
     segment_position get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
