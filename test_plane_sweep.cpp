@@ -6,7 +6,8 @@
 #include "binary_Tree_Node.h"
 #include "tree_function.h"
 #include "vector_signed_area.h"
-
+#include "half_edge.h"
+#include  "segment_end_ponit_and_gradient.h"
 // 既然我们这里需要使用plane sweep 算法，
 // 那么先说说这个算法是怎么实现的呢？
 // 需要首先需要一系列的边，
@@ -29,58 +30,6 @@
 // 新的端点进来的时候需要添加什么样的内容？
 // 至少需要先做出一个结果，之后再更改
 //
-
-struct vertex_xy {
-    float x, y;
-    int incident_half_edge;
-    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
-    bool operator<(const vertex_xy &right) const {
-        if (y < right.y) {
-            // 先比较x轴，x轴小的为小
-            return true;
-        } else if (y == right.y && x < right.x) {
-            // 之后再比较y轴，y轴小的为小
-            return true;
-        } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {
-                // 值完全一样，比较是否是起点，是起点的边，
-                return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
-            }
-        }
-        return false;
-    }
-
-    bool operator==(const vertex_xy &right) const {
-        if (x == right.x && y == right.y && incident_half_edge == right.incident_half_edge) {
-            return true;
-        }
-        return false;
-    }
-};
-
-
-struct segment_start_point_and_gradient {
-    float x, y;
-    float gradient;
-    float compare_x_position;
-    int incident_half_edge;
-    // 只给了点与射线，没有给需要比较多位置
-    bool operator<(const segment_start_point_and_gradient &right) const {
-        float current_segment_y = y + gradient * (right.compare_x_position - x);
-        float right_segment_y = right.y + right.gradient * (right.compare_x_position - right.x);
-        if (current_segment_y < right_segment_y) {
-            return true;
-        }
-        return false;
-    }
-
-    bool operator==(const segment_start_point_and_gradient &right) const {
-        if (x == right.x && y == right.y && gradient == right.gradient) {
-            return true;
-        }
-        return false;
-    }
-};
 
 
 struct event_point {
@@ -111,37 +60,6 @@ struct event_point {
 };
 
 
-struct half_edge {
-    int vertex_index;
-    int twin_half_edge;
-    int next_half_edge;
-    int pre_half_edge;
-    int incident_face;
-    int is_using;
-};
-
-using half_edge_index = int;
-// 索引还是比较啊随意的，问题是如何建立一条边？
-
-struct face {
-    std::vector<half_edge_index> bounding_half_edge;
-    std::vector<half_edge_index> hole_half_edge;
-};
-
-void add_edge(std::vector<half_edge> &half_edges, std::vector<vertex_xy> &vertices, vertex_xy start_point,
-              vertex_xy end_point) {
-    int half_edges_size = half_edges.size();
-    int vertices_size = vertices.size();
-    vertices.push_back(start_point);
-    vertices.push_back(end_point);
-    half_edges.push_back({vertices_size, vertices_size + 1, 0});
-    half_edges.push_back({vertices_size + 1, vertices_size, 0});
-}
-
-int get_same_edge_index(int incident_half_edge) {
-    return incident_half_edge - (incident_half_edge % 2);
-}
-
 template<typename T>
 bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
     if (tree_find_value(root, temp) == nullptr) {
@@ -149,63 +67,6 @@ bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
     } else {
         return true;
     }
-}
-
-// 还需要有face
-struct half_edge_struct {
-    std::vector<half_edge> half_edges;
-    std::vector<vertex_xy> vertices;
-
-    void add_edge(vertex_xy start_point,
-                  vertex_xy end_point) {
-        int half_edges_size = half_edges.size();
-        int vertices_size = vertices.size();
-        start_point.incident_half_edge = half_edges_size;
-        end_point.incident_half_edge = half_edges_size + 1;
-        vertices.push_back(start_point);
-        vertices.push_back(end_point);
-        half_edges.push_back({vertices_size, vertices_size + 1, 0});
-        // 上面这条边插入的是什么呢？它的vertex 和 边是一一对应的，知道一条边，能够知道它的起点
-        half_edges.push_back({vertices_size + 1, vertices_size, 0});
-    }
-
-    segment_position get_segment_from_node(int incident_half_edge) {
-        // 稍微有一点点的问题啊？
-        int vertex_index_end_point = half_edges.at(incident_half_edge).vertex_index;
-        segment_vector start_point{
-            vertices.at(vertex_index_end_point).x,
-            vertices.at(vertex_index_end_point).y
-        };
-        int twin_half_edge = half_edges.at(incident_half_edge).twin_half_edge;
-        int vertex_index_start_point = half_edges.at(twin_half_edge).vertex_index;
-        segment_vector end_point{
-            vertices.at(vertex_index_start_point).x,
-            vertices.at(vertex_index_start_point).y
-        };
-        segment_position result{start_point, end_point};
-        return result;
-    }
-
-    vertex_xy &get_vertex_xy(int incident_half_edge) {
-        int same_edge_index = get_same_edge_index(incident_half_edge);
-        int vertex_index_end_point = half_edges.at(same_edge_index).vertex_index;
-        return vertices.at(vertex_index_end_point);
-    }
-};
-
-segment_start_point_and_gradient &get_segment_start_point_and_gradient(half_edge_struct &hf, int incident_half_edge) {
-    segment_start_point_and_gradient *temp = new segment_start_point_and_gradient;
-    segment_position current_segment = hf.get_segment_from_node(incident_half_edge);
-    temp->compare_x_position = current_segment.start_point.x;
-    if (current_segment.end_point.x < current_segment.start_point.x) {
-        std::swap(current_segment.start_point, current_segment.end_point);
-    }
-    temp->x = current_segment.start_point.x;
-    temp->y = current_segment.start_point.y;
-    temp->incident_half_edge = incident_half_edge;
-    temp->gradient = (current_segment.end_point.y - current_segment.start_point.y) /
-                     (current_segment.end_point.x - current_segment.start_point.x);
-    return *temp;
 }
 
 
@@ -217,11 +78,11 @@ void init_all_segments(half_edge_struct &hf) {
 }
 
 
-std::priority_queue<event_point, std::vector<event_point>, std::greater<event_point> > &create_event_queue(
+std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &create_event_queue(
     half_edge_struct &hf) {
-    auto event_points = new std::priority_queue<event_point, std::vector<event_point>, std::greater<event_point> >;
+    auto event_points = new std::priority_queue<event_point, std::vector<event_point>, std::greater<> >;
     for (auto vertice: hf.vertices) {
-        event_point temp;
+        event_point temp{};
         temp.x = vertice.x;
         temp.y = vertice.y;
         temp.incident_half_edge = vertice.incident_half_edge;
@@ -237,8 +98,8 @@ template<typename T, typename T1>
 bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct &hf, T1 event_points) {
     if (left_node != nullptr && right_node != nullptr) {
         // 两条线段判断是否相交
-        segment_position ab = hf.get_segment_from_node(left_node->data.incident_half_edge);
-        segment_position cd = hf.get_segment_from_node(right_node->data.incident_half_edge);
+        segment_position ab = hf.get_segment(left_node->data.incident_half_edge);
+        segment_position cd = hf.get_segment(right_node->data.incident_half_edge);
 
         if (ab.intersection(cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
@@ -255,7 +116,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct &hf,
                 // 如果有多个点呢？不能在这里考虑，因为会重复交换AB，造成另一个问题
                 std::cout << " intersect point :" << result.x << "  " << result.y << std::endl;
 
-                event_point temp;
+                event_point temp{};
                 temp.x = result.x;
                 temp.y = result.y;
                 temp.incident_half_edge = -1;
@@ -264,9 +125,11 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct &hf,
                 temp.if_intersect = 1;
                 event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
                 // 还需要把相交的点插入一个vector中，用于之后的输出
+                return true;
             }
         }
     }
+    return false;
 }
 
 // 然后我怎么才能建立这个结构呢？
@@ -289,9 +152,9 @@ TEST(test_edge, test_create_edge) {
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
             auto intersect_vertex = event_points.top();
-            auto intersect_half_edge_1_vertex = get_segment_start_point_and_gradient(
+            auto intersect_half_edge_1_vertex = segment_start_point_and_gradient::get_segment_start_point_and_gradient(
                 hf, intersect_vertex.intersect_half_edge_1);
-            auto intersect_half_edge_2_vertex = get_segment_start_point_and_gradient(
+            auto intersect_half_edge_2_vertex = segment_start_point_and_gradient::get_segment_start_point_and_gradient(
                 hf, intersect_vertex.intersect_half_edge_2);
             // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
             auto intersect_half_edge_1_vertex_node = tree_find_value(root, intersect_half_edge_1_vertex);
@@ -304,16 +167,20 @@ TEST(test_edge, test_create_edge) {
                 intersect_half_edge_2_vertex_node);
             test_two_node_if_intersect(predecessor_half_edge_node, intersect_half_edge_1_vertex_node, hf, event_points);
             test_two_node_if_intersect(intersect_half_edge_2_vertex_node, successor_half_edge_node, hf, event_points);
-        } else if (if_half_edge_in_tree(root, get_segment_start_point_and_gradient(hf, current_half_edge)) == false) {
-            root = root->tree_insert_value(root, get_segment_start_point_and_gradient(hf, current_half_edge));
+        } else if (if_half_edge_in_tree(
+                       root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(
+                           hf, current_half_edge)) == false) {
+            root = root->tree_insert_value(
+                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
             auto current_half_edge_node = tree_find_value(
-                root, get_segment_start_point_and_gradient(hf, current_half_edge));
+                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_points);
             test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_points);
         } else {
-            auto delate_node = tree_find_value(root, get_segment_start_point_and_gradient(hf, current_half_edge));
+            auto delate_node = tree_find_value(
+                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
             root = root->delete_node_from_binary_search_tree(root, *delate_node);
         }
         event_points.pop();
