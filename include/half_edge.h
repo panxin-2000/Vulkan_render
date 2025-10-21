@@ -89,9 +89,9 @@ struct half_edge_struct {
         end_point.incident_half_edge = half_edges_size + 1;
         vertices.push_back(start_point);
         vertices.push_back(end_point);
-        half_edges.push_back({vertices_size, vertices_size + 1, 0});
+        half_edges.push_back({vertices_size, half_edges_size + 1, 0});
         // 上面这条边插入的是什么呢？它的vertex 和 边是一一对应的，知道一条边，能够知道它的起点
-        half_edges.push_back({vertices_size + 1, vertices_size, 0});
+        half_edges.push_back({vertices_size + 1, half_edges_size, 0});
         return half_edges_size;
     }
 
