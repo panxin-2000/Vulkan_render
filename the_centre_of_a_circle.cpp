@@ -48,8 +48,8 @@ segment_vector centre_of_a_circle(segment_vector a, segment_vector b, segment_ve
     auto A_2_2 = -2 * (a.y - c.y);
     auto A = A_1_1 * A_2_2 - A_1_2 * A_2_1;
     auto inv_A_1_1 = A_2_2 / A;
-    auto inv_A_1_2 =-1 * A_1_2 / A;
-    auto inv_A_2_1 =-1 * A_2_1 / A;
+    auto inv_A_1_2 = -1 * A_1_2 / A;
+    auto inv_A_2_1 = -1 * A_2_1 / A;
     auto inv_A_2_2 = A_1_1 / A;
     auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
     auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
@@ -63,18 +63,28 @@ segment_vector centre_of_a_circle(segment_vector a, segment_vector b, segment_ve
 
 TEST(centre, the_centre_of_a_circle) {
     segment_vector a{0, 3};
-    segment_vector b{3,6};
+    segment_vector b{3, 6};
     segment_vector c{6, 3};
     segment_vector result{3, 3};
 
     EXPECT_EQ(true, if_colinear(a, b, c));
     EXPECT_EQ(result, centre_of_a_circle(a, b, c));
 }
+
 TEST(centre, the_centre_of_a_circle_2) {
     segment_vector a{1, 3};
-    segment_vector b{9,1};
+    segment_vector b{9, 1};
     segment_vector c{4, -2};
     segment_vector result{5, 2};
+
+
+    struct MyStruct {
+        using type = int; // 用 using 定义嵌套类型 type（等价于 typedef int type;）
+    }; // 这个结构体的大小
+    MyStruct::type f = 200;
+    // 上面的f的本质应该还是int,主要的目的是什么其他的数据类型，可以被外部使用
+    int g = f;
+    // 目的也只是改一个名字，并不改变任何其他的内容
 
     EXPECT_EQ(true, if_colinear(a, b, c));
     EXPECT_EQ(result, centre_of_a_circle(a, b, c));
