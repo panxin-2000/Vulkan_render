@@ -104,7 +104,7 @@ struct half_edge_struct {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
-        int middle_point_index = vertices_size ;
+        int middle_point_index = vertices_size;
         vertices.push_back(middle_point);
         // 单纯的加点很好加
 
@@ -194,7 +194,6 @@ struct half_edge_struct {
             half_edges.at(blue_a).pre_half_edge = blue_e;
             half_edges.at(blue_a).vertex_index = middle_point_index;
             half_edges.at(blue_e).vertex_index = vertex_index_end_point;
-
         }
         return green_f;
     }
@@ -299,6 +298,16 @@ struct half_edge_struct {
         }
     }
 
+    bool get_first_face(face &int_put_face) {
+        for (auto face: faces) {
+            if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
+                int_put_face.bounding_half_edge = face.bounding_half_edge;
+                int_put_face.boundary_type = face.boundary_type;
+                return true;
+            }
+        }
+        return false;
+    }
 
     std::vector<half_edge_index> get_all_edge_of_face(face face) {
         return get_all_edge_of_face(face.bounding_half_edge);

@@ -7,6 +7,54 @@
 #include "ear_clip.h"
 #include "half_edge.h"
 
+
+half_edge_struct &init_hf(half_edge_struct &hf) {
+    auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
+    auto first_half_edge = half_edge_index;
+    half_edge_index = hf.add_edge(half_edge_index, {0, 0});
+    half_edge_index = hf.insert_edge(half_edge_index, {3, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {5, 1});
+    half_edge_index = hf.insert_edge(half_edge_index, {7, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
+    half_edge_index = hf.insert_edge(half_edge_index, {3, 3});
+    half_edge_index = hf.insert_edge(half_edge_index, {2, 5});
+    half_edge_index = hf.insert_edge(half_edge_index, {1, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {-1, 3});
+    return hf;
+}
+
+TEST(ear_clip, from_half_edge_create_loop_vertices) {
+    half_edge_struct hf{};
+    hf = init_hf(hf);
+    face temp;
+    hf.get_first_face(temp);
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto new_segments = hf.get_vertices(all_edge);
+
+    std::vector<point_2> segments{};
+    segments.push_back(point_2{-2, 3});
+    segments.push_back(point_2{0, 0});
+    segments.push_back(point_2{3, 2});
+    segments.push_back(point_2{5, 1});
+    segments.push_back(point_2{7, 2});
+    segments.push_back(point_2{5, 3});
+    segments.push_back(point_2{3, 3});
+    segments.push_back(point_2{2, 5});
+    segments.push_back(point_2{1, 2});
+    segments.push_back(point_2{-1, 3});
+    segments.push_back(point_2{0, 5});
+
+    if (segments.size() == new_segments.size()) {
+        for (int i = 0; i < new_segments.size(); ++i) {
+            EXPECT_EQ(new_segments.at(i), segments.at(i)) << "i value: " << i
+        << std::endl;
+            // 这里的打印也很方便，不出现错误的时候是不需要打印的
+        }
+    } else {
+        FAIL() << " segments.size() == new_segments.size()" << std::endl;
+    }
+}
+
 TEST(ear_clip, ear_clip) {
     // 既然是测试，那么需要测试输入有什么？
     // 输入就需要一个half-edge 的结构，
@@ -23,39 +71,16 @@ TEST(ear_clip, ear_clip) {
 
 
     half_edge_struct hf{};
-    auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
-    auto first_half_edge = half_edge_index;
-    half_edge_index = hf.add_edge(half_edge_index, {0, 0});
-    half_edge_index = hf.insert_edge(half_edge_index, {3, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {5, 1});
-    half_edge_index = hf.insert_edge(half_edge_index, {7, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
-    half_edge_index = hf.insert_edge(half_edge_index, {3, 3});
-    half_edge_index = hf.insert_edge(half_edge_index, {2, 5});
-    half_edge_index = hf.insert_edge(half_edge_index, {1, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {-1, 3});
-    auto all_edge = hf.get_all_edge_of_face(first_half_edge);
+    hf = init_hf(hf);
+    face temp;
+    hf.get_first_face(temp);
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
-    // 这里还是有问题，解决了一点点，还是有
 
-    std::vector<point_2> segments{};
-    segments.push_back(point_2{-2, 3});
-    segments.push_back(point_2{0, 0});
-    segments.push_back(point_2{3, 2});
-    segments.push_back(point_2{5, 1});
-    segments.push_back(point_2{7, 2});
-    segments.push_back(point_2{5, 3});
-    segments.push_back(point_2{3, 3});
-    segments.push_back(point_2{2, 5});
-    segments.push_back(point_2{1, 2});
-    segments.push_back(point_2{-1, 3});
-    segments.push_back(point_2{0, 5});
-    std::vector<point_2> copy_vertices;
-    for (auto vertice: segments) {
-        copy_vertices.push_back(vertice);
+    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    for (auto new_segment: new_segments) {
+        tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }
-    // 下面的应该都是可以不用动的，只是需要从上面的点点顺序需要去重新排布一次
-
 
     std::vector<triangle> expect_triangles{};
     std::vector<triangle> result_segments{};
@@ -68,20 +93,8 @@ TEST(ear_clip, ear_clip) {
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{-2, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{0, 0});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{3, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{5, 1});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{7, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{5, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{3, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{2, 5});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{1, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{-1, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{0, 5});
 
-    if (ear_clip_algorithm_no_efficient(result_segments, segments, *tree_vertices) == true &&
+    if (ear_clip_algorithm_no_efficient(result_segments, new_segments, *tree_vertices) == true &&
         result_segments.size() == expect_triangles.size()) {
         for (int i = 0; i < result_segments.size(); ++i) {
             EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i
