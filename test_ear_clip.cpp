@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 #include "vector_signed_area.h"
 #include "ear_clip.h"
+#include "half_edge.h"
 
 TEST(ear_clip, ear_clip) {
     // 既然是测试，那么需要测试输入有什么？
@@ -21,19 +22,22 @@ TEST(ear_clip, ear_clip) {
     //
 
 
-    std::vector<segment_vector> segments{};
-    segments.push_back(segment_vector{-2, 3});
-    segments.push_back(segment_vector{0, 0});
-    segments.push_back(segment_vector{3, 2});
-    segments.push_back(segment_vector{5, 1});
-    segments.push_back(segment_vector{7, 2});
-    segments.push_back(segment_vector{5, 3});
-    segments.push_back(segment_vector{3, 3});
-    segments.push_back(segment_vector{2, 5});
-    segments.push_back(segment_vector{1, 2});
-    segments.push_back(segment_vector{-1, 3});
-    segments.push_back(segment_vector{0, 5});
-    std::vector<segment_vector> copy_vertices;
+    half_edge_struct hf{};
+    auto half_edge_index = hf.create_loop({-2, 3}, {0, 5});
+    hf.add_edge(half_edge_index, {0, 0});
+    std::vector<point_2> segments{};
+    segments.push_back(point_2{-2, 3});
+    segments.push_back(point_2{0, 0});
+    segments.push_back(point_2{3, 2});
+    segments.push_back(point_2{5, 1});
+    segments.push_back(point_2{7, 2});
+    segments.push_back(point_2{5, 3});
+    segments.push_back(point_2{3, 3});
+    segments.push_back(point_2{2, 5});
+    segments.push_back(point_2{1, 2});
+    segments.push_back(point_2{-1, 3});
+    segments.push_back(point_2{0, 5});
+    std::vector<point_2> copy_vertices;
     for (auto vertice: segments) {
         copy_vertices.push_back(vertice);
     }
@@ -50,18 +54,18 @@ TEST(ear_clip, ear_clip) {
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
-    RB_Tree_Node<segment_vector> *tree_vertices = nullptr;
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{-2, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{0, 0});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{3, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{5, 1});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{7, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{5, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{3, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{2, 5});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{1, 2});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{-1, 3});
-    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, segment_vector{0, 5});
+    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{-2, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{0, 0});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{3, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{5, 1});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{7, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{5, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{3, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{2, 5});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{1, 2});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{-1, 3});
+    tree_vertices = tree_vertices->tree_insert_value(tree_vertices, point_2{0, 5});
 
     if (ear_clip_algorithm_no_efficient(result_segments, segments, *tree_vertices) == true &&
         result_segments.size() == expect_triangles.size()) {

@@ -10,8 +10,8 @@
  * @param tree_vertices
  * @return
  */
-bool no_point_in_line_clockwise_direction(segment_vector a, segment_vector C,
-                                          RB_Tree_Node<segment_vector> &tree_vertices) {
+bool no_point_in_line_clockwise_direction(point_2 a, point_2 C,
+                                          RB_Tree_Node<point_2> &tree_vertices) {
 }
 
 /**
@@ -21,15 +21,15 @@ bool no_point_in_line_clockwise_direction(segment_vector a, segment_vector C,
  * @param tree_vertices
  * @return
  */
-bool no_point_in_line_clockwise_direction_no_efficient(segment_vector a, segment_vector c,
-                                                       segment_vector do_not_care_point,
-                                                       std::vector<segment_vector> &tree_vertices) {
+bool no_point_in_line_clockwise_direction_no_efficient(point_2 a, point_2 c,
+                                                       point_2 do_not_care_point,
+                                                       std::vector<point_2> &tree_vertices) {
     for (auto tree_vertice: tree_vertices) {
         if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
             (tree_vertice.x < a.x && tree_vertice.x > c.x && !(do_not_care_point == tree_vertice))) {
-            segment_vector b = tree_vertice;
-            segment_vector ab = b - a;
-            segment_vector ac = c - a;
+            point_2 b = tree_vertice;
+            point_2 ab = b - a;
+            point_2 ac = c - a;
             float area = ac.single_area(ab);
             if (area <= 0) {
                 return false;
@@ -40,17 +40,17 @@ bool no_point_in_line_clockwise_direction_no_efficient(segment_vector a, segment
 }
 
 
-bool no_point_in_line_clockwise_direction_binary(segment_vector a, segment_vector c,
-                                                 segment_vector do_not_care_point,
-                                                 RB_Tree_Node<segment_vector> &tree_vertices_root) {
+bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 c,
+                                                 point_2 do_not_care_point,
+                                                 RB_Tree_Node<point_2> &tree_vertices_root) {
     auto vertices = find_interval(tree_vertices_root, a, c);
     for (auto p_vertice: vertices) {
         auto tree_vertice = p_vertice->data;
         if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
             (tree_vertice.x < a.x && tree_vertice.x > c.x && !(do_not_care_point == tree_vertice))) {
-            segment_vector b = tree_vertice;
-            segment_vector ab = b - a;
-            segment_vector ac = c - a;
+            point_2 b = tree_vertice;
+            point_2 ab = b - a;
+            point_2 ac = c - a;
             float area = ac.single_area(ab);
             if (area <= 0) {
                 return false;
@@ -60,23 +60,23 @@ bool no_point_in_line_clockwise_direction_binary(segment_vector a, segment_vecto
     return true;
 }
 
-bool ear_clip_algorithm(std::vector<segment_vector> &new_segments,
-                        RB_Tree_Node<segment_vector> &tree_vertices) {
+bool ear_clip_algorithm(std::vector<point_2> &new_segments,
+                        RB_Tree_Node<point_2> &tree_vertices) {
     // 首先拿到前三个，
     while (new_segments.size() >= 3) {
-        segment_vector a = new_segments.at(new_segments.size() - 3);
-        segment_vector b = new_segments.at(new_segments.size() - 2);
-        segment_vector c = new_segments.at(new_segments.size() - 1);
+        point_2 a = new_segments.at(new_segments.size() - 3);
+        point_2 b = new_segments.at(new_segments.size() - 2);
+        point_2 c = new_segments.at(new_segments.size() - 1);
         // 判断这三个点是顺时针还是逆时针
-        segment_vector ab = b - a;
-        segment_vector ac = c - a;
+        point_2 ab = b - a;
+        point_2 ac = c - a;
         float area = ab.single_area(ac);
         if (area >= 0 && no_point_in_line_clockwise_direction(a, c, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             new_segments.erase(new_segments.begin() + 1);
         } else {
             // 需要将这三个点作为一个三角形进行输出
-            segment_vector set_to_last = *new_segments.begin();
+            point_2 set_to_last = *new_segments.begin();
             new_segments.erase(new_segments.begin());
             new_segments.push_back(set_to_last);
         }
@@ -84,19 +84,19 @@ bool ear_clip_algorithm(std::vector<segment_vector> &new_segments,
 }
 
 bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
-                                     std::vector<segment_vector> &new_segments,
-                                     RB_Tree_Node<segment_vector> &tree_vertices) {
+                                     std::vector<point_2> &new_segments,
+                                     RB_Tree_Node<point_2> &tree_vertices) {
     if (new_segments.size() < 3) {
         return false;
     }
     // 首先拿到前三个，
     while (new_segments.size() > 3) {
-        segment_vector a = new_segments.at(0);
-        segment_vector b = new_segments.at(1);
-        segment_vector c = new_segments.at(2);
+        point_2 a = new_segments.at(0);
+        point_2 b = new_segments.at(1);
+        point_2 c = new_segments.at(2);
         // 判断这三个点是顺时针还是逆时针
-        segment_vector ab = b - a;
-        segment_vector ac = c - a;
+        point_2 ab = b - a;
+        point_2 ac = c - a;
         float area = ab.single_area(ac);
         if (area >= 0 && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
@@ -109,7 +109,7 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
             //                                                       &tree_vertices, new_segments.at(2)));
         } else {
             // 需要将这三个点作为一个三角形进行输出
-            segment_vector set_to_last = *new_segments.begin();
+            point_2 set_to_last = *new_segments.begin();
             new_segments.erase(new_segments.begin());
             new_segments.push_back(set_to_last);
         }

@@ -31,9 +31,9 @@
  * @param c
  * @return
  */
-bool if_colinear(segment_vector a, segment_vector b, segment_vector c) {
-    segment_vector ab = b - a;
-    segment_vector ac = c - a;
+bool if_colinear(point_2 a, point_2 b, point_2 c) {
+    point_2 ab = b - a;
+    point_2 ac = c - a;
     float f1 = ab.single_area(ac);
     if (abs(f1) < 0.00001)
         return false;
@@ -41,7 +41,7 @@ bool if_colinear(segment_vector a, segment_vector b, segment_vector c) {
         return true;
 }
 
-segment_vector centre_of_a_circle(segment_vector a, segment_vector b, segment_vector c) {
+point_2 centre_of_a_circle(point_2 a, point_2 b, point_2 c) {
     auto A_1_1 = -2 * (a.x - b.x);
     auto A_1_2 = -2 * (a.y - b.y);
     auto A_2_1 = -2 * (a.x - c.x);
@@ -54,7 +54,7 @@ segment_vector centre_of_a_circle(segment_vector a, segment_vector b, segment_ve
     auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
     auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
 
-    segment_vector result = {};
+    point_2 result = {};
     result.x = inv_A_1_1 * B_1 + inv_A_1_2 * B_2;
     result.y = inv_A_2_1 * B_1 + inv_A_2_2 * B_2;
     return result;
@@ -62,20 +62,20 @@ segment_vector centre_of_a_circle(segment_vector a, segment_vector b, segment_ve
 
 
 TEST(centre, the_centre_of_a_circle) {
-    segment_vector a{0, 3};
-    segment_vector b{3, 6};
-    segment_vector c{6, 3};
-    segment_vector result{3, 3};
+    point_2 a{0, 3};
+    point_2 b{3, 6};
+    point_2 c{6, 3};
+    point_2 result{3, 3};
 
     EXPECT_EQ(true, if_colinear(a, b, c));
     EXPECT_EQ(result, centre_of_a_circle(a, b, c));
 }
 
 TEST(centre, the_centre_of_a_circle_2) {
-    segment_vector a{1, 3};
-    segment_vector b{9, 1};
-    segment_vector c{4, -2};
-    segment_vector result{5, 2};
+    point_2 a{1, 3};
+    point_2 b{9, 1};
+    point_2 c{4, -2};
+    point_2 result{5, 2};
 
 
     struct MyStruct {

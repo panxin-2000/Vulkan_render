@@ -220,13 +220,13 @@ struct half_edge_struct {
     segment_position get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
         int vertex_index_end_point = half_edges.at(incident_half_edge).vertex_index;
-        segment_vector start_point{
+        point_2 start_point{
             vertices.at(vertex_index_end_point).x,
             vertices.at(vertex_index_end_point).y
         };
         int twin_half_edge = half_edges.at(incident_half_edge).twin_half_edge;
         int vertex_index_start_point = half_edges.at(twin_half_edge).vertex_index;
-        segment_vector end_point{
+        point_2 end_point{
             vertices.at(vertex_index_start_point).x,
             vertices.at(vertex_index_start_point).y
         };
