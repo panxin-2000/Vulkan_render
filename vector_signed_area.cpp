@@ -5,24 +5,24 @@
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
 
-segment_vector::segment_vector(float x1, float y1) {
+point_2::point_2(float x1, float y1) {
     x = x1;
     y = y1;
 }
 
-segment_vector segment_vector::operator+(const segment_vector &R) {
-    segment_vector temp{0, 0};
+point_2 point_2::operator+(const point_2 &R) {
+    point_2 temp{0, 0};
     temp.x = this->x + R.x;
     temp.y = this->y + R.y;
     return temp;
 }
 
-bool segment_vector::operator==(const segment_vector &R) {
+bool point_2::operator==(const point_2 &R) {
     if (this->x == R.x && this->y == R.y) return true;
     else return false;
 }
 
-bool operator==(const segment_vector &L, const segment_vector &R) {
+bool operator==(const point_2 &L, const point_2 &R) {
     if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
         return true;
     }
@@ -31,7 +31,7 @@ bool operator==(const segment_vector &L, const segment_vector &R) {
 
 // 其实感觉不应该用这个的，但是暂时没有办法，就先用这个吧，应该和sort一样，
 // 增加一个添加函数的接口的
-bool operator<(const segment_vector &L, const segment_vector &R) {
+bool operator<(const point_2 &L, const point_2 &R) {
     if (L.x < R.x) {
         return true;
     }
@@ -45,8 +45,8 @@ bool operator==(const triangle &L, const triangle &R) {
     return false;
 }
 
-segment_vector segment_vector::operator-(const segment_vector &R) {
-    segment_vector temp{0, 0};
+point_2 point_2::operator-(const point_2 &R) {
+    point_2 temp{0, 0};
     temp.x = this->x - R.x;
     temp.y = this->y - R.y;
     return temp;
@@ -58,7 +58,7 @@ segment_vector segment_vector::operator-(const segment_vector &R) {
  * @param R
  * @return
  */
-float segment_vector::single_area(const segment_vector &R) {
+float point_2::single_area(const point_2 &R) {
     return this->x * R.y - this->y * R.x;
 }
 
@@ -69,8 +69,8 @@ float segment_vector::single_area(const segment_vector &R) {
  * @param test_point
  * @return
  */
-bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_vector &segment_end_point,
-                             segment_vector &test_point) {
+bool on_segment_bounding_box(const point_2 &segment_start_point, point_2 &segment_end_point,
+                             point_2 &test_point) {
     if (std::min(segment_start_point.x, segment_end_point.x) <= test_point.x &&
         test_point.x <= std::max(segment_start_point.x, segment_end_point.x) &&
         std::min(segment_start_point.y, segment_end_point.y) <= test_point.y &&
@@ -79,7 +79,7 @@ bool on_segment_bounding_box(const segment_vector &segment_start_point, segment_
     return false;
 }
 
-bool segment_position::get_intersection_point(struct segment_position &R_segment_position, segment_vector *result) {
+bool segment_position::get_intersection_point(struct segment_position &R_segment_position, point_2 *result) {
     // 已知两条线段相交怎么求交点？
     // y_0 = a_0 * x + b_0
     // y_1 = a_1 * x + b_1
@@ -90,10 +90,10 @@ bool segment_position::get_intersection_point(struct segment_position &R_segment
     //  a_1 - a_0
     //  y = a_0 * x + b_0
     // a_1 - a_0 == 0 时 为平行线
-    segment_vector ab = this->end_point - this->start_point;
+    point_2 ab = this->end_point - this->start_point;
     float a_0 = ab.y / ab.x;
     float b_0 = this->start_point.y - a_0 * this->start_point.x;
-    segment_vector cd = R_segment_position.end_point - R_segment_position.start_point;
+    point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
     float a_1 = cd.y / cd.x;
     float b_1 = R_segment_position.start_point.y - a_1 * R_segment_position.start_point.x;
     if (std::abs(a_1 - a_0) < 0.000001) {
@@ -107,13 +107,13 @@ bool segment_position::get_intersection_point(struct segment_position &R_segment
 }
 
 bool segment_position::intersection(struct segment_position &R_segment_position) {
-    segment_vector ab = this->end_point - this->start_point;
-    segment_vector ac = R_segment_position.start_point - this->start_point;
-    segment_vector ad = R_segment_position.end_point - this->start_point;
+    point_2 ab = this->end_point - this->start_point;
+    point_2 ac = R_segment_position.start_point - this->start_point;
+    point_2 ad = R_segment_position.end_point - this->start_point;
 
-    segment_vector cd = R_segment_position.end_point - R_segment_position.start_point;
-    segment_vector ca = this->start_point - R_segment_position.start_point;
-    segment_vector cb = this->end_point - R_segment_position.start_point;
+    point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
+    point_2 ca = this->start_point - R_segment_position.start_point;
+    point_2 cb = this->end_point - R_segment_position.start_point;
 
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
     float f1 = ab.single_area(ac);
