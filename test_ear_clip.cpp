@@ -23,16 +23,21 @@ TEST(ear_clip, ear_clip) {
 
 
     half_edge_struct hf{};
-    auto half_edge_index = hf.create_loop({0, 5},{-2, 3});
+    auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
+    auto first_half_edge = half_edge_index;
     half_edge_index = hf.add_edge(half_edge_index, {0, 0});
-    half_edge_index = hf.split_edge(half_edge_index, {3, 2});
-    half_edge_index = hf.split_edge(half_edge_index, {5, 1});
-    half_edge_index = hf.split_edge(half_edge_index, {7, 2});
-    half_edge_index = hf.split_edge(half_edge_index, {5, 3});
-    half_edge_index = hf.split_edge(half_edge_index, {3, 3});
-    half_edge_index = hf.split_edge(half_edge_index, {2, 5});
-    half_edge_index = hf.split_edge(half_edge_index, {1, 2});
-    half_edge_index = hf.split_edge(half_edge_index, {-1, 3});
+    half_edge_index = hf.insert_edge(half_edge_index, {3, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {5, 1});
+    half_edge_index = hf.insert_edge(half_edge_index, {7, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
+    half_edge_index = hf.insert_edge(half_edge_index, {3, 3});
+    half_edge_index = hf.insert_edge(half_edge_index, {2, 5});
+    half_edge_index = hf.insert_edge(half_edge_index, {1, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {-1, 3});
+    auto all_edge = hf.get_all_edge_of_face(first_half_edge);
+    auto new_segments = hf.get_vertices(all_edge);
+    // 这里还是有问题，解决了一点点，还是有
+
     std::vector<point_2> segments{};
     segments.push_back(point_2{-2, 3});
     segments.push_back(point_2{0, 0});
