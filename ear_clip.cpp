@@ -1,7 +1,7 @@
 //
 // Created by 潘鑫 on 2025/10/8.
 //
-#include "include/ear_clip.h"
+#include "ear_clip.h"
 #include "tree_function.h"
 /**
  * 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上

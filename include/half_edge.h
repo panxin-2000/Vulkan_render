@@ -221,6 +221,61 @@ struct half_edge_struct {
         return half_edges_size;
     }
 
+    // 在一个两个顶点直接插入一条边，将原本的一个face，分为两个face
+    half_edge_index split_face(vertex_xy first_point,
+                               vertex_xy second_point) {
+    }
+
+    half_edge_index split_face(half_edge_index first_edge,
+                               half_edge_index second_edge) {
+        // first_edge 是我画的图中的 E_a
+        // first_edge 是我画的图中的 E_h
+        auto E_a = first_edge;
+        auto E_h = second_edge;
+        auto P_a = half_edges.at(E_a).vertex_index;
+        auto P_b = half_edges.at(E_h).vertex_index;
+        int half_edges_size = half_edges.size();
+        int vertices_size = vertices.size();
+        int faces_size = faces.size();
+
+        auto E_f = half_edges_size;
+        auto E_g = half_edges_size + 1;
+        auto E_I = get_pre(E_a);
+        auto E_c = get_pre(E_h);
+        // E_f
+        half_edges.push_back({
+            P_a, E_g,
+            E_h, E_I, faces_size
+        });
+        // E_g
+        half_edges.push_back({
+            P_b, E_f,
+            E_a, E_c, faces_size + 1
+        });
+        half_edges.at(E_c).next_half_edge = E_g;
+        half_edges.at(E_I).next_half_edge = E_f;
+        half_edges.at(E_h).pre_half_edge = E_f;
+        half_edges.at(E_a).pre_half_edge = E_g;
+
+        // 下一步需要做什么呢？将整个E_a的循环全部都设置为
+        faces.push_back({E_a, face::BOUNDARY_TYPE::bounding_face});
+        set_face(E_a);
+    }
+
+    bool set_face(int half_edge_index_of_face) {
+        int current_half_edge_index = half_edge_index_of_face;
+        int first_half_edge = current_half_edge_index;
+        int faces_size = faces.size();
+        while (true) {
+            half_edges.at(current_half_edge_index).incident_face = faces_size + 1;
+            auto next_half_edge = get_next(current_half_edge_index);
+            current_half_edge_index = next_half_edge;
+            if (current_half_edge_index == first_half_edge) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     segment_position get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
@@ -311,6 +366,13 @@ struct half_edge_struct {
 
     std::vector<half_edge_index> get_all_edge_of_face(face face) {
         return get_all_edge_of_face(face.bounding_half_edge);
+    }
+
+    point_2 get_vertex(half_edge_index half_edge_indices) const {
+        point_2 temp_point{};
+        temp_point.x = vertices.at(half_edges.at(half_edge_indices).vertex_index).x;
+        temp_point.y = vertices.at(half_edges.at(half_edge_indices).vertex_index).y;
+        return temp_point;
     }
 
     std::vector<point_2> get_vertices(const std::vector<half_edge_index> &half_edge_indices) const {
