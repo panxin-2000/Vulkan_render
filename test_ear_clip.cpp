@@ -23,8 +23,16 @@ TEST(ear_clip, ear_clip) {
 
 
     half_edge_struct hf{};
-    auto half_edge_index = hf.create_loop({-2, 3}, {0, 5});
-    hf.add_edge(half_edge_index, {0, 0});
+    auto half_edge_index = hf.create_loop({0, 5},{-2, 3});
+    half_edge_index = hf.add_edge(half_edge_index, {0, 0});
+    half_edge_index = hf.split_edge(half_edge_index, {3, 2});
+    half_edge_index = hf.split_edge(half_edge_index, {5, 1});
+    half_edge_index = hf.split_edge(half_edge_index, {7, 2});
+    half_edge_index = hf.split_edge(half_edge_index, {5, 3});
+    half_edge_index = hf.split_edge(half_edge_index, {3, 3});
+    half_edge_index = hf.split_edge(half_edge_index, {2, 5});
+    half_edge_index = hf.split_edge(half_edge_index, {1, 2});
+    half_edge_index = hf.split_edge(half_edge_index, {-1, 3});
     std::vector<point_2> segments{};
     segments.push_back(point_2{-2, 3});
     segments.push_back(point_2{0, 0});
@@ -41,6 +49,7 @@ TEST(ear_clip, ear_clip) {
     for (auto vertice: segments) {
         copy_vertices.push_back(vertice);
     }
+    // 下面的应该都是可以不用动的，只是需要从上面的点点顺序需要去重新排布一次
 
 
     std::vector<triangle> expect_triangles{};
