@@ -117,6 +117,8 @@ struct half_edge_struct {
         int vertex_index_start_point = half_edges.at(black_a).vertex_index;
         int vertex_index_end_point = half_edges.at(red_b).vertex_index;
 
+        int insert_face = half_edges.at(current_edge).incident_face;
+        int opposite_face = half_edges.at(get_opposite(current_edge)).pre_half_edge;
 
         half_edges.push_back({
             vertex_index_start_point, blue_d,
@@ -124,7 +126,7 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             middle_point_index, half_edges_size,
-            get_next(red_b), blue_f, faces_size
+            get_next(red_b), blue_f, opposite_face
         });
         half_edges.push_back({
             middle_point_index, blue_f,
@@ -132,7 +134,7 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             vertex_index_end_point, red_e,
-            blue_d, get_pre(red_b), faces_size
+            blue_d, get_pre(red_b), opposite_face
         });
         // 添加新的四条边也是能够添加的
         // 问题是原本的边应该怎么动？
@@ -150,7 +152,8 @@ struct half_edge_struct {
     half_edge_index insert_edge(half_edge_index current_edge, vertex_xy middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
-        int faces_size = faces.size();
+        int insert_face = half_edges.at(current_edge).incident_face;
+        int opposite_face = half_edges.at(get_opposite(current_edge)).incident_face;
         int middle_point_index = vertices_size;
         vertices.push_back(middle_point);
         // 单纯的加点很好加
@@ -169,11 +172,11 @@ struct half_edge_struct {
         if (get_next(get_opposite(current_edge)) == current_edge) {
             half_edges.push_back({
                 middle_point_index, blue_e,
-                blue_e, green_b, faces_size
+                blue_e, green_b, insert_face
             });
             half_edges.push_back({
                 vertex_index_end_point, green_f,
-                blue_a, green_f, faces_size
+                blue_a, green_f, opposite_face
             });
             half_edges.at(green_b).next_half_edge = green_f;
             half_edges.at(blue_a).pre_half_edge = blue_e;
@@ -181,12 +184,12 @@ struct half_edge_struct {
             // green_f
             half_edges.push_back({
                 middle_point_index, blue_e,
-                green_c, green_b, faces_size
+                green_c, green_b, insert_face
             });
             // blue_e
             half_edges.push_back({
                 vertex_index_end_point, green_f,
-                blue_a, blue_d, faces_size
+                blue_a, blue_d, opposite_face
             });
             half_edges.at(green_c).pre_half_edge = green_f;
             half_edges.at(blue_d).next_half_edge = blue_e;
@@ -215,7 +218,7 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             vertices_size + 1, half_edges_size,
-            half_edges_size, half_edges_size, faces_size
+            half_edges_size, half_edges_size, faces_size + 1
         });
         faces.push_back({half_edges_size, face::BOUNDARY_TYPE::hole_face});
         return half_edges_size;
@@ -237,12 +240,13 @@ struct half_edge_struct {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
-        auto split_face = half_edges.at(E_a).incident_face;
 
         auto E_f = half_edges_size;
         auto E_g = half_edges_size + 1;
         auto E_I = get_pre(E_a);
         auto E_c = get_pre(E_h);
+        auto split_face = half_edges.at(E_a).incident_face;
+        // 拿到我要劈开的环的索引
         // E_f
         half_edges.push_back({
             P_a, E_g,
@@ -259,19 +263,19 @@ struct half_edge_struct {
         half_edges.at(E_a).pre_half_edge = E_g;
 
         // 下一步需要做什么呢？将整个E_a的循环全部都设置为
-        faces.push_back({E_a, face::BOUNDARY_TYPE::bounding_face});
-        set_face(E_a);
-        faces.at(split_face).bounding_half_edge = E_f;
+        set_face(E_a); // 将被劈开的另一边全部设置为同一个face
+        faces.at(split_face).bounding_half_edge = E_f; // 更新原本的face的索引
 
         return E_g;
     }
 
     bool set_face(int half_edge_index_of_face) {
+        faces.push_back({half_edge_index_of_face, face::BOUNDARY_TYPE::bounding_face});
         int current_half_edge_index = half_edge_index_of_face;
         int first_half_edge = current_half_edge_index;
         int faces_size = faces.size();
         while (true) {
-            half_edges.at(current_half_edge_index).incident_face = faces_size + 1;
+            half_edges.at(current_half_edge_index).incident_face = faces_size;
             auto next_half_edge = get_next(current_half_edge_index);
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
