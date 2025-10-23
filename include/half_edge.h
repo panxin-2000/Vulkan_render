@@ -237,6 +237,7 @@ struct half_edge_struct {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
+        auto split_face = half_edges.at(E_a).incident_face;
 
         auto E_f = half_edges_size;
         auto E_g = half_edges_size + 1;
@@ -245,7 +246,7 @@ struct half_edge_struct {
         // E_f
         half_edges.push_back({
             P_a, E_g,
-            E_h, E_I, faces_size
+            E_h, E_I, split_face
         });
         // E_g
         half_edges.push_back({
@@ -260,6 +261,9 @@ struct half_edge_struct {
         // 下一步需要做什么呢？将整个E_a的循环全部都设置为
         faces.push_back({E_a, face::BOUNDARY_TYPE::bounding_face});
         set_face(E_a);
+        faces.at(split_face).bounding_half_edge = E_f;
+
+        return E_g;
     }
 
     bool set_face(int half_edge_index_of_face) {
@@ -384,6 +388,24 @@ struct half_edge_struct {
             segments.push_back(temp_point);
         }
         return segments;
+    }
+
+    bool print_all_face_vertices(std::vector<triangle> &result_segments) {
+        for (auto face: faces) {
+            if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
+                auto temp = get_all_edge_of_face(face.bounding_half_edge);
+                if (temp.size() == 3) {
+                    point_2 a = get_vertex(temp.at(0));
+                    point_2 b = get_vertex(temp.at(1));
+                    point_2 c = get_vertex(temp.at(2));
+
+                    triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
+                    result_segments.push_back(t);
+                } else {
+                    return false;
+                }
+            }
+        }
     }
 };
 

@@ -156,6 +156,10 @@ TEST(ear_clip, ear_clip_half_edge) {
             // 这里的打印也很方便，不出现错误的时候是不需要打印的
         }
     } else {
+        std::vector<triangle> result_segments_2{};
+
+        auto temp_flag = hf.print_all_face_vertices(result_segments_2);
+
         FAIL() << "ear_clip_algorithm_no_efficient failed "
         << " or  result_segments.size() != expect_triangles.size()" << std::endl;
     }
@@ -163,4 +167,4 @@ TEST(ear_clip, ear_clip_half_edge) {
 }
 
 // 如果是不带洞的，那么直接用是没有问题的，带洞的话，就稍微有点问题，不是论文中提到的办法能够直接解决的了
-//
+// 第一件事是三角形的划分结果肯定是对的，那么问题在哪里？

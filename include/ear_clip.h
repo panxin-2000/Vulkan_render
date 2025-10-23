@@ -36,7 +36,8 @@ bool ear_clip_algorithm_half_edge(half_edge_struct &hf, std::vector<triangle> &r
         float area = ab.single_area(ac);
         if (area >= 0 && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
-            hf.split_face(new_segments.at(0), hf.get_next(new_segments.at(2)));
+            auto tem = hf.split_face(new_segments.at(0), new_segments.at(2));
+            new_segments.at(0) = hf.get_opposite(tem);
             new_segments.erase(new_segments.begin() + 1);
             triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
             result_segments.push_back(t);
@@ -49,6 +50,7 @@ bool ear_clip_algorithm_half_edge(half_edge_struct &hf, std::vector<triangle> &r
     }
     if (new_segments.size() == 3) {
         // 只剩三个点时候，就已经是一个三角形了
+
         return true;
     }
     return false;
