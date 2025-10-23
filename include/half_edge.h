@@ -410,6 +410,7 @@ struct half_edge_struct {
                 }
             }
         }
+        return true;
     }
 };
 

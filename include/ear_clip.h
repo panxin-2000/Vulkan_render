@@ -19,7 +19,7 @@ bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 c,
                                                  RB_Tree_Node<point_2> &tree_vertices_root);
 
 template<typename T>
-bool ear_clip_algorithm_half_edge(half_edge_struct &hf, std::vector<triangle> &result_segments,
+bool ear_clip_algorithm_half_edge(half_edge_struct &hf,
                                   T &new_segments,
                                   RB_Tree_Node<point_2> &tree_vertices) {
     if (new_segments.size() < 3) {
@@ -39,8 +39,6 @@ bool ear_clip_algorithm_half_edge(half_edge_struct &hf, std::vector<triangle> &r
             auto tem = hf.split_face(new_segments.at(0), new_segments.at(2));
             new_segments.at(0) = hf.get_opposite(tem);
             new_segments.erase(new_segments.begin() + 1);
-            triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
-            result_segments.push_back(t);
         } else {
             // 将第一个点放回最后
             auto set_to_last = *new_segments.begin();

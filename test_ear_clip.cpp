@@ -148,20 +148,21 @@ TEST(ear_clip, ear_clip_half_edge) {
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
 
-    if (ear_clip_algorithm_half_edge(hf, result_segments, all_edge, *tree_vertices) == true &&
-        result_segments.size() == expect_triangles.size()) {
-        for (int i = 0; i < result_segments.size(); ++i) {
-            EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i
-        << std::endl;
-            // 这里的打印也很方便，不出现错误的时候是不需要打印的
+    if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
+        std::vector<triangle> result_segments{};
+        auto temp_flag = hf.print_all_face_vertices(result_segments);
+        if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
+            for (int i = 0; i < result_segments.size(); ++i) {
+                EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i << std::endl;
+                // 这里的打印也很方便，不出现错误的时候是不需要打印的
+                // 比较还是有点问题，两个向量对比需要重新写一个函数，因为它们的排序可能会不一致
+            }
+        } else {
+            FAIL() << "ear_clip_algorithm_no_efficient failed "
+            << " or  result_segments.size() != expect_triangles.size()" << std::endl;
         }
     } else {
-        std::vector<triangle> result_segments_2{};
-
-        auto temp_flag = hf.print_all_face_vertices(result_segments_2);
-
-        FAIL() << "ear_clip_algorithm_no_efficient failed "
-        << " or  result_segments.size() != expect_triangles.size()" << std::endl;
+        FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }
     // 拿到了正确的输入的结果，只不过是强行拿到的，并不是自己手动计算处理的，所以结果必然是正确的
 }
