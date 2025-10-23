@@ -412,6 +412,22 @@ struct half_edge_struct {
         }
         return true;
     }
+
+    bool print_all_face_vertices_indices(std::vector<int> &vertices_indices) {
+        for (auto face: faces) {
+            if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
+                auto temp = get_all_edge_of_face(face.bounding_half_edge);
+                if (temp.size() == 3) {
+                    vertices_indices.push_back(temp.at(0));
+                    vertices_indices.push_back(temp.at(1));
+                    vertices_indices.push_back(temp.at(2));
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 };
 
 
