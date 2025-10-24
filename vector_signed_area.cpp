@@ -10,12 +10,8 @@ point_2::point_2(float x1, float y1) {
     y = y1;
 }
 
-point_2 point_2::operator+(const point_2 &R) {
-    point_2 temp{0, 0};
-    temp.x = this->x + R.x;
-    temp.y = this->y + R.y;
-    return temp;
-}
+
+
 
 bool point_2::operator==(const point_2 &R) {
     if (this->x == R.x && this->y == R.y) return true;

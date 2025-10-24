@@ -17,7 +17,13 @@ public:
 
     point_2(float x1, float y1);
 
-    point_2 operator+(const point_2 &R);
+
+    point_2 operator+(const point_2 &R) const {
+        point_2 temp{0, 0};
+        temp.x = this->x + R.x;
+        temp.y = this->y + R.y;
+        return temp;
+    }
 
     bool operator==(const point_2 &R);
 
@@ -35,9 +41,24 @@ bool operator<(const point_2 &L, const point_2 &R);
 typedef point_2 triangle_position;
 
 struct triangle {
-    triangle_position a;
-    triangle_position b;
-    triangle_position c;
+    point_2 a;
+    point_2 b;
+    point_2 c;
+
+    bool operator==(const triangle &R) {
+        if (!(this->a + this->b + this->c == R.a + R.b + R.c)) {
+            return false;
+        }
+        if ((this->a == R.a && this->b == R.b && this->c == R.c) ||
+            (this->a == R.b && this->b == R.c && this->c == R.a) ||
+            (this->a == R.c && this->b == R.a && this->c == R.b))
+            return true;
+        else return false;
+    }
+
+    // 这里如果想要排序，那么也是有点不太一样的需求的
+    // 需要比较它们的重心，其实也不是非要比较重心，比较三个值相加也是可以的。
+    //
 };
 
 bool operator==(const triangle &L, const triangle &R);

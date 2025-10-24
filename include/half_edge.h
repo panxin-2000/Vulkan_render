@@ -337,8 +337,9 @@ struct half_edge_struct {
     }
 
     vertex &get_vertex(int incident_half_edge) {
-        int same_edge_index = get_same_edge_index(incident_half_edge);
-        int vertex_index_end_point = half_edges.at(same_edge_index).vertex_index;
+        // int same_edge_index = get_same_edge_index(incident_half_edge);
+        // 当时为什么会加这么一行，想起来也是有点离谱的
+        int vertex_index_end_point = half_edges.at(incident_half_edge).vertex_index;
         return vertices.at(vertex_index_end_point);
     }
 

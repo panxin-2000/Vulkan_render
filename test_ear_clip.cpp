@@ -138,6 +138,7 @@ TEST(ear_clip, ear_clip_half_edge) {
 
     std::vector<triangle> expect_triangles{};
     std::vector<triangle> result_segments{};
+    expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
     expect_triangles.push_back(triangle{{3, 2}, {5, 1}, {7, 2}});
     expect_triangles.push_back(triangle{{3, 2}, {7, 2}, {5, 3}});
     expect_triangles.push_back(triangle{{3, 2}, {5, 3}, {3, 3}});
@@ -146,14 +147,13 @@ TEST(ear_clip, ear_clip_half_edge) {
     expect_triangles.push_back(triangle{{-1, 3}, {0, 5}, {-2, 3}});
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
     expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
-    expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         std::vector<triangle> result_segments{};
         auto temp_flag = hf.print_all_face_vertices(result_segments);
         if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
-                EXPECT_EQ(result_segments.at(i), expect_triangles.at(i)) << "i value: " << i << std::endl;
+                EXPECT_EQ(result_segments.at(i)== expect_triangles.at(i), true) << "i value: " << i << std::endl;
                 // 这里的打印也很方便，不出现错误的时候是不需要打印的
                 // 比较还是有点问题，两个向量对比需要重新写一个函数，因为它们的排序可能会不一致
             }
