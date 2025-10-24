@@ -9,6 +9,10 @@ include_directories(${CURSES_INCLUDE_DIR})
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -save-temps=obj")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps=obj")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+add_compile_options(-fno-omit-frame-pointer)
+add_compile_options(-mno-omit-leaf-frame-pointer)
 
 ## 按照googletest官网文档添加了gtest
 include(FetchContent)

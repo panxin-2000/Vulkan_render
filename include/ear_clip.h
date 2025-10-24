@@ -19,7 +19,7 @@ bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 c,
                                                  RB_Tree_Node<point_2> &tree_vertices_root);
 
 template<typename T>
-bool ear_clip_algorithm_half_edge(half_edge_struct &hf,
+bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
                                   T &new_segments,
                                   RB_Tree_Node<point_2> &tree_vertices) {
     if (new_segments.size() < 3) {

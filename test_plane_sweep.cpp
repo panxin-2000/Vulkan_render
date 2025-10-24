@@ -46,7 +46,11 @@ struct event_point {
             // 之后再比较y轴，y轴小的为小
             return true;
         } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {
+            if (incident_half_edge % 2 == 0) {  // todo： 这里的逻辑在实际中稍微有点问题
+                // flip能够解决吗？然后就带了来一个问题flip翻转是为了解决什么？
+                // 如果排序不变，但是next和pre改变，那么其实需要翻转的内容很多。
+                // 但是如果只是为了更改这两个点索引的位置，那么只需要改这两条边各自的上下，顶点对于的边的索引，
+                // 以及face需要循环一遍更改索引值
                 // 值完全一样，比较是否是起点，是起点的边，
                 return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
             }
@@ -70,16 +74,16 @@ bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
 }
 
 
-void init_all_segments(half_edge_struct &hf) {
+void init_all_segments(half_edge_struct<vertex_xy> &hf) {
     hf.create_loop({1, 1}, {2, 2});
     hf.create_loop({3, 3}, {4, 4});
     hf.create_loop({0, 2}, {2, 0});
     hf.create_loop({0, 6.5}, {6.5, 0});
 }
-
+// 上面给出了来的左右点是对的，之后给出的话，两条边，小的不一定是起点。
 
 std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &create_event_queue(
-    half_edge_struct &hf) {
+    half_edge_struct<vertex_xy> &hf) {
     auto event_points = new std::priority_queue<event_point, std::vector<event_point>, std::greater<> >;
     for (auto vertice: hf.vertices) {
         event_point temp{};
@@ -95,8 +99,16 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
 }
 
 template<typename T, typename T1>
-bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct &hf, T1 event_points) {
+bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vertex_xy> &hf, T1 event_points) {
     if (left_node != nullptr && right_node != nullptr) {
+        auto temp = hf.get_opposite(left_node->data.incident_half_edge);
+        auto temp_2 = hf.get_vertices_index(temp);
+        auto temp_3 = hf.get_vertices_index(right_node->data.incident_half_edge);
+        if (temp_2 == temp_3) return false;
+        // 上面加的其实是有问题的，因为并没有考虑到四条边相交于同一个点的情况
+        // 还有一个问题，应该是默认进入的时候都是靠左的为起点，靠右的为终点，create_event_queue 应该是筛选过的，都是左先进的
+        // 但是应该不是很彻底
+
         // 两条线段判断是否相交
         segment_position ab = hf.get_segment(left_node->data.incident_half_edge);
         segment_position cd = hf.get_segment(right_node->data.incident_half_edge);
@@ -136,7 +148,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct &hf,
 //  其实应该先写一个最简单暴力的来，不然不太好玩
 //
 TEST(test_edge, test_create_edge) {
-    half_edge_struct hf;
+    half_edge_struct<vertex_xy> hf;
     init_all_segments(hf);
 
     auto event_points = create_event_queue(hf);

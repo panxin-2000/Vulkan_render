@@ -7,8 +7,8 @@
 #include "ear_clip.h"
 #include "half_edge.h"
 
-
-half_edge_struct &init_hf(half_edge_struct &hf) {
+template<typename T>
+T &init_hf(T &hf) {
     auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
     auto first_half_edge = half_edge_index;
     half_edge_index = hf.add_edge(half_edge_index, {0, 0});
@@ -24,7 +24,7 @@ half_edge_struct &init_hf(half_edge_struct &hf) {
 }
 
 TEST(ear_clip, from_half_edge_create_loop_vertices) {
-    half_edge_struct hf{};
+    half_edge_struct<vertex_xy> hf{};
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
@@ -70,7 +70,7 @@ TEST(ear_clip, ear_clip) {
     //
 
 
-    half_edge_struct hf{};
+    half_edge_struct<vertex_xy> hf{};
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
@@ -124,7 +124,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     //
 
 
-    half_edge_struct hf{};
+    half_edge_struct<vertex_xy> hf{};
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);

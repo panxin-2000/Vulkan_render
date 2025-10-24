@@ -29,7 +29,7 @@ struct segment_start_point_and_gradient {
     }
 
     static segment_start_point_and_gradient &
-    get_segment_start_point_and_gradient(half_edge_struct &hf, int incident_half_edge);
+    get_segment_start_point_and_gradient(half_edge_struct<vertex_xy> &hf, int incident_half_edge);
 };
 
 

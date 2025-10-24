@@ -38,6 +38,34 @@ struct vertex_xy {
     }
 };
 
+struct vertex_xyz {
+    float x, y, z;
+    int incident_half_edge;
+    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+    bool operator<(const vertex_xyz &right) const {
+        if (y < right.y) {
+            // 先比较x轴，x轴小的为小
+            return true;
+        } else if (y == right.y && x < right.x) {
+            // 之后再比较y轴，y轴小的为小
+            return true;
+        } else if (x == right.x && y == right.y) {
+            if (incident_half_edge % 2 == 0) {
+                // 值完全一样，比较是否是起点，是起点的边，
+                return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
+            }
+        }
+        return false;
+    }
+
+    bool operator==(const vertex_xyz &right) const {
+        if (x == right.x && y == right.y && incident_half_edge == right.incident_half_edge) {
+            return true;
+        }
+        return false;
+    }
+};
+
 
 struct half_edge {
     int vertex_index;
@@ -50,6 +78,7 @@ struct half_edge {
 
 
 using half_edge_index = int;
+using vertices_index = int;
 // 索引还是比较啊随意的，问题是如何建立一条边？
 
 
@@ -77,9 +106,10 @@ struct face {
 
 
 // 还需要有face
+template <typename vertex>
 struct half_edge_struct {
     std::vector<half_edge> half_edges;
-    std::vector<vertex_xy> vertices;
+    std::vector<vertex> vertices;
     std::vector<face> faces;
 
     half_edge_index add_edge(vertex_xy start_point,
@@ -329,6 +359,11 @@ struct half_edge_struct {
 
     [[nodiscard]] half_edge_index get_opposite(const int incident_half_edge) const {
         const int result = half_edges.at(incident_half_edge).twin_half_edge;
+        return result;
+    }
+
+    [[nodiscard]] vertices_index get_vertices_index(const int incident_half_edge) const {
+        const int result = half_edges.at(incident_half_edge).vertex_index;
         return result;
     }
 
