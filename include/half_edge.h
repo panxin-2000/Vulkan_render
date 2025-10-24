@@ -112,8 +112,8 @@ struct half_edge_struct {
     std::vector<vertex> vertices;
     std::vector<face> faces;
 
-    half_edge_index add_edge(vertex_xy start_point,
-                             vertex_xy end_point) {
+    half_edge_index add_edge(vertex start_point,
+                             vertex end_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         start_point.incident_half_edge = half_edges_size;
@@ -130,7 +130,7 @@ struct half_edge_struct {
     // 如果之前内部的面是空的话，那么不需要创建新的face
     // 如果不为空的话，那么是什么样子的呢？
     // 需要新建立一个面，并更改掉一些原本的内容
-    half_edge_index add_edge(half_edge_index current_edge, vertex_xy middle_point) {
+    half_edge_index add_edge(half_edge_index current_edge, vertex middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
@@ -179,7 +179,7 @@ struct half_edge_struct {
     }
 
     // 如果想将原本的half_edge 中，添加一个顶点，将它分为两个edge的操作
-    half_edge_index insert_edge(half_edge_index current_edge, vertex_xy middle_point) {
+    half_edge_index insert_edge(half_edge_index current_edge, vertex middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int insert_face = half_edges.at(current_edge).incident_face;
@@ -233,8 +233,8 @@ struct half_edge_struct {
 
     // 两个顶点创建一个loop，然后后创建两个面，一个是内部的面，另一个是外部的面，
     // 创建loop的时候只会创建一个面。，这个退化的线之内全部都是这个面
-    half_edge_index create_loop(vertex_xy start_point,
-                                vertex_xy end_point) {
+    half_edge_index create_loop(vertex start_point,
+                                vertex end_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
@@ -255,8 +255,8 @@ struct half_edge_struct {
     }
 
     // 在一个两个顶点直接插入一条边，将原本的一个face，分为两个face
-    half_edge_index split_face(vertex_xy first_point,
-                               vertex_xy second_point) {
+    half_edge_index split_face(vertex first_point,
+                               vertex second_point) {
     }
 
     half_edge_index split_face(half_edge_index first_edge,
@@ -336,7 +336,7 @@ struct half_edge_struct {
         return incident_half_edge - (incident_half_edge % 2);
     }
 
-    vertex_xy &get_vertex_xy(int incident_half_edge) {
+    vertex &get_vertex(int incident_half_edge) {
         int same_edge_index = get_same_edge_index(incident_half_edge);
         int vertex_index_end_point = half_edges.at(same_edge_index).vertex_index;
         return vertices.at(vertex_index_end_point);
@@ -434,9 +434,9 @@ struct half_edge_struct {
             if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
                 auto temp = get_all_edge_of_face(face.bounding_half_edge);
                 if (temp.size() == 3) {
-                    point_2 a = get_vertex(temp.at(0));
-                    point_2 b = get_vertex(temp.at(1));
-                    point_2 c = get_vertex(temp.at(2));
+                    auto a = get_vertex(temp.at(0));
+                    auto b = get_vertex(temp.at(1));
+                    auto c = get_vertex(temp.at(2));
 
                     triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
                     result_segments.push_back(t);

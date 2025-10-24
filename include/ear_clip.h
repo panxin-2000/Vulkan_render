@@ -27,9 +27,9 @@ bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
     }
     // 首先拿到前三个，
     while (new_segments.size() > 3) {
-        point_2 a = hf.get_vertex(new_segments.at(0));
-        point_2 b = hf.get_vertex(new_segments.at(1));
-        point_2 c = hf.get_vertex(new_segments.at(2));
+        point_2 a{hf.get_vertex(new_segments.at(0)).x, hf.get_vertex(new_segments.at(0)).y};
+        point_2 b{hf.get_vertex(new_segments.at(1)).x, hf.get_vertex(new_segments.at(1)).y};
+        point_2 c{hf.get_vertex(new_segments.at(2)).x, hf.get_vertex(new_segments.at(2)).y};
         // 判断这三个点是顺时针还是逆时针
         point_2 ab = b - a;
         point_2 ac = c - a;
