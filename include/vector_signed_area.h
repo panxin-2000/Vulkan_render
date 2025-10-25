@@ -63,7 +63,7 @@ struct triangle {
         if (left.x < right.x) {
             return true;
         }
-        if (left.y < right.y) {
+        if (left.x == right.x && left.y < right.y) {
             return true;
         }
         return false;

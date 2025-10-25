@@ -84,16 +84,15 @@ TEST(ear_clip, ear_clip) {
 
     std::vector<triangle> expect_triangles{};
     std::vector<triangle> result_segments{};
-    expect_triangles.push_back(triangle{{3, 2}, {5, 1}, {7, 2}});
+    expect_triangles.push_back(triangle{{3, 2}, {5, 3}, {3, 3}});
     expect_triangles.push_back(triangle{{3, 2}, {7, 2}, {5, 3}});
+    expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
+    expect_triangles.push_back(triangle{{3, 2}, {5, 1}, {7, 2}});
     expect_triangles.push_back(triangle{{3, 2}, {2, 5}, {1, 2}});
+    expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
     expect_triangles.push_back(triangle{{3, 2}, {3, 3}, {2, 5}});
     expect_triangles.push_back(triangle{{-1, 3}, {0, 5}, {-2, 3}});
-    expect_triangles.push_back(triangle{{3, 2}, {5, 3}, {3, 3}});
     expect_triangles.push_back(triangle{{-1, 3}, {-2, 3}, {0, 0}});
-    expect_triangles.push_back(triangle{{0, 0}, {3, 2}, {1, 2}});
-    expect_triangles.push_back(triangle{{0, 0}, {1, 2}, {-1, 3}});
-
 
 
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
