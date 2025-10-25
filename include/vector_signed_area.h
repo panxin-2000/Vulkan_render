@@ -62,7 +62,8 @@ struct triangle {
         auto right = R.a + R.b + R.c;
         if (left.x < right.x) {
             return true;
-        } else if (left.y < right.y) {
+        }
+        if (left.y < right.y) {
             return true;
         }
         return false;
