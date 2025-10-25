@@ -54,6 +54,7 @@ add_executable(hello_test
         test_add_char_calculata.cpp
         the_centre_of_a_circle.cpp
         segment_end_ponit_and_gradient.cpp
+        longest_continuous_sequence.cpp
         test_tetrahedron.cpp
         convex_hull.cpp
         bracket.cpp

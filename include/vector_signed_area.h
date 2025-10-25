@@ -6,6 +6,7 @@
 #define VECTOR_SIGNED_AREA_H
 
 #include <vector>
+#include <ostream>
 
 class point_2 {
 public:
@@ -54,6 +55,32 @@ struct triangle {
             (this->a == R.c && this->b == R.a && this->c == R.b))
             return true;
         else return false;
+    }
+
+    bool operator<(const triangle &R) const {
+        auto left = this->a + this->b + this->c;
+        auto right = R.a + R.b + R.c;
+        if (left.x < right.x) {
+            return true;
+        }
+        if (left.x == right.x && left.y < right.y) {
+            return true;
+        }
+        return false;
+    }
+
+    friend std::ostream &operator<<(std::ostream &output,
+                                    const triangle &D) {
+        auto right = D.a + D.b + D.c;
+
+        output << " barycenter x : " << right.x << " barycenter y : " << right.y;
+        output << " a.x :  " << D.a.x <<
+                " a.y :  " << D.a.y <<
+                " b.x :  " << D.b.x <<
+                " b.y :  " << D.b.y <<
+                " c.x :  " << D.c.x <<
+                " c.y :  " << D.c.y << std::endl;
+        return output;
     }
 
     // 这里如果想要排序，那么也是有点不太一样的需求的

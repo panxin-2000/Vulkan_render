@@ -4,6 +4,7 @@
 //#include <iostream>
 #include <vector>
 #include <unordered_map>
+#include "gtest/gtest.h"
 
 int longest_consecutive(std::vector<int> &nums) {
     std::unordered_map<int, int> L, R; // 首先这里可以理解为两个hash表
@@ -43,10 +44,12 @@ int update_longest_consecutive(std::vector<int> &nums) {
     // 首先哪个是键，哪个是值
     // []中的是键，L[]的左值是值
     for (auto x: nums) {
+        auto it = Length.find(x);
+        auto ff = Length[x];
         if (Length[x])continue;
 
         int left = Length[x - 1]; //left 代表左边有几个连续值
-        int right = Length[x + 1];//right 代表右边有几个连续值
+        int right = Length[x + 1]; //right 代表右边有几个连续值
         int d = left + right + 1; // 总值等于左边连续值加上右边连续值
         ans = std::max(ans, d);
 
@@ -54,4 +57,10 @@ int update_longest_consecutive(std::vector<int> &nums) {
         // 只在两边更新其值
     }
     return ans;
+}
+
+
+TEST(hash, find) {
+    std::vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    update_longest_consecutive(nums);
 }
