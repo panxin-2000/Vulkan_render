@@ -97,9 +97,6 @@ TEST(ear_clip, ear_clip) {
 
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 
-    for (auto triangle: expect_triangles) {
-        std::cout << triangle << std::endl;
-    }
 
     if (ear_clip_algorithm_no_efficient(result_segments, new_segments, *tree_vertices) == true &&
         result_segments.size() == expect_triangles.size()) {
