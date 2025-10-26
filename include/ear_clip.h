@@ -10,7 +10,7 @@
 #include "RB_tree_node.h"
 #include "half_edge.h"
 
-bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
+bool ear_clip_algorithm_no_efficient(std::vector<triangle<point_2> > &result_segments,
                                      std::vector<point_2> &new_segments,
                                      RB_Tree_Node<point_2> &tree_vertices);
 

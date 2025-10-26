@@ -83,7 +83,7 @@ bool ear_clip_algorithm(std::vector<point_2> &new_segments,
     }
 }
 
-bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
+bool ear_clip_algorithm_no_efficient(std::vector<triangle<point_2> > &result_segments,
                                      std::vector<point_2> &new_segments,
                                      RB_Tree_Node<point_2> &tree_vertices) {
     if (new_segments.size() < 3) {
@@ -101,7 +101,7 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
         if (area >= 0 && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             new_segments.erase(new_segments.begin() + 1);
-            triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
+            triangle<point_2> t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
             result_segments.push_back(t);
             // 应该是需要删除的，之后我看看，怎么写一个需要删除的例子
             // tree_vertices.delete_node_from_binary_search_tree(&tree_vertices,
@@ -118,7 +118,7 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle> &result_segments,
         // 清楚全部的内容，
         // 并进行三角化
         // 得到相应的结果
-        triangle t{
+        triangle<point_2> t{
             {new_segments.at(0).x, new_segments.at(0).y},
             {new_segments.at(1).x, new_segments.at(1).y},
             {new_segments.at(2).x, new_segments.at(2).y}

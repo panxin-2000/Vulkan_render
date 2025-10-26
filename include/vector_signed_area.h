@@ -12,12 +12,15 @@ class point_2 {
 public:
     float x;
     float y;
+    using point_type = point_2;
 
     point_2() {
     }
 
-    point_2(float x1, float y1);
-
+    point_2(float x1, float y1) {
+        x = x1;
+        y = y1;
+    }
 
     point_2 operator+(const point_2 &R) const {
         point_2 temp{0, 0};
@@ -28,23 +31,91 @@ public:
 
     bool operator==(const point_2 &R);
 
+    friend bool operator<(const point_2 &L, const point_2 &R) {
+        if (L.x < R.x) {
+            return true;
+        } else if (L.x == R.x && L.y < R.y) {
+            return true;
+        }
+        return false;
+    }
+
+    friend bool operator==(const point_2 &L, const point_2 &R) {
+        if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
+            return true;
+        }
+        return false;
+    }
 
     point_2 operator-(const point_2 &R);
 
     float single_area(const point_2 &R);
 };
 
-bool operator==(const point_2 &L, const point_2 &R);
+class point_3 {
+public:
+    float x;
+    float y;
+    float z;
+    using point_type = point_3;
 
-bool operator<(const point_2 &L, const point_2 &R);
+
+    point_3() {
+    }
+
+    point_3(float x1, float y1, float z1) {
+        x = x1;
+        y = y1;
+        z = z1;
+    }
+
+    point_3 operator+(const point_3 &R) const {
+        point_3 temp{0, 0, 0};
+        temp.x = this->x + R.x;
+        temp.y = this->y + R.y;
+        return temp;
+    }
+
+    bool operator==(const point_3 &R) {
+        if (this->x == R.x && this->y == R.y && this->z == R.z) {
+            return true;
+        }
+        return false;
+    }
+
+    friend bool operator<(const point_3 &L, const point_3 &R) {
+        if (L.x < R.x) {
+            return true;
+        }
+        return false;
+    }
+
+    friend bool operator==(const point_3 &L, const point_3 &R) {
+        if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
+            return true;
+        }
+        return false;
+    }
+
+    point_3 operator-(const point_3 &R);
+
+    float single_area(const point_3 &R);
+};
 
 
 typedef point_2 triangle_position;
 
+template<typename T>
 struct triangle {
-    point_2 a;
-    point_2 b;
-    point_2 c;
+    T a;
+    T b;
+    T c;
+
+    triangle(T a_1, T b_1, T c_1) {
+        a = a_1;
+        b = b_1;
+        c = c_1;
+    }
 
     bool operator==(const triangle &R) {
         if (!(this->a + this->b + this->c == R.a + R.b + R.c)) {
@@ -60,10 +131,7 @@ struct triangle {
     bool operator<(const triangle &R) const {
         auto left = this->a + this->b + this->c;
         auto right = R.a + R.b + R.c;
-        if (left.x < right.x) {
-            return true;
-        }
-        if (left.x == right.x && left.y < right.y) {
+        if (left < right) {
             return true;
         }
         return false;
@@ -83,12 +151,18 @@ struct triangle {
         return output;
     }
 
+    friend bool operator==(const triangle &L, const triangle &R) {
+        if (L == R) {
+            return true;
+        }
+        return false;
+    }
+
+
     // 这里如果想要排序，那么也是有点不太一样的需求的
     // 需要比较它们的重心，其实也不是非要比较重心，比较三个值相加也是可以的。
     //
 };
-
-bool operator==(const triangle &L, const triangle &R);
 
 
 bool on_segment_bounding_box(const point_2 &segment_start_point, point_2 &segment_end_point,

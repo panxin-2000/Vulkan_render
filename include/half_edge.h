@@ -10,10 +10,23 @@
 // Created by 潘鑫 on 2025/10/21.
 //
 
-struct vertex_xy {
-    float x, y;
+struct vertex_xy : public point_2 {
+    using point_type = point_2;
+
     int incident_half_edge;
     int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+
+    vertex_xy(float x1, float y1) {
+        x = x1;
+        y = y1;
+    }
+
+    vertex_xy(float x1, float y1, int incident_half_edge_1) {
+        x = x1;
+        y = y1;
+        incident_half_edge = incident_half_edge_1;
+    }
+
     bool operator<(const vertex_xy &right) const {
         if (y < right.y) {
             // 先比较x轴，x轴小的为小
@@ -38,10 +51,16 @@ struct vertex_xy {
     }
 };
 
-struct vertex_xyz {
-    float x, y, z;
-    int incident_half_edge;
-    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+struct vertex_xyz : public point_3 {
+    int incident_half_edge{};
+    int is_using{}; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+
+    vertex_xyz(float x1, float y1, float z1) {
+        x = x1;
+        y = y1;
+        z = z1;
+    }
+
     bool operator<(const vertex_xyz &right) const {
         if (y < right.y) {
             // 先比较x轴，x轴小的为小
@@ -106,11 +125,12 @@ struct face {
 
 
 // 还需要有face
-template <typename vertex>
+template<typename vertex>
 struct half_edge_struct {
     std::vector<half_edge> half_edges;
     std::vector<vertex> vertices;
     std::vector<face> faces;
+    using vertex_base_type = typename vertex::point_type;
 
     half_edge_index add_edge(vertex start_point,
                              vertex end_point) {
@@ -430,16 +450,28 @@ struct half_edge_struct {
         return segments;
     }
 
-    bool print_all_face_vertices(std::vector<triangle> &result_segments) {
+    /**
+     *
+     * @tparam T
+     * @param result_segments
+     * @param without_hole true 时 不输出洞， false 输出洞
+     * @return
+     */
+    template<typename T>
+    bool print_all_face_vertices(T &result_segments, bool without_hole) {
         for (auto face: faces) {
-            if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
+            if (!without_hole || face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
                 auto temp = get_all_edge_of_face(face.bounding_half_edge);
                 if (temp.size() == 3) {
                     auto a = get_vertex(temp.at(0));
                     auto b = get_vertex(temp.at(1));
                     auto c = get_vertex(temp.at(2));
 
-                    triangle t{{a.x, a.y}, {b.x, b.y}, {c.x, c.y}};
+                    triangle<vertex_base_type> t{
+                        static_cast<vertex_base_type>(a),
+                        static_cast<vertex_base_type>(b),
+                        static_cast<vertex_base_type>(c)
+                    };
                     result_segments.push_back(t);
                 } else {
                     return false;
@@ -449,9 +481,9 @@ struct half_edge_struct {
         return true;
     }
 
-    bool print_all_face_vertices_indices(std::vector<int> &vertices_indices) {
+    bool print_all_face_vertices_indices(std::vector<int> &vertices_indices, bool without_hole) {
         for (auto face: faces) {
-            if (face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
+            if (!without_hole || face.boundary_type != face::BOUNDARY_TYPE::hole_face) {
                 auto temp = get_all_edge_of_face(face.bounding_half_edge);
                 if (temp.size() == 3) {
                     vertices_indices.push_back(temp.at(0));

@@ -5,11 +5,6 @@
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
 
-point_2::point_2(float x1, float y1) {
-    x = x1;
-    y = y1;
-}
-
 
 
 
@@ -18,28 +13,12 @@ bool point_2::operator==(const point_2 &R) {
     else return false;
 }
 
-bool operator==(const point_2 &L, const point_2 &R) {
-    if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
-        return true;
-    }
-    return false;
-}
+
 
 // 其实感觉不应该用这个的，但是暂时没有办法，就先用这个吧，应该和sort一样，
 // 增加一个添加函数的接口的
-bool operator<(const point_2 &L, const point_2 &R) {
-    if (L.x < R.x) {
-        return true;
-    }
-    return false;
-}
 
-bool operator==(const triangle &L, const triangle &R) {
-    if (L.a == R.a && L.b == R.b && L.c == R.c) {
-        return true;
-    }
-    return false;
-}
+
 
 point_2 point_2::operator-(const point_2 &R) {
     point_2 temp{0, 0};
