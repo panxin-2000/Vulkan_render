@@ -20,10 +20,7 @@ bool convex_hull_in_order_of_angles(std::vector<point_2> &new_segments) {
         point_2 b = new_segments.at(new_segments.size() - 2);
         point_2 c = new_segments.at(new_segments.size() - 1);
 
-        point_2 ab = b - a;
-        point_2 ac = c - a;
-        float area = ab.single_area(ac);
-        if (area >= 0) {
+        if (point_2::is_anticlockwise(a, b, c)) {
             // 那么这里是逆时针
             return true;
         } else {

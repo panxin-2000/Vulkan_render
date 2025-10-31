@@ -6,21 +6,17 @@
 #include "vector_signed_area.h"
 
 
-
-
 bool point_2::operator==(const point_2 &R) {
     if (this->x == R.x && this->y == R.y) return true;
     else return false;
 }
 
 
-
 // 其实感觉不应该用这个的，但是暂时没有办法，就先用这个吧，应该和sort一样，
 // 增加一个添加函数的接口的
 
 
-
-point_2 point_2::operator-(const point_2 &R) {
+const point_2 point_2::operator-(const point_2 &R) const {
     point_2 temp{0, 0};
     temp.x = this->x - R.x;
     temp.y = this->y - R.y;
@@ -35,6 +31,21 @@ point_2 point_2::operator-(const point_2 &R) {
  */
 float point_2::single_area(const point_2 &R) {
     return this->x * R.y - this->y * R.x;
+}
+
+/**
+ * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
+ * @param a
+ * @param b
+ * @param c
+ * @return
+ */
+bool point_2::is_anticlockwise(const point_2 &a, const point_2 b, const point_2 c) {
+    point_2 ab = b - a;
+    point_2 ac = c - a;
+    float area = ab.single_area(ac);
+    if (area > 0) return true;
+    else return false;
 }
 
 /**

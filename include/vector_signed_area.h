@@ -47,9 +47,11 @@ public:
         return false;
     }
 
-    point_2 operator-(const point_2 &R);
+    const point_2 operator-(const point_2 &R) const;
 
     float single_area(const point_2 &R);
+
+    static bool is_anticlockwise(const point_2 &a, point_2 b, point_2 c);
 };
 
 class point_3 {

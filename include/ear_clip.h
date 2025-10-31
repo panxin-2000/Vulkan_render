@@ -31,10 +31,8 @@ bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
         point_2 b{hf.get_vertex(new_segments.at(1)).x, hf.get_vertex(new_segments.at(1)).y};
         point_2 c{hf.get_vertex(new_segments.at(2)).x, hf.get_vertex(new_segments.at(2)).y};
         // 判断这三个点是顺时针还是逆时针
-        point_2 ab = b - a;
-        point_2 ac = c - a;
-        float area = ab.single_area(ac);
-        if (area >= 0 && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
+        if (point_2::is_anticlockwise(a, b, c) &&
+            no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             auto tem = hf.split_face(new_segments.at(0), new_segments.at(2));
             new_segments.at(0) = hf.get_opposite(tem);
