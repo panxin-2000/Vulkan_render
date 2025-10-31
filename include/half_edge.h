@@ -270,7 +270,7 @@ struct half_edge_struct {
             vertices_size + 1, half_edges_size,
             half_edges_size, half_edges_size, faces_size + 1
         });
-        faces.push_back({half_edges_size, face::BOUNDARY_TYPE::hole_face});
+        faces.push_back({half_edges_size + 1, face::BOUNDARY_TYPE::hole_face});
         return half_edges_size;
     }
 
