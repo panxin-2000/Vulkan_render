@@ -23,6 +23,21 @@ T &init_hf(T &hf) {
     return hf;
 }
 
+template<typename T>
+T &init_expect_triangles(T &expect_triangles) {
+    expect_triangles.push_back(triangle<point_2>{{0, 0}, {1, 2}, {-1, 3}});
+    expect_triangles.push_back(triangle<point_2>{{3, 2}, {5, 1}, {7, 2}});
+    expect_triangles.push_back(triangle<point_2>{{3, 2}, {7, 2}, {5, 3}});
+    expect_triangles.push_back(triangle<point_2>{{3, 2}, {5, 3}, {3, 3}});
+    expect_triangles.push_back(triangle<point_2>{{3, 2}, {3, 3}, {2, 5}});
+    expect_triangles.push_back(triangle<point_2>{{3, 2}, {2, 5}, {1, 2}});
+    expect_triangles.push_back(triangle<point_2>{{-1, 3}, {0, 5}, {-2, 3}});
+    expect_triangles.push_back(triangle<point_2>{{-1, 3}, {-2, 3}, {0, 0}});
+    expect_triangles.push_back(triangle<point_2>{{0, 0}, {3, 2}, {1, 2}});
+    return expect_triangles;
+}
+
+
 TEST(ear_clip, from_half_edge_create_loop_vertices) {
     half_edge_struct<vertex_xy> hf{};
     hf = init_hf(hf);
@@ -141,16 +156,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     }
 
     std::vector<triangle<point_2> > expect_triangles{};
-    std::vector<triangle<point_2> > result_segments{};
-    expect_triangles.push_back(triangle<point_2>{{0, 0}, {1, 2}, {-1, 3}});
-    expect_triangles.push_back(triangle<point_2>{{3, 2}, {5, 1}, {7, 2}});
-    expect_triangles.push_back(triangle<point_2>{{3, 2}, {7, 2}, {5, 3}});
-    expect_triangles.push_back(triangle<point_2>{{3, 2}, {5, 3}, {3, 3}});
-    expect_triangles.push_back(triangle<point_2>{{3, 2}, {3, 3}, {2, 5}});
-    expect_triangles.push_back(triangle<point_2>{{3, 2}, {2, 5}, {1, 2}});
-    expect_triangles.push_back(triangle<point_2>{{-1, 3}, {0, 5}, {-2, 3}});
-    expect_triangles.push_back(triangle<point_2>{{-1, 3}, {-2, 3}, {0, 0}});
-    expect_triangles.push_back(triangle<point_2>{{0, 0}, {3, 2}, {1, 2}});
+    init_expect_triangles(expect_triangles);
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         std::vector<triangle<point_2> > result_segments{};
@@ -173,3 +179,34 @@ TEST(ear_clip, ear_clip_half_edge) {
 
 // 如果是不带洞的，那么直接用是没有问题的，带洞的话，就稍微有点问题，不是论文中提到的办法能够直接解决的了
 // 第一件事是三角形的划分结果肯定是对的，那么问题在哪里？
+
+
+TEST(ear_clip, test_point_location) {
+    half_edge_struct<vertex_xy> hf{};
+    hf = init_hf(hf);
+    face temp;
+    hf.get_first_face(temp);
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto new_segments = hf.get_vertices(all_edge);
+
+    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    for (auto new_segment: new_segments) {
+        tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
+    }
+
+
+    if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
+        // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
+        EXPECT_EQ(9, hf.get_vertex_in_witch_face_test({1, 1}));
+        EXPECT_EQ(2, hf.get_vertex_in_witch_face_test({5, 1.1}));
+        EXPECT_EQ(3, hf.get_vertex_in_witch_face_test({5, 2.5}));
+        EXPECT_EQ(4, hf.get_vertex_in_witch_face_test({3.1, 2.9}));
+        EXPECT_EQ(5, hf.get_vertex_in_witch_face_test({2.9, 3}));
+        EXPECT_EQ(6, hf.get_vertex_in_witch_face_test({2, 3}));
+        EXPECT_EQ(7, hf.get_vertex_in_witch_face_test({-1, 3.1})); // 这里结果确实是0，但是不应该是零
+        // 为什么不应该是零，因为零应该是一个最大的环，但是现在却不是
+        EXPECT_EQ(8, hf.get_vertex_in_witch_face_test({-1, 2}));
+    } else {
+        FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
+    }
+}

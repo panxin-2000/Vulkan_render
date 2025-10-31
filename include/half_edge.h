@@ -98,6 +98,7 @@ struct half_edge {
 
 using half_edge_index = int;
 using vertices_index = int;
+using face_index = int;
 // 索引还是比较啊随意的，问题是如何建立一条边？
 
 
@@ -480,6 +481,40 @@ struct half_edge_struct {
         }
         return true;
     }
+
+
+    face_index get_vertex_in_witch_face_test(vertex_base_type vertex_in) {
+        face_index result_face_index = 0;
+        for (auto face: faces) {
+            auto temps = get_vertex_in_face(vertex_in, face.bounding_half_edge);
+            if (temps == true) {
+                return result_face_index;
+            }
+            result_face_index++;
+        }
+        return -1;
+    }
+
+    bool get_vertex_in_face(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
+        auto temps = get_all_edge_of_face(half_edge_indices);
+        for (auto temp: temps) {
+            if (!get_vertex_in_the_edge_left(vertex_in, temp)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
+        auto a = get_vertex(half_edge_indices);
+        auto b = get_vertex(get_opposite(half_edge_indices));
+        if (point_2::is_anticlockwise(a, b, vertex_in)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
     bool print_all_face_vertices_indices(std::vector<int> &vertices_indices, bool without_hole) {
         for (auto face: faces) {
