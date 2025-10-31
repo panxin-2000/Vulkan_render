@@ -37,15 +37,15 @@ bool no_point_in_line_clockwise_direction_no_efficient(point_2 a, point_2 c,
 }
 
 
-bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 c,
+bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 b,
                                                  point_2 do_not_care_point,
                                                  RB_Tree_Node<point_2> &tree_vertices_root) {
-    auto vertices = find_interval(tree_vertices_root, a, c);
+    auto vertices = find_interval(tree_vertices_root, a, b);
     for (auto p_vertice: vertices) {
         auto tree_vertice = p_vertice->data;
-        if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
-            (tree_vertice.x < a.x && tree_vertice.x > c.x && !(do_not_care_point == tree_vertice))) {
-            point_2 b = tree_vertice;
+        if ((tree_vertice.x > a.x && tree_vertice.x < b.x && !(do_not_care_point == tree_vertice)) ||
+            (tree_vertice.x < a.x && tree_vertice.x > b.x && !(do_not_care_point == tree_vertice))) {
+            point_2 c = tree_vertice;
             if (!point_2::is_anticlockwise(a, b, c)) {
                 return false;
             }
