@@ -22,6 +22,12 @@ public:
         y = y1;
     }
 
+    // point_2 &operator=(const point_2 &R) {
+    //     this->x = R.x;
+    //     this->y = R.y;
+    //     return *this;
+    // }
+
     point_2 operator+(const point_2 &R) const {
         point_2 temp{0, 0};
         temp.x = this->x + R.x;
@@ -45,6 +51,39 @@ public:
             return true;
         }
         return false;
+    }
+
+    static point_2 int_max_limit(point_2 &L) {
+        L.x = std::numeric_limits<float>::infinity();;
+        L.y = std::numeric_limits<float>::infinity();
+        return L;
+    }
+
+    static point_2 int_min_limit(point_2 &L) {
+        L.x = -std::numeric_limits<float>::infinity();;
+        L.y = -std::numeric_limits<float>::infinity();
+        return L;
+    }
+
+
+    static  const point_2 min_two_point(point_2 &L, const point_2 &R) {
+        if (R.x < L.x) {
+            L.x = R.x;
+        }
+        if (R.y < L.y) {
+            L.y = R.y;
+        }
+        return L;
+    }
+
+    static const point_2 max_two_point(point_2 &L, const point_2 &R) {
+        if (R.x > L.x) {
+            L.x = R.x;
+        }
+        if (R.y > L.y) {
+            L.y = R.y;
+        }
+        return L;
     }
 
     const point_2 operator-(const point_2 &R) const;

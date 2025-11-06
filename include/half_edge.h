@@ -5,7 +5,10 @@
 #ifndef HALF_EDGE_H
 #define HALF_EDGE_H
 #include <vector>
+
+#include "bounding_box.h"
 #include "vector_signed_area.h"
+
 //
 // Created by 潘鑫 on 2025/10/21.
 //
@@ -513,6 +516,15 @@ struct half_edge_struct {
         } else {
             return false;
         }
+    }
+
+    AABB<vertex_base_type> calculate_aabb() {
+        AABB<vertex_base_type> box;
+        for (auto vertex_point: vertices) {
+            box.min_point = vertex_base_type::min_two_point(box.min_point, vertex_point);
+            box.max_point = vertex_base_type::max_two_point(box.max_point, vertex_point);
+        }
+        return box;
     }
 
 

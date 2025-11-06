@@ -2,10 +2,12 @@
 // Created by 潘鑫 on 2025/10/8.
 //
 
+#include <random>
 #include <gtest/gtest.h>
 #include "vector_signed_area.h"
 #include "ear_clip.h"
 #include "half_edge.h"
+#include "trapezoid.h"
 
 template<typename T>
 T &init_hf(T &hf) {
@@ -203,9 +205,38 @@ TEST(ear_clip, test_point_location) {
         EXPECT_EQ(4, hf.get_vertex_in_witch_face_test({3.1, 2.9}));
         EXPECT_EQ(5, hf.get_vertex_in_witch_face_test({2.9, 3}));
         EXPECT_EQ(6, hf.get_vertex_in_witch_face_test({2, 3}));
-        EXPECT_EQ(7, hf.get_vertex_in_witch_face_test({-1, 3.1})); // 这里结果确实是0，但是不应该是零
-        // 为什么不应该是零，因为零应该是一个最大的环，但是现在却不是
+        EXPECT_EQ(7, hf.get_vertex_in_witch_face_test({-1, 3.1}));
         EXPECT_EQ(8, hf.get_vertex_in_witch_face_test({-1, 2}));
+
+        // 这里准备好了hf
+        // 首先需要什么呢？一个大的四边形，将全部的线段包裹起来
+        // 之后再做什么呢？随机添加线段？然后构建梯形？
+        // 梯形的索引是怎么和我之前的索引相对应了起来呢？
+        std::vector<triangle<point_2> > result_segments{};
+
+        auto temp_flag = hf.print_all_face_vertices(result_segments, true);
+        if (temp_flag == true) {
+            std::random_device rd;
+            std::mt19937 g(rd());
+            // obtain a time-based seed:
+            // unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+            // shuffle (foo.begin(), foo.end(), std::default_random_engine(seed));
+            // 其中注释的是另一种实现办法
+
+            // 我需要拿到 half_edge 结构中全部的线段
+
+            std::shuffle(result_segments.begin(), result_segments.end(), g);
+        }
+        // 其实最开始
+
+        auto bounding_box = hf.calculate_aabb();
+        // 这里的结果是对的
+        half_edge_struct<vertex_xy> hf_2;
+        auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
+        // 之后需要做什么呢？
+
+
+        // std::copy(hf, hf_2);
     } else {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }
