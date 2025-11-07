@@ -227,13 +227,16 @@ TEST(ear_clip, test_point_location) {
 
             std::shuffle(result_segments.begin(), result_segments.end(), g);
         }
-        // 其实最开始
+        // 其实最开始打乱不打乱都无所谓，因为如果能按照一个固定的规则来，其实更好进行验证每一步是否是正确的
 
         auto bounding_box = hf.calculate_aabb();
         // 这里的结果是对的
-        half_edge_struct<vertex_xy> hf_2;
+        half_edge_struct<vertex_xy> hf_2;// 这里还需要一个copy的函数
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
         // 之后需要做什么呢？
+        // 之后就需要一个线段了，
+
+
 
 
         // std::copy(hf, hf_2);
