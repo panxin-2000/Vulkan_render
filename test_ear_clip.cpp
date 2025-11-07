@@ -244,3 +244,35 @@ TEST(ear_clip, test_point_location) {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }
 }
+
+
+// 下面是关于两个不同的智能指针的简单测试
+// 树应该是不太好使用智能指针的
+// std::shared_ptr侵占独占指针所指向的对象的独占权，所以独占指针被设置为null
+std::unique_ptr<int> set(std::unique_ptr<int> &&tem) {
+    *tem = 5;
+    return tem;
+}
+
+std::shared_ptr<int> set(std::shared_ptr<int> tem) {
+    *tem = 5;
+    return tem;
+}
+
+TEST(unique_point, int) {
+    std::unique_ptr<int> p{new int(3)};
+    auto new_p = set(std::move(p));
+    EXPECT_EQ(*new_p, 5);
+    EXPECT_EQ(p, nullptr);
+    std::move(new_p); // 只调用一个单独的move是没有什么作用的
+    std::shared_ptr<int> shared_p = std::move(new_p);   // 还需要添加等号或者转移的实际操作才会生效
+    EXPECT_EQ(*shared_p, 5);
+}
+
+
+TEST(share_point, int) {
+    std::shared_ptr<int> p{new int(3)};
+    auto new_p = set(p);
+    EXPECT_EQ(*new_p, 5);
+    EXPECT_NE(p, nullptr);
+}
