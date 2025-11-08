@@ -82,34 +82,29 @@ public:
         return need_clean_sub_tree;
     }
 
+    // 原本B是A的右子树，现在变成A是B的左子树
     bool left_rotate(T *node) {
         if (node != nullptr && node->right == nullptr) {
             return false;
         } else {
-            auto temp_node_right = node->right;
-            node->right = node->right->left;
-            if (node->right != nullptr) {
-                node->right->parent = node; // 还需要判空
-            }
-            replace_sub_tree(node, temp_node_right);
-            temp_node_right->parent = node->parent;
-            temp_node_right->left = node;
-            node->parent = temp_node_right;
+            auto A_node = node;
+            auto B_node = node->right;
+            replace_sub_tree(A_node, B_node);
+            replace_sub_tree_right(A_node, B_node->left);
+            replace_sub_tree_left(B_node, A_node);
         }
     }
 
+    // 原本B是A的左子树，现在变成A是B的右子树
     static bool right_rotate(T *node) {
         if (node != nullptr && node->left == nullptr) {
             return false;
         } else {
-            auto temp_node_left = node->left;
-            node->left = temp_node_left->right;
-            if (node->left != nullptr) {
-                node->left->parent = node;
-            }
-            replace_sub_tree(node, temp_node_left);
-            temp_node_left->right = node;
-            node->parent = temp_node_left;
+            auto A_node = node;
+            auto B_node = node->left;
+            replace_sub_tree(A_node, B_node);
+            replace_sub_tree_left(A_node, B_node->right);
+            replace_sub_tree_right(B_node, A_node);
         }
     }
 
