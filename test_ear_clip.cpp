@@ -231,12 +231,13 @@ TEST(ear_clip, test_point_location) {
 
         auto bounding_box = hf.calculate_aabb();
         // 这里的结果是对的
-        half_edge_struct<vertex_xy> hf_2;// 这里还需要一个copy的函数
+        half_edge_struct<vertex_xy> hf_2; // 这里还需要一个copy的函数
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
+
+        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {5, 3}});
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
-
-
+        // 添加第一个线段完成了
 
 
         // std::copy(hf, hf_2);
