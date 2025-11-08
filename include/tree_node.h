@@ -13,7 +13,7 @@ public:
     T *left;
     T *right;
 
-    T *tree_successor(T *tree_node) {
+    static T *tree_successor(T *tree_node) {
         if (tree_node->right != nullptr) {
             return tree_minimum(tree_node->right);
         }
@@ -37,13 +37,49 @@ public:
         return result_node;
     }
 
-    T *tree_minimum(T *tree_node) {
+    static T *tree_minimum(T *tree_node) {
         T *return_node = nullptr;
         while (tree_node != nullptr) {
             return_node = tree_node;
             tree_node = tree_node->left;
         }
         return return_node;
+    }
+
+    static T *replace_sub_tree(T *delete_sub_tree, T *replace_sub_tree) {
+        replace_sub_tree->parent = delete_sub_tree->parent;
+        if (replace_sub_tree->parent == nullptr) {
+        } else if (delete_sub_tree == replace_sub_tree->parent->left) {
+            replace_sub_tree->parent->left = replace_sub_tree;
+        } else if (delete_sub_tree == replace_sub_tree->parent->right) {
+            replace_sub_tree->parent->right = replace_sub_tree;
+        }
+        return replace_sub_tree;
+    }
+
+    static T *replace_sub_tree_left(T *sub_tree, T *left_sub_tree) {
+        sub_tree->left = left_sub_tree;
+        if (left_sub_tree != nullptr)
+            left_sub_tree->parent = sub_tree;
+        return sub_tree;
+    }
+
+    static T *replace_sub_tree_right(T *sub_tree, T *right_sub_tree) {
+        sub_tree->right = right_sub_tree;
+        if (right_sub_tree != nullptr)
+            right_sub_tree->parent = sub_tree;
+        return sub_tree;
+    }
+
+    static T *clean_sub_tree_father(T *delete_sub_tree) {
+        if (delete_sub_tree->parent == nullptr) {
+        } else if (delete_sub_tree == delete_sub_tree->parent->left) {
+            delete_sub_tree->parent->left = nullptr;
+        } else if (delete_sub_tree == delete_sub_tree->parent->right) {
+            delete_sub_tree->parent->right = nullptr;
+        }
+        delete_sub_tree->parent = nullptr;
+        return delete_sub_tree;
     }
 
     bool left_rotate(T *node) {
@@ -55,13 +91,8 @@ public:
             if (node->right != nullptr) {
                 node->right->parent = node; // 还需要判空
             }
+            replace_sub_tree(node, temp_node_right);
             temp_node_right->parent = node->parent;
-            if (node->parent == nullptr) {
-            } else if (node == node->parent->left) {
-                node->parent->left = temp_node_right;
-            } else if (node == node->parent->right) {
-                node->parent->right = temp_node_right;
-            }
             temp_node_right->left = node;
             node->parent = temp_node_right;
         }
@@ -76,13 +107,7 @@ public:
             if (node->left != nullptr) {
                 node->left->parent = node;
             }
-            temp_node_left->parent = node->parent;
-            if (node->parent == nullptr) {
-            } else if (node == node->parent->left) {
-                node->parent->left = temp_node_left;
-            } else if (node == node->parent->right) {
-                node->parent->right = temp_node_left;
-            }
+            replace_sub_tree(node, temp_node_left);
             temp_node_left->right = node;
             node->parent = temp_node_left;
         }

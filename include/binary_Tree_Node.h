@@ -125,68 +125,37 @@ public:
         }
         if (delete_node.right == nullptr && delete_node.left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
-            if (delete_node.parent != nullptr && delete_node.parent->left == &delete_node) {
-                delete_node.parent->left = nullptr;
-            } else if (delete_node.parent != nullptr && delete_node.parent->right == &delete_node) {
-                delete_node.parent->right = nullptr;
-            }
+            delete_node.clean_sub_tree_father(&delete_node);
         } else if (delete_node.right == nullptr && delete_node.left != nullptr) {
             // 右子树为空
-            if (delete_node.parent != nullptr && delete_node.parent->left == &delete_node) {
-                // 为父亲的左子树
-                delete_node.parent->left = delete_node.left; // 将父亲的左子树更新为删除节点的左子树
-            } else if (delete_node.parent != nullptr && delete_node.parent->right == &delete_node) {
-                // 就不继续注释了
-                delete_node.parent->right = delete_node.left;
-            }
-            delete_node.left->parent = delete_node.parent;
+            delete_node.replace_sub_tree(&delete_node, delete_node.left);
         } else if (delete_node.right != nullptr && delete_node.left == nullptr) {
             // 左子树为空
-            if (delete_node.parent != nullptr && delete_node.parent->left == &delete_node) {
-                delete_node.parent->left = delete_node.right;
-            } else if (delete_node.parent != nullptr && delete_node.parent->right == &delete_node) {
-                delete_node.parent->right = delete_node.right;
-            }
-            delete_node.right->parent = delete_node.parent;
+            delete_node.replace_sub_tree(&delete_node, delete_node.right);
         } else if (delete_node.right != nullptr && delete_node.left != nullptr) {
             // 寻找后继
             auto successor = root->tree_successor(&delete_node); // 这行还是有问题的，还是编译不过，
             if (successor->left == nullptr && successor->right == nullptr) {
-                if (successor->parent->left == successor) {
-                    successor->parent->left = nullptr;
-                } else if (successor->parent->right == successor) {
-                    successor->parent->right = nullptr;
-                }
+                successor->clean_sub_tree_father(successor);
             } else if (successor->left == nullptr && successor->right != nullptr) {
-                if (successor->parent == &delete_node) {
-                    // 后继是删除结点的右孩子， // 想办法跳过就可以了
-                    delete_node.right = successor->right;
-                } else {
-                    // 后继不是删除结点的右孩子
-                    successor->parent->left = successor->right;
-                    successor->right->parent = successor->parent;
-                }
+                // 后继右子树替换掉后继原本的位置
+                // 后继是删除结点的右孩子 时也是执行这个操作
+                successor->replace_sub_tree(successor, successor->right);
             }
-            // successor 这个时候是算法一个最小的叶子结点了
-            successor->parent = delete_node.parent;
+            // successor 这个时候是删除结点 一个最小的叶子结点了
+            // 查找后继时就决定上一行的内容，
+            // 重点时这时候 successor 是一个孤立的结点
+            // 父亲，左右孩子都可以被直接赋值
+            // 后继右子树替换掉被删除结点原本的位置
+            successor->replace_sub_tree(&delete_node, successor);
 
-            if (delete_node.parent != nullptr && delete_node.parent->left == &delete_node) {
-                delete_node.parent->left = successor;
-            } else if (delete_node.parent != nullptr && delete_node.parent->right == &delete_node) {
-                delete_node.parent->right = successor;
-            }
             if (delete_node.parent == nullptr) {
                 root = successor;
             }
             // 清理后继和其父亲的关系
-            successor->left = delete_node.left;
-            if (successor->left != nullptr) {
-                successor->left->parent = successor;
-            }
-            successor->right = delete_node.right;
-            if (successor->right != nullptr) {
-                successor->right->parent = successor;
-            }
+            successor->replace_sub_tree_left(successor, delete_node.left);
+            successor->replace_sub_tree_right(successor, delete_node.right);
+
             // 将后继与被删除的结点进行替换
             // return find_root(successor);
             //这里变更了根结点吗？并没有，所以不需要上面那一行
