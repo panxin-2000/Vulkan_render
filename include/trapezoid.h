@@ -44,6 +44,11 @@ class trapezoid_graph_Node : public Tree_Node<trapezoid_graph_Node<T> > {
         segment_node,
     };
 
+    enum class point_enum {
+        left_point,
+        right_point,
+    };
+
     graph_enum trapezoid_type;
 
     // 这里有一个使用模版不断套娃的小技巧
@@ -59,8 +64,13 @@ public:
 
     // 写完之后，发现其实查找并不是问题，问题是怎么构造的问题
     // 构造的时候最简单的比较好做，然后就是难的部分应该怎么做
+    // false left_point     right right_point
     static trapezoid_graph_Node<T> *find_point_in_trapezoid_graph(trapezoid_graph_Node<T> *root_node,
-                                                                  point_2 find_point) {
+                                                                  point_2 find_point,
+                                                                  point_enum left_or_right_point =
+                                                                          point_enum::left_point,
+                                                                  bool have_help_point = false,
+                                                                  point_2 help_point = point_2(0, 0)) {
         // 既然这里已经看到了查找相关的内容
         // 那么其实需要先构造一个具体的结构
         // 测试一下我这里查找的结果是否是我需要的
@@ -84,20 +94,41 @@ public:
             case graph_enum::point_node: {
                 // 需要判断需要查找的点是在当前点点左边还是右边？
                 // todo:还需要判断边界条件
-                if (find_point.x > root_node->trapezoid_union_data.segment_point.x) {
-                    return find_point_in_trapezoid_graph(root_node->right, find_point);
-                } else {
-                    return find_point_in_trapezoid_graph(root_node->left, find_point);
+                if (find_point.x == root_node->trapezoid_union_data.segment_point.x &&
+                    left_or_right_point == point_enum::right_point) {
+                    return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
+                                                         have_help_point, help_point);
                 }
+                if (find_point.x >= root_node->trapezoid_union_data.segment_point.x) {
+                    return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
+                                                         have_help_point, help_point);
+                }
+                return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point, have_help_point,
+                                                     help_point);
             }
             case graph_enum::segment_node: {
+                // 第一个问题是这个点有多个线段应该怎么办？
+
                 point_2 a = root_node->trapezoid_union_data.segment.start_point;
                 point_2 b = root_node->trapezoid_union_data.segment.end_point;
                 point_2 c = find_point;
-                if (point_2::is_anticlockwise(a, b, c)) {
-                    return find_point_in_trapezoid_graph(root_node->right, find_point);
+                // 这里还需要添加判断，
+                float temp = point_2::single_area(a, b, c);
+                if (abs(temp) < 0.0000001) {
+                    float temp2 = point_2::single_area(a, b, help_point);
+                    if (temp2 > 0.0000001) {
+                        return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
+                                                             have_help_point, help_point);
+                    } else {
+                        return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
+                                                             have_help_point, help_point);
+                    }
+                } else if (temp > 0.0000001) {
+                    return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
+                                                         have_help_point, help_point);
                 } else {
-                    return find_point_in_trapezoid_graph(root_node->left, find_point);
+                    return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
+                                                         have_help_point, help_point);
                 }
             }
             default:
@@ -106,12 +137,24 @@ public:
     }
 
     static trapezoid_ptr add_a_segment(trapezoid_graph_Node<T> *root_node, segment_position insert_segement) {
-        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.start_point);
-        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.end_point);
+        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.start_point,
+                                                                   point_enum::left_point, true,
+                                                                   insert_segement.end_point);
+        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.end_point,
+                                                                 point_enum::right_point, true,
+                                                                 insert_segement.start_point);
         if ((start_point_trapezoid != nullptr) && (end_point_trapezoid != nullptr) &&
             (start_point_trapezoid == end_point_trapezoid)) {
             // 判断是否在一个梯形中，之后 end_point_trapezoid 其实就不用再使用了
-            return replace_node_in_one_trapezoid(start_point_trapezoid, insert_segement);
+            auto new_graph_node = replace_node_in_one_trapezoid(start_point_trapezoid, insert_segement);
+            // 将原本包含 start_point_trapezoid 的子树替换为 new_graph_node 的子树
+            trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
+            // 另一个地方也是有下面这样一行的代码的
+            if (root_node == start_point_trapezoid) {
+                return new_graph_node;
+            }
+            return root_node;
+            // 第一次添加的时候是可以将根结点直接返回的，之后的时候就不能了，第一种是指针不变，指针里面的内容变掉，第二种是指针需要被更改
         } else if (start_point_trapezoid != nullptr && end_point_trapezoid != nullptr) {
             // 第一个问题是左端点重合的问题，需要看右端点
             // 确定是在那个梯形中，
@@ -378,10 +421,18 @@ public:
 
     static trapezoid_ptr init_root(AABB<point_2> bounding_box) {
         auto result_ptr = new trapezoid_graph_Node;
-        result_ptr->trapezoid_union_data.trapezoid.left_upper = {bounding_box.min_point.x, bounding_box.max_point.y};
-        result_ptr->trapezoid_union_data.trapezoid.right_upper = {bounding_box.max_point.x, bounding_box.max_point.y};
-        result_ptr->trapezoid_union_data.trapezoid.left_lower = {bounding_box.min_point.x, bounding_box.min_point.y};
-        result_ptr->trapezoid_union_data.trapezoid.right_lower = {bounding_box.max_point.x, bounding_box.min_point.y};
+        result_ptr->trapezoid_union_data.trapezoid.left_upper = {
+            bounding_box.min_point.x, bounding_box.max_point.y
+        };
+        result_ptr->trapezoid_union_data.trapezoid.right_upper = {
+            bounding_box.max_point.x, bounding_box.max_point.y
+        };
+        result_ptr->trapezoid_union_data.trapezoid.left_lower = {
+            bounding_box.min_point.x, bounding_box.min_point.y
+        };
+        result_ptr->trapezoid_union_data.trapezoid.right_lower = {
+            bounding_box.max_point.x, bounding_box.min_point.y
+        };
         result_ptr->trapezoid_type = graph_enum::leaf_node;
         return result_ptr;
     }
@@ -407,7 +458,7 @@ public:
         trapezoid_ptr result_ptr = new trapezoid_graph_Node<T>;
         result_ptr->trapezoid_union_data.segment.start_point = A;
         result_ptr->trapezoid_union_data.segment.end_point = B;
-        result_ptr->trapezoid_type = graph_enum::point_node;
+        result_ptr->trapezoid_type = graph_enum::segment_node;
         return result_ptr;
     }
 };

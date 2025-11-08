@@ -90,6 +90,12 @@ public:
 
     float single_area(const point_2 &R);
 
+    static  float single_area(const point_2 &a, const point_2 b, const point_2 c) {
+        point_2 ab = b - a;
+        point_2 ac = c - a;
+        return ab.single_area(ac);
+    }
+
     static bool is_anticlockwise(const point_2 &a, point_2 b, point_2 c);
 };
 
@@ -221,7 +227,7 @@ struct segment_position {
     static point_2 get_intersection_point(point_2 &start_point, point_2 &end_point, float x) {
         point_2 ab = start_point - end_point;
         point_2 result;
-        float a_0 = ab.y / ab.x;   // a_0 是 start_point 到 end_point 之间的斜率
+        float a_0 = ab.y / ab.x; // a_0 是 start_point 到 end_point 之间的斜率
         result.x = x;
         result.y = start_point.y + a_0 * (x - start_point.x);
         return result;

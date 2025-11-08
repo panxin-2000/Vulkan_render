@@ -235,9 +235,11 @@ TEST(ear_clip, test_point_location) {
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
 
         root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {5, 3}});
+        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {4, 1}});
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
         // 添加第一个线段完成了
+        auto start_point_trapezoid = trapezoid_graph_Node<int>::find_point_in_trapezoid_graph(root, {3.5, 2.9});
 
 
         // std::copy(hf, hf_2);
