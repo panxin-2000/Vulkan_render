@@ -203,12 +203,12 @@ public:
             auto E_node = init_points_node(E_point);
             auto F_node = init_points_node(F_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            E_node->left = R_trapezoid;
-            E_node->right = F_node;
-            F_node->right = U_trapezoid;
-            F_node->left = EF_segment_node;
-            EF_segment_node->left = S_trapezoid;
-            EF_segment_node->right = T_trapezoid;
+            trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(E_node, F_node);
+            trapezoid_graph_Node::replace_sub_tree_left(F_node, EF_segment_node);
+            trapezoid_graph_Node::replace_sub_tree_right(F_node, U_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return E_node;
         } else if (A_point == E_point || C_point == E_point) {
             // 这其实是一种退化的 (degenerate) 情况
@@ -250,10 +250,10 @@ public:
             // 第一个不需要一个有E点的结构，第二个，需要一个有F点的结构
             auto F_node = init_points_node(F_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            F_node->right = U_trapezoid;
-            F_node->left = EF_segment_node;
-            EF_segment_node->left = S_trapezoid;
-            EF_segment_node->right = T_trapezoid;
+            trapezoid_graph_Node::replace_sub_tree_left(F_node, EF_segment_node);
+            trapezoid_graph_Node::replace_sub_tree_right(F_node, U_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return F_node;
         } else if (B_point == F_point || D_point == F_point) {
             // 被删除并释放内存 之后 被替换为了                                      E_node
@@ -280,10 +280,11 @@ public:
             // 第一个不需要一个有E点的结构，第二个，需要一个有F点的结构
             auto E_node = init_points_node(E_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            E_node->left = R_trapezoid;
-            E_node->right = EF_segment_node;
-            EF_segment_node->left = S_trapezoid;
-            EF_segment_node->right = T_trapezoid;
+            trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+
             return E_node;
         }
         return nullptr;
@@ -306,8 +307,9 @@ public:
             auto S_trapezoid = init_four_points(A_point, B_point, E_point, J_point);
             auto T_trapezoid = init_four_points(E_point, J_point, C_point, D_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            EF_segment_node->left = S_trapezoid;
-            EF_segment_node->right = T_trapezoid;
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+
             return EF_segment_node;
         }
         // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
@@ -334,10 +336,11 @@ public:
         // 第一个不需要一个有E点的结构，第二个，需要一个有F点的结构
         auto E_node = init_points_node(E_point);
         auto EF_segment_node = init_segment_node(E_point, F_point);
-        E_node->left = R_trapezoid;
-        E_node->right = EF_segment_node;
-        EF_segment_node->left = S_trapezoid;
-        EF_segment_node->right = T_trapezoid;
+        trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
+        trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
+        trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+        trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+
         return E_node;
     }
 
@@ -357,8 +360,8 @@ public:
             auto S_trapezoid = init_four_points(A_point, B_point, J_point, F_point);
             auto T_trapezoid = init_four_points(J_point, F_point, C_point, D_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            EF_segment_node->left = S_trapezoid;
-            EF_segment_node->right = T_trapezoid;
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return EF_segment_node;
         }
         // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
@@ -385,10 +388,11 @@ public:
         // 第一个不需要一个有E点的结构，第二个，需要一个有F点的结构
         auto F_node = init_points_node(F_point);
         auto EF_segment_node = init_segment_node(E_point, F_point);
-        F_node->left = EF_segment_node;
-        F_node->right = R_trapezoid;
-        EF_segment_node->left = S_trapezoid;
-        EF_segment_node->right = T_trapezoid;
+        trapezoid_graph_Node::replace_sub_tree_left(F_node, EF_segment_node);
+        trapezoid_graph_Node::replace_sub_tree_right(F_node, R_trapezoid);
+        trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+        trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+
         return F_node;
     }
 
@@ -414,8 +418,9 @@ public:
         auto S_trapezoid = init_four_points(A_point, B_point, J_point, K_point);
         auto T_trapezoid = init_four_points(J_point, K_point, C_point, D_point);
         auto EF_segment_node = init_segment_node(E_point, F_point);
-        EF_segment_node->left = S_trapezoid;
-        EF_segment_node->right = T_trapezoid;
+        trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+        trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+
         return EF_segment_node;
     }
 
