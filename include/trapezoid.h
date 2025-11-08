@@ -167,11 +167,11 @@ public:
             EF_segment_node->left = S_trapezoid;
             EF_segment_node->right = T_trapezoid;
             return E_node;
-        } else if (A_point == C_point && A_point == E_point) {
+        } else if (A_point == C_point || A_point == E_point) {
             // 这其实是一种退化的 (degenerate) 情况
             // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
             // 原本的root 被删除并释放内存  之后 被替换为了
-            // 因为是梯形，所以需要几个新的点
+            // 因为是梯形，所以需要几个新的点( AHB 和 GJB 是一条直线)
             //                              H---------B                                 F_node
             //                        *     |         |                               /       \
             //                   *          |         |                              /         \
@@ -183,6 +183,18 @@ public:
             //                    *         |         |          S_trapezoid         T_trapezoid
             //                        *     |         |
             //                              J---------D
+            //  A---------------------------H---------B                                H---------B
+            //  |                           |         |                          *     |         |
+            //  |                           |         |                     *          |         |
+            //  |                    S      |         |                *        S      |         |
+            //  |                           |         |           *                    |         |
+            //  G E-------------------------F    U    |    A  E------------------------F    U    |
+            //         *                    |         |    |                           |         |
+            //              *        T      |         |    |                    T      |         |
+            //                    *         |         |    |                           |         |
+            //                        *     |         |    |                           |         |
+            //                              J---------D    G---------------------------J---------D
+            //
             // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
             auto G_point = segment_position::get_intersection_point(A_point, B_point, E_point.x);
             auto H_point = segment_position::get_intersection_point(A_point, B_point, F_point.x);
@@ -202,7 +214,7 @@ public:
             EF_segment_node->left = S_trapezoid;
             EF_segment_node->right = T_trapezoid;
             return F_node;
-        } else if (B_point == D_point && B_point == F_point) {
+        } else if (B_point == D_point || B_point == F_point) {
             // 被删除并释放内存 之后 被替换为了                                      E_node
             // 因为是梯形，所以需要几个新的点                                       /      \
             //     A---------G                                      R_trapezoid        \
@@ -210,7 +222,7 @@ public:
             //     |         |           *                                             \
             //     |         |      S         *                                        \
             //     |         |                    *                                 EF_segment_node
-            //     |   R     E------------------------B D F                        /         \
+            //     |   R     E------------------------B D F(任意两个点重合)          /         \
             //     |         |                    *                               /           \
             //     |         |      T        *                                   /             \
             //     |         |           *                                      /               \
