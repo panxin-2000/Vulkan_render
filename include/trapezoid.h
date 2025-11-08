@@ -167,7 +167,7 @@ public:
             EF_segment_node->left = S_trapezoid;
             EF_segment_node->right = T_trapezoid;
             return E_node;
-        } else if (A_point == C_point || A_point == E_point) {
+        } else if (A_point == E_point || C_point == E_point) {
             // 这其实是一种退化的 (degenerate) 情况
             // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
             // 原本的root 被删除并释放内存  之后 被替换为了
@@ -177,7 +177,7 @@ public:
             //                   *          |         |                              /         \
             //              *        S      |         |                    EF_segment_node      U_trapezoid
             //         *                    |         |                    /       \
-            //  A G E-----------------------F    U    |                   /         \
+            //  A C E-----------------------F    U    |                   /         \
             //         *                    |         |                  /           \
             //              *        T      |         |                 /             \
             //                    *         |         |          S_trapezoid         T_trapezoid
@@ -188,20 +188,18 @@ public:
             //  |                           |         |                     *          |         |
             //  |                    S      |         |                *        S      |         |
             //  |                           |         |           *                    |         |
-            //  G E-------------------------F    U    |    A  E------------------------F    U    |
+            //  C E-------------------------F    U    |    A  E------------------------F    U    |
             //         *                    |         |    |                           |         |
             //              *        T      |         |    |                    T      |         |
             //                    *         |         |    |                           |         |
             //                        *     |         |    |                           |         |
-            //                              J---------D    G---------------------------J---------D
+            //                              J---------D    C---------------------------J---------D
             //
             // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
-            auto G_point = segment_position::get_intersection_point(A_point, B_point, E_point.x);
             auto H_point = segment_position::get_intersection_point(A_point, B_point, F_point.x);
-            auto I_point = segment_position::get_intersection_point(C_point, D_point, E_point.x);
             auto J_point = segment_position::get_intersection_point(C_point, D_point, H_point.x);
-            auto S_trapezoid = init_four_points(G_point, H_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, I_point, J_point);
+            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point);
             auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
             // 梯形插入完成了，之后需要做什么呢？
             // 构造结构了，如果将原本的梯形替换为新的内容
@@ -214,7 +212,7 @@ public:
             EF_segment_node->left = S_trapezoid;
             EF_segment_node->right = T_trapezoid;
             return F_node;
-        } else if (B_point == D_point || B_point == F_point) {
+        } else if (B_point == F_point || D_point == F_point) {
             // 被删除并释放内存 之后 被替换为了                                      E_node
             // 因为是梯形，所以需要几个新的点                                       /      \
             //     A---------G                                      R_trapezoid        \
@@ -260,6 +258,15 @@ public:
         auto D_point = root->trapezoid_union_data.trapezoid.right_lower;
         auto E_point = left_point;
         auto F_point = right_point;
+        if (A_point == E_point || C_point == E_point) {
+            auto J_point = segment_position::get_intersection_point(E_point, F_point, D_point.x);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, J_point);
+            auto T_trapezoid = init_four_points(E_point, J_point, C_point, D_point);
+            auto EF_segment_node = init_segment_node(E_point, F_point);
+            EF_segment_node->left = S_trapezoid;
+            EF_segment_node->right = T_trapezoid;
+            return EF_segment_node;
+        }
         // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
         // 原本的root 被删除并释放内存  之后 被替换为了                           E_node
         // 因为是梯形，所以需要几个新的点                                       /      \
@@ -302,6 +309,15 @@ public:
         auto D_point = root->trapezoid_union_data.trapezoid.right_lower;
         auto E_point = left_point;
         auto F_point = right_point;
+        if (B_point == F_point || D_point == F_point) {
+            auto J_point = segment_position::get_intersection_point(E_point, F_point, C_point.x);
+            auto S_trapezoid = init_four_points(A_point, B_point, J_point, F_point);
+            auto T_trapezoid = init_four_points(J_point, F_point, C_point, D_point);
+            auto EF_segment_node = init_segment_node(E_point, F_point);
+            EF_segment_node->left = S_trapezoid;
+            EF_segment_node->right = T_trapezoid;
+            return EF_segment_node;
+        }
         // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
         // 原本的root 被删除并释放内存  之后 被替换为了                                  F_node
         // 因为是梯形，所以需要几个新的点                                              /      \
