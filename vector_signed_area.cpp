@@ -44,7 +44,7 @@ bool point_2::is_anticlockwise(const point_2 &a, const point_2 b, const point_2 
     point_2 ab = b - a;
     point_2 ac = c - a;
     float area = ab.single_area(ac);
-    if (area > 0) return true;
+    if (area >= 0) return true;
     else return false;
 }
 
