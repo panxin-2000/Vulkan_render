@@ -12,8 +12,7 @@ struct S {
 
     S(int i, double d, std::string s) : id{i} {
         std::cout << "S::S" << i << ", " << d << ", \"" << s
-                  << "\"); " << std::endl;
-
+                << "\"); " << std::endl;
     }
 };
 
@@ -35,6 +34,13 @@ void test_run_queue() {
     assert(q.back() == 3);
     assert(q.size() == 4);
 
+    int a = 10;
+    int d = 40;
+    const int *b = &a; // 常量的int 类型的指针
+    b = &d;
+    int *const c = &a; // int 类型的指针的 常量
+    *c = d;
+
     q.pop();
     assert(q.size() == 3);
 
@@ -44,4 +50,3 @@ void test_run_queue() {
     std::cout << std::endl;
     assert(q.size() == 0);
 }
-
