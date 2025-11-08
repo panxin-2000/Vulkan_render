@@ -46,40 +46,40 @@ public:
         return return_node;
     }
 
-    static T *replace_sub_tree(T *delete_sub_tree, T *replace_sub_tree) {
-        replace_sub_tree->parent = delete_sub_tree->parent;
-        if (replace_sub_tree->parent == nullptr) {
-        } else if (delete_sub_tree == replace_sub_tree->parent->left) {
-            replace_sub_tree->parent->left = replace_sub_tree;
-        } else if (delete_sub_tree == replace_sub_tree->parent->right) {
-            replace_sub_tree->parent->right = replace_sub_tree;
+    static T *replace_sub_tree(T *dst_sub_tree_position, T *src_sub_tree) {
+        src_sub_tree->parent = dst_sub_tree_position->parent;
+        if (src_sub_tree->parent == nullptr) {
+        } else if (dst_sub_tree_position == src_sub_tree->parent->left) {
+            src_sub_tree->parent->left = src_sub_tree;
+        } else if (dst_sub_tree_position == src_sub_tree->parent->right) {
+            src_sub_tree->parent->right = src_sub_tree;
         }
-        return replace_sub_tree;
+        return src_sub_tree;
     }
 
-    static T *replace_sub_tree_left(T *sub_tree, T *left_sub_tree) {
-        sub_tree->left = left_sub_tree;
-        if (left_sub_tree != nullptr)
-            left_sub_tree->parent = sub_tree;
+    static T *replace_sub_tree_left(T *sub_tree, T *new_left_sub_tree) {
+        sub_tree->left = new_left_sub_tree;
+        if (new_left_sub_tree != nullptr)
+            new_left_sub_tree->parent = sub_tree;
         return sub_tree;
     }
 
-    static T *replace_sub_tree_right(T *sub_tree, T *right_sub_tree) {
-        sub_tree->right = right_sub_tree;
-        if (right_sub_tree != nullptr)
-            right_sub_tree->parent = sub_tree;
+    static T *replace_sub_tree_right(T *sub_tree, T *new_right_sub_tree) {
+        sub_tree->right = new_right_sub_tree;
+        if (new_right_sub_tree != nullptr)
+            new_right_sub_tree->parent = sub_tree;
         return sub_tree;
     }
 
-    static T *clean_sub_tree_father(T *delete_sub_tree) {
-        if (delete_sub_tree->parent == nullptr) {
-        } else if (delete_sub_tree == delete_sub_tree->parent->left) {
-            delete_sub_tree->parent->left = nullptr;
-        } else if (delete_sub_tree == delete_sub_tree->parent->right) {
-            delete_sub_tree->parent->right = nullptr;
+    static T *clean_sub_tree_father(T *need_clean_sub_tree) {
+        if (need_clean_sub_tree->parent == nullptr) {
+        } else if (need_clean_sub_tree == need_clean_sub_tree->parent->left) {
+            need_clean_sub_tree->parent->left = nullptr;
+        } else if (need_clean_sub_tree == need_clean_sub_tree->parent->right) {
+            need_clean_sub_tree->parent->right = nullptr;
         }
-        delete_sub_tree->parent = nullptr;
-        return delete_sub_tree;
+        need_clean_sub_tree->parent = nullptr;
+        return need_clean_sub_tree;
     }
 
     bool left_rotate(T *node) {
