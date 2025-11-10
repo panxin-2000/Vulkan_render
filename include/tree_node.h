@@ -8,16 +8,18 @@
 
 template<class T>
 class Tree_Node {
-public:
-    T *parent;
-    T *left;
-    T *right;
+    using ptr = T *;
 
-    static T *tree_successor(T *tree_node) {
+public:
+    ptr parent;
+    ptr left;
+    ptr right;
+
+    static ptr tree_successor(ptr tree_node) {
         if (tree_node->right != nullptr) {
             return tree_minimum(tree_node->right);
         }
-        T *result_node = tree_node->parent;
+        ptr result_node = tree_node->parent;
         while (result_node != nullptr && result_node->right == tree_node) {
             tree_node = result_node;
             result_node = result_node->parent;
@@ -25,11 +27,11 @@ public:
         return result_node;
     }
 
-    T *tree_predecessor(T *tree_node) {
+    ptr tree_predecessor(ptr tree_node) {
         if (tree_node->left != nullptr) {
             return tree_maximum(tree_node->left);
         }
-        T *result_node = tree_node->parent;
+        ptr result_node = tree_node->parent;
         while (result_node != nullptr && result_node->left == tree_node) {
             tree_node = result_node;
             result_node = result_node->parent;
@@ -37,8 +39,8 @@ public:
         return result_node;
     }
 
-    static T *tree_minimum(T *tree_node) {
-        T *return_node = nullptr;
+    static ptr tree_minimum(ptr tree_node) {
+        ptr return_node = nullptr;
         while (tree_node != nullptr) {
             return_node = tree_node;
             tree_node = tree_node->left;
@@ -46,8 +48,9 @@ public:
         return return_node;
     }
 
-    static T *replace_sub_tree(T *dst_sub_tree_position, T *src_sub_tree) {
+    static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
         src_sub_tree->parent = dst_sub_tree_position->parent;
+
         if (src_sub_tree->parent == nullptr) {
         } else if (dst_sub_tree_position == src_sub_tree->parent->left) {
             src_sub_tree->parent->left = src_sub_tree;
@@ -57,21 +60,21 @@ public:
         return src_sub_tree;
     }
 
-    static T *replace_sub_tree_left(T *sub_tree, T *new_left_sub_tree) {
+    static ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
         sub_tree->left = new_left_sub_tree;
         if (new_left_sub_tree != nullptr)
             new_left_sub_tree->parent = sub_tree;
         return sub_tree;
     }
 
-    static T *replace_sub_tree_right(T *sub_tree, T *new_right_sub_tree) {
+    static ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
         sub_tree->right = new_right_sub_tree;
         if (new_right_sub_tree != nullptr)
             new_right_sub_tree->parent = sub_tree;
         return sub_tree;
     }
 
-    static T *clean_sub_tree_father(T *need_clean_sub_tree) {
+    static ptr clean_sub_tree_father(ptr need_clean_sub_tree) {
         if (need_clean_sub_tree->parent == nullptr) {
         } else if (need_clean_sub_tree == need_clean_sub_tree->parent->left) {
             need_clean_sub_tree->parent->left = nullptr;
@@ -83,7 +86,7 @@ public:
     }
 
     // 原本B是A的右子树，现在变成A是B的左子树
-    bool left_rotate(T *node) {
+    bool left_rotate(ptr node) {
         if (node != nullptr && node->right == nullptr) {
             return false;
         } else {
@@ -96,7 +99,7 @@ public:
     }
 
     // 原本B是A的左子树，现在变成A是B的右子树
-    static bool right_rotate(T *node) {
+    static bool right_rotate(ptr node) {
         if (node != nullptr && node->left == nullptr) {
             return false;
         } else {
@@ -108,8 +111,8 @@ public:
         }
     }
 
-    T *tree_maximum(T *tree_node) {
-        T *return_node = nullptr;
+    ptr tree_maximum(ptr tree_node) {
+        ptr return_node = nullptr;
         while (tree_node != nullptr) {
             return_node = tree_node;
             tree_node = tree_node->right;
@@ -117,7 +120,7 @@ public:
         return return_node;
     }
 
-    T *find_root(T *node) {
+    ptr find_root(ptr node) {
         if (node == nullptr) {
             return nullptr;
         } else {
@@ -134,7 +137,7 @@ public:
      * @param root
      * @return
      */
-    T *find_miximum_leaf(T *root) {
+    ptr find_miximum_leaf(ptr root) {
         if (root == nullptr) {
             return nullptr;
         } else {
