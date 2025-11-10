@@ -237,6 +237,7 @@ TEST(ear_clip, test_point_location) {
         root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {5, 3}});
         // root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {4, 1}});
         root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {6, 1}});
+        root = trapezoid_graph_Node<int>::add_a_segment(root, {{5, 3}, {6, 1}});
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
         // 添加第一个线段完成了

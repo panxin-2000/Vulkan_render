@@ -244,6 +244,13 @@ public:
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return E_node;
+        } else if (A_point.x == E_point.x && B_point.x == F_point.x) {
+            auto EF_segment_node = init_segment_node(E_point, F_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+            return EF_segment_node;
         } else if (A_point == E_point || C_point == E_point) {
             // 这其实是一种退化的 (degenerate) 情况
             // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
