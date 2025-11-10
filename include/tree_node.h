@@ -86,7 +86,7 @@ public:
     }
 
     // 原本B是A的右子树，现在变成A是B的左子树
-    bool left_rotate(ptr node) {
+    static bool left_rotate(ptr node) {
         if (node != nullptr && node->right == nullptr) {
             return false;
         } else {
