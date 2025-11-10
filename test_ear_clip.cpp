@@ -235,13 +235,15 @@ TEST(ear_clip, test_point_location) {
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
 
         root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {5, 3}});
-        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {4, 1}});
+        // root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {4, 1}});
+        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {6, 1}});
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
         // 添加第一个线段完成了
         auto start_point_trapezoid = trapezoid_graph_Node<int>::find_point_in_trapezoid_graph(root, {3.5, 2.9});
 
 
+        int a = 90;
         // std::copy(hf, hf_2);
     } else {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
@@ -268,7 +270,7 @@ TEST(unique_point, int) {
     EXPECT_EQ(*new_p, 5);
     EXPECT_EQ(p, nullptr);
     std::move(new_p); // 只调用一个单独的move是没有什么作用的
-    std::shared_ptr<int> shared_p = std::move(new_p);   // 还需要添加等号或者转移的实际操作才会生效
+    std::shared_ptr<int> shared_p = std::move(new_p); // 还需要添加等号或者转移的实际操作才会生效
     EXPECT_EQ(*shared_p, 5);
 }
 

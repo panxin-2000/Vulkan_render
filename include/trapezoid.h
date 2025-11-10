@@ -65,12 +65,12 @@ public:
     // 写完之后，发现其实查找并不是问题，问题是怎么构造的问题
     // 构造的时候最简单的比较好做，然后就是难的部分应该怎么做
     // false left_point     right right_point
-    static trapezoid_graph_Node<T> *find_point_in_trapezoid_graph(trapezoid_graph_Node<T> *root_node,
-                                                                  point_2 find_point,
-                                                                  point_enum left_or_right_point =
-                                                                          point_enum::left_point,
-                                                                  bool have_help_point = false,
-                                                                  point_2 help_point = point_2(0, 0)) {
+    static trapezoid_ptr find_point_in_trapezoid_graph(trapezoid_ptr root_node,
+                                                       point_2 find_point,
+                                                       point_enum left_or_right_point =
+                                                               point_enum::left_point,
+                                                       bool have_help_point = false,
+                                                       point_2 help_point = point_2(0, 0)) {
         // 既然这里已经看到了查找相关的内容
         // 那么其实需要先构造一个具体的结构
         // 测试一下我这里查找的结果是否是我需要的
@@ -136,17 +136,32 @@ public:
         }
     }
 
-    static trapezoid_ptr add_a_segment(trapezoid_graph_Node<T> *root_node, segment_position insert_segement) {
-        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.start_point,
+    static trapezoid_ptr find_right_trapezoid(trapezoid_ptr root_node, trapezoid_ptr trapezoid,
+                                              segment_position insert_segment) {
+        auto left_point = insert_segment.start_point;
+        auto right_point = insert_segment.end_point;
+        auto E_point = left_point;
+        auto F_point = right_point;
+        auto D_point = trapezoid->trapezoid_union_data.trapezoid.right_lower;
+
+        auto J_point = segment_position::get_intersection_point(E_point, F_point, D_point.x);
+
+        return find_point_in_trapezoid_graph(root_node, J_point,
+                                             point_enum::left_point, true,
+                                             insert_segment.end_point);
+    }
+
+    static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, segment_position insert_segment) {
+        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.start_point,
                                                                    point_enum::left_point, true,
-                                                                   insert_segement.end_point);
-        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segement.end_point,
+                                                                   insert_segment.end_point);
+        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.end_point,
                                                                  point_enum::right_point, true,
-                                                                 insert_segement.start_point);
+                                                                 insert_segment.start_point);
         if ((start_point_trapezoid != nullptr) && (end_point_trapezoid != nullptr) &&
             (start_point_trapezoid == end_point_trapezoid)) {
             // 判断是否在一个梯形中，之后 end_point_trapezoid 其实就不用再使用了
-            auto new_graph_node = replace_node_in_one_trapezoid(start_point_trapezoid, insert_segement);
+            auto new_graph_node = replace_node_in_one_trapezoid(start_point_trapezoid, insert_segment);
             // 将原本包含 start_point_trapezoid 的子树替换为 new_graph_node 的子树
             trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
             // 另一个地方也是有下面这样一行的代码的
@@ -160,15 +175,34 @@ public:
             // 确定是在那个梯形中，
             // 右端点其实也会有重合的，右端点重合有几种不同的情况，首先是只与右侧的线段重合
             // 之后是重合的时候是有左右两侧的线段的
+
+            auto new_graph_node = replace_node_in_multi_trapezoid_left_in_right_out(
+                start_point_trapezoid, insert_segment);
+            trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
+
+            auto right_trapezoid = find_right_trapezoid(root_node, start_point_trapezoid, insert_segment);
+            // 现在的代码其实写的并没有什么意识到应该这么写，但是写下去之后，发现这么写好像刚刚好
+            while (right_trapezoid != end_point_trapezoid) {
+                // 执行操作，
+                auto intern_graph_node = replace_node_in_multi_trapezoid_left_out_right_out(
+                    right_trapezoid, insert_segment);
+                trapezoid_graph_Node::replace_sub_tree(right_trapezoid, intern_graph_node);
+                right_trapezoid = find_right_trapezoid(root_node, right_trapezoid, insert_segment);
+            }
+            // 相等的时候，执行另一个操作
+            auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(right_trapezoid, insert_segment);
+            trapezoid_graph_Node::replace_sub_tree(end_point_trapezoid, last_graph_node);
+            return root_node;
         }
         return nullptr;
     }
 
+
     static trapezoid_ptr replace_node_in_one_trapezoid(
-        trapezoid_graph_Node<T> *root, segment_position insert_segement) {
+        trapezoid_ptr root, segment_position insert_segment) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
-        auto left_point = insert_segement.start_point;
-        auto right_point = insert_segement.end_point;
+        auto left_point = insert_segment.start_point;
+        auto right_point = insert_segment.end_point;
         auto A_point = root->trapezoid_union_data.trapezoid.left_upper;
         auto B_point = root->trapezoid_union_data.trapezoid.right_upper;
         auto C_point = root->trapezoid_union_data.trapezoid.left_lower;
@@ -292,10 +326,10 @@ public:
 
     //
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_in_right_out(
-        trapezoid_graph_Node<T> *root, segment_position insert_segement) {
+        trapezoid_ptr root, segment_position insert_segment) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
-        auto left_point = insert_segement.start_point;
-        auto right_point = insert_segement.end_point;
+        auto left_point = insert_segment.start_point;
+        auto right_point = insert_segment.end_point;
         auto A_point = root->trapezoid_union_data.trapezoid.left_upper;
         auto B_point = root->trapezoid_union_data.trapezoid.right_upper;
         auto C_point = root->trapezoid_union_data.trapezoid.left_lower;
@@ -345,10 +379,10 @@ public:
     }
 
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_out_right_in(
-        trapezoid_graph_Node<T> *root, segment_position insert_segement) {
+        trapezoid_ptr root, segment_position insert_segment) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
-        auto left_point = insert_segement.start_point;
-        auto right_point = insert_segement.end_point;
+        auto left_point = insert_segment.start_point;
+        auto right_point = insert_segment.end_point;
         auto A_point = root->trapezoid_union_data.trapezoid.left_upper;
         auto B_point = root->trapezoid_union_data.trapezoid.right_upper;
         auto C_point = root->trapezoid_union_data.trapezoid.left_lower;
@@ -397,9 +431,9 @@ public:
     }
 
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_out_right_out(
-        trapezoid_graph_Node<T> *root, segment_position insert_segement) {
-        auto left_point = insert_segement.start_point;
-        auto right_point = insert_segement.end_point;
+        trapezoid_ptr root, segment_position insert_segment) {
+        auto left_point = insert_segment.start_point;
+        auto right_point = insert_segment.end_point;
         auto A_point = root->trapezoid_union_data.trapezoid.left_upper;
         auto B_point = root->trapezoid_union_data.trapezoid.right_upper;
         auto C_point = root->trapezoid_union_data.trapezoid.left_lower;
@@ -443,7 +477,7 @@ public:
     }
 
     static trapezoid_ptr init_four_points(point_2 A, point_2 B, point_2 C, point_2 D) {
-        trapezoid_ptr result_ptr = new trapezoid_graph_Node;
+        auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {A};
         result_ptr->trapezoid_union_data.trapezoid.right_upper = {B};
         result_ptr->trapezoid_union_data.trapezoid.left_lower = {C};
@@ -453,14 +487,14 @@ public:
     }
 
     static trapezoid_ptr init_points_node(point_2 A) {
-        trapezoid_ptr result_ptr = new trapezoid_graph_Node;
+        auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.segment_point = A;
         result_ptr->trapezoid_type = graph_enum::point_node;
         return result_ptr;
     }
 
     static trapezoid_ptr init_segment_node(point_2 A, point_2 B) {
-        trapezoid_ptr result_ptr = new trapezoid_graph_Node<T>;
+        auto result_ptr = new trapezoid_graph_Node<T>;
         result_ptr->trapezoid_union_data.segment.start_point = A;
         result_ptr->trapezoid_union_data.segment.end_point = B;
         result_ptr->trapezoid_type = graph_enum::segment_node;
