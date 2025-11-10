@@ -33,14 +33,6 @@ public:
 
     RB_Tree_Node_color color;
 
-    // static binary_Tree_Node<T> *get_nil(void) {
-    //     static binary_Tree_Node<T> *nil = nullptr;
-    //     if (nil == nullptr) {
-    //         nil = new binary_Tree_Node<T>;
-    //     }
-    //     // 什么时候销魂呢？整个树还是整个程序？
-    // }
-
 
     RB_Tree_Node *tree_insert_value(RB_Tree_Node *root, T data) {
         RB_Tree_Node &nodes = *new RB_Tree_Node<T>;
@@ -128,14 +120,9 @@ public:
             new_node.color = RB_Tree_BLACK;
             return &new_node;
         } else if (insert_node->data < new_node.data) {
-            // 这个判断和41行完全相同
-            // insert_node->right 必为空
-            insert_node->right = &new_node;
-            new_node.parent = insert_node;
+            RB_Tree_Node::replace_sub_tree_right(insert_node, &new_node);
         } else {
-            // insert_node->left  必为空
-            insert_node->left = &new_node;
-            new_node.parent = insert_node;
+            RB_Tree_Node::replace_sub_tree_left(insert_node, &new_node);
         }
         if (insert_node->color == RB_Tree_RED) {
             // 那么这里就是两个红色结点了，是需要调整的，之后的情况，我已经不能纯粹的记住了
