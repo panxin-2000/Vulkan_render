@@ -194,11 +194,15 @@ struct half_edge_struct {
         // 问题是原本的边应该怎么动？
         // 判断一下get_next(get_opposite(current_edge)) == current_edge
         // 不需要，直接执行就好，能够直接满足两种条件
+        half_edges.at(get_next_edge_index(red_b)).incident_face = opposite_face;
         half_edges.at(get_next_edge_index(red_b)).pre_half_edge = blue_d;
         half_edges.at(get_pre_edge_index(red_b)).next_half_edge = blue_f;
         half_edges.at(red_b).next_half_edge = red_c;
         half_edges.at(red_b).pre_half_edge = red_e;
+        half_edges.at(red_b).incident_face = faces_size;
+        set_face_for_new_add_edge(red_c, faces_size);
         faces.push_back({red_c, face::BOUNDARY_TYPE::bounding_face});
+
         return red_e;
     }
 
@@ -272,7 +276,7 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             vertices_size + 1, half_edges_size,
-            half_edges_size, half_edges_size, faces_size + 1
+            half_edges_size, half_edges_size, faces_size
         });
         faces.push_back({half_edges_size + 1, face::BOUNDARY_TYPE::hole_face});
         return half_edges_size;
@@ -309,7 +313,7 @@ struct half_edge_struct {
         // E_g
         half_edges.push_back({
             P_b, E_f,
-            E_a, E_c, faces_size + 1
+            E_a, E_c, faces_size
         });
         half_edges.at(E_c).next_half_edge = E_g;
         half_edges.at(E_I).next_half_edge = E_f;
@@ -317,7 +321,9 @@ struct half_edge_struct {
         half_edges.at(E_a).pre_half_edge = E_g;
 
         // 下一步需要做什么呢？将整个E_a的循环全部都设置为
-        set_face(E_a); // 将被劈开的另一边全部设置为同一个face
+        set_face_for_new_add_edge(E_a, faces_size); // 将被劈开的另一边全部设置为同一个face
+        faces.push_back({E_a, face::BOUNDARY_TYPE::bounding_face});
+
         faces.at(split_face).bounding_half_edge = E_f; // 更新原本的face的索引
 
         return E_g;
@@ -344,8 +350,9 @@ struct half_edge_struct {
 
             if ((bool_1 && bool_2 && bool_3 && bool_4) || (!bool_1 && !bool_2 && !bool_3 && !bool_4)) {
                 // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
-                get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
-                get_edge(opposite_edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
+                get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
+                get_edge(opposite_edge_index).vertex_index =
+                        get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
                 auto x_index = get_edge(edge_index).pre_half_edge;
                 auto y_index = edge_index;
                 auto z_index = get_edge(edge_index).next_half_edge;
@@ -373,15 +380,16 @@ struct half_edge_struct {
 
                 get_vertex(S_index).incident_half_edge = S_index; // 重新确认一遍顶点的入射
                 get_vertex(z_index).incident_half_edge = z_index;
+                set_face_for_new_add_edge(y_index, get_edge(y_index).incident_face);
+                set_face_for_new_add_edge(R_index, get_edge(R_index).incident_face);
             }
         }
     }
 
-    bool set_face(int half_edge_index_of_face) {
-        faces.push_back({half_edge_index_of_face, face::BOUNDARY_TYPE::bounding_face});
+    bool set_face_for_new_add_edge(int half_edge_index_of_face, int faces_index) {
+        int faces_size = faces_index;
         int current_half_edge_index = half_edge_index_of_face;
         int first_half_edge = current_half_edge_index;
-        int faces_size = faces.size();
         while (true) {
             half_edges.at(current_half_edge_index).incident_face = faces_size;
             auto next_half_edge = get_next_edge_index(current_half_edge_index);
