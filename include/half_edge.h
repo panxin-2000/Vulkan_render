@@ -162,7 +162,7 @@ struct half_edge_struct {
         vertices.push_back(middle_point);
         // 单纯的加点很好加
 
-        int black_a = get_opposite(current_edge);
+        int black_a = get_opposite_edge_index(current_edge);
         int red_b = current_edge;
         int red_c = half_edges_size;
         int blue_d = half_edges_size + 1;
@@ -172,7 +172,7 @@ struct half_edge_struct {
         int vertex_index_end_point = half_edges.at(red_b).vertex_index;
 
         int insert_face = half_edges.at(current_edge).incident_face;
-        int opposite_face = half_edges.at(get_opposite(current_edge)).pre_half_edge;
+        int opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).pre_half_edge;
 
         half_edges.push_back({
             vertex_index_start_point, blue_d,
@@ -180,7 +180,7 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             middle_point_index, half_edges_size,
-            get_next(red_b), blue_f, opposite_face
+            get_next_edge_index(red_b), blue_f, opposite_face
         });
         half_edges.push_back({
             middle_point_index, blue_f,
@@ -188,14 +188,14 @@ struct half_edge_struct {
         });
         half_edges.push_back({
             vertex_index_end_point, red_e,
-            blue_d, get_pre(red_b), opposite_face
+            blue_d, get_pre_edge_index(red_b), opposite_face
         });
         // 添加新的四条边也是能够添加的
         // 问题是原本的边应该怎么动？
         // 判断一下get_next(get_opposite(current_edge)) == current_edge
         // 不需要，直接执行就好，能够直接满足两种条件
-        half_edges.at(get_next(red_b)).pre_half_edge = blue_d;
-        half_edges.at(get_pre(red_b)).next_half_edge = blue_f;
+        half_edges.at(get_next_edge_index(red_b)).pre_half_edge = blue_d;
+        half_edges.at(get_pre_edge_index(red_b)).next_half_edge = blue_f;
         half_edges.at(red_b).next_half_edge = red_c;
         half_edges.at(red_b).pre_half_edge = red_e;
         faces.push_back({red_c, face::BOUNDARY_TYPE::bounding_face});
@@ -207,15 +207,15 @@ struct half_edge_struct {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int insert_face = half_edges.at(current_edge).incident_face;
-        int opposite_face = half_edges.at(get_opposite(current_edge)).incident_face;
+        int opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).incident_face;
         int middle_point_index = vertices_size;
         vertices.push_back(middle_point);
         // 单纯的加点很好加
 
-        int blue_a = get_opposite(current_edge);
+        int blue_a = get_opposite_edge_index(current_edge);
         int green_b = current_edge;
-        int green_c = get_next(green_b);
-        int blue_d = get_pre(blue_a);
+        int green_c = get_next_edge_index(green_b);
+        int blue_d = get_pre_edge_index(blue_a);
         int green_f = half_edges_size;
         int blue_e = half_edges_size + 1;
 
@@ -223,7 +223,7 @@ struct half_edge_struct {
         int vertex_index_end_point = half_edges.at(green_c).vertex_index;
 
         // 这里需要做一个判断
-        if (get_next(get_opposite(current_edge)) == current_edge) {
+        if (get_next_edge_index(get_opposite_edge_index(current_edge)) == current_edge) {
             half_edges.push_back({
                 middle_point_index, blue_e,
                 blue_e, green_b, insert_face
@@ -297,8 +297,8 @@ struct half_edge_struct {
 
         auto E_f = half_edges_size;
         auto E_g = half_edges_size + 1;
-        auto E_I = get_pre(E_a);
-        auto E_c = get_pre(E_h);
+        auto E_I = get_pre_edge_index(E_a);
+        auto E_c = get_pre_edge_index(E_h);
         auto split_face = half_edges.at(E_a).incident_face;
         // 拿到我要劈开的环的索引
         // E_f
@@ -323,6 +323,60 @@ struct half_edge_struct {
         return E_g;
     }
 
+
+    // bood set_
+
+    bool flip_edge(int edge_index) {
+        auto opposite_edge_index = get_opposite_edge_index(edge_index);
+        auto first_face_index = get_face_index(edge_index);
+        auto second_face_index = get_face_index(opposite_edge_index);
+        auto all_edges_of_first_face = get_all_edge_of_face(first_face_index);
+        auto all_edges_of_second_face = get_all_edge_of_face(second_face_index);
+        if (all_edges_of_first_face.size() == 3 && all_edges_of_second_face.size() == 3) {
+            // 这时候就可以拿到四个点了
+            auto point_a = get_vertex(get_pre_edge_index(edge_index));
+            auto point_b = get_vertex(edge_index);
+            auto point_c = get_vertex(get_pre_edge_index(opposite_edge_index));
+            auto point_d = get_vertex(opposite_edge_index);
+
+            if (point_2::is_anticlockwise(point_a, point_d, point_c) &&
+                point_2::is_anticlockwise(point_d, point_c, point_b) &&
+                point_2::is_anticlockwise(point_c, point_b, point_a) &&
+                point_2::is_anticlockwise(point_b, point_a, point_d)) {
+                // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
+                get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
+                get_edge(opposite_edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
+                auto x_index = get_edge(edge_index).pre_half_edge;
+                auto y_index = edge_index;
+                auto z_index = get_edge(edge_index).next_half_edge;
+                auto R_index = opposite_edge_index;
+                auto S_index = get_edge(opposite_edge_index).next_half_edge;
+                auto T_index = get_edge(opposite_edge_index).pre_half_edge;
+
+                get_edge(x_index).pre_half_edge = y_index;
+                get_edge(x_index).next_half_edge = S_index;
+                get_edge(y_index).pre_half_edge = S_index;
+                get_edge(y_index).next_half_edge = x_index;
+                get_edge(S_index).pre_half_edge = x_index;
+                get_edge(S_index).next_half_edge = y_index;
+
+                get_edge(z_index).pre_half_edge = T_index;
+                get_edge(z_index).next_half_edge = R_index;
+                get_edge(R_index).pre_half_edge = z_index;
+                get_edge(R_index).next_half_edge = T_index;
+                get_edge(T_index).pre_half_edge = R_index;
+                get_edge(T_index).next_half_edge = z_index;
+
+                // 还需要更改面和点
+                get_face(y_index).bounding_half_edge = y_index; // 重新确认一遍 面对应的边的索引
+                get_face(R_index).bounding_half_edge = R_index;
+
+                get_vertex(S_index).incident_half_edge = S_index; // 重新确认一遍顶点的入射
+                get_vertex(z_index).incident_half_edge = z_index;
+            }
+        }
+    }
+
     bool set_face(int half_edge_index_of_face) {
         faces.push_back({half_edge_index_of_face, face::BOUNDARY_TYPE::bounding_face});
         int current_half_edge_index = half_edge_index_of_face;
@@ -330,7 +384,7 @@ struct half_edge_struct {
         int faces_size = faces.size();
         while (true) {
             half_edges.at(current_half_edge_index).incident_face = faces_size;
-            auto next_half_edge = get_next(current_half_edge_index);
+            auto next_half_edge = get_next_edge_index(current_half_edge_index);
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
                 return true;
@@ -367,22 +421,30 @@ struct half_edge_struct {
         return vertices.at(vertex_index_end_point);
     }
 
-    [[nodiscard]] half_edge_index get_next(const int incident_half_edge) const {
+    half_edge &get_edge(int incident_half_edge) {
+        return half_edges.at(incident_half_edge);
+    }
+
+    face &get_face(int face_index) {
+        return faces.at(face_index);
+    }
+
+    [[nodiscard]] half_edge_index get_next_edge_index(const int incident_half_edge) const {
         const int result = half_edges.at(incident_half_edge).next_half_edge;
         return result;
     }
 
-    [[nodiscard]] half_edge_index get_pre(const int incident_half_edge) const {
+    [[nodiscard]] half_edge_index get_pre_edge_index(const int incident_half_edge) const {
         const int result = half_edges.at(incident_half_edge).pre_half_edge;
         return result;
     }
 
-    [[nodiscard]] half_edge_index get_twin(const int incident_half_edge) const {
+    [[nodiscard]] half_edge_index get_twin_edge_index(const int incident_half_edge) const {
         const int result = half_edges.at(incident_half_edge).twin_half_edge;
         return result;
     }
 
-    [[nodiscard]] half_edge_index get_opposite(const int incident_half_edge) const {
+    [[nodiscard]] half_edge_index get_opposite_edge_index(const int incident_half_edge) const {
         const int result = half_edges.at(incident_half_edge).twin_half_edge;
         return result;
     }
@@ -392,13 +454,17 @@ struct half_edge_struct {
         return result;
     }
 
+    int get_face_index(half_edge_index edge_index) {
+        return half_edges.at(edge_index).incident_face;
+    }
+
     std::vector<half_edge_index> get_all_edge_of_vertex(int vertex_index) {
         std::vector<half_edge_index> result;
         int current_half_edge_index = vertices.at(vertex_index).incident_half_edge;
         int first_half_edge = current_half_edge_index;
         while (true) {
-            auto opposite_edge = get_opposite(current_half_edge_index);
-            auto next_half_edge = get_next(current_half_edge_index);
+            auto opposite_edge = get_opposite_edge_index(current_half_edge_index);
+            auto next_half_edge = get_next_edge_index(current_half_edge_index);
             result.push_back(next_half_edge);
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
@@ -412,7 +478,7 @@ struct half_edge_struct {
         int current_half_edge_index = half_edge_index_of_face;
         int first_half_edge = current_half_edge_index;
         while (true) {
-            auto next_half_edge = get_next(current_half_edge_index);
+            auto next_half_edge = get_next_edge_index(current_half_edge_index);
             result.push_back(next_half_edge);
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
@@ -510,7 +576,7 @@ struct half_edge_struct {
 
     bool get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
-        auto b = get_vertex(get_opposite(half_edge_indices));
+        auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
         if (point_2::is_anticlockwise(a, b, vertex_in)) {
             return true;
         } else {

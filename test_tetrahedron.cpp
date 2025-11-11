@@ -9,8 +9,8 @@ TEST(tetrahedron, init_tetrahedron) {
     half_edge_struct<vertex_xyz> hf;
     auto b_half_edge_index = hf.create_loop({-1, 1, 0}, {0, -1, 0});
     auto c_half_edge_index = hf.add_edge(b_half_edge_index, {0, 0, 2});
-    auto d_half_edge_index = hf.add_edge(hf.get_opposite(hf.get_pre(c_half_edge_index)), {1, 1, 2});
-    hf.split_face(hf.get_opposite(hf.get_pre(d_half_edge_index)), hf.get_opposite(c_half_edge_index));
+    auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)), {1, 1, 2});
+    hf.split_face(hf.get_opposite_edge_index(hf.get_pre_edge_index(d_half_edge_index)), hf.get_opposite_edge_index(c_half_edge_index));
 
     std::vector<triangle<point_3> > expect_triangles{};
     std::vector<triangle<point_3> > result_segments{};

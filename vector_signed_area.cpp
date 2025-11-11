@@ -33,20 +33,8 @@ float point_2::single_area(const point_2 &R) {
     return this->x * R.y - this->y * R.x;
 }
 
-/**
- * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
- * @param a
- * @param b
- * @param c
- * @return
- */
-bool point_2::is_anticlockwise(const point_2 &a, const point_2 b, const point_2 c) {
-    point_2 ab = b - a;
-    point_2 ac = c - a;
-    float area = ab.single_area(ac);
-    if (area >= 0) return true;
-    else return false;
-}
+
+
 
 /**
  * 这里的on_segment 函数名并不是很对，只是判断了 测试点 是否在 线段的包围盒内

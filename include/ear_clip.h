@@ -35,7 +35,7 @@ bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
             no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             auto tem = hf.split_face(new_segments.at(0), new_segments.at(2));
-            new_segments.at(0) = hf.get_opposite(tem);
+            new_segments.at(0) = hf.get_opposite_edge_index(tem);
             new_segments.erase(new_segments.begin() + 1);
         } else {
             // 将第一个点放回最后

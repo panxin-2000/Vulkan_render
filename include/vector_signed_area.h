@@ -90,13 +90,26 @@ public:
 
     float single_area(const point_2 &R);
 
-    static  float single_area(const point_2 &a, const point_2 b, const point_2 c) {
+    static float single_area(const point_2 &a, const point_2 b, const point_2 c) {
         point_2 ab = b - a;
         point_2 ac = c - a;
         return ab.single_area(ac);
     }
 
-    static bool is_anticlockwise(const point_2 &a, point_2 b, point_2 c);
+    /**
+     * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
+     * @param a
+     * @param b
+     * @param c
+     * @return
+     */
+    static bool is_anticlockwise(const point_2 &a, const point_2 &b, const point_2 &c) {
+        point_2 ab = b - a;
+        point_2 ac = c - a;
+        float area = ab.single_area(ac);
+        if (area >= 0) return true;
+        else return false;
+    }
 };
 
 class point_3 {

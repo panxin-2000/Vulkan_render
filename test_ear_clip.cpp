@@ -45,7 +45,7 @@ TEST(ear_clip, from_half_edge_create_loop_vertices) {
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     std::vector<point_2> segments{};
@@ -91,7 +91,7 @@ TEST(ear_clip, ear_clip) {
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<point_2> *tree_vertices = nullptr;
@@ -149,7 +149,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<point_2> *tree_vertices = nullptr;
@@ -176,6 +176,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     } else {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }
+    hf.flip_edge(4);
     // 拿到了正确的输入的结果，只不过是强行拿到的，并不是自己手动计算处理的，所以结果必然是正确的
 }
 
@@ -188,7 +189,7 @@ TEST(ear_clip, test_point_location) {
     hf = init_hf(hf);
     face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre(temp.bounding_half_edge));
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<point_2> *tree_vertices = nullptr;

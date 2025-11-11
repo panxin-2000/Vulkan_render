@@ -101,7 +101,7 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
 template<typename T, typename T1>
 bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vertex_xy> &hf, T1 event_points) {
     if (left_node != nullptr && right_node != nullptr) {
-        auto temp = hf.get_opposite(left_node->data.incident_half_edge);
+        auto temp = hf.get_opposite_edge_index(left_node->data.incident_half_edge);
         auto temp_2 = hf.get_vertices_index(temp);
         auto temp_3 = hf.get_vertices_index(right_node->data.incident_half_edge);
         if (temp_2 == temp_3) return false;
