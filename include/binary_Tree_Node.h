@@ -66,11 +66,11 @@ public:
     // 这里是没有问题的，从那个结点向上到根之间是需要保存的
     //
     binary_Tree_Node *tree_insert_value(binary_Tree_Node *root, T data) {
-        binary_Tree_Node &nodes = *new binary_Tree_Node<T>;
-        nodes.right = nullptr;
-        nodes.left = nullptr;
-        nodes.parent = nullptr;
-        nodes.data = data;
+        const auto nodes = new binary_Tree_Node<T>;
+        nodes->right = nullptr;
+        nodes->left = nullptr;
+        nodes->parent = nullptr;
+        nodes->data = data;
         return root->insert_node_to_binary_search_tree(root, nodes);
     }
 
@@ -81,12 +81,15 @@ public:
      * @param new_node
      * @return
      */
-    binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node &new_node) {
+    binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node *new_node) {
+        if (new_node == nullptr) {
+            return root;
+        }
         binary_Tree_Node *new_root = root;
         binary_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
             insert_node = new_root;
-            if (insert_node->data < new_node.data) {
+            if (insert_node->data < new_node->data) {
                 // 新插入的结点在比较的后面
                 new_root = new_root->right;
             } else {
@@ -94,13 +97,13 @@ public:
             }
         }
         if (insert_node == nullptr) {
-            return &new_node;
-        } else if (insert_node->data < new_node.data) {
-            insert_node->right = &new_node;
-            new_node.parent = insert_node;
+            return new_node;
+        } else if (insert_node->data < new_node->data) {
+            insert_node->right = new_node;
+            new_node->parent = insert_node;
         } else {
-            insert_node->left = &new_node;
-            new_node.parent = insert_node;
+            insert_node->left = new_node;
+            new_node->parent = insert_node;
         }
         return root;
         // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度
