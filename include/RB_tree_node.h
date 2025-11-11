@@ -134,7 +134,7 @@ public:
 
     RB_Tree_Node *left_rotate_with_color(RB_Tree_Node *node) {
         if (node != nullptr && node->right == nullptr) {
-            return false;
+            return nullptr;
         }
         auto temp_color = node->right->color;
         node->right->color = node->color;
@@ -144,7 +144,7 @@ public:
 
     RB_Tree_Node *right_rotate_with_color(RB_Tree_Node *node) {
         if (node != nullptr && node->left == nullptr) {
-            return false;
+            return nullptr;
         }
         auto temp_color = node->left->color;
         node->left->color = node->color;
@@ -153,6 +153,13 @@ public:
     }
 
 
+    RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node *delete_node) {
+        if (delete_node == nullptr) {
+            return root;
+        }
+        return delete_node_from_binary_search_tree(root, *delete_node);
+    }
+
     RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
         auto delete_node_color = delete_node.color;
         auto need_fix_node = root; {
@@ -160,10 +167,10 @@ public:
             if (&delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
                 return nullptr;
             } else if (&delete_node == root && delete_node.left != nullptr && delete_node.right == nullptr) {
-                delete_node.left.color = RB_Tree_BLACK;
+                delete_node.left->color = RB_Tree_BLACK;
                 return delete_node.left;
             } else if (&delete_node == root && delete_node.left == nullptr && delete_node.right != nullptr) {
-                delete_node.right.color = RB_Tree_BLACK;
+                delete_node.right->color = RB_Tree_BLACK;
                 return delete_node.right;
             }
         }
@@ -171,7 +178,9 @@ public:
         if (delete_node.right == nullptr && delete_node.left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
             // 只有叶子结点这里需要一个额外的处理
+            RB_delete_fix(root, &delete_node); //
             RB_Tree_Node::clean_sub_tree_father(&delete_node); // 这个函数里面多了一步，导致了一个小问题
+            return root;
         } else if (delete_node.right == nullptr && delete_node.left != nullptr) {
             // 右子树为空
             need_fix_node = delete_node.left;
@@ -190,7 +199,7 @@ public:
             } else if (successor->left == nullptr && successor->right != nullptr) {
                 // 后继右子树替换掉后继原本的位置
                 // 后继是删除结点的右孩子 时也是执行这个操作
-                need_fix_node = successor.right;
+                need_fix_node = successor->right;
                 successor->replace_sub_tree(successor, successor->right);
             }
             successor->replace_sub_tree(&delete_node, successor);
@@ -213,49 +222,43 @@ public:
             if (need_fix_node == need_fix_node->parent->left) {
                 auto w_node = need_fix_node->parent->right;
                 if (w_node->color == RB_Tree_RED) {
-                    w_node->color = RB_Tree_BLACK;
-                    need_fix_node->parent->color = RB_Tree_RED;
-                    RB_Tree_Node::left_rotate(need_fix_node->parent);
+                    RB_Tree_Node::left_rotate_with_color(need_fix_node->parent);
                     w_node = need_fix_node->parent->right;
                 }
                 if (w_node->left->color == RB_Tree_BLACK && w_node->right->color == RB_Tree_BLACK) {
                     w_node->color = RB_Tree_RED;
                     need_fix_node = need_fix_node->parent;
-                } else if (w_node->right->color == RB_Tree_BLACK) {
-                    w_node->left->color = RB_Tree_BLACK;
-                    w_node->color = RB_Tree_RED;
-                    RB_Tree_Node::right_rotate(w_node);
+                }
+                if (w_node->left->color == RB_Tree_RED && w_node->right->color == RB_Tree_BLACK) {
+                    RB_Tree_Node::right_rotate_with_color(w_node);
                     w_node = need_fix_node->parent->right;
                 }
-                // 下面的是存在一个例子的
-                // 图13-4(d) 中的 数字 8 被删除的后就应该调用下面的内容
-                w_node->color = need_fix_node->parent->color;
-                need_fix_node->parent->color = RB_Tree_BLACK;
-                w_node->right->color = RB_Tree_BLACK;
-                RB_Tree_Node::left_rotate(need_fix_node->parent);
-                need_fix_node = root;
+                if (w_node->right->color == RB_Tree_RED) {
+                    need_fix_node->parent->color = RB_Tree_BLACK;
+                    RB_Tree_Node::left_rotate(need_fix_node->parent);
+                    w_node->right->color = RB_Tree_BLACK;
+                    need_fix_node = root;
+                }
             } else {
                 auto w_node = need_fix_node->parent->left;
                 if (w_node->color == RB_Tree_RED) {
-                    w_node->color = RB_Tree_BLACK;
-                    need_fix_node->parent->color = RB_Tree_RED;
-                    RB_Tree_Node::right_rotate(need_fix_node->parent);
+                    RB_Tree_Node::right_rotate_with_color(need_fix_node->parent);
                     w_node = need_fix_node->parent->left;
                 }
                 if (w_node->right->color == RB_Tree_BLACK && w_node->left->color == RB_Tree_BLACK) {
                     w_node->color = RB_Tree_RED;
                     need_fix_node = need_fix_node->parent;
-                } else if (w_node->left->color == RB_Tree_BLACK) {
-                    w_node->right->color = RB_Tree_BLACK;
-                    w_node->color = RB_Tree_RED;
-                    RB_Tree_Node::left_rotate(w_node);
+                }
+                if (w_node->right->color == RB_Tree_RED && w_node->left->color == RB_Tree_BLACK) {
+                    RB_Tree_Node::left_rotate_with_color(w_node);
                     w_node = need_fix_node->parent->left;
                 }
-                w_node->color = need_fix_node->parent->color;
-                need_fix_node->parent->color = RB_Tree_BLACK;
-                w_node->lefet_tem->color = RB_Tree_BLACK;
-                RB_Tree_Node::right_rotate(need_fix_node->parent);
-                need_fix_node = root;
+                if (w_node->left->color == RB_Tree_RED) {
+                    need_fix_node->parent->color = RB_Tree_BLACK;
+                    RB_Tree_Node::right_rotate_with_color(need_fix_node->parent);
+                    w_node->left->color = RB_Tree_BLACK;
+                    need_fix_node = root;
+                }
             }
         }
         need_fix_node->color = RB_Tree_BLACK;

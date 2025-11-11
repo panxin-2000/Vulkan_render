@@ -170,6 +170,8 @@ TEST(test_tree, RB_Tree_Node_insert) {
     EXPECT_EQ(root->right->right->data, 14);
     EXPECT_EQ(root->left->right->left->data, 4);
     EXPECT_EQ(root->right->right->right->data, 15);
+    auto temp = tree_find_value(root, 5);
+    root = root->delete_node_from_binary_search_tree(root, temp);
 
     // 其实可以想办法写一个层序输出的结果，与最开始的值进行比较
     // 插入时应该是可以随机打乱顺序的

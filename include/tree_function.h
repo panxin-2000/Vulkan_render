@@ -11,14 +11,15 @@
 // 这里需要考虑边界条件，边界条件考虑不到的时候会出现死循环
 // 需要考虑数据本身的边界条件
 // 我这里改了一下顺序，
-template<typename T, typename T2>
-T2 tree_find_value(T2 root, T data) {
-    T2 new_root = root;
-    T2 result_node = nullptr;
+template<typename value_type, typename ptr>
+ptr tree_find_value(ptr root, value_type data) {
+    ptr new_root = root;
+    ptr result_node = nullptr;
     while (new_root != nullptr) {
         if (new_root->data == data) {
             return new_root;
-        } else if (new_root->data < data) { // 这里的前后的顺序，需要与插入时比较相同
+        } else if (new_root->data < data) {
+            // 这里的前后的顺序，需要与插入时比较相同
             new_root = new_root->right;
         } else {
             new_root = new_root->left;
