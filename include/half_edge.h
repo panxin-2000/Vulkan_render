@@ -328,21 +328,21 @@ struct half_edge_struct {
 
     bool flip_edge(int edge_index) {
         auto opposite_edge_index = get_opposite_edge_index(edge_index);
-        auto first_face_index = get_face_index(edge_index);
-        auto second_face_index = get_face_index(opposite_edge_index);
-        auto all_edges_of_first_face = get_all_edge_of_face(first_face_index);
-        auto all_edges_of_second_face = get_all_edge_of_face(second_face_index);
+        auto all_edges_of_first_face = get_all_edge_of_face(edge_index);
+        auto all_edges_of_second_face = get_all_edge_of_face(opposite_edge_index);
         if (all_edges_of_first_face.size() == 3 && all_edges_of_second_face.size() == 3) {
             // 这时候就可以拿到四个点了
             auto point_a = get_vertex(get_pre_edge_index(edge_index));
             auto point_b = get_vertex(edge_index);
             auto point_c = get_vertex(get_pre_edge_index(opposite_edge_index));
             auto point_d = get_vertex(opposite_edge_index);
+            auto bool_1 = point_2::is_anticlockwise(point_a, point_d, point_c);
 
-            if (point_2::is_anticlockwise(point_a, point_d, point_c) &&
-                point_2::is_anticlockwise(point_d, point_c, point_b) &&
-                point_2::is_anticlockwise(point_c, point_b, point_a) &&
-                point_2::is_anticlockwise(point_b, point_a, point_d)) {
+            auto bool_2 = point_2::is_anticlockwise(point_d, point_c, point_b);
+            auto bool_3 = point_2::is_anticlockwise(point_c, point_b, point_a);
+            auto bool_4 = point_2::is_anticlockwise(point_b, point_a, point_d);
+
+            if ((bool_1 && bool_2 && bool_3 && bool_4) || (!bool_1 && !bool_2 && !bool_3 && !bool_4)) {
                 // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
                 get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
                 get_edge(opposite_edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
@@ -425,8 +425,8 @@ struct half_edge_struct {
         return half_edges.at(incident_half_edge);
     }
 
-    face &get_face(int face_index) {
-        return faces.at(face_index);
+    face &get_face(int incident_half_edge) {
+        return faces.at(get_edge(incident_half_edge).incident_face);
     }
 
     [[nodiscard]] half_edge_index get_next_edge_index(const int incident_half_edge) const {
