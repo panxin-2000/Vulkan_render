@@ -28,10 +28,79 @@ ptr tree_find_value(ptr root, value_type data) {
     return result_node;
 }
 
+template<typename T>
+std::vector<T> *find_all_leaf_node(T node, std::vector<T> *result) {
+    std::queue<T> tem;
+    if (node != nullptr) {
+        tem.push(node);
+    }
+    while (!tem.empty()) {
+        T *node_tem = tem.front();
+        if (node_tem->left != nullptr) {
+            tem.push(node_tem->left);
+        }
+        if (node_tem->right != nullptr) {
+            tem.push(node_tem->right);
+        }
+        if (node_tem->left == nullptr && node_tem->right == nullptr) {
+            result->push_back(node_tem); // 是叶子节点才添加到向量中准备之后的输出
+        }
+        tem.pop();
+    }
+    return result;
+}
+
+
+template<typename T>
+void inorder_tree_walk(T node, const std::vector<T> *result) {
+    if (node != nullptr) {
+        inorder_tree_walk(node->left, result);
+        result->push_back(node);
+        inorder_tree_walk(node->right, result);
+    }
+}
+
+template<typename T>
+void preorder_tree_walk(T node, const std::vector<T> *result) {
+    if (node != nullptr) {
+        result->push_back(node);
+        preorder_tree_walk(node->left, result);
+        preorder_tree_walk(node->right, result);
+    }
+}
+
+template<typename T>
+void postorder_tree_walk(T node, const std::vector<T> *result) {
+    if (node != nullptr) {
+        postorder_tree_walk(node->left, result);
+        postorder_tree_walk(node->right, result);
+        result->push_back(node);
+    }
+}
+
+template<typename T>
+std::vector<T> level_tree_walk(T node, const std::vector<T> *result) {
+    std::queue<T> tem;
+    if (node != nullptr) {
+        tem.push(node);
+    }
+    while (!tem.empty()) {
+        T *node_tem = tem.front();
+        if (node_tem->left != nullptr) {
+            tem.push(node_tem->left);
+        }
+        if (node_tem->right != nullptr) {
+            tem.push(node_tem->right);
+        }
+        result->push_back(node_tem);
+        tem.pop();
+    }
+}
 
 // T2 RB_Tree_Node<segment_vector>   T  segment_vector
+// 这个函数中找到的是值，时间上如果能够返回
 template<typename T, typename T2>
-std::vector<T2 *> find_interval(T2 root, T &left_node, T &right_node) {
+std::vector<T2> find_interval(T2 root, T &left_node, T &right_node) {
     //
     auto new_left_node = left_node;
     auto new_right_node = right_node;
@@ -39,10 +108,10 @@ std::vector<T2 *> find_interval(T2 root, T &left_node, T &right_node) {
         std::swap(new_left_node, new_right_node);
     }
     // auto root = this;
-    auto result = *new std::vector<T2 *>;
+    auto result = *new std::vector<T2>;
     // 找到最小值和最大值
-    auto min_node = tree_find_value(&root, new_left_node); //其实这里是稍微有点问题的
-    auto max_node = tree_find_value(&root, new_right_node); //大部分情况是是取一个间隔，并不能准确的对应的值
+    auto min_node = tree_find_value(root, new_left_node); //其实这里是稍微有点问题的
+    auto max_node = tree_find_value(root, new_right_node); //大部分情况是是取一个间隔，并不能准确的对应的值
     if (min_node == nullptr || max_node == nullptr) {
         return result;
     }
