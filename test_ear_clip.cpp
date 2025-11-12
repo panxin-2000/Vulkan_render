@@ -25,6 +25,16 @@ T &init_hf(T &hf) {
     return hf;
 }
 
+
+template<typename T>
+T &init_hf_2(T &hf) {
+    auto half_edge_index = hf.create_loop({3, 2}, {5, 1});
+    auto first_half_edge = half_edge_index;
+    half_edge_index = hf.add_edge(half_edge_index, {7, 2});
+    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
+    return hf;
+}
+
 template<typename T>
 T &init_expect_triangles(T &expect_triangles) {
     expect_triangles.push_back(triangle<point_2>{{0, 0}, {1, 2}, {-1, 3}});
@@ -176,12 +186,34 @@ TEST(ear_clip, ear_clip_half_edge) {
     } else {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }
-    hf.flip_edge(24);
     // 拿到了正确的输入的结果，只不过是强行拿到的，并不是自己手动计算处理的，所以结果必然是正确的
 }
 
 // 如果是不带洞的，那么直接用是没有问题的，带洞的话，就稍微有点问题，不是论文中提到的办法能够直接解决的了
 // 第一件事是三角形的划分结果肯定是对的，那么问题在哪里？
+
+
+TEST(half_edge, test_flip_edge) {
+    half_edge_struct<vertex_xy> hf{};
+    hf = init_hf_2(hf);
+    face temp;
+    hf.get_first_face(temp);
+    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto new_segments = hf.get_vertices(all_edge);
+
+    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    for (auto new_segment: new_segments) {
+        tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
+    }
+
+    std::vector<triangle<point_2> > expect_triangles{};
+    init_expect_triangles(expect_triangles);
+
+    if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
+    }
+    hf.flip_edge(8);
+    int a = 90;
+}
 
 
 TEST(ear_clip, test_point_location) {
