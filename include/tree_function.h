@@ -29,13 +29,13 @@ ptr tree_find_value(ptr root, value_type data) {
 }
 
 template<typename T>
-std::vector<T> *find_all_leaf_node(T node, std::vector<T> *result) {
+std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result) {
     std::queue<T> tem;
     if (node != nullptr) {
         tem.push(node);
     }
     while (!tem.empty()) {
-        T *node_tem = tem.front();
+        auto node_tem = tem.front();
         if (node_tem->left != nullptr) {
             tem.push(node_tem->left);
         }
@@ -43,7 +43,7 @@ std::vector<T> *find_all_leaf_node(T node, std::vector<T> *result) {
             tem.push(node_tem->right);
         }
         if (node_tem->left == nullptr && node_tem->right == nullptr) {
-            result->push_back(node_tem); // 是叶子节点才添加到向量中准备之后的输出
+            result.push_back(node_tem); // 是叶子节点才添加到向量中准备之后的输出
         }
         tem.pop();
     }

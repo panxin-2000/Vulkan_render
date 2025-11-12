@@ -170,6 +170,7 @@ public:
             }
             return root_node;
             // 第一次添加的时候是可以将根结点直接返回的，之后的时候就不能了，第一种是指针不变，指针里面的内容变掉，第二种是指针需要被更改
+            // 上面不需要合并的代码
         } else if (start_point_trapezoid != nullptr && end_point_trapezoid != nullptr) {
             // 第一个问题是左端点重合的问题，需要看右端点
             // 确定是在那个梯形中，
@@ -179,7 +180,8 @@ public:
             auto new_graph_node = replace_node_in_multi_trapezoid_left_in_right_out(
                 start_point_trapezoid, insert_segment);
             trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
-
+            auto result = new std::vector<trapezoid_ptr>();
+            find_all_leaf_node(new_graph_node, *result);
             auto right_trapezoid = find_right_trapezoid(root_node, start_point_trapezoid, insert_segment);
             // 现在的代码其实写的并没有什么意识到应该这么写，但是写下去之后，发现这么写好像刚刚好
             while (right_trapezoid != end_point_trapezoid) {
@@ -192,6 +194,11 @@ public:
             // 相等的时候，执行另一个操作
             auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(right_trapezoid, insert_segment);
             trapezoid_graph_Node::replace_sub_tree(end_point_trapezoid, last_graph_node);
+
+            // 但是这里是需要合并的代码的
+            // 将所有的叶子结点添加到队列中
+
+
             return root_node;
         }
         return nullptr;

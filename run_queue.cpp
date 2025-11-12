@@ -38,8 +38,11 @@ void test_run_queue() {
     int d = 40;
     const int *b = &a; // 常量的int 类型的指针
     b = &d;
+    // *b = 40; //编译器会警告
+
     int *const c = &a; // int 类型的指针的 常量
     *c = d;
+    // c = 0xffffffff; // 编译器会警告
 
     q.pop();
     assert(q.size() == 3);
