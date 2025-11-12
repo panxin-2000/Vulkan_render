@@ -26,5 +26,15 @@ TEST(vecter, add) {
     // for (int v1: v) {
     //     expected.push_back(v1);
     // }
-    EXPECT_EQ(v, expected);  // 居然是可以直接判断两个vector 是否相等的
+
+    EXPECT_EQ(v, expected); // 居然是可以直接判断两个vector 是否相等的
+    try {
+        auto tem = expected.at(100);
+    } catch (const std::out_of_range &e) {
+        std::cout << "Error: " << e.what() << std::endl;
+    }
+    // auto tem = expected.at(100);
+
+    // 有两种异常的捕捉器，上面是自定义的
+    // gtest 也存在自定义的异常步骤，输出会稍微字多一点，但是给出的信息内容的是一样的。
 }
