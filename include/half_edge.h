@@ -206,6 +206,27 @@ struct half_edge_struct {
         return red_e;
     }
 
+    half_edge_index add_half_edge(int vertex_index,
+                                  int next_half_edge,
+                                  int pre_half_edge,
+                                  int incident_face,
+                                  int is_using = true) {
+        int half_edges_size = half_edges.size();
+        int twin_half_edge;
+        // half_edges_size 为 0 时， twin_half_edge = 1
+        // half_edges_size 为 1 时， twin_half_edge = 0
+        if (half_edges_size % 2 == 0) {
+            twin_half_edge = half_edges_size + 1;
+        } else {
+            twin_half_edge = half_edges_size - 1;
+        }
+        half_edges.push_back({
+            vertex_index, twin_half_edge,
+            next_half_edge, pre_half_edge, incident_face, is_using
+        });
+        return half_edges_size;
+    }
+
     // 如果想将原本的half_edge 中，添加一个顶点，将它分为两个edge的操作
     half_edge_index insert_edge(half_edge_index current_edge, vertex middle_point) {
         int half_edges_size = half_edges.size();
@@ -329,8 +350,46 @@ struct half_edge_struct {
         return E_g;
     }
 
-
-    // bood set_
+    /**
+     * 给一个三角形的face中间添加一个点，变更为三个face
+     * @param face_index
+     * @param add_point
+     * @return
+     */
+    bool face_add_new_point(int face_index, vertex add_point) {
+        get_face(face_index).bounding_half_edge;
+        auto all_edges_of_first_face = get_all_edge_of_face(get_face(face_index).bounding_half_edge);
+        if (all_edges_of_first_face.size() == 3) {
+            auto AB_edge = all_edges_of_first_face.at(0);
+            auto BC_edge = all_edges_of_first_face.at(1);
+            auto CA_edge = all_edges_of_first_face.at(2);
+            int half_edges_size = half_edges.size();
+            int vertices_size = vertices.size();
+            int faces_size = faces.size();
+            add_point.incident_half_edge = half_edges_size;
+            vertices.push_back(add_point);
+            auto AD_edge = half_edges_size;
+            auto DA_edge = half_edges_size + 1;
+            auto CD_edge = half_edges_size + 2;
+            auto DC_edge = half_edges_size + 3;
+            auto BD_edge = half_edges_size + 4;
+            auto DB_edge = half_edges_size + 5;
+            auto face_ABD = get_edge(AB_edge).incident_face;
+            auto face_BCD = faces_size;
+            auto face_DCA = faces_size + 1;
+            AD_edge = add_half_edge(get_vertices_index(AB_edge), DC_edge, CA_edge, face_DCA);
+            DA_edge = add_half_edge(vertices_size, AB_edge, BD_edge, face_ABD);
+            CD_edge = add_half_edge(get_vertices_index(CA_edge), DB_edge, BC_edge, face_BCD);
+            DC_edge = add_half_edge(vertices_size, CA_edge, AD_edge, face_DCA);
+            BD_edge = add_half_edge(get_vertices_index(BC_edge), DA_edge, AB_edge, face_ABD);
+            DB_edge = add_half_edge(vertices_size, BC_edge, CD_edge, face_BCD);
+            set_face_for_new_add_edge(DB_edge, face_BCD);
+            faces.push_back({DB_edge, face::BOUNDARY_TYPE::bounding_face});
+            set_face_for_new_add_edge(DC_edge, face_DCA);
+            faces.push_back({DC_edge, face::BOUNDARY_TYPE::bounding_face});
+            set_face_for_new_add_edge(DA_edge, face_ABD);
+        }
+    }
 
     bool flip_edge(int edge_index) {
         auto opposite_edge_index = get_opposite_edge_index(edge_index);
