@@ -220,7 +220,8 @@ TEST(half_edge, test_face_and_point) {
     auto half_edge_index = hf.create_loop({7, 8}, {12, 8});
     auto first_half_edge = half_edge_index;
     half_edge_index = hf.add_edge(half_edge_index, {10, 3});
-    hf.face_add_new_point(1, {10, 6});
+    int vertex_index = 0;
+    hf.face_add_new_point(1, {10, 6}, vertex_index);
     int a = 90;
 }
 

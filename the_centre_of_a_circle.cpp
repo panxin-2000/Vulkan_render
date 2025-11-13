@@ -41,25 +41,6 @@ bool if_colinear(point_2 a, point_2 b, point_2 c) {
         return true;
 }
 
-point_2 centre_of_a_circle(point_2 a, point_2 b, point_2 c) {
-    auto A_1_1 = -2 * (a.x - b.x);
-    auto A_1_2 = -2 * (a.y - b.y);
-    auto A_2_1 = -2 * (a.x - c.x);
-    auto A_2_2 = -2 * (a.y - c.y);
-    auto A = A_1_1 * A_2_2 - A_1_2 * A_2_1;
-    auto inv_A_1_1 = A_2_2 / A;
-    auto inv_A_1_2 = -1 * A_1_2 / A;
-    auto inv_A_2_1 = -1 * A_2_1 / A;
-    auto inv_A_2_2 = A_1_1 / A;
-    auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
-    auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
-
-    point_2 result = {};
-    result.x = inv_A_1_1 * B_1 + inv_A_1_2 * B_2;
-    result.y = inv_A_2_1 * B_1 + inv_A_2_2 * B_2;
-    return result;
-}
-
 
 TEST(centre, the_centre_of_a_circle) {
     point_2 a{0, 3};
@@ -68,7 +49,7 @@ TEST(centre, the_centre_of_a_circle) {
     point_2 result{3, 3};
 
     EXPECT_EQ(true, if_colinear(a, b, c));
-    EXPECT_EQ(result, centre_of_a_circle(a, b, c));
+    EXPECT_EQ(result, point_2::centre_of_a_circle(a, b, c));
 }
 
 TEST(centre, the_centre_of_a_circle_2) {
@@ -87,5 +68,5 @@ TEST(centre, the_centre_of_a_circle_2) {
     // 目的也只是改一个名字，并不改变任何其他的内容
 
     EXPECT_EQ(true, if_colinear(a, b, c));
-    EXPECT_EQ(result, centre_of_a_circle(a, b, c));
+    EXPECT_EQ(result, point_2::centre_of_a_circle(a, b, c));
 }

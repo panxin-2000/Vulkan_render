@@ -24,6 +24,11 @@ struct vertex_xy : public point_2 {
         y = y1;
     }
 
+    vertex_xy(point_2 point) {
+        x = point.x;
+        y = point.y;
+    }
+
     vertex_xy(float x1, float y1, int incident_half_edge_1) {
         x = x1;
         y = y1;
@@ -350,15 +355,27 @@ struct half_edge_struct {
         return E_g;
     }
 
+    half_edge_index get_edge_from_trangle_dont_have_point(face_index face_index_para, int vertex_index) {
+        auto edge_indices = get_all_edge_of_face(get_face(face_index_para).bounding_half_edge);
+        for (auto edge_index: edge_indices) {
+            if (get_edge(edge_index).vertex_index != vertex_index ||
+                get_edge(get_opposite_edge_index(edge_index)).vertex_index != vertex_index) {
+                return edge_index;
+            }
+        }
+    }
+
     /**
      * 给一个三角形的face中间添加一个点，变更为三个face
-     * @param face_index
+     * @param face_index_para
      * @param add_point
+     * @param vertex_index
      * @return
      */
-    bool face_add_new_point(int face_index, vertex add_point) {
-        get_face(face_index).bounding_half_edge;
-        auto all_edges_of_first_face = get_all_edge_of_face(get_face(face_index).bounding_half_edge);
+    std::vector<face_index> face_add_new_point(int face_index_para, vertex add_point, int &vertex_index) {
+        std::vector<face_index> new_faces;
+        get_face(face_index_para).bounding_half_edge;
+        auto all_edges_of_first_face = get_all_edge_of_face(get_face(face_index_para).bounding_half_edge);
         if (all_edges_of_first_face.size() == 3) {
             auto BC_edge = all_edges_of_first_face.at(2);
             auto CA_edge = all_edges_of_first_face.at(0);
@@ -367,6 +384,7 @@ struct half_edge_struct {
             int vertices_size = vertices.size();
             int faces_size = faces.size();
             add_point.incident_half_edge = half_edges_size;
+            vertex_index = vertices_size;
             vertices.push_back(add_point);
             auto AD_edge = half_edges_size;
             auto DA_edge = half_edges_size + 1;
@@ -398,7 +416,12 @@ struct half_edge_struct {
 
             set_face_for_new_add_edge(DA_edge, face_ABD);
             get_face(face_ABD).bounding_half_edge = DA_edge;
+            new_faces.push_back(face_BCD);
+            new_faces.push_back(face_DCA);
+            new_faces.push_back(face_ABD);
+            return new_faces;
         }
+        return new_faces;
     }
 
     bool flip_edge(int edge_index) {
@@ -465,6 +488,76 @@ struct half_edge_struct {
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 这个函数的目的是为了判断是否非法？
+     * 什么样才算非法呢？
+     * 第四个点在前三个点组成的外接圆内
+     * flip之前，一个三角形非法，另一个也是非法的，可以用两个圆随意摆放得到这个结果
+     * 有一个前提条件，第四个点不能在三角形的内部
+     * @param hf
+     * @param half_edge_index
+     * @param vertex_index
+     * @return
+     */
+    bool legalize_edge(int half_edge_index, int vertex_index) {
+        // 有了一个half_edge_index 能找到那个面
+        // 有了 face_index ,能够找到 三个顶点
+        // 还能找到反面，还能找到反面的顶点，不在 half_edge_index 上的顶点
+        // 找到 face_index 的三个顶点，计算出一个圆心和半径
+        // 反面的顶点 与 圆心和半径比较，判断是否在圆内
+        // 在圆内就是非法
+        // 非法就需要做什么呢？
+        // flip 对角线
+        // 然后再进行检测，还需要检测两个内容
+        // 能知道 half_edge_index 和 opposite_of_half_edge_index
+        // 两个face,总共有6条边，去掉 上面的两条边，再去掉与 vertex_index 连接的两条边
+        // 最后的得到剩余的两条边，重新调用这个函数，最后一个参数写什么呢？还是 vertex_index ,这个参数不需要改变
+        // 然后一个问题上，这个操作我放在哪里呢？ 我觉得放在另一个文件里面会稍微好一点
+        // 毕竟是操作half_edge数据结构本身的内容
+        // 但是也没有改变太多的内容
+        auto face_index = get_face_index(half_edge_index);
+        auto all_edges_of_first_face = get_all_edge_of_face(half_edge_index);
+        auto all_edges_of_second_face = get_all_edge_of_face(get_opposite_edge_index(half_edge_index));
+        if (all_edges_of_first_face.size() == 3 && all_edges_of_second_face.size() == 3) {
+            //    B----------D
+            //    *  *       *
+            //    *    *     *
+            //    *      *   *
+            //    *        * *
+            //    A----------C
+            //  BC 两个点相互交换应该是没有问题的
+            auto BC_edge = half_edge_index;
+
+            auto AC_or_AB_edge = get_pre_edge_index(half_edge_index);
+            auto AB_or_AC_edge = get_next_edge_index(half_edge_index);
+
+            // 确定是 AC_or_AB 而不是 DB_or_DC
+            if (get_edge(AC_or_AB_edge).vertex_index == vertex_index ||
+                get_edge(AB_or_AC_edge).vertex_index == vertex_index) {
+                AC_or_AB_edge = get_pre_edge_index(get_opposite_edge_index(half_edge_index));
+                AB_or_AC_edge = get_next_edge_index(get_opposite_edge_index(half_edge_index));
+            }
+            auto A_point = get_vertex(AC_or_AB_edge);
+            auto B_point = get_vertex(half_edge_index);
+            auto D_point = vertices.at(vertex_index);
+            auto C_point = get_vertex(get_opposite_edge_index(half_edge_index));
+
+
+            auto centre = point_2::centre_of_a_circle(A_point, B_point, C_point);
+            if (point_2::distance_compare(D_point - centre, C_point - centre)) {
+                // 当前是合法的
+            } else {
+                // 当前是非法的，需要执行flip操作
+                flip_edge(half_edge_index);
+                // half_edge_index 这个索引并没有改变
+                // 但是边需要变更了，需要变更为 AB 或者 AC ，但是不能是 BD 或者 CD ,前面添加条件确定了
+                legalize_edge(AC_or_AB_edge, vertex_index);
+                legalize_edge(AB_or_AC_edge, vertex_index);
             }
         }
         return false;

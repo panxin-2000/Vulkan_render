@@ -4,12 +4,18 @@
 
 #ifndef TEST_DELAUNAY_TRIANGULATION_H
 #define TEST_DELAUNAY_TRIANGULATION_H
+#include <glm/fwd.hpp>
+
 #include "half_edge.h"
 
 
 namespace delaunay_triangulation {
     // 并不是算事一个类，只能算是一个方法
-    //       A-------------------D-------------------C
+    //                           *---------------------------------------C
+    //                           *                   *                   *
+    //                           *                   *                   *
+    //                           *                   *                   *
+    //       A-------------------D-------------------*-------------------*
     //       *                   *  * *  *  *  *  *  *
     //       *                   *  * *  *  *  *  *  *
     //       *                   *  * *  *  *  *  *  *
@@ -90,8 +96,29 @@ namespace delaunay_triangulation {
     // 再之后需要做什么操作呢？
     // 检查边，查看是否需要flip
 
+
     half_edge *delaunay_triangulation(std::vector<point_2> input_points) {
         auto box = AABB<point_2>::calculate_bound_box(input_points);
+        auto point_a = box.max_point + (box.max_point - box.min_point);
+        point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
+        point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};
+        auto hf = new half_edge_struct<vertex_xy>;;
+        auto half_edge_index = hf->create_loop(point_a, point_b);
+        auto first_half_edge = half_edge_index;
+        half_edge_index = hf->add_edge(half_edge_index, point_c);
+
+
+        for (auto point: input_points) {
+            auto face_index = hf->get_vertex_in_witch_face_test(point);
+            // 上面的函数并没有考虑另一种情况，那就是在边上的情况
+            // 先不考虑在边上的情况，之后考虑什么呢？
+            int vertex_index = 0;
+            auto new_faces = hf->face_add_new_point(face_index, point, vertex_index);
+            for (auto face: new_faces) {
+                auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
+                hf->legalize_edge(temp, vertex_index);
+            }
+        }
     }
 };
 
