@@ -17,6 +17,15 @@ public:
         min_point = T::int_max_limit(min_point);
         max_point = T::int_min_limit(max_point);
     }
+
+    static AABB calculate_bound_box(std::vector<T> &points) {
+        AABB box;
+        for (auto vertex_point: points) {
+            box.min_point = T::min_two_point(box.min_point, vertex_point);
+            box.max_point = T::max_two_point(box.max_point, vertex_point);
+        }
+        return box;
+    }
 };
 
 #endif //BOUNDING_BOX_H

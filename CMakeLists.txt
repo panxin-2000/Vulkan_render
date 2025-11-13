@@ -55,6 +55,7 @@ add_executable(hello_test
         the_centre_of_a_circle.cpp
         segment_end_ponit_and_gradient.cpp
         longest_continuous_sequence.cpp
+        test_delaunay_triangulation.cpp
         test_tetrahedron.cpp
         convex_hull.cpp
         bracket.cpp
@@ -71,14 +72,13 @@ add_executable(hello_test
         test_cut_rod.cpp)
 
 
-
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 target_link_libraries(hello_test GTest::gtest_main)
 
 add_executable(test_mutex
-#        test_curve.cpp
+        #        test_curve.cpp
         test_thread_fibonacci.cpp
         test_dot_product.cpp
         test_matrix_view_model_projection.cpp

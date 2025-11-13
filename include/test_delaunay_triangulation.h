@@ -4,9 +4,10 @@
 
 #ifndef TEST_DELAUNAY_TRIANGULATION_H
 #define TEST_DELAUNAY_TRIANGULATION_H
+#include "half_edge.h"
 
 
-class test_delaunay_triangulation {
+namespace delaunay_triangulation {
     // 并不是算事一个类，只能算是一个方法
     //       A-------------------D-------------------C
     //       *                   *  * *  *  *  *  *  *
@@ -59,7 +60,7 @@ class test_delaunay_triangulation {
     //            *                 *     *             // 如果不是的话，就不能执行这个操作了
     //              *            *        *             // 应该就只会在当前边上进行操作
     //                *        *          *             // 这个应该是有一个直接的操作能够实现的
-    //                  *   *             *             //
+    //                  *   *             *             // 这里完成了，
     //                    D               *             //
     //                      *             *             //
     //                        *           *             //
@@ -88,6 +89,10 @@ class test_delaunay_triangulation {
 
     // 再之后需要做什么操作呢？
     // 检查边，查看是否需要flip
+
+    half_edge *delaunay_triangulation(std::vector<point_2> input_points) {
+        auto box = AABB<point_2>::calculate_bound_box(input_points);
+    }
 };
 
 
