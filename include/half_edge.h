@@ -360,9 +360,9 @@ struct half_edge_struct {
         get_face(face_index).bounding_half_edge;
         auto all_edges_of_first_face = get_all_edge_of_face(get_face(face_index).bounding_half_edge);
         if (all_edges_of_first_face.size() == 3) {
-            auto AB_edge = all_edges_of_first_face.at(0);
-            auto BC_edge = all_edges_of_first_face.at(1);
-            auto CA_edge = all_edges_of_first_face.at(2);
+            auto BC_edge = all_edges_of_first_face.at(2);
+            auto CA_edge = all_edges_of_first_face.at(0);
+            auto AB_edge = all_edges_of_first_face.at(1);
             int half_edges_size = half_edges.size();
             int vertices_size = vertices.size();
             int faces_size = faces.size();
@@ -383,11 +383,21 @@ struct half_edge_struct {
             DC_edge = add_half_edge(vertices_size, CA_edge, AD_edge, face_DCA);
             BD_edge = add_half_edge(get_vertices_index(BC_edge), DA_edge, AB_edge, face_ABD);
             DB_edge = add_half_edge(vertices_size, BC_edge, CD_edge, face_BCD);
+            get_edge(AB_edge).next_half_edge = BD_edge;
+            get_edge(AB_edge).pre_half_edge = DA_edge;
+            get_edge(BC_edge).next_half_edge = CD_edge;
+            get_edge(BC_edge).pre_half_edge = DB_edge;
+            get_edge(CA_edge).next_half_edge = AD_edge;
+            get_edge(CA_edge).pre_half_edge = DC_edge;
+
+
             set_face_for_new_add_edge(DB_edge, face_BCD);
             faces.push_back({DB_edge, face::BOUNDARY_TYPE::bounding_face});
             set_face_for_new_add_edge(DC_edge, face_DCA);
             faces.push_back({DC_edge, face::BOUNDARY_TYPE::bounding_face});
+
             set_face_for_new_add_edge(DA_edge, face_ABD);
+            get_face(face_ABD).bounding_half_edge = DA_edge;
         }
     }
 
@@ -434,8 +444,8 @@ struct half_edge_struct {
                 get_edge(T_index).next_half_edge = z_index;
 
                 // 还需要更改面和点
-                get_face(y_index).bounding_half_edge = y_index; // 重新确认一遍 面对应的边的索引
-                get_face(R_index).bounding_half_edge = R_index;
+                get_face_with_one_edge(y_index).bounding_half_edge = y_index; // 重新确认一遍 面对应的边的索引
+                get_face_with_one_edge(R_index).bounding_half_edge = R_index;
 
                 get_vertex(S_index).incident_half_edge = S_index; // 重新确认一遍顶点的入射
                 get_vertex(z_index).incident_half_edge = z_index;
@@ -492,8 +502,12 @@ struct half_edge_struct {
         return half_edges.at(incident_half_edge);
     }
 
-    face &get_face(int incident_half_edge) {
+    face &get_face_with_one_edge(int incident_half_edge) {
         return faces.at(get_edge(incident_half_edge).incident_face);
+    }
+
+    face &get_face(int face_index) {
+        return faces.at(face_index);
     }
 
     [[nodiscard]] half_edge_index get_next_edge_index(const int incident_half_edge) const {

@@ -215,6 +215,15 @@ TEST(half_edge, test_flip_edge) {
     int a = 90;
 }
 
+TEST(half_edge, test_face_and_point) {
+    half_edge_struct<vertex_xy> hf{};
+    auto half_edge_index = hf.create_loop({7, 8}, {12, 8});
+    auto first_half_edge = half_edge_index;
+    half_edge_index = hf.add_edge(half_edge_index, {10, 3});
+    hf.face_add_new_point(1, {10, 6});
+    int a = 90;
+}
+
 
 TEST(ear_clip, test_point_location) {
     half_edge_struct<vertex_xy> hf{};
