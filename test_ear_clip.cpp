@@ -242,14 +242,24 @@ TEST(ear_clip, test_point_location) {
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
-        EXPECT_EQ(9, hf.get_vertex_in_witch_face_test({1, 1}));
-        EXPECT_EQ(2, hf.get_vertex_in_witch_face_test({5, 1.1}));
-        EXPECT_EQ(3, hf.get_vertex_in_witch_face_test({5, 2.5}));
-        EXPECT_EQ(4, hf.get_vertex_in_witch_face_test({3.1, 2.9}));
-        EXPECT_EQ(5, hf.get_vertex_in_witch_face_test({2.9, 3}));
-        EXPECT_EQ(6, hf.get_vertex_in_witch_face_test({2, 3}));
-        EXPECT_EQ(7, hf.get_vertex_in_witch_face_test({-1, 3.1}));
-        EXPECT_EQ(8, hf.get_vertex_in_witch_face_test({-1, 2}));
+        face_index result_face_index = 0;
+        half_edge_index edge_index = 0;
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {1, 1});
+        EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内 todo:
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 1.1});
+        EXPECT_EQ(2, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 2.5});
+        EXPECT_EQ(3, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {3.1, 2.9});
+        EXPECT_EQ(4, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {2.9, 3});
+        EXPECT_EQ(5, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {2, 3});
+        EXPECT_EQ(6, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {-1, 3.1});
+        EXPECT_EQ(7, result_face_index);
+        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {-1, 2});
+        EXPECT_EQ(8, result_face_index);
 
         // 这里准备好了hf
         // 首先需要什么呢？一个大的四边形，将全部的线段包裹起来

@@ -59,6 +59,12 @@ struct vertex_xy : public point_2 {
     }
 };
 
+enum point_in_triangle_type {
+    in_triangle = 1,
+    on_edge = 2,
+    out_triangle
+};
+
 struct vertex_xyz : public point_3 {
     int incident_half_edge{};
     int is_using{}; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
@@ -729,36 +735,41 @@ struct half_edge_struct {
     }
 
 
-    face_index get_vertex_in_witch_face_test(vertex_base_type vertex_in) {
-        face_index result_face_index = 0;
+    point_in_triangle_type get_vertex_in_witch_face_test(face_index &result_face_index, half_edge_index &edge_index,
+                                                         vertex_base_type vertex_in) {
+        result_face_index = 0;
         for (auto face: faces) {
-            auto temps = get_vertex_in_face(vertex_in, face.bounding_half_edge);
-            if (temps == true) {
-                return result_face_index;
-            }
+            auto temps = get_vertex_in_face(vertex_in,
+                                            face.bounding_half_edge, edge_index);
+            if (temps == point_in_triangle_type::in_triangle || temps == point_in_triangle_type::on_edge)
+                return temps;
             result_face_index++;
         }
-        return -1;
     }
 
-    bool get_vertex_in_face(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
+    point_in_triangle_type get_vertex_in_face(vertex_base_type vertex_in, half_edge_index half_edge_indices,
+                                              half_edge_index &return_half_edge_indices) {
         auto temps = get_all_edge_of_face(half_edge_indices);
         for (auto temp: temps) {
-            if (!get_vertex_in_the_edge_left(vertex_in, temp)) {
-                return false;
+            if (get_vertex_in_the_edge_left(vertex_in, temp) == point_2::anticlockwise::clockwise) {
+                return point_in_triangle_type::out_triangle;
+            }
+            if (get_vertex_in_the_edge_left(vertex_in, temp) == point_2::anticlockwise::collinear) {
+                auto a = get_vertex(half_edge_indices);
+                auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
+                if (on_segment_bounding_box(a, b, vertex_in))
+                    return point_in_triangle_type::on_edge;
+                else
+                    return point_in_triangle_type::out_triangle;
             }
         }
-        return true;
+        return point_in_triangle_type::in_triangle;
     }
 
-    bool get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
+    point_2::anticlockwise get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
         auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-        if (point_2::is_anticlockwise(a, b, vertex_in) == point_2::anticlockwise::counterclockwise) {
-            return true;
-        } else {
-            return false;
-        }
+        return point_2::is_anticlockwise(a, b, vertex_in);
     }
 
     AABB<vertex_base_type> calculate_aabb() {
