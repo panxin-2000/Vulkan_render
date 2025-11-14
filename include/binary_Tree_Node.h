@@ -33,17 +33,16 @@ public:
         return root->insert_node_to_binary_search_tree(root, nodes);
     }
 
+    binary_Tree_Node *tree_insert_value_with_history(binary_Tree_Node *root, T data) {
+        const auto nodes = new binary_Tree_Node<T>;
+        nodes->right = nullptr;
+        nodes->left = nullptr;
+        nodes->parent = nullptr;
+        nodes->data = data;
+        return root->insert_node_to_binary_search_tree_with_history(root, nodes);
+    }
 
-    /**
-     * 确定一下返回值，返回值总是返回树的根
-     * @param root
-     * @param new_node
-     * @return
-     */
-    binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node *new_node) {
-        if (new_node == nullptr) {
-            return root;
-        }
+    binary_Tree_Node *find_insert_position(binary_Tree_Node *root, binary_Tree_Node *new_node) {
         binary_Tree_Node *new_root = root;
         binary_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
@@ -55,14 +54,53 @@ public:
                 new_root = new_root->left;
             }
         }
+        return insert_node;
+    }
+
+    /**
+     * 确定一下返回值，返回值总是返回树的根
+     * @param root
+     * @param new_node
+     * @return
+     */
+    binary_Tree_Node *insert_node_to_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node *new_node) {
+        if (new_node == nullptr) {
+            return root;
+        }
+        auto insert_node = find_insert_position(root, new_node);
+
         if (insert_node == nullptr) {
             return new_node;
         } else if (insert_node->data < new_node->data) {
-            insert_node->right = new_node;
-            new_node->parent = insert_node;
+            binary_Tree_Node::replace_sub_tree_right(insert_node, new_node);
         } else {
-            insert_node->left = new_node;
-            new_node->parent = insert_node;
+            binary_Tree_Node::replace_sub_tree_left(insert_node, new_node);
+        }
+        return root;
+        // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度
+    }
+
+    binary_Tree_Node *
+    insert_node_to_binary_search_tree_with_history(binary_Tree_Node *root, binary_Tree_Node *new_node) {
+        if (new_node == nullptr) {
+            return root;
+        }
+        auto insert_node = find_insert_position(root, new_node);
+
+        if (insert_node == nullptr) {
+            return new_node;
+        } else if (insert_node->data < new_node->data) {
+            const auto nodes = new binary_Tree_Node<T>;
+            std::copy_n(insert_node, 1, nodes);
+            binary_Tree_Node::replace_sub_tree_right(insert_node, new_node);
+        } else {
+            const auto nodes = new binary_Tree_Node<T>;
+            std::copy_n(insert_node, 1, nodes);
+            binary_Tree_Node::replace_sub_tree_left(nodes, new_node);
+            // 从 insert_node 向上，copy 一条完整的链路，指针都是对的链路
+            while (insert_node != nullptr) {
+                insert_node = insert_node->parent;
+            }
         }
         return root;
         // 插入完成之后，然后再重新进行排序，根据左右树的高度，看看是否需要调节高度

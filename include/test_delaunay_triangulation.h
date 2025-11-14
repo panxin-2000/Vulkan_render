@@ -116,7 +116,8 @@ namespace delaunay_triangulation {
             auto new_faces = hf->face_add_new_point(face_index, point, vertex_index);
             for (auto face: new_faces) {
                 auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
-                hf->legalize_edge(temp, vertex_index);
+                // hf->legalize_edge(temp, vertex_index);
+                // 有问题，运行的时候发生了死循环
             }
         }
     }
