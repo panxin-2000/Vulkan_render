@@ -440,7 +440,7 @@ struct half_edge_struct {
             auto bool_3 = point_2::is_anticlockwise(point_c, point_b, point_a);
             auto bool_4 = point_2::is_anticlockwise(point_b, point_a, point_d);
 
-            if ((bool_1 && bool_2 && bool_3 && bool_4) || (!bool_1 && !bool_2 && !bool_3 && !bool_4)) {
+            if (bool_1 & bool_2 & bool_3 & bool_4) {
                 // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
                 get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
                 get_edge(opposite_edge_index).vertex_index =
@@ -523,7 +523,10 @@ struct half_edge_struct {
         auto face_index = get_face_index(half_edge_index);
         auto all_edges_of_first_face = get_all_edge_of_face(half_edge_index);
         auto all_edges_of_second_face = get_all_edge_of_face(get_opposite_edge_index(half_edge_index));
-        if (all_edges_of_first_face.size() == 3 && all_edges_of_second_face.size() == 3) {
+        if (all_edges_of_first_face.size() == 3 &&
+            all_edges_of_second_face.size() == 3 &&
+            get_face(get_edge(get_opposite_edge_index(half_edge_index)).incident_face).boundary_type !=
+            face::BOUNDARY_TYPE::hole_face) {
             //    B----------D
             //    *  *       *
             //    *    *     *
@@ -751,7 +754,7 @@ struct half_edge_struct {
     bool get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
         auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-        if (point_2::is_anticlockwise(a, b, vertex_in)) {
+        if (point_2::is_anticlockwise(a, b, vertex_in) == point_2::anticlockwise::counterclockwise) {
             return true;
         } else {
             return false;

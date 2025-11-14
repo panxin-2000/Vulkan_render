@@ -124,6 +124,18 @@ public:
         return ab.single_area(ac);
     }
 
+
+    // 下面一行去掉class之后是能够编译过的，添加之后是编译不过的？
+    enum anticlockwise {
+        clockwise = 0,
+        counterclockwise = 1,
+        collinear = 2,
+    };
+
+    friend anticlockwise operator&(anticlockwise &left, anticlockwise &right) {
+        return static_cast<anticlockwise>(static_cast<int>(left) & static_cast<int>(right));
+    }
+
     /**
      * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
      * @param a
@@ -131,12 +143,14 @@ public:
      * @param c
      * @return
      */
-    static bool is_anticlockwise(const point_2 &a, const point_2 &b, const point_2 &c) {
+    static anticlockwise is_anticlockwise(const point_2 &a, const point_2 &b, const point_2 &c) {
         point_2 ab = b - a;
         point_2 ac = c - a;
         float area = ab.single_area(ac);
-        if (area >= 0) return true;
-        else return false;
+        if (abs(area) < 0.00001)
+            return anticlockwise::collinear;
+        if (area > 0) return anticlockwise::counterclockwise;
+        else return anticlockwise::clockwise;
     }
 };
 

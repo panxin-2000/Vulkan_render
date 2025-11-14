@@ -103,7 +103,7 @@ namespace delaunay_triangulation {
         point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
         point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};
         auto hf = new half_edge_struct<vertex_xy>;;
-        auto half_edge_index = hf->create_loop(point_a, point_b);
+        auto half_edge_index = hf->create_loop(point_b, point_a);
         auto first_half_edge = half_edge_index;
         half_edge_index = hf->add_edge(half_edge_index, point_c);
 
@@ -111,12 +111,13 @@ namespace delaunay_triangulation {
         for (auto point: input_points) {
             auto face_index = hf->get_vertex_in_witch_face_test(point);
             // 上面的函数并没有考虑另一种情况，那就是在边上的情况
+            // 上面的在边上的情况会返回负一，之后怎么对这个负一进行处理，或者说怎么得到在那条边上的情况
             // 先不考虑在边上的情况，之后考虑什么呢？
             int vertex_index = 0;
             auto new_faces = hf->face_add_new_point(face_index, point, vertex_index);
             for (auto face: new_faces) {
                 auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
-                // hf->legalize_edge(temp, vertex_index);
+                hf->legalize_edge(temp, vertex_index);
                 // 有问题，运行的时候发生了死循环
             }
         }

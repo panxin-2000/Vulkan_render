@@ -27,7 +27,7 @@ bool no_point_in_line_clockwise_direction_no_efficient(point_2 a, point_2 c,
         if ((tree_vertice.x > a.x && tree_vertice.x < c.x && !(do_not_care_point == tree_vertice)) ||
             (tree_vertice.x < a.x && tree_vertice.x > c.x && !(do_not_care_point == tree_vertice))) {
             point_2 b = tree_vertice;
-            if (!point_2::is_anticlockwise(a, b, c)) {
+            if (point_2::anticlockwise::counterclockwise != point_2::is_anticlockwise(a, b, c)) {
                 return false;
             }
         }
@@ -45,7 +45,7 @@ bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 b,
         if ((tree_vertice.x > a.x && tree_vertice.x < b.x && !(do_not_care_point == tree_vertice)) ||
             (tree_vertice.x < a.x && tree_vertice.x > b.x && !(do_not_care_point == tree_vertice))) {
             point_2 c = tree_vertice;
-            if (!point_2::is_anticlockwise(a, b, c)) {
+            if (point_2::anticlockwise::counterclockwise !=point_2::is_anticlockwise(a, b, c)) {
                 return false;
             }
         }
@@ -61,7 +61,7 @@ bool ear_clip_algorithm(std::vector<point_2> &new_segments,
         point_2 b = new_segments.at(new_segments.size() - 2);
         point_2 c = new_segments.at(new_segments.size() - 1);
         // 判断这三个点是顺时针还是逆时针
-        if (point_2::is_anticlockwise(a, b, c)
+        if (point_2::is_anticlockwise(a, b, c) == point_2::anticlockwise::counterclockwise
             && no_point_in_line_clockwise_direction(a, c, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             new_segments.erase(new_segments.begin() + 1);
@@ -86,7 +86,7 @@ bool ear_clip_algorithm_no_efficient(std::vector<triangle<point_2> > &result_seg
         point_2 b = new_segments.at(1);
         point_2 c = new_segments.at(2);
         // 判断这三个点是顺时针还是逆时针
-        if (point_2::is_anticlockwise(a, b, c)
+        if (point_2::is_anticlockwise(a, b, c) == point_2::anticlockwise::counterclockwise
             && no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             new_segments.erase(new_segments.begin() + 1);
