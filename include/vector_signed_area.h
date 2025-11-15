@@ -127,9 +127,9 @@ public:
 
     // 下面一行去掉class之后是能够编译过的，添加之后是编译不过的？
     enum anticlockwise {
-        clockwise = 0,
-        counterclockwise = 1,
-        collinear = 2,
+        clockwise = 1,
+        counterclockwise = 2,
+        collinear = 5,
     };
 
     friend anticlockwise operator&(anticlockwise &left, anticlockwise &right) {

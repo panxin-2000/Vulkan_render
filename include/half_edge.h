@@ -468,7 +468,7 @@ struct half_edge_struct {
         return new_faces;
     }
 
-    bool flip_edge(int edge_index) {
+    bool if_convex_quadrangle(int edge_index) {
         auto opposite_edge_index = get_opposite_edge_index(edge_index);
         auto all_edges_of_first_face = get_all_edge_of_face(edge_index);
         auto all_edges_of_second_face = get_all_edge_of_face(opposite_edge_index);
@@ -478,47 +478,56 @@ struct half_edge_struct {
             auto point_b = get_vertex(edge_index);
             auto point_c = get_vertex(get_pre_edge_index(opposite_edge_index));
             auto point_d = get_vertex(opposite_edge_index);
-            auto bool_1 = point_2::is_anticlockwise(point_a, point_d, point_c);
 
+            auto bool_1 = point_2::is_anticlockwise(point_a, point_d, point_c);
             auto bool_2 = point_2::is_anticlockwise(point_d, point_c, point_b);
             auto bool_3 = point_2::is_anticlockwise(point_c, point_b, point_a);
             auto bool_4 = point_2::is_anticlockwise(point_b, point_a, point_d);
 
             if (bool_1 & bool_2 & bool_3 & bool_4) {
-                // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
-                get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
-                get_edge(opposite_edge_index).vertex_index =
-                        get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
-                auto x_index = get_edge(edge_index).pre_half_edge;
-                auto y_index = edge_index;
-                auto z_index = get_edge(edge_index).next_half_edge;
-                auto R_index = opposite_edge_index;
-                auto S_index = get_edge(opposite_edge_index).next_half_edge;
-                auto T_index = get_edge(opposite_edge_index).pre_half_edge;
-
-                get_edge(x_index).pre_half_edge = y_index;
-                get_edge(x_index).next_half_edge = S_index;
-                get_edge(y_index).pre_half_edge = S_index;
-                get_edge(y_index).next_half_edge = x_index;
-                get_edge(S_index).pre_half_edge = x_index;
-                get_edge(S_index).next_half_edge = y_index;
-
-                get_edge(z_index).pre_half_edge = T_index;
-                get_edge(z_index).next_half_edge = R_index;
-                get_edge(R_index).pre_half_edge = z_index;
-                get_edge(R_index).next_half_edge = T_index;
-                get_edge(T_index).pre_half_edge = R_index;
-                get_edge(T_index).next_half_edge = z_index;
-
-                // 还需要更改面和点
-                get_face_with_one_edge(y_index).bounding_half_edge = y_index; // 重新确认一遍 面对应的边的索引
-                get_face_with_one_edge(R_index).bounding_half_edge = R_index;
-
-                get_vertex(S_index).incident_half_edge = S_index; // 重新确认一遍顶点的入射
-                get_vertex(z_index).incident_half_edge = z_index;
-                set_face_for_new_add_edge(y_index, get_edge(y_index).incident_face);
-                set_face_for_new_add_edge(R_index, get_edge(R_index).incident_face);
+                return true;
             }
+        }
+        return false;
+    }
+
+    bool flip_edge(int edge_index) {
+        auto opposite_edge_index = get_opposite_edge_index(edge_index);
+
+        if (if_convex_quadrangle(edge_index)) {
+            // 全部条件都满足时，就可以进行四边形对角线的翻转操作了
+            get_edge(edge_index).vertex_index = get_edge(get_pre_edge_index(edge_index)).vertex_index;
+            get_edge(opposite_edge_index).vertex_index =
+                    get_edge(get_pre_edge_index(opposite_edge_index)).vertex_index;
+            auto x_index = get_edge(edge_index).pre_half_edge;
+            auto y_index = edge_index;
+            auto z_index = get_edge(edge_index).next_half_edge;
+            auto R_index = opposite_edge_index;
+            auto S_index = get_edge(opposite_edge_index).next_half_edge;
+            auto T_index = get_edge(opposite_edge_index).pre_half_edge;
+
+            get_edge(x_index).pre_half_edge = y_index;
+            get_edge(x_index).next_half_edge = S_index;
+            get_edge(y_index).pre_half_edge = S_index;
+            get_edge(y_index).next_half_edge = x_index;
+            get_edge(S_index).pre_half_edge = x_index;
+            get_edge(S_index).next_half_edge = y_index;
+
+            get_edge(z_index).pre_half_edge = T_index;
+            get_edge(z_index).next_half_edge = R_index;
+            get_edge(R_index).pre_half_edge = z_index;
+            get_edge(R_index).next_half_edge = T_index;
+            get_edge(T_index).pre_half_edge = R_index;
+            get_edge(T_index).next_half_edge = z_index;
+
+            // 还需要更改面和点
+            get_face_with_one_edge(y_index).bounding_half_edge = y_index; // 重新确认一遍 面对应的边的索引
+            get_face_with_one_edge(R_index).bounding_half_edge = R_index;
+
+            get_vertex(S_index).incident_half_edge = S_index; // 重新确认一遍顶点的入射
+            get_vertex(z_index).incident_half_edge = z_index;
+            set_face_for_new_add_edge(y_index, get_edge(y_index).incident_face);
+            set_face_for_new_add_edge(R_index, get_edge(R_index).incident_face);
         }
     }
 
@@ -570,6 +579,7 @@ struct half_edge_struct {
         // 下面的判断里面少了一步确定非凹，两个三角形组成了一个凹四边形 todo:
         if (all_edges_of_first_face.size() == 3 &&
             all_edges_of_second_face.size() == 3 &&
+            if_convex_quadrangle(half_edge_index) &&
             get_face(get_edge(get_opposite_edge_index(half_edge_index)).incident_face).boundary_type !=
             face::BOUNDARY_TYPE::hole_face) {
             //    B----------D
