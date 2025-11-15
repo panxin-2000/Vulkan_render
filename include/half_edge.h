@@ -170,7 +170,7 @@ struct half_edge_struct {
         int vertices_size = vertices.size();
         int faces_size = faces.size();
         int middle_point_index = vertices_size;
-        vertices.push_back(middle_point);
+
         // 单纯的加点很好加
 
         int black_a = get_opposite_edge_index(current_edge);
@@ -213,7 +213,8 @@ struct half_edge_struct {
         half_edges.at(red_b).incident_face = faces_size;
         set_face_for_new_add_edge(red_c, faces_size);
         faces.push_back({red_c, face::BOUNDARY_TYPE::bounding_face});
-
+        middle_point.incident_half_edge = red_e;
+        vertices.push_back(middle_point);
         return red_e;
     }
 
@@ -239,57 +240,59 @@ struct half_edge_struct {
     }
 
     // 如果想将原本的half_edge 中，添加一个顶点，将它分为两个edge的操作
-    half_edge_index insert_edge(half_edge_index current_edge, vertex middle_point) {
+    // 在边AB中插入一个点D
+    half_edge_index insert_edge(half_edge_index current_edge, vertex d_middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int insert_face = half_edges.at(current_edge).incident_face;
         int opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).incident_face;
         int middle_point_index = vertices_size;
-        middle_point.incident_half_edge = middle_point_index;
-        vertices.push_back(middle_point);
+
         // 单纯的加点很好加
 
-        int blue_a = get_opposite_edge_index(current_edge);
-        int green_b = current_edge;
-        int green_c = get_next_edge_index(green_b);
-        int blue_d = get_pre_edge_index(blue_a);
-        int green_f = half_edges_size;
-        int blue_e = half_edges_size + 1;
+        int ba_edge_to_da = get_opposite_edge_index(current_edge);
+        int ab_edge_to_ad = current_edge;
+        int bc_edge = get_next_edge_index(ab_edge_to_ad);
+        int ed_edge = get_pre_edge_index(ba_edge_to_da);
+        int db_edge = half_edges_size;
+        int bd_edge = half_edges_size + 1;
 
-        int vertex_index_start_point = half_edges.at(blue_a).vertex_index;
-        int vertex_index_end_point = half_edges.at(green_c).vertex_index;
+        int vertex_index_start_point = half_edges.at(ba_edge_to_da).vertex_index;
+        int vertex_index_end_point = half_edges.at(bc_edge).vertex_index;
 
         // 这里需要做一个判断
         if (get_next_edge_index(get_opposite_edge_index(current_edge)) == current_edge) {
             half_edges.push_back({
-                middle_point_index, blue_e,
-                blue_e, green_b, insert_face
+                middle_point_index, bd_edge,
+                bd_edge, ab_edge_to_ad, insert_face
             });
             half_edges.push_back({
-                vertex_index_end_point, green_f,
-                blue_a, green_f, opposite_face
+                vertex_index_end_point, db_edge,
+                ba_edge_to_da, db_edge, opposite_face
             });
-            half_edges.at(green_b).next_half_edge = green_f;
-            half_edges.at(blue_a).pre_half_edge = blue_e;
+            half_edges.at(ab_edge_to_ad).next_half_edge = db_edge;
+            half_edges.at(ba_edge_to_da).pre_half_edge = bd_edge;
         } else {
             // green_f
             half_edges.push_back({
-                middle_point_index, blue_e,
-                green_c, green_b, insert_face
+                middle_point_index, bd_edge,
+                bc_edge, ab_edge_to_ad, insert_face
             });
             // blue_e
             half_edges.push_back({
-                vertex_index_end_point, green_f,
-                blue_a, blue_d, opposite_face
+                vertex_index_end_point, db_edge,
+                ba_edge_to_da, ed_edge, opposite_face
             });
-            half_edges.at(green_c).pre_half_edge = green_f;
-            half_edges.at(blue_d).next_half_edge = blue_e;
-            half_edges.at(green_b).next_half_edge = green_f;
-            half_edges.at(blue_a).pre_half_edge = blue_e;
-            half_edges.at(blue_a).vertex_index = middle_point_index;
-            half_edges.at(blue_e).vertex_index = vertex_index_end_point;
+            half_edges.at(bc_edge).pre_half_edge = db_edge;
+            half_edges.at(ed_edge).next_half_edge = bd_edge;
+            half_edges.at(ab_edge_to_ad).next_half_edge = db_edge;
+            half_edges.at(ba_edge_to_da).pre_half_edge = bd_edge;
+            half_edges.at(ba_edge_to_da).vertex_index = middle_point_index;
+            half_edges.at(bd_edge).vertex_index = vertex_index_end_point;
         }
-        return green_f;
+        d_middle_point.incident_half_edge = db_edge;
+        vertices.push_back(d_middle_point);
+        return db_edge;
     }
 
     // 两个顶点创建一个loop，然后后创建两个面，一个是内部的面，另一个是外部的面，
@@ -564,6 +567,7 @@ struct half_edge_struct {
         auto face_index = get_face_index(half_edge_index);
         auto all_edges_of_first_face = get_all_edge_of_face(half_edge_index);
         auto all_edges_of_second_face = get_all_edge_of_face(get_opposite_edge_index(half_edge_index));
+        // 下面的判断里面少了一步确定非凹，两个三角形组成了一个凹四边形 todo:
         if (all_edges_of_first_face.size() == 3 &&
             all_edges_of_second_face.size() == 3 &&
             get_face(get_edge(get_opposite_edge_index(half_edge_index)).incident_face).boundary_type !=
@@ -590,7 +594,7 @@ struct half_edge_struct {
             auto B_point = get_vertex(half_edge_index);
             auto D_point = vertices.at(vertex_index);
             auto C_point = get_vertex(get_opposite_edge_index(half_edge_index));
-
+            //
 
             auto centre = point_2::centre_of_a_circle(A_point, B_point, C_point);
             if (point_2::distance_compare(D_point - centre, C_point - centre)) {
@@ -682,8 +686,8 @@ struct half_edge_struct {
         int first_half_edge = current_half_edge_index;
         while (true) {
             auto opposite_edge = get_opposite_edge_index(current_half_edge_index);
-            auto next_half_edge = get_next_edge_index(current_half_edge_index);
-            result.push_back(next_half_edge);
+            result.push_back(opposite_edge);
+            auto next_half_edge = get_next_edge_index(opposite_edge);
             current_half_edge_index = next_half_edge;
             if (current_half_edge_index == first_half_edge) {
                 return result;
@@ -802,10 +806,10 @@ struct half_edge_struct {
             if (get_vertex_in_the_edge_left(vertex_in, temp) == point_2::anticlockwise::collinear) {
                 auto a = get_vertex(half_edge_indices);
                 auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-                if (on_segment_bounding_box(a, b, vertex_in))
+                if (on_segment_bounding_box(a, b, vertex_in)) {
+                    return_half_edge_indices = half_edge_indices;
                     return point_in_triangle_type::on_edge;
-                else
-                    return point_in_triangle_type::out_triangle;
+                } else return point_in_triangle_type::out_triangle;
             }
         }
         return point_in_triangle_type::in_triangle;

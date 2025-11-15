@@ -133,7 +133,7 @@ namespace delaunay_triangulation {
                 // 四个face 再去做 是否合法的测试
                 auto vertex_index = hf->get_edge(edge_index_insert).vertex_index;
                 auto all_face_from_one_vertex = hf->get_all_face_of_vertex(vertex_index);
-                // 拿到的面的数量是不够的
+                // 拿到的面的数量是不够的,应该是1，4，0，5的，但是目前数量不够
                 for (auto face: all_face_from_one_vertex) {
                     auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
                     hf->legalize_edge(temp, vertex_index);
