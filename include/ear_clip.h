@@ -52,4 +52,15 @@ bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
     return false;
 }
 
+template<typename T>
+bool ear_clip_triangulations(T &hf, half_edge_index half_edge) {
+    auto all_edge = hf.get_all_edge_of_face(half_edge);
+    auto new_segments = hf.get_vertices(all_edge);
+    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    for (auto new_segment: new_segments) {
+        tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
+    }
+    return ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices);
+}
+
 #endif //EAR_CLIP_H

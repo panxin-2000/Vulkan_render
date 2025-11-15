@@ -5,7 +5,7 @@
 #ifndef TEST_DELAUNAY_TRIANGULATION_H
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
-
+#include "ear_clip.h"
 #include "half_edge.h"
 
 
@@ -124,7 +124,20 @@ namespace delaunay_triangulation {
                     // 有问题，运行的时候发生了死循环
                 }
             } else if (type_temp == point_in_triangle_type::on_edge) {
-
+                auto edge_index_insert = hf->insert_edge(edge_index, point);
+                ear_clip_triangulations(*hf, edge_index_insert);
+                ear_clip_triangulations(*hf, hf->get_opposite_edge_index(edge_index_insert));
+                // 有了插入的一条边，然后呢？需要做什么呢？
+                // 找到新的两个点，将原本的一个三角形分成两个三角形,需要调用之前完成的三角化的算法
+                // 需要找到这个顶点的全部的face,原本有两个面，劈开之后应该是有四个面的
+                // 四个face 再去做 是否合法的测试
+                auto vertex_index = hf->get_edge(edge_index_insert).vertex_index;
+                auto all_face_from_one_vertex = hf->get_all_face_of_vertex(vertex_index);
+                // 拿到的面的数量是不够的
+                for (auto face: all_face_from_one_vertex) {
+                    auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
+                    hf->legalize_edge(temp, vertex_index);
+                }
             }
         }
     }

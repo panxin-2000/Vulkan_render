@@ -193,6 +193,8 @@ TEST(ear_clip, ear_clip_half_edge) {
 // 第一件事是三角形的划分结果肯定是对的，那么问题在哪里？
 
 
+
+
 TEST(half_edge, test_flip_edge) {
     half_edge_struct<vertex_xy> hf{};
     hf = init_hf_2(hf);
@@ -245,7 +247,7 @@ TEST(ear_clip, test_point_location) {
         face_index result_face_index = 0;
         half_edge_index edge_index = 0;
         hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {1, 1});
-        EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内 todo:
+        EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内
         hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 1.1});
         EXPECT_EQ(2, result_face_index);
         hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 2.5});

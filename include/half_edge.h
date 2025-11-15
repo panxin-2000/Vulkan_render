@@ -66,8 +66,8 @@ enum point_in_triangle_type {
 };
 
 struct vertex_xyz : public point_3 {
-    int incident_half_edge{};
-    int is_using{}; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+    int incident_half_edge;
+    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
 
     vertex_xyz(float x1, float y1, float z1) {
         x = x1;
@@ -245,6 +245,7 @@ struct half_edge_struct {
         int insert_face = half_edges.at(current_edge).incident_face;
         int opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).incident_face;
         int middle_point_index = vertices_size;
+        middle_point.incident_half_edge = middle_point_index;
         vertices.push_back(middle_point);
         // 单纯的加点很好加
 
@@ -315,10 +316,44 @@ struct half_edge_struct {
     }
 
     // 在一个两个顶点直接插入一条边，将原本的一个face，分为两个face
-    half_edge_index split_face(vertex first_point,
+    half_edge_index split_face(face_index split_face, vertex first_point,
                                vertex second_point) {
+        auto all_edges_first_point = get_all_edge_of_vertex(first_point);
+        auto all_edges_second_point = get_all_edge_of_vertex(second_point);
+        half_edge_index first_edge;
+        half_edge_index second_edge;
+        for (auto edge_first_point: all_edges_first_point) {
+            if (get_edge(edge_first_point).incident_face == split_face) {
+                first_edge = edge_first_point;
+                break;
+            }
+        }
+        for (auto edge_second_point: all_edges_second_point) {
+            if (get_edge(edge_second_point).incident_face == split_face) {
+                second_edge = edge_second_point;
+                break;
+            }
+        }
+        return split_face(first_edge, second_point);
     }
 
+    half_edge_index split_face(half_edge_index first_edge,
+                               vertex second_point) {
+        face_index split_face = get_edge(first_edge).incident_face;
+        auto all_edges_second_point = get_all_edge_of_vertex(second_point);
+        half_edge_index second_edge;
+
+        for (auto edge_second_point: all_edges_second_point) {
+            if (get_edge(edge_second_point).incident_face == split_face) {
+                second_edge = edge_second_point;
+                break;
+            }
+        }
+        return split_face(first_edge, second_point);
+    }
+
+    // 最后开始做的时候没有写注释
+    // 参考上面的代码，才能知道具体的内容是什么
     half_edge_index split_face(half_edge_index first_edge,
                                half_edge_index second_edge) {
         // first_edge 是我画的图中的 E_a
@@ -655,6 +690,16 @@ struct half_edge_struct {
             }
         }
     }
+
+    std::vector<face_index> get_all_face_of_vertex(int vertex_index) {
+        auto all_edges = get_all_edge_of_vertex(vertex_index);
+        std::vector<half_edge_index> result;
+        for (half_edge_index single_edge: all_edges) {
+            result.push_back(get_edge(single_edge).incident_face);
+        }
+        return result;
+    }
+
 
     std::vector<half_edge_index> get_all_edge_of_face(int half_edge_index_of_face) {
         std::vector<half_edge_index> result;
