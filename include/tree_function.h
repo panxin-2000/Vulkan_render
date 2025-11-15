@@ -130,7 +130,6 @@ void preorder_tree_walk_with_stack(T root, std::vector<T> *result) {
             ptr_stack.push(current_node->right);
             current_node = current_node->right; // 更新为右子树
         } else if (current_node->left == nullptr && current_node->left == nullptr) {
-
             while (ptr_stack.size() >= 2) {
                 auto top = ptr_stack.top();
                 ptr_stack.pop();
@@ -155,12 +154,77 @@ void preorder_tree_walk_with_stack(T root, std::vector<T> *result) {
 }
 
 template<typename T>
+T preorder_tree_walk_with_stack_find_father(T root, T node) {
+    std::stack<T> ptr_stack;
+    auto current_node = root;
+    if (root != nullptr) {
+        ptr_stack.push(root);
+    }
+    while (ptr_stack.empty() == false) {
+        if (current_node->left != nullptr) {
+            // 当前左子树不为空时前进
+            ptr_stack.push(current_node->left); // 入栈
+            current_node = current_node->left; // 更新为左子树
+        } else if (current_node->left == nullptr && current_node->right != nullptr) {
+            // 左子树为空时，先输出，再去访问右子树
+            ptr_stack.push(current_node->right);
+            current_node = current_node->right; // 更新为右子树
+        } else if (current_node->left == nullptr && current_node->left == nullptr) {
+            while (ptr_stack.size() >= 2) {
+                auto top = ptr_stack.top();
+                ptr_stack.pop();
+                auto second = ptr_stack.top();
+                if (top == node) {
+                    return second;
+                }
+                if (top == second->right) {
+                    continue;
+                }
+                if (top == second->left) {
+                    if (second->right != nullptr) {
+                        ptr_stack.push(second->right);
+                        current_node = second->right; // 更新为右子树
+                        break;
+                    }
+                    continue;
+                }
+            }
+            if (ptr_stack.size() == 1) {
+                ptr_stack.pop();
+            }
+        }
+    }
+    return nullptr;
+}
+
+template<typename T>
 void postorder_tree_walk(T node, std::vector<T> *result) {
     if (node != nullptr) {
         postorder_tree_walk(node->left, result);
         postorder_tree_walk(node->right, result);
         result->push_back(node);
     }
+}
+
+template<typename T>
+T preorder_tree_walk_find_father(T root, T node) {
+    if (root != nullptr) {
+        if (root->left == node) {
+            return root;
+        }
+        if (root->right == node) {
+            return root;
+        }
+        auto left_temp = preorder_tree_walk_find_father(root->left, node);
+        if (nullptr != left_temp) {
+            return left_temp;
+        }
+        auto right_temp = preorder_tree_walk_find_father(root->right, node);
+        if (nullptr != right_temp) {
+            return right_temp;
+        }
+    }
+    return nullptr;
 }
 
 template<typename T>

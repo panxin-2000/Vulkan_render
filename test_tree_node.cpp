@@ -121,6 +121,7 @@ TEST(test_tree, binary_Tree_Node_delete) {
     EXPECT_EQ(root->right->right->data, 8);
     // 这里是上面测试插入部分的代码，应该怎么做呢？
     // 有没有办法不复制一遍呢？
+    preorder_tree_walk_find_father(root,root->right->right);
 
     root = root->delete_node_from_binary_search_tree(root, *root->right->right);
     EXPECT_EQ(root->right->right, nullptr);
