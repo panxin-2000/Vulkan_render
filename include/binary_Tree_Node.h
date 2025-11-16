@@ -42,20 +42,7 @@ public:
         return root->insert_node_to_binary_search_tree_with_history(root, nodes);
     }
 
-    binary_Tree_Node *find_insert_position(binary_Tree_Node *root, binary_Tree_Node *new_node) {
-        binary_Tree_Node *new_root = root;
-        binary_Tree_Node *insert_node = nullptr;
-        while (new_root != nullptr) {
-            insert_node = new_root;
-            if (insert_node->data < new_node->data) {
-                // 新插入的结点在比较的后面
-                new_root = new_root->right;
-            } else {
-                new_root = new_root->left;
-            }
-        }
-        return insert_node;
-    }
+
 
     /**
      * 确定一下返回值，返回值总是返回树的根

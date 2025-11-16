@@ -228,6 +228,22 @@ T preorder_tree_walk_find_father(T root, T node) {
 }
 
 template<typename T>
+T find_insert_position(T root, T new_node) {
+    T new_root = root;
+    T insert_node = nullptr;
+    while (new_root != nullptr) {
+        insert_node = new_root;
+        if (insert_node->data < new_node->data) {
+            // 新插入的结点在比较的后面
+            new_root = new_root->right;
+        } else {
+            new_root = new_root->left;
+        }
+    }
+    return insert_node;
+}
+
+template<typename T>
 void postorder_tree_walk_with_stack(T root, std::vector<T> *result) {
     std::stack<T> ptr_stack;
     auto current_node = root;
