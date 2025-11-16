@@ -218,7 +218,7 @@ TEST(test_tree, test_tree_delete_root_2) {
 //            9   11
 
 TEST(test_tree, test_tree_delete_index) {
-    index_binary_Tree_Node<int, class index> tree;
+    index_binary_Tree_Node<int> tree;
     // tree.init_root(1);
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     tree.add_new_node(5);
@@ -229,7 +229,8 @@ TEST(test_tree, test_tree_delete_index) {
     tree.add_new_node(6);
     tree.add_new_node(10);
     tree.add_new_node(11);
-    tree.add_new_node(9);
+    auto temp = tree.add_new_node(9);
+    // auto temp2 = tree.get_node(temp).father();
 
     // root = root->delete_node_from_binary_search_tree(root, *root->right);
     // EXPECT_EQ(root->data, 5);

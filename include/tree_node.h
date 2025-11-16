@@ -5,7 +5,6 @@
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
 #include <iostream>
-#include "tree_function.h"
 
 template<class T>
 class Tree_Node {

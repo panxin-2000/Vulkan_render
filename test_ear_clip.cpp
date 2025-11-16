@@ -8,6 +8,7 @@
 #include "ear_clip.h"
 #include "half_edge.h"
 #include "trapezoid.h"
+#include "tree_function.h"
 
 template<typename T>
 T &init_hf(T &hf) {
@@ -191,8 +192,6 @@ TEST(ear_clip, ear_clip_half_edge) {
 
 // 如果是不带洞的，那么直接用是没有问题的，带洞的话，就稍微有点问题，不是论文中提到的办法能够直接解决的了
 // 第一件事是三角形的划分结果肯定是对的，那么问题在哪里？
-
-
 
 
 TEST(half_edge, test_flip_edge) {

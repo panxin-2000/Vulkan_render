@@ -8,113 +8,151 @@
 
 #include "tree_node.h"
 
-class index {
+class v_index {
 public:
     int number;
 
-    friend bool operator==(index left, index right) {
+    friend bool operator==(v_index left, v_index right) {
         return left.number == right.number;
     }
 
-    friend bool operator!=(index left, index right) {
+    friend bool operator!=(v_index left, v_index right) {
         return left.number != right.number;
     }
 };
 
-template<class T, typename index>
+template<class T, int v_index_numer>
 class index_Tree_Node {
     using ptr = T *;
 
-public:
-    // index parent;
-    index left;
-    index right;
-    T data;
 
-    index_Tree_Node() {
+    v_index father() {
+        if constexpr (v_index_numer == 3) {
+            return vector[2];
+        } else {
+        }
+        return vector[v_index_numer];
     }
 
-    index_Tree_Node(T _data, index _index) {
+public:
+    // v_index parent;
+    v_index vector[v_index_numer];
+
+public:
+    T data;
+
+    v_index left() {
+        return vector[0];
+    }
+
+    // v_index father() {
+    //     if (v_index_numer == 3) {
+    //         return vector[2];
+    //     }
+    //     return vector[v_index_numer];
+    // }
+
+    v_index right() {
+        return vector[0];
+    }
+
+
+    index_Tree_Node(T _data, v_index _nil_v_index) {
         data = _data;
-        left = _index;
-        right = _index;
+        vector[0] = _nil_v_index;
+        vector[1] = _nil_v_index;
+        if (v_index_numer == 3) {
+            vector[2] = _nil_v_index;
+        }
     }
 };
 
-template<typename T, typename index>
+template<typename T>
 class index_binary_Tree_Node {
-    using node = index_Tree_Node<T, index>;
+    using node = index_Tree_Node<T, 2>;
     std::vector<node> details;
-    std::vector<index> roots;
+    std::vector<v_index> roots;
 
 public:
-    index_binary_Tree_Node &get_detail_from_index(index in) {
+    index_binary_Tree_Node &get_detail_from_v_index(v_index in) {
         return details.at(in.number);
     }
 
     // 这里的操作是什么意思呢？
     // 只是为了初始化一个哨兵
     // 其他的操作并没有去做
-    index init_root(T input_data) {
-        node new_node{input_data, get_nil_index()};
-        index result = get_nil_index();
+    v_index init_root(T input_data) {
+        node new_node{input_data, get_nil_v_index()};
+        v_index result = get_nil_v_index();
         details.push_back(new_node);
         roots.push_back(result);
         return result;
     }
 
-    index get_root_index() {
+    v_index get_root_v_index() {
         if (roots.empty() == false)
             return roots.at(roots.size() - 1);
         else {
-            index result = get_nil_index();
+            v_index result = get_nil_v_index();
             return result;
         }
     }
 
-    node &get_node(index need) {
+    node &get_node(v_index need) {
         return details.at(need.number);
     }
 
     node &get_root_node() {
-        return details.at(get_root_index().number);
+        return details.at(get_root_v_index().number);
     }
 
-    index get_nil_index() {
-        index result;
+    v_index get_nil_v_index() {
+        v_index result;
         result.number = 0;
         return result;
     }
 
+    v_index find_insert_position(v_index root, v_index new_node, v_index nil_v_index) {
+        v_index new_root = root;
+        v_index insert_node = nil_v_index;
+        while (new_root != nil_v_index) {
+            insert_node = new_root;
+            if (get_node(insert_node).data < get_node(new_node).data) {
+                // 新插入的结点在比较的后面
+                new_root = get_node(new_root).right();
+            } else {
+                new_root = get_node(new_root).left();
+            }
+        }
+        return insert_node;
+    }
 
-    index add_new_node(T input_data) {
+    v_index add_new_node(T input_data) {
         if (roots.empty() == true && details.empty() == true) {
             init_root(input_data);
         }
-        node new_node{input_data, get_nil_index()};
+        node new_node{input_data, get_nil_v_index()};
 
-        index new_node_index;
-        new_node_index.number = details.size();
+        v_index new_node_v_index;
+        new_node_v_index.number = details.size();
         details.push_back(new_node);
 
-        auto insert_index_value =
-                find_insert_position(get_root_index(),
-                                     new_node_index,
-                                     get_nil_index(),
-                                     std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
+        auto insert_v_index_value =
+                find_insert_position(get_root_v_index(),
+                                     new_node_v_index, get_nil_v_index());
 
-        if (insert_index_value == get_nil_index()) {
-            roots.push_back(new_node_index);
-            return new_node_index;
-        } else if (get_node(insert_index_value).data < new_node.data) {
-            get_node(insert_index_value).right = new_node_index;
+        if (insert_v_index_value == get_nil_v_index()) {
+            roots.push_back(new_node_v_index);
+            return new_node_v_index;
+        } else if (get_node(insert_v_index_value).data < new_node.data) {
+            get_node(insert_v_index_value).right() = new_node_v_index;
         } else {
-            get_node(insert_index_value).left = new_node_index;
+            get_node(insert_v_index_value).left() = new_node_v_index;
         }
-        return new_node_index;
+        return new_node_v_index;
     }
 };
 
-// #undef index
+// #undef v_index
 
 #endif //INDEX_BINARY_TREE_NODE_H
