@@ -11,21 +11,26 @@
 // 这里需要考虑边界条件，边界条件考虑不到的时候会出现死循环
 // 需要考虑数据本身的边界条件
 // 我这里改了一下顺序，
-template<typename value_type, typename ptr>
-ptr tree_find_value(ptr root, value_type data) {
+template<typename value_type, typename ptr, typename function>
+ptr tree_find_value(ptr root, value_type data, ptr nil_ptr_or_index, function get_node) {
     ptr new_root = root;
-    ptr result_node = nullptr;
-    while (new_root != nullptr) {
-        if (new_root->data == data) {
+    ptr result_node = nil_ptr_or_index;
+    while (new_root != nil_ptr_or_index) {
+        if (get_node(new_root).data == data) {
             return new_root;
-        } else if (new_root->data < data) {
+        } else if (get_node(new_root).data < data) {
             // 这里的前后的顺序，需要与插入时比较相同
-            new_root = new_root->right;
+            new_root = get_node(new_root).right;
         } else {
-            new_root = new_root->left;
+            new_root = get_node(new_root).left;
         }
     }
     return result_node;
+}
+
+template<typename value_type, typename ptr>
+ptr tree_find_value(ptr root, value_type data) {
+    return tree_find_value(root, data, static_cast<ptr>(nullptr), [](ptr insert_node) { return *insert_node; });
 }
 
 template<typename T>
