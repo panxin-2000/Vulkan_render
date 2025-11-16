@@ -227,17 +227,17 @@ T preorder_tree_walk_find_father(T root, T node) {
     return nullptr;
 }
 
-template<typename T>
-T find_insert_position(T root, T new_node) {
+template<typename T, typename function>
+T find_insert_position(T root, T new_node, T nil_ptr_or_index, function get_node) {
     T new_root = root;
-    T insert_node = nullptr;
-    while (new_root != nullptr) {
+    T insert_node = nil_ptr_or_index;
+    while (new_root != nil_ptr_or_index) {
         insert_node = new_root;
-        if (insert_node->data < new_node->data) {
+        if (get_node(insert_node).data < get_node(new_node).data) {
             // 新插入的结点在比较的后面
-            new_root = new_root->right;
+            new_root = get_node(new_root).right;
         } else {
-            new_root = new_root->left;
+            new_root = get_node(new_root).left;
         }
     }
     return insert_node;

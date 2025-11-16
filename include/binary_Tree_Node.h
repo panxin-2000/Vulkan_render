@@ -43,7 +43,6 @@ public:
     }
 
 
-
     /**
      * 确定一下返回值，返回值总是返回树的根
      * @param root
@@ -54,7 +53,8 @@ public:
         if (new_node == nullptr) {
             return root;
         }
-        auto insert_node = find_insert_position(root, new_node);
+        auto insert_node = find_insert_position(root, new_node, static_cast<binary_Tree_Node *>(nullptr),
+                                                binary_Tree_Node::get_node);
 
         if (insert_node == nullptr) {
             return new_node;
@@ -72,7 +72,9 @@ public:
         if (new_node == nullptr) {
             return root;
         }
-        auto insert_node = find_insert_position(root, new_node);
+        auto insert_node = find_insert_position(root, new_node,
+                                                static_cast<binary_Tree_Node *>(nullptr),
+                                                binary_Tree_Node::get_node);
 
         if (insert_node == nullptr) {
             return new_node;

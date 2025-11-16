@@ -28,6 +28,10 @@ public:
         return result_node;
     }
 
+    static T get_node(ptr tree_node) {
+        return *tree_node;
+    }
+
     ptr tree_predecessor(ptr tree_node) {
         if (tree_node->left != nullptr) {
             return tree_maximum(tree_node->left);

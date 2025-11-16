@@ -87,22 +87,6 @@ public:
     }
 
 
-    index find_insert_position(index root, index new_node, index nil_index) {
-        index new_root = root;
-        index insert_node = nil_index;
-        while (new_root != nil_index) {
-            insert_node = new_root;
-            if (get_node(insert_node).data < get_node(new_node).data) {
-                // 新插入的结点在比较的后面
-                new_root = get_node(new_root).right;
-            } else {
-                new_root = get_node(new_root).left;
-            }
-        }
-        return insert_node;
-    }
-
-
     index add_new_node(T input_data) {
         if (roots.empty() == true && details.empty() == true) {
             init_root(input_data);
@@ -113,7 +97,11 @@ public:
         new_node_index.number = details.size();
         details.push_back(new_node);
 
-        auto insert_index_value = find_insert_position(get_root_index(), new_node_index, get_nil_index());
+        auto insert_index_value =
+                find_insert_position(get_root_index(),
+                                     new_node_index,
+                                     get_nil_index(),
+                                     std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
 
         if (insert_index_value == get_nil_index()) {
             roots.push_back(new_node_index);
