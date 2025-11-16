@@ -75,14 +75,14 @@ void inorder_tree_walk(T node, std::vector<T> *result, T nil_ptr_or_index, funct
 }
 
 template<typename T>
-void inorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    inorder_tree_walk_with_stack(root, result,
-                                 static_cast<T>(nullptr),
-                                 [](T insert_node) { return *insert_node; });
+std::vector<T> *inorder_tree_walk_with_stack(T root, std::vector<T> *result) {
+    return inorder_tree_walk_with_stack(root, result,
+                                        static_cast<T>(nullptr),
+                                        [](T insert_node) { return *insert_node; });
 }
 
 template<typename T, typename function>
-void inorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
+std::vector<T> *inorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
     std::stack<T> ptr_stack;
     auto current_node = root;
     if (root != nil_ptr_or_index) {
@@ -123,6 +123,7 @@ void inorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_i
             }
         }
     }
+    return result;
 }
 
 template<typename T>
@@ -143,14 +144,14 @@ void preorder_tree_walk(T node, std::vector<T> *result, T nil_ptr_or_index, func
 }
 
 template<typename T>
-void preorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    preorder_tree_walk_with_stack(root, result,
-                                  static_cast<T>(nullptr),
-                                  [](T insert_node) { return *insert_node; });
+std::vector<T> *preorder_tree_walk_with_stack(T root, std::vector<T> *result) {
+    return preorder_tree_walk_with_stack(root, result,
+                                         static_cast<T>(nullptr),
+                                         [](T insert_node) { return *insert_node; });
 }
 
 template<typename T, typename function>
-void preorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
+std::vector<T> *preorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
     std::stack<T> ptr_stack;
     auto current_node = root;
     if (root != nil_ptr_or_index) {
@@ -189,6 +190,7 @@ void preorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_
             }
         }
     }
+    return result;
 }
 
 template<typename T>
@@ -308,12 +310,13 @@ T find_insert_position(T root, T new_node) {
 }
 
 template<typename T>
-void postorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    postorder_tree_walk_with_stack(root, result, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
+std::vector<T> *postorder_tree_walk_with_stack(T root, std::vector<T> *result) {
+    return postorder_tree_walk_with_stack(root, result, static_cast<T>(nullptr),
+                                          [](T insert_node) { return *insert_node; });
 }
 
 template<typename T, typename function>
-void postorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
+std::vector<T> *postorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
     std::stack<T> ptr_stack;
     auto current_node = root;
     if (root != nil_ptr_or_index) {
@@ -354,6 +357,7 @@ void postorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or
             }
         }
     }
+    return result;
 }
 
 template<typename T>

@@ -7,6 +7,8 @@
 #include <vector>
 
 #include "tree_node.h"
+#include "tree_function.h"
+
 
 class v_index {
 public:
@@ -90,8 +92,31 @@ public:
         }
     }
 
+    std::vector<index_node *> *translate(std::vector<v_index> src_s) {
+        auto result = new std::vector<index_node *>();
+        for (auto src: src_s) {
+            result->push_back(get_node_ptr(src));
+        }
+        return result;
+    }
+
+
+    std::vector<v_index> *preorder_tree_walk_index() {
+        auto result = new std::vector<v_index>();
+        auto last_result = preorder_tree_walk_with_stack(get_root_index(),
+                                                         result,
+                                                         get_nil_index(),
+                                                         std::bind(&index_binary_Tree_Node::get_node, this,
+                                                                   std::placeholders::_1));
+        return last_result;
+    }
+
     node &get_node(v_index need) {
         return details.at(need.number);
+    }
+
+    node *get_node_ptr(v_index need) {
+        return &details.at(need.number);
     }
 
     node &get_root_node() {
@@ -102,6 +127,11 @@ public:
         v_index result;
         result.number = 0;
         return result;
+    }
+
+    v_index tree_insert_value(v_index root, T data) {
+        this->add_new_node(data);
+        return root;
     }
 
 

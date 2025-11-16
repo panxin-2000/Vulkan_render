@@ -10,15 +10,22 @@
 #include "tree_function.h"
 
 
-TEST(test_tree, binary_Tree_Node_insert) {
+std::vector<int> first{5, 3, 2, 4, 7, 8};
+
+binary_Tree_Node<int> *init_tree(std::vector<int> vs) {
     binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    root = root->tree_insert_value(root, 5);
-    root = root->tree_insert_value(root, 3);
-    root = root->tree_insert_value(root, 2);
-    root = root->tree_insert_value(root, 4);
-    root = root->tree_insert_value(root, 7);
-    root = root->tree_insert_value(root, 8);
+    for (auto v: vs) {
+        root = root->tree_insert_value(root, v);
+    }
+    return root;
+}
+
+binary_Tree_Node<int> *init_tree() {
+    return init_tree(first);
+}
+
+TEST(test_tree, binary_Tree_Node_insert) {
+    auto root = init_tree();
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);
@@ -35,64 +42,53 @@ TEST(test_tree, binary_Tree_Node_insert) {
     EXPECT_EQ(root->right->right->data, 8);
 }
 
-TEST(test_tree, inorder_tree_walk) {
-    binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    root = root->tree_insert_value(root, 5);
-    root = root->tree_insert_value(root, 3);
-    root = root->tree_insert_value(root, 2);
-    root = root->tree_insert_value(root, 4);
-    root = root->tree_insert_value(root, 7);
-    root = root->tree_insert_value(root, 8);
-    auto inorder_walk = new std::vector<binary_Tree_Node<int> *>;
-    inorder_tree_walk(root, inorder_walk);
-    auto inorder_walk_stack = new std::vector<binary_Tree_Node<int> *>;
-    inorder_tree_walk_with_stack(root, inorder_walk_stack);
-
-    ASSERT_EQ(inorder_walk_stack->size(), inorder_walk->size());
-    for (int i = 0; i < inorder_walk_stack->size(); i++) {
-        EXPECT_EQ(inorder_walk_stack->at(i), inorder_walk->at(i));
+template<typename T>
+void test_two_vector_value_eq(T left, T right) {
+    ASSERT_EQ(left.size(), right.size());
+    for (int i = 0; i < left.size(); i++) {
+        EXPECT_EQ(left.at(i), right.at(i));
     }
+}
+
+template<typename T, typename T1>
+void test_two_vector_value_eq_data(T1 left, T right) {
+    ASSERT_EQ(left.size(), right.size());
+    for (int i = 0; i < left.size(); i++) {
+        EXPECT_EQ(left.at(i)->data, right.at(i)->data);
+    }
+}
+
+
+template<typename T>
+std::vector<T> *init_null_vector(T root) {
+    return new std::vector<T>;
+}
+
+TEST(test_tree, inorder_tree_walk) {
+    auto root = init_tree();
+    auto inorder_walk = init_null_vector(root);
+    inorder_tree_walk(root, inorder_walk);
+
+    test_two_vector_value_eq(*inorder_walk,
+                             *inorder_tree_walk_with_stack(root, init_null_vector(root)));
 }
 
 TEST(test_tree, postorder_tree_walk_with_stack) {
-    binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    root = root->tree_insert_value(root, 5);
-    root = root->tree_insert_value(root, 3);
-    root = root->tree_insert_value(root, 2);
-    root = root->tree_insert_value(root, 4);
-    root = root->tree_insert_value(root, 7);
-    root = root->tree_insert_value(root, 8);
-    auto inorder_walk = new std::vector<binary_Tree_Node<int> *>;
+    auto root = init_tree();
+    auto inorder_walk = init_null_vector(root);
     postorder_tree_walk(root, inorder_walk);
-    auto inorder_walk_stack = new std::vector<binary_Tree_Node<int> *>;
-    postorder_tree_walk_with_stack(root, inorder_walk_stack);
 
-    ASSERT_EQ(inorder_walk_stack->size(), inorder_walk->size());
-    for (int i = 0; i < inorder_walk_stack->size(); i++) {
-        EXPECT_EQ(inorder_walk_stack->at(i), inorder_walk->at(i));
-    }
+    test_two_vector_value_eq(*inorder_walk,
+                             *postorder_tree_walk_with_stack(root, init_null_vector(root)));
 }
 
 TEST(test_tree, preorder_tree_walk_with_stack) {
-    binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    root = root->tree_insert_value(root, 5);
-    root = root->tree_insert_value(root, 3);
-    root = root->tree_insert_value(root, 2);
-    root = root->tree_insert_value(root, 4);
-    root = root->tree_insert_value(root, 7);
-    root = root->tree_insert_value(root, 8);
-    auto inorder_walk = new std::vector<binary_Tree_Node<int> *>;
+    auto root = init_tree();
+    auto inorder_walk = init_null_vector(root);
     preorder_tree_walk(root, inorder_walk);
-    auto inorder_walk_stack = new std::vector<binary_Tree_Node<int> *>;
-    preorder_tree_walk_with_stack(root, inorder_walk_stack);
 
-    ASSERT_EQ(inorder_walk_stack->size(), inorder_walk->size());
-    for (int i = 0; i < inorder_walk_stack->size(); i++) {
-        EXPECT_EQ(inorder_walk_stack->at(i), inorder_walk->at(i));
-    }
+    test_two_vector_value_eq(*inorder_walk,
+                             *preorder_tree_walk_with_stack(root, init_null_vector(root)));
 }
 
 //       5
@@ -100,7 +96,6 @@ TEST(test_tree, preorder_tree_walk_with_stack) {
 // 2   4      8
 TEST(test_tree, binary_Tree_Node_delete) {
     binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value(root, 5);
     EXPECT_EQ(root->data, 5);
     root = root->tree_insert_value(root, 3);
@@ -136,7 +131,6 @@ TEST(test_tree, binary_Tree_Node_delete) {
 TEST(test_tree, binary_Tree_Node_history) {
     GTEST_SKIP();
     binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     root = root->tree_insert_value_with_history(root, 5);
     EXPECT_EQ(root->data, 5);
     root = root->tree_insert_value_with_history(root, 3);
@@ -172,15 +166,7 @@ TEST(test_tree, binary_Tree_Node_history) {
 //   3      8
 // 2   4
 TEST(test_tree, test_tree_delete_root) {
-    binary_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    root = root->tree_insert_value(root, 5);
-    root = root->tree_insert_value(root, 3);
-    root = root->tree_insert_value(root, 2);
-    root = root->tree_insert_value(root, 4);
-    root = root->tree_insert_value(root, 7);
-    root = root->tree_insert_value(root, 8);
-
+    auto root = init_tree();
     root = root->delete_node_from_binary_search_tree(root, *root);
     EXPECT_EQ(root->data, 7);
     EXPECT_EQ(root->left->data, 3);
@@ -217,26 +203,28 @@ TEST(test_tree, test_tree_delete_root_2) {
 // 2   4   6   10
 //            9   11
 
+template<typename T>
+T init_tree(T tree, std::vector<int> vs) {
+    for (auto v: vs) {
+        tree.add_new_node(v);
+    }
+    return tree;
+}
+
+
 TEST(test_tree, test_tree_delete_index) {
     index_binary_Tree_Node<int, index_Tree_Node_with_father<int> > tree;
-    // tree.init_root(1);
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    tree.add_new_node(5);
-    tree.add_new_node(3);
-    tree.add_new_node(2);
-    tree.add_new_node(4);
-    tree.add_new_node(7);
-    tree.add_new_node(6);
-    tree.add_new_node(10);
-    tree.add_new_node(11);
-    auto temp = tree.add_new_node(9);
-    // auto temp2 = tree.get_node(temp).father();
 
-    // root = root->delete_node_from_binary_search_tree(root, *root->right);
-    // EXPECT_EQ(root->data, 5);
-    // EXPECT_EQ(root->left->data, 3);
-    // EXPECT_EQ(root->right->data, 9);
-    int a = 0;
+    tree = init_tree(tree, first);
+    auto vs = new std::vector<index_Tree_Node_with_father<int> >;
+    auto reslut = tree.preorder_tree_walk_index();
+    auto value_ptr = tree.translate(*reslut);
+
+    auto root = init_tree(first);
+    auto inorder_walk = init_null_vector(root);
+    preorder_tree_walk(root, inorder_walk);
+
+    test_two_vector_value_eq_data(*value_ptr, *inorder_walk);
 }
 
 
