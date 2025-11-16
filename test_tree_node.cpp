@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "binary_Tree_Node.h"
+#include "index_binary_tree_node.h"
 #include "RB_tree_node.h"
 #include "tree_function.h"
 
@@ -73,6 +74,7 @@ TEST(test_tree, postorder_tree_walk_with_stack) {
         EXPECT_EQ(inorder_walk_stack->at(i), inorder_walk->at(i));
     }
 }
+
 TEST(test_tree, preorder_tree_walk_with_stack) {
     binary_Tree_Node<int> *root = nullptr;
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
@@ -121,7 +123,7 @@ TEST(test_tree, binary_Tree_Node_delete) {
     EXPECT_EQ(root->right->right->data, 8);
     // 这里是上面测试插入部分的代码，应该怎么做呢？
     // 有没有办法不复制一遍呢？
-    preorder_tree_walk_find_father(root,root->right->right);
+    preorder_tree_walk_find_father(root, root->right->right);
 
     root = root->delete_node_from_binary_search_tree(root, *root->right->right);
     EXPECT_EQ(root->right->right, nullptr);
@@ -208,6 +210,32 @@ TEST(test_tree, test_tree_delete_root_2) {
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 9);
+}
+
+//       5
+//   3       7
+// 2   4   6   10
+//            9   11
+
+TEST(test_tree, test_tree_delete_index) {
+    index_binary_Tree_Node<int, class index> tree;
+    // tree.init_root(1);
+    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
+    tree.add_new_node(5);
+    tree.add_new_node(3);
+    tree.add_new_node(2);
+    tree.add_new_node(4);
+    tree.add_new_node(7);
+    tree.add_new_node(6);
+    tree.add_new_node(10);
+    tree.add_new_node(11);
+    tree.add_new_node(9);
+
+    // root = root->delete_node_from_binary_search_tree(root, *root->right);
+    // EXPECT_EQ(root->data, 5);
+    // EXPECT_EQ(root->left->data, 3);
+    // EXPECT_EQ(root->right->data, 9);
+    int a = 0;
 }
 
 
