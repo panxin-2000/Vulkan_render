@@ -218,7 +218,7 @@ TEST(test_tree, test_tree_delete_root_2) {
 //            9   11
 
 TEST(test_tree, test_tree_delete_index) {
-    index_binary_Tree_Node<int> tree;
+    index_binary_Tree_Node<int, index_Tree_Node_with_father<int> > tree;
     // tree.init_root(1);
     //最先考虑的应该是插入,但是过了5个小时才开始看到插入
     tree.add_new_node(5);

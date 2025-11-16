@@ -21,55 +21,47 @@ public:
     }
 };
 
-template<class T, int v_index_numer>
+template<class T>
 class index_Tree_Node {
     using ptr = T *;
 
-
-    v_index father() {
-        if constexpr (v_index_numer == 3) {
-            return vector[2];
-        } else {
-        }
-        return vector[v_index_numer];
-    }
-
 public:
-    // v_index parent;
-    v_index vector[v_index_numer];
+    v_index left;
+    v_index right;
 
 public:
     T data;
 
-    v_index left() {
-        return vector[0];
-    }
-
-    // v_index father() {
-    //     if (v_index_numer == 3) {
-    //         return vector[2];
-    //     }
-    //     return vector[v_index_numer];
-    // }
-
-    v_index right() {
-        return vector[0];
-    }
-
-
     index_Tree_Node(T _data, v_index _nil_v_index) {
         data = _data;
-        vector[0] = _nil_v_index;
-        vector[1] = _nil_v_index;
-        if (v_index_numer == 3) {
-            vector[2] = _nil_v_index;
-        }
+        left = _nil_v_index;
+        right = _nil_v_index;
     }
 };
 
-template<typename T>
+template<class T>
+class index_Tree_Node_with_father {
+    using ptr = T *;
+
+public:
+    v_index left;
+    v_index right;
+    v_index father;
+
+public:
+    T data;
+
+    index_Tree_Node_with_father(T _data, v_index _nil_v_index) {
+        data = _data;
+        left = _nil_v_index;
+        right = _nil_v_index;
+        father = _nil_v_index;
+    }
+};
+
+template<typename T, typename index_node>
 class index_binary_Tree_Node {
-    using node = index_Tree_Node<T, 2>;
+    using node = index_node;
     std::vector<node> details;
     std::vector<v_index> roots;
 
@@ -112,20 +104,6 @@ public:
         return result;
     }
 
-    v_index find_insert_position(v_index root, v_index new_node, v_index nil_v_index) {
-        v_index new_root = root;
-        v_index insert_node = nil_v_index;
-        while (new_root != nil_v_index) {
-            insert_node = new_root;
-            if (get_node(insert_node).data < get_node(new_node).data) {
-                // 新插入的结点在比较的后面
-                new_root = get_node(new_root).right();
-            } else {
-                new_root = get_node(new_root).left();
-            }
-        }
-        return insert_node;
-    }
 
     v_index add_new_node(T input_data) {
         if (roots.empty() == true && details.empty() == true) {
@@ -139,15 +117,17 @@ public:
 
         auto insert_v_index_value =
                 find_insert_position(get_root_v_index(),
-                                     new_node_v_index, get_nil_v_index());
+                                     new_node_v_index,
+                                     get_nil_v_index(),
+                                     std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
 
         if (insert_v_index_value == get_nil_v_index()) {
             roots.push_back(new_node_v_index);
             return new_node_v_index;
         } else if (get_node(insert_v_index_value).data < new_node.data) {
-            get_node(insert_v_index_value).right() = new_node_v_index;
+            get_node(insert_v_index_value).right = new_node_v_index;
         } else {
-            get_node(insert_v_index_value).left() = new_node_v_index;
+            get_node(insert_v_index_value).left = new_node_v_index;
         }
         return new_node_v_index;
     }
