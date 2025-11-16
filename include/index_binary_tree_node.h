@@ -74,18 +74,18 @@ public:
     // 只是为了初始化一个哨兵
     // 其他的操作并没有去做
     v_index init_root(T input_data) {
-        node new_node{input_data, get_nil_v_index()};
-        v_index result = get_nil_v_index();
+        node new_node{input_data, get_nil_index()};
+        v_index result = get_nil_index();
         details.push_back(new_node);
         roots.push_back(result);
         return result;
     }
 
-    v_index get_root_v_index() {
+    v_index get_root_index() {
         if (roots.empty() == false)
             return roots.at(roots.size() - 1);
         else {
-            v_index result = get_nil_v_index();
+            v_index result = get_nil_index();
             return result;
         }
     }
@@ -95,10 +95,10 @@ public:
     }
 
     node &get_root_node() {
-        return details.at(get_root_v_index().number);
+        return details.at(get_root_index().number);
     }
 
-    v_index get_nil_v_index() {
+    v_index get_nil_index() {
         v_index result;
         result.number = 0;
         return result;
@@ -109,19 +109,19 @@ public:
         if (roots.empty() == true && details.empty() == true) {
             init_root(input_data);
         }
-        node new_node{input_data, get_nil_v_index()};
+        node new_node{input_data, get_nil_index()};
 
         v_index new_node_v_index;
         new_node_v_index.number = details.size();
         details.push_back(new_node);
 
         auto insert_v_index_value =
-                find_insert_position(get_root_v_index(),
+                find_insert_position(get_root_index(),
                                      new_node_v_index,
-                                     get_nil_v_index(),
+                                     get_nil_index(),
                                      std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
 
-        if (insert_v_index_value == get_nil_v_index()) {
+        if (insert_v_index_value == get_nil_index()) {
             roots.push_back(new_node_v_index);
             return new_node_v_index;
         } else if (get_node(insert_v_index_value).data < new_node.data) {

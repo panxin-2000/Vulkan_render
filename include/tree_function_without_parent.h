@@ -1,0 +1,10 @@
+//
+// Created by 潘鑫 on 2025/11/16.
+//
+
+#ifndef TREE_FUNCTION_WITHOUT_PARENT_H
+#define TREE_FUNCTION_WITHOUT_PARENT_H
+
+
+
+#endif //TREE_FUNCTION_WITHOUT_PARENT_H
