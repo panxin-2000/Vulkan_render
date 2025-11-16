@@ -244,6 +244,11 @@ T find_insert_position(T root, T new_node, T nil_ptr_or_index, function get_node
 }
 
 template<typename T>
+T find_insert_position(T root, T new_node) {
+    return find_insert_position(root, new_node, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
+}
+
+template<typename T>
 void postorder_tree_walk_with_stack(T root, std::vector<T> *result) {
     std::stack<T> ptr_stack;
     auto current_node = root;

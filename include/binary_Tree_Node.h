@@ -17,8 +17,6 @@ public:
 
     T data;
 
-
-
 public:
     // 持久树，持久树的目的是为了保存两个操作 persistent
     // 其实有一个问题，是否可以只用保存一个新的树到叶子结点的链而保存保存整个树中的内容呢？
@@ -53,8 +51,7 @@ public:
         if (new_node == nullptr) {
             return root;
         }
-        auto insert_node = find_insert_position(root, new_node, static_cast<binary_Tree_Node *>(nullptr),
-                                                binary_Tree_Node::get_node);
+        auto insert_node = find_insert_position(root, new_node);
 
         if (insert_node == nullptr) {
             return new_node;
@@ -72,9 +69,7 @@ public:
         if (new_node == nullptr) {
             return root;
         }
-        auto insert_node = find_insert_position(root, new_node,
-                                                static_cast<binary_Tree_Node *>(nullptr),
-                                                binary_Tree_Node::get_node);
+        auto insert_node = find_insert_position(root, new_node);
 
         if (insert_node == nullptr) {
             return new_node;
