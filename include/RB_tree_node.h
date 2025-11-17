@@ -161,46 +161,48 @@ public:
     }
 
 
+    /**
+     *
+     * @param root
+     * @param delete_node
+     * @return 返回根结点
+     */
     RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node *delete_node) {
         if (delete_node == nullptr) {
             return root;
         }
-        return delete_node_from_binary_search_tree(root, *delete_node);
-    }
-
-    RB_Tree_Node *delete_node_from_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &delete_node) {
-        auto delete_node_color = delete_node.color;
+        auto delete_node_color = delete_node->color;
         auto need_fix_node = root; {
             // 删除的是根结点，左子树为空，或者右子树为空，那么不为空的只有一个红色的结点
-            if (&delete_node == root && delete_node.left == nullptr && delete_node.right == nullptr) {
+            if (delete_node == root && delete_node->left == nullptr && delete_node->right == nullptr) {
                 return nullptr;
-            } else if (&delete_node == root && delete_node.left != nullptr && delete_node.right == nullptr) {
-                delete_node.left->color = RB_Tree_BLACK;
-                return delete_node.left;
-            } else if (&delete_node == root && delete_node.left == nullptr && delete_node.right != nullptr) {
-                delete_node.right->color = RB_Tree_BLACK;
-                return delete_node.right;
+            } else if (delete_node == root && delete_node->left != nullptr && delete_node->right == nullptr) {
+                delete_node->left->color = RB_Tree_BLACK;
+                return delete_node->left;
+            } else if (delete_node == root && delete_node->left == nullptr && delete_node->right != nullptr) {
+                delete_node->right->color = RB_Tree_BLACK;
+                return delete_node->right;
             }
         }
 
-        if (delete_node.right == nullptr && delete_node.left == nullptr) {
+        if (delete_node->right == nullptr && delete_node->left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
             // 只有叶子结点这里需要一个额外的处理
             // RB_Tree_Node::clean_parent_to_current(&delete_node);
-            RB_delete_fix(root, &delete_node); //
-            RB_Tree_Node::clean_sub_tree_father(&delete_node); // 这个函数里面多了一步，导致了一个小问题
+            RB_delete_fix(root, delete_node); //
+            RB_Tree_Node::clean_sub_tree_father(delete_node); // 这个函数里面多了一步，导致了一个小问题
             return root;
-        } else if (delete_node.right == nullptr && delete_node.left != nullptr) {
+        } else if (delete_node->right == nullptr && delete_node->left != nullptr) {
             // 右子树为空
-            need_fix_node = delete_node.left;
-            delete_node.replace_sub_tree(&delete_node, delete_node.left);
-        } else if (delete_node.right != nullptr && delete_node.left == nullptr) {
+            need_fix_node = delete_node->left;
+            delete_node->replace_sub_tree(delete_node, delete_node->left);
+        } else if (delete_node->right != nullptr && delete_node->left == nullptr) {
             // 左子树为空
-            need_fix_node = delete_node.right;
-            delete_node.replace_sub_tree(&delete_node, delete_node.right);
-        } else if (delete_node.right != nullptr && delete_node.left != nullptr) {
+            need_fix_node = delete_node->right;
+            delete_node->replace_sub_tree(delete_node, delete_node->right);
+        } else if (delete_node->right != nullptr && delete_node->left != nullptr) {
             // 寻找后继
-            auto successor = root->tree_successor(&delete_node); // 这行还是有问题的，还是编译不过，
+            auto successor = root->tree_successor(delete_node); // 这行还是有问题的，还是编译不过，
             delete_node_color = successor->color;
             if (successor->left == nullptr && successor->right == nullptr) {
                 need_fix_node = successor;
@@ -217,15 +219,15 @@ public:
                 need_fix_node = successor->right;
                 successor->replace_sub_tree(successor, successor->right);
             }
-            successor->replace_sub_tree(&delete_node, successor);
+            successor->replace_sub_tree(delete_node, successor);
 
-            if (delete_node.parent == nullptr) {
+            if (delete_node->parent == nullptr) {
                 root = successor;
                 need_fix_node = root;
             }
-            successor->replace_sub_tree_left(successor, delete_node.left);
-            successor->replace_sub_tree_right(successor, delete_node.right);
-            successor->color = delete_node.color;
+            successor->replace_sub_tree_left(successor, delete_node->left);
+            successor->replace_sub_tree_right(successor, delete_node->right);
+            successor->color = delete_node->color;
         }
         if (delete_node_color == RB_Tree_BLACK) {
             RB_delete_fix(root, need_fix_node);
