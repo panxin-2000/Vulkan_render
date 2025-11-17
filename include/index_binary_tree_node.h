@@ -132,12 +132,12 @@ public:
     }
 
     v_index tree_insert_value(v_index root, T data) {
-        this->index_add_new_node(data);
+        this->add_new_node(data);
         return root;
     }
 
 
-    v_index index_add_new_node(T input_data) {
+    v_index add_new_node(T input_data) {
         if (roots.empty() == true && details.empty() == true) {
             init_root(input_data);
         }
@@ -147,9 +147,9 @@ public:
         new_node_v_index.number = details.size();
         details.push_back(new_node);
 
-        auto temp = add_new_node(get_root_index(), new_node_v_index,
-                                 get_nil_index(),
-                                 std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
+        auto temp = BIN_tree::add_new_node(get_root_index(), new_node_v_index,
+                                           get_nil_index(),
+                                           std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
         roots.push_back(temp);
         return new_node_v_index;
     }

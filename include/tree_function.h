@@ -398,33 +398,35 @@ ptr find_root(ptr node, ptr nil_ptr_or_index, function get_node) {
     }
 }
 
-/**
- *
- * @tparam v_index
- * @tparam function
- * @param root
- * @param new_node_v_index
- * @param nil_ptr_or_index
- * @param get_node
- * @return 返回根指针
- */
-template<typename v_index, typename function>
-v_index add_new_node(v_index root, v_index new_node_v_index,
-                     v_index nil_ptr_or_index,
-                     function get_node) {
-    auto insert_v_index_value =
-            find_insert_position(root,
-                                 new_node_v_index,
-                                 nil_ptr_or_index,
-                                 get_node);
-    if (insert_v_index_value == nil_ptr_or_index) {
-        return new_node_v_index;
-    } else if (get_node(insert_v_index_value).data < get_node(new_node_v_index).data) {
-        get_node(insert_v_index_value).right = new_node_v_index;
-    } else {
-        get_node(insert_v_index_value).left = new_node_v_index;
+namespace BIN_tree {
+    /**
+     *
+     * @tparam v_index
+     * @tparam function
+     * @param root
+     * @param new_node_v_index
+     * @param nil_ptr_or_index
+     * @param get_node
+     * @return 返回根指针
+     */
+    template<typename v_index, typename function>
+    v_index add_new_node(v_index root, v_index new_node_v_index,
+                         v_index nil_ptr_or_index,
+                         function get_node) {
+        auto insert_v_index_value =
+                find_insert_position(root,
+                                     new_node_v_index,
+                                     nil_ptr_or_index,
+                                     get_node);
+        if (insert_v_index_value == nil_ptr_or_index) {
+            return new_node_v_index;
+        } else if (get_node(insert_v_index_value).data < get_node(new_node_v_index).data) {
+            get_node(insert_v_index_value).right = new_node_v_index;
+        } else {
+            get_node(insert_v_index_value).left = new_node_v_index;
+        }
+        return root;
     }
-    return root;
 }
 
 /**
