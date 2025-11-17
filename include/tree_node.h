@@ -86,6 +86,11 @@ public:
         return need_clean_sub_tree;
     }
 
+
+    //            A                              B
+    //         E     B                       A       D
+    //            C    D                   E   C
+
     // 原本B是A的右子树，现在变成A是B的左子树
     static bool left_rotate(ptr node) {
         if (node != nullptr && node->right == nullptr) {
@@ -99,6 +104,11 @@ public:
         }
     }
 
+
+    //            A                 B
+    //         B     E           C     A
+    //      C    D                   D   E
+    //
     // 原本B是A的左子树，现在变成A是B的右子树
     static bool right_rotate(ptr node) {
         if (node != nullptr && node->left == nullptr) {

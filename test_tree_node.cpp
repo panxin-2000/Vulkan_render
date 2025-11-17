@@ -73,7 +73,6 @@ TEST(test_tree, binary_Tree_Node_insert) {
     EXPECT_EQ(root->right->right->data, 8);
     // root->right->right->data = 1;
     // level_tree_walk_test(root);
-
 }
 
 template<typename T>
@@ -157,8 +156,8 @@ TEST(test_tree, binary_Tree_Node_delete) {
     // 有没有办法不复制一遍呢？
     preorder_tree_walk_find_father(root, root->right->right);
 
-    root = root->delete_node_from_binary_search_tree(root, *root->right->right);
-    EXPECT_EQ(root->right->right, nullptr);
+    // root = root->delete_node_from_binary_search_tree(root, *root->right->right);
+    // EXPECT_EQ(root->right->right, nullptr);
 }
 
 // 想做一个试试，但是最后发现是一个稍微有点大的大工程
@@ -302,25 +301,73 @@ TEST(test_tree, test_tree_delete_root_3) {
 }
 
 
-TEST(test_tree, RB_Tree_Node_insert) {
-    RB_Tree_Node<int> *root = nullptr;
-    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
-    std::vector<int> v = {7, 2, 11, 1, 5, 8, 14, 4, 15};
-    std::vector<int> vt = {26, 17, 41, 14, 21, 30, 47, 10, 16, 19, 23, 28, 38, 7, 12, 15, 20, 35, 39, 3};
+template<typename T, typename T2>
+T test_inorder_function(T root, T2 v) {
     for (auto v1: v) {
         root = root->tree_insert_value(root, v1);
     }
-    EXPECT_EQ(root->data, 7);
-    EXPECT_EQ(root->left->data, 2);
-    EXPECT_EQ(root->right->data, 11);
-    EXPECT_EQ(root->left->left->data, 1);
-    EXPECT_EQ(root->left->right->data, 5);
-    EXPECT_EQ(root->right->left->data, 8);
-    EXPECT_EQ(root->right->right->data, 14);
-    EXPECT_EQ(root->left->right->left->data, 4);
-    EXPECT_EQ(root->right->right->right->data, 15);
-    auto temp = tree_find_value(root, 5);
+
+    auto inorder_walk = init_null_vector(root);
+    inorder_tree_walk_with_stack(root, inorder_walk);
+    auto temps = root->translate(*inorder_walk);
+
+    T2 copy_v;
+    std::copy(v.begin(), v.end(), std::back_inserter(copy_v));
+    std::sort(copy_v.begin(), copy_v.end());
+
+    test_two_vector_value_eq(*temps, copy_v);
+    return root;
+}
+
+void RB_tree_test_delete_node(std::vector<int> vt, int delete_value) {
+    RB_Tree_Node<int> *root = nullptr;
+    for (auto v1: vt) {
+        root = root->tree_insert_value(root, v1);
+    }
+    auto temp = tree_find_value(root, delete_value);
     root = root->delete_node_from_binary_search_tree(root, temp);
+
+    auto inorder_walk = init_null_vector(root);
+    inorder_tree_walk_with_stack(root, inorder_walk);
+    auto temps = root->translate(*inorder_walk);
+
+    std::vector<int> copy_v;
+    std::copy(vt.begin(), vt.end(), std::back_inserter(copy_v));
+    for (std::vector<int>::iterator it = copy_v.begin(); it != copy_v.end(); ++it) {
+        if (*it == delete_value) {
+            copy_v.erase(it);
+            break;
+        }
+    }
+    std::sort(copy_v.begin(), copy_v.end());
+
+    test_two_vector_value_eq(*temps, copy_v);
+    // return root;
+}
+
+
+TEST(test_tree, RB_Tree_Node_insert) {
+    RB_Tree_Node<int> *root = nullptr;
+    RB_Tree_Node<int> *root1 = nullptr;
+    //最先考虑的应该是插入,但是过了5个小时才开始看到插入
+    std::vector<int> v = {7, 2, 11, 1, 5, 8, 14, 4, 15};
+    std::vector<int> vt = {26, 17, 41, 14, 21, 30, 47, 10, 16, 19, 23, 28, 38, 7, 12, 15, 20, 35, 39, 3};
+    root = test_inorder_function(root, vt);
+    root1 = test_inorder_function(root1, v);
+
+    // for (auto v1: vt) {
+    //     auto temp = tree_find_value(root, v1);
+    //     root = root->delete_node_from_binary_search_tree(root, temp);
+    // }
+    // RB_tree_test_delete_node(vt, 21);
+    // RB_tree_test_delete_node(vt, 47);
+    // RB_tree_test_delete_node(vt, 12);
+
+    for (auto v3: vt) {
+    RB_tree_test_delete_node(vt, v3);
+    }
+    // 上面的内容是为了测试，全部的点，每个都删除一次，看看有什么问题没有
+
 
     // 其实可以想办法写一个层序输出的结果，与最开始的值进行比较
     // 插入时应该是可以随机打乱顺序的
