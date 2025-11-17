@@ -40,7 +40,7 @@ public:
         nodes.left = nullptr;
         nodes.parent = nullptr;
         nodes.data = data;
-        return root->insert_node_to_binary_search_tree(root, nodes);
+        return root->insert_node_to_binary_search_tree(root, &nodes);
     }
 
     std::vector<T> *translate(std::vector<RB_Tree_Node *> src_s) {
@@ -104,7 +104,7 @@ public:
         }
     }
 
-    RB_Tree_Node *insert_node_to_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node &new_node) {
+    RB_Tree_Node *insert_node_to_binary_search_tree(RB_Tree_Node *root, RB_Tree_Node *new_node) {
         // 其实稍微有点不想做，为什么呢？因为感觉有点细碎
         // 但是还是需要去做的，其实重点还是去写测试的规则
         // 这里其实是有五条规则的，但是我已经并不能
@@ -113,12 +113,12 @@ public:
         // 树的黑高，
         // 先不考虑删除的事情，刚好给了一个机会把插入实现了
         // 先把全部的代码复制过来。
-        new_node.color = RB_Tree_RED;
+        new_node->color = RB_Tree_RED;
         RB_Tree_Node *new_root = root;
         RB_Tree_Node *insert_node = nullptr;
         while (new_root != nullptr) {
             insert_node = new_root;
-            if (insert_node->data < new_node.data) {
+            if (insert_node->data < new_node->data) {
                 new_root = new_root->right;
             } else {
                 new_root = new_root->left;
@@ -126,16 +126,16 @@ public:
         }
         if (insert_node == nullptr) {
             // 这里是直接插入根结点，根结点的颜色应该是黑色
-            new_node.color = RB_Tree_BLACK;
-            return &new_node;
-        } else if (insert_node->data < new_node.data) {
-            RB_Tree_Node::replace_sub_tree_right(insert_node, &new_node);
+            new_node->color = RB_Tree_BLACK;
+            return new_node;
+        } else if (insert_node->data < new_node->data) {
+            RB_Tree_Node::replace_sub_tree_right(insert_node, new_node);
         } else {
-            RB_Tree_Node::replace_sub_tree_left(insert_node, &new_node);
+            RB_Tree_Node::replace_sub_tree_left(insert_node, new_node);
         }
         if (insert_node->color == RB_Tree_RED) {
             // 那么这里就是两个红色结点了，是需要调整的，之后的情况，我已经不能纯粹的记住了
-            RB_insert_fix(root, &new_node);
+            RB_insert_fix(root, new_node);
         }
         return root->find_root(root); // 这里的问题，返回的估计有问题，在去查找一遍根结点，之后再返回吧
     }
