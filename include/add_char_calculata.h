@@ -7,6 +7,8 @@
 #include "binary_Tree_Node.h"
 #include <vector>
 
+#include "tree_function.h"
+
 
 int add_function(int left_value, int right_value);
 
@@ -62,9 +64,8 @@ public:
         if (root == nullptr) {
             root = new_node;
         } else {
-            struct tree_node_calculate *new_root = root;
-            auto miximum_leaf =
-                    (new_node->find_miximum_leaf(new_root));
+            tree_node_calculate *new_root = root;
+            auto miximum_leaf = find_miximum_leaf(dynamic_cast<binary_Tree_Node<tree_node_calculate_date> *>(new_root));
             while (miximum_leaf != new_root->find_root(new_root)) {
                 if (miximum_leaf->parent != nullptr) {
                     if (new_node->data.get_operate_symbol_priority() >

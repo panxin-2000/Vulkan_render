@@ -174,7 +174,7 @@ public:
             root = new_node; // 这里是添加首个数字的位置
         } else {
             struct binary_Tree_Node *new_root = root;
-            struct binary_Tree_Node *miximum_leaf = new_node->find_miximum_leaf(new_root);
+            struct binary_Tree_Node *miximum_leaf = find_miximum_leaf(new_root);
             while (miximum_leaf->parent->right != nullptr) {
                 miximum_leaf = miximum_leaf->parent;
             }

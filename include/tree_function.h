@@ -436,4 +436,46 @@ std::vector<T2> find_interval(T2 root, T &left_node, T &right_node, T2 nil_ptr_o
 }
 
 
+template<typename ptr>
+static ptr tree_maximum(ptr tree_node) {
+    ptr return_node = nullptr;
+    while (tree_node != nullptr) {
+        return_node = tree_node;
+        tree_node = tree_node->right;
+    }
+    return return_node;
+}
+
+template<typename ptr>
+static ptr tree_minimum(ptr tree_node) {
+    ptr return_node = nullptr;
+    while (tree_node != nullptr) {
+        return_node = tree_node;
+        tree_node = tree_node->left;
+    }
+    return return_node;
+}
+
+/**
+ * 这个方法可以从扩展类中移动到基类当中
+ * @param root
+ * @return
+ */
+template<typename ptr>
+ptr find_miximum_leaf(ptr root) {
+    if (root == nullptr) {
+        return nullptr;
+    } else {
+        while (root->right != nullptr || root->left != nullptr) {
+            if (root->right != nullptr) {
+                return find_miximum_leaf(root->right);
+            } else {
+                return find_miximum_leaf(root->left);
+            }
+        }
+        return root;
+    }
+}
+
+
 #endif //TREE_FUNCTION_H

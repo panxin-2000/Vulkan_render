@@ -10,6 +10,34 @@
 #include "tree_function.h"
 
 
+// 如果只是二叉搜索树，那么需要测试这个，
+// 其实应该还可以再加上中序输出的，因为它比较好测试
+template<typename T>
+void level_tree_walk_test(T node) {
+    return level_tree_walk_test(node, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
+}
+
+template<typename T, typename function>
+void level_tree_walk_test(T node, T nil_ptr_or_index, function get_node) {
+    std::queue<T> tem;
+    if (node != nil_ptr_or_index) {
+        tem.push(node);
+    }
+    while (!tem.empty()) {
+        T node_tem = tem.front();
+        if (get_node(node_tem).left != nil_ptr_or_index) {
+            tem.push(get_node(node_tem).left);
+            EXPECT_LT(get_node(get_node(node_tem).left).data, get_node(node_tem).data);
+        }
+        if (get_node(node_tem).right != nil_ptr_or_index) {
+            tem.push(get_node(node_tem).right);
+            EXPECT_GE(get_node(get_node(node_tem).right).data, get_node(node_tem).data);
+        }
+        tem.pop();
+    }
+}
+
+
 std::vector<int> first{5, 3, 2, 4, 7, 8};
 
 binary_Tree_Node<int> *init_tree(std::vector<int> vs) {
@@ -25,7 +53,10 @@ binary_Tree_Node<int> *init_tree() {
 }
 
 TEST(test_tree, binary_Tree_Node_insert) {
+    EXPECT_LT(1, 2);
+    EXPECT_GE(2, 2);
     auto root = init_tree();
+    level_tree_walk_test(root);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);
@@ -40,6 +71,9 @@ TEST(test_tree, binary_Tree_Node_insert) {
 
     EXPECT_EQ(root->right->data, 7);
     EXPECT_EQ(root->right->right->data, 8);
+    // root->right->right->data = 1;
+    // level_tree_walk_test(root);
+
 }
 
 template<typename T>

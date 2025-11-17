@@ -28,7 +28,6 @@ public:
     }
 
 
-
     ptr tree_predecessor(ptr tree_node) {
         if (tree_node->left != nullptr) {
             return tree_maximum(tree_node->left);
@@ -41,14 +40,6 @@ public:
         return result_node;
     }
 
-    static ptr tree_minimum(ptr tree_node) {
-        ptr return_node = nullptr;
-        while (tree_node != nullptr) {
-            return_node = tree_node;
-            tree_node = tree_node->left;
-        }
-        return return_node;
-    }
 
     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
         src_sub_tree->parent = dst_sub_tree_position->parent;
@@ -113,14 +104,6 @@ public:
         }
     }
 
-    ptr tree_maximum(ptr tree_node) {
-        ptr return_node = nullptr;
-        while (tree_node != nullptr) {
-            return_node = tree_node;
-            tree_node = tree_node->right;
-        }
-        return return_node;
-    }
 
     ptr find_root(ptr node) {
         if (node == nullptr) {
@@ -134,25 +117,6 @@ public:
     }
 
 
-    /**
-     * 这个方法可以从扩展类中移动到基类当中
-     * @param root
-     * @return
-     */
-    ptr find_miximum_leaf(ptr root) {
-        if (root == nullptr) {
-            return nullptr;
-        } else {
-            while (root->right != nullptr || root->left != nullptr) {
-                if (root->right != nullptr) {
-                    return find_miximum_leaf(root->right);
-                } else {
-                    return find_miximum_leaf(root->left);
-                }
-            }
-            return root;
-        }
-    }
 };
 
 #endif //TREE_NODE_H
