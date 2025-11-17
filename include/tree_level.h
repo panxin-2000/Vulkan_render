@@ -8,7 +8,7 @@
 
 template<typename T>
 std::vector<T> level_tree_walk(T node, const std::vector<T> *result) {
-    return level_tree_walk(node, result, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
+    return level_tree_walk(node, result, static_cast<T>(nullptr), [](T insert_node) { return insert_node; });
 }
 
 template<typename T, typename function>

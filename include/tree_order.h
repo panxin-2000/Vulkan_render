@@ -25,22 +25,22 @@ std::vector<T> *tree_walk_with_stack(T root, std::vector<T> *result,
         if (tree_walk == tree_walk_type::preorder_type) {
             result->push_back(ptr_stack.top()); // 输出
         }
-        if (get_node(current_node).left != nil_ptr_or_index) {
+        if (get_node(current_node)->left != nil_ptr_or_index) {
             // 当前左子树不为空时前进
-            ptr_stack.push(get_node(current_node).left); // 入栈
-            current_node = get_node(current_node).left; // 更新为左子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).right !=
+            ptr_stack.push(get_node(current_node)->left); // 入栈
+            current_node = get_node(current_node)->left; // 更新为左子树
+        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->right !=
                    nil_ptr_or_index) {
             // 左子树为空时，先输出，再去访问右子树
             if (tree_walk == tree_walk_type::inorder_type) {
                 result->push_back(current_node); // 输出
             }
             if (tree_walk == tree_walk_type::preorder_type) {
-                ptr_stack.push(get_node(current_node).right);
+                ptr_stack.push(get_node(current_node)->right);
             }
-            ptr_stack.push(get_node(current_node).right); // 入栈
-            current_node = get_node(current_node).right; // 更新为右子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).left == nil_ptr_or_index) {
+            ptr_stack.push(get_node(current_node)->right); // 入栈
+            current_node = get_node(current_node)->right; // 更新为右子树
+        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->left == nil_ptr_or_index) {
             if (tree_walk == tree_walk_type::inorder_type) {
                 result->push_back(current_node); // 输出
             }
@@ -52,16 +52,16 @@ std::vector<T> *tree_walk_with_stack(T root, std::vector<T> *result,
                 ptr_stack.pop();
 
                 auto second = ptr_stack.top();
-                if (top == get_node(second).right) {
+                if (top == get_node(second)->right) {
                     continue;
                 }
-                if (top == get_node(second).left) {
+                if (top == get_node(second)->left) {
                     if (tree_walk == tree_walk_type::inorder_type) {
                         result->push_back(second);
                     }
-                    if (get_node(second).right != nil_ptr_or_index) {
-                        ptr_stack.push(get_node(second).right);
-                        current_node = get_node(second).right; // 更新为右子树
+                    if (get_node(second)->right != nil_ptr_or_index) {
+                        ptr_stack.push(get_node(second)->right);
+                        current_node = get_node(second)->right; // 更新为右子树
                         break;
                     }
                     continue;

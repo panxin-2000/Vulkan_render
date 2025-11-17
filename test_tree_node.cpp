@@ -14,7 +14,7 @@
 // 其实应该还可以再加上中序输出的，因为它比较好测试
 template<typename T>
 void level_tree_walk_test(T node) {
-    return level_tree_walk_test(node, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
+    return level_tree_walk_test(node, static_cast<T>(nullptr), [](T insert_node) { return insert_node; });
 }
 
 template<typename T, typename function>
@@ -25,13 +25,13 @@ void level_tree_walk_test(T node, T nil_ptr_or_index, function get_node) {
     }
     while (!tem.empty()) {
         T node_tem = tem.front();
-        if (get_node(node_tem).left != nil_ptr_or_index) {
-            tem.push(get_node(node_tem).left);
-            EXPECT_LT(get_node(get_node(node_tem).left).data, get_node(node_tem).data);
+        if (get_node(node_tem)->left != nil_ptr_or_index) {
+            tem.push(get_node(node_tem)->left);
+            EXPECT_LT(get_node(get_node(node_tem)->left)->data, get_node(node_tem)->data);
         }
-        if (get_node(node_tem).right != nil_ptr_or_index) {
-            tem.push(get_node(node_tem).right);
-            EXPECT_GE(get_node(get_node(node_tem).right).data, get_node(node_tem).data);
+        if (get_node(node_tem)->right != nil_ptr_or_index) {
+            tem.push(get_node(node_tem)->right);
+            EXPECT_GE(get_node(get_node(node_tem)->right)->data, get_node(node_tem)->data);
         }
         tem.pop();
     }

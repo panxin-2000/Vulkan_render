@@ -6,6 +6,8 @@
 #define TREE_NODE_H
 #include <iostream>
 
+#include "tree_function.h"
+
 template<class T>
 class Tree_Node {
     using ptr = T *;

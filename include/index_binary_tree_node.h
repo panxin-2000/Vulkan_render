@@ -48,7 +48,7 @@ class index_Tree_Node_with_father {
 public:
     v_index left;
     v_index right;
-    v_index father;
+    v_index parent;
 
 public:
     T data;
@@ -57,7 +57,7 @@ public:
         data = _data;
         left = _nil_v_index;
         right = _nil_v_index;
-        father = _nil_v_index;
+        parent = _nil_v_index;
     }
 };
 
@@ -107,7 +107,7 @@ public:
         auto last_result = tree_walk_with_stack(get_root_index(),
                                                 result,
                                                 get_nil_index(),
-                                                std::bind(&index_binary_Tree_Node::get_node, this,
+                                                std::bind(&index_binary_Tree_Node::get_node_ptr, this,
                                                           std::placeholders::_1),
                                                 tree_walk_type::preorder_type);
         return last_result;
@@ -149,7 +149,7 @@ public:
 
         auto temp = BIN_tree::add_new_node(get_root_index(), new_node_v_index,
                                            get_nil_index(),
-                                           std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
+                                           std::bind(&index_binary_Tree_Node::get_node_ptr, this, std::placeholders::_1));
         roots.push_back(temp);
         return new_node_v_index;
     }
@@ -158,7 +158,7 @@ public:
     v_index index_delete_node_from_binary_search_tree(v_index delete_node) {
         return delete_node_from_binary_search_tree(get_root_index(), delete_node,
                                                    get_nil_index(),
-                                                   std::bind(&index_binary_Tree_Node::get_node, this,
+                                                   std::bind(&index_binary_Tree_Node::get_node_ptr, this,
                                                              std::placeholders::_1));
     }
 };
