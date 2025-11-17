@@ -4,6 +4,10 @@
 
 #ifndef TREE_FUNCTION_H
 #define TREE_FUNCTION_H
+#include "tree_inorder.h"
+#include "tree_level.h"
+#include "tree_postorder.h"
+#include "tree_preorder.h"
 
 
 // T2 RB_Tree_Node<segment_vector>   T  segment_vector
@@ -60,138 +64,6 @@ std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result) {
     return find_all_leaf_node(node, result, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
 }
 
-template<typename T>
-void inorder_tree_walk(T node, std::vector<T> *result) {
-    inorder_tree_walk(node, result, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-void inorder_tree_walk(T node, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    if (node != nil_ptr_or_index) {
-        inorder_tree_walk(get_node(node).left, result);
-        result->push_back(node);
-        inorder_tree_walk(get_node(node).right, result);
-    }
-}
-
-template<typename T>
-std::vector<T> *inorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    return inorder_tree_walk_with_stack(root, result,
-                                        static_cast<T>(nullptr),
-                                        [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-std::vector<T> *inorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    std::stack<T> ptr_stack;
-    auto current_node = root;
-    if (root != nil_ptr_or_index) {
-        ptr_stack.push(root);
-    }
-    while (ptr_stack.empty() == false) {
-        if (get_node(current_node).left != nil_ptr_or_index) {
-            // 当前左子树不为空时前进
-            ptr_stack.push(get_node(current_node).left); // 入栈
-            current_node = get_node(current_node).left; // 更新为左子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).right !=
-                   nil_ptr_or_index) {
-            // 左子树为空时，先输出，再去访问右子树
-            result->push_back(current_node); // 输出
-            ptr_stack.push(get_node(current_node).right); // 入栈
-            current_node = get_node(current_node).right; // 更新为右子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).left == nil_ptr_or_index) {
-            result->push_back(current_node); // 输出
-            while (ptr_stack.size() >= 2) {
-                auto top = ptr_stack.top();
-                ptr_stack.pop();
-                auto second = ptr_stack.top();
-                if (top == get_node(second).right) {
-                    continue;
-                }
-                if (top == get_node(second).left) {
-                    result->push_back(second);
-                    if (get_node(second).right != nil_ptr_or_index) {
-                        ptr_stack.push(get_node(second).right);
-                        current_node = get_node(second).right; // 更新为右子树
-                        break;
-                    }
-                    continue;
-                }
-            }
-            if (ptr_stack.size() == 1) {
-                ptr_stack.pop();
-            }
-        }
-    }
-    return result;
-}
-
-template<typename T>
-void preorder_tree_walk(T node, std::vector<T> *result) {
-    preorder_tree_walk(node, result,
-                       static_cast<T>(nullptr),
-                       [](T insert_node) { return *insert_node; });
-}
-
-
-template<typename T, typename function>
-void preorder_tree_walk(T node, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    if (node != nil_ptr_or_index) {
-        result->push_back(node);
-        preorder_tree_walk(get_node(node).left, result);
-        preorder_tree_walk(get_node(node).right, result);
-    }
-}
-
-template<typename T>
-std::vector<T> *preorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    return preorder_tree_walk_with_stack(root, result,
-                                         static_cast<T>(nullptr),
-                                         [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-std::vector<T> *preorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    std::stack<T> ptr_stack;
-    auto current_node = root;
-    if (root != nil_ptr_or_index) {
-        ptr_stack.push(root);
-    }
-    while (ptr_stack.empty() == false) {
-        result->push_back(ptr_stack.top()); // 输出
-        if (get_node(current_node).left != nil_ptr_or_index) {
-            // 当前左子树不为空时前进
-            ptr_stack.push(get_node(current_node).left); // 入栈
-            current_node = get_node(current_node).left; // 更新为左子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).right !=
-                   nil_ptr_or_index) {
-            // 左子树为空时，先输出，再去访问右子树
-            ptr_stack.push(get_node(current_node).right);
-            current_node = get_node(current_node).right; // 更新为右子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).left == nil_ptr_or_index) {
-            while (ptr_stack.size() >= 2) {
-                auto top = ptr_stack.top();
-                ptr_stack.pop();
-                auto second = ptr_stack.top();
-                if (top == get_node(second).right) {
-                    continue;
-                }
-                if (top == get_node(second).left) {
-                    if (get_node(second).right != nil_ptr_or_index) {
-                        ptr_stack.push(get_node(second).right);
-                        current_node = get_node(second).right; // 更新为右子树
-                        break;
-                    }
-                    continue;
-                }
-            }
-            if (ptr_stack.size() == 1) {
-                ptr_stack.pop();
-            }
-        }
-    }
-    return result;
-}
 
 template<typename T>
 T preorder_tree_walk_with_stack_find_father(T root, T node) {
@@ -244,21 +116,6 @@ T preorder_tree_walk_with_stack_find_father(T root, T node, T nil_ptr_or_index, 
     return nil_ptr_or_index;
 }
 
-template<typename T>
-void postorder_tree_walk(T node, std::vector<T> *result) {
-    postorder_tree_walk(node, result,
-                        static_cast<T>(nullptr),
-                        [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-void postorder_tree_walk(T node, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    if (node != nil_ptr_or_index) {
-        postorder_tree_walk(get_node(node).left, result);
-        postorder_tree_walk(get_node(node).right, result);
-        result->push_back(node);
-    }
-}
 
 template<typename T>
 T preorder_tree_walk_find_father(T root, T node) {
@@ -307,81 +164,6 @@ T find_insert_position(T root, T new_node, T nil_ptr_or_index, function get_node
 template<typename T>
 T find_insert_position(T root, T new_node) {
     return find_insert_position(root, new_node, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
-}
-
-template<typename T>
-std::vector<T> *postorder_tree_walk_with_stack(T root, std::vector<T> *result) {
-    return postorder_tree_walk_with_stack(root, result, static_cast<T>(nullptr),
-                                          [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-std::vector<T> *postorder_tree_walk_with_stack(T root, std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    std::stack<T> ptr_stack;
-    auto current_node = root;
-    if (root != nil_ptr_or_index) {
-        ptr_stack.push(root);
-    }
-    while (ptr_stack.empty() == false) {
-        if (get_node(current_node).left != nil_ptr_or_index) {
-            // 当前左子树不为空时前进
-            ptr_stack.push(get_node(current_node).left); // 入栈
-            current_node = get_node(current_node).left; // 更新为左子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).right !=
-                   nil_ptr_or_index) {
-            // 左子树为空时，先输出，再去访问右子树
-            ptr_stack.push(get_node(current_node).right); // 入栈
-            current_node = get_node(current_node).right; // 更新为右子树
-        } else if (get_node(current_node).left == nil_ptr_or_index && get_node(current_node).left == nil_ptr_or_index) {
-            while (ptr_stack.size() >= 2) {
-                auto top = ptr_stack.top();
-                result->push_back(ptr_stack.top()); // 输出
-                ptr_stack.pop();
-
-                auto second = ptr_stack.top();
-                if (top == get_node(second).right) {
-                    continue;
-                }
-                if (top == get_node(second).left) {
-                    if (get_node(second).right != nil_ptr_or_index) {
-                        ptr_stack.push(get_node(second).right);
-                        current_node = get_node(second).right; // 更新为右子树
-                        break;
-                    }
-                    continue;
-                }
-            }
-            if (ptr_stack.size() == 1) {
-                result->push_back(ptr_stack.top()); // 输出
-                ptr_stack.pop();
-            }
-        }
-    }
-    return result;
-}
-
-template<typename T>
-std::vector<T> level_tree_walk(T node, const std::vector<T> *result) {
-    return level_tree_walk(node, result, static_cast<T>(nullptr), [](T insert_node) { return *insert_node; });
-}
-
-template<typename T, typename function>
-std::vector<T> level_tree_walk(T node, const std::vector<T> *result, T nil_ptr_or_index, function get_node) {
-    std::queue<T> tem;
-    if (node != nil_ptr_or_index) {
-        tem.push(node);
-    }
-    while (!tem.empty()) {
-        T *node_tem = tem.front();
-        if (get_node(node_tem).left != nil_ptr_or_index) {
-            tem.push(get_node(node_tem).left);
-        }
-        if (get_node(node_tem).right != nil_ptr_or_index) {
-            tem.push(get_node(node_tem).right);
-        }
-        result->push_back(node_tem);
-        tem.pop();
-    }
 }
 
 
