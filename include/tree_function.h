@@ -88,7 +88,8 @@ T preorder_tree_walk_with_stack_find_father(T root, T node, T nil_ptr_or_index, 
             // 左子树为空时，先输出，再去访问右子树
             ptr_stack.push(get_node(current_node)->right);
             current_node = get_node(current_node)->right; // 更新为右子树
-        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->left == nil_ptr_or_index) {
+        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->left ==
+                   nil_ptr_or_index) {
             while (ptr_stack.size() >= 2) {
                 auto top = ptr_stack.top();
                 ptr_stack.pop();
@@ -179,7 +180,7 @@ template<typename T, typename T2>
 std::vector<T2> find_interval(T2 root, T &left_node, T &right_node) {
     return find_interval(root, left_node, right_node,
                          static_cast<T2>(nullptr),
-                         [](T2 insert_node) { return *insert_node; });
+                         [](T2 insert_node) { return insert_node; });
 }
 
 template<typename T, typename T2, typename function>
@@ -211,9 +212,9 @@ std::vector<T2> find_interval(T2 root, T &left_node, T &right_node, T2 nil_ptr_o
     //         break;
     //     }
     // }
-    while (get_node(max_node).tree_predecessor(max_node) != nil_ptr_or_index) {
+    while (get_node(max_node)->tree_predecessor(max_node) != nil_ptr_or_index) {
         // 这里稍微有点死循环
-        auto temp = get_node(max_node).tree_predecessor(max_node);
+        auto temp = get_node(max_node)->tree_predecessor(max_node);
         result.push_back(temp);
         max_node = temp;
         if (temp == min_node) {
@@ -234,12 +235,12 @@ static ptr tree_maximum(ptr tree_node) {
     return return_node;
 }
 
-template<typename ptr>
-static ptr tree_minimum(ptr tree_node) {
-    ptr return_node = nullptr;
-    while (tree_node != nullptr) {
+template<typename ptr, typename function>
+static ptr tree_minimum(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
+    ptr return_node = nil_ptr_or_index;
+    while (tree_node != nil_ptr_or_index) {
         return_node = tree_node;
-        tree_node = tree_node->left;
+        tree_node = get_node(tree_node)->left;
     }
     return return_node;
 }
@@ -269,7 +270,7 @@ ptr find_miximum_leaf(ptr root) {
 template<typename ptr, typename function>
 static ptr tree_successor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
     if (get_node(tree_node)->right != nil_ptr_or_index) {
-        return tree_minimum(get_node(tree_node)->right);
+        return tree_minimum(get_node(tree_node)->right, nil_ptr_or_index, get_node);
     }
     ptr result_node = get_node(tree_node)->parent;
     while (result_node != nil_ptr_or_index && get_node(result_node)->right == tree_node) {
@@ -318,7 +319,7 @@ namespace BIN_tree {
     ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
         replace_sub_tree(sub_tree, new_left_sub_tree,
                          static_cast<ptr>(nullptr),
-                         [](ptr insert_node) { return *insert_node; });
+                         [](ptr insert_node) { return insert_node; });
     }
 
 
@@ -334,7 +335,7 @@ namespace BIN_tree {
     ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
         replace_sub_tree(sub_tree, new_right_sub_tree,
                          static_cast<ptr>(nullptr),
-                         [](ptr insert_node) { return *insert_node; });
+                         [](ptr insert_node) { return insert_node; });
     }
 
     template<typename ptr, typename function>
@@ -362,18 +363,25 @@ static ptr clean_current_to_father(ptr need_clean_sub_tree, ptr nil_ptr_or_index
     get_node(need_clean_sub_tree)->parent = nil_ptr_or_index;
 }
 
-template<typename ptr, typename function>
-static ptr clean_sub_tree_father(ptr need_clean_sub_tree, ptr nil_ptr_or_index, function get_node) {
-    clean_parent_to_current(need_clean_sub_tree);
-    clean_current_to_father(need_clean_sub_tree);
-    return need_clean_sub_tree;
-}
 
 namespace BIN_tree {
+    template<typename ptr, typename function>
+    static ptr clean_sub_tree_father(ptr need_clean_sub_tree, ptr nil_ptr_or_index, function get_node) {
+        auto temp_parent = get_node(need_clean_sub_tree)->parent;
+        if (temp_parent == nil_ptr_or_index) {
+        } else if (need_clean_sub_tree == get_node(temp_parent)->left) {
+            get_node(temp_parent)->left = nil_ptr_or_index;
+        } else if (need_clean_sub_tree == get_node(temp_parent)->right) {
+            get_node(temp_parent)->right = nil_ptr_or_index;
+        }
+        get_node(need_clean_sub_tree)->parent = nil_ptr_or_index;
+        return need_clean_sub_tree;
+    }
+
     template<typename ptr>
     static bool left_rotate(ptr node) {
         left_rotate(node, static_cast<ptr>(nullptr),
-                    [](ptr insert_node) { return *insert_node; });
+                    [](ptr insert_node) { return insert_node; });
     }
 
     //            A                              B
@@ -419,7 +427,7 @@ template<typename ptr>
 ptr find_root(ptr node) {
     return find_root(node,
                      static_cast<ptr>(nullptr),
-                     [](ptr insert_node) { return *insert_node; });
+                     [](ptr insert_node) { return insert_node; });
 }
 
 template<typename ptr, typename function>
@@ -469,7 +477,7 @@ namespace BIN_tree {
 template<typename RB_Tree_Node>
 RB_Tree_Node left_rotate_with_color(RB_Tree_Node node) {
     return left_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
-                                  [](RB_Tree_Node insert_node) { return *insert_node; });
+                                  [](RB_Tree_Node insert_node) { return insert_node; });
 }
 
 
@@ -491,7 +499,7 @@ RB_Tree_Node left_rotate_with_color(RB_Tree_Node node,
 template<typename RB_Tree_Node>
 RB_Tree_Node right_rotate_with_color(RB_Tree_Node node) {
     return right_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
-                                   [](RB_Tree_Node insert_node) { return *insert_node; });
+                                   [](RB_Tree_Node insert_node) { return insert_node; });
 }
 
 template<typename RB_Tree_Node, typename function>
@@ -507,59 +515,64 @@ RB_Tree_Node *right_rotate_with_color(RB_Tree_Node *node,
     right_rotate(node, nil_ptr_or_index, get_node);
 }
 
-/**
- * 只是将删除的节点从书中移除
- * @tparam v_index
- * @tparam function
- * @param root
- * @param delete_node
- * @param nil_ptr_or_index
- * @param get_node
- * @return 也是返回根指针
- */
-template<typename v_index, typename function>
-v_index delete_node_from_binary_search_tree(v_index root, v_index delete_node,
-                                            v_index nil_ptr_or_index,
-                                            function get_node) {
-    if (delete_node == root && get_node(delete_node)->left == nil_ptr_or_index && get_node(delete_node).
-        right == nil_ptr_or_index) {
-        return nil_ptr_or_index;
-    } else if (delete_node == root && get_node(delete_node)->left != nil_ptr_or_index &&
-               get_node(delete_node)->right == nil_ptr_or_index) {
-        return get_node(delete_node)->left;
-    } else if (delete_node == root && get_node(delete_node)->left == nil_ptr_or_index &&
-               get_node(delete_node)->right != nil_ptr_or_index) {
-        return get_node(delete_node)->right;
-    }
-    if (get_node(delete_node)->right == nil_ptr_or_index && get_node(delete_node)->left == nil_ptr_or_index) {
-        // 如果被删除的是叶子结点，那么就清除父结点的索引
-        clean_sub_tree_father(delete_node, nil_ptr_or_index, get_node);
-    } else if (get_node(delete_node)->right == nil_ptr_or_index && get_node(delete_node)->left != nil_ptr_or_index) {
-        // 右子树为空
-        replace_sub_tree(delete_node, get_node(delete_node)->left, get_node);
-    } else if (get_node(delete_node)->right != nil_ptr_or_index && get_node(delete_node)->left == nil_ptr_or_index) {
-        // 左子树为空
-        replace_sub_tree(delete_node, get_node(delete_node)->right, get_node);
-    } else if (get_node(delete_node)->right != nil_ptr_or_index && get_node(delete_node)->left != nil_ptr_or_index) {
-        // 寻找后继
-        auto successor = tree_successor(delete_node,
-                                        get_node);
-        // 这行还是有问题的，还是编译不过，
-        if (successor->left == nil_ptr_or_index && successor->right == nil_ptr_or_index) {
-            clean_sub_tree_father(successor, get_node);
-        } else if (successor->left == nil_ptr_or_index && successor->right != nil_ptr_or_index) {
-            replace_sub_tree(successor, successor->right, get_node);
+namespace BIN_tree {
+    /**
+     * 只是将删除的节点从书中移除
+     * @tparam v_index
+     * @tparam function
+     * @param root
+     * @param delete_node
+     * @param nil_ptr_or_index
+     * @param get_node
+     * @return 也是返回根指针
+     */
+    template<typename v_index, typename function>
+    v_index delete_node_from_binary_search_tree(v_index root, v_index delete_node,
+                                                v_index nil_ptr_or_index,
+                                                function get_node) {
+        if (delete_node == root &&
+            get_node(delete_node)->left == nil_ptr_or_index &&
+            get_node(delete_node)->right == nil_ptr_or_index) {
+            return nil_ptr_or_index;
+        } else if (delete_node == root && get_node(delete_node)->left != nil_ptr_or_index &&
+                   get_node(delete_node)->right == nil_ptr_or_index) {
+            return get_node(delete_node)->left;
+        } else if (delete_node == root && get_node(delete_node)->left == nil_ptr_or_index &&
+                   get_node(delete_node)->right != nil_ptr_or_index) {
+            return get_node(delete_node)->right;
         }
-        replace_sub_tree(delete_node, successor, get_node);
+        if (get_node(delete_node)->right == nil_ptr_or_index && get_node(delete_node)->left == nil_ptr_or_index) {
+            // 如果被删除的是叶子结点，那么就清除父结点的索引
+            clean_sub_tree_father(delete_node, nil_ptr_or_index, get_node);
+        } else if (get_node(delete_node)->right == nil_ptr_or_index && get_node(delete_node)->left !=
+                   nil_ptr_or_index) {
+            // 右子树为空
+            replace_sub_tree(delete_node, get_node(delete_node)->left, nil_ptr_or_index, get_node);
+        } else if (get_node(delete_node)->right != nil_ptr_or_index && get_node(delete_node)->left ==
+                   nil_ptr_or_index) {
+            // 左子树为空
+            replace_sub_tree(delete_node, get_node(delete_node)->right, nil_ptr_or_index, get_node);
+        } else if (get_node(delete_node)->right != nil_ptr_or_index && get_node(delete_node)->left !=
+                   nil_ptr_or_index) {
+            // 寻找后继
+            auto successor = tree_successor(delete_node,
+                                            nil_ptr_or_index, get_node);
+            // 这行还是有问题的，还是编译不过，
+            if (get_node(successor)->left == nil_ptr_or_index && get_node(successor)->right == nil_ptr_or_index) {
+                clean_sub_tree_father(successor, nil_ptr_or_index, get_node);
+            } else if (get_node(successor)->left == nil_ptr_or_index && get_node(successor)->right !=
+                       nil_ptr_or_index) {
+                replace_sub_tree(successor, get_node(successor)->right, nil_ptr_or_index, get_node);
+            }
+            replace_sub_tree(delete_node, successor, nil_ptr_or_index, get_node);
 
-        if (get_node(delete_node)->parent == nil_ptr_or_index) {
-            root = successor;
+            if (get_node(delete_node)->parent == nil_ptr_or_index) {
+                root = successor;
+            }
+            replace_sub_tree_left(successor, get_node(delete_node)->left, nil_ptr_or_index, get_node);
+            replace_sub_tree_right(successor, get_node(delete_node)->right, nil_ptr_or_index, get_node);
         }
-        replace_sub_tree_left(successor, get_node(delete_node)->left, get_node);
-        replace_sub_tree_right(successor, get_node(delete_node)->right, get_node);
+        return root;
     }
-    return root;
 }
-
-
 #endif //TREE_FUNCTION_H

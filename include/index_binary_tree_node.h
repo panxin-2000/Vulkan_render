@@ -149,17 +149,18 @@ public:
 
         auto temp = BIN_tree::add_new_node(get_root_index(), new_node_v_index,
                                            get_nil_index(),
-                                           std::bind(&index_binary_Tree_Node::get_node_ptr, this, std::placeholders::_1));
+                                           std::bind(&index_binary_Tree_Node::get_node_ptr, this,
+                                                     std::placeholders::_1));
         roots.push_back(temp);
         return new_node_v_index;
     }
 
 
-    v_index index_delete_node_from_binary_search_tree(v_index delete_node) {
-        return delete_node_from_binary_search_tree(get_root_index(), delete_node,
-                                                   get_nil_index(),
-                                                   std::bind(&index_binary_Tree_Node::get_node_ptr, this,
-                                                             std::placeholders::_1));
+    v_index delete_node_from_binary_search_tree(v_index delete_node) {
+        return BIN_tree::delete_node_from_binary_search_tree(get_root_index(), delete_node,
+                                                             get_nil_index(),
+                                                             std::bind(&index_binary_Tree_Node::get_node_ptr, this,
+                                                                       std::placeholders::_1));
     }
 };
 

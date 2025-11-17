@@ -19,7 +19,9 @@ public:
 
     static ptr tree_successor(ptr tree_node) {
         if (tree_node->right != nullptr) {
-            return tree_minimum(tree_node->right);
+            return tree_minimum(tree_node->right,
+                                static_cast<ptr>(nullptr),
+                                [](ptr insert_node) { return insert_node; });
         }
         ptr result_node = tree_node->parent;
         while (result_node != nullptr && result_node->right == tree_node) {

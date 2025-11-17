@@ -260,7 +260,10 @@ TEST(test_tree, test_tree_delete_index) {
     auto inorder_walk = init_null_vector(root);
     preorder_tree_walk(root, inorder_walk);
 
+
     test_two_vector_value_eq_data(*value_ptr, *inorder_walk);
+
+    tree.delete_node_from_binary_search_tree(tree.get_root_index());
 }
 
 
@@ -364,7 +367,7 @@ TEST(test_tree, RB_Tree_Node_insert) {
     // RB_tree_test_delete_node(vt, 12);
 
     for (auto v3: vt) {
-    RB_tree_test_delete_node(vt, v3);
+        RB_tree_test_delete_node(vt, v3);
     }
     // 上面的内容是为了测试，全部的点，每个都删除一次，看看有什么问题没有
 
