@@ -353,7 +353,7 @@ static bool left_rotate(ptr node, ptr nil_ptr_or_index, function get_node) {
         auto A_node = node;
         auto B_node = get_node(node).right;
         replace_sub_tree(A_node, B_node);
-        replace_sub_tree_right(A_node, B_get_node(node).left);
+        replace_sub_tree_right(A_node, get_node(node).left);
         replace_sub_tree_left(B_node, A_node);
     }
 }
@@ -427,6 +427,48 @@ namespace BIN_tree {
         }
         return root;
     }
+}
+
+
+template<typename RB_Tree_Node>
+RB_Tree_Node left_rotate_with_color(RB_Tree_Node node) {
+    return left_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
+                                  [](RB_Tree_Node insert_node) { return *insert_node; });
+}
+
+
+template<typename RB_Tree_Node, typename function>
+RB_Tree_Node left_rotate_with_color(RB_Tree_Node node,
+                                    RB_Tree_Node nil_ptr_or_index,
+                                    function get_node) {
+    if (node != nil_ptr_or_index && get_node(node).right == nil_ptr_or_index) {
+        return nil_ptr_or_index;
+    }
+
+    auto temp = get_node(node).right;
+    auto temp_color = get_node(temp).color;
+    get_node(temp).color = get_node(node).color;
+    get_node(node).color = temp_color;
+    left_rotate(node, nil_ptr_or_index, get_node);
+}
+
+template<typename RB_Tree_Node>
+RB_Tree_Node right_rotate_with_color(RB_Tree_Node node) {
+    return right_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
+                                   [](RB_Tree_Node insert_node) { return *insert_node; });
+}
+
+template<typename RB_Tree_Node, typename function>
+RB_Tree_Node *right_rotate_with_color(RB_Tree_Node *node,
+                                      RB_Tree_Node nil_ptr_or_index,
+                                      function get_node) {
+    if (node != nil_ptr_or_index && get_node(node).left == nil_ptr_or_index) {
+        return nil_ptr_or_index;
+    }
+    auto temp_color = get_node(get_node(node).left).color;
+    get_node(get_node(node).left).color = get_node(node).color;
+    get_node(node).color = temp_color;
+    right_rotate(node, nil_ptr_or_index, get_node);
 }
 
 /**
