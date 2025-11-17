@@ -242,7 +242,7 @@ TEST(test_tree, test_tree_delete_root_2) {
 template<typename T>
 T init_tree(T tree, std::vector<int> vs) {
     for (auto v: vs) {
-        tree.add_new_node(v);
+        tree.index_add_new_node(v);
     }
     return tree;
 }

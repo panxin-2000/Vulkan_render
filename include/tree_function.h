@@ -398,5 +398,88 @@ ptr find_root(ptr node, ptr nil_ptr_or_index, function get_node) {
     }
 }
 
+/**
+ *
+ * @tparam v_index
+ * @tparam function
+ * @param root
+ * @param new_node_v_index
+ * @param nil_ptr_or_index
+ * @param get_node
+ * @return 返回根指针
+ */
+template<typename v_index, typename function>
+v_index add_new_node(v_index root, v_index new_node_v_index,
+                     v_index nil_ptr_or_index,
+                     function get_node) {
+    auto insert_v_index_value =
+            find_insert_position(root,
+                                 new_node_v_index,
+                                 nil_ptr_or_index,
+                                 get_node);
+    if (insert_v_index_value == nil_ptr_or_index) {
+        return new_node_v_index;
+    } else if (get_node(insert_v_index_value).data < get_node(new_node_v_index).data) {
+        get_node(insert_v_index_value).right = new_node_v_index;
+    } else {
+        get_node(insert_v_index_value).left = new_node_v_index;
+    }
+    return root;
+}
+
+/**
+ * 只是将删除的节点从书中移除
+ * @tparam v_index
+ * @tparam function
+ * @param root
+ * @param delete_node
+ * @param nil_ptr_or_index
+ * @param get_node
+ * @return 也是返回根指针
+ */
+template<typename v_index, typename function>
+v_index delete_node_from_binary_search_tree(v_index root, v_index delete_node,
+                                            v_index nil_ptr_or_index,
+                                            function get_node) {
+    if (delete_node == root && get_node(delete_node).left == nil_ptr_or_index && get_node(delete_node).
+        right == nil_ptr_or_index) {
+        return nil_ptr_or_index;
+    } else if (delete_node == root && get_node(delete_node).left != nil_ptr_or_index &&
+               get_node(delete_node).right == nil_ptr_or_index) {
+        return get_node(delete_node).left;
+    } else if (delete_node == root && get_node(delete_node).left == nil_ptr_or_index &&
+               get_node(delete_node).right != nil_ptr_or_index) {
+        return get_node(delete_node).right;
+    }
+    if (get_node(delete_node).right == nil_ptr_or_index && get_node(delete_node).left == nil_ptr_or_index) {
+        // 如果被删除的是叶子结点，那么就清除父结点的索引
+        clean_sub_tree_father(delete_node, nil_ptr_or_index, get_node);
+    } else if (get_node(delete_node).right == nil_ptr_or_index && get_node(delete_node).left != nil_ptr_or_index) {
+        // 右子树为空
+        replace_sub_tree(delete_node, get_node(delete_node).left, get_node);
+    } else if (get_node(delete_node).right != nil_ptr_or_index && get_node(delete_node).left == nil_ptr_or_index) {
+        // 左子树为空
+        replace_sub_tree(delete_node, get_node(delete_node).right, get_node);
+    } else if (get_node(delete_node).right != nil_ptr_or_index && get_node(delete_node).left != nil_ptr_or_index) {
+        // 寻找后继
+        auto successor = tree_successor(delete_node,
+                                        get_node);
+        // 这行还是有问题的，还是编译不过，
+        if (successor->left == nil_ptr_or_index && successor->right == nil_ptr_or_index) {
+            clean_sub_tree_father(successor, get_node);
+        } else if (successor->left == nil_ptr_or_index && successor->right != nil_ptr_or_index) {
+            replace_sub_tree(successor, successor->right, get_node);
+        }
+        replace_sub_tree(delete_node, successor, get_node);
+
+        if (get_node(delete_node).parent == nil_ptr_or_index) {
+            root = successor;
+        }
+        replace_sub_tree_left(successor, get_node(delete_node).left, get_node);
+        replace_sub_tree_right(successor, get_node(delete_node).right, get_node);
+    }
+    return root;
+}
+
 
 #endif //TREE_FUNCTION_H

@@ -132,12 +132,12 @@ public:
     }
 
     v_index tree_insert_value(v_index root, T data) {
-        this->add_new_node(data);
+        this->index_add_new_node(data);
         return root;
     }
 
 
-    v_index add_new_node(T input_data) {
+    v_index index_add_new_node(T input_data) {
         if (roots.empty() == true && details.empty() == true) {
             init_root(input_data);
         }
@@ -147,74 +147,19 @@ public:
         new_node_v_index.number = details.size();
         details.push_back(new_node);
 
-        auto insert_v_index_value =
-                find_insert_position(get_root_index(),
-                                     new_node_v_index,
-                                     get_nil_index(),
-                                     std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-
-        if (insert_v_index_value == get_nil_index()) {
-            roots.push_back(new_node_v_index);
-            return new_node_v_index;
-        } else if (get_node(insert_v_index_value).data < new_node.data) {
-            get_node(insert_v_index_value).right = new_node_v_index;
-        } else {
-            get_node(insert_v_index_value).left = new_node_v_index;
-        }
+        auto temp = add_new_node(get_root_index(), new_node_v_index,
+                                 get_nil_index(),
+                                 std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
+        roots.push_back(temp);
         return new_node_v_index;
     }
 
 
-    v_index delete_node_from_binary_search_tree(v_index delete_node) {
-        auto root = get_root_index();
-        if (delete_node == get_root_index() && get_node(delete_node).left == get_nil_index() && get_node(delete_node).
-            right == get_nil_index()) {
-            return get_nil_index();
-        } else if (delete_node == root && get_node(delete_node).left != get_nil_index() && get_node(delete_node).right
-                   ==
-                   get_nil_index()) {
-            return get_node(delete_node).left;
-        } else if (delete_node == root && get_node(delete_node).left == get_nil_index() && get_node(delete_node).right
-                   !=
-                   get_nil_index()) {
-            return get_node(delete_node).right;
-        }
-        if (get_node(delete_node).right == get_nil_index() && get_node(delete_node).left == get_nil_index()) {
-            // 如果被删除的是叶子结点，那么就清除父结点的索引
-            clean_sub_tree_father(delete_node, get_nil_index(),
-                                  std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-        } else if (get_node(delete_node).right == get_nil_index() && get_node(delete_node).left != get_nil_index()) {
-            // 右子树为空
-            replace_sub_tree(delete_node, get_node(delete_node).left,
-                             std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-        } else if (get_node(delete_node).right != get_nil_index() && get_node(delete_node).left == get_nil_index()) {
-            // 左子树为空
-            replace_sub_tree(delete_node, get_node(delete_node).right,
-                             std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-        } else if (get_node(delete_node).right != get_nil_index() && get_node(delete_node).left != get_nil_index()) {
-            // 寻找后继
-            auto successor = tree_successor(delete_node,
-                                            std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-            // 这行还是有问题的，还是编译不过，
-            if (successor->left == get_nil_index() && successor->right == get_nil_index()) {
-                clean_sub_tree_father(successor,
-                                      std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-            } else if (successor->left == get_nil_index() && successor->right != get_nil_index()) {
-                replace_sub_tree(successor, successor->right,
-                                 std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-            }
-            replace_sub_tree(delete_node, successor,
-                             std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-
-            if (get_node(delete_node).parent == get_nil_index()) {
-                root = successor;
-            }
-            replace_sub_tree_left(successor, get_node(delete_node).left,
-                                  std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-            replace_sub_tree_right(successor, get_node(delete_node).right,
-                                   std::bind(&index_binary_Tree_Node::get_node, this, std::placeholders::_1));
-        }
-        return root;
+    v_index index_delete_node_from_binary_search_tree(v_index delete_node) {
+        return delete_node_from_binary_search_tree(get_root_index(), delete_node,
+                                                   get_nil_index(),
+                                                   std::bind(&index_binary_Tree_Node::get_node, this,
+                                                             std::placeholders::_1));
     }
 };
 
