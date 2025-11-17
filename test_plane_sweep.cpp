@@ -193,7 +193,7 @@ TEST(test_edge, test_create_edge) {
         } else {
             auto delate_node = tree_find_value(
                 root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
-            root = root->delete_node_from_binary_search_tree(root, *delate_node);
+            root = root->delete_node_from_binary_search_tree(root, delate_node);
         }
         event_points.pop();
         // if (event_points.top().incident_half_edge % 2 == 1) {

@@ -190,7 +190,7 @@ TEST(test_tree, binary_Tree_Node_history) {
     // 这里是上面测试插入部分的代码，应该怎么做呢？
     // 有没有办法不复制一遍呢？
 
-    root = root->delete_node_from_binary_search_tree(root, *root->right->right);
+    root = root->delete_node_from_binary_search_tree(root, root->right->right);
     EXPECT_EQ(root->right->right, nullptr);
 }
 
@@ -203,7 +203,7 @@ TEST(test_tree, binary_Tree_Node_history) {
 // 2   4
 TEST(test_tree, test_tree_delete_root) {
     auto root = init_tree();
-    root = root->delete_node_from_binary_search_tree(root, *root);
+    root = root->delete_node_from_binary_search_tree(root, root);
     EXPECT_EQ(root->data, 7);
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 8);
@@ -228,7 +228,7 @@ TEST(test_tree, test_tree_delete_root_2) {
     root = root->tree_insert_value(root, 11);
     root = root->tree_insert_value(root, 9);
 
-    root = root->delete_node_from_binary_search_tree(root, *root->right);
+    root = root->delete_node_from_binary_search_tree(root, root->right);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 9);
@@ -291,7 +291,7 @@ TEST(test_tree, test_tree_delete_root_3) {
     EXPECT_EQ(root->right->data, 7);
 
 
-    root = root->delete_node_from_binary_search_tree(root, *root->right);
+    root = root->delete_node_from_binary_search_tree(root, root->right);
     EXPECT_EQ(root->data, 5);
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 9);
