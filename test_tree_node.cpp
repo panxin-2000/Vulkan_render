@@ -102,27 +102,30 @@ TEST(test_tree, inorder_tree_walk) {
     auto root = init_tree();
     auto inorder_walk = init_null_vector(root);
     inorder_tree_walk(root, inorder_walk);
+    auto temp = inorder_tree_walk_with_stack(root, init_null_vector(root));
 
     test_two_vector_value_eq(*inorder_walk,
-                             *inorder_tree_walk_with_stack(root, init_null_vector(root)));
+                             *temp);
 }
 
 TEST(test_tree, postorder_tree_walk_with_stack) {
     auto root = init_tree();
     auto inorder_walk = init_null_vector(root);
     postorder_tree_walk(root, inorder_walk);
+    auto temp = postorder_tree_walk_with_stack(root, init_null_vector(root));
 
     test_two_vector_value_eq(*inorder_walk,
-                             *postorder_tree_walk_with_stack(root, init_null_vector(root)));
+                             *temp);
 }
 
 TEST(test_tree, preorder_tree_walk_with_stack) {
     auto root = init_tree();
     auto inorder_walk = init_null_vector(root);
     preorder_tree_walk(root, inorder_walk);
+    auto preorder_walk = preorder_tree_walk_with_stack(root, init_null_vector(root));
 
     test_two_vector_value_eq(*inorder_walk,
-                             *preorder_tree_walk_with_stack(root, init_null_vector(root)));
+                             *preorder_walk);
 }
 
 //       5

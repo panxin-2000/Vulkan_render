@@ -103,11 +103,12 @@ public:
 
     std::vector<v_index> *preorder_tree_walk_index() {
         auto result = new std::vector<v_index>();
-        auto last_result = preorder_tree_walk_with_stack(get_root_index(),
-                                                         result,
-                                                         get_nil_index(),
-                                                         std::bind(&index_binary_Tree_Node::get_node, this,
-                                                                   std::placeholders::_1));
+        auto last_result = tree_walk_with_stack(get_root_index(),
+                                                result,
+                                                get_nil_index(),
+                                                std::bind(&index_binary_Tree_Node::get_node, this,
+                                                          std::placeholders::_1),
+                                                tree_walk_type::preorder_type);
         return last_result;
     }
 
