@@ -67,14 +67,22 @@ public:
         return sub_tree;
     }
 
-    static ptr clean_sub_tree_father(ptr need_clean_sub_tree) {
+    static ptr clean_parent_to_current(ptr need_clean_sub_tree) {
         if (need_clean_sub_tree->parent == nullptr) {
         } else if (need_clean_sub_tree == need_clean_sub_tree->parent->left) {
             need_clean_sub_tree->parent->left = nullptr;
         } else if (need_clean_sub_tree == need_clean_sub_tree->parent->right) {
             need_clean_sub_tree->parent->right = nullptr;
         }
+    }
+
+    static ptr clean_current_to_father(ptr need_clean_sub_tree) {
         need_clean_sub_tree->parent = nullptr;
+    }
+
+    static ptr clean_sub_tree_father(ptr need_clean_sub_tree) {
+        clean_parent_to_current(need_clean_sub_tree);
+        clean_current_to_father(need_clean_sub_tree);
         return need_clean_sub_tree;
     }
 
@@ -115,8 +123,6 @@ public:
             return node;
         }
     }
-
-
 };
 
 #endif //TREE_NODE_H
