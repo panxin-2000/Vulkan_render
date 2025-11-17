@@ -271,10 +271,10 @@ static ptr tree_successor(ptr tree_node, ptr nil_ptr_or_index, function get_node
     if (get_node(tree_node)->right != nil_ptr_or_index) {
         return tree_minimum(get_node(tree_node)->right);
     }
-    ptr result_node = get_node(tree_node).parent;
+    ptr result_node = get_node(tree_node)->parent;
     while (result_node != nil_ptr_or_index && get_node(result_node)->right == tree_node) {
         tree_node = result_node;
-        result_node = get_node(result_node).parent;
+        result_node = get_node(result_node)->parent;
     }
     return result_node;
 }
@@ -284,71 +284,71 @@ ptr tree_predecessor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
     if (get_node(tree_node)->left != nil_ptr_or_index) {
         return tree_maximum(get_node(tree_node)->left);
     }
-    ptr result_node = get_node(tree_node).parent;
+    ptr result_node = get_node(tree_node)->parent;
     while (result_node != nil_ptr_or_index && get_node(result_node)->left == tree_node) {
         tree_node = result_node;
-        result_node = get_node(result_node).parent;
+        result_node = get_node(result_node)->parent;
     }
     return result_node;
 }
 
-// namespace BIN_tree {
-//     template<typename ptr>
-//     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
-//         return replace_sub_tree(dst_sub_tree_position, src_sub_tree,
-//                                 static_cast<ptr>(nullptr),
-//                                 [](ptr insert_node) -> decltype(auto) { return insert_node; });
-//     }
-//
-//     template<typename ptr, typename function>
-//     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree, ptr nil_ptr_or_index, function get_node) {
-//         get_node(src_sub_tree).parent = get_node(dst_sub_tree_position).parent;
-//
-//         auto src_sub_tree_parent = get_node(src_sub_tree).parent;
-//         if (src_sub_tree_parent == nil_ptr_or_index) {
-//         } else if (dst_sub_tree_position == get_node(src_sub_tree_parent)->left) {
-//             get_node(src_sub_tree_parent)->left = src_sub_tree;
-//         } else if (dst_sub_tree_position == get_node(src_sub_tree_parent)->right) {
-//             get_node(src_sub_tree_parent)->right = src_sub_tree;
-//         }
-//         return src_sub_tree;
-//     }
-//
-//     template<typename ptr>
-//     ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
-//         replace_sub_tree(sub_tree, new_left_sub_tree,
-//                          static_cast<ptr>(nullptr),
-//                          [](ptr insert_node) { return *insert_node; });
-//     }
-//
-//
-//     template<typename ptr, typename function>
-//     ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree, ptr nil_ptr_or_index, function get_node) {
-//         get_node(sub_tree)->left = new_left_sub_tree;
-//         if (new_left_sub_tree != nil_ptr_or_index)
-//             get_node(new_left_sub_tree).parent = sub_tree;
-//         return sub_tree;
-//     }
-//
-//     template<typename ptr>
-//     ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
-//         replace_sub_tree(sub_tree, new_right_sub_tree,
-//                          static_cast<ptr>(nullptr),
-//                          [](ptr insert_node) { return *insert_node; });
-//     }
-//
-//     template<typename ptr, typename function>
-//     ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree, ptr nil_ptr_or_index, function get_node) {
-//         get_node(sub_tree)->right = new_right_sub_tree;
-//         if (new_right_sub_tree != nil_ptr_or_index)
-//             get_node(new_right_sub_tree).parent = sub_tree;
-//         return sub_tree;
-//     }
-// }
+namespace BIN_tree {
+    template<typename ptr>
+    static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
+        return replace_sub_tree(dst_sub_tree_position, src_sub_tree,
+                                static_cast<ptr>(nullptr),
+                                [](ptr insert_node) { return insert_node; });
+    }
+
+    template<typename ptr, typename function>
+    static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree, ptr nil_ptr_or_index, function get_node) {
+        get_node(src_sub_tree)->parent = get_node(dst_sub_tree_position)->parent;
+
+        auto src_sub_tree_parent = get_node(src_sub_tree)->parent;
+        if (src_sub_tree_parent == nil_ptr_or_index) {
+        } else if (dst_sub_tree_position == get_node(src_sub_tree_parent)->left) {
+            get_node(src_sub_tree_parent)->left = src_sub_tree;
+        } else if (dst_sub_tree_position == get_node(src_sub_tree_parent)->right) {
+            get_node(src_sub_tree_parent)->right = src_sub_tree;
+        }
+        return src_sub_tree;
+    }
+
+    template<typename ptr>
+    ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
+        replace_sub_tree(sub_tree, new_left_sub_tree,
+                         static_cast<ptr>(nullptr),
+                         [](ptr insert_node) { return *insert_node; });
+    }
+
+
+    template<typename ptr, typename function>
+    ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree, ptr nil_ptr_or_index, function get_node) {
+        get_node(sub_tree)->left = new_left_sub_tree;
+        if (new_left_sub_tree != nil_ptr_or_index)
+            get_node(new_left_sub_tree)->parent = sub_tree;
+        return sub_tree;
+    }
+
+    template<typename ptr>
+    ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
+        replace_sub_tree(sub_tree, new_right_sub_tree,
+                         static_cast<ptr>(nullptr),
+                         [](ptr insert_node) { return *insert_node; });
+    }
+
+    template<typename ptr, typename function>
+    ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree, ptr nil_ptr_or_index, function get_node) {
+        get_node(sub_tree)->right = new_right_sub_tree;
+        if (new_right_sub_tree != nil_ptr_or_index)
+            get_node(new_right_sub_tree)->parent = sub_tree;
+        return sub_tree;
+    }
+}
 
 template<typename ptr, typename function>
 static ptr clean_parent_to_current(ptr need_clean_sub_tree, ptr nil_ptr_or_index, function get_node) {
-    auto temp_parent = get_node(need_clean_sub_tree).parent;
+    auto temp_parent = get_node(need_clean_sub_tree)->parent;
     if (temp_parent == nil_ptr_or_index) {
     } else if (need_clean_sub_tree == get_node(temp_parent)->left) {
         get_node(temp_parent)->left = nil_ptr_or_index;
@@ -359,7 +359,7 @@ static ptr clean_parent_to_current(ptr need_clean_sub_tree, ptr nil_ptr_or_index
 
 template<typename ptr, typename function>
 static ptr clean_current_to_father(ptr need_clean_sub_tree, ptr nil_ptr_or_index, function get_node) {
-    get_node(need_clean_sub_tree).parent = nil_ptr_or_index;
+    get_node(need_clean_sub_tree)->parent = nil_ptr_or_index;
 }
 
 template<typename ptr, typename function>
@@ -427,8 +427,8 @@ ptr find_root(ptr node, ptr nil_ptr_or_index, function get_node) {
     if (node == nil_ptr_or_index) {
         return nil_ptr_or_index;
     } else {
-        while (get_node(node).parent != nil_ptr_or_index) {
-            return find_root(get_node(node).parent);
+        while (get_node(node)->parent != nil_ptr_or_index) {
+            return find_root(get_node(node)->parent);
         }
         return node;
     }
@@ -552,7 +552,7 @@ v_index delete_node_from_binary_search_tree(v_index root, v_index delete_node,
         }
         replace_sub_tree(delete_node, successor, get_node);
 
-        if (get_node(delete_node).parent == nil_ptr_or_index) {
+        if (get_node(delete_node)->parent == nil_ptr_or_index) {
             root = successor;
         }
         replace_sub_tree_left(successor, get_node(delete_node)->left, get_node);
