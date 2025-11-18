@@ -266,34 +266,33 @@ ptr find_miximum_leaf(ptr root) {
     }
 }
 
-
-template<typename ptr, typename function>
-static ptr tree_successor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
-    if (get_node(tree_node)->right != nil_ptr_or_index) {
-        return tree_minimum(get_node(tree_node)->right, nil_ptr_or_index, get_node);
-    }
-    ptr result_node = get_node(tree_node)->parent;
-    while (result_node != nil_ptr_or_index && get_node(result_node)->right == tree_node) {
-        tree_node = result_node;
-        result_node = get_node(result_node)->parent;
-    }
-    return result_node;
-}
-
-template<typename ptr, typename function>
-ptr tree_predecessor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
-    if (get_node(tree_node)->left != nil_ptr_or_index) {
-        return tree_maximum(get_node(tree_node)->left);
-    }
-    ptr result_node = get_node(tree_node)->parent;
-    while (result_node != nil_ptr_or_index && get_node(result_node)->left == tree_node) {
-        tree_node = result_node;
-        result_node = get_node(result_node)->parent;
-    }
-    return result_node;
-}
-
 namespace BIN_tree {
+    template<typename ptr, typename function>
+    static ptr tree_successor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
+        if (get_node(tree_node)->right != nil_ptr_or_index) {
+            return tree_minimum(get_node(tree_node)->right, nil_ptr_or_index, get_node);
+        }
+        ptr result_node = get_node(tree_node)->parent;
+        while (result_node != nil_ptr_or_index && get_node(result_node)->right == tree_node) {
+            tree_node = result_node;
+            result_node = get_node(result_node)->parent;
+        }
+        return result_node;
+    }
+
+    template<typename ptr, typename function>
+    ptr tree_predecessor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
+        if (get_node(tree_node)->left != nil_ptr_or_index) {
+            return tree_maximum(get_node(tree_node)->left);
+        }
+        ptr result_node = get_node(tree_node)->parent;
+        while (result_node != nil_ptr_or_index && get_node(result_node)->left == tree_node) {
+            tree_node = result_node;
+            result_node = get_node(result_node)->parent;
+        }
+        return result_node;
+    }
+
     template<typename ptr>
     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
         return replace_sub_tree(dst_sub_tree_position, src_sub_tree,
@@ -317,9 +316,9 @@ namespace BIN_tree {
 
     template<typename ptr>
     ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
-        replace_sub_tree(sub_tree, new_left_sub_tree,
-                         static_cast<ptr>(nullptr),
-                         [](ptr insert_node) { return insert_node; });
+        replace_sub_tree_left(sub_tree, new_left_sub_tree,
+                              static_cast<ptr>(nullptr),
+                              [](ptr insert_node) { return insert_node; });
     }
 
 
@@ -333,9 +332,9 @@ namespace BIN_tree {
 
     template<typename ptr>
     ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
-        replace_sub_tree(sub_tree, new_right_sub_tree,
-                         static_cast<ptr>(nullptr),
-                         [](ptr insert_node) { return insert_node; });
+        replace_sub_tree_right(sub_tree, new_right_sub_tree,
+                               static_cast<ptr>(nullptr),
+                               [](ptr insert_node) { return insert_node; });
     }
 
     template<typename ptr, typename function>
@@ -401,24 +400,24 @@ namespace BIN_tree {
             replace_sub_tree_left(B_node, A_node);
         }
     }
-}
 
-//            A                 B
-//         B     E           C     A
-//      C    D                   D   E
-//
-// 原本B是A的左子树，现在变成A是B的右子树
+    //            A                 B
+    //         B     E           C     A
+    //      C    D                   D   E
+    //
+    // 原本B是A的左子树，现在变成A是B的右子树
 
-template<typename ptr, typename function>
-bool right_rotate(ptr node, ptr nil_ptr_or_index, function get_node) {
-    if (node != nil_ptr_or_index && get_node(node)->left == nil_ptr_or_index) {
-        return false;
-    } else {
-        auto A_node = node;
-        auto B_node = get_node(node)->left;
-        replace_sub_tree(A_node, B_node);
-        replace_sub_tree_left(A_node, B_get_node(node)->right);
-        replace_sub_tree_right(B_node, A_node);
+    template<typename ptr, typename function>
+    bool right_rotate(ptr node, ptr nil_ptr_or_index, function get_node) {
+        if (node != nil_ptr_or_index && get_node(node)->left == nil_ptr_or_index) {
+            return false;
+        } else {
+            auto A_node = node;
+            auto B_node = get_node(node)->left;
+            replace_sub_tree(A_node, B_node);
+            replace_sub_tree_left(A_node, get_node(B_node)->right);
+            replace_sub_tree_right(B_node, A_node);
+        }
     }
 }
 

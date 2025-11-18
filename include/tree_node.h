@@ -18,57 +18,29 @@ public:
     ptr right;
 
     static ptr tree_successor(ptr tree_node) {
-        if (tree_node->right != nullptr) {
-            return tree_minimum(tree_node->right,
-                                static_cast<ptr>(nullptr),
-                                [](ptr insert_node) { return insert_node; });
-        }
-        ptr result_node = tree_node->parent;
-        while (result_node != nullptr && result_node->right == tree_node) {
-            tree_node = result_node;
-            result_node = result_node->parent;
-        }
-        return result_node;
+        return BIN_tree::tree_successor(tree_node,
+                                        static_cast<ptr>(nullptr),
+                                        [](ptr insert_node) { return insert_node; });
     }
 
 
     ptr tree_predecessor(ptr tree_node) {
-        if (tree_node->left != nullptr) {
-            return tree_maximum(tree_node->left);
-        }
-        ptr result_node = tree_node->parent;
-        while (result_node != nullptr && result_node->left == tree_node) {
-            tree_node = result_node;
-            result_node = result_node->parent;
-        }
-        return result_node;
+        return BIN_tree::tree_predecessor(tree_node,
+                                        static_cast<ptr>(nullptr),
+                                        [](ptr insert_node) { return insert_node; });
     }
 
 
     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
-        src_sub_tree->parent = dst_sub_tree_position->parent;
-
-        if (src_sub_tree->parent == nullptr) {
-        } else if (dst_sub_tree_position == src_sub_tree->parent->left) {
-            src_sub_tree->parent->left = src_sub_tree;
-        } else if (dst_sub_tree_position == src_sub_tree->parent->right) {
-            src_sub_tree->parent->right = src_sub_tree;
-        }
-        return src_sub_tree;
+        return BIN_tree::replace_sub_tree(dst_sub_tree_position, src_sub_tree);
     }
 
     static ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
-        sub_tree->left = new_left_sub_tree;
-        if (new_left_sub_tree != nullptr)
-            new_left_sub_tree->parent = sub_tree;
-        return sub_tree;
+        return BIN_tree::replace_sub_tree_left(sub_tree, new_left_sub_tree);
     }
 
     static ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
-        sub_tree->right = new_right_sub_tree;
-        if (new_right_sub_tree != nullptr)
-            new_right_sub_tree->parent = sub_tree;
-        return sub_tree;
+        return BIN_tree::replace_sub_tree_right(sub_tree, new_right_sub_tree);
     }
 
     static ptr clean_parent_to_current(ptr need_clean_sub_tree) {
