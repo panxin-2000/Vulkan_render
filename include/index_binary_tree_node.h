@@ -8,58 +8,8 @@
 
 #include "tree_node.h"
 #include "tree_function.h"
-
-
-class v_index {
-public:
-    int number;
-
-    friend bool operator==(v_index left, v_index right) {
-        return left.number == right.number;
-    }
-
-    friend bool operator!=(v_index left, v_index right) {
-        return left.number != right.number;
-    }
-};
-
-template<class T>
-class index_Tree_Node {
-    using ptr = T *;
-
-public:
-    v_index left;
-    v_index right;
-
-public:
-    T data;
-
-    index_Tree_Node(T _data, v_index _nil_v_index) {
-        data = _data;
-        left = _nil_v_index;
-        right = _nil_v_index;
-    }
-};
-
-template<class T>
-class index_Tree_Node_with_father {
-    using ptr = T *;
-
-public:
-    v_index left;
-    v_index right;
-    v_index parent;
-
-public:
-    T data;
-
-    index_Tree_Node_with_father(T _data, v_index _nil_v_index) {
-        data = _data;
-        left = _nil_v_index;
-        right = _nil_v_index;
-        parent = _nil_v_index;
-    }
-};
+#include "tree_node_index.h"
+#include "index_tree_node.h"
 
 
 template<typename T, typename index_node>

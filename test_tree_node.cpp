@@ -249,10 +249,10 @@ T init_tree(T tree, std::vector<int> vs) {
 
 
 TEST(test_tree, test_tree_delete_index) {
-    index_binary_Tree_Node<int, index_Tree_Node_with_father<int> > tree;
+    index_binary_Tree_Node<int, index_Tree_Node<int> > tree;
 
     tree = init_tree(tree, first);
-    auto vs = new std::vector<index_Tree_Node_with_father<int> >;
+    auto vs = new std::vector<index_Tree_Node<int> >;
     auto reslut = tree.preorder_tree_walk_index();
     auto value_ptr = tree.translate(*reslut);
 
