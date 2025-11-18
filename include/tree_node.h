@@ -26,8 +26,8 @@ public:
 
     ptr tree_predecessor(ptr tree_node) {
         return BIN_tree::tree_predecessor(tree_node,
-                                        static_cast<ptr>(nullptr),
-                                        [](ptr insert_node) { return insert_node; });
+                                          static_cast<ptr>(nullptr),
+                                          [](ptr insert_node) { return insert_node; });
     }
 
 
@@ -69,15 +69,9 @@ public:
 
     // 原本B是A的右子树，现在变成A是B的左子树
     static bool left_rotate(ptr node) {
-        if (node != nullptr && node->right == nullptr) {
-            return false;
-        } else {
-            auto A_node = node;
-            auto B_node = node->right;
-            replace_sub_tree(A_node, B_node);
-            replace_sub_tree_right(A_node, B_node->left);
-            replace_sub_tree_left(B_node, A_node);
-        }
+        return BIN_tree::left_rotate(node,
+                                     static_cast<ptr>(nullptr),
+                                     [](ptr insert_node) { return insert_node; });
     }
 
 
@@ -87,15 +81,9 @@ public:
     //
     // 原本B是A的左子树，现在变成A是B的右子树
     static bool right_rotate(ptr node) {
-        if (node != nullptr && node->left == nullptr) {
-            return false;
-        } else {
-            auto A_node = node;
-            auto B_node = node->left;
-            replace_sub_tree(A_node, B_node);
-            replace_sub_tree_left(A_node, B_node->right);
-            replace_sub_tree_right(B_node, A_node);
-        }
+        return BIN_tree::right_rotate(node,
+                                      static_cast<ptr>(nullptr),
+                                      [](ptr insert_node) { return insert_node; });
     }
 
 

@@ -395,9 +395,9 @@ namespace BIN_tree {
         } else {
             auto A_node = node;
             auto B_node = get_node(node)->right;
-            replace_sub_tree(A_node, B_node);
-            replace_sub_tree_right(A_node, get_node(node)->left);
-            replace_sub_tree_left(B_node, A_node);
+            replace_sub_tree(A_node, B_node, nil_ptr_or_index, get_node);
+            replace_sub_tree_right(A_node, get_node(B_node)->left, nil_ptr_or_index, get_node);
+            replace_sub_tree_left(B_node, A_node, nil_ptr_or_index, get_node);
         }
     }
 
@@ -414,9 +414,9 @@ namespace BIN_tree {
         } else {
             auto A_node = node;
             auto B_node = get_node(node)->left;
-            replace_sub_tree(A_node, B_node);
-            replace_sub_tree_left(A_node, get_node(B_node)->right);
-            replace_sub_tree_right(B_node, A_node);
+            replace_sub_tree(A_node, B_node, nil_ptr_or_index, get_node);
+            replace_sub_tree_left(A_node, get_node(B_node)->right, nil_ptr_or_index, get_node);
+            replace_sub_tree_right(B_node, A_node, nil_ptr_or_index, get_node);
         }
     }
 }
