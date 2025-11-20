@@ -32,10 +32,6 @@ ptr tree_find_value(ptr root, value_type data, ptr nil_ptr_or_index, function ge
     return result_node;
 }
 
-template<typename value_type, typename ptr>
-ptr tree_find_value(ptr root, value_type data) {
-    return tree_find_value(root, data, static_cast<ptr>(nullptr), [](ptr insert_node) { return insert_node; });
-}
 
 template<typename T, typename function>
 std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result, T nil_ptr_or_index, function get_node) {
@@ -59,17 +55,6 @@ std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result, T nil_ptr_or_
     return result;
 }
 
-template<typename T>
-std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result) {
-    return find_all_leaf_node(node, result, static_cast<T>(nullptr), [](T insert_node) { return insert_node; });
-}
-
-
-template<typename T>
-T preorder_tree_walk_with_stack_find_father(T root, T node) {
-    preorder_tree_walk_with_stack_find_father(root, node, static_cast<T>(nullptr),
-                                              [](T insert_node) { return insert_node; });
-}
 
 template<typename T, typename function>
 T preorder_tree_walk_with_stack_find_father(T root, T node, T nil_ptr_or_index, function get_node) {
@@ -118,13 +103,6 @@ T preorder_tree_walk_with_stack_find_father(T root, T node, T nil_ptr_or_index, 
 }
 
 
-template<typename T>
-T preorder_tree_walk_find_father(T root, T node) {
-    return preorder_tree_walk_find_father(root, node,
-                                          static_cast<T>(nullptr),
-                                          [](T insert_node) { return insert_node; });
-}
-
 template<typename T, typename function>
 T preorder_tree_walk_find_father(T root, T node, T nil_ptr_or_index, function get_node) {
     if (root != nil_ptr_or_index) {
@@ -162,20 +140,6 @@ T find_insert_position(T root, T new_node, T nil_ptr_or_index, function get_node
     return insert_node;
 }
 
-template<typename T>
-T find_insert_position(T root, T new_node) {
-    return find_insert_position(root, new_node,
-                                static_cast<T>(nullptr),
-                                [](T insert_node) {
-                                    auto *temp = insert_node;
-
-                                    return temp;
-                                });
-}
-
-
-// T2 RB_Tree_Node<segment_vector>   T  segment_vector
-// 这个函数中找到的是值，时间上如果能够返回
 template<typename T, typename T2>
 std::vector<T2> find_interval(T2 root, T &left_node, T &right_node) {
     return find_interval(root, left_node, right_node,
@@ -194,8 +158,8 @@ std::vector<T2> find_interval(T2 root, T &left_node, T &right_node, T2 nil_ptr_o
     // auto root = this;
     auto result = *new std::vector<T2>;
     // 找到最小值和最大值
-    auto min_node = tree_find_value(root, new_left_node); //其实这里是稍微有点问题的
-    auto max_node = tree_find_value(root, new_right_node); //大部分情况是是取一个间隔，并不能准确的对应的值
+    auto min_node = tree_find_value(root, new_left_node, nil_ptr_or_index, get_node); //其实这里是稍微有点问题的
+    auto max_node = tree_find_value(root, new_right_node, nil_ptr_or_index, get_node); //大部分情况是是取一个间隔，并不能准确的对应的值
     if (min_node == nil_ptr_or_index || max_node == nil_ptr_or_index) {
         return result;
     }
@@ -293,12 +257,6 @@ namespace BIN_tree {
         return result_node;
     }
 
-    template<typename ptr>
-    static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree) {
-        return replace_sub_tree(dst_sub_tree_position, src_sub_tree,
-                                static_cast<ptr>(nullptr),
-                                [](ptr insert_node) { return insert_node; });
-    }
 
     template<typename ptr, typename function>
     static ptr replace_sub_tree(ptr dst_sub_tree_position, ptr src_sub_tree, ptr nil_ptr_or_index, function get_node) {
@@ -314,13 +272,6 @@ namespace BIN_tree {
         return src_sub_tree;
     }
 
-    template<typename ptr>
-    ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree) {
-        replace_sub_tree_left(sub_tree, new_left_sub_tree,
-                              static_cast<ptr>(nullptr),
-                              [](ptr insert_node) { return insert_node; });
-    }
-
 
     template<typename ptr, typename function>
     ptr replace_sub_tree_left(ptr sub_tree, ptr new_left_sub_tree, ptr nil_ptr_or_index, function get_node) {
@@ -330,12 +281,6 @@ namespace BIN_tree {
         return sub_tree;
     }
 
-    template<typename ptr>
-    ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree) {
-        replace_sub_tree_right(sub_tree, new_right_sub_tree,
-                               static_cast<ptr>(nullptr),
-                               [](ptr insert_node) { return insert_node; });
-    }
 
     template<typename ptr, typename function>
     ptr replace_sub_tree_right(ptr sub_tree, ptr new_right_sub_tree, ptr nil_ptr_or_index, function get_node) {
@@ -375,11 +320,6 @@ namespace BIN_tree {
         return need_clean_sub_tree;
     }
 
-    template<typename ptr>
-    static bool left_rotate(ptr node) {
-        left_rotate(node, static_cast<ptr>(nullptr),
-                    [](ptr insert_node) { return insert_node; });
-    }
 
     //            A                              B
     //         E     B                       A       D
@@ -419,20 +359,13 @@ namespace BIN_tree {
     }
 
 
-    template<typename ptr>
-    ptr find_root(ptr node) {
-        return find_root(node,
-                         static_cast<ptr>(nullptr),
-                         [](ptr insert_node) { return insert_node; });
-    }
-
     template<typename ptr, typename function>
     ptr find_root(ptr node, ptr nil_ptr_or_index, function get_node) {
         if (node == nil_ptr_or_index) {
             return nil_ptr_or_index;
         } else {
             while (get_node(node)->parent != nil_ptr_or_index) {
-                return find_root(get_node(node)->parent);
+                return find_root(get_node(node)->parent, nil_ptr_or_index, get_node);
             }
             return node;
         }
@@ -460,19 +393,12 @@ namespace BIN_tree {
         if (insert_v_index_value == nil_ptr_or_index) {
             return new_node_v_index;
         } else if (get_node(insert_v_index_value)->data < get_node(new_node_v_index)->data) {
-            get_node(insert_v_index_value)->right = new_node_v_index;
+            replace_sub_tree_right(insert_v_index_value, new_node_v_index, nil_ptr_or_index, get_node);
         } else {
-            get_node(insert_v_index_value)->left = new_node_v_index;
+            replace_sub_tree_left(insert_v_index_value, new_node_v_index, nil_ptr_or_index, get_node);
         }
         return root;
     }
-}
-
-
-template<typename RB_Tree_Node>
-RB_Tree_Node left_rotate_with_color(RB_Tree_Node node) {
-    return left_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
-                                  [](RB_Tree_Node insert_node) { return insert_node; });
 }
 
 
@@ -491,16 +417,11 @@ RB_Tree_Node left_rotate_with_color(RB_Tree_Node node,
     left_rotate(node, nil_ptr_or_index, get_node);
 }
 
-template<typename RB_Tree_Node>
-RB_Tree_Node right_rotate_with_color(RB_Tree_Node node) {
-    return right_rotate_with_color(node, static_cast<RB_Tree_Node>(nullptr),
-                                   [](RB_Tree_Node insert_node) { return insert_node; });
-}
 
 template<typename RB_Tree_Node, typename function>
-RB_Tree_Node *right_rotate_with_color(RB_Tree_Node *node,
-                                      RB_Tree_Node nil_ptr_or_index,
-                                      function get_node) {
+RB_Tree_Node right_rotate_with_color(RB_Tree_Node node,
+                                     RB_Tree_Node nil_ptr_or_index,
+                                     function get_node) {
     if (node != nil_ptr_or_index && get_node(node)->left == nil_ptr_or_index) {
         return nil_ptr_or_index;
     }
@@ -569,5 +490,23 @@ namespace BIN_tree {
         }
         return root;
     }
+}
+
+
+template<typename value_type, typename ptr>
+ptr tree_find_value(ptr root, value_type data) {
+    return tree_find_value(root, data, static_cast<ptr>(nullptr), [](ptr insert_node) { return insert_node; });
+}
+
+template<typename T>
+T find_insert_position(T root, T new_node) {
+    return find_insert_position(root, new_node,
+                                static_cast<T>(nullptr),
+                                [](T insert_node) { return insert_node; });
+}
+
+template<typename T>
+std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result) {
+    return find_all_leaf_node(node, result, static_cast<T>(nullptr), [](T insert_node) { return insert_node; });
 }
 #endif //TREE_FUNCTION_H

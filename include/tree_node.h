@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include "tree_function.h"
+#include "tree_function_pointer.h"
 
 template<class T>
 class Tree_Node {
