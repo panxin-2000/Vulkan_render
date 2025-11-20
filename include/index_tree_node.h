@@ -25,5 +25,13 @@ public:
         right = _nil_v_index;
         parent = _nil_v_index;
     }
+
+    static bool init_index_node(index_Tree_Node *address, T _data, v_index _nil_v_index) {
+        address->data = _data;
+        address->left = _nil_v_index;
+        address->right = _nil_v_index;
+        address->parent = _nil_v_index;
+        return true;
+    }
 };
 #endif //INDEX_TREE_NODE_H

@@ -17,31 +17,28 @@ public:
         return root;
     }
 
+
     v_index add_new_node(T input_data) {
-        if (index_binary_Tree::roots.empty() == true && index_binary_Tree::details.empty() == true) {
-            index_binary_Tree::init_root(input_data);
-        }
-        node new_node{input_data, index_binary_Tree::get_nil_index()};
-
-        v_index new_node_v_index;
-        new_node_v_index.number = index_binary_Tree::details.size();
-        index_binary_Tree::details.push_back(new_node);
-
-        auto temp = BIN_tree::add_new_node(index_binary_Tree::get_root_index(),
+        auto new_node_v_index = index_RB_tree::get_new_node_index(input_data);
+        auto temp = BIN_tree::add_new_node(index_RB_tree::get_root_index(),
                                            new_node_v_index,
-                                           index_binary_Tree::get_nil_index(),
-                                           std::bind(&index_binary_Tree::get_node_ptr, this,
+                                           index_RB_tree::get_nil_index(),
+                                           std::bind(&index_RB_tree::get_node_ptr, this,
                                                      std::placeholders::_1));
-        index_binary_Tree::roots.push_back(temp);
+        index_RB_tree::roots.push_back(temp);
         return new_node_v_index;
     }
 
 
     v_index delete_node(v_index delete_node) {
-        return BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(), delete_node,
-                                                             index_binary_Tree::get_nil_index(),
-                                                             std::bind(&index_binary_Tree::get_node_ptr, this,
-                                                                       std::placeholders::_1));
+        auto temp_index = BIN_tree::delete_node_from_binary_search_tree(index_RB_tree::get_root_index(),
+                                                                        delete_node,
+                                                                        index_RB_tree::get_nil_index(),
+                                                                        std::bind(&index_RB_tree::get_node_ptr,
+                                                                            this,
+                                                                            std::placeholders::_1));
+        index_RB_tree::update_new_delete_node(temp_index);
+        return temp_index;
     }
 };
 

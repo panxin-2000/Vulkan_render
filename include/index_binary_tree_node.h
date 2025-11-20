@@ -18,6 +18,7 @@ public:
     using node = index_node;
     std::vector<v_index> roots;
     std::vector<node> details;
+    v_index delete_v_index;
 
     index_binary_Tree_Node &get_detail_from_v_index(v_index in) {
         return details.at(in.number);
@@ -80,6 +81,40 @@ public:
         result.number = 0;
         return result;
     }
+
+    // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
+    bool update_new_delete_node(v_index delete_node_index) {
+        get_node(delete_node_index).left = delete_v_index;
+        delete_v_index = delete_node_index;
+        return true;
+    }
+
+    // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
+    v_index get_one_delete_node() {
+        auto new_node_v_index = delete_v_index;
+        delete_v_index = get_node(new_node_v_index).left;
+        return new_node_v_index;
+    }
+
+    v_index get_new_node_index(T input_data) {
+        if (roots.empty() == true && details.empty() == true) {
+            init_root(input_data);
+            delete_v_index = get_nil_index();
+        }
+
+        v_index new_node_v_index;
+        if (delete_v_index == get_nil_index()) {
+            node new_node{input_data, get_nil_index()};
+            new_node_v_index.number = details.size();
+            details.push_back(new_node);
+        } else {
+            new_node_v_index = get_one_delete_node();
+            index_node::init_index_node(get_node_ptr(new_node_v_index),
+                                        input_data,
+                                        get_nil_index());
+            // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
+        }
+    }
 };
 
 template<typename T, typename index_node>
@@ -94,15 +129,7 @@ public:
 
 
     v_index add_new_node(T input_data) {
-        if (index_binary_Tree::roots.empty() == true && index_binary_Tree::details.empty() == true) {
-            index_binary_Tree::init_root(input_data);
-        }
-        node new_node{input_data, index_binary_Tree::get_nil_index()};
-
-        v_index new_node_v_index;
-        new_node_v_index.number = index_binary_Tree::details.size();
-        index_binary_Tree::details.push_back(new_node);
-
+        auto new_node_v_index = index_binary_Tree::get_new_node_index(input_data);
         auto temp = BIN_tree::add_new_node(index_binary_Tree::get_root_index(),
                                            new_node_v_index,
                                            index_binary_Tree::get_nil_index(),
@@ -114,11 +141,14 @@ public:
 
 
     v_index delete_node(v_index delete_node) {
-        return BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(), delete_node,
-                                                             index_binary_Tree::get_nil_index(),
-                                                             std::bind(&index_binary_Tree::get_node_ptr, this,
-                                                                       std::placeholders::_1));
-
+        auto temp_index = BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(),
+                                                                        delete_node,
+                                                                        index_binary_Tree::get_nil_index(),
+                                                                        std::bind(&index_binary_Tree::get_node_ptr,
+                                                                            this,
+                                                                            std::placeholders::_1));
+        index_binary_Tree::update_new_delete_node(temp_index);
+        return temp_index;
     }
 };
 
