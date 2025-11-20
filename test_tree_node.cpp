@@ -249,7 +249,7 @@ T init_tree(T tree, std::vector<int> vs) {
 
 
 TEST(test_tree, test_tree_delete_index) {
-    index_binary_Tree_Node<int, index_Tree_Node<int> > tree;
+    index_binary_Tree<int, index_Tree_Node<int> > tree;
 
     tree = init_tree(tree, first);
     auto vs = new std::vector<index_Tree_Node<int> >;
@@ -263,7 +263,7 @@ TEST(test_tree, test_tree_delete_index) {
 
     test_two_vector_value_eq_data(*value_ptr, *inorder_walk);
 
-    tree.delete_node_from_binary_search_tree(tree.get_root_index());
+    tree.delete_node(tree.get_root_index());
 }
 
 

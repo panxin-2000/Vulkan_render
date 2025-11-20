@@ -41,10 +41,6 @@ namespace BIN_tree {
     }
 
 
-
-
-
-
     template<typename T>
     T preorder_tree_walk_with_stack_find_father(T root, T node) {
         preorder_tree_walk_with_stack_find_father(root, node, static_cast<T>(nullptr),
@@ -59,10 +55,8 @@ namespace BIN_tree {
     }
 
 
-
     // T2 RB_Tree_Node<segment_vector>   T  segment_vector
     // 这个函数中找到的是值，时间上如果能够返回
-
 
 
     template<typename ptr>

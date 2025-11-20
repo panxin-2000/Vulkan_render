@@ -14,11 +14,11 @@
 
 template<typename T, typename index_node>
 class index_binary_Tree_Node {
-    using node = index_node;
-    std::vector<node> details;
-    std::vector<v_index> roots;
-
 public:
+    using node = index_node;
+    std::vector<v_index> roots;
+    std::vector<node> details;
+
     index_binary_Tree_Node &get_detail_from_v_index(v_index in) {
         return details.at(in.number);
     }
@@ -80,7 +80,13 @@ public:
         result.number = 0;
         return result;
     }
+};
 
+template<typename T, typename index_node>
+class index_binary_Tree : public index_binary_Tree_Node<T, index_node> {
+    using node = index_node;
+
+public:
     v_index tree_insert_value(v_index root, T data) {
         this->add_new_node(data);
         return root;
@@ -88,29 +94,31 @@ public:
 
 
     v_index add_new_node(T input_data) {
-        if (roots.empty() == true && details.empty() == true) {
-            init_root(input_data);
+        if (index_binary_Tree::roots.empty() == true && index_binary_Tree::details.empty() == true) {
+            index_binary_Tree::init_root(input_data);
         }
-        node new_node{input_data, get_nil_index()};
+        node new_node{input_data, index_binary_Tree::get_nil_index()};
 
         v_index new_node_v_index;
-        new_node_v_index.number = details.size();
-        details.push_back(new_node);
+        new_node_v_index.number = index_binary_Tree::details.size();
+        index_binary_Tree::details.push_back(new_node);
 
-        auto temp = BIN_tree::add_new_node(get_root_index(), new_node_v_index,
-                                           get_nil_index(),
-                                           std::bind(&index_binary_Tree_Node::get_node_ptr, this,
+        auto temp = BIN_tree::add_new_node(index_binary_Tree::get_root_index(),
+                                           new_node_v_index,
+                                           index_binary_Tree::get_nil_index(),
+                                           std::bind(&index_binary_Tree::get_node_ptr, this,
                                                      std::placeholders::_1));
-        roots.push_back(temp);
+        index_binary_Tree::roots.push_back(temp);
         return new_node_v_index;
     }
 
 
-    v_index delete_node_from_binary_search_tree(v_index delete_node) {
-        return BIN_tree::delete_node_from_binary_search_tree(get_root_index(), delete_node,
-                                                             get_nil_index(),
-                                                             std::bind(&index_binary_Tree_Node::get_node_ptr, this,
+    v_index delete_node(v_index delete_node) {
+        return BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(), delete_node,
+                                                             index_binary_Tree::get_nil_index(),
+                                                             std::bind(&index_binary_Tree::get_node_ptr, this,
                                                                        std::placeholders::_1));
+
     }
 };
 
