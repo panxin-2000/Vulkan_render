@@ -109,8 +109,8 @@ namespace delaunay_triangulation {
 
 
         for (auto point: input_points) {
-            face_index result_face_index = 0;
-            half_edge_index edge_index = 0;
+            face_v_index result_face_index = 0;
+            half_edge_v_index edge_index = 0;
             auto type_temp = hf->get_vertex_in_witch_face_test(result_face_index, edge_index, point);
             if (type_temp == point_in_triangle_type::in_triangle) {
                 // 上面的函数并没有考虑另一种情况，那就是在边上的情况
