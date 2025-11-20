@@ -182,6 +182,7 @@ struct half_edge_struct {
 
         auto insert_face = half_edges.at(current_edge).incident_face;
         auto opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).incident_face;
+        // 这里引发的问题，但是应该改过之后的为正确的
 
         add_half_edge(
             vertex_index_start_point, blue_d,
