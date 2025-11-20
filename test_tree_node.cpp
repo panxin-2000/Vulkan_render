@@ -5,7 +5,8 @@
 #include <gtest/gtest.h>
 
 #include "binary_Tree_Node.h"
-#include "index_binary_tree_node.h"
+#include "index_binary_tree.h"
+#include "index_tree_base.h"
 #include "RB_tree_node.h"
 #include "tree_function.h"
 

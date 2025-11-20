@@ -4,11 +4,11 @@
 
 #ifndef INDEX_RB_NODE_H
 #define INDEX_RB_NODE_H
-#include "index_binary_tree_node.h"
+#include "index_tree_base.h"
 
 
 template<typename T, typename index_node>
-class index_RB_tree : public index_binary_Tree_Node<T, index_node> {
+class index_RB_tree : public index_tree_base<T, index_node> {
     using node = index_node;
 
 public:
