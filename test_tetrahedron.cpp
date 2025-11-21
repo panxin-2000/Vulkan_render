@@ -14,10 +14,10 @@ TEST(tetrahedron, init_tetrahedron) {
 
     std::vector<triangle<point_3> > expect_triangles{};
     std::vector<triangle<point_3> > result_segments{};
-    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}});
-    expect_triangles.push_back(triangle<point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}});
-    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}});
-    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}});
+    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}}); // blue
+    expect_triangles.push_back(triangle<point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}});  // yellow
+    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}});  //  green
+    expect_triangles.push_back(triangle<point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 
     auto temp_flag = hf.print_all_face_vertices(result_segments, false);

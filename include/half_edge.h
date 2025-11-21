@@ -17,7 +17,6 @@ struct vertex_xy : public point_2 {
     using point_type = point_2;
 
     int incident_half_edge;
-    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
 
     vertex_xy(float x1, float y1) {
         x = x1;
@@ -67,7 +66,6 @@ enum point_in_triangle_type {
 
 struct vertex_xyz : public point_3 {
     int incident_half_edge;
-    int is_using; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
 
     vertex_xyz(float x1, float y1, float z1) {
         x = x1;
@@ -111,7 +109,6 @@ struct half_edge {
     half_edge_v_index next_half_edge;
     half_edge_v_index pre_half_edge;
     face_v_index incident_face;
-    int is_using;
 };
 
 struct face {
@@ -143,10 +140,11 @@ struct half_edge_struct {
     std::vector<half_edge> half_edges;
     std::vector<vertex> vertices;
     std::vector<face> faces;
+    std::vector<face_v_index> faces_delete;
     using vertex_base_type = typename vertex::point_type;
 
     half_edge_v_index add_edge(vertex start_point,
-                             vertex end_point) {
+                               vertex end_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         start_point.incident_half_edge = half_edges_size;
@@ -180,8 +178,8 @@ struct half_edge_struct {
         auto vertex_index_start_point = half_edges.at(black_a).vertex_index;
         auto vertex_index_end_point = half_edges.at(red_b).vertex_index;
 
-        auto insert_face = half_edges.at(current_edge).incident_face;
-        auto opposite_face = half_edges.at(get_opposite_edge_index(current_edge)).incident_face;
+        auto insert_face = faces_size;
+        auto current_edge_face = half_edges.at((current_edge)).incident_face;
         // 这里引发的问题，但是应该改过之后的为正确的
 
         add_half_edge(
@@ -190,7 +188,7 @@ struct half_edge_struct {
         );
         add_half_edge(
             middle_point_index, half_edges_size,
-            get_next_edge_index(red_b), blue_f, opposite_face
+            get_next_edge_index(red_b), blue_f, current_edge_face
         );
         add_half_edge(
             middle_point_index, blue_f,
@@ -198,19 +196,20 @@ struct half_edge_struct {
         );
         add_half_edge(
             vertex_index_end_point, red_e,
-            blue_d, get_pre_edge_index(red_b), opposite_face
+            blue_d, get_pre_edge_index(red_b), current_edge_face
         );
         // 添加新的四条边也是能够添加的
         // 问题是原本的边应该怎么动？
         // 判断一下get_next(get_opposite(current_edge)) == current_edge
         // 不需要，直接执行就好，能够直接满足两种条件
-        half_edges.at(get_next_edge_index(red_b)).incident_face = opposite_face;
+        half_edges.at(get_next_edge_index(red_b)).incident_face = current_edge_face;
         half_edges.at(get_next_edge_index(red_b)).pre_half_edge = blue_d;
         half_edges.at(get_pre_edge_index(red_b)).next_half_edge = blue_f;
         half_edges.at(red_b).next_half_edge = red_c;
         half_edges.at(red_b).pre_half_edge = red_e;
         half_edges.at(red_b).incident_face = faces_size;
         set_face_for_new_add_edge(red_c, faces_size);
+        set_face_for_new_add_edge(blue_d, current_edge_face);
         faces.push_back({red_c, face::BOUNDARY_TYPE::bounding_face});
         middle_point.incident_half_edge = red_e;
         vertices.push_back(middle_point);
@@ -218,18 +217,17 @@ struct half_edge_struct {
     }
 
     half_edge_v_index add_half_edge(vertices_v_index vertex_index,
-                                  half_edge_v_index temp_twin_half_edge,
-                                  half_edge_v_index next_half_edge,
-                                  half_edge_v_index pre_half_edge,
-                                  face_v_index incident_face) {
+                                    half_edge_v_index temp_twin_half_edge,
+                                    half_edge_v_index next_half_edge,
+                                    half_edge_v_index pre_half_edge,
+                                    face_v_index incident_face) {
         add_half_edge(vertex_index, next_half_edge, pre_half_edge, incident_face);
     }
 
     half_edge_v_index add_half_edge(vertices_v_index vertex_index,
-                                  half_edge_v_index next_half_edge,
-                                  half_edge_v_index pre_half_edge,
-                                  face_v_index incident_face) {
-        int is_using = true;
+                                    half_edge_v_index next_half_edge,
+                                    half_edge_v_index pre_half_edge,
+                                    face_v_index incident_face) {
         int half_edges_size = half_edges.size();
         half_edge_v_index twin_half_edge;
         // half_edges_size 为 0 时， twin_half_edge = 1
@@ -243,7 +241,6 @@ struct half_edge_struct {
         temp.next_half_edge = next_half_edge;
         temp.pre_half_edge = pre_half_edge;
         temp.incident_face = incident_face;
-        temp.is_using = is_using;
         temp.twin_half_edge = twin_half_edge;
         temp.vertex_index = vertex_index;
 
@@ -254,6 +251,28 @@ struct half_edge_struct {
 
     // 如果想将原本的half_edge 中，添加一个顶点，将它分为两个edge的操作
     // 在边AB中插入一个点D
+    half_edge_v_index delete_edge(half_edge_v_index current_edge) {
+        auto opposite_edge_index = get_opposite_edge_index(current_edge);
+        get_edge(get_edge(current_edge).pre_half_edge).next_half_edge = get_edge(opposite_edge_index).next_half_edge;
+        get_edge(get_edge(opposite_edge_index).next_half_edge).pre_half_edge = get_edge(current_edge).pre_half_edge;
+        get_edge(get_edge(opposite_edge_index).pre_half_edge).next_half_edge = get_edge(current_edge).next_half_edge;
+        get_edge(get_edge(current_edge).next_half_edge).pre_half_edge = get_edge(opposite_edge_index).pre_half_edge;
+        int opposite_face = get_edge(opposite_edge_index).incident_face;
+        int current_face = get_edge(current_edge).incident_face;
+        if (opposite_face != current_face) {
+            faces_delete.push_back(opposite_face);
+            set_face_for_new_add_edge(get_edge(current_edge).pre_half_edge, current_face);
+        } // 相同的话，其实是删除的同一个face,那么就不需要做任何其他的操作
+        // 假设删除完成了，那么这两个边应该做什么操作呢？
+        get_edge(current_edge).pre_half_edge = opposite_edge_index;
+        get_edge(current_edge).next_half_edge = opposite_edge_index;
+        get_edge(opposite_edge_index).pre_half_edge = current_edge;
+        get_edge(opposite_edge_index).next_half_edge = current_edge;
+        get_edge(current_edge).incident_face = opposite_face;
+        get_edge(opposite_edge_index).incident_face = opposite_face;
+        // 将删除的两条边搞成了循环的边
+    }
+
     half_edge_v_index insert_edge(half_edge_v_index current_edge, vertex d_middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
@@ -311,7 +330,7 @@ struct half_edge_struct {
     // 两个顶点创建一个loop，然后后创建两个面，一个是内部的面，另一个是外部的面，
     // 创建loop的时候只会创建一个面。，这个退化的线之内全部都是这个面
     half_edge_v_index create_loop(vertex start_point,
-                                vertex end_point) {
+                                  vertex end_point) {
         auto half_edges_size = half_edges.size();
         auto vertices_size = vertices.size();
         auto faces_size = faces.size();
@@ -336,7 +355,7 @@ struct half_edge_struct {
 
     // 在一个两个顶点直接插入一条边，将原本的一个face，分为两个face
     half_edge_v_index split_face(face_v_index split_face, vertex first_point,
-                               vertex second_point) {
+                                 vertex second_point) {
         auto all_edges_first_point = get_all_edge_of_vertex(first_point);
         auto all_edges_second_point = get_all_edge_of_vertex(second_point);
         half_edge_v_index first_edge;
@@ -357,7 +376,7 @@ struct half_edge_struct {
     }
 
     half_edge_v_index split_face(half_edge_v_index first_edge,
-                               vertex second_point) {
+                                 vertex second_point) {
         face_v_index split_face = get_edge(first_edge).incident_face;
         auto all_edges_second_point = get_all_edge_of_vertex(second_point);
         half_edge_v_index second_edge;
@@ -374,7 +393,7 @@ struct half_edge_struct {
     // 最后开始做的时候没有写注释
     // 参考上面的代码，才能知道具体的内容是什么
     half_edge_v_index split_face(half_edge_v_index first_edge,
-                               half_edge_v_index second_edge) {
+                                 half_edge_v_index second_edge) {
         // first_edge 是我画的图中的 E_a
         // first_edge 是我画的图中的 E_h
         auto E_a = first_edge;
@@ -415,7 +434,8 @@ struct half_edge_struct {
         return E_g;
     }
 
-    half_edge_v_index get_edge_from_trangle_dont_have_point(face_v_index face_index_para, vertices_v_index vertex_index) {
+    half_edge_v_index
+    get_edge_from_trangle_dont_have_point(face_v_index face_index_para, vertices_v_index vertex_index) {
         auto edge_indices = get_all_edge_of_face(get_face(face_index_para).bounding_half_edge);
         for (auto edge_index: edge_indices) {
             if (get_edge(edge_index).vertex_index != vertex_index ||
@@ -841,7 +861,8 @@ struct half_edge_struct {
         return point_in_triangle_type::in_triangle;
     }
 
-    point_2::anticlockwise get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_v_index half_edge_indices) {
+    point_2::anticlockwise
+    get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_v_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
         auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
         return point_2::is_anticlockwise(a, b, vertex_in);
