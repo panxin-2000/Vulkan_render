@@ -6,6 +6,8 @@
 
 #include "binary_Tree_Node.h"
 #include "index_binary_tree.h"
+#include "index_RB_tree.h"
+#include "index_RB_tree_node.h"
 #include "index_tree_base.h"
 #include "RB_tree_node.h"
 #include "tree_function.h"
@@ -349,10 +351,9 @@ void RB_tree_test_delete_node(std::vector<int> vt, int delete_value) {
     // return root;
 }
 
-void index_tree_test_delete_node(std::vector<int> vt, int delete_value) {
-    index_binary_Tree<int, index_Tree_Node<int> > tree;
 
-
+template<typename T>
+void test_delete_node_common(T tree, std::vector<int> vt, int delete_value) {
     for (auto v1: vt) {
         tree.add_new_node(v1);
     }
@@ -374,9 +375,21 @@ void index_tree_test_delete_node(std::vector<int> vt, int delete_value) {
     std::sort(copy_v.begin(), copy_v.end());
 
     test_two_vector_value_eq(*temps, copy_v);
+}
+
+void index_tree_test_delete_node(std::vector<int> vt, int delete_value) {
+    index_binary_Tree<int, index_Tree_Node<int> > tree;
+    test_delete_node_common(tree, vt, delete_value);
+
     // return root;
 }
 
+void index_RB_tree_test_delete_node(std::vector<int> vt, int delete_value) {
+    index_RB_tree<int, index_RB_Tree_Node<int> > tree;
+    test_delete_node_common(tree, vt, delete_value);
+
+    // return root;
+}
 
 TEST(test_tree, RB_Tree_Node_insert) {
     RB_Tree_Node<int> *root = nullptr;
@@ -406,10 +419,18 @@ TEST(test_tree, RB_Tree_Node_insert) {
 }
 
 
-TEST(test_tree, index_RB_Tree_Node_insert) {
+TEST(test_tree, index_Tree_Node_insert) {
     std::vector<int> vt = {26, 17, 41, 14, 21, 30, 47, 10, 16, 19, 23, 28, 38, 7, 12, 15, 20, 35, 39, 3};
 
     for (auto v3: vt) {
         index_tree_test_delete_node(vt, v3);
+    }
+}
+
+TEST(test_tree, index_RB_tree_test_delete_node) {
+    std::vector<int> vt = {26, 17, 41, 14, 21, 30, 47, 10, 16, 19, 23, 28, 38, 7, 12, 15, 20, 35, 39, 3};
+
+    for (auto v3: vt) {
+        index_RB_tree_test_delete_node(vt, v3);
     }
 }

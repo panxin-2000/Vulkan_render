@@ -13,6 +13,72 @@ enum RB_Tree_Node_color {
 
 namespace BIN_tree {
     template<typename RB_Tree_Node, typename function>
+    bool RB_delete_fix(RB_Tree_Node root, RB_Tree_Node need_fix_node,
+                       RB_Tree_Node nil_ptr_or_index,
+                       function get_node) {
+        while (need_fix_node != root && get_node(need_fix_node)->color == RB_Tree_BLACK) {
+            auto need_fix_node_parent = get_node(need_fix_node)->parent;
+            if (need_fix_node == get_node(need_fix_node_parent)->left) {
+                auto w_node = get_node(need_fix_node_parent)->right;
+                if (get_node(w_node)->color == RB_Tree_RED) {
+                    left_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
+                    w_node = get_node(need_fix_node_parent)->right;
+                }
+                if ((get_node(w_node)->left == nil_ptr_or_index ||
+                     get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)
+                    && (get_node(w_node)->right == nil_ptr_or_index ||
+                        get_node(get_node(w_node)->right)->color ==
+                        RB_Tree_BLACK)) {
+                    get_node(w_node)->color = RB_Tree_RED;
+                    need_fix_node = need_fix_node_parent;
+                }
+                if ((get_node(w_node)->left != nil_ptr_or_index &&
+                     get_node(get_node(w_node)->left)->color == RB_Tree_RED)
+                    && (get_node(w_node)->right == nil_ptr_or_index ||
+                        get_node(get_node(w_node)->right)->color == RB_Tree_BLACK)) {
+                    right_rotate_with_color(w_node, nil_ptr_or_index, get_node);
+                    w_node = get_node(need_fix_node_parent)->right;
+                }
+                if (get_node(w_node)->right != nil_ptr_or_index &&
+                    get_node(get_node(w_node)->right)->color == RB_Tree_RED) {
+                    get_node(need_fix_node_parent)->color = RB_Tree_BLACK;
+                    left_rotate(need_fix_node_parent, nil_ptr_or_index, get_node);
+                    get_node(get_node(w_node)->right)->color = RB_Tree_BLACK;
+                    need_fix_node = root;
+                }
+            } else {
+                auto w_node = get_node(need_fix_node_parent)->left;
+                if (get_node(w_node)->color == RB_Tree_RED) {
+                    right_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
+                    w_node = get_node(need_fix_node_parent)->left;
+                }
+                if ((get_node(w_node)->left == nil_ptr_or_index ||
+                     get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)
+                    && (get_node(w_node)->right == nil_ptr_or_index ||
+                        get_node(get_node(w_node)->right)->color == RB_Tree_BLACK)) {
+                    get_node(w_node)->color = RB_Tree_RED;
+                    need_fix_node = need_fix_node_parent;
+                }
+                if ((get_node(w_node)->right != nil_ptr_or_index &&
+                     get_node(get_node(w_node)->right)->color == RB_Tree_RED)
+                    && (get_node(w_node)->left == nil_ptr_or_index ||
+                        get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)) {
+                    left_rotate_with_color(w_node, nil_ptr_or_index, get_node);
+                    w_node = get_node(need_fix_node_parent)->left;
+                }
+                if (get_node(w_node)->left != nil_ptr_or_index &&
+                    get_node(get_node(w_node)->left)->color == RB_Tree_RED) {
+                    get_node(need_fix_node_parent)->color = RB_Tree_BLACK;
+                    right_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
+                    get_node(get_node(w_node)->left)->color = RB_Tree_BLACK;
+                    need_fix_node = root;
+                }
+            }
+        }
+        get_node(need_fix_node)->color = RB_Tree_BLACK;
+    }
+
+    template<typename RB_Tree_Node, typename function>
     bool RB_insert_fix(RB_Tree_Node root, RB_Tree_Node new_node,
                        RB_Tree_Node nil_ptr_or_index,
                        function get_node) {
@@ -35,7 +101,7 @@ namespace BIN_tree {
                 } else if ((uncle == nil_ptr_or_index || get_node(uncle)->color == RB_Tree_BLACK) &&
                            new_node == get_node(new_node_parent)->right) {
                     new_node = new_node_parent;
-                    get_node(new_node)->left_rotate(new_node);
+                    left_rotate(new_node, nil_ptr_or_index, get_node);
                 } else if ((uncle == nil_ptr_or_index || get_node(uncle)->color == RB_Tree_BLACK) &&
                            new_node == get_node(new_node_parent)->left) {
                     get_node(new_node_parent)->color = RB_Tree_BLACK;
@@ -52,14 +118,14 @@ namespace BIN_tree {
                     get_node(new_node_parent)->color = RB_Tree_BLACK;
                     new_node = new_node_grandparent;
                 } else if ((uncle == nil_ptr_or_index || get_node(uncle)->color == RB_Tree_BLACK) &&
-                           new_node == (get_node(new_node)->parent)->left) {
+                           new_node == get_node(get_node(new_node)->parent)->left) {
                     new_node = new_node_parent;
                     right_rotate(new_node, nil_ptr_or_index, get_node); // 这里的旋转似乎也应该换一个位置
                 } else if ((uncle == nil_ptr_or_index || get_node(uncle)->color == RB_Tree_BLACK) &&
                            new_node == get_node(get_node(new_node)->parent)->right) {
                     get_node(new_node_parent)->color = RB_Tree_BLACK;
                     get_node(new_node_grandparent)->color = RB_Tree_RED;
-                    left_rotate(new_node_grandparent);
+                    left_rotate(new_node_grandparent, nil_ptr_or_index, get_node);
                 }
             }
         }
@@ -131,8 +197,8 @@ namespace BIN_tree {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
             // 只有叶子结点这里需要一个额外的处理
             // clean_parent_to_current(&delete_node);
-            RB_delete_fix(root, delete_node); //
-            clean_sub_tree_father(delete_node); // 这个函数里面多了一步，导致了一个小问题
+            RB_delete_fix(root, delete_node, nil_ptr_or_index, get_node);
+            clean_sub_tree_father(delete_node, nil_ptr_or_index, get_node); // 这个函数里面多了一步，导致了一个小问题
             return root;
         } else if (get_node(delete_node)->right == nil_ptr_or_index &&
                    get_node(delete_node)->left != nil_ptr_or_index) {
@@ -147,17 +213,17 @@ namespace BIN_tree {
         } else if (get_node(delete_node)->right != nil_ptr_or_index &&
                    get_node(delete_node)->left != nil_ptr_or_index) {
             // 寻找后继
-            auto successor = tree_successor(delete_node); // 这行还是有问题的，还是编译不过，
+            auto successor = tree_successor(delete_node, nil_ptr_or_index, get_node); // 这行还是有问题的，还是编译不过，
             delete_node_color = get_node(successor)->color;
             if (get_node(successor)->left == nil_ptr_or_index &&
                 get_node(successor)->right == nil_ptr_or_index) {
                 need_fix_node = successor;
                 // clean_parent_to_current(successor);
                 if (delete_node_color == RB_Tree_BLACK) {
-                    RB_delete_fix(root, need_fix_node);
+                    RB_delete_fix(root, need_fix_node, nil_ptr_or_index, get_node);
                 }
                 delete_node_color = RB_Tree_RED;
-                clean_sub_tree_father(successor);
+                clean_sub_tree_father(successor, nil_ptr_or_index, get_node);
                 // successor是一个叶子结点，是红是黑是无所谓的
             } else if (get_node(successor)->left == nil_ptr_or_index &&
                        get_node(successor)->right != nil_ptr_or_index) {
@@ -177,75 +243,9 @@ namespace BIN_tree {
             get_node(successor)->color = get_node(delete_node)->color;
         }
         if (delete_node_color == RB_Tree_BLACK) {
-            RB_delete_fix(root, need_fix_node);
+            RB_delete_fix(root, need_fix_node, nil_ptr_or_index, get_node);
         }
         return root;
-    }
-
-    template<typename RB_Tree_Node, typename function>
-    bool RB_delete_fix(RB_Tree_Node root, RB_Tree_Node need_fix_node,
-                       RB_Tree_Node nil_ptr_or_index,
-                       function get_node) {
-        while (need_fix_node != root && get_node(need_fix_node)->color == RB_Tree_BLACK) {
-            auto need_fix_node_parent = get_node(need_fix_node)->parent;
-            if (need_fix_node == get_node(need_fix_node_parent)->left) {
-                auto w_node = get_node(need_fix_node_parent)->right;
-                if (get_node(w_node)->color == RB_Tree_RED) {
-                    left_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
-                    w_node = get_node(need_fix_node_parent)->right;
-                }
-                if ((get_node(w_node)->left == nil_ptr_or_index ||
-                     get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)
-                    && (get_node(w_node)->right == nil_ptr_or_index ||
-                        get_node(get_node(w_node)->right)->color ==
-                        RB_Tree_BLACK)) {
-                    get_node(w_node)->color = RB_Tree_RED;
-                    need_fix_node = need_fix_node_parent;
-                }
-                if ((get_node(w_node)->left != nil_ptr_or_index &&
-                     get_node(get_node(w_node)->left)->color == RB_Tree_RED)
-                    && (get_node(w_node)->right == nil_ptr_or_index ||
-                        get_node(get_node(w_node)->right)->color == RB_Tree_BLACK)) {
-                    right_rotate_with_color(w_node, nil_ptr_or_index, get_node);
-                    w_node = get_node(need_fix_node_parent)->right;
-                }
-                if (get_node(w_node)->right != nil_ptr_or_index &&
-                    get_node(get_node(w_node)->right)->color == RB_Tree_RED) {
-                    get_node(need_fix_node_parent)->color = RB_Tree_BLACK;
-                    left_rotate(need_fix_node_parent);
-                    get_node(w_node)->right->color = RB_Tree_BLACK;
-                    need_fix_node = root;
-                }
-            } else {
-                auto w_node = get_node(need_fix_node_parent)->left;
-                if (get_node(w_node)->color == RB_Tree_RED) {
-                    right_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
-                    w_node = get_node(need_fix_node_parent)->left;
-                }
-                if ((get_node(w_node)->left == nil_ptr_or_index ||
-                     get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)
-                    && (get_node(w_node)->right == nil_ptr_or_index ||
-                        get_node(get_node(w_node)->right)->color == RB_Tree_BLACK)) {
-                    get_node(w_node)->color = RB_Tree_RED;
-                    need_fix_node = need_fix_node_parent;
-                }
-                if ((get_node(w_node)->right != nil_ptr_or_index &&
-                     get_node(get_node(w_node)->right)->color == RB_Tree_RED)
-                    && (get_node(w_node)->left == nil_ptr_or_index ||
-                        get_node(get_node(w_node)->left)->color == RB_Tree_BLACK)) {
-                    left_rotate_with_color(w_node, nil_ptr_or_index, get_node);
-                    w_node = get_node(need_fix_node_parent)->left;
-                }
-                if (get_node(w_node)->left != nil_ptr_or_index &&
-                    get_node(get_node(w_node)->left)->color == RB_Tree_RED) {
-                    get_node(need_fix_node_parent)->color = RB_Tree_BLACK;
-                    right_rotate_with_color(need_fix_node_parent, nil_ptr_or_index, get_node);
-                    get_node(get_node(w_node)->left)->color = RB_Tree_BLACK;
-                    need_fix_node = root;
-                }
-            }
-        }
-        need_fix_node->color = RB_Tree_BLACK;
     }
 }
 

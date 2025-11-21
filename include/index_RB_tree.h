@@ -5,6 +5,7 @@
 #ifndef INDEX_RB_NODE_H
 #define INDEX_RB_NODE_H
 #include "index_tree_base.h"
+#include "RB_tree_function.h"
 
 
 template<typename T, typename index_node>
@@ -20,25 +21,26 @@ public:
 
     v_index add_new_node(T input_data) {
         auto new_node_v_index = index_RB_tree::get_new_node_index(input_data);
-        auto temp = BIN_tree::add_new_node(index_RB_tree::get_root_index(),
-                                           new_node_v_index,
-                                           index_RB_tree::get_nil_index(),
-                                           std::bind(&index_RB_tree::get_node_ptr, this,
-                                                     std::placeholders::_1));
-        index_RB_tree::roots.push_back(temp);
+        auto root_index = BIN_tree::insert_node_to_RB_search_tree(index_RB_tree::get_root_index(),
+                                                                  new_node_v_index,
+                                                                  index_RB_tree::get_nil_index(),
+                                                                  std::bind(&index_RB_tree::get_node_ptr, this,
+                                                                            std::placeholders::_1));
+        index_RB_tree::roots.push_back(root_index);
         return new_node_v_index;
     }
 
 
     v_index delete_node(v_index delete_node) {
-        auto temp_index = BIN_tree::delete_node_from_binary_search_tree(index_RB_tree::get_root_index(),
-                                                                        delete_node,
-                                                                        index_RB_tree::get_nil_index(),
-                                                                        std::bind(&index_RB_tree::get_node_ptr,
-                                                                            this,
-                                                                            std::placeholders::_1));
-        index_RB_tree::update_new_delete_node(temp_index);
-        return temp_index;
+        auto root_index = BIN_tree::delete_node_from_RB_tree(index_RB_tree::get_root_index(),
+                                                             delete_node,
+                                                             index_RB_tree::get_nil_index(),
+                                                             std::bind(&index_RB_tree::get_node_ptr,
+                                                                       this,
+                                                                       std::placeholders::_1));
+        index_RB_tree::update_new_delete_node(delete_node);
+        index_RB_tree::roots.push_back(root_index);
+        return delete_node;
     }
 };
 
