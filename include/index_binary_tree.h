@@ -30,14 +30,15 @@ public:
 
 
     v_index delete_node(v_index delete_node) {
-        auto temp_index = BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(),
+        auto root_index = BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(),
                                                                         delete_node,
                                                                         index_binary_Tree::get_nil_index(),
                                                                         std::bind(&index_binary_Tree::get_node_ptr,
                                                                             this,
                                                                             std::placeholders::_1));
-        index_binary_Tree::update_new_delete_node(temp_index);
-        return temp_index;
+        index_binary_Tree::update_new_delete_node(delete_node);
+        index_binary_Tree::roots.push_back(root_index);
+        return delete_node;
     }
 };
 #endif //INDEX_BINARY_TREE_H

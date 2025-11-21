@@ -52,6 +52,27 @@ public:
         return result;
     }
 
+    std::vector<T> *translate_data(std::vector<v_index> src_s) {
+        auto result = new std::vector<T>();
+        for (auto src: src_s) {
+            result->push_back(get_node(src).data);
+        }
+        return result;
+    }
+
+    v_index tree_find_value(T data) {
+        return BIN_tree::tree_find_value(get_root_index(), data,
+                                         get_nil_index(),
+                                         std::bind(&index_tree_base::get_node_ptr, this, std::placeholders::_1));
+    }
+
+    std::vector<v_index> *inorder_tree_walk_with_stack(std::vector<v_index> *result) {
+        return tree_walk_with_stack(get_root_index(), result,
+                                    get_nil_index(),
+                                    std::bind(&index_tree_base::get_node_ptr, this,
+                                              std::placeholders::_1), tree_walk_type::inorder_type);
+    }
+
 
     std::vector<v_index> *preorder_tree_walk_index() {
         auto result = new std::vector<v_index>();
@@ -116,7 +137,6 @@ public:
         return new_node_v_index;
     }
 };
-
 
 
 // #undef v_index

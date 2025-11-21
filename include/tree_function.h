@@ -9,29 +9,29 @@
 #include "tree_postorder.h"
 #include "tree_preorder.h"
 
-
-// T2 RB_Tree_Node<segment_vector>   T  segment_vector
-// 这里的第二个参数是默认需要带指针的
-// 这里需要考虑边界条件，边界条件考虑不到的时候会出现死循环
-// 需要考虑数据本身的边界条件
-// 我这里改了一下顺序，
-template<typename value_type, typename ptr, typename function>
-ptr tree_find_value(ptr root, value_type data, ptr nil_ptr_or_index, function get_node) {
-    ptr new_root = root;
-    ptr result_node = nil_ptr_or_index;
-    while (new_root != nil_ptr_or_index) {
-        if (get_node(new_root)->data == data) {
-            return new_root;
-        } else if (get_node(new_root)->data < data) {
-            // 这里的前后的顺序，需要与插入时比较相同
-            new_root = get_node(new_root)->right;
-        } else {
-            new_root = get_node(new_root)->left;
+namespace BIN_tree {
+    // T2 RB_Tree_Node<segment_vector>   T  segment_vector
+    // 这里的第二个参数是默认需要带指针的
+    // 这里需要考虑边界条件，边界条件考虑不到的时候会出现死循环
+    // 需要考虑数据本身的边界条件
+    // 我这里改了一下顺序，
+    template<typename value_type, typename ptr, typename function>
+    ptr tree_find_value(ptr root, value_type data, ptr nil_ptr_or_index, function get_node) {
+        ptr new_root = root;
+        ptr result_node = nil_ptr_or_index;
+        while (new_root != nil_ptr_or_index) {
+            if (get_node(new_root)->data == data) {
+                return new_root;
+            } else if (get_node(new_root)->data < data) {
+                // 这里的前后的顺序，需要与插入时比较相同
+                new_root = get_node(new_root)->right;
+            } else {
+                new_root = get_node(new_root)->left;
+            }
         }
+        return result_node;
     }
-    return result_node;
 }
-
 
 template<typename T, typename function>
 std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result, T nil_ptr_or_index, function get_node) {
@@ -158,8 +158,9 @@ std::vector<T2> find_interval(T2 root, T &left_node, T &right_node, T2 nil_ptr_o
     // auto root = this;
     auto result = *new std::vector<T2>;
     // 找到最小值和最大值
-    auto min_node = tree_find_value(root, new_left_node, nil_ptr_or_index, get_node); //其实这里是稍微有点问题的
-    auto max_node = tree_find_value(root, new_right_node, nil_ptr_or_index, get_node); //大部分情况是是取一个间隔，并不能准确的对应的值
+    auto min_node = BIN_tree::tree_find_value(root, new_left_node, nil_ptr_or_index, get_node); //其实这里是稍微有点问题的
+    auto max_node = BIN_tree::tree_find_value(root, new_right_node, nil_ptr_or_index, get_node);
+    //大部分情况是是取一个间隔，并不能准确的对应的值
     if (min_node == nil_ptr_or_index || max_node == nil_ptr_or_index) {
         return result;
     }
@@ -495,7 +496,8 @@ namespace BIN_tree {
 
 template<typename value_type, typename ptr>
 ptr tree_find_value(ptr root, value_type data) {
-    return tree_find_value(root, data, static_cast<ptr>(nullptr), [](ptr insert_node) { return insert_node; });
+    return BIN_tree::tree_find_value(root, data, static_cast<ptr>(nullptr),
+                                     [](ptr insert_node) { return insert_node; });
 }
 
 template<typename T>

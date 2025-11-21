@@ -349,6 +349,34 @@ void RB_tree_test_delete_node(std::vector<int> vt, int delete_value) {
     // return root;
 }
 
+void index_tree_test_delete_node(std::vector<int> vt, int delete_value) {
+    index_binary_Tree<int, index_Tree_Node<int> > tree;
+
+
+    for (auto v1: vt) {
+        tree.add_new_node(v1);
+    }
+    auto temp = tree.tree_find_value(delete_value);
+    tree.delete_node(temp);
+
+    auto inorder_walk = init_null_vector(temp);
+    tree.inorder_tree_walk_with_stack(inorder_walk);
+    auto temps = tree.translate_data(*inorder_walk);
+
+    std::vector<int> copy_v;
+    std::copy(vt.begin(), vt.end(), std::back_inserter(copy_v));
+    for (std::vector<int>::iterator it = copy_v.begin(); it != copy_v.end(); ++it) {
+        if (*it == delete_value) {
+            copy_v.erase(it);
+            break;
+        }
+    }
+    std::sort(copy_v.begin(), copy_v.end());
+
+    test_two_vector_value_eq(*temps, copy_v);
+    // return root;
+}
+
 
 TEST(test_tree, RB_Tree_Node_insert) {
     RB_Tree_Node<int> *root = nullptr;
@@ -375,4 +403,13 @@ TEST(test_tree, RB_Tree_Node_insert) {
 
     // 其实可以想办法写一个层序输出的结果，与最开始的值进行比较
     // 插入时应该是可以随机打乱顺序的
+}
+
+
+TEST(test_tree, index_RB_Tree_Node_insert) {
+    std::vector<int> vt = {26, 17, 41, 14, 21, 30, 47, 10, 16, 19, 23, 28, 38, 7, 12, 15, 20, 35, 39, 3};
+
+    for (auto v3: vt) {
+        index_tree_test_delete_node(vt, v3);
+    }
 }
