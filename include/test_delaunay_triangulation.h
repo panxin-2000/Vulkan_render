@@ -112,6 +112,14 @@ namespace delaunay_triangulation {
             face_v_index result_face_index = 0;
             half_edge_v_index edge_index = 0;
             auto type_temp = hf->get_vertex_in_witch_face_test(result_face_index, edge_index, point);
+            // 上面这一行的参数不用改，不，参数也是需要改的，主要是为了进行加速
+            // 需要一个三角形的结构，需要同步在下面add_new_point 的时候，添加在树的结构中相同的内容
+            // 在insert_edge的时候，将原本的一条边上的两个面，劈成四个三角形
+            // 不对，还没有结束，后面的对角线变更的时候，还会改变三角形，
+            // 这时候拿到的face或者edge就不准了，要么变更树，要么就要使用之前的点定位的办法了
+            // 再看书时候发现，flip的时候也是需要去更改查找树的。
+            // 我暂时不想这个问题太负责，就先不继续去做了。
+
             if (type_temp == point_in_triangle_type::in_triangle) {
                 // 上面的函数并没有考虑另一种情况，那就是在边上的情况
                 // 上面的在边上的情况会返回负一，之后怎么对这个负一进行处理，或者说怎么得到在那条边上的情况
