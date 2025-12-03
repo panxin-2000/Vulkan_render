@@ -9,20 +9,21 @@
 
 template<typename T>
 class Triangle_node {
+public:
     Triangle<T> triangle;
     int face_index = 0;
     Triangle_node *inner_triangle[3];
 
-public:
     Triangle_node(T a_1, T b_1, T c_1, int face_index) : triangle(a_1, b_1, c_1), face_index(face_index) {
     }
 
     void add_triangle_node(Triangle_node *node) {
-        for (int i = 0; i < 3; ++i) {
-            if (node->inner_triangle[i] != nullptr) {
-                node->inner_triangle[i] = node;
+        for (auto &i: inner_triangle) {
+            // 没想到数组也是能够进行for range 的
+            if (i == nullptr) {
+                i = node;
                 face_index = -1;
-                break;
+                return;
             }
         }
         assert(false && "inner_triangle[3] has full");
@@ -49,11 +50,36 @@ public:
     // face_index是会被清零的或者说置为-1
 
     Triangle_node<T> *find_triangle_node(T point) {
+        auto temp_root_triangle = root_triangle;
+        auto result = root_triangle;
+
+        if (temp_root_triangle != nullptr &&
+            temp_root_triangle->triangle.point_position_of_triangle(point) ==
+            (point_in_triangle_type::in_triangle || point_in_triangle_type::on_edge)) {
+            result = temp_root_triangle;
+        }
+        while (temp_root_triangle != nullptr) {
+            for (auto check_triangle: temp_root_triangle->inner_triangle) {
+                if (check_triangle != nullptr &&
+                    check_triangle->triangle.point_position_of_triangle(point) ==
+                    (point_in_triangle_type::in_triangle || point_in_triangle_type::on_edge)) {
+                    temp_root_triangle = check_triangle;
+                    result = check_triangle;
+                    break;
+                }
+            }
+            temp_root_triangle = nullptr;
+        }
+        return result;
     }
 
-    void add_split_point(T find_triangle_point, T add_point) {
-        // 找到重心，
+    void add_split_triangle(T find_triangle_point, Triangle_node<T> *node) {
+        // 找到重心，也就是find_triangle_point
         // 从根结点开始遍历找到三角形
+        auto triangle_node = find_triangle_node(find_triangle_point);
+        if (triangle_node != nullptr) {
+            triangle_node->add_triangle_node(node);
+        }
         // 将三角形进行分裂
     }
 };

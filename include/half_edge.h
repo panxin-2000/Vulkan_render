@@ -13,6 +13,7 @@
 // Created by 潘鑫 on 2025/10/21.
 //
 
+#include "point_3.h"
 #include "point_in_on_out_triangle.h"
 
 struct vertex_xy : public point_2 {

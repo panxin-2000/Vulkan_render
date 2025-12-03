@@ -4,7 +4,7 @@
 
 #ifndef BOUNDING_BOX_H
 #define BOUNDING_BOX_H
-#include "vector_signed_area.h"
+#include "point_2.h"
 
 template<typename T>
 class AABB {

@@ -6,34 +6,6 @@
 #include "vector_signed_area.h"
 
 
-bool point_2::operator==(const point_2 &R) {
-    if (this->x == R.x && this->y == R.y) return true;
-    else return false;
-}
-
-
-// 其实感觉不应该用这个的，但是暂时没有办法，就先用这个吧，应该和sort一样，
-// 增加一个添加函数的接口的
-
-
-const point_2 point_2::operator-(const point_2 &R) const {
-    point_2 temp{0, 0};
-    temp.x = this->x - R.x;
-    temp.y = this->y - R.y;
-    return temp;
-}
-
-/**
- * 可以用来判断顺时针还是逆时针，第二个相对于第一个逆时针为正，顺时针为负
- * 这里写完还是很简单的
- * @param R
- * @return
- */
-float point_2::single_area(const point_2 &R) {
-    return this->x * R.y - this->y * R.x;
-}
-
-
 
 
 /**

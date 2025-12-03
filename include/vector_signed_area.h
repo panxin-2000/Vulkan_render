@@ -7,205 +7,9 @@
 
 #include <vector>
 #include <ostream>
-
+#include "point_2.h"
 #include "point_in_on_out_triangle.h"
 #include "bounding_box.h"
-
-class point_2 {
-public:
-    float x;
-    float y;
-    using point_type = point_2;
-
-    point_2() {
-    }
-
-    point_2(float x1, float y1) {
-        x = x1;
-        y = y1;
-    }
-
-    // point_2 &operator=(const point_2 &R) {
-    //     this->x = R.x;
-    //     this->y = R.y;
-    //     return *this;
-    // }
-
-    point_2 operator+(const point_2 &R) const {
-        point_2 temp{0, 0};
-        temp.x = this->x + R.x;
-        temp.y = this->y + R.y;
-        return temp;
-    }
-
-    // a 的 平方 大于 b 的平方 是返回 true  否则返回 false
-    static bool distance_compare(point_2 a, point_2 b) {
-        if (a.x * a.x + a.y * a.y > b.x * b.x + b.y * b.y) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    static point_2 centre_of_a_circle(point_2 a, point_2 b, point_2 c) {
-        auto A_1_1 = -2 * (a.x - b.x);
-        auto A_1_2 = -2 * (a.y - b.y);
-        auto A_2_1 = -2 * (a.x - c.x);
-        auto A_2_2 = -2 * (a.y - c.y);
-        auto A = A_1_1 * A_2_2 - A_1_2 * A_2_1;
-        auto inv_A_1_1 = A_2_2 / A;
-        auto inv_A_1_2 = -1 * A_1_2 / A;
-        auto inv_A_2_1 = -1 * A_2_1 / A;
-        auto inv_A_2_2 = A_1_1 / A;
-        auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
-        auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
-
-        point_2 result = {};
-        result.x = inv_A_1_1 * B_1 + inv_A_1_2 * B_2;
-        result.y = inv_A_2_1 * B_1 + inv_A_2_2 * B_2;
-        return result;
-    }
-
-    bool operator==(const point_2 &R);
-
-    friend bool operator<(const point_2 &L, const point_2 &R) {
-        if (L.x < R.x) {
-            return true;
-        } else if (L.x == R.x && L.y < R.y) {
-            return true;
-        }
-        return false;
-    }
-
-    friend bool operator==(const point_2 &L, const point_2 &R) {
-        if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
-            return true;
-        }
-        return false;
-    }
-
-    static point_2 int_max_limit(point_2 &L) {
-        L.x = std::numeric_limits<float>::infinity();;
-        L.y = std::numeric_limits<float>::infinity();
-        return L;
-    }
-
-    static point_2 int_min_limit(point_2 &L) {
-        L.x = -std::numeric_limits<float>::infinity();;
-        L.y = -std::numeric_limits<float>::infinity();
-        return L;
-    }
-
-
-    static const point_2 min_two_point(point_2 &L, const point_2 &R) {
-        if (R.x < L.x) {
-            L.x = R.x;
-        }
-        if (R.y < L.y) {
-            L.y = R.y;
-        }
-        return L;
-    }
-
-    static const point_2 max_two_point(point_2 &L, const point_2 &R) {
-        if (R.x > L.x) {
-            L.x = R.x;
-        }
-        if (R.y > L.y) {
-            L.y = R.y;
-        }
-        return L;
-    }
-
-    const point_2 operator-(const point_2 &R) const;
-
-    float single_area(const point_2 &R);
-
-    static float single_area(const point_2 &a, const point_2 b, const point_2 c) {
-        point_2 ab = b - a;
-        point_2 ac = c - a;
-        return ab.single_area(ac);
-    }
-
-
-    // 下面一行去掉class之后是能够编译过的，添加之后是编译不过的？
-    enum anticlockwise {
-        clockwise = 1,
-        counterclockwise = 2,
-        collinear = 5,
-    };
-
-    friend anticlockwise operator&(anticlockwise &left, anticlockwise &right) {
-        return static_cast<anticlockwise>(static_cast<int>(left) & static_cast<int>(right));
-    }
-
-    /**
-     * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
-     * @param a
-     * @param b
-     * @param c
-     * @return
-     */
-    static anticlockwise is_anticlockwise(const point_2 &a, const point_2 &b, const point_2 &c) {
-        point_2 ab = b - a;
-        point_2 ac = c - a;
-        float area = ab.single_area(ac);
-        if (abs(area) < 0.00001)
-            return anticlockwise::collinear;
-        if (area > 0) return anticlockwise::counterclockwise;
-        else return anticlockwise::clockwise;
-    }
-};
-
-class point_3 {
-public:
-    float x;
-    float y;
-    float z;
-    using point_type = point_3;
-
-
-    point_3() {
-    }
-
-    point_3(float x1, float y1, float z1) {
-        x = x1;
-        y = y1;
-        z = z1;
-    }
-
-    point_3 operator+(const point_3 &R) const {
-        point_3 temp{0, 0, 0};
-        temp.x = this->x + R.x;
-        temp.y = this->y + R.y;
-        return temp;
-    }
-
-    bool operator==(const point_3 &R) {
-        if (this->x == R.x && this->y == R.y && this->z == R.z) {
-            return true;
-        }
-        return false;
-    }
-
-    friend bool operator<(const point_3 &L, const point_3 &R) {
-        if (L.x < R.x) {
-            return true;
-        }
-        return false;
-    }
-
-    friend bool operator==(const point_3 &L, const point_3 &R) {
-        if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
-            return true;
-        }
-        return false;
-    }
-
-    point_3 operator-(const point_3 &R);
-
-    float single_area(const point_3 &R);
-};
 
 
 typedef point_2 triangle_position;
@@ -268,21 +72,22 @@ struct Triangle {
     point_in_triangle_type point_position_of_triangle(T point) {
         T a2b = b - a;
         T a2c = c - a;
-        float area = a2b.area(a2c);
+        float area = a2b.single_area(a2c);
 
-        float p2a = a - point;
-        float alpha = a2c.area(p2a) / area;
+        auto p2a = a - point;
+        float alpha = a2c.single_area(p2a) / area;
 
         if (abs(area) == 0.000001f) {
             // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
-            if ((abs(alpha) == 0.000001f) && (AABB<T>(a, b, c).in_bounding_box(point))) {
+            if (abs(alpha) == 0.000001f) {
+                AABB<T> temp{a, b, c};
+                if (temp.in_bounding_box(point))return on_edge;
                 // 判断是否在线上还需要过包围盒，在包围盒内才是在线上
-                return on_edge;
             }
             return out_triangle;
         };
 
-        float beta = a2b.area(p2a) / area;
+        float beta = a2b.single_area(p2a) / area;
         float gamma = 1.0f - (alpha + beta);
 
         if (abs(alpha) == 0.000001f || abs(beta) == 0.000001f || abs(gamma) == 0.000001f) {

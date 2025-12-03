@@ -131,8 +131,10 @@ namespace delaunay_triangulation {
                 int vertex_index = 0;
                 auto centroid = hf->get_centroid(result_face_index);
                 auto new_faces = hf->face_add_new_point(result_face_index, point, vertex_index);
-                tree.add_split_point(centroid, point);
                 for (auto face: new_faces) {
+                    auto new_triangle_node = new Triangle_node<point_2>(point_a, point_b, point_c, face);
+                    tree.add_split_triangle(centroid, new_triangle_node);
+
                     auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
                     hf->legalize_edge(temp, vertex_index);
                     // 有问题，运行的时候发生了死循环

@@ -8,7 +8,7 @@
 enum point_in_triangle_type {
     in_triangle = 1,
     on_edge = 2,
-    out_triangle
+    out_triangle = 4
 };
 
 #endif //HELLO_MAC_POINT_IN_ON_OUT_TRIANGLE_H
