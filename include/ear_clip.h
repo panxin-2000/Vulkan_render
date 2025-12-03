@@ -8,9 +8,9 @@
 
 #include "vector_signed_area.h"
 #include "RB_tree_node.h"
-#include "half_edge.h"
+#include "Half_edge.h"
 
-bool ear_clip_algorithm_no_efficient(std::vector<triangle<point_2> > &result_segments,
+bool ear_clip_algorithm_no_efficient(std::vector<Triangle<point_2> > &result_segments,
                                      std::vector<point_2> &new_segments,
                                      RB_Tree_Node<point_2> &tree_vertices);
 
@@ -53,7 +53,7 @@ bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
 }
 
 template<typename T>
-bool ear_clip_triangulations(T &hf, half_edge_v_index half_edge) {
+bool ear_clip_triangulations(T &hf, Half_edge_v_index half_edge) {
     auto all_edge = hf.get_all_edge_of_face(half_edge);
     auto new_segments = hf.get_vertices(all_edge);
     RB_Tree_Node<point_2> *tree_vertices = nullptr;

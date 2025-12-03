@@ -211,18 +211,18 @@ public:
 typedef point_2 triangle_position;
 
 template<typename T>
-struct triangle {
+struct Triangle {
     T a;
     T b;
     T c;
 
-    triangle(T a_1, T b_1, T c_1) {
+    Triangle(T a_1, T b_1, T c_1) {
         a = a_1;
         b = b_1;
         c = c_1;
     }
 
-    bool operator==(const triangle &R) {
+    bool operator==(const Triangle &R) {
         if (!(this->a + this->b + this->c == R.a + R.b + R.c)) {
             return false;
         }
@@ -233,7 +233,7 @@ struct triangle {
         else return false;
     }
 
-    bool operator<(const triangle &R) const {
+    bool operator<(const Triangle &R) const {
         auto left = this->a + this->b + this->c;
         auto right = R.a + R.b + R.c;
         if (left < right) {
@@ -243,7 +243,7 @@ struct triangle {
     }
 
     friend std::ostream &operator<<(std::ostream &output,
-                                    const triangle &D) {
+                                    const Triangle &D) {
         auto right = D.a + D.b + D.c;
 
         output << " barycenter x : " << right.x << " barycenter y : " << right.y;
@@ -256,7 +256,7 @@ struct triangle {
         return output;
     }
 
-    friend bool operator==(const triangle &L, const triangle &R) {
+    friend bool operator==(const Triangle &L, const Triangle &R) {
         if (L == R) {
             return true;
         }

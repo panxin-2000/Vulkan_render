@@ -6,7 +6,7 @@
 #include "binary_Tree_Node.h"
 #include "tree_function.h"
 #include "vector_signed_area.h"
-#include "half_edge.h"
+#include "Half_edge.h"
 #include  "segment_end_ponit_and_gradient.h"
 // 既然我们这里需要使用plane sweep 算法，
 // 那么先说说这个算法是怎么实现的呢？

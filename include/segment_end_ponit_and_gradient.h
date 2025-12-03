@@ -4,7 +4,7 @@
 
 #ifndef SEGMENT_END_PONIT_AND_GRADIENT_H
 #define SEGMENT_END_PONIT_AND_GRADIENT_H
-#include "half_edge.h"
+#include "Half_edge.h"
 
 struct segment_start_point_and_gradient {
     float x, y;

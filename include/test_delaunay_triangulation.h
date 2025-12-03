@@ -6,8 +6,8 @@
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
 #include "ear_clip.h"
-#include "half_edge.h"
-
+#include "Half_edge.h"
+#include "triangle_graph.h"
 
 namespace delaunay_triangulation {
     // 并不是算事一个类，只能算是一个方法
@@ -97,7 +97,7 @@ namespace delaunay_triangulation {
     // 检查边，查看是否需要flip
 
 
-    half_edge *delaunay_triangulation(std::vector<point_2> input_points) {
+    Half_edge *delaunay_triangulation(std::vector<point_2> input_points) {
         auto box = AABB<point_2>::calculate_bound_box(input_points);
         auto point_a = box.max_point + (box.max_point - box.min_point);
         point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
@@ -109,8 +109,8 @@ namespace delaunay_triangulation {
 
 
         for (auto point: input_points) {
-            face_v_index result_face_index = 0;
-            half_edge_v_index edge_index = 0;
+            Face_v_index result_face_index = 0;
+            Half_edge_v_index edge_index = 0;
             auto type_temp = hf->get_vertex_in_witch_face_test(result_face_index, edge_index, point);
             // 上面这一行的参数不用改，不，参数也是需要改的，主要是为了进行加速
             // 需要一个三角形的结构，需要同步在下面add_new_point 的时候，添加在树的结构中相同的内容
