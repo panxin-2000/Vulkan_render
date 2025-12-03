@@ -8,7 +8,7 @@
 
 #include "vector_signed_area.h"
 #include "RB_tree_node.h"
-#include "Half_edge.h"
+#include "half_edge.h"
 
 bool ear_clip_algorithm_no_efficient(std::vector<Triangle<point_2> > &result_segments,
                                      std::vector<point_2> &new_segments,

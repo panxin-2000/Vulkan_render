@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/10/24.
 //
 
-#include "Half_edge.h"
+#include "half_edge.h"
 #include <gtest/gtest.h>
 
 TEST(tetrahedron, init_tetrahedron) {

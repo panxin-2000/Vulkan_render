@@ -6,7 +6,7 @@
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
 #include "ear_clip.h"
-#include "Half_edge.h"
+#include "half_edge.h"
 #include "triangle_graph.h"
 
 namespace delaunay_triangulation {
@@ -102,10 +102,10 @@ namespace delaunay_triangulation {
         auto point_a = box.max_point + (box.max_point - box.min_point);
         point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
         point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};
-        auto hf = new half_edge_struct<vertex_xy>;;
-        auto half_edge_index_s = hf->create_loop(point_b, point_a);
-        auto first_half_edge = half_edge_index_s;
-        half_edge_index_s = hf->add_edge(half_edge_index_s, point_c);
+        auto hf = new half_edge_struct<vertex_xy>;
+        auto ab_index = hf->add_triangle(point_a, point_b, point_c);
+        auto abc_face_index = hf->get_face_index(ab_index);
+        auto root_node = new Triangle_node<point_2>(point_a, point_b, point_c, abc_face_index);
 
 
         for (auto point: input_points) {

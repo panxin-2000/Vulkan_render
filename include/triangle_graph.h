@@ -7,11 +7,15 @@
 #include "half_edge.h"
 #include "vector_signed_area.h"
 
-
-struct Triangle_node {
+template<typename T>
+class Triangle_node {
+    Triangle<T> triangle;
+    int face_index = 0;
     Triangle_node *inner_triangle[3];
-    Triangle<float> triangle;
-    int face_index;
+
+public:
+    Triangle_node(T a_1, T b_1, T c_1, int face_index) : triangle(a_1, b_1, c_1), face_index(face_index) {
+    }
 
     void add_triangle_node(Triangle_node *node) {
         for (int i = 0; i < 3; ++i) {
@@ -25,8 +29,9 @@ struct Triangle_node {
     }
 };
 
+template<typename T>
 class Triangle_node_tree {
-    Triangle_node *root_triangle;
+    Triangle_node<T> *root_triangle;
     // 这里可以肯定的是root是不会变的。
 
     // 翻转边的时候需要做什么呢？
@@ -39,8 +44,12 @@ class Triangle_node_tree {
     // 在它们内部各添加两个三角形
     // face_index是会被清零的或者说置为-1
 
+    Triangle_node<T> *find_triangle_node(T point) {
+    }
+
     void add_split_point() {
         // 找到重心，
+        // 从根结点开始遍历找到三角形
         // 将三角形进行分裂
     }
 };

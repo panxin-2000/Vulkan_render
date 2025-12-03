@@ -61,7 +61,6 @@ struct vertex_xy : public point_2 {
 };
 
 
-
 struct vertex_xyz : public point_3 {
     int incident_half_edge;
 
@@ -325,8 +324,19 @@ struct half_edge_struct {
         return db_edge;
     }
 
+    // 返回AB边的索引,有一个前置要求，要求a,b,c三个点已经是逆时针了
+    Half_edge_v_index add_triangle(Vertex point_a, Vertex point_b, Vertex point_c) {
+        auto half_edge_index_s = create_loop(point_b, point_a);
+        auto first_half_edge = half_edge_index_s;
+        add_edge(half_edge_index_s, point_c);
+        return half_edge_index_s;
+    }
+
+
     // 两个顶点创建一个loop，然后后创建两个面，一个是内部的面，另一个是外部的面，
     // 创建loop的时候只会创建一个面。，这个退化的线之内全部都是这个面
+    // 返回 start_point 指向 end_point 索引的边，
+    // 假设输入是 a , b , 那么返回的是 ab 的索引
     Half_edge_v_index create_loop(Vertex start_point,
                                   Vertex end_point) {
         auto half_edges_size = half_edges.size();

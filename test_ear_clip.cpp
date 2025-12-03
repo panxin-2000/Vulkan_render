@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include "vector_signed_area.h"
 #include "ear_clip.h"
-#include "Half_edge.h"
+#include "half_edge.h"
 #include "trapezoid.h"
 #include "tree_function.h"
 
