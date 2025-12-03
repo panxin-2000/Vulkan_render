@@ -34,6 +34,10 @@ class Triangle_node_tree {
     Triangle_node<T> *root_triangle;
     // 这里可以肯定的是root是不会变的。
 
+public:
+    explicit Triangle_node_tree(Triangle_node<T> *root_triangle) : root_triangle(root_triangle) {
+    }
+
     // 翻转边的时候需要做什么呢？
     // 找到两个原本的三角形，
     //     怎么找到原本的两个三角形呢？
@@ -47,7 +51,7 @@ class Triangle_node_tree {
     Triangle_node<T> *find_triangle_node(T point) {
     }
 
-    void add_split_point() {
+    void add_split_point(T find_triangle_point, T add_point) {
         // 找到重心，
         // 从根结点开始遍历找到三角形
         // 将三角形进行分裂

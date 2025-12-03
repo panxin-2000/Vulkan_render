@@ -107,6 +107,8 @@ namespace delaunay_triangulation {
         auto abc_face_index = hf->get_face_index(ab_index);
         auto root_node = new Triangle_node<point_2>(point_a, point_b, point_c, abc_face_index);
 
+        auto tree = Triangle_node_tree<point_2>(root_node);
+
 
         for (auto point: input_points) {
             Face_v_index result_face_index = 0;
@@ -127,7 +129,9 @@ namespace delaunay_triangulation {
                 // 上面的在边上的情况会返回负一，之后怎么对这个负一进行处理，或者说怎么得到在那条边上的情况
                 // 先不考虑在边上的情况，之后考虑什么呢？
                 int vertex_index = 0;
+                auto centroid = hf->get_centroid(result_face_index);
                 auto new_faces = hf->face_add_new_point(result_face_index, point, vertex_index);
+                tree.add_split_point(centroid, point);
                 for (auto face: new_faces) {
                     auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
                     hf->legalize_edge(temp, vertex_index);

@@ -36,6 +36,11 @@ struct vertex_xy : public point_2 {
         incident_half_edge = incident_half_edge_1;
     }
 
+    vertex_xy operator/(unsigned long number) const {
+        const vertex_xy result(x / number, y / number);
+        return result;
+    }
+
     bool operator<(const vertex_xy &right) const {
         if (y < right.y) {
             // 先比较x轴，x轴小的为小
@@ -693,6 +698,10 @@ struct half_edge_struct {
         return vertices.at(vertex_index_end_point);
     }
 
+    Half_edge_v_index &get_edge_incident_edge(int face_index) {
+        return faces.at(face_index).bounding_half_edge;
+    }
+
     Half_edge &get_edge(int incident_half_edge) {
         return half_edges.at(incident_half_edge);
     }
@@ -835,6 +844,17 @@ struct half_edge_struct {
             }
         }
         return true;
+    }
+
+    vertex_base_type get_centroid(int face_index_para) {
+        auto temps = get_all_edge_of_face(get_edge_incident_edge(face_index_para));
+        Vertex total(0, 0);
+        for (auto temp: temps) {
+            auto a = get_vertex(temp);
+            total = total + a;
+        }
+        auto centroid = total / temps.size();
+        return centroid;
     }
 
 
