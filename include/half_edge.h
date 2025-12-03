@@ -13,6 +13,8 @@
 // Created by 潘鑫 on 2025/10/21.
 //
 
+#include "point_in_on_out_triangle.h"
+
 struct vertex_xy : public point_2 {
     using point_type = point_2;
 
@@ -58,11 +60,7 @@ struct vertex_xy : public point_2 {
     }
 };
 
-enum point_in_triangle_type {
-    in_triangle = 1,
-    on_edge = 2,
-    out_triangle
-};
+
 
 struct vertex_xyz : public point_3 {
     int incident_half_edge;

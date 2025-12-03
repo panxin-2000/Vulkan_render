@@ -18,6 +18,16 @@ public:
         max_point = T::int_min_limit(max_point);
     }
 
+    AABB(std::initializer_list<T> points) {
+        min_point = T::int_max_limit(min_point);
+        max_point = T::int_min_limit(max_point);
+        for (auto vertex_point: points) {
+            min_point = T::min_two_point(min_point, vertex_point);
+            max_point = T::max_two_point(max_point, vertex_point);
+        }
+    }
+
+
     static AABB calculate_bound_box(std::vector<T> &points) {
         AABB box;
         for (auto vertex_point: points) {
@@ -25,6 +35,17 @@ public:
             box.max_point = T::max_two_point(box.max_point, vertex_point);
         }
         return box;
+    }
+
+    /**
+     * 在包围盒的内部和边缘的线上都 返回 true
+     * @param test_point 需要测试 是否 在包围盒内的点
+     * @return
+     */
+    bool in_bounding_box(const T &test_point) {
+        if (min_point <= test_point && test_point <= max_point)
+            return true;
+        return false;
     }
 };
 

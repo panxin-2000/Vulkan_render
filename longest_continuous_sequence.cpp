@@ -4,7 +4,7 @@
 //#include <iostream>
 #include <vector>
 #include <unordered_map>
-#include "gtest/gtest.h"
+// #include "gtest/gtest.h"
 
 int longest_consecutive(std::vector<int> &nums) {
     std::unordered_map<int, int> L, R; // 首先这里可以理解为两个hash表
@@ -60,7 +60,7 @@ int update_longest_consecutive(std::vector<int> &nums) {
 }
 
 
-TEST(hash, find) {
-    std::vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    update_longest_consecutive(nums);
-}
+// TEST(hash, find) {
+//     std::vector<int> nums = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+//     update_longest_consecutive(nums);
+// }

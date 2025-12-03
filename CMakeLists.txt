@@ -26,7 +26,7 @@ include(FetchContent)
 FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG release-1.11.0
+        GIT_TAG v1.17.0
 )
 
 ## 下面这行没有看懂什么意思，按照说明先复制过来了

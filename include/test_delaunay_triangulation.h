@@ -119,6 +119,8 @@ namespace delaunay_triangulation {
             // 这时候拿到的face或者edge就不准了，要么变更树，要么就要使用之前的点定位的办法了
             // 再看书时候发现，flip的时候也是需要去更改查找树的。
             // 我暂时不想这个问题太负责，就先不继续去做了。
+            // 继续把这个问题做下去，先简单的改一改。
+            //
 
             if (type_temp == point_in_triangle_type::in_triangle) {
                 // 上面的函数并没有考虑另一种情况，那就是在边上的情况

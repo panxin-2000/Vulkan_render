@@ -8,6 +8,9 @@
 #include <vector>
 #include <ostream>
 
+#include "point_in_on_out_triangle.h"
+#include "bounding_box.h"
+
 class point_2 {
 public:
     float x;
@@ -258,6 +261,37 @@ struct triangle {
             return true;
         }
         return false;
+    }
+
+    // 有三角形了，需要判断是在三角形里面还是在三角形的边上
+    // 有一个固定的算法
+    point_in_triangle_type point_position_of_triangle(T point) {
+        T a2b = b - a;
+        T a2c = c - a;
+        float area = a2b.area(a2c);
+
+        float p2a = a - point;
+        float alpha = a2c.area(p2a) / area;
+
+        if (abs(area) == 0.000001f) {
+            // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
+            if ((abs(alpha) == 0.000001f) && (AABB<T>(a, b, c).in_bounding_box(point))) {
+                // 判断是否在线上还需要过包围盒，在包围盒内才是在线上
+                return on_edge;
+            }
+            return out_triangle;
+        };
+
+        float beta = a2b.area(p2a) / area;
+        float gamma = 1.0f - (alpha + beta);
+
+        if (abs(alpha) == 0.000001f || abs(beta) == 0.000001f || abs(gamma) == 0.000001f) {
+            return on_edge;
+        } else if (alpha < 0.0f || beta < 0.0f || gamma < 0.0f) {
+            return out_triangle;
+        } else if (alpha > 0.0f || beta > 0.0f || gamma > 0.0f) {
+            return in_triangle;
+        }
     }
 
 
