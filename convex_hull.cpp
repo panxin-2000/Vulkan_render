@@ -12,15 +12,15 @@
  * @param new_segments
  * @return
  */
-bool convex_hull_in_order_of_angles(std::vector<point_2> &new_segments) {
+bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments) {
     // 这里需要做什么呢？
     // 判断长度
     if (new_segments.size() >= 3) {
-        point_2 a = new_segments.at(new_segments.size() - 3);
-        point_2 b = new_segments.at(new_segments.size() - 2);
-        point_2 c = new_segments.at(new_segments.size() - 1);
+        Point_2 a = new_segments.at(new_segments.size() - 3);
+        Point_2 b = new_segments.at(new_segments.size() - 2);
+        Point_2 c = new_segments.at(new_segments.size() - 1);
 
-        if (point_2::is_anticlockwise(a, b, c) == point_2::anticlockwise::counterclockwise ) {
+        if (Point_2::is_anticlockwise(a, b, c) == Point_2::anticlockwise::counterclockwise ) {
             // 那么这里是逆时针
             return true;
         } else {
@@ -47,9 +47,9 @@ bool convex_hull_in_order_of_angles(std::vector<point_2> &new_segments) {
  * @param segments
  * @return
  */
-std::vector<point_2> &calculate_convex_hull(std::vector<point_2> &segments) {
+std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments) {
     struct {
-        bool operator()(point_2 a, point_2 b) const {
+        bool operator()(Point_2 a, Point_2 b) const {
             if (a.y < b.y) {
                 return true;
             } else if (a.y > b.y) {
@@ -63,14 +63,14 @@ std::vector<point_2> &calculate_convex_hull(std::vector<point_2> &segments) {
             }
         }
     } customLess;
-    std::vector<point_2>::iterator current_min = std::min_element(segments.begin(), segments.end(), customLess);
+    std::vector<Point_2>::iterator current_min = std::min_element(segments.begin(), segments.end(), customLess);
 
-    point_2 min = *current_min;
+    Point_2 min = *current_min;
     segments.erase(current_min);
     std::sort(segments.begin(), segments.end(),
-              [min](point_2 a, point_2 b) {
-                  point_2 new_a = a - min;
-                  point_2 new_b = b - min;
+              [min](Point_2 a, Point_2 b) {
+                  Point_2 new_a = a - min;
+                  Point_2 new_b = b - min;
                   if (std::asin(new_a.y / new_a.x) < std::asin(new_b.y / new_b.x)) {
                       return true;
                   } else {
@@ -85,7 +85,7 @@ std::vector<point_2> &calculate_convex_hull(std::vector<point_2> &segments) {
     } // 只有在大于三个的时候，才会去添加，不大于三个的时候是没有办法添加的，
     // 因为添加进入会导致判断角度为零
 
-    std::vector<point_2> *new_segments = new std::vector<point_2>;
+    std::vector<Point_2> *new_segments = new std::vector<Point_2>;
     // 直接用new，之后变换为引用
     new_segments->push_back(min);
     // new_segments.push_back(*segments.begin());

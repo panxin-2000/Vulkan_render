@@ -15,8 +15,8 @@
  * @param test_point
  * @return
  */
-bool on_segment_bounding_box(const point_2 &segment_start_point, point_2 &segment_end_point,
-                             point_2 &test_point) {
+bool on_segment_bounding_box(const Point_2 &segment_start_point, Point_2 &segment_end_point,
+                             Point_2 &test_point) {
     if (std::min(segment_start_point.x, segment_end_point.x) <= test_point.x &&
         test_point.x <= std::max(segment_start_point.x, segment_end_point.x) &&
         std::min(segment_start_point.y, segment_end_point.y) <= test_point.y &&
@@ -25,7 +25,7 @@ bool on_segment_bounding_box(const point_2 &segment_start_point, point_2 &segmen
     return false;
 }
 
-bool segment_position::get_intersection_point(struct segment_position &R_segment_position, point_2 *result) {
+bool segment_position::get_intersection_point(struct segment_position &R_segment_position, Point_2 *result) {
     // 已知两条线段相交怎么求交点？
     // y_0 = a_0 * x + b_0
     // y_1 = a_1 * x + b_1
@@ -36,10 +36,10 @@ bool segment_position::get_intersection_point(struct segment_position &R_segment
     //  a_1 - a_0
     //  y = a_0 * x + b_0
     // a_1 - a_0 == 0 时 为平行线
-    point_2 ab = this->end_point - this->start_point;
+    Point_2 ab = this->end_point - this->start_point;
     float a_0 = ab.y / ab.x;
     float b_0 = this->start_point.y - a_0 * this->start_point.x;
-    point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
+    Point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
     float a_1 = cd.y / cd.x;
     float b_1 = R_segment_position.start_point.y - a_1 * R_segment_position.start_point.x;
     if (std::abs(a_1 - a_0) < 0.000001) {
@@ -53,13 +53,13 @@ bool segment_position::get_intersection_point(struct segment_position &R_segment
 }
 
 bool segment_position::intersection(struct segment_position &R_segment_position) {
-    point_2 ab = this->end_point - this->start_point;
-    point_2 ac = R_segment_position.start_point - this->start_point;
-    point_2 ad = R_segment_position.end_point - this->start_point;
+    Point_2 ab = this->end_point - this->start_point;
+    Point_2 ac = R_segment_position.start_point - this->start_point;
+    Point_2 ad = R_segment_position.end_point - this->start_point;
 
-    point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
-    point_2 ca = this->start_point - R_segment_position.start_point;
-    point_2 cb = this->end_point - R_segment_position.start_point;
+    Point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
+    Point_2 ca = this->start_point - R_segment_position.start_point;
+    Point_2 cb = this->end_point - R_segment_position.start_point;
 
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
     float f1 = ab.single_area(ac);

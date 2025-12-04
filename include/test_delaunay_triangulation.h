@@ -97,17 +97,17 @@ namespace delaunay_triangulation {
     // 检查边，查看是否需要flip
 
 
-    Half_edge *delaunay_triangulation(std::vector<point_2> input_points) {
-        auto box = AABB<point_2>::calculate_bound_box(input_points);
+    Half_edge *delaunay_triangulation(std::vector<Point_2> input_points) {
+        auto box = AABB<Point_2>::calculate_bound_box(input_points);
         auto point_a = box.max_point + (box.max_point - box.min_point);
-        point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
-        point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};
+        Point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
+        Point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};
         auto hf = new half_edge_struct<vertex_xy>;
         auto ab_index = hf->add_triangle(point_a, point_b, point_c);
         auto abc_face_index = hf->get_face_index(ab_index);
-        auto root_node = new Triangle_node<point_2>(point_a, point_b, point_c, abc_face_index);
+        auto root_node = new Triangle_node<Point_2>(point_a, point_b, point_c, abc_face_index);
 
-        auto tree = new Triangle_node_tree<point_2>(root_node);
+        auto tree = new Triangle_node_tree<Point_2>(root_node);
 
 
         for (auto point: input_points) {
@@ -144,7 +144,7 @@ namespace delaunay_triangulation {
                 auto triangle_node = tree->find_triangle_node(centroid);
                 auto new_faces = hf->face_add_new_point(result_face_index, point, vertex_index);
                 for (auto face: new_faces) {
-                    std::vector<Triangle<point_2> > result_segments{};
+                    std::vector<Triangle<Point_2> > result_segments{};
                     auto new_triangle_node = hf->make_Triangle_node(face);
                     triangle_node->add_triangle_node(new_triangle_node);
 

@@ -12,7 +12,7 @@
 #include "bounding_box.h"
 
 
-typedef point_2 triangle_position;
+typedef Point_2 triangle_position;
 
 template<typename T>
 struct Triangle {
@@ -106,21 +106,21 @@ struct Triangle {
 };
 
 
-bool on_segment_bounding_box(const point_2 &segment_start_point, point_2 &segment_end_point,
-                             point_2 &test_point);
+bool on_segment_bounding_box(const Point_2 &segment_start_point, Point_2 &segment_end_point,
+                             Point_2 &test_point);
 
 struct segment_position {
-    point_2 start_point;
-    point_2 end_point;
+    Point_2 start_point;
+    Point_2 end_point;
 
     bool intersection(struct segment_position &R_segment_position);
 
-    bool get_intersection_point(struct segment_position &R_segment_position, point_2 *result);
+    bool get_intersection_point(struct segment_position &R_segment_position, Point_2 *result);
 
 
-    static point_2 get_intersection_point(point_2 &start_point, point_2 &end_point, float x) {
-        point_2 ab = start_point - end_point;
-        point_2 result;
+    static Point_2 get_intersection_point(Point_2 &start_point, Point_2 &end_point, float x) {
+        Point_2 ab = start_point - end_point;
+        Point_2 result;
         float a_0 = ab.y / ab.x; // a_0 是 start_point 到 end_point 之间的斜率
         result.x = x;
         result.y = start_point.y + a_0 * (x - start_point.x);
@@ -128,7 +128,7 @@ struct segment_position {
     }
 };
 
-bool convex_hull_in_order_of_angles(std::vector<point_2> &new_segments);
+bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments);
 
-std::vector<point_2> &calculate_convex_hull(std::vector<point_2> &segments);
+std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments);
 #endif //VECTOR_SIGNED_AREA_H

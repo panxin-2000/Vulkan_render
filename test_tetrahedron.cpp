@@ -12,12 +12,12 @@ TEST(tetrahedron, init_tetrahedron) {
     auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)), {1, 1, 2});
     hf.split_face(hf.get_opposite_edge_index(hf.get_pre_edge_index(d_half_edge_index)), hf.get_opposite_edge_index(c_half_edge_index));
 
-    std::vector<Triangle<point_3> > expect_triangles{};
-    std::vector<Triangle<point_3> > result_segments{};
-    expect_triangles.push_back(Triangle<point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}}); // blue
-    expect_triangles.push_back(Triangle<point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}});  // yellow
-    expect_triangles.push_back(Triangle<point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}});  //  green
-    expect_triangles.push_back(Triangle<point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
+    std::vector<Triangle<Point_3> > expect_triangles{};
+    std::vector<Triangle<Point_3> > result_segments{};
+    expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}}); // blue
+    expect_triangles.push_back(Triangle<Point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}});  // yellow
+    expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}});  //  green
+    expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 
     auto temp_flag = hf.print_all_face_vertices(result_segments, false);

@@ -31,9 +31,9 @@
  * @param c
  * @return
  */
-bool if_colinear(point_2 a, point_2 b, point_2 c) {
-    point_2 ab = b - a;
-    point_2 ac = c - a;
+bool if_colinear(Point_2 a, Point_2 b, Point_2 c) {
+    Point_2 ab = b - a;
+    Point_2 ac = c - a;
     float f1 = ab.single_area(ac);
     if (abs(f1) < 0.00001)
         return false;
@@ -43,20 +43,20 @@ bool if_colinear(point_2 a, point_2 b, point_2 c) {
 
 
 TEST(centre, the_centre_of_a_circle) {
-    point_2 a{0, 3};
-    point_2 b{3, 6};
-    point_2 c{6, 3};
-    point_2 result{3, 3};
+    Point_2 a{0, 3};
+    Point_2 b{3, 6};
+    Point_2 c{6, 3};
+    Point_2 result{3, 3};
 
     EXPECT_EQ(true, if_colinear(a, b, c));
-    EXPECT_EQ(result, point_2::centre_of_a_circle(a, b, c));
+    EXPECT_EQ(result, Point_2::centre_of_a_circle(a, b, c));
 }
 
 TEST(centre, the_centre_of_a_circle_2) {
-    point_2 a{1, 3};
-    point_2 b{9, 1};
-    point_2 c{4, -2};
-    point_2 result{5, 2};
+    Point_2 a{1, 3};
+    Point_2 b{9, 1};
+    Point_2 c{4, -2};
+    Point_2 result{5, 2};
 
 
     struct MyStruct {
@@ -68,5 +68,5 @@ TEST(centre, the_centre_of_a_circle_2) {
     // 目的也只是改一个名字，并不改变任何其他的内容
 
     EXPECT_EQ(true, if_colinear(a, b, c));
-    EXPECT_EQ(result, point_2::centre_of_a_circle(a, b, c));
+    EXPECT_EQ(result, Point_2::centre_of_a_circle(a, b, c));
 }

@@ -38,15 +38,15 @@ T &init_hf_2(T &hf) {
 
 template<typename T>
 T &init_expect_triangles(T &expect_triangles) {
-    expect_triangles.push_back(Triangle<point_2>{{0, 0}, {1, 2}, {-1, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {5, 1}, {7, 2}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {7, 2}, {5, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {5, 3}, {3, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {3, 3}, {2, 5}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {2, 5}, {1, 2}});
-    expect_triangles.push_back(Triangle<point_2>{{-1, 3}, {0, 5}, {-2, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{-1, 3}, {-2, 3}, {0, 0}});
-    expect_triangles.push_back(Triangle<point_2>{{0, 0}, {3, 2}, {1, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{0, 0}, {1, 2}, {-1, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {5, 1}, {7, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {7, 2}, {5, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {5, 3}, {3, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {3, 3}, {2, 5}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {2, 5}, {1, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{-1, 3}, {0, 5}, {-2, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{-1, 3}, {-2, 3}, {0, 0}});
+    expect_triangles.push_back(Triangle<Point_2>{{0, 0}, {3, 2}, {1, 2}});
     return expect_triangles;
 }
 
@@ -59,18 +59,18 @@ TEST(ear_clip, from_half_edge_create_loop_vertices) {
     auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
-    std::vector<point_2> segments{};
-    segments.push_back(point_2{-2, 3});
-    segments.push_back(point_2{0, 0});
-    segments.push_back(point_2{3, 2});
-    segments.push_back(point_2{5, 1});
-    segments.push_back(point_2{7, 2});
-    segments.push_back(point_2{5, 3});
-    segments.push_back(point_2{3, 3});
-    segments.push_back(point_2{2, 5});
-    segments.push_back(point_2{1, 2});
-    segments.push_back(point_2{-1, 3});
-    segments.push_back(point_2{0, 5});
+    std::vector<Point_2> segments{};
+    segments.push_back(Point_2{-2, 3});
+    segments.push_back(Point_2{0, 0});
+    segments.push_back(Point_2{3, 2});
+    segments.push_back(Point_2{5, 1});
+    segments.push_back(Point_2{7, 2});
+    segments.push_back(Point_2{5, 3});
+    segments.push_back(Point_2{3, 3});
+    segments.push_back(Point_2{2, 5});
+    segments.push_back(Point_2{1, 2});
+    segments.push_back(Point_2{-1, 3});
+    segments.push_back(Point_2{0, 5});
 
     if (segments.size() == new_segments.size()) {
         for (int i = 0; i < new_segments.size(); ++i) {
@@ -105,22 +105,22 @@ TEST(ear_clip, ear_clip) {
     auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    RB_Tree_Node<Point_2> *tree_vertices = nullptr;
     for (auto new_segment: new_segments) {
         tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }
 
-    std::vector<Triangle<point_2> > expect_triangles{};
-    std::vector<Triangle<point_2> > result_segments{};
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {5, 3}, {3, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {7, 2}, {5, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{0, 0}, {1, 2}, {-1, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {5, 1}, {7, 2}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {2, 5}, {1, 2}});
-    expect_triangles.push_back(Triangle<point_2>{{0, 0}, {3, 2}, {1, 2}});
-    expect_triangles.push_back(Triangle<point_2>{{3, 2}, {3, 3}, {2, 5}});
-    expect_triangles.push_back(Triangle<point_2>{{-1, 3}, {0, 5}, {-2, 3}});
-    expect_triangles.push_back(Triangle<point_2>{{-1, 3}, {-2, 3}, {0, 0}});
+    std::vector<Triangle<Point_2> > expect_triangles{};
+    std::vector<Triangle<Point_2> > result_segments{};
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {5, 3}, {3, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {7, 2}, {5, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{0, 0}, {1, 2}, {-1, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {5, 1}, {7, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {2, 5}, {1, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{0, 0}, {3, 2}, {1, 2}});
+    expect_triangles.push_back(Triangle<Point_2>{{3, 2}, {3, 3}, {2, 5}});
+    expect_triangles.push_back(Triangle<Point_2>{{-1, 3}, {0, 5}, {-2, 3}});
+    expect_triangles.push_back(Triangle<Point_2>{{-1, 3}, {-2, 3}, {0, 0}});
 
 
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
@@ -163,16 +163,16 @@ TEST(ear_clip, ear_clip_half_edge) {
     auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    RB_Tree_Node<Point_2> *tree_vertices = nullptr;
     for (auto new_segment: new_segments) {
         tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }
 
-    std::vector<Triangle<point_2> > expect_triangles{};
+    std::vector<Triangle<Point_2> > expect_triangles{};
     init_expect_triangles(expect_triangles);
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
-        std::vector<Triangle<point_2> > result_segments{};
+        std::vector<Triangle<Point_2> > result_segments{};
         auto temp_flag = hf.print_all_face_vertices(result_segments, true);
         if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
@@ -202,12 +202,12 @@ TEST(half_edge, test_flip_edge) {
     auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    RB_Tree_Node<Point_2> *tree_vertices = nullptr;
     for (auto new_segment: new_segments) {
         tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }
 
-    std::vector<Triangle<point_2> > expect_triangles{};
+    std::vector<Triangle<Point_2> > expect_triangles{};
     init_expect_triangles(expect_triangles);
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
@@ -235,7 +235,7 @@ TEST(ear_clip, test_point_location) {
     auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    RB_Tree_Node<Point_2> *tree_vertices = nullptr;
     for (auto new_segment: new_segments) {
         tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }
@@ -266,7 +266,7 @@ TEST(ear_clip, test_point_location) {
         // 首先需要什么呢？一个大的四边形，将全部的线段包裹起来
         // 之后再做什么呢？随机添加线段？然后构建梯形？
         // 梯形的索引是怎么和我之前的索引相对应了起来呢？
-        std::vector<Triangle<point_2> > result_segments{};
+        std::vector<Triangle<Point_2> > result_segments{};
 
         auto temp_flag = hf.print_all_face_vertices(result_segments, true);
         if (temp_flag == true) {

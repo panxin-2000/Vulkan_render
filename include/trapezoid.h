@@ -15,10 +15,10 @@
 // 或者说，这个结构需要添加到树中
 //
 struct TRAPEZOID {
-    point_2 left_upper;
-    point_2 right_upper;
-    point_2 left_lower;
-    point_2 right_lower;
+    Point_2 left_upper;
+    Point_2 right_upper;
+    Point_2 left_lower;
+    Point_2 right_lower;
 };
 
 
@@ -26,7 +26,7 @@ template<class T>
 class trapezoid_graph_Node : public Tree_Node<trapezoid_graph_Node<T> > {
     union my_union {
         TRAPEZOID trapezoid;
-        point_2 segment_point;
+        Point_2 segment_point;
         segment_position segment;
 
         my_union() {
@@ -66,11 +66,11 @@ public:
     // 构造的时候最简单的比较好做，然后就是难的部分应该怎么做
     // false left_point     right right_point
     static trapezoid_ptr find_point_in_trapezoid_graph(trapezoid_ptr root_node,
-                                                       point_2 find_point,
+                                                       Point_2 find_point,
                                                        point_enum left_or_right_point =
                                                                point_enum::left_point,
                                                        bool have_help_point = false,
-                                                       point_2 help_point = point_2(0, 0)) {
+                                                       Point_2 help_point = Point_2(0, 0)) {
         // 既然这里已经看到了查找相关的内容
         // 那么其实需要先构造一个具体的结构
         // 测试一下我这里查找的结果是否是我需要的
@@ -82,10 +82,10 @@ public:
                 auto B_point = root_node->trapezoid_union_data.trapezoid.right_upper;
                 auto C_point = root_node->trapezoid_union_data.trapezoid.left_lower;
                 auto D_point = root_node->trapezoid_union_data.trapezoid.right_lower;
-                if (point_2::is_anticlockwise(C_point, D_point, find_point) != point_2::anticlockwise::clockwise &&
-                    point_2::is_anticlockwise(D_point, B_point, find_point) != point_2::anticlockwise::clockwise &&
-                    point_2::is_anticlockwise(B_point, A_point, find_point) != point_2::anticlockwise::clockwise &&
-                    point_2::is_anticlockwise(A_point, C_point, find_point) != point_2::anticlockwise::clockwise) {
+                if (Point_2::is_anticlockwise(C_point, D_point, find_point) != Point_2::anticlockwise::clockwise &&
+                    Point_2::is_anticlockwise(D_point, B_point, find_point) != Point_2::anticlockwise::clockwise &&
+                    Point_2::is_anticlockwise(B_point, A_point, find_point) != Point_2::anticlockwise::clockwise &&
+                    Point_2::is_anticlockwise(A_point, C_point, find_point) != Point_2::anticlockwise::clockwise) {
                     return root_node;
                 } else {
                     return nullptr;
@@ -109,13 +109,13 @@ public:
             case graph_enum::segment_node: {
                 // 第一个问题是这个点有多个线段应该怎么办？
 
-                point_2 a = root_node->trapezoid_union_data.segment.start_point;
-                point_2 b = root_node->trapezoid_union_data.segment.end_point;
-                point_2 c = find_point;
+                Point_2 a = root_node->trapezoid_union_data.segment.start_point;
+                Point_2 b = root_node->trapezoid_union_data.segment.end_point;
+                Point_2 c = find_point;
                 // 这里还需要添加判断，
-                float temp = point_2::single_area(a, b, c);
+                float temp = Point_2::single_area(a, b, c);
                 if (abs(temp) < 0.0000001) {
-                    float temp2 = point_2::single_area(a, b, help_point);
+                    float temp2 = Point_2::single_area(a, b, help_point);
                     if (temp2 > 0.0000001) {
                         return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
                                                              have_help_point, help_point);
@@ -472,7 +472,7 @@ public:
         return EF_segment_node;
     }
 
-    static trapezoid_ptr init_root(AABB<point_2> bounding_box) {
+    static trapezoid_ptr init_root(AABB<Point_2> bounding_box) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {
             bounding_box.min_point.x, bounding_box.max_point.y
@@ -490,7 +490,7 @@ public:
         return result_ptr;
     }
 
-    static trapezoid_ptr init_four_points(point_2 A, point_2 B, point_2 C, point_2 D) {
+    static trapezoid_ptr init_four_points(Point_2 A, Point_2 B, Point_2 C, Point_2 D) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {A};
         result_ptr->trapezoid_union_data.trapezoid.right_upper = {B};
@@ -500,14 +500,14 @@ public:
         return result_ptr;
     }
 
-    static trapezoid_ptr init_points_node(point_2 A) {
+    static trapezoid_ptr init_points_node(Point_2 A) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.segment_point = A;
         result_ptr->trapezoid_type = graph_enum::point_node;
         return result_ptr;
     }
 
-    static trapezoid_ptr init_segment_node(point_2 A, point_2 B) {
+    static trapezoid_ptr init_segment_node(Point_2 A, Point_2 B) {
         auto result_ptr = new trapezoid_graph_Node<T>;
         result_ptr->trapezoid_union_data.segment.start_point = A;
         result_ptr->trapezoid_union_data.segment.end_point = B;

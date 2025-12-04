@@ -10,28 +10,28 @@
 #include "RB_tree_node.h"
 #include "half_edge.h"
 
-bool ear_clip_algorithm_no_efficient(std::vector<Triangle<point_2> > &result_segments,
-                                     std::vector<point_2> &new_segments,
-                                     RB_Tree_Node<point_2> &tree_vertices);
+bool ear_clip_algorithm_no_efficient(std::vector<Triangle<Point_2> > &result_segments,
+                                     std::vector<Point_2> &new_segments,
+                                     RB_Tree_Node<Point_2> &tree_vertices);
 
-bool no_point_in_line_clockwise_direction_binary(point_2 a, point_2 c,
-                                                 point_2 do_not_care_point,
-                                                 RB_Tree_Node<point_2> &tree_vertices_root);
+bool no_point_in_line_clockwise_direction_binary(Point_2 a, Point_2 c,
+                                                 Point_2 do_not_care_point,
+                                                 RB_Tree_Node<Point_2> &tree_vertices_root);
 
 template<typename T>
 bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
                                   T &new_segments,
-                                  RB_Tree_Node<point_2> &tree_vertices) {
+                                  RB_Tree_Node<Point_2> &tree_vertices) {
     if (new_segments.size() < 3) {
         return false;
     }
     // 首先拿到前三个，
     while (new_segments.size() > 3) {
-        point_2 a{hf.get_vertex(new_segments.at(0)).x, hf.get_vertex(new_segments.at(0)).y};
-        point_2 b{hf.get_vertex(new_segments.at(1)).x, hf.get_vertex(new_segments.at(1)).y};
-        point_2 c{hf.get_vertex(new_segments.at(2)).x, hf.get_vertex(new_segments.at(2)).y};
+        Point_2 a{hf.get_vertex(new_segments.at(0)).x, hf.get_vertex(new_segments.at(0)).y};
+        Point_2 b{hf.get_vertex(new_segments.at(1)).x, hf.get_vertex(new_segments.at(1)).y};
+        Point_2 c{hf.get_vertex(new_segments.at(2)).x, hf.get_vertex(new_segments.at(2)).y};
         // 判断这三个点是顺时针还是逆时针
-        if (point_2::is_anticlockwise(a, b, c) == point_2::anticlockwise::counterclockwise &&
+        if (Point_2::is_anticlockwise(a, b, c) == Point_2::anticlockwise::counterclockwise &&
             no_point_in_line_clockwise_direction_binary(a, c, b, tree_vertices)) {
             // 那么这里是逆时针,并且 所以顶点都不在 ac 的x轴范围内的点，都不在逆时针的方向上
             auto tem = hf.split_face(new_segments.at(0), new_segments.at(2));
@@ -56,7 +56,7 @@ template<typename T>
 bool ear_clip_triangulations(T &hf, Half_edge_v_index half_edge) {
     auto all_edge = hf.get_all_edge_of_face(half_edge);
     auto new_segments = hf.get_vertices(all_edge);
-    RB_Tree_Node<point_2> *tree_vertices = nullptr;
+    RB_Tree_Node<Point_2> *tree_vertices = nullptr;
     for (auto new_segment: new_segments) {
         tree_vertices = tree_vertices->tree_insert_value(tree_vertices, new_segment);
     }

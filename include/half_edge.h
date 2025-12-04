@@ -17,8 +17,8 @@
 #include "point_in_on_out_triangle.h"
 #include "triangle_graph.h"
 
-struct vertex_xy : public point_2 {
-    using point_type = point_2;
+struct vertex_xy : public Point_2 {
+    using point_type = Point_2;
 
     int incident_half_edge;
 
@@ -27,7 +27,7 @@ struct vertex_xy : public point_2 {
         y = y1;
     }
 
-    vertex_xy(point_2 point) {
+    vertex_xy(Point_2 point) {
         x = point.x;
         y = point.y;
     }
@@ -68,7 +68,7 @@ struct vertex_xy : public point_2 {
 };
 
 
-struct vertex_xyz : public point_3 {
+struct vertex_xyz : public Point_3 {
     int incident_half_edge;
 
     vertex_xyz(float x1, float y1, float z1) {
@@ -530,10 +530,10 @@ struct half_edge_struct {
             auto point_c = get_vertex(get_pre_edge_index(opposite_edge_index));
             auto point_d = get_vertex(opposite_edge_index);
 
-            auto bool_1 = point_2::is_anticlockwise(point_a, point_d, point_c);
-            auto bool_2 = point_2::is_anticlockwise(point_d, point_c, point_b);
-            auto bool_3 = point_2::is_anticlockwise(point_c, point_b, point_a);
-            auto bool_4 = point_2::is_anticlockwise(point_b, point_a, point_d);
+            auto bool_1 = Point_2::is_anticlockwise(point_a, point_d, point_c);
+            auto bool_2 = Point_2::is_anticlockwise(point_d, point_c, point_b);
+            auto bool_3 = Point_2::is_anticlockwise(point_c, point_b, point_a);
+            auto bool_4 = Point_2::is_anticlockwise(point_b, point_a, point_d);
 
             if (bool_1 & bool_2 & bool_3 & bool_4) {
                 return true;
@@ -615,7 +615,7 @@ struct half_edge_struct {
      * @return
      */
     bool legalize_edge(Half_edge_v_index half_edge_index, Vertices_v_index vertex_index,
-                       Triangle_node_tree<point_2> *tree) {
+                       Triangle_node_tree<Point_2> *tree) {
         // 有了一个half_edge_index 能找到那个面
         // 有了 face_index ,能够找到 三个顶点
         // 还能找到反面，还能找到反面的顶点，不在 half_edge_index 上的顶点
@@ -664,13 +664,13 @@ struct half_edge_struct {
             auto C_point = get_vertex(get_opposite_edge_index(half_edge_index));
             //
 
-            auto centre = point_2::centre_of_a_circle(A_point, B_point, C_point);
-            if (point_2::distance_compare(D_point - centre, C_point - centre)) {
+            auto centre = Point_2::centre_of_a_circle(A_point, B_point, C_point);
+            if (Point_2::distance_compare(D_point - centre, C_point - centre)) {
                 // 当前是合法的
             } else {
                 // 当前是非法的，需要执行flip操作，将原本的BC边切换为AC边
-                Triangle_node<point_2> *triangle_node;
-                Triangle_node<point_2> *triangle_node_2;
+                Triangle_node<Point_2> *triangle_node;
+                Triangle_node<Point_2> *triangle_node_2;
                 if (tree != nullptr) {
                     auto centroid = get_centroid(get_face_index(half_edge_index));
                     auto centroid_2 = get_centroid(get_face_index(get_opposite_edge_index(half_edge_index)));
@@ -700,13 +700,13 @@ struct half_edge_struct {
     segment_position get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
         int vertex_index_end_point = half_edges.at(incident_half_edge).vertex_index;
-        point_2 start_point{
+        Point_2 start_point{
             vertices.at(vertex_index_end_point).x,
             vertices.at(vertex_index_end_point).y
         };
         int twin_half_edge = half_edges.at(incident_half_edge).twin_half_edge;
         int vertex_index_start_point = half_edges.at(twin_half_edge).vertex_index;
-        point_2 end_point{
+        Point_2 end_point{
             vertices.at(vertex_index_start_point).x,
             vertices.at(vertex_index_start_point).y
         };
@@ -820,10 +820,10 @@ struct half_edge_struct {
     }
 
 
-    [[nodiscard]] std::vector<point_2> get_vertices(const std::vector<Half_edge_v_index> &half_edge_indices) const {
-        std::vector<point_2> segments{};
+    [[nodiscard]] std::vector<Point_2> get_vertices(const std::vector<Half_edge_v_index> &half_edge_indices) const {
+        std::vector<Point_2> segments{};
         for (auto half_edge_index: half_edge_indices) {
-            point_2 temp_point{};
+            Point_2 temp_point{};
             temp_point.x = vertices.at(half_edges.at(half_edge_index).vertex_index).x;
             temp_point.y = vertices.at(half_edges.at(half_edge_index).vertex_index).y;
             segments.push_back(temp_point);
@@ -878,9 +878,9 @@ struct half_edge_struct {
         }
     }
 
-    Triangle_node<point_2> *make_Triangle_node(int face_index) {
+    Triangle_node<Point_2> *make_Triangle_node(int face_index) {
         auto temp_flag = get_triangle_face_vertex(face_index);
-        auto new_triangle_node = new Triangle_node<point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index);
+        auto new_triangle_node = new Triangle_node<Point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index);
         return new_triangle_node;
     }
 
@@ -915,10 +915,10 @@ struct half_edge_struct {
                                               Half_edge_v_index &return_half_edge_indices) {
         auto temps = get_all_edge_of_face(half_edge_indices);
         for (auto temp: temps) {
-            if (get_vertex_in_the_edge_left(vertex_in, temp) == point_2::anticlockwise::clockwise) {
+            if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::clockwise) {
                 return point_in_triangle_type::out_triangle;
             }
-            if (get_vertex_in_the_edge_left(vertex_in, temp) == point_2::anticlockwise::collinear) {
+            if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::collinear) {
                 auto a = get_vertex(half_edge_indices);
                 auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
                 if (on_segment_bounding_box(a, b, vertex_in)) {
@@ -930,11 +930,11 @@ struct half_edge_struct {
         return point_in_triangle_type::in_triangle;
     }
 
-    point_2::anticlockwise
+    Point_2::anticlockwise
     get_vertex_in_the_edge_left(vertex_base_type vertex_in, Half_edge_v_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
         auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-        return point_2::is_anticlockwise(a, b, vertex_in);
+        return Point_2::is_anticlockwise(a, b, vertex_in);
     }
 
     AABB<vertex_base_type> calculate_aabb() {

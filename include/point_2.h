@@ -5,16 +5,16 @@
 #ifndef HELLO_MAC_POINT_2_H
 #define HELLO_MAC_POINT_2_H
 
-class point_2 {
+class Point_2 {
 public:
     float x;
     float y;
-    using point_type = point_2;
+    using point_type = Point_2;
 
-    point_2() {
+    Point_2() {
     }
 
-    point_2(float x1, float y1) {
+    Point_2(float x1, float y1) {
         x = x1;
         y = y1;
     }
@@ -25,15 +25,15 @@ public:
     //     return *this;
     // }
 
-    point_2 operator+(const point_2 &R) const {
-        point_2 temp{0, 0};
+    Point_2 operator+(const Point_2 &R) const {
+        Point_2 temp{0, 0};
         temp.x = this->x + R.x;
         temp.y = this->y + R.y;
         return temp;
     }
 
     // a 的 平方 大于 b 的平方 是返回 true  否则返回 false
-    static bool distance_compare(point_2 a, point_2 b) {
+    static bool distance_compare(Point_2 a, Point_2 b) {
         if (a.x * a.x + a.y * a.y > b.x * b.x + b.y * b.y) {
             return true;
         } else {
@@ -41,7 +41,7 @@ public:
         }
     }
 
-    static point_2 centre_of_a_circle(point_2 a, point_2 b, point_2 c) {
+    static Point_2 centre_of_a_circle(Point_2 a, Point_2 b, Point_2 c) {
         auto A_1_1 = -2 * (a.x - b.x);
         auto A_1_2 = -2 * (a.y - b.y);
         auto A_2_1 = -2 * (a.x - c.x);
@@ -54,18 +54,18 @@ public:
         auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
         auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
 
-        point_2 result = {};
+        Point_2 result = {};
         result.x = inv_A_1_1 * B_1 + inv_A_1_2 * B_2;
         result.y = inv_A_2_1 * B_1 + inv_A_2_2 * B_2;
         return result;
     }
 
-    bool operator==(const point_2 &R) {
+    bool operator==(const Point_2 &R) {
         if (this->x == R.x && this->y == R.y) return true;
         else return false;
     }
 
-    friend bool operator<(const point_2 &L, const point_2 &R) {
+    friend bool operator<(const Point_2 &L, const Point_2 &R) {
         if (L.x < R.x) {
             return true;
         } else if (L.x == R.x && L.y < R.y) {
@@ -74,7 +74,7 @@ public:
         return false;
     }
 
-    friend bool operator<=(const point_2 &L, const point_2 &R) {
+    friend bool operator<=(const Point_2 &L, const Point_2 &R) {
         if (L.x <= R.x) {
             return true;
         }
@@ -84,27 +84,27 @@ public:
         return false;
     }
 
-    friend bool operator==(const point_2 &L, const point_2 &R) {
+    friend bool operator==(const Point_2 &L, const Point_2 &R) {
         if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
             return true;
         }
         return false;
     }
 
-    static point_2 int_max_limit(point_2 &L) {
+    static Point_2 int_max_limit(Point_2 &L) {
         L.x = std::numeric_limits<float>::infinity();;
         L.y = std::numeric_limits<float>::infinity();
         return L;
     }
 
-    static point_2 int_min_limit(point_2 &L) {
+    static Point_2 int_min_limit(Point_2 &L) {
         L.x = -std::numeric_limits<float>::infinity();;
         L.y = -std::numeric_limits<float>::infinity();
         return L;
     }
 
 
-    static const point_2 min_two_point(point_2 &L, const point_2 &R) {
+    static const Point_2 min_two_point(Point_2 &L, const Point_2 &R) {
         if (R.x < L.x) {
             L.x = R.x;
         }
@@ -114,7 +114,7 @@ public:
         return L;
     }
 
-    static const point_2 max_two_point(point_2 &L, const point_2 &R) {
+    static const Point_2 max_two_point(Point_2 &L, const Point_2 &R) {
         if (R.x > L.x) {
             L.x = R.x;
         }
@@ -124,8 +124,8 @@ public:
         return L;
     }
 
-    const point_2 operator-(const point_2 &R) const {
-        point_2 temp{0, 0};
+    const Point_2 operator-(const Point_2 &R) const {
+        Point_2 temp{0, 0};
         temp.x = this->x - R.x;
         temp.y = this->y - R.y;
         return temp;
@@ -137,13 +137,13 @@ public:
      * @param R
      * @return
      */
-    float single_area(const point_2 &R) {
+    float single_area(const Point_2 &R) {
         return this->x * R.y - this->y * R.x;
     }
 
-    static float single_area(const point_2 &a, const point_2 b, const point_2 c) {
-        point_2 ab = b - a;
-        point_2 ac = c - a;
+    static float single_area(const Point_2 &a, const Point_2 b, const Point_2 c) {
+        Point_2 ab = b - a;
+        Point_2 ac = c - a;
         return ab.single_area(ac);
     }
 
@@ -166,9 +166,9 @@ public:
      * @param c
      * @return
      */
-    static anticlockwise is_anticlockwise(const point_2 &a, const point_2 &b, const point_2 &c) {
-        point_2 ab = b - a;
-        point_2 ac = c - a;
+    static anticlockwise is_anticlockwise(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
+        Point_2 ab = b - a;
+        Point_2 ac = c - a;
         float area = ab.single_area(ac);
         if (abs(area) < 0.00001)
             return anticlockwise::collinear;
