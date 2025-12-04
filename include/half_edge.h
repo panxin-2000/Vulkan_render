@@ -675,17 +675,17 @@ struct half_edge_struct {
                     auto centroid = get_centroid(get_face_index(half_edge_index));
                     auto centroid_2 = get_centroid(get_face_index(get_opposite_edge_index(half_edge_index)));
                     triangle_node = tree->find_triangle_node(centroid);
-                    triangle_node_2 = tree->find_triangle_node(centroid);
+                    triangle_node_2 = tree->find_triangle_node(centroid_2);
                 }
                 flip_edge(half_edge_index);
                 if (tree != nullptr) {
                     auto new_triangle_node = make_Triangle_node(get_face_index(half_edge_index));
                     auto new_2_triangle_node = make_Triangle_node(
                         get_face_index(get_opposite_edge_index(half_edge_index)));
-                    new_triangle_node->add_triangle_node(new_triangle_node);
-                    new_triangle_node->add_triangle_node(new_2_triangle_node);
-                    new_2_triangle_node->add_triangle_node(new_triangle_node);
-                    new_2_triangle_node->add_triangle_node(new_2_triangle_node);
+                    triangle_node->add_triangle_node(new_triangle_node);
+                    triangle_node->add_triangle_node(new_2_triangle_node);
+                    triangle_node_2->add_triangle_node(new_triangle_node);
+                    triangle_node_2->add_triangle_node(new_2_triangle_node);
                 }
 
                 // half_edge_index 这个索引并没有改变

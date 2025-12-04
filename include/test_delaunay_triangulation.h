@@ -142,20 +142,40 @@ namespace delaunay_triangulation {
                     // 有问题，运行的时候发生了死循环
                 }
             } else if (type_temp == point_in_triangle_type::on_edge) {
+                // 在AB边上添加一个点，现在这个边变成了ADB，返回DB这条边
+                auto ab_edge_index = edge_index;
+                auto ba_edge_index = hf->get_opposite_edge_index(ab_edge_index);
+                auto centroid = hf->get_centroid(hf->get_face_index(ab_edge_index));
+                auto centroid_2 = hf->get_centroid(hf->get_face_index(ba_edge_index));
+                auto triangle_node = tree->find_triangle_node(centroid);
+                auto triangle_node_2 = tree->find_triangle_node(centroid_2);
 
-                auto edge_index_insert = hf->insert_edge(edge_index, point);
-                ear_clip_triangulations(*hf, edge_index_insert);
-                ear_clip_triangulations(*hf, hf->get_opposite_edge_index(edge_index_insert));
+                auto db_edge_index = hf->insert_edge(ab_edge_index, point);
+                auto bd_edge_index = hf->get_opposite_edge_index(db_edge_index);
+
+                ear_clip_triangulations(*hf, db_edge_index);
+                ear_clip_triangulations(*hf, hf->get_opposite_edge_index(db_edge_index)); {
+                    auto new_triangle_node = hf->make_Triangle_node(hf->get_face_index(ab_edge_index));
+                    auto new_2_triangle_node = hf->make_Triangle_node(hf->get_face_index(db_edge_index));
+                    triangle_node->add_triangle_node(new_triangle_node);
+                    triangle_node->add_triangle_node(new_2_triangle_node);
+                } {
+                    auto new_triangle_node = hf->make_Triangle_node(hf->get_face_index(ba_edge_index));
+                    auto new_2_triangle_node = hf->make_Triangle_node(hf->get_face_index(bd_edge_index));
+                    triangle_node_2->add_triangle_node(new_triangle_node);
+                    triangle_node_2->add_triangle_node(new_2_triangle_node);
+                }
+
                 // 有了插入的一条边，然后呢？需要做什么呢？
                 // 找到新的两个点，将原本的一个三角形分成两个三角形,需要调用之前完成的三角化的算法
                 // 需要找到这个顶点的全部的face,原本有两个面，劈开之后应该是有四个面的
                 // 四个face 再去做 是否合法的测试
-                auto vertex_index = hf->get_edge(edge_index_insert).vertex_index;
+                auto vertex_index = hf->get_edge(db_edge_index).vertex_index;
                 auto all_face_from_one_vertex = hf->get_all_face_of_vertex(vertex_index);
                 // 拿到的面的数量是不够的,应该是1，4，0，5的，但是目前数量不够
                 for (auto face: all_face_from_one_vertex) {
                     auto temp = hf->get_ab_edge_from_face_abc(face, vertex_index);
-                    hf->legalize_edge(temp, vertex_index, nullptr);
+                    hf->legalize_edge(temp, vertex_index, tree);
                 }
             }
         }
