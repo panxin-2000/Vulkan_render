@@ -113,7 +113,18 @@ namespace delaunay_triangulation {
         for (auto point: input_points) {
             Face_v_index result_face_index = 0;
             Half_edge_v_index edge_index = 0;
-            auto type_temp = hf->get_vertex_in_which_face_for_test(result_face_index, edge_index, point);
+            auto triangle_node = tree->find_triangle_node(point); // 拿到结点
+            // triangle_node只负责给出face_index,再去判断这个点是在三角形的边上还是内部(half_edge 给出)
+            // 给出结果，相应结束的话，可以很快的结束这个问题
+            if (triangle_node != nullptr) {
+                result_face_index = triangle_node->face_index;
+            }
+            auto type_temp = hf->get_vertex_in_face(point,
+                                                    hf->get_face_incident_edge(result_face_index),
+                                                    edge_index);
+
+
+            // auto type_temp = hf->get_vertex_in_which_face_for_test(result_face_index, edge_index, point);
             // 上面这一行的参数不用改，不，参数也是需要改的，主要是为了进行加速
             // 需要一个三角形的结构，需要同步在下面add_new_point 的时候，添加在树的结构中相同的内容
             // 在insert_edge的时候，将原本的一条边上的两个面，劈成四个三角形
