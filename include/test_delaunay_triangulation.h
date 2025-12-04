@@ -113,7 +113,7 @@ namespace delaunay_triangulation {
         for (auto point: input_points) {
             Face_v_index result_face_index = 0;
             Half_edge_v_index edge_index = 0;
-            auto type_temp = hf->get_vertex_in_witch_face_test(result_face_index, edge_index, point);
+            auto type_temp = hf->get_vertex_in_which_face_for_test(result_face_index, edge_index, point);
             // 上面这一行的参数不用改，不，参数也是需要改的，主要是为了进行加速
             // 需要一个三角形的结构，需要同步在下面add_new_point 的时候，添加在树的结构中相同的内容
             // 在insert_edge的时候，将原本的一条边上的两个面，劈成四个三角形
@@ -137,11 +137,12 @@ namespace delaunay_triangulation {
                     auto new_triangle_node = hf->make_Triangle_node(face);
                     triangle_node->add_triangle_node(new_triangle_node);
 
-                    auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
+                    auto temp = hf->get_ab_edge_from_face_abc(face, vertex_index);
                     hf->legalize_edge(temp, vertex_index, tree);
                     // 有问题，运行的时候发生了死循环
                 }
             } else if (type_temp == point_in_triangle_type::on_edge) {
+
                 auto edge_index_insert = hf->insert_edge(edge_index, point);
                 ear_clip_triangulations(*hf, edge_index_insert);
                 ear_clip_triangulations(*hf, hf->get_opposite_edge_index(edge_index_insert));
@@ -153,7 +154,7 @@ namespace delaunay_triangulation {
                 auto all_face_from_one_vertex = hf->get_all_face_of_vertex(vertex_index);
                 // 拿到的面的数量是不够的,应该是1，4，0，5的，但是目前数量不够
                 for (auto face: all_face_from_one_vertex) {
-                    auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
+                    auto temp = hf->get_ab_edge_from_face_abc(face, vertex_index);
                     hf->legalize_edge(temp, vertex_index, nullptr);
                 }
             }

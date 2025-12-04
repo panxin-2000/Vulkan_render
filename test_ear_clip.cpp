@@ -245,21 +245,21 @@ TEST(ear_clip, test_point_location) {
         // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
         Face_v_index result_face_index = 0;
         Half_edge_v_index edge_index = 0;
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {1, 1});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {1, 1});
         EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 1.1});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {5, 1.1});
         EXPECT_EQ(2, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {5, 2.5});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {5, 2.5});
         EXPECT_EQ(3, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {3.1, 2.9});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {3.1, 2.9});
         EXPECT_EQ(4, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {2.9, 3});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {2.9, 3});
         EXPECT_EQ(5, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {2, 3});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {2, 3});
         EXPECT_EQ(6, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {-1, 3.1});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {-1, 3.1});
         EXPECT_EQ(7, result_face_index);
-        hf.get_vertex_in_witch_face_test(result_face_index, edge_index, {-1, 2});
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {-1, 2});
         EXPECT_EQ(8, result_face_index);
 
         // 这里准备好了hf
