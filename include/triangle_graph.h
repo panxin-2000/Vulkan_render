@@ -59,6 +59,7 @@ public:
             result = temp_root_triangle;
         }
         while (temp_root_triangle != nullptr) {
+            int i = 0;
             for (auto check_triangle: temp_root_triangle->inner_triangle) {
                 if (check_triangle != nullptr &&
                     check_triangle->triangle.point_position_of_triangle(point) ==
@@ -66,9 +67,13 @@ public:
                     temp_root_triangle = check_triangle;
                     result = check_triangle;
                     break;
+                } else {
+                    i++;
                 }
             }
-            temp_root_triangle = nullptr;
+            if (i == 3) {
+                break;
+            }
         }
         return result;
     }
