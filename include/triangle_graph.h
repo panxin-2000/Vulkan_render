@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_TRIANGLE_GRAPH_H
 #define HELLO_MAC_TRIANGLE_GRAPH_H
-#include "half_edge.h"
+#include <cassert>
 #include "vector_signed_area.h"
 
 template<typename T>

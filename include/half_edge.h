@@ -15,6 +15,7 @@
 
 #include "point_3.h"
 #include "point_in_on_out_triangle.h"
+#include "triangle_graph.h"
 
 struct vertex_xy : public point_2 {
     using point_type = point_2;
@@ -607,7 +608,8 @@ struct half_edge_struct {
      * @param vertex_index
      * @return
      */
-    bool legalize_edge(Half_edge_v_index half_edge_index, Vertices_v_index vertex_index) {
+    bool legalize_edge(Half_edge_v_index half_edge_index, Vertices_v_index vertex_index,
+                       Triangle_node_tree<point_2> *tree) {
         // 有了一个half_edge_index 能找到那个面
         // 有了 face_index ,能够找到 三个顶点
         // 还能找到反面，还能找到反面的顶点，不在 half_edge_index 上的顶点
@@ -660,12 +662,29 @@ struct half_edge_struct {
             if (point_2::distance_compare(D_point - centre, C_point - centre)) {
                 // 当前是合法的
             } else {
-                // 当前是非法的，需要执行flip操作
+                // 当前是非法的，需要执行flip操作，将原本的BC边切换为AC边
+                Triangle_node<point_2> *triangle_node;
+                Triangle_node<point_2> *triangle_node_2;
+                if (tree != nullptr) {
+                    auto centroid = get_centroid(get_face_index(half_edge_index));
+                    auto centroid_2 = get_centroid(get_face_index(get_opposite_edge_index(half_edge_index)));
+                    triangle_node = tree->find_triangle_node(centroid);
+                    triangle_node_2 = tree->find_triangle_node(centroid);
+                }
                 flip_edge(half_edge_index);
+                if (tree != nullptr) {
+                    auto new_triangle_node = make_Triangle_node(get_face_index(half_edge_index));
+                    auto new_2_triangle_node = make_Triangle_node(get_face_index(get_opposite_edge_index(half_edge_index)));
+                    new_triangle_node->add_triangle_node(new_triangle_node);
+                    new_triangle_node->add_triangle_node(new_2_triangle_node);
+                    new_2_triangle_node->add_triangle_node(new_triangle_node);
+                    new_2_triangle_node->add_triangle_node(new_2_triangle_node);
+                }
+
                 // half_edge_index 这个索引并没有改变
                 // 但是边需要变更了，需要变更为 AB 或者 AC ，但是不能是 BD 或者 CD ,前面添加条件确定了
-                legalize_edge(AC_or_AB_edge, vertex_index);
-                legalize_edge(AB_or_AC_edge, vertex_index);
+                legalize_edge(AC_or_AB_edge, vertex_index, tree);
+                legalize_edge(AB_or_AC_edge, vertex_index, tree);
             }
         }
         return false;
@@ -862,6 +881,13 @@ struct half_edge_struct {
             return t;
         }
     }
+
+    Triangle_node<point_2> *make_Triangle_node(int face_index_para) {
+        auto temp_flag = get_face_vertex(face_index_para);
+        auto new_triangle_node = new Triangle_node<point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index_para);
+        return new_triangle_node;
+    }
+
 
     vertex_base_type get_centroid(int face_index_para) {
         auto temps = get_all_edge_of_face(get_edge_incident_edge(face_index_para));

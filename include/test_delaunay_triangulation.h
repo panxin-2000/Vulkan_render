@@ -107,7 +107,7 @@ namespace delaunay_triangulation {
         auto abc_face_index = hf->get_face_index(ab_index);
         auto root_node = new Triangle_node<point_2>(point_a, point_b, point_c, abc_face_index);
 
-        auto tree = Triangle_node_tree<point_2>(root_node);
+        auto tree = new Triangle_node_tree<point_2>(root_node);
 
 
         for (auto point: input_points) {
@@ -130,18 +130,15 @@ namespace delaunay_triangulation {
                 // 先不考虑在边上的情况，之后考虑什么呢？
                 int vertex_index = 0;
                 auto centroid = hf->get_centroid(result_face_index);
-                auto triangle_node = tree.find_triangle_node(centroid);
+                auto triangle_node = tree->find_triangle_node(centroid);
                 auto new_faces = hf->face_add_new_point(result_face_index, point, vertex_index);
                 for (auto face: new_faces) {
                     std::vector<Triangle<point_2> > result_segments{};
-
-                    auto temp_flag = hf->get_face_vertex(face);
-
-                    auto new_triangle_node = new Triangle_node<point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face);
+                    auto new_triangle_node = hf->make_Triangle_node(face);
                     triangle_node->add_triangle_node(new_triangle_node);
 
                     auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
-                    hf->legalize_edge(temp, vertex_index);
+                    hf->legalize_edge(temp, vertex_index, tree);
                     // 有问题，运行的时候发生了死循环
                 }
             } else if (type_temp == point_in_triangle_type::on_edge) {
@@ -157,7 +154,7 @@ namespace delaunay_triangulation {
                 // 拿到的面的数量是不够的,应该是1，4，0，5的，但是目前数量不够
                 for (auto face: all_face_from_one_vertex) {
                     auto temp = hf->get_edge_from_trangle_dont_have_point(face, vertex_index);
-                    hf->legalize_edge(temp, vertex_index);
+                    hf->legalize_edge(temp, vertex_index, nullptr);
                 }
             }
         }
