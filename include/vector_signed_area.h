@@ -74,8 +74,8 @@ struct Triangle {
         T a2c = c - a;
         float area = a2b.single_area(a2c);
 
-        auto p2a = a - point;
-        float alpha = a2c.single_area(p2a) / area;
+        auto a2p = point - a;
+        float alpha = a2p.single_area(a2c) / area;
 
         if (abs(area) == 0.000001f) {
             // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
@@ -87,7 +87,7 @@ struct Triangle {
             return out_triangle;
         };
 
-        float beta = a2b.single_area(p2a) / area;
+        float beta = a2b.single_area(a2p) / area;
         float gamma = 1.0f - (alpha + beta);
 
         if (abs(alpha) == 0.000001f || abs(beta) == 0.000001f || abs(gamma) == 0.000001f) {
