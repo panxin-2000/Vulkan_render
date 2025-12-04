@@ -847,6 +847,22 @@ struct half_edge_struct {
         return true;
     }
 
+    Triangle<vertex_base_type> get_face_vertex(int face_index_para) {
+        auto temps = get_all_edge_of_face(get_edge_incident_edge(face_index_para));
+        if (temps.size() == 3) {
+            auto a = get_vertex(temps.at(0));
+            auto b = get_vertex(temps.at(1));
+            auto c = get_vertex(temps.at(2));
+
+            Triangle<vertex_base_type> t{
+                static_cast<vertex_base_type>(a),
+                static_cast<vertex_base_type>(b),
+                static_cast<vertex_base_type>(c)
+            };
+            return t;
+        }
+    }
+
     vertex_base_type get_centroid(int face_index_para) {
         auto temps = get_all_edge_of_face(get_edge_incident_edge(face_index_para));
         Vertex total(0, 0);
@@ -859,7 +875,8 @@ struct half_edge_struct {
     }
 
 
-    point_in_triangle_type get_vertex_in_witch_face_test(Face_v_index &result_face_index, Half_edge_v_index &edge_index,
+    point_in_triangle_type get_vertex_in_witch_face_test(Face_v_index &result_face_index,
+                                                         Half_edge_v_index &edge_index,
                                                          vertex_base_type vertex_in) {
         result_face_index = 0;
         for (auto face: faces) {
