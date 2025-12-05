@@ -8,7 +8,7 @@
 #include "iostream"
 
 template<typename point_type = Point_2>
-struct segment_position {
+struct Segment {
     point_type start_point;
     point_type end_point;
 
@@ -22,7 +22,7 @@ struct segment_position {
         return result;
     }
 
-    bool get_intersection_point(struct segment_position &R_segment_position, Point_2 *result) {
+    bool get_intersection_point(struct Segment &R_segment_position, Point_2 *result) {
         // 已知两条线段相交怎么求交点？
         // y_0 = a_0 * x + b_0
         // y_1 = a_1 * x + b_1

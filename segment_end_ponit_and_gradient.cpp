@@ -7,7 +7,7 @@
 segment_start_point_and_gradient &segment_start_point_and_gradient::get_segment_start_point_and_gradient(
     half_edge_struct<vertex_xy> &hf, int incident_half_edge) {
     segment_start_point_and_gradient *temp = new segment_start_point_and_gradient;
-    segment_position<Point_2> current_segment = hf.get_segment(incident_half_edge);
+    Segment<Point_2> current_segment = hf.get_segment(incident_half_edge);
     temp->compare_x_position = current_segment.start_point.x;
     if (current_segment.end_point.x < current_segment.start_point.x) {
         std::swap(current_segment.start_point, current_segment.end_point);

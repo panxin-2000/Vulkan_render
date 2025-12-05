@@ -112,8 +112,8 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
         // 但是应该不是很彻底
 
         // 两条线段判断是否相交
-        segment_position<Point_2> ab = hf.get_segment(left_node->data.incident_half_edge);
-        segment_position<Point_2> cd = hf.get_segment(right_node->data.incident_half_edge);
+        Segment<Point_2> ab = hf.get_segment(left_node->data.incident_half_edge);
+        Segment<Point_2> cd = hf.get_segment(right_node->data.incident_half_edge);
 
         if (intersect(ab, cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
