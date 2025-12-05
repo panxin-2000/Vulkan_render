@@ -79,6 +79,12 @@ TEST(on_segment_bounding_box, on_segment_bounding_box) { {
         Point_2 c(7, 8);
         EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
     }
+
+    EXPECT_EQ(intersect(Sphere<Point_2>{{0, 0}, 3}, Point_2{2, 2}), true);
+    EXPECT_EQ(intersect(Sphere<Point_2>{{0, 0}, 3}, Point_2{4, 2}), false);
+    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,0}), true);
+    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,2}), false);
+    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{4, 0,2}), false);
 }
 
 TEST(sort, sort_segment_vector) {

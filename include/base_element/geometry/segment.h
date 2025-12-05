@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_SEGMENT_H
 #define HELLO_MAC_SEGMENT_H
-
+#include "base_element/point_2.h"
 #include "iostream"
 
 template<typename point_type = Point_2>

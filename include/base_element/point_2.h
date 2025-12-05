@@ -189,5 +189,9 @@ public:
     }
 };
 
+inline float dot(const Point_2 &A, const Point_2 &b) {
+    return A.x * b.x + A.y * b.y;
+}
+
 
 #endif //HELLO_MAC_POINT_2_H

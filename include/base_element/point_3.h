@@ -26,6 +26,15 @@ public:
         Point_3 temp{0, 0, 0};
         temp.x = this->x + R.x;
         temp.y = this->y + R.y;
+        temp.z = this->z + R.z;
+        return temp;
+    }
+
+    Point_3 operator-(const Point_3 &R) const {
+        Point_3 temp{0, 0, 0};
+        temp.x = this->x - R.x;
+        temp.y = this->y - R.y;
+        temp.z = this->z - R.z;
         return temp;
     }
 
@@ -50,10 +59,14 @@ public:
         return false;
     }
 
-    Point_3 operator-(const Point_3 &R);
+
 
     float single_area(const Point_3 &R);
 };
 
+
+inline float dot(const Point_3 &A, const Point_3 &b) {
+    return A.x * b.x + A.y * b.y + A.z * b.z;
+}
 
 #endif //HELLO_MAC_POINT_3_H

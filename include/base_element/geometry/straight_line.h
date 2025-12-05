@@ -8,7 +8,7 @@
 
 template<typename point_type = Point_2>
 struct Straight_line {
-    point_type start_point;
+    point_type point;
     point_type direction;
 };
 

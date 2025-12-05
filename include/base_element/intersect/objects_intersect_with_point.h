@@ -9,6 +9,8 @@
 #include "../geometry/AABB_bounding_box.h"
 #include "../geometry/segment.h"
 #include "base_element/point_2.h"
+#include "base_element/point_3.h"
+#include "base_element/geometry/Sphere_bounding_volume.h"
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &box, const T &test_point) {
@@ -64,6 +66,14 @@ inline bool intersect(const Trapezoid &trapezoid, const T &test_point) {
     return false;
 }
 
+template<typename T>
+inline bool intersect(const Sphere<T> &sphere, const T &test_point) {
+    if (dot((test_point - sphere.center), (test_point - sphere.center)) <=
+        (sphere.radius * sphere.radius)) {
+        return true;
+    }
+    return false;
+}
 
 
 #endif //HELLO_MAC_INTERSECTION_H
