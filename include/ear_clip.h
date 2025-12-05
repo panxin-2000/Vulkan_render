@@ -6,7 +6,7 @@
 #define EAR_CLIP_H
 
 
-#include "vector_signed_area.h"
+#include "base_element/triangle.h"
 #include "RB_tree_node.h"
 #include "half_edge.h"
 

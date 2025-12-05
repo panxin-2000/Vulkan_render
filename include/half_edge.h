@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "base_element/base.h"
-#include "vector_signed_area.h"
+#include "base_element/triangle.h"
 
 //
 // Created by 潘鑫 on 2025/10/21.

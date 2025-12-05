@@ -3,8 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "vector_signed_area.h"
-#include "base_element/base.h"
+#include "base_element/convex_hull.h"
 
 
 // 顺时针
@@ -114,17 +113,17 @@ TEST(sort, sort_segment_vector) {
 
 
 TEST(sort, sort_segment_vector_2) {
-    std::vector<Point_2> segments{};
-    segments.push_back(Point_2{1, 1});
-    segments.push_back(Point_2{3, 2});
-    segments.push_back(Point_2{4, 4});
-    segments.push_back(Point_2{2, 5}); // 最后这个点会消失掉
-    segments.push_back(Point_2{-1, 6});
-    segments.push_back(Point_2{-4, 4});
-    segments.push_back(Point_2{-3, 2});
-    segments.push_back(Point_2{-5, 1});
+    std::vector<Point_2> polygon_points{};
+    polygon_points.push_back(Point_2{1, 1});
+    polygon_points.push_back(Point_2{3, 2});
+    polygon_points.push_back(Point_2{4, 4});
+    polygon_points.push_back(Point_2{2, 5}); // 最后这个点会消失掉
+    polygon_points.push_back(Point_2{-1, 6});
+    polygon_points.push_back(Point_2{-4, 4});
+    polygon_points.push_back(Point_2{-3, 2});
+    polygon_points.push_back(Point_2{-5, 1});
 
-    std::vector<Point_2> &result_segments = calculate_convex_hull(segments);
+    std::vector<Point_2> &result_segments = calculate_convex_hull(polygon_points);
 
     std::vector<Point_2> expect_segments{};
     expect_segments.push_back(Point_2{-5, 1});

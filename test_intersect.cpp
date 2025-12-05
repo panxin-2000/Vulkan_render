@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/10/1.
 //
 #include "gtest/gtest.h"
-#include "vector_signed_area.h"
+#include "include/base_element/triangle.h"
 #include "base_element/base.h"
 #include "base_element/intersection.h"
 

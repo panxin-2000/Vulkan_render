@@ -4,7 +4,7 @@
 
 #include <random>
 #include <gtest/gtest.h>
-#include "vector_signed_area.h"
+#include "include/base_element/triangle.h"
 #include "ear_clip.h"
 #include "half_edge.h"
 #include "trapezoid.h"

@@ -1,34 +1,36 @@
 #include <vector>
 
-#include "vector_signed_area.h"
+#include "base_element/base.h"
 //
 // Created by 潘鑫 on 2025/10/3.
 //
 /**
+ * 清理不在最终 convex hull 上的点
  * 这里是按照角度的顺序来计算
  * 具体的细节可以参考算法导论和另一本计算机图形学的书
  * 《computational geometry algorithms and applications》
  *
- * @param new_segments
+ * @param sorted_points
  * @return
  */
-bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments) {
+bool clean_point_not_on_convex_hull(std::vector<Point_2> &sorted_points) {
     // 这里需要做什么呢？
     // 判断长度
-    if (new_segments.size() >= 3) {
-        Point_2 a = new_segments.at(new_segments.size() - 3);
-        Point_2 b = new_segments.at(new_segments.size() - 2);
-        Point_2 c = new_segments.at(new_segments.size() - 1);
+    if (sorted_points.size() >= 3) {
+        // sorted_points 中的最后的三个点
+        Point_2 a = sorted_points.at(sorted_points.size() - 3);
+        Point_2 b = sorted_points.at(sorted_points.size() - 2);
+        Point_2 c = sorted_points.at(sorted_points.size() - 1);
 
-        if (Point_2::is_anticlockwise(a, b, c) == Point_2::anticlockwise::counterclockwise ) {
+        if (Point_2::is_anticlockwise(a, b, c) == Point_2::anticlockwise::counterclockwise) {
             // 那么这里是逆时针
             return true;
         } else {
             // 如果是顺时针，那么就需要删除倒数第二个，然后重新计算
             // 重新计算需要重新调用这个函数本身
             // 参数是什么呢？只需要一个向量就好
-            new_segments.erase(new_segments.end() - 2);
-            return convex_hull_in_order_of_angles(new_segments);
+            sorted_points.erase(sorted_points.end() - 2);
+            return clean_point_not_on_convex_hull(sorted_points);
         }
     } else {
         return false;
@@ -44,10 +46,10 @@ bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments) {
  * 1. 这里只是使用了float类型，没有使用模版更新新的类型
  * 2. 应该是有一个关于平行的退化情况，这个并没有去写测试，可能相同的输入会产生不同的结果
  *
- * @param segments
+ * @param polygon_points
  * @return
  */
-std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments) {
+std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &polygon_points) {
     struct {
         bool operator()(Point_2 a, Point_2 b) const {
             if (a.y < b.y) {
@@ -62,12 +64,17 @@ std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments) {
                 }
             }
         }
-    } customLess;
-    std::vector<Point_2>::iterator current_min = std::min_element(segments.begin(), segments.end(), customLess);
+    } min_y_then_min_x;
+    std::vector<Point_2>::iterator current_min =
+            std::min_element(polygon_points.begin(),
+                             polygon_points.end(),
+                             min_y_then_min_x);
 
     Point_2 min = *current_min;
-    segments.erase(current_min);
-    std::sort(segments.begin(), segments.end(),
+    polygon_points.erase(current_min);
+
+    std::sort(polygon_points.begin(),
+              polygon_points.end(),
               [min](Point_2 a, Point_2 b) {
                   Point_2 new_a = a - min;
                   Point_2 new_b = b - min;
@@ -77,28 +84,25 @@ std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments) {
                       return false;
                   }
               });
+
+    std::vector<Point_2> &sorted_polygon_points = polygon_points;
     // 是的，之前是有问题，全部排序完成之后还需要将最后一个添加到线段中
     // 将最开始的点也添加到最后，目的是为了防止最后一部分是凹的
     // 然后导致了需要检查一些内容
-    if (segments.size() >= 3) {
-        segments.push_back(min);
+    if (sorted_polygon_points.size() >= 3) {
+        sorted_polygon_points.push_back(min);
     } // 只有在大于三个的时候，才会去添加，不大于三个的时候是没有办法添加的，
     // 因为添加进入会导致判断角度为零
 
-    std::vector<Point_2> *new_segments = new std::vector<Point_2>;
-    // 直接用new，之后变换为引用
-    new_segments->push_back(min);
-    // new_segments.push_back(*segments.begin());
-    // segments.erase(segments.begin);
-    // 上面这两行是可以被注释的，因为只是被增加了，其他并没有问题
+    const auto result_point = new std::vector<Point_2>;
+    result_point->push_back(min); // 这里和 return 前的删除是否是冲突的呢？
 
-    for (auto segment: segments) {
-        new_segments->push_back(segment);
-        // segments.erase(segments.begin);  // 这里其实应该也并不应该存在，因上面for导致的是有问题的
-        convex_hull_in_order_of_angles(*new_segments);
+    for (auto point: sorted_polygon_points) {
+        result_point->push_back(point);
+        clean_point_not_on_convex_hull(*result_point);
     }
-    if (new_segments->at(0) == new_segments->at(new_segments->size() - 1)) {
-        new_segments->pop_back();
+    if (result_point->at(0) == result_point->at(result_point->size() - 1)) {
+        result_point->pop_back();
     }
-    return *new_segments;
+    return *result_point;
 }

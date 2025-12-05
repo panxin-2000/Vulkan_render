@@ -2,17 +2,15 @@
 // Created by 潘鑫 on 2025/10/1.
 //
 
-#ifndef VECTOR_SIGNED_AREA_H
-#define VECTOR_SIGNED_AREA_H
+#ifndef HELLO_MAC_TRIANGLE_H
+#define HELLO_MAC_TRIANGLE_H
 
 #include <vector>
 #include <ostream>
-#include "base_element/point_2.h"
-#include "point_in_on_out_triangle.h"
-#include "base_element/AABB_bounding_box.h"
+#include "point_2.h"
+#include "../point_in_on_out_triangle.h"
+#include "AABB_bounding_box.h"
 
-
-typedef Point_2 triangle_position;
 
 template<typename T>
 struct Triangle {
@@ -99,16 +97,7 @@ struct Triangle {
     }
 
 
-    // 这里如果想要排序，那么也是有点不太一样的需求的
-    // 需要比较它们的重心，其实也不是非要比较重心，比较三个值相加也是可以的。
-    //
 };
 
 
-
-
-
-bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments);
-
-std::vector<Point_2> &calculate_convex_hull(std::vector<Point_2> &segments);
-#endif //VECTOR_SIGNED_AREA_H
+#endif //HELLO_MAC_TRIANGLE_H
