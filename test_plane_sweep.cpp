@@ -117,8 +117,8 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
 
         if (intersect(ab, cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
-            Point_2 result;
-            if (ab.get_intersection_point(cd, &result) == true && event_points.top().x <= result.x) {
+            Point_2 result = ab.get_intersect_result(cd);
+            if (event_points.top().x <= result.x) {
                 // 上面其实应该是有一个奇怪的问题的，那就是小于还是等于？
                 // 问题就是添加一个等于是否会出现循环的问题
                 // 端点B 进入，判断和端点A相交

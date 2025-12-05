@@ -144,7 +144,7 @@ public:
         auto F_point = right_point;
         auto D_point = trapezoid->trapezoid_union_data.trapezoid.right_lower;
 
-        auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, D_point.x);
+        auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
 
         return find_point_in_trapezoid_graph(root_node, J_point,
                                              point_enum::left_point, true,
@@ -230,10 +230,10 @@ public:
             //     C---------I--------------J---------D
             // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
             // 这几个点还需要计算,计算完成了，开始想怎么构造第一个结构了
-            auto G_point = Segment<Point_2>::get_intersection_point(A_point, B_point, E_point.x);
-            auto H_point = Segment<Point_2>::get_intersection_point(A_point, B_point, F_point.x);
-            auto I_point = Segment<Point_2>::get_intersection_point(C_point, D_point, E_point.x);
-            auto J_point = Segment<Point_2>::get_intersection_point(C_point, D_point, H_point.x);
+            auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, E_point.x);
+            auto H_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, F_point.x);
+            auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
+            auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
             auto S_trapezoid = init_four_points(G_point, H_point, E_point, F_point);
             auto T_trapezoid = init_four_points(E_point, F_point, I_point, J_point);
@@ -288,8 +288,8 @@ public:
             //                              J---------D    C---------------------------J---------D
             //
             // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
-            auto H_point = Segment<Point_2>::get_intersection_point(A_point, B_point, F_point.x);
-            auto J_point = Segment<Point_2>::get_intersection_point(C_point, D_point, H_point.x);
+            auto H_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, F_point.x);
+            auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
             auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point);
             auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point);
             auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
@@ -318,8 +318,8 @@ public:
             //     |         |           *                                      /               \
             //     |         |      *                                     S_trapezoid         T_trapezoid
             //     C---------I
-            auto G_point = Segment<Point_2>::get_intersection_point(A_point, B_point, E_point.x);
-            auto I_point = Segment<Point_2>::get_intersection_point(C_point, D_point, E_point.x);
+            auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, E_point.x);
+            auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
             auto S_trapezoid = init_four_points(G_point, B_point, E_point, F_point);
             auto T_trapezoid = init_four_points(E_point, F_point, I_point, D_point);
@@ -352,7 +352,7 @@ public:
         auto E_point = left_point;
         auto F_point = right_point;
         if (A_point == E_point || C_point == E_point) {
-            auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, D_point.x);
+            auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
             auto S_trapezoid = init_four_points(A_point, B_point, E_point, J_point);
             auto T_trapezoid = init_four_points(E_point, J_point, C_point, D_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
@@ -373,9 +373,9 @@ public:
         //     C---------I------------------------D
         // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
         // 这几个点还需要计算,计算完成了，开始想怎么构造第一个结构了
-        auto G_point = Segment<Point_2>::get_intersection_point(A_point, B_point, E_point.x);
-        auto I_point = Segment<Point_2>::get_intersection_point(C_point, D_point, E_point.x);
-        auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, D_point.x);
+        auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, E_point.x);
+        auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
+        auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
         auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
         auto S_trapezoid = init_four_points(G_point, B_point, E_point, J_point);
         auto T_trapezoid = init_four_points(E_point, J_point, I_point, D_point);
@@ -405,7 +405,7 @@ public:
         auto E_point = left_point;
         auto F_point = right_point;
         if (B_point == F_point || D_point == F_point) {
-            auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, C_point.x);
+            auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
             auto S_trapezoid = init_four_points(A_point, B_point, J_point, F_point);
             auto T_trapezoid = init_four_points(J_point, F_point, C_point, D_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
@@ -425,9 +425,9 @@ public:
         //            C---------I------------------------D
         // 有退化的情况没有考虑，比如AC是同一个点，四边形退化为三角形的情况
         // 更特殊的一点是EF与CD相交或者 EF与AB相交，但是最开始的规定中不允许出现这种情况
-        auto G_point = Segment<Point_2>::get_intersection_point(A_point, B_point, F_point.x);
-        auto I_point = Segment<Point_2>::get_intersection_point(C_point, D_point, F_point.x);
-        auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, C_point.x);
+        auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, F_point.x);
+        auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, F_point.x);
+        auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
         auto R_trapezoid = init_four_points(G_point, B_point, I_point, D_point);
         auto S_trapezoid = init_four_points(A_point, G_point, J_point, F_point);
         auto T_trapezoid = init_four_points(J_point, F_point, C_point, I_point);
@@ -462,8 +462,8 @@ public:
         //            |                                 |                        /           \
         //            |    T                            |                 S_trapezoid         T_trapezoid
         //            C---------------------------------D
-        auto J_point = Segment<Point_2>::get_intersection_point(E_point, F_point, C_point.x);
-        auto K_point = Segment<Point_2>::get_intersection_point(E_point, F_point, D_point.x);
+        auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
+        auto K_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
         auto S_trapezoid = init_four_points(A_point, B_point, J_point, K_point);
         auto T_trapezoid = init_four_points(J_point, K_point, C_point, D_point);
         auto EF_segment_node = init_segment_node(E_point, F_point);
