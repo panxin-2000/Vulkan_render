@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 #include "include/base_element/triangle.h"
 #include "base_element/base.h"
-#include "base_element/intersection.h"
 
 
 TEST(intersect, have_intersect) {
