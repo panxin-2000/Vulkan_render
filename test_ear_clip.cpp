@@ -4,7 +4,7 @@
 
 #include <random>
 #include <gtest/gtest.h>
-#include "include/base_element/triangle.h"
+#include "include/base_element/geometry/triangle.h"
 #include "ear_clip.h"
 #include "half_edge.h"
 #include "trapezoid_graph.h"

@@ -4,9 +4,9 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
-#include "segment.h"
-#include "point_2.h"
-#include "AABB_bounding_box.h"
+#include "../geometry/segment.h"
+#include "../point_2.h"
+#include "../geometry/AABB_bounding_box.h"
 #include "objects_intersect_with_point.h"
 
 inline bool intersect(Segment<Point_2> &L_segment, Segment<Point_2> &R_segment) {

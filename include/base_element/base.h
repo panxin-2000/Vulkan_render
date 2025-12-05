@@ -7,13 +7,13 @@
 
 #include "base_element/point_2.h"
 #include "base_element/point_3.h"
-#include "base_element/Ray.h"
-#include "base_element/segment.h"
-#include "base_element/straight_line.h"
-#include "base_element/AABB_bounding_box.h"
-#include "base_element/objects_intersect_with_point.h"
-#include "base_element/objects_intersect_with_segment.h"
+#include "geometry/Ray.h"
+#include "geometry/segment.h"
+#include "geometry/straight_line.h"
+#include "geometry/AABB_bounding_box.h"
+#include "intersect/objects_intersect_with_point.h"
+#include "intersect/objects_intersect_with_segment.h"
 #include "base_element/intersect_result.h"
-#include "base_element/Trapezoid.h"
+#include "geometry/Trapezoid.h"
 
 #endif //HELLO_MAC_BASE_H

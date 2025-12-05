@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 
-#include "include/base_element/triangle.h"
+#include "include/base_element/geometry/triangle.h"
 
 
 // 输入三个点，之后呢？

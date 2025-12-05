@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_TRIANGLE_GRAPH_H
 #define HELLO_MAC_TRIANGLE_GRAPH_H
 #include <cassert>
-#include "base_element/triangle.h"
+#include "base_element/geometry/triangle.h"
 
 template<typename T>
 class Triangle_node {

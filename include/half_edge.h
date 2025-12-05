@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "base_element/base.h"
-#include "base_element/triangle.h"
+#include "base_element/geometry/triangle.h"
 #include "base_element/convex_hull.h"
 
 

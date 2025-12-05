@@ -6,7 +6,7 @@
 #define EAR_CLIP_H
 
 
-#include "base_element/triangle.h"
+#include "base_element/geometry/triangle.h"
 #include "RB_tree_node.h"
 #include "half_edge.h"
 

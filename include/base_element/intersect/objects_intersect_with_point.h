@@ -4,10 +4,10 @@
 
 #ifndef HELLO_MAC_INTERSECTION_H
 #define HELLO_MAC_INTERSECTION_H
-#include "Trapezoid.h"
-#include "triangle.h"
-#include "base_element/AABB_bounding_box.h"
-#include "base_element/segment.h"
+#include "../geometry/Trapezoid.h"
+#include "../geometry/triangle.h"
+#include "../geometry/AABB_bounding_box.h"
+#include "../geometry/segment.h"
 #include "base_element/point_2.h"
 
 template<typename T>

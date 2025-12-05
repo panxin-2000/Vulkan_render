@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/10/1.
 //
 #include "gtest/gtest.h"
-#include "include/base_element/triangle.h"
+#include "include/base_element/geometry/triangle.h"
 #include "base_element/base.h"
 
 
