@@ -32,12 +32,6 @@ public:
     //     return *this;
     // }
 
-    Point_2 operator+(const Point_2 &R) const {
-        Point_2 temp{0, 0};
-        temp.x = this->x + R.x;
-        temp.y = this->y + R.y;
-        return temp;
-    }
 
     // a 的 平方 大于 b 的平方 是返回 true  否则返回 false
     static bool distance_compare(Point_2 a, Point_2 b) {
@@ -126,6 +120,20 @@ public:
             L.y = R.y;
         }
         return L;
+    }
+
+    Point_2 operator+(const Point_2 &R) const {
+        Point_2 temp{0, 0};
+        temp.x = this->x + R.x;
+        temp.y = this->y + R.y;
+        return temp;
+    }
+
+    Point_2 operator/(int number) const {
+        Point_2 temp{0, 0};
+        temp.x = this->x / number;
+        temp.y = this->y / number;
+        return temp;
     }
 
     const Point_2 operator-(const Point_2 &R) const {

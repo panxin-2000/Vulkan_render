@@ -80,7 +80,7 @@ struct Triangle {
         if (abs(area) == 0.000001f) {
             // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
             if (abs(alpha) == 0.000001f) {
-                if (intersect(AABB<T>{a, b, c}, point))return on_edge;
+                if (intersect(AABB_centroid<T>{a, b, c}, point))return on_edge;
                 // 判断是否在线上还需要过包围盒，在包围盒内才是在线上
             }
             return out_triangle;

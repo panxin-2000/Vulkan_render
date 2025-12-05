@@ -98,7 +98,7 @@ namespace delaunay_triangulation {
 
 
     Half_edge *delaunay_triangulation(std::vector<Point_2> input_points) {
-        auto box = AABB<Point_2>(input_points);
+        auto box = AABB_min_max<Point_2>(input_points);
         auto point_a = box.max_point + (box.max_point - box.min_point);
         Point_2 point_b = {box.max_point.x, box.min_point.y - (box.max_point.y - box.min_point.y)};
         Point_2 point_c = {box.min_point.x - (box.max_point.x - box.min_point.x), box.max_point.y};

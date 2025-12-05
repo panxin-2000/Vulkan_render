@@ -58,27 +58,27 @@ TEST(on_segment_bounding_box, on_segment_bounding_box) { {
         Point_2 a(12, 6);
         Point_2 b(17, 10);
         Point_2 c(7, 8);
-        EXPECT_EQ(intersect({a, b}, c), false);
+        EXPECT_EQ(intersect(AABB_centroid<Point_2>{a, b}, c), false);
     } {
         Point_2 a(0, 2);
         Point_2 b(2, 0);
         Point_2 c(1, 1);
-        EXPECT_EQ(intersect({a, b}, c), true);
+        EXPECT_EQ(intersect(AABB_centroid<Point_2>{a, b}, c), true);
     } {
         Point_2 a(3, 2);
         Point_2 b(5, 3);
         Point_2 c(2.9, 3);
-        EXPECT_EQ(intersect({a, b}, c), false);
+        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
     } {
         Point_2 a(3, 2);
         Point_2 b(5, 3);
         Point_2 c(-1, 2);
-        EXPECT_EQ(intersect({a, b}, c), false);
+        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
     } {
         Point_2 a(12, 6);
         Point_2 b(17, 10);
         Point_2 c(7, 8);
-        EXPECT_EQ(intersect({a, b}, c), false);
+        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
     }
 }
 

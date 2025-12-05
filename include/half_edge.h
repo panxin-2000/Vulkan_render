@@ -921,7 +921,7 @@ struct half_edge_struct {
             if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::collinear) {
                 auto a = get_vertex(half_edge_indices);
                 auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-                if (intersect({a, b}, vertex_in)) {
+                if (intersect(AABB_min_max<Point_2>{a, b}, vertex_in)) {
                     return_half_edge_indices = half_edge_indices;
                     return point_in_triangle_type::on_edge;
                 } else return point_in_triangle_type::out_triangle;
@@ -937,8 +937,8 @@ struct half_edge_struct {
         return Point_2::is_anticlockwise(a, b, vertex_in);
     }
 
-    AABB<vertex_base_type> calculate_aabb() {
-        AABB<vertex_base_type> box;
+    AABB_min_max<vertex_base_type> calculate_aabb() {
+        AABB_min_max<vertex_base_type> box;
         for (auto vertex_point: vertices) {
             box.min_point = vertex_base_type::min_two_point(box.min_point, vertex_point);
             box.max_point = vertex_base_type::max_two_point(box.max_point, vertex_point);

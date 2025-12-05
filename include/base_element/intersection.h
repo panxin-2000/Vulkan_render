@@ -8,8 +8,16 @@
 #include "base_element/segment.h"
 
 template<typename T>
-bool intersect(const AABB<T> &box, const T &test_point) {
+bool intersect(const AABB_min_max<T> &box, const T &test_point) {
     if (box.min_point <= test_point && test_point <= box.max_point)
+        return true;
+    return false;
+}
+
+template<typename T>
+bool intersect(const AABB_centroid<T> &box, const T &test_point) {
+    if (box.centroid_point - box.direction_interval <= test_point &&
+        test_point <= box.centroid_point + box.direction_interval)
         return true;
     return false;
 }
@@ -35,16 +43,16 @@ inline bool intersect(Segment<Point_2> &L_segment, Segment<Point_2> &R_segment) 
     }
     // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
     // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
-    if (f1 == 0 && intersect({L_segment.start_point, L_segment.end_point},
+    if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
                              R_segment.start_point))
         return true;
-    if (f2 == 0 && intersect({L_segment.start_point, L_segment.end_point},
+    if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
                              R_segment.end_point))
         return true;
-    if (f3 == 0 && intersect({R_segment.start_point, R_segment.end_point},
+    if (f3 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
                              L_segment.start_point))
         return true;
-    if (f4 == 0 && intersect({R_segment.start_point, R_segment.end_point},
+    if (f4 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
                              L_segment.end_point))
         return true;
     return false;

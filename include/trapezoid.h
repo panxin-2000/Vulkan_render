@@ -473,7 +473,7 @@ public:
         return EF_segment_node;
     }
 
-    static trapezoid_ptr init_root(AABB<Point_2> bounding_box) {
+    static trapezoid_ptr init_root(AABB_min_max<Point_2> bounding_box) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {
             bounding_box.min_point.x, bounding_box.max_point.y
