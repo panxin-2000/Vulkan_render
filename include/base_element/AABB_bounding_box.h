@@ -26,6 +26,15 @@ public:
         }
     }
 
+    AABB(std::vector<T> &points) {
+        min_point = T::int_max_limit(min_point);
+        max_point = T::int_min_limit(max_point);
+        for (auto vertex_point: points) {
+            min_point = T::min_two_point(min_point, vertex_point);
+            max_point = T::max_two_point(max_point, vertex_point);
+        }
+    }
+
     AABB(T l_points, T r_points) {
         min_point = T::int_max_limit(min_point);
         max_point = T::int_min_limit(max_point);
@@ -36,15 +45,6 @@ public:
     }
 
 
-    static AABB calculate_bound_box(std::vector<T> &points) {
-        AABB box;
-        for (auto vertex_point: points) {
-            box.min_point = T::min_two_point(box.min_point, vertex_point);
-            box.max_point = T::max_two_point(box.max_point, vertex_point);
-        }
-        return box;
-    }
-
     /**
      * 在包围盒的内部和边缘的线上都 返回 true
      * @param box
@@ -52,7 +52,6 @@ public:
      * @return
      */
 };
-
 
 
 #endif //BOUNDING_BOX_H
