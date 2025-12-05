@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_SEGMENT_H
 #define HELLO_MAC_SEGMENT_H
 #include "base_element/base.h"
-
+#include "iostream"
 
 struct segment_position {
     Point_2 start_point;
@@ -49,7 +49,10 @@ struct segment_position {
     }
 
     static bool on_segment_bounding_box(const Point_2 &segment_start_point, Point_2 &segment_end_point,
-                                 Point_2 &test_point) {
+                                        Point_2 &test_point) {
+        // std::cout << "segment_start_point " << segment_start_point << std::endl;
+        // std::cout << "segment_end_point " << segment_end_point << std::endl;
+        // std::cout << "test_point " << test_point << std::endl;
         if (std::min(segment_start_point.x, segment_end_point.x) <= test_point.x &&
             test_point.x <= std::max(segment_start_point.x, segment_end_point.x) &&
             std::min(segment_start_point.y, segment_end_point.y) <= test_point.y &&

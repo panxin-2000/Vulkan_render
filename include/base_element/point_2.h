@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_POINT_2_H
 #define HELLO_MAC_POINT_2_H
+#include <ostream>
 
 class Point_2 {
 public:
@@ -17,6 +18,12 @@ public:
     Point_2(float x1, float y1) {
         x = x1;
         y = y1;
+    }
+
+    friend std::ostream &operator<<(std::ostream &output,
+                                    const Point_2 &P) {
+        output << " x :  " << P.x << " y :  " << P.y;
+        return output;
     }
 
     // point_2 &operator=(const point_2 &R) {
@@ -75,10 +82,7 @@ public:
     }
 
     friend bool operator<=(const Point_2 &L, const Point_2 &R) {
-        if (L.x <= R.x) {
-            return true;
-        }
-        if (L.y <= R.y) {
+        if (L.x <= R.x && L.y <= R.y) {
             return true;
         }
         return false;

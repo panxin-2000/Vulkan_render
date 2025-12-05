@@ -4,6 +4,7 @@
 
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
+#include "base_element/segment.h"
 
 
 // 顺时针
@@ -52,6 +53,44 @@ TEST(triangle, three_point) {
     // 所以可以通过这个办法来简单的判断顺时针和逆时针，确实只有在做的时候才会更加了解具体相关的细节
 }
 
+
+TEST(on_segment_bounding_box, on_segment_bounding_box) { {
+        Point_2 a(12, 6);
+        Point_2 b(17, 10);
+        Point_2 c(7, 8);
+        EXPECT_EQ(segment_position::on_segment_bounding_box(a,b,c),
+                  false);
+        EXPECT_EQ(intersect({a, b}, c), false);
+    } {
+        Point_2 a(0, 2);
+        Point_2 b(2, 0);
+        Point_2 c(1, 1);
+        EXPECT_EQ(segment_position::on_segment_bounding_box(a,b,c),
+                  true);
+        EXPECT_EQ(intersect({a, b}, c), true);
+    } {
+        Point_2 a(3, 2);
+        Point_2 b(5, 3);
+        Point_2 c(2.9, 3);
+        EXPECT_EQ(segment_position::on_segment_bounding_box(a,b,c),
+                  false);
+        EXPECT_EQ(intersect({a, b}, c), false);
+    } {
+        Point_2 a(3, 2);
+        Point_2 b(5, 3);
+        Point_2 c(-1, 2);
+        EXPECT_EQ(segment_position::on_segment_bounding_box(a,b,c),
+                  false);
+        EXPECT_EQ(intersect({a, b}, c), false);
+    } {
+        Point_2 a(12, 6);
+        Point_2 b(17, 10);
+        Point_2 c(7, 8);
+        EXPECT_EQ(segment_position::on_segment_bounding_box(a,b,c),
+                  false);
+        EXPECT_EQ(intersect({a, b}, c), false);
+    }
+}
 
 TEST(sort, sort_segment_vector) {
     std::vector<Point_2> segments{};
@@ -116,7 +155,7 @@ TEST(sort, sort_segment_vector_2) {
         << std::endl;
             // 这里的打印也很方便，不出现错误的时候是不需要打印的
         }
-    }else {
+    } else {
         FAIL() << "result_segments not equal to expect_segments size.";
     }
 }
