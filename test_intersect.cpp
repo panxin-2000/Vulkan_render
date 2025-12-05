@@ -13,5 +13,5 @@ TEST(intersect, have_intersect) {
     Point_2 point_d{1, 5};
     segment_position segment_1{point_a, point_b};
     segment_position segment_2{point_c, point_d};
-    EXPECT_EQ(true, segment_1.intersection(segment_2));
+    EXPECT_EQ(true, intersect(segment_1,segment_2));
 }

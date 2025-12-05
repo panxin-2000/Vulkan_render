@@ -46,7 +46,8 @@ struct event_point {
             // 之后再比较y轴，y轴小的为小
             return true;
         } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {  // todo： 这里的逻辑在实际中稍微有点问题
+            if (incident_half_edge % 2 == 0) {
+                // todo： 这里的逻辑在实际中稍微有点问题
                 // flip能够解决吗？然后就带了来一个问题flip翻转是为了解决什么？
                 // 如果排序不变，但是next和pre改变，那么其实需要翻转的内容很多。
                 // 但是如果只是为了更改这两个点索引的位置，那么只需要改这两条边各自的上下，顶点对于的边的索引，
@@ -80,6 +81,7 @@ void init_all_segments(half_edge_struct<vertex_xy> &hf) {
     hf.create_loop({0, 2}, {2, 0});
     hf.create_loop({0, 6.5}, {6.5, 0});
 }
+
 // 上面给出了来的左右点是对的，之后给出的话，两条边，小的不一定是起点。
 
 std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &create_event_queue(
@@ -113,7 +115,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
         segment_position ab = hf.get_segment(left_node->data.incident_half_edge);
         segment_position cd = hf.get_segment(right_node->data.incident_half_edge);
 
-        if (ab.intersection(cd) == true) {
+        if (intersect(ab, cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
             Point_2 result;
             if (ab.get_intersection_point(cd, &result) == true && event_points.top().x <= result.x) {
