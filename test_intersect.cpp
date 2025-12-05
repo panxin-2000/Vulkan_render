@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
 #include "base_element/base.h"
+#include "base_element/intersection.h"
 
 
 TEST(intersect, have_intersect) {

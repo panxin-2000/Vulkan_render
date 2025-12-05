@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
-#include "base_element/segment.h"
+#include "base_element/base.h"
 
 
 // 顺时针

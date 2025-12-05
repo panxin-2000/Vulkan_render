@@ -11,5 +11,7 @@
 #include "base_element/segment.h"
 #include "base_element/straight_line.h"
 #include "base_element/AABB_bounding_box.h"
+#include "base_element/intersection.h"
+#include "base_element/intersect_result.h"
 
 #endif //HELLO_MAC_BASE_H
