@@ -697,7 +697,7 @@ struct half_edge_struct {
         return false;
     }
 
-    segment_position get_segment(int incident_half_edge) {
+    segment_position<Point_2> get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
         int vertex_index_end_point = half_edges.at(incident_half_edge).vertex_index;
         Point_2 start_point{
@@ -710,7 +710,7 @@ struct half_edge_struct {
             vertices.at(vertex_index_start_point).x,
             vertices.at(vertex_index_start_point).y
         };
-        segment_position result{start_point, end_point};
+        segment_position<Point_2> result{start_point, end_point};
         return result;
     }
 

@@ -48,7 +48,6 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(hello_test
-        vector_signed_area.cpp
         hello_test.cpp
         add_char_calculata.cpp
         test_add_char_calculata.cpp

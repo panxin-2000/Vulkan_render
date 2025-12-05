@@ -62,7 +62,7 @@ bool intersect(const AABB<T> &box, const T &test_point) {
     return false;
 }
 
-inline bool intersect(segment_position &L_segment, segment_position &R_segment) {
+inline bool intersect(segment_position<Point_2> &L_segment, segment_position<Point_2> &R_segment) {
     Point_2 ab = L_segment.end_point - L_segment.start_point;
     Point_2 ac = R_segment.start_point - L_segment.start_point;
     Point_2 ad = R_segment.end_point - L_segment.start_point;
