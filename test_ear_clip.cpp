@@ -7,7 +7,7 @@
 #include "include/base_element/triangle.h"
 #include "ear_clip.h"
 #include "half_edge.h"
-#include "trapezoid.h"
+#include "trapezoid_graph.h"
 #include "tree_function.h"
 
 template<typename T>

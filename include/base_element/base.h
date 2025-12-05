@@ -13,5 +13,6 @@
 #include "base_element/AABB_bounding_box.h"
 #include "base_element/intersection.h"
 #include "base_element/intersect_result.h"
+#include "base_element/Trapezoid.h"
 
 #endif //HELLO_MAC_BASE_H

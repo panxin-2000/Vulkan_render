@@ -4,7 +4,7 @@
 
 #ifndef TRAPEZOID_H
 #define TRAPEZOID_H
-#include "base_element/AABB_bounding_box.h"
+#include "base_element/base.h"
 
 // 我希望四边形有什么样的结构呢？
 // 四边形肯定是需要有四个顶点的
@@ -14,18 +14,12 @@
 // 创建与有向无环图的双向连接
 // 或者说，这个结构需要添加到树中
 //
-struct TRAPEZOID {
-    Point_2 left_upper;
-    Point_2 right_upper;
-    Point_2 left_lower;
-    Point_2 right_lower;
-};
 
 
 template<class T>
 class trapezoid_graph_Node : public Tree_Node<trapezoid_graph_Node<T> > {
     union my_union {
-        TRAPEZOID trapezoid;
+        Trapezoid trapezoid;
         Point_2 segment_point;
         Segment<Point_2> segment;
 
