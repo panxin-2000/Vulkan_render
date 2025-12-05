@@ -54,16 +54,14 @@ public:
         auto result = root_triangle;
 
         if (temp_root_triangle != nullptr &&
-            temp_root_triangle->triangle.point_position_of_triangle(point) ==
-            (point_in_triangle_type::in_triangle || point_in_triangle_type::on_edge)) {
+            intersect(temp_root_triangle->triangle, point)) {
             result = temp_root_triangle;
         }
         while (temp_root_triangle != nullptr) {
             int i = 0;
             for (auto check_triangle: temp_root_triangle->inner_triangle) {
                 if (check_triangle != nullptr &&
-                    check_triangle->triangle.point_position_of_triangle(point) ==
-                    (point_in_triangle_type::in_triangle || point_in_triangle_type::on_edge)) {
+                    intersect(check_triangle->triangle, point)) {
                     temp_root_triangle = check_triangle;
                     result = check_triangle;
                     break;

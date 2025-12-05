@@ -65,38 +65,17 @@ struct Triangle {
         return false;
     }
 
-    // 有三角形了，需要判断是在三角形里面还是在三角形的边上
-    // 有一个固定的算法
-    point_in_triangle_type point_position_of_triangle(T point) {
+    // 这个算法不太好，先调用intersect，为true之后再调用这个，用于得到三个分量
+    // 之后再想想办法，看看能否再优化了
+    void point_position_of_triangle(T point, float &alpha, float &beta, float &gamma) {
         T a2b = b - a;
         T a2c = c - a;
-        float area = a2b.single_area(a2c);
-
         auto a2p = point - a;
-        float alpha = a2p.single_area(a2c) / area;
-
-        if (abs(area) == 0.000001f) {
-            // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
-            if (abs(alpha) == 0.000001f) {
-                if (intersect(AABB_centroid<T>{a, b, c}, point))return on_edge;
-                // 判断是否在线上还需要过包围盒，在包围盒内才是在线上
-            }
-            return out_triangle;
-        };
-
-        float beta = a2b.single_area(a2p) / area;
-        float gamma = 1.0f - (alpha + beta);
-
-        if (abs(alpha) == 0.000001f || abs(beta) == 0.000001f || abs(gamma) == 0.000001f) {
-            return on_edge;
-        } else if (alpha < 0.0f || beta < 0.0f || gamma < 0.0f) {
-            return out_triangle;
-        } else if (alpha > 0.0f || beta > 0.0f || gamma > 0.0f) {
-            return in_triangle;
-        }
+        float area = a2b.single_area(a2c);
+        alpha = a2p.single_area(a2c) / area;
+        beta = a2b.single_area(a2p) / area;
+        gamma = 1.0f - (alpha + beta);
     }
-
-
 };
 
 
