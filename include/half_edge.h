@@ -8,6 +8,8 @@
 
 #include "base_element/base.h"
 #include "base_element/triangle.h"
+#include "base_element/convex_hull.h"
+
 
 //
 // Created by 潘鑫 on 2025/10/21.
@@ -525,17 +527,14 @@ struct half_edge_struct {
         auto all_edges_of_second_face = get_all_edge_of_face(opposite_edge_index);
         if (all_edges_of_first_face.size() == 3 && all_edges_of_second_face.size() == 3) {
             // 这时候就可以拿到四个点了
-            auto point_a = get_vertex(get_pre_edge_index(edge_index));
-            auto point_b = get_vertex(edge_index);
-            auto point_c = get_vertex(get_pre_edge_index(opposite_edge_index));
-            auto point_d = get_vertex(opposite_edge_index);
+            Trapezoid temp{
+                get_vertex(get_pre_edge_index(edge_index)),
+                get_vertex(edge_index),
+                get_vertex(get_pre_edge_index(opposite_edge_index)),
+                get_vertex(opposite_edge_index)
+            };
 
-            auto bool_1 = Point_2::is_anticlockwise(point_a, point_d, point_c);
-            auto bool_2 = Point_2::is_anticlockwise(point_d, point_c, point_b);
-            auto bool_3 = Point_2::is_anticlockwise(point_c, point_b, point_a);
-            auto bool_4 = Point_2::is_anticlockwise(point_b, point_a, point_d);
-
-            if (bool_1 & bool_2 & bool_3 & bool_4) {
+            if (convex(temp)) {
                 return true;
             }
         }

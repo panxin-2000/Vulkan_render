@@ -72,14 +72,7 @@ public:
         switch (root_node->trapezoid_type) {
             case graph_enum::leaf_node: {
                 // 需要判断是否在梯形内
-                auto A_point = root_node->trapezoid_union_data.trapezoid.left_upper;
-                auto B_point = root_node->trapezoid_union_data.trapezoid.right_upper;
-                auto C_point = root_node->trapezoid_union_data.trapezoid.left_lower;
-                auto D_point = root_node->trapezoid_union_data.trapezoid.right_lower;
-                if (Point_2::is_anticlockwise(C_point, D_point, find_point) != Point_2::anticlockwise::clockwise &&
-                    Point_2::is_anticlockwise(D_point, B_point, find_point) != Point_2::anticlockwise::clockwise &&
-                    Point_2::is_anticlockwise(B_point, A_point, find_point) != Point_2::anticlockwise::clockwise &&
-                    Point_2::is_anticlockwise(A_point, C_point, find_point) != Point_2::anticlockwise::clockwise) {
+                if (intersect(root_node->trapezoid_union_data.trapezoid, find_point)) {
                     return root_node;
                 } else {
                     return nullptr;
