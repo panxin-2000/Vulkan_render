@@ -6,14 +6,14 @@
 #define HALF_EDGE_H
 #include <vector>
 
-#include "bounding_box.h"
+#include "base_element/base.h"
 #include "vector_signed_area.h"
 
 //
 // Created by 潘鑫 on 2025/10/21.
 //
 
-#include "point_3.h"
+#include "base_element/point_3.h"
 #include "point_in_on_out_triangle.h"
 #include "triangle_graph.h"
 
@@ -921,7 +921,7 @@ struct half_edge_struct {
             if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::collinear) {
                 auto a = get_vertex(half_edge_indices);
                 auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-                if (on_segment_bounding_box(a, b, vertex_in)) {
+                if (segment_position::on_segment_bounding_box(a, b, vertex_in)) {
                     return_half_edge_indices = half_edge_indices;
                     return point_in_triangle_type::on_edge;
                 } else return point_in_triangle_type::out_triangle;

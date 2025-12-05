@@ -7,9 +7,9 @@
 
 #include <vector>
 #include <ostream>
-#include "point_2.h"
+#include "base_element/point_2.h"
 #include "point_in_on_out_triangle.h"
-#include "bounding_box.h"
+#include "base_element/AABB_bounding_box.h"
 
 
 typedef Point_2 triangle_position;
@@ -80,8 +80,7 @@ struct Triangle {
         if (abs(area) == 0.000001f) {
             // 三角形退化为一条线了,判断点是否在线上，在的话返回on_edge,不在的话返回为out_triangle
             if (abs(alpha) == 0.000001f) {
-                AABB<T> temp{a, b, c};
-                if (temp.in_bounding_box(point))return on_edge;
+                if (intersect(AABB<T>{a, b, c}, point))return on_edge;
                 // 判断是否在线上还需要过包围盒，在包围盒内才是在线上
             }
             return out_triangle;
@@ -106,27 +105,8 @@ struct Triangle {
 };
 
 
-bool on_segment_bounding_box(const Point_2 &segment_start_point, Point_2 &segment_end_point,
-                             Point_2 &test_point);
-
-struct segment_position {
-    Point_2 start_point;
-    Point_2 end_point;
-
-    bool intersection(struct segment_position &R_segment_position);
-
-    bool get_intersection_point(struct segment_position &R_segment_position, Point_2 *result);
 
 
-    static Point_2 get_intersection_point(Point_2 &start_point, Point_2 &end_point, float x) {
-        Point_2 ab = start_point - end_point;
-        Point_2 result;
-        float a_0 = ab.y / ab.x; // a_0 是 start_point 到 end_point 之间的斜率
-        result.x = x;
-        result.y = start_point.y + a_0 * (x - start_point.x);
-        return result;
-    }
-};
 
 bool convex_hull_in_order_of_angles(std::vector<Point_2> &new_segments);
 

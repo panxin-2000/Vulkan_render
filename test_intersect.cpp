@@ -3,6 +3,7 @@
 //
 #include "gtest/gtest.h"
 #include "vector_signed_area.h"
+#include "base_element/base.h"
 
 
 TEST(intersect, have_intersect) {
@@ -13,5 +14,4 @@ TEST(intersect, have_intersect) {
     segment_position segment_1{point_a, point_b};
     segment_position segment_2{point_c, point_d};
     EXPECT_EQ(true, segment_1.intersection(segment_2));
-
 }

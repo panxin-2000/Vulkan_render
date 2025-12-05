@@ -4,7 +4,7 @@
 
 #ifndef TRAPEZOID_H
 #define TRAPEZOID_H
-#include "bounding_box.h"
+#include "base_element/AABB_bounding_box.h"
 
 // 我希望四边形有什么样的结构呢？
 // 四边形肯定是需要有四个顶点的
@@ -197,6 +197,7 @@ public:
 
             // 但是这里是需要合并的代码的
             // 将所有的叶子结点添加到队列中
+            // 梯形需要合并，来减少梯形结点的数量。
 
 
             return root_node;
