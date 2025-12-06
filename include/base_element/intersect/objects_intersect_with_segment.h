@@ -64,11 +64,16 @@ bool intersect(const AABB_centroid<T> &L_box, const Segment<T> &R_segment) {
     return false;
 }
 
-
-template<typename Point_2>
-bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
-                                  const Segment<Point_2> &R_segment,
-                                  std::vector<Point_2> *result) {
+/**
+ * 已知相交，求交点
+ * @param L_box
+ * @param R_segment
+ * @param result
+ * @return
+ */
+inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
+                                         const Segment<Point_2> &R_segment,
+                                         std::vector<Point_2> *result) {
     auto offset = R_segment.end_point - R_segment.start_point;
     float k_x = offset.y / offset.x;
     float k_y = offset.x / offset.y;
@@ -80,11 +85,6 @@ bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
     float segment_max_x = std::max(R_segment.start_point.x, R_segment.end_point.x);
     float segment_min_y = std::min(R_segment.start_point.y, R_segment.end_point.y);
     float segment_max_y = std::max(R_segment.start_point.y, R_segment.end_point.y);
-    // result_1 = {L_box.min_point.x, R_segment.start_point.y + k_x * start_point_to_min_x};
-    // result_2 = {L_box.max_point.x, R_segment.start_point.y + k_x * start_point_to_max_x};
-    // result_3 = std::min(R_segment.start_point.y, R_segment.end_point.y);
-    // result_4 = {R_segment.start_point.x + k_y * start_point_to_max_y, L_box.max_point.y};
-    // 判断有点多，不知道能不能省一点内容
     auto number = 0;
     auto a_y = R_segment.start_point.y + k_x * interval_to_min_x;
     auto a_x = R_segment.start_point.x + interval_to_min_x;
@@ -126,6 +126,27 @@ bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 
 // 之后还需要两个函数，返回的点是否在线段上，是否在光线上
 // 其实在上面也是能够判断完成的
+
+inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &R_segment) {
+    Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
+    Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
+    Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
+    Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
+    auto bool_1 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+                                            box_min_x_min_y);
+    auto bool_2 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+                                            box_min_x_max_y);
+    auto bool_3 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+                                            box_mam_x_min_y);
+    auto bool_4 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+                                            box_max_x_max_y);
+    if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
+        ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
+        // 只有单一的一种必然是不相交的
+        return false;
+    }
+    return true;
+}
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &R_segment) {
     // 判断两个包围盒是否存在相交

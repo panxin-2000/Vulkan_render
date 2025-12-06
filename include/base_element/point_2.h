@@ -85,37 +85,21 @@ public:
         return false;
     }
 
-    static Point_2 int_max_limit(Point_2 &L) {
-        L.x = std::numeric_limits<float>::infinity();;
-        L.y = std::numeric_limits<float>::infinity();
-        return L;
+    static Point_2 init_max_limit() {
+        return {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
     }
 
-    static Point_2 int_min_limit(Point_2 &L) {
-        L.x = -std::numeric_limits<float>::infinity();;
-        L.y = -std::numeric_limits<float>::infinity();
-        return L;
+    static Point_2 init_min_limit() {
+        return {-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()};
     }
 
 
-    static const Point_2 min_two_point(Point_2 &L, const Point_2 &R) {
-        if (R.x < L.x) {
-            L.x = R.x;
-        }
-        if (R.y < L.y) {
-            L.y = R.y;
-        }
-        return L;
+    static Point_2 min_two_point(const Point_2 &L, const Point_2 &R) {
+        return {((R.x < L.x) ? R.x : L.x), ((R.y < L.y) ? R.y : L.y)};
     }
 
-    static const Point_2 max_two_point(Point_2 &L, const Point_2 &R) {
-        if (R.x > L.x) {
-            L.x = R.x;
-        }
-        if (R.y > L.y) {
-            L.y = R.y;
-        }
-        return L;
+    static Point_2 max_two_point(Point_2 &L, const Point_2 &R) {
+        return {((R.x > L.x) ? R.x : L.x), ((R.y > L.y) ? R.y : L.y)};
     }
 
     Point_2 operator+(const Point_2 &R) const {
