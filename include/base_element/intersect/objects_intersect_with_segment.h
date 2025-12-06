@@ -216,13 +216,7 @@ inline bool intersect(const Trapezoid &trapezoid, const Segment<Point_2> &segmen
 }
 
 
-inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
-    AABB_min_max<Point_2> L_AABB{L_segment.start_point, L_segment.end_point};
-    AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
-    if (!intersect(L_AABB, R_AABB)) {
-        return false;
-    }
-
+inline bool intersect_without_AABB(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
     Point_2 ab = L_segment.end_point - L_segment.start_point;
     Point_2 ac = segment.start_point - L_segment.start_point;
     Point_2 ad = segment.end_point - L_segment.start_point;
@@ -264,6 +258,15 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
     return false;
 }
 
+inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
+    AABB_min_max<Point_2> L_AABB{L_segment.start_point, L_segment.end_point};
+    AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
+    if (!intersect(L_AABB, R_AABB)) {
+        return false;
+    }
+    intersect_without_AABB(L_segment, segment);
+}
+
 template<typename T>
 bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
@@ -277,11 +280,11 @@ bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     // if (intersect(triangle, segment.end_point))
     //     return true;
     // 线段是否相互
-    if (intersect({triangle.a, triangle.b}, segment))
+    if (intersect_without_AABB({triangle.a, triangle.b}, segment))
         return true;
-    if (intersect({triangle.b, triangle.c}, segment))
+    if (intersect_without_AABB({triangle.b, triangle.c}, segment))
         return true;
-    if (intersect({triangle.c, triangle.a}, segment))
+    if (intersect_without_AABB({triangle.c, triangle.a}, segment))
         return true;
     return false;
 }
