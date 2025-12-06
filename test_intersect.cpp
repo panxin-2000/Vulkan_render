@@ -64,9 +64,12 @@ TEST(AABB_bounding_box, segment) {
     } {
         Segment<Point_2> temp{{5, 7}, {8, 5}};
         EXPECT_EQ(intersect(box, temp), false);
-    }{
+    } {
         Segment<Point_2> temp{{10, 10}, {8, 8}};
         EXPECT_EQ(intersect(box, temp), false);
+    } {
+        Straight_line<Point_2> temp{{10, 10}, {8, 8}};
+        EXPECT_EQ(intersect(box, temp), true);
     }
 }
 

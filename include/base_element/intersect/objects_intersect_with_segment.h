@@ -128,17 +128,20 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 // 其实在上面也是能够判断完成的
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &R_segment) {
+}
+
+inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Point_2> &R_segment) {
     Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
     Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
     Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
     Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
-    auto bool_1 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+    auto bool_1 = Point_2::is_anticlockwise(R_segment.point, R_segment.point + R_segment.direction,
                                             box_min_x_min_y);
-    auto bool_2 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+    auto bool_2 = Point_2::is_anticlockwise(R_segment.point, R_segment.point + R_segment.direction,
                                             box_min_x_max_y);
-    auto bool_3 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+    auto bool_3 = Point_2::is_anticlockwise(R_segment.point, R_segment.point + R_segment.direction,
                                             box_mam_x_min_y);
-    auto bool_4 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.start_point + R_segment.direction,
+    auto bool_4 = Point_2::is_anticlockwise(R_segment.point, R_segment.point + R_segment.direction,
                                             box_max_x_max_y);
     if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
         ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
