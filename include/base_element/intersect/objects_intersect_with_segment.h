@@ -234,8 +234,14 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
     float f1 = ab.single_area(ac);
     float f2 = ab.single_area(ad);
+    if (f1 > 0 && f2 > 0) {
+        return false;
+    }
     float f3 = cd.single_area(ca);
     float f4 = cd.single_area(cb);
+    if (f3 > 0 && f4 > 0) {
+        return false;
+    }
     if (f1 * f2 < 0 && f3 * f4 < 0) {
         // 这个应该是一个比较简单的判断了 // 算法导论上的比较符号太多了
         // 这里似乎是有问题的，之前写的有问题，之前的符号写的有问题
@@ -243,24 +249,41 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
     }
     // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
     // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
-    if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                             segment.start_point))
+    else if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+                                  segment.start_point))
         return true;
-    if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                             segment.end_point))
+    else if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+                                  segment.end_point))
         return true;
-    if (f3 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
-                             L_segment.start_point))
+    else if (f3 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
+                                  L_segment.start_point))
         return true;
-    if (f4 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
-                             L_segment.end_point))
+    else if (f4 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
+                                  L_segment.end_point))
         return true;
     return false;
 }
 
 template<typename T>
 bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
-
+    AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
+    AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
+    if (!intersect(L_AABB, R_AABB)) {
+        return false;
+    }
+    // 先判断 AABB
+    // if (intersect(triangle, segment.start_point))  // 概率太小，没有必要，
+    //     return true;
+    // if (intersect(triangle, segment.end_point))
+    //     return true;
+    // 线段是否相互
+    if (intersect({triangle.a, triangle.b}, segment))
+        return true;
+    if (intersect({triangle.b, triangle.c}, segment))
+        return true;
+    if (intersect({triangle.c, triangle.a}, segment))
+        return true;
+    return false;
 }
 
 

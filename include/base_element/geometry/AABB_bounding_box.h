@@ -46,9 +46,16 @@ public:
         }
     }
 
-    AABB_min_max(T l_points, T r_points) {
-        min_point = T::min_two_point(l_points, r_points);
-        max_point = T::max_two_point(l_points, r_points);
+    AABB_min_max(T a_points, T b_points) {
+        min_point = T::min_two_point(a_points, b_points);
+        max_point = T::max_two_point(a_points, b_points);
+    }
+
+    AABB_min_max(T a_points, T b_points, T c_points) {
+        min_point = T::min_two_point(a_points, b_points);
+        max_point = T::max_two_point(a_points, b_points);
+        min_point = T::min_two_point(min_point, c_points);
+        max_point = T::max_two_point(max_point, c_points);
     }
 
 
