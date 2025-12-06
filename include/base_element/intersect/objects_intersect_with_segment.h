@@ -168,6 +168,24 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &R_segment) {
     return true;
 }
 
+template<typename T>
+bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
+    auto center_to_ray_start = line.point - sphere.center;
+    auto c = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    if (c < 0) {
+        // 如果是直线的话，这个分支概率很小，几乎接近零
+        return true;
+    }
+    auto direction = line.direction;
+    auto b_half = dot(center_to_ray_start, direction);
+    auto a = dot(direction, direction);
+    auto delta_half = b_half * b_half - dot(direction, direction) * c;
+    if (delta_half < 0) {
+        return false;
+    }
+    return true;
+}
+
 inline bool intersect(const Trapezoid &trapezoid, const Segment<Point_2> &R_segment) {
     auto A_point = trapezoid.left_upper;
     auto B_point = trapezoid.right_upper;
