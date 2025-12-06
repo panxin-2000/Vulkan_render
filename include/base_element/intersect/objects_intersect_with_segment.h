@@ -129,35 +129,24 @@ bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 
 template<typename T>
 bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &R_segment) {
-    /**
-     *     找到四个 # 号的点，判断是否点是否在包围盒上并且在线段内，在则相交
-     *     S
-     *        *
-     *           *
-     *              #(a_y)
-     *                 *  (d_x)
-     *              d * * # * * * * * * * * c
-     *              *        *              *
-     *              *           *           *
-     *              *              *        *
-     *              *                 *     *
-     *              *                    *  *
-     *              *                       # (c_y)
-     *              *                       *  *
-     *              a * * * * * * * * * * * b     # (b_x)
-     *                                               *
-     *                                                  *
-     */
-
-
-    // 存在相交
-    return true;
-
+    // 判断两个包围盒是否存在相交
+    if (intersect(L_box, AABB_min_max<Point_2>(R_segment.start_point, R_segment.end_point))) {
+        Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
+        Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
+        Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
+        Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
+        auto bool_1 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.end_point, box_min_x_min_y);
+        auto bool_2 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.end_point, box_min_x_max_y);
+        auto bool_3 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.end_point, box_mam_x_min_y);
+        auto bool_4 = Point_2::is_anticlockwise(R_segment.start_point, R_segment.end_point, box_max_x_max_y);
+        if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
+            ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
+            // 只有单一的一种必然是不相交的
+            return false;
+        }
+        return true;
+    }
     return false;
-
-    // 求最近点时，有一个稍微简单一点点办法，比较偏向于直线了
-    // 找到最近点两个 # 点
-    // 利用相似三角形可以比较快的得出结果
 }
 
 template<typename T>

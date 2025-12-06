@@ -36,12 +36,23 @@ bool intersect(const AABB_centroid<T> &box, const T &test_point) {
  */
 template<typename T>
 bool intersect(const Triangle<T> &triangle, const T &test_point) {
-    if (Point_2::is_anticlockwise(triangle.a, triangle.b, test_point) != Point_2::anticlockwise::clockwise &&
-        Point_2::is_anticlockwise(triangle.b, triangle.c, test_point) != Point_2::anticlockwise::clockwise &&
-        Point_2::is_anticlockwise(triangle.c, triangle.a, test_point) != Point_2::anticlockwise::clockwise) {
+    auto temp1 = Point_2::is_anticlockwise(triangle.a, triangle.b, test_point);
+    auto temp2 = Point_2::is_anticlockwise(triangle.b, triangle.c, test_point);
+    auto temp3 = Point_2::is_anticlockwise(triangle.c, triangle.a, test_point);
+    if (((temp1 | temp2 | temp3) == Point_2::anticlockwise::collinear_and_clockwise) ||
+        ((temp1 | temp2 | temp3) == Point_2::anticlockwise::collinear_and_counterclockwise) ||
+        ((temp1 | temp2 | temp3) == Point_2::anticlockwise::clockwise) ||
+        ((temp1 | temp2 | temp3) == Point_2::anticlockwise::counterclockwise)) {
         return true;
     }
     return false;
+
+    // 下面的逻辑应该是和上面的一样的
+    if (((temp1 | temp2 | temp3) == Point_2::anticlockwise::clockwise_and_counterclockwise) ||
+        ((temp1 | temp2 | temp3) == Point_2::anticlockwise::collinear_and_clock_and_counter)) {
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -57,10 +68,12 @@ inline bool intersect(const Trapezoid &trapezoid, const T &test_point) {
     auto B_point = trapezoid.right_upper;
     auto C_point = trapezoid.left_lower;
     auto D_point = trapezoid.right_lower;
-    if (Point_2::is_anticlockwise(C_point, D_point, test_point) != Point_2::anticlockwise::clockwise &&
-        Point_2::is_anticlockwise(D_point, B_point, test_point) != Point_2::anticlockwise::clockwise &&
-        Point_2::is_anticlockwise(B_point, A_point, test_point) != Point_2::anticlockwise::clockwise &&
-        Point_2::is_anticlockwise(A_point, C_point, test_point) != Point_2::anticlockwise::clockwise) {
+    auto bool_1 = Point_2::is_anticlockwise(C_point, D_point, test_point);
+    auto bool_2 = Point_2::is_anticlockwise(D_point, B_point, test_point);
+    auto bool_3 = Point_2::is_anticlockwise(B_point, A_point, test_point);
+    auto bool_4 = Point_2::is_anticlockwise(A_point, C_point, test_point);
+    if (((bool_1 | bool_2 | bool_3 | bool_4) != Point_2::anticlockwise::clockwise)) {
+        // 只有单一的一种必然是不相交的
         return true;
     }
     return false;

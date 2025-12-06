@@ -164,7 +164,12 @@ public:
     enum anticlockwise {
         clockwise = 1,
         counterclockwise = 2,
-        collinear = 5,
+        collinear = 4,
+        // 下面的四个是方便组合的
+        clockwise_and_counterclockwise = 3,
+        collinear_and_clockwise = 5,
+        collinear_and_counterclockwise = 6,
+        collinear_and_clock_and_counter = 7,
     };
 
     friend anticlockwise operator&(anticlockwise &left, anticlockwise &right) {
