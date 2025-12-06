@@ -268,6 +268,15 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
 }
 
 template<typename T>
+bool intersect(const Trapezoid &trapezoid, const Segment<T> &segment) {
+    // 分为两个三角形
+    if (intersect(Triangle<Point_2>{trapezoid.right_upper, trapezoid.left_upper, trapezoid.left_lower}, segment))
+        return true;
+    if (intersect(Triangle<Point_2>{trapezoid.left_lower, trapezoid.right_lower, trapezoid.right_upper}, segment))
+        return true;
+}
+
+template<typename T>
 bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
     AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
