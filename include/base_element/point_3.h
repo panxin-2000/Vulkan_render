@@ -59,6 +59,10 @@ public:
         return false;
     }
 
+    friend Point_3 abs(const Point_3 &R) {
+        Point_3 temp{std::abs(R.x), std::abs(R.y), std::abs(R.z)};
+        return temp;
+    }
 
 
     float single_area(const Point_3 &R);

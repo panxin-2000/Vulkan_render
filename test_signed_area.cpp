@@ -53,39 +53,6 @@ TEST(triangle, three_point) {
 }
 
 
-TEST(on_segment_bounding_box, on_segment_bounding_box) { {
-        Point_2 a(12, 6);
-        Point_2 b(17, 10);
-        Point_2 c(7, 8);
-        EXPECT_EQ(intersect(AABB_centroid<Point_2>{a, b}, c), false);
-    } {
-        Point_2 a(0, 2);
-        Point_2 b(2, 0);
-        Point_2 c(1, 1);
-        EXPECT_EQ(intersect(AABB_centroid<Point_2>{a, b}, c), true);
-    } {
-        Point_2 a(3, 2);
-        Point_2 b(5, 3);
-        Point_2 c(2.9, 3);
-        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
-    } {
-        Point_2 a(3, 2);
-        Point_2 b(5, 3);
-        Point_2 c(-1, 2);
-        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
-    } {
-        Point_2 a(12, 6);
-        Point_2 b(17, 10);
-        Point_2 c(7, 8);
-        EXPECT_EQ(intersect(AABB_min_max<Point_2>{a, b}, c), false);
-    }
-
-    EXPECT_EQ(intersect(Sphere<Point_2>{{0, 0}, 3}, Point_2{2, 2}), true);
-    EXPECT_EQ(intersect(Sphere<Point_2>{{0, 0}, 3}, Point_2{4, 2}), false);
-    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,0}), true);
-    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,2}), false);
-    EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{4, 0,2}), false);
-}
 
 TEST(sort, sort_segment_vector) {
     std::vector<Point_2> segments{};

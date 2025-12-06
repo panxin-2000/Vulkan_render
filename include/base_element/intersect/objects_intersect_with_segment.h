@@ -127,8 +127,7 @@ bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 // 之后还需要两个函数，返回的点是否在线段上，是否在光线上
 // 其实在上面也是能够判断完成的
 
-template<typename T>
-bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &R_segment) {
+inline bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &R_segment) {
     // 判断两个包围盒是否存在相交
     if (intersect(L_box, AABB_min_max<Point_2>(R_segment.start_point, R_segment.end_point))) {
         Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};

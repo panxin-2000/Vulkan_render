@@ -143,6 +143,11 @@ public:
         return temp;
     }
 
+    friend Point_2 abs(const Point_2 &R) {
+        Point_2 temp{std::abs(R.x), std::abs(R.y)};
+        return temp;
+    }
+
 
     /**
      * 可以用来判断顺时针还是逆时针，第二个相对于第一个逆时针为正，顺时针为负
@@ -175,6 +180,7 @@ public:
     friend anticlockwise operator&(anticlockwise &left, anticlockwise &right) {
         return static_cast<anticlockwise>(static_cast<int>(left) & static_cast<int>(right));
     }
+
 
     /**
      * 按照顺序输入三个点，如果是逆时针的话，那么返回 true,否则返回 false
