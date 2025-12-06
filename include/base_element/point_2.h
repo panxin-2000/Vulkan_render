@@ -15,9 +15,7 @@ public:
     Point_2() {
     }
 
-    Point_2(float x1, float y1) {
-        x = x1;
-        y = y1;
+    Point_2(float x1, float y1) : x(x1), y(y1) {
     }
 
     friend std::ostream &operator<<(std::ostream &output,
@@ -55,9 +53,7 @@ public:
         auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
         auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
 
-        Point_2 result = {};
-        result.x = inv_A_1_1 * B_1 + inv_A_1_2 * B_2;
-        result.y = inv_A_2_1 * B_1 + inv_A_2_2 * B_2;
+        const Point_2 result{inv_A_1_1 * B_1 + inv_A_1_2 * B_2, inv_A_2_1 * B_1 + inv_A_2_2 * B_2};
         return result;
     }
 

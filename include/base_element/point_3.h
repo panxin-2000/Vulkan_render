@@ -16,10 +16,7 @@ public:
     Point_3() {
     }
 
-    Point_3(float x1, float y1, float z1) {
-        x = x1;
-        y = y1;
-        z = z1;
+    Point_3(float x1, float y1, float z1) : x(x1), y(y1), z(z1) {
     }
 
     Point_3 operator+(const Point_3 &R) const {

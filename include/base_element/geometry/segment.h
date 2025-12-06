@@ -39,15 +39,14 @@ struct Segment {
         //  a_1 - a_0
         //  y = a_0 * x + b_0
         // a_1 - a_0 == 0 时 为平行线
-        Point_2 result;
-        Point_2 ab = this->end_point - this->start_point;
+        const Point_2 ab = this->end_point - this->start_point;
         float a_0 = ab.y / ab.x;
         float b_0 = this->start_point.y - a_0 * this->start_point.x;
-        Point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
+        const Point_2 cd = R_segment_position.end_point - R_segment_position.start_point;
         float a_1 = cd.y / cd.x;
-        float b_1 = R_segment_position.start_point.y - a_1 * R_segment_position.start_point.x;
-        result.x = (b_0 - b_1) / (a_1 - a_0);
-        result.y = a_0 * result.x + b_0;
+        const float b_1 = R_segment_position.start_point.y - a_1 * R_segment_position.start_point.x;
+        const auto x_temp = (b_0 - b_1) / (a_1 - a_0);
+        const Point_2 result{x_temp, a_0 * x_temp + b_0};
         return result;
     }
 };

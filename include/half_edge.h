@@ -24,19 +24,13 @@ struct vertex_xy : public Point_2 {
 
     int incident_half_edge;
 
-    vertex_xy(float x1, float y1) {
-        x = x1;
-        y = y1;
+    vertex_xy(float x1, float y1) : Point_2(x1, y1) {
     }
 
-    vertex_xy(Point_2 point) {
-        x = point.x;
-        y = point.y;
+    vertex_xy(Point_2 point) : Point_2(point.x, point.y) {
     }
 
-    vertex_xy(float x1, float y1, int incident_half_edge_1) {
-        x = x1;
-        y = y1;
+    vertex_xy(float x1, float y1, int incident_half_edge_1) : Point_2(x1, y1) {
         incident_half_edge = incident_half_edge_1;
     }
 
@@ -73,10 +67,7 @@ struct vertex_xy : public Point_2 {
 struct vertex_xyz : public Point_3 {
     int incident_half_edge;
 
-    vertex_xyz(float x1, float y1, float z1) {
-        x = x1;
-        y = y1;
-        z = z1;
+    vertex_xyz(float x1, float y1, float z1) : Point_3(x1, y1, z1) {
     }
 
     bool operator<(const vertex_xyz &right) const {
