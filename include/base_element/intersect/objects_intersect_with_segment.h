@@ -147,14 +147,40 @@ bool intersect_with_closest_result(const AABB_min_max<T> &L_box, const Segment<T
 
 template<typename T>
 bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
+    Ray<T> ray_start(segment.start_point, segment.end_point - segment.start_point);
+    auto center_to_segment_start = ray_start.point - sphere.center;
+    auto c_start = (dot(center_to_segment_start, center_to_segment_start) - sphere.radius * sphere.radius);
+    if (c_start < 0) {
+        return true; // 起点在球中
+    }
+    auto center_to_segment_end = segment.end_point - sphere.center;
+    auto c_end = (dot(center_to_segment_end, center_to_segment_end) - sphere.radius * sphere.radius);
+    if (c_end < 0) {
+        return true; // 钟点在球中
+    }
+    // 起点和终点都不在球中
+
+    auto direction_start = ray_start.direction;
+    auto b_half_start = dot(center_to_segment_start, direction_start);
+    auto a = dot(direction_start, direction_start);
+    auto delta_half = b_half_start * b_half_start - dot(direction_start, direction_start) * c_start;
+    if (delta_half < 0) {
+        return false; // 这里决定了线段所在直线不会相交
+    }
+    Ray<T> ray_end(segment.end_point, segment.start_point - segment.end_point);
+    auto direction_end = ray_end.direction;
+    auto b_half_end = dot(center_to_segment_end, direction_end);
+    if (-b_half_start < 0 || -b_half_end < 0) {
+        return false; // 一个线段穿过球两次，所以不管那个点做起点，都不会小于零
+    }
 }
 
 template<typename T>
-bool intersect(const Sphere<T> &sphere, const Ray<T> &segment) {
+bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
     // 与球相交与判断结果之间是存在一个优化的办法的
     // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
     // 优化了一元二次方程
-    auto center_to_ray_start = segment.point - sphere.center;
+    auto center_to_ray_start = ray.point - sphere.center;
     auto c = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
     if (c < 0) {
         // 此时光线发射点在 球中
@@ -162,7 +188,7 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &segment) {
         // 体积雾的话又是true
         return true;
     }
-    auto direction = segment.direction;
+    auto direction = ray.direction;
     auto b_half = dot(center_to_ray_start, direction);
     auto a = dot(direction, direction);
     auto delta_half = b_half * b_half - dot(direction, direction) * c;
