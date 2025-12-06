@@ -70,6 +70,24 @@ TEST(AABB_bounding_box, segment) {
     } {
         Straight_line<Point_2> temp{{10, 10}, {8, 8}};
         EXPECT_EQ(intersect(box, temp), true);
+    } {
+        Straight_line<Point_2> temp{{10, 10}, {8, 8}};
+        EXPECT_EQ(intersect(box, temp), true);
+    } {
+        Sphere<Point_2> sphere({0, 0}, 3); {
+            Ray<Point_2> temp{{10, 10}, {1, 1}};
+            EXPECT_EQ(intersect(sphere, temp), false);
+        }
+    } {
+        Sphere<Point_2> sphere({0, 0}, 3); {
+            Ray<Point_2> temp{{10, 10}, {-1, -1}};
+            EXPECT_EQ(intersect(sphere, temp), true);
+        }
+    } {
+        Sphere<Point_2> sphere({0, 0}, 3); {
+            Ray<Point_2> temp{{5, 0}, {1, 1}};
+            EXPECT_EQ(intersect(sphere, temp), false);
+        }
     }
 }
 

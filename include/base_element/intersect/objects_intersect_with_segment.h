@@ -10,48 +10,6 @@
 #include "objects_intersect_with_point.h"
 #include "base_element/intersect/objects_intersect_with_AABB.h"
 
-inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &R_segment) {
-    AABB_min_max<Point_2> L_AABB{L_segment.start_point, L_segment.end_point};
-    AABB_min_max<Point_2> R_AABB{R_segment.start_point, R_segment.end_point};
-    if (!intersect(L_AABB, R_AABB)) {
-        return false;
-    }
-
-    Point_2 ab = L_segment.end_point - L_segment.start_point;
-    Point_2 ac = R_segment.start_point - L_segment.start_point;
-    Point_2 ad = R_segment.end_point - L_segment.start_point;
-
-    Point_2 cd = R_segment.end_point - R_segment.start_point;
-    Point_2 ca = L_segment.start_point - R_segment.start_point;
-    Point_2 cb = L_segment.end_point - R_segment.start_point;
-
-    // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
-    float f1 = ab.single_area(ac);
-    float f2 = ab.single_area(ad);
-    float f3 = cd.single_area(ca);
-    float f4 = cd.single_area(cb);
-    if (f1 * f2 < 0 && f3 * f4 < 0) {
-        // 这个应该是一个比较简单的判断了 // 算法导论上的比较符号太多了
-        // 这里似乎是有问题的，之前写的有问题，之前的符号写的有问题
-        return true;
-    }
-    // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
-    // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
-    if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                             R_segment.start_point))
-        return true;
-    if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                             R_segment.end_point))
-        return true;
-    if (f3 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
-                             L_segment.start_point))
-        return true;
-    if (f4 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
-                             L_segment.end_point))
-        return true;
-    return false;
-}
-
 
 template<typename T>
 bool intersect(const AABB_centroid<T> &L_box, const Segment<T> &R_segment) {
@@ -181,10 +139,93 @@ bool intersect_with_closest_result(const AABB_min_max<T> &L_box, const Segment<T
 
 
 template<typename T>
-bool intersect(const Sphere<T> &sphere, const Segment<T> &R_segment) {
+bool intersect(const Sphere<T> &sphere, const Ray<T> &R_segment) {
     // 与球相交与判断结果之间是存在一个优化的办法的
-    // 在光线追踪的最简实现中看到过
+    // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
     // 优化了一元二次方程
+    auto center_to_ray_start = R_segment.point - sphere.center;
+    auto c = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    if (c < 0) {
+        // 此时光线发射点在 球中
+        // 如果光线的渲染要返回false
+        // 体积雾的话又是true
+        return true;
+    }
+    auto direction = R_segment.direction;
+    auto b_half = dot(center_to_ray_start, direction);
+    auto a = dot(direction, direction);
+    auto delta_half = b_half * b_half - dot(direction, direction) * c;
+    if (delta_half < 0) {
+        return false;
+    }
+    if (-b_half < 0) {
+        // x_1 + x_2 = -b/a
+        // 此时不在球中，要么都是正，要么都负
+        // 都是负时，-b < 0 , 因为 a 一直为正
+        return false;
+    }
+
+    return true;
+}
+
+inline bool intersect(const Trapezoid &trapezoid, const Segment<Point_2> &R_segment) {
+    auto A_point = trapezoid.left_upper;
+    auto B_point = trapezoid.right_upper;
+    auto C_point = trapezoid.left_lower;
+    auto D_point = trapezoid.right_lower;
+    // 划分为两个三角形，之后再执行
+    // auto bool_1 = Point_2::is_anticlockwise(C_point, D_point, test_point);
+    // auto bool_2 = Point_2::is_anticlockwise(D_point, B_point, test_point);
+    // auto bool_3 = Point_2::is_anticlockwise(B_point, A_point, test_point);
+    // auto bool_4 = Point_2::is_anticlockwise(A_point, C_point, test_point);
+    // if (((bool_1 | bool_2 | bool_3 | bool_4) != Point_2::anticlockwise::clockwise)) {
+    // 只有单一的一种必然是不相交的
+    // return true;
+    // }
+    return false;
+}
+
+
+inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &R_segment) {
+    AABB_min_max<Point_2> L_AABB{L_segment.start_point, L_segment.end_point};
+    AABB_min_max<Point_2> R_AABB{R_segment.start_point, R_segment.end_point};
+    if (!intersect(L_AABB, R_AABB)) {
+        return false;
+    }
+
+    Point_2 ab = L_segment.end_point - L_segment.start_point;
+    Point_2 ac = R_segment.start_point - L_segment.start_point;
+    Point_2 ad = R_segment.end_point - L_segment.start_point;
+
+    Point_2 cd = R_segment.end_point - R_segment.start_point;
+    Point_2 ca = L_segment.start_point - R_segment.start_point;
+    Point_2 cb = L_segment.end_point - R_segment.start_point;
+
+    // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
+    float f1 = ab.single_area(ac);
+    float f2 = ab.single_area(ad);
+    float f3 = cd.single_area(ca);
+    float f4 = cd.single_area(cb);
+    if (f1 * f2 < 0 && f3 * f4 < 0) {
+        // 这个应该是一个比较简单的判断了 // 算法导论上的比较符号太多了
+        // 这里似乎是有问题的，之前写的有问题，之前的符号写的有问题
+        return true;
+    }
+    // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
+    // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
+    if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+                             R_segment.start_point))
+        return true;
+    if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+                             R_segment.end_point))
+        return true;
+    if (f3 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
+                             L_segment.start_point))
+        return true;
+    if (f4 == 0 && intersect(AABB_min_max<Point_2>{R_segment.start_point, R_segment.end_point},
+                             L_segment.end_point))
+        return true;
+    return false;
 }
 
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
