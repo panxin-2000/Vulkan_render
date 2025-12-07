@@ -8,6 +8,7 @@
 #include "base_element/geometry/segment.h"
 #include "base_element/geometry/Ray.h"
 #include "base_element/geometry/straight_line.h"
+#include "base_element/geometry/triangle.h"
 
 
 template<typename T>
@@ -45,6 +46,21 @@ inline bool intersect(const Plane<T> &plane, const Straight_line<T> &straight_li
     }
     // 垂直时，点在平面上才相交
     if (abs(plane.distance(straight_line.point)) < 0.0000001) {
+        return true;
+    }
+    return false;
+}
+
+
+template<typename T>
+inline bool intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
+    // 三角形中，任意一个点在平面一侧，另一个点在平面另一侧
+    auto a_distance = plane.distance_to_point(triangle.a);
+    auto b_distance = plane.distance_to_point(triangle.b);
+    auto c_distance = plane.distance_to_point(triangle.c);
+    if (a_distance * b_distance <= 0 ||
+        b_distance * c_distance <= 0 ||
+        c_distance * a_distance <= 0) {
         return true;
     }
     return false;
