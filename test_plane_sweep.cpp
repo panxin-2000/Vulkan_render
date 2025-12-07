@@ -37,11 +37,8 @@
 struct event_point {
     float x, y;
     int incident_half_edge;
-    int intersect_half_edge_1;
-    int intersect_half_edge_2;
-    std::set<int> start_points_edge; // 那么另一个选择应该是set,可以用set来进行消除重复
-    std::set<int> end_points_edge;
-    std::set<int> middle_points_edge;
+    std::set<int> clean_from_tree;
+    std::set<int> re_insert_to_tree; // 那么另一个选择应该是set,可以用set来进行消除重复
 
     enum intersection_type {
         is_intersect,
@@ -140,8 +137,6 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
         temp.x = vertice.x;
         temp.y = vertice.y;
         temp.incident_half_edge = vertice.incident_half_edge;
-        temp.intersect_half_edge_1 = -1;
-        temp.intersect_half_edge_2 = -1;
         temp.if_intersect = event_point::no_intersect;
         event_points->push(temp);
     }
@@ -164,8 +159,6 @@ auto create_event_tree(
                    current_segment.start_point.y < current_segment.end_point.y) {
             temp.left_or_right = event_point::left;
         }
-        temp.intersect_half_edge_1 = -1;
-        temp.intersect_half_edge_2 = -1;
         temp.if_intersect = event_point::no_intersect;
         tree->add_new_node(temp);
     }
@@ -203,6 +196,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
                 // 之后是A进行判断的上下的相交判断，扫描线已经在A之后了
                 // 不会再进入了
                 // 如果有多个点呢？不能在这里考虑，因为会重复交换AB，造成另一个问题
+                // 新的左端点进入时，必然会出现等于的情况
                 std::cout << " intersect point :" << result.x << "  " << result.y << std::endl;
                 // 居然没有做测试，只是随便写了两个点，进行手动判断
 
@@ -213,39 +207,29 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
                 temp.if_intersect = event_point::is_intersect;
 
                 temp.incident_half_edge = -1;
-                temp.intersect_half_edge_1 = ab_incident_half_edge;
-                temp.intersect_half_edge_2 = cd_incident_half_edge;
 
 
                 // 找不到就插入，能找到，则不动
                 auto data = event_points->tree_find_data(temp);
                 if (data != nullptr && data->if_intersect == event_point::is_intersect) {
                     // 并且已经是相交时，才可以进行合并
-                    if (ab.start_point == result)
-                        data->start_points_edge.insert(ab_incident_half_edge);
-                    else if (ab.end_point == result)
-                        data->end_points_edge.insert(ab_incident_half_edge);
+                    if (ab.end_point == result)
+                        data->clean_from_tree.insert(ab_incident_half_edge);
                     else
-                        data->middle_points_edge.insert(ab_incident_half_edge);
-                    if (cd.start_point == result)
-                        data->start_points_edge.insert(cd_incident_half_edge);
-                    else if (cd.end_point == result)
-                        data->end_points_edge.insert(cd_incident_half_edge);
+                        data->re_insert_to_tree.insert(ab_incident_half_edge);
+                    if (cd.end_point == result)
+                        data->clean_from_tree.insert(cd_incident_half_edge);
                     else
-                        data->middle_points_edge.insert(cd_incident_half_edge);
+                        data->re_insert_to_tree.insert(cd_incident_half_edge);
                 } else {
-                    if (ab.start_point == result)
-                        temp.start_points_edge.insert(ab_incident_half_edge);
-                    else if (ab.end_point == result)
-                        temp.end_points_edge.insert(ab_incident_half_edge);
+                    if (ab.end_point == result)
+                        temp.clean_from_tree.insert(ab_incident_half_edge);
                     else
-                        temp.middle_points_edge.insert(ab_incident_half_edge);
-                    if (cd.start_point == result)
-                        temp.start_points_edge.insert(cd_incident_half_edge);
-                    else if (cd.end_point == result)
-                        temp.end_points_edge.insert(cd_incident_half_edge);
+                        temp.re_insert_to_tree.insert(ab_incident_half_edge);
+                    if (cd.end_point == result)
+                        temp.clean_from_tree.insert(cd_incident_half_edge);
                     else
-                        temp.middle_points_edge.insert(cd_incident_half_edge);
+                        temp.re_insert_to_tree.insert(cd_incident_half_edge);
                     event_points->add_new_node(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
                     // 还需要把相交的点插入一个vector中，用于之后的输出
                 }
@@ -284,19 +268,106 @@ TEST(test_edge, test_create_edge) {
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
             auto intersect_vertex = event_tree->tree_minimum_data();
-            auto edge_1_vertex = ray_2d::get_ray_2d(hf, intersect_vertex->intersect_half_edge_1);
-            auto edge_2_vertex = ray_2d::get_ray_2d(hf, intersect_vertex->intersect_half_edge_2);
-            // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
-            auto edge_1_vertex_node = tree_find_value(ray_root, edge_1_vertex);
-            auto edge_2_vertex_node = tree_find_value(ray_root, edge_2_vertex);
-            std::swap(edge_1_vertex_node->data, edge_2_vertex_node->data);
-            // 能判断相交的一定是前后的， 1 是前，2 是后的
-            auto predecessor_edge_node = edge_1_vertex_node->tree_predecessor(edge_1_vertex_node);
-            auto successor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
-            test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_tree);
-            test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_tree);
-            // 这里有一个前提条件，就是到底交点的扫描线时，已经全部全部处理完成了
-            // 最大的问题是排序,先将左边的全部处理掉，再将交点处理，最后将右边的全部删除
+            // 右端点是需要删除的，删除之前判断，上下是否都在集合当中，是的话，删除，不需要重新检测，否则需要重新检测
+            for (auto end_edge: intersect_vertex->clean_from_tree) {
+                auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, end_edge));
+                ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
+            }
+            // 删除没有问题，重新插入有问题
+
+            if (intersect_vertex->re_insert_to_tree.size() == 0) {
+            } else if (intersect_vertex->re_insert_to_tree.size() == 1) {
+                for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
+                    auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
+                    auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
+                    auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
+                    test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
+                    test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
+                }
+            } else if (intersect_vertex->re_insert_to_tree.size() == 2) {
+                std::vector<binary_Tree_Node<ray_2d> *> re_insert_node;
+                for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
+                    auto node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
+                    re_insert_node.push_back(node);
+                }
+                auto edge_1_vertex_node = re_insert_node.at(0);
+                auto edge_2_vertex_node = re_insert_node.at(1);
+                std::swap(edge_1_vertex_node->data, edge_2_vertex_node->data);
+                // 能判断相交的一定是前后的， 1 是前，2 是后的
+                auto predecessor_edge_node = edge_1_vertex_node->tree_predecessor(edge_1_vertex_node);
+                if (predecessor_edge_node == edge_2_vertex_node) {
+                    predecessor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
+                }
+                auto successor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
+                if (successor_edge_node == edge_1_vertex_node) {
+                    successor_edge_node = edge_1_vertex_node->tree_successor(edge_1_vertex_node);
+                }
+                test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_tree);
+                test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_tree);
+            } else if (intersect_vertex->re_insert_to_tree.size() >= 3) {
+                std::vector<binary_Tree_Node<ray_2d> *> re_insert_node;
+                for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
+                    auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
+                    re_insert_node.push_back(delate_node);
+                }
+                std::set<binary_Tree_Node<ray_2d> *> pre_and_success;
+
+                binary_Tree_Node<ray_2d> *min_node = nullptr;
+                for (auto insert_node: re_insert_node) {
+                    auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
+                    auto successor_half_edge_node = insert_node->tree_successor(insert_node);
+                    if (predecessor_half_edge_node != nullptr)
+                        pre_and_success.insert(predecessor_half_edge_node);
+                    else
+                        min_node = insert_node;
+                    if (successor_half_edge_node != nullptr)
+                        pre_and_success.insert(successor_half_edge_node);
+                }
+                for (auto insert_node: re_insert_node) {
+                    pre_and_success.erase(insert_node);
+                }
+                auto x = intersect_vertex->x;
+                // 需要一个排序
+                std::sort(re_insert_node.begin(), re_insert_node.end(),
+                          [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
+                              const ray_2d &right = b->data;
+                              const ray_2d &left = a->data;
+                              float current_segment_y = left.y + left.gradient * (right.compare_x_position - x);
+                              float right_segment_y = right.y + right.gradient * (right.compare_x_position - right.x);
+                              if (current_segment_y < right_segment_y) {
+                                  return true;
+                              }
+                              if (current_segment_y == right_segment_y) {
+                                  if (left.gradient < right.gradient) {
+                                      return true; // 梯度的比较
+                                  }
+                              }
+                              return false;
+                          });
+                if (min_node == nullptr) {
+                    min_node = re_insert_node.at(0)->tree_successor(re_insert_node.at(0));
+                }
+                for (auto insert_node: re_insert_node) {
+                    std::swap(min_node->data, insert_node->data);
+                    min_node = insert_node->tree_successor(insert_node);
+                }
+                for (auto insert_node: re_insert_node) {
+                    for (auto node: pre_and_success) {
+                        test_two_node_if_intersect(node, insert_node, hf, event_tree);
+                    }
+                }
+
+
+                // 遍历一遍，找到现在的顺序？ 不需要吧，随便找一个点，向前并向后，直到不在set中，就必然不是了
+                // 保存一下这个顺序，目前是已经知道相交点了，ray 也是能够得出的，应该是有排序的办法的
+                // 排序完之后呢？拿到之外的最下与最上，与每个都进行比较,也可以直到不相交时就停止上或者下
+                // 结束
+                // 一个比较奇怪的想法是，能够删除之后，再重新插入？次数会爆炸，不要紧，重点是确定进行比较的两个对象
+                // 重新插入时会调用光线的排序，红黑树，在这个的效率上必然不算高
+                // 这里有一个前提条件，就是到底交点的扫描线时，已经全部全部处理完成了
+                // 最大的问题是排序,先将左边的全部处理掉，再将交点处理，最后将右边的全部删除
+            }
+
             result.push_back(*event_tree->tree_minimum_data());
         } else if (if_half_edge_in_tree(ray_root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
@@ -311,6 +382,7 @@ TEST(test_edge, test_create_edge) {
         }
         event_tree->delete_node(mini_node_index);
     }
+    auto ssd = result.size();
 }
 
 // 说一下上面的代码有哪些没有完成

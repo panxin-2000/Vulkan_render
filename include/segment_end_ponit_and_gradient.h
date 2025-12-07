@@ -18,6 +18,11 @@ struct ray_2d {
         if (current_segment_y < right_segment_y) {
             return true;
         }
+        if (current_segment_y == right_segment_y) {
+            if (gradient < right.gradient) {
+                return true; // 梯度的比较
+            }
+        }
         return false;
     }
 

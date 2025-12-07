@@ -97,6 +97,9 @@ public:
      * @return 返回整个树的根结点
      */
     binary_Tree_Node *delete_node_from_binary_search_tree(binary_Tree_Node *root, binary_Tree_Node *delete_node) {
+        if (delete_node == nullptr) {
+            return root;
+        }
         if (delete_node == root && delete_node->left == nullptr && delete_node->right == nullptr) {
             // 删除的是根结点，那么根结点为空
             // 只有一个结点，这里删除完成之后再去在外面free吧，因为是引用，引用最好不要修改
