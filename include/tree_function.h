@@ -190,26 +190,6 @@ std::vector<T2> find_interval(T2 root, T &left_node, T &right_node, T2 nil_ptr_o
 }
 
 
-template<typename ptr>
-static ptr tree_maximum(ptr tree_node) {
-    ptr return_node = nullptr;
-    while (tree_node != nullptr) {
-        return_node = tree_node;
-        tree_node = tree_node->right;
-    }
-    return return_node;
-}
-
-template<typename ptr, typename function>
-static ptr tree_minimum(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
-    ptr return_node = nil_ptr_or_index;
-    while (tree_node != nil_ptr_or_index) {
-        return_node = tree_node;
-        tree_node = get_node(tree_node)->left;
-    }
-    return return_node;
-}
-
 /**
  * 这个方法可以从扩展类中移动到基类当中
  * @param root
@@ -233,6 +213,26 @@ ptr find_miximum_leaf(ptr root) {
 
 namespace BIN_tree {
     template<typename ptr, typename function>
+    static ptr tree_maximum(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
+        ptr return_node = nil_ptr_or_index;
+        while (tree_node != nil_ptr_or_index) {
+            return_node = tree_node;
+            tree_node = get_node(tree_node)->right;
+        }
+        return return_node;
+    }
+
+    template<typename ptr, typename function>
+    static ptr tree_minimum(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
+        ptr return_node = nil_ptr_or_index;
+        while (tree_node != nil_ptr_or_index) {
+            return_node = tree_node;
+            tree_node = get_node(tree_node)->left;
+        }
+        return return_node;
+    }
+
+    template<typename ptr, typename function>
     static ptr tree_successor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
         if (get_node(tree_node)->right != nil_ptr_or_index) {
             return tree_minimum(get_node(tree_node)->right, nil_ptr_or_index, get_node);
@@ -248,7 +248,7 @@ namespace BIN_tree {
     template<typename ptr, typename function>
     ptr tree_predecessor(ptr tree_node, ptr nil_ptr_or_index, function get_node) {
         if (get_node(tree_node)->left != nil_ptr_or_index) {
-            return tree_maximum(get_node(tree_node)->left);
+            return tree_maximum(get_node(tree_node)->left, nil_ptr_or_index, get_node);
         }
         ptr result_node = get_node(tree_node)->parent;
         while (result_node != nil_ptr_or_index && get_node(result_node)->left == tree_node) {
