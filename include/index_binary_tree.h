@@ -16,7 +16,7 @@ public:
         return root;
     }
 
-    const T *get_data(v_index index) {
+    T *get_data(v_index index) {
         auto temp = index_binary_Tree::get_node_from_v_index(index);
         if (temp != nullptr)
             return &temp->data;
@@ -55,11 +55,12 @@ public:
     }
 
 
-    v_index tree_find_value(T input_data) {
-        return BIN_tree::tree_find_value(index_binary_Tree::get_root_index(), input_data,
-                                         index_binary_Tree::get_nil_index(),
-                                         std::bind(&index_binary_Tree::get_node_ptr, this,
-                                                   std::placeholders::_1));
+    node *tree_find_node(T input_data) {
+        return index_binary_Tree::get_node_from_v_index(index_binary_Tree::tree_find_value(input_data));
+    }
+
+    T *tree_find_data(T input_data) {
+        return get_data(index_binary_Tree::tree_find_value(input_data));
     }
 
     v_index minimum(v_index index) {
@@ -102,6 +103,8 @@ public:
 
 
     v_index delete_node(v_index delete_node) {
+        if (delete_node == index_binary_Tree::get_nil_index())
+            return delete_node;
         auto root_index = BIN_tree::delete_node_from_binary_search_tree(index_binary_Tree::get_root_index(),
                                                                         delete_node,
                                                                         index_binary_Tree::get_nil_index(),

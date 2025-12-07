@@ -43,7 +43,19 @@ struct event_point {
     std::set<int> end_points_edge;
     std::set<int> middle_points_edge;
 
-    int if_intersect; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
+    enum intersection_type {
+        is_intersect,
+        no_intersect,
+    };
+
+    enum left_or_right_type {
+        left,
+        right,
+    };
+
+    bool left_or_right;
+
+    bool if_intersect; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
     bool operator<(const event_point &right) const {
         if (x < right.x) {
             // 先比较x轴，x轴小的为小
@@ -52,21 +64,44 @@ struct event_point {
             // 之后再比较y轴，y轴小的为小
             return true;
         } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {
-                // todo： 这里的逻辑在实际中稍微有点问题
-                // flip能够解决吗？然后就带了来一个问题flip翻转是为了解决什么？
-                // 如果排序不变，但是next和pre改变，那么其实需要翻转的内容很多。
-                // 但是如果只是为了更改这两个点索引的位置，那么只需要改这两条边各自的上下，顶点对于的边的索引，
-                // 以及face需要循环一遍更改索引值
-                // 值完全一样，比较是否是起点，是起点的边，
-                return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
+            if (left_or_right == left_or_right_type::right &&
+                right.left_or_right == left_or_right_type::left)
+                return false;
+            if (left_or_right == left_or_right_type::left &&
+                right.left_or_right == left_or_right_type::right)
+                return true;
+            if (left_or_right == left_or_right_type::left &&
+                right.left_or_right == left_or_right_type::left) {
+                // 同左 , 交点大一点
+                if (if_intersect == intersection_type::is_intersect &&
+                    right.if_intersect == intersection_type::no_intersect)
+                    return false; // 左边大于右边
+                if (if_intersect == intersection_type::no_intersect &&
+                    right.if_intersect == intersection_type::is_intersect)
+                    return true; //  右边大于左边
             }
+            if (left_or_right == left_or_right_type::left &&
+                right.left_or_right == left_or_right_type::left) {
+                // 同右 , 交点小一点
+                if (if_intersect == intersection_type::is_intersect &&
+                    right.if_intersect == intersection_type::no_intersect)
+                    return true; // 左边大于右边
+                if (if_intersect == intersection_type::no_intersect &&
+                    right.if_intersect == intersection_type::is_intersect)
+                    return false; //  右边大于左边
+            }
+            if (incident_half_edge < right.incident_half_edge) {
+                return true; // 左边大于右边
+            }
+            return false;
         }
         return false;
     }
 
     bool operator==(const event_point &right) const {
-        if (x == right.x && y == right.y) {
+        if (x == right.x && y == right.y &&
+            if_intersect == right.if_intersect &&
+            left_or_right == right.left_or_right) {
             return true;
         }
         return false;
@@ -107,7 +142,7 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
         temp.incident_half_edge = vertice.incident_half_edge;
         temp.intersect_half_edge_1 = -1;
         temp.intersect_half_edge_2 = -1;
-        temp.if_intersect = 0;
+        temp.if_intersect = event_point::no_intersect;
         event_points->push(temp);
     }
     return *event_points;
@@ -116,14 +151,22 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
 auto create_event_tree(
     half_edge_struct<vertex_xy> &hf) {
     auto tree = new index_binary_Tree<event_point, index_Tree_Node<event_point> >;
-    for (auto vertice: hf.vertices) {
+    for (auto half_edge: hf.half_edges) {
         event_point temp{};
-        temp.x = vertice.x;
-        temp.y = vertice.y;
-        temp.incident_half_edge = vertice.incident_half_edge;
+        Segment<Point_2> current_segment = hf.get_segment(half_edge.twin_half_edge);
+        temp.x = current_segment.start_point.x;
+        temp.y = current_segment.start_point.y;
+        temp.incident_half_edge = half_edge.twin_half_edge;
+        temp.left_or_right = event_point::right;
+        if (current_segment.start_point.x < current_segment.end_point.x) {
+            temp.left_or_right = event_point::left;
+        } else if (current_segment.start_point.x == current_segment.end_point.x &&
+                   current_segment.start_point.y < current_segment.end_point.y) {
+            temp.left_or_right = event_point::left;
+        }
         temp.intersect_half_edge_1 = -1;
         temp.intersect_half_edge_2 = -1;
-        temp.if_intersect = 0;
+        temp.if_intersect = event_point::no_intersect;
         tree->add_new_node(temp);
     }
     return tree;
@@ -166,27 +209,46 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
                 event_point temp{};
                 temp.x = result.x;
                 temp.y = result.y;
+                temp.left_or_right = event_point::left;
+                temp.if_intersect = event_point::is_intersect;
+
                 temp.incident_half_edge = -1;
                 temp.intersect_half_edge_1 = ab_incident_half_edge;
                 temp.intersect_half_edge_2 = cd_incident_half_edge;
 
-                if (ab.start_point == result)
-                    temp.start_points_edge.insert(ab_incident_half_edge);
-                else if (ab.end_point == result)
-                    temp.end_points_edge.insert(ab_incident_half_edge);
-                else
-                    temp.middle_points_edge.insert(ab_incident_half_edge);
-                if (cd.start_point == result)
-                    temp.start_points_edge.insert(cd_incident_half_edge);
-                else if (cd.end_point == result)
-                    temp.end_points_edge.insert(cd_incident_half_edge);
-                else
-                    temp.middle_points_edge.insert(cd_incident_half_edge);
 
-
-                temp.if_intersect = 1;
-                event_points->add_new_node(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
-                // 还需要把相交的点插入一个vector中，用于之后的输出
+                // 找不到就插入，能找到，则不动
+                auto data = event_points->tree_find_data(temp);
+                if (data != nullptr && data->if_intersect == event_point::is_intersect) {
+                    // 并且已经是相交时，才可以进行合并
+                    if (ab.start_point == result)
+                        data->start_points_edge.insert(ab_incident_half_edge);
+                    else if (ab.end_point == result)
+                        data->end_points_edge.insert(ab_incident_half_edge);
+                    else
+                        data->middle_points_edge.insert(ab_incident_half_edge);
+                    if (cd.start_point == result)
+                        data->start_points_edge.insert(cd_incident_half_edge);
+                    else if (cd.end_point == result)
+                        data->end_points_edge.insert(cd_incident_half_edge);
+                    else
+                        data->middle_points_edge.insert(cd_incident_half_edge);
+                } else {
+                    if (ab.start_point == result)
+                        temp.start_points_edge.insert(ab_incident_half_edge);
+                    else if (ab.end_point == result)
+                        temp.end_points_edge.insert(ab_incident_half_edge);
+                    else
+                        temp.middle_points_edge.insert(ab_incident_half_edge);
+                    if (cd.start_point == result)
+                        temp.start_points_edge.insert(cd_incident_half_edge);
+                    else if (cd.end_point == result)
+                        temp.end_points_edge.insert(cd_incident_half_edge);
+                    else
+                        temp.middle_points_edge.insert(cd_incident_half_edge);
+                    event_points->add_new_node(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
+                    // 还需要把相交的点插入一个vector中，用于之后的输出
+                }
                 return true;
             }
         }
@@ -203,16 +265,21 @@ TEST(test_edge, test_create_edge) {
 
     auto event_tree = create_event_tree(hf);
 
+    std::vector<event_point> result;
+
     binary_Tree_Node<ray_2d> *ray_root;
     ray_root = nullptr; // 忽然发现这里插入的时候是有问题的
-    for (; event_tree->tree_minimum_data() != nullptr;) {
+    v_index mini_node_index;
+    for (; mini_node_index = event_tree->minimum(event_tree->get_root_index()),
+           event_tree->tree_minimum_data() != nullptr;) {
         // 居然有一个空指针检查在这里，终于的是很像唯一一个
+        auto temo = event_tree->tree_minimum_data();
         auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
         vertex_xy current_vertex{
             event_tree->tree_minimum_data()->x, event_tree->tree_minimum_data()->y, current_half_edge
         };
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
-        if (event_tree->tree_minimum_data()->if_intersect == true) {
+        if (event_tree->tree_minimum_data()->if_intersect == event_point::is_intersect) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
@@ -228,6 +295,9 @@ TEST(test_edge, test_create_edge) {
             auto successor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
             test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_tree);
             test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_tree);
+            // 这里有一个前提条件，就是到底交点的扫描线时，已经全部全部处理完成了
+            // 最大的问题是排序,先将左边的全部处理掉，再将交点处理，最后将右边的全部删除
+            result.push_back(*event_tree->tree_minimum_data());
         } else if (if_half_edge_in_tree(ray_root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
@@ -239,7 +309,7 @@ TEST(test_edge, test_create_edge) {
             auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
         }
-        event_tree->pop_minimum();
+        event_tree->delete_node(mini_node_index);
     }
 }
 
@@ -248,3 +318,6 @@ TEST(test_edge, test_create_edge) {
 // 第二个其实是水平的线段，在我的代码中应该是垂直线段，斜率为无穷
 
 // 把把 queue 变成一个 tree 吗？ 为什么需要？ 一个需要排序的办法，插入时能够自定义
+
+// 忽然想清楚了，为什么两个树不能合并的原因了，事件点是线段的两端
+// 而另一棵树的排序只是和射线相关的内容
