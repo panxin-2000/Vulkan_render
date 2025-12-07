@@ -77,6 +77,13 @@ public:
         return get_data(minimum(index));
     }
 
+    const T *tree_minimum_data() {
+        return get_data(minimum(index_binary_Tree::get_root_index()));
+    }
+
+    const node *tree_minimum_data_node() {
+        return index_binary_Tree::get_node_from_v_index(index_binary_Tree::get_root_index());
+    }
 
     v_index add_new_node(T input_data) {
         auto new_node_v_index = index_binary_Tree::get_new_node_index(input_data);
@@ -87,6 +94,10 @@ public:
                                                      std::placeholders::_1));
         index_binary_Tree::roots.push_back(temp);
         return new_node_v_index;
+    }
+
+    void pop_minimum() {
+        delete_node(minimum(index_binary_Tree::get_root_index()));
     }
 
 

@@ -7,6 +7,8 @@
 #include "tree_function.h"
 #include "include/base_element/geometry/triangle.h"
 #include "half_edge.h"
+#include "index_binary_tree.h"
+#include "index_tree_node.h"
 #include  "segment_end_ponit_and_gradient.h"
 // 既然我们这里需要使用plane sweep 算法，
 // 那么先说说这个算法是怎么实现的呢？
@@ -111,6 +113,23 @@ std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &cre
     return *event_points;
 }
 
+auto create_event_tree(
+    half_edge_struct<vertex_xy> &hf) {
+    auto tree = new index_binary_Tree<event_point, index_Tree_Node<event_point> >;
+    for (auto vertice: hf.vertices) {
+        event_point temp{};
+        temp.x = vertice.x;
+        temp.y = vertice.y;
+        temp.incident_half_edge = vertice.incident_half_edge;
+        temp.intersect_half_edge_1 = -1;
+        temp.intersect_half_edge_2 = -1;
+        temp.if_intersect = 0;
+        tree->add_new_node(temp);
+    }
+    return tree;
+}
+
+
 template<typename T, typename T1>
 bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vertex_xy> &hf, T1 event_points) {
     if (left_node != nullptr && right_node != nullptr) {
@@ -131,7 +150,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
         if (intersect(ab, cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
             auto result = ab.get_intersect_result(cd);
-            if (event_points.top().x <= result.x) {
+            if (event_points->tree_minimum_data()->x <= result.x) {
                 // 上面其实应该是有一个奇怪的问题的，那就是小于还是等于？
                 // 问题就是添加一个等于是否会出现循环的问题
                 // 端点B 进入，判断和端点A相交
@@ -166,7 +185,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
 
 
                 temp.if_intersect = 1;
-                event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
+                event_points->add_new_node(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
                 // 还需要把相交的点插入一个vector中，用于之后的输出
                 return true;
             }
@@ -182,21 +201,24 @@ TEST(test_edge, test_create_edge) {
     half_edge_struct<vertex_xy> hf;
     init_all_segments(hf);
 
-    auto event_tree = create_event_queue(hf);
+    auto event_tree = create_event_tree(hf);
 
     binary_Tree_Node<ray_2d> *ray_root;
     ray_root = nullptr; // 忽然发现这里插入的时候是有问题的
-    for (; event_tree.empty() == false;) {
-        auto current_half_edge = event_tree.top().incident_half_edge;
-        vertex_xy current_vertex{event_tree.top().x, event_tree.top().y, current_half_edge};
+    for (; event_tree->tree_minimum_data() != nullptr;) {
+        // 居然有一个空指针检查在这里，终于的是很像唯一一个
+        auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
+        vertex_xy current_vertex{
+            event_tree->tree_minimum_data()->x, event_tree->tree_minimum_data()->y, current_half_edge
+        };
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
-        if (event_tree.top().if_intersect == true) {
+        if (event_tree->tree_minimum_data()->if_intersect == true) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
-            auto intersect_vertex = event_tree.top();
-            auto edge_1_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_1);
-            auto edge_2_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_2);
+            auto intersect_vertex = event_tree->tree_minimum_data();
+            auto edge_1_vertex = ray_2d::get_ray_2d(hf, intersect_vertex->intersect_half_edge_1);
+            auto edge_2_vertex = ray_2d::get_ray_2d(hf, intersect_vertex->intersect_half_edge_2);
             // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
             auto edge_1_vertex_node = tree_find_value(ray_root, edge_1_vertex);
             auto edge_2_vertex_node = tree_find_value(ray_root, edge_2_vertex);
@@ -217,7 +239,7 @@ TEST(test_edge, test_create_edge) {
             auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
         }
-        event_tree.pop();
+        event_tree->pop_minimum();
     }
 }
 
