@@ -153,7 +153,8 @@ bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     if (c_start < 0) {
         return true; // 起点在球中
     }
-    auto center_to_segment_end = segment.end_point - sphere.center;
+    Ray<T> ray_end(segment.end_point, segment.start_point - segment.end_point);
+    auto center_to_segment_end = ray_end.point - sphere.center;
     auto c_end = (dot(center_to_segment_end, center_to_segment_end) - sphere.radius * sphere.radius);
     if (c_end < 0) {
         return true; // 钟点在球中
@@ -167,7 +168,6 @@ bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     if (delta_half < 0) {
         return false; // 这里决定了线段所在直线不会相交
     }
-    Ray<T> ray_end(segment.end_point, segment.start_point - segment.end_point);
     auto direction_end = ray_end.direction;
     auto b_half_end = dot(center_to_segment_end, direction_end);
     if (-b_half_start < 0 || -b_half_end < 0) {
@@ -254,12 +254,12 @@ inline bool intersect_without_AABB(const Segment<Point_2> &L_segment, const Segm
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
     float f1 = ab.single_area(ac);
     float f2 = ab.single_area(ad);
-    if (f1 > 0 && f2 > 0) {
+    if (f1 * f2 > 0) {
         return false;
     }
     float f3 = cd.single_area(ca);
     float f4 = cd.single_area(cb);
-    if (f3 > 0 && f4 > 0) {
+    if (f3 * f4 > 0) {
         return false;
     }
     if (f1 * f2 < 0 && f3 * f4 < 0) {
@@ -290,7 +290,7 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
     if (!intersect(L_AABB, R_AABB)) {
         return false;
     }
-    intersect_without_AABB(L_segment, segment);
+    return intersect_without_AABB(L_segment, segment);
 }
 
 template<typename T>

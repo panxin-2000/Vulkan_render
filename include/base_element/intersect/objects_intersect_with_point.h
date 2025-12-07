@@ -10,6 +10,7 @@
 #include "../geometry/segment.h"
 #include "base_element/point_2.h"
 #include "base_element/point_3.h"
+#include "base_element/geometry/plane.h"
 #include "base_element/geometry/Sphere_bounding_volume.h"
 
 template<typename T>
@@ -83,6 +84,14 @@ template<typename T>
 inline bool intersect(const Sphere<T> &sphere, const T &test_point) {
     if (dot((test_point - sphere.center), (test_point - sphere.center)) <=
         (sphere.radius * sphere.radius)) {
+        return true;
+    }
+    return false;
+}
+
+template<typename T>
+inline bool intersect(const Plane<T> &plane, const T &test_point) {
+    if (abs(dot((test_point - plane.point), (plane.normal))) < 0.0000001) {
         return true;
     }
     return false;
