@@ -37,6 +37,10 @@ struct event_point {
     int incident_half_edge;
     int intersect_half_edge_1;
     int intersect_half_edge_2;
+    std::set<int> start_points_edge; // 那么另一个选择应该是set,可以用set来进行消除重复
+    std::set<int> end_points_edge;
+    std::set<int> middle_points_edge;
+
     int if_intersect; // 暂时没有办法的一个办法了 // 用于判断是否当前端点或者其他是否有在使用
     bool operator<(const event_point &right) const {
         if (x < right.x) {
@@ -55,6 +59,13 @@ struct event_point {
                 // 值完全一样，比较是否是起点，是起点的边，
                 return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
             }
+        }
+        return false;
+    }
+
+    bool operator==(const event_point &right) const {
+        if (x == right.x && y == right.y) {
+            return true;
         }
         return false;
     }
@@ -112,12 +123,14 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
         // 但是应该不是很彻底
 
         // 两条线段判断是否相交
-        Segment<Point_2> ab = hf.get_segment(left_node->data.incident_half_edge);
-        Segment<Point_2> cd = hf.get_segment(right_node->data.incident_half_edge);
+        auto ab_incident_half_edge = left_node->data.incident_half_edge;
+        auto cd_incident_half_edge = right_node->data.incident_half_edge;
+        Segment<Point_2> ab = hf.get_segment(ab_incident_half_edge);
+        Segment<Point_2> cd = hf.get_segment(cd_incident_half_edge);
 
         if (intersect(ab, cd) == true) {
             // 如果相交，把交点插入到事件点中，并且需要判断交点是否在扫描线之后
-            Point_2 result = ab.get_intersect_result(cd);
+            auto result = ab.get_intersect_result(cd);
             if (event_points.top().x <= result.x) {
                 // 上面其实应该是有一个奇怪的问题的，那就是小于还是等于？
                 // 问题就是添加一个等于是否会出现循环的问题
@@ -129,13 +142,29 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
                 // 不会再进入了
                 // 如果有多个点呢？不能在这里考虑，因为会重复交换AB，造成另一个问题
                 std::cout << " intersect point :" << result.x << "  " << result.y << std::endl;
+                // 居然没有做测试，只是随便写了两个点，进行手动判断
 
                 event_point temp{};
                 temp.x = result.x;
                 temp.y = result.y;
                 temp.incident_half_edge = -1;
-                temp.intersect_half_edge_1 = left_node->data.incident_half_edge;
-                temp.intersect_half_edge_2 = right_node->data.incident_half_edge;
+                temp.intersect_half_edge_1 = ab_incident_half_edge;
+                temp.intersect_half_edge_2 = cd_incident_half_edge;
+
+                if (ab.start_point == result)
+                    temp.start_points_edge.insert(ab_incident_half_edge);
+                else if (ab.end_point == result)
+                    temp.end_points_edge.insert(ab_incident_half_edge);
+                else
+                    temp.middle_points_edge.insert(ab_incident_half_edge);
+                if (cd.start_point == result)
+                    temp.start_points_edge.insert(cd_incident_half_edge);
+                else if (cd.end_point == result)
+                    temp.end_points_edge.insert(cd_incident_half_edge);
+                else
+                    temp.middle_points_edge.insert(cd_incident_half_edge);
+
+
                 temp.if_intersect = 1;
                 event_points.push(temp); // 这里只是为了在树中交换，// 交换应该在删除只前
                 // 还需要把相交的点插入一个vector中，用于之后的输出
@@ -153,41 +182,47 @@ TEST(test_edge, test_create_edge) {
     half_edge_struct<vertex_xy> hf;
     init_all_segments(hf);
 
-    auto event_points = create_event_queue(hf);
+    auto event_tree = create_event_queue(hf);
 
-    binary_Tree_Node<ray_2d> *root;
-    root = nullptr; // 忽然发现这里插入的时候是有问题的
-    for (; event_points.empty() == false;) {
-        auto current_half_edge = event_points.top().incident_half_edge;
-        vertex_xy current_vertex{event_points.top().x, event_points.top().y, current_half_edge};
+    binary_Tree_Node<ray_2d> *ray_root;
+    ray_root = nullptr; // 忽然发现这里插入的时候是有问题的
+    for (; event_tree.empty() == false;) {
+        auto current_half_edge = event_tree.top().incident_half_edge;
+        vertex_xy current_vertex{event_tree.top().x, event_tree.top().y, current_half_edge};
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
-        if (event_points.top().if_intersect == true) {
+        if (event_tree.top().if_intersect == true) {
             // 是线段中的交点,之后应该如何处理呢？
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
-            auto intersect_vertex = event_points.top();
+            auto intersect_vertex = event_tree.top();
             auto edge_1_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_1);
             auto edge_2_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_2);
             // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
-            auto edge_1_vertex_node = tree_find_value(root, edge_1_vertex);
-            auto edge_2_vertex_node = tree_find_value(root, edge_2_vertex);
+            auto edge_1_vertex_node = tree_find_value(ray_root, edge_1_vertex);
+            auto edge_2_vertex_node = tree_find_value(ray_root, edge_2_vertex);
             std::swap(edge_1_vertex_node->data, edge_2_vertex_node->data);
             // 能判断相交的一定是前后的， 1 是前，2 是后的
             auto predecessor_edge_node = edge_1_vertex_node->tree_predecessor(edge_1_vertex_node);
             auto successor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
-            test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_points);
-            test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_points);
-        } else if (if_half_edge_in_tree(root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
-            root = root->tree_insert_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
-            auto current_half_edge_node = tree_find_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
+            test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_tree);
+            test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_tree);
+        } else if (if_half_edge_in_tree(ray_root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
+            ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
+            auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
-            test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_points);
-            test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_points);
+            test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
+            test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
         } else {
-            auto delate_node = tree_find_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
-            root = root->delete_node_from_binary_search_tree(root, delate_node);
+            auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
+            ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
         }
-        event_points.pop();
+        event_tree.pop();
     }
 }
+
+// 说一下上面的代码有哪些没有完成
+// 第一个没有完成的是，多个线段相交在同一位置时应该如何处理
+// 第二个其实是水平的线段，在我的代码中应该是垂直线段，斜率为无穷
+
+// 把把 queue 变成一个 tree 吗？ 为什么需要？ 一个需要排序的办法，插入时能够自定义

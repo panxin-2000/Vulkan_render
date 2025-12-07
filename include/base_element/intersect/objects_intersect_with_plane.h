@@ -65,4 +65,10 @@ inline bool intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
     }
     return false;
 }
+
+template<typename T>
+inline bool intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
+    // 确实是很有想法的一个解法
+    return false;
+}
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_PLANE_H
