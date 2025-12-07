@@ -296,6 +296,31 @@ TEST(test_tree, test_tree_delete_root_3) {
     EXPECT_EQ(root->left->data, 3);
     EXPECT_EQ(root->right->data, 7);
 
+    index_binary_Tree<int, index_Tree_Node<int> > tree;
+    tree.add_new_node(5);
+    tree.add_new_node(3);
+    tree.add_new_node(2);
+    tree.add_new_node(4);
+    tree.add_new_node(7);
+    tree.add_new_node(6);
+    tree.add_new_node(15);
+    tree.add_new_node(19);
+    tree.add_new_node(9);
+    tree.add_new_node(12);
+    tree.add_new_node(13);
+    auto new_node_temp = tree.tree_find_value(5);
+    auto root_index = tree.get_root_index();
+    auto pre = tree.predecessor_data(root_index);
+    EXPECT_EQ(*pre, 4);
+
+    auto success = tree.successor_data(root_index);
+    EXPECT_EQ(*success, 6);
+
+    auto min_value = tree.minimum_data(root_index);
+    auto value = tree.get_data(new_node_temp);
+    EXPECT_EQ(*value, 5);
+    EXPECT_EQ(*min_value, 2);
+
 
     root = root->delete_node_from_binary_search_tree(root, root->right);
     EXPECT_EQ(root->data, 5);

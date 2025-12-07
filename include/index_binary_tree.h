@@ -16,6 +16,67 @@ public:
         return root;
     }
 
+    const T *get_data(v_index index) {
+        auto temp = index_binary_Tree::get_node_from_v_index(index);
+        if (temp != nullptr)
+            return &temp->data;
+        return nullptr;
+    }
+
+    v_index predecessor(v_index index) {
+        return BIN_tree::tree_predecessor(index,
+                                          index_binary_Tree::get_nil_index(),
+                                          std::bind(&index_binary_Tree::get_node_ptr, this,
+                                                    std::placeholders::_1));
+    }
+
+    const node *predecessor_node(v_index index) {
+        return index_binary_Tree::get_node_from_v_index(predecessor(index));
+    }
+
+    const node *successor_node(v_index index) {
+        return index_binary_Tree::get_node_from_v_index(successor(index));
+    }
+
+    const T *predecessor_data(v_index index) {
+        return get_data(predecessor(index));
+    }
+
+    const T *successor_data(v_index index) {
+        return get_data(successor(index));
+    }
+
+
+    v_index successor(v_index index) {
+        return BIN_tree::tree_successor(index,
+                                        index_binary_Tree::get_nil_index(),
+                                        std::bind(&index_binary_Tree::get_node_ptr, this,
+                                                  std::placeholders::_1));
+    }
+
+
+    v_index tree_find_value(T input_data) {
+        return BIN_tree::tree_find_value(index_binary_Tree::get_root_index(), input_data,
+                                         index_binary_Tree::get_nil_index(),
+                                         std::bind(&index_binary_Tree::get_node_ptr, this,
+                                                   std::placeholders::_1));
+    }
+
+    v_index minimum(v_index index) {
+        return BIN_tree::tree_minimum(index,
+                                      index_binary_Tree::get_nil_index(),
+                                      std::bind(&index_binary_Tree::get_node_ptr, this,
+                                                std::placeholders::_1));
+    }
+
+    const node *minimum_node(v_index index) {
+        return index_binary_Tree::get_node_from_v_index(minimum_node(index));
+    }
+
+    const T *minimum_data(v_index index) {
+        return get_data(minimum(index));
+    }
+
 
     v_index add_new_node(T input_data) {
         auto new_node_v_index = index_binary_Tree::get_new_node_index(input_data);

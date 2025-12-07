@@ -20,8 +20,11 @@ public:
     std::vector<node> details;
     v_index delete_v_index;
 
-    index_tree_base &get_detail_from_v_index(v_index in) {
-        return details.at(in.number);
+    node *get_node_from_v_index(v_index in) {
+        if (in == get_nil_index()) {
+            return nullptr;
+        }
+        return &details.at(in.number);
     }
 
     // 这里的操作是什么意思呢？
@@ -90,6 +93,9 @@ public:
     }
 
     node *get_node_ptr(v_index need) {
+        if (need == get_nil_index()) {
+            return nullptr;
+        }
         return &details.at(need.number);
     }
 
