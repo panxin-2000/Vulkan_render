@@ -6,7 +6,7 @@
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_PLANE_H
 #include "base_element/geometry/plane.h"
 #include "base_element/geometry/segment.h"
-#include "base_element/geometry/Ray.h"
+#include "base_element/geometry/ray.h"
 #include "base_element/geometry/straight_line.h"
 #include "base_element/geometry/triangle.h"
 

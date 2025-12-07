@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SPHERE_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SPHERE_H
 #include "base_element/geometry/segment.h"
-#include "base_element/geometry/Sphere_bounding_volume.h"
+#include "base_element/geometry/sphere_bounding_volume.h"
 #include "base_element/geometry/triangle.h"
 #include "base_element/intersect/objects_intersect_with_segment.h"
 

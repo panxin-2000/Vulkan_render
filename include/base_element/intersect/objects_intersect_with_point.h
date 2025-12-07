@@ -4,14 +4,14 @@
 
 #ifndef HELLO_MAC_INTERSECTION_H
 #define HELLO_MAC_INTERSECTION_H
-#include "../geometry/Trapezoid.h"
+#include "../geometry/trapezoid.h"
 #include "../geometry/triangle.h"
 #include "../geometry/AABB_bounding_box.h"
 #include "../geometry/segment.h"
 #include "base_element/point_2.h"
 #include "base_element/point_3.h"
 #include "base_element/geometry/plane.h"
-#include "base_element/geometry/Sphere_bounding_volume.h"
+#include "base_element/geometry/sphere_bounding_volume.h"
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &box, const T &test_point) {

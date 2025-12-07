@@ -4,9 +4,11 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
-#include "../geometry/segment.h"
-#include "../point_2.h"
-#include "../geometry/AABB_bounding_box.h"
+#include "base_element/geometry/segment.h"
+#include "base_element/point_2.h"
+#include "base_element/geometry/AABB_bounding_box.h"
+#include "base_element/geometry/ray.h"
+#include "base_element/geometry/straight_line.h"
 #include "objects_intersect_with_point.h"
 #include "base_element/intersect/objects_intersect_with_AABB.h"
 
