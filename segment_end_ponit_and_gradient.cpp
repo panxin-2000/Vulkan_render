@@ -4,9 +4,9 @@
 #include "segment_end_ponit_and_gradient.h"
 
 
-segment_start_point_and_gradient &segment_start_point_and_gradient::get_segment_start_point_and_gradient(
+ray_2d &ray_2d::get_ray_2d(
     half_edge_struct<vertex_xy> &hf, int incident_half_edge) {
-    segment_start_point_and_gradient *temp = new segment_start_point_and_gradient;
+    ray_2d *temp = new ray_2d;
     Segment<Point_2> current_segment = hf.get_segment(incident_half_edge);
     temp->compare_x_position = current_segment.start_point.x;
     if (current_segment.end_point.x < current_segment.start_point.x) {

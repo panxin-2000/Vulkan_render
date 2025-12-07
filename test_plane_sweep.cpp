@@ -155,7 +155,7 @@ TEST(test_edge, test_create_edge) {
 
     auto event_points = create_event_queue(hf);
 
-    binary_Tree_Node<segment_start_point_and_gradient> *root;
+    binary_Tree_Node<ray_2d> *root;
     root = nullptr; // 忽然发现这里插入的时候是有问题的
     for (; event_points.empty() == false;) {
         auto current_half_edge = event_points.top().incident_half_edge;
@@ -166,40 +166,28 @@ TEST(test_edge, test_create_edge) {
             // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
             // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
             auto intersect_vertex = event_points.top();
-            auto intersect_half_edge_1_vertex = segment_start_point_and_gradient::get_segment_start_point_and_gradient(
-                hf, intersect_vertex.intersect_half_edge_1);
-            auto intersect_half_edge_2_vertex = segment_start_point_and_gradient::get_segment_start_point_and_gradient(
-                hf, intersect_vertex.intersect_half_edge_2);
+            auto edge_1_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_1);
+            auto edge_2_vertex = ray_2d::get_ray_2d(hf, intersect_vertex.intersect_half_edge_2);
             // 因为是auto 所以上面的名字是不对的，但是还是能够继续工作，因为拿到的类型和将要输入的类型是一致的
-            auto intersect_half_edge_1_vertex_node = tree_find_value(root, intersect_half_edge_1_vertex);
-            auto intersect_half_edge_2_vertex_node = tree_find_value(root, intersect_half_edge_2_vertex);
-            std::swap(intersect_half_edge_1_vertex_node->data, intersect_half_edge_2_vertex_node->data);
+            auto edge_1_vertex_node = tree_find_value(root, edge_1_vertex);
+            auto edge_2_vertex_node = tree_find_value(root, edge_2_vertex);
+            std::swap(edge_1_vertex_node->data, edge_2_vertex_node->data);
             // 能判断相交的一定是前后的， 1 是前，2 是后的
-            auto predecessor_half_edge_node = intersect_half_edge_1_vertex_node->tree_predecessor(
-                intersect_half_edge_1_vertex_node);
-            auto successor_half_edge_node = intersect_half_edge_2_vertex_node->tree_successor(
-                intersect_half_edge_2_vertex_node);
-            test_two_node_if_intersect(predecessor_half_edge_node, intersect_half_edge_1_vertex_node, hf, event_points);
-            test_two_node_if_intersect(intersect_half_edge_2_vertex_node, successor_half_edge_node, hf, event_points);
-        } else if (if_half_edge_in_tree(
-                       root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(
-                           hf, current_half_edge)) == false) {
-            root = root->tree_insert_value(
-                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
-            auto current_half_edge_node = tree_find_value(
-                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
+            auto predecessor_edge_node = edge_1_vertex_node->tree_predecessor(edge_1_vertex_node);
+            auto successor_edge_node = edge_2_vertex_node->tree_successor(edge_2_vertex_node);
+            test_two_node_if_intersect(predecessor_edge_node, edge_1_vertex_node, hf, event_points);
+            test_two_node_if_intersect(edge_2_vertex_node, successor_edge_node, hf, event_points);
+        } else if (if_half_edge_in_tree(root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
+            root = root->tree_insert_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
+            auto current_half_edge_node = tree_find_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_points);
             test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_points);
         } else {
-            auto delate_node = tree_find_value(
-                root, segment_start_point_and_gradient::get_segment_start_point_and_gradient(hf, current_half_edge));
+            auto delate_node = tree_find_value(root, ray_2d::get_ray_2d(hf, current_half_edge));
             root = root->delete_node_from_binary_search_tree(root, delate_node);
         }
         event_points.pop();
-        // if (event_points.top().incident_half_edge % 2 == 1) {
-        //     // 这里应该在 delete_node_from_binary_search_tree 中就已经被处理掉了
-        // }
     }
 }
