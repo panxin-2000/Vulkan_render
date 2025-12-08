@@ -243,10 +243,9 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
 // 然后我怎么才能建立这个结构呢？
 //  其实应该先写一个最简单暴力的来，不然不太好玩
 //
-TEST(test_edge, test_create_edge) {
-    half_edge_struct<vertex_xy> hf;
-    init_all_segments(hf);
 
+
+std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
     auto event_tree = create_event_tree(hf);
 
     std::vector<event_point> result;
@@ -383,6 +382,7 @@ TEST(test_edge, test_create_edge) {
         event_tree->delete_node(mini_node_index);
     }
     auto ssd = result.size();
+    return result;
 }
 
 // 说一下上面的代码有哪些没有完成
@@ -393,3 +393,11 @@ TEST(test_edge, test_create_edge) {
 
 // 忽然想清楚了，为什么两个树不能合并的原因了，事件点是线段的两端
 // 而另一棵树的排序只是和射线相关的内容
+
+// 忽然想到来另一个问题，那就是线段之间不可以重合
+
+TEST(test_edge, test_create_edge) {
+    half_edge_struct<vertex_xy> hf;
+    init_all_segments(hf);
+    auto result = get_intersect_point(hf);
+}
