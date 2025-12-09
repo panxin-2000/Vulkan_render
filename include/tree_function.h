@@ -32,6 +32,15 @@ namespace BIN_tree {
         return result_node;
     }
 
+    // 这个函数有问题，所有情况下都不能使用
+    // data 的区域应该是一个封闭空间，判断data的封闭空间是否在要判断的结点的封闭空间内
+    // 不在的话才能退出，
+    // 另一个退出机制是null，但是只能退一个，所以没有用
+    // 结果就是data只能是封闭空间
+    // 其他的想要也是可以的，但是需要判断方向，
+    // 方向变化时，就确定了在那个子树当中，
+    // 需要结合上一个左右子树进行判断
+    // 结合栈进行方向的判断
     template<typename value_type, typename ptr, typename function>
     ptr tree_find_value_with_help_stack(ptr root, value_type data,
                                         std::stack<ptr> *ptr_stack, ptr nil_ptr_or_index, function get_node) {
@@ -48,11 +57,17 @@ namespace BIN_tree {
             } else if (get_node(new_root)->data < data) {
                 // 这里的前后的顺序，需要与插入时比较相同
                 new_root = get_node(new_root)->right;
-                ptr_stack->push(new_root);
+                if (new_root == nil_ptr_or_index)
+                    ptr_stack->pop();
+                else
+                    ptr_stack->push(new_root);
             } else if (data < get_node(new_root)->data) {
                 // 这里的前后的顺序，需要与插入时比较相同
                 new_root = get_node(new_root)->left;
-                ptr_stack->push(new_root);
+                if (new_root == nil_ptr_or_index)
+                    ptr_stack->pop();
+                else
+                    ptr_stack->push(new_root);
             } else {
                 ptr_stack->pop();
             }

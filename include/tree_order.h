@@ -5,6 +5,7 @@
 #ifndef TREE_ORDER_H
 #define TREE_ORDER_H
 #include <vector>
+#include <stack>
 
 enum class tree_walk_type {
     inorder_type,
@@ -40,7 +41,8 @@ std::vector<T> *tree_walk_with_stack(T root, std::vector<T> *result,
             }
             ptr_stack.push(get_node(current_node)->right); // 入栈
             current_node = get_node(current_node)->right; // 更新为右子树
-        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->left == nil_ptr_or_index) {
+        } else if (get_node(current_node)->left == nil_ptr_or_index && get_node(current_node)->left ==
+                   nil_ptr_or_index) {
             if (tree_walk == tree_walk_type::inorder_type) {
                 result->push_back(current_node); // 输出
             }
