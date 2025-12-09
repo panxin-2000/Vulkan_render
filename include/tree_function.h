@@ -31,6 +31,34 @@ namespace BIN_tree {
         }
         return result_node;
     }
+
+    template<typename value_type, typename ptr, typename function>
+    ptr tree_find_value_with_help_stack(ptr root, value_type data,
+                                        std::stack<ptr> *ptr_stack, ptr nil_ptr_or_index, function get_node) {
+        ptr temp_root = root;
+        ptr result_node = nil_ptr_or_index;
+        assert(ptr_stack != data);
+        if (ptr_stack->size() == 0) {
+            ptr_stack->push(temp_root);
+        }
+        while (ptr_stack->size() != 0) {
+            ptr new_root = ptr_stack->top();
+            if (get_node(new_root)->data == data) {
+                return new_root;
+            } else if (get_node(new_root)->data < data) {
+                // 这里的前后的顺序，需要与插入时比较相同
+                new_root = get_node(new_root)->right;
+                ptr_stack->push(new_root);
+            } else if (data < get_node(new_root)->data) {
+                // 这里的前后的顺序，需要与插入时比较相同
+                new_root = get_node(new_root)->left;
+                ptr_stack->push(new_root);
+            } else {
+                ptr_stack->pop();
+            }
+        }
+        return result_node;
+    }
 }
 
 
