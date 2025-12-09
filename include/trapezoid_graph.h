@@ -59,7 +59,8 @@ public:
     // 写完之后，发现其实查找并不是问题，问题是怎么构造的问题
     // 构造的时候最简单的比较好做，然后就是难的部分应该怎么做
     // false left_point     right right_point
-    static trapezoid_ptr find_point_in_trapezoid_graph(trapezoid_ptr root_node,
+    // 其实这里应该更改为一个栈的，执行相应的操作
+    static trapezoid_ptr find_point_in_trapezoid_graph(trapezoid_ptr root_node_para,
                                                        Point_2 find_point,
                                                        point_enum left_or_right_point =
                                                                point_enum::left_point,
@@ -69,58 +70,61 @@ public:
         // 那么其实需要先构造一个具体的结构
         // 测试一下我这里查找的结果是否是我需要的
         // 既然要做这么一个测试，其实还是只能边做，边更新了
-        switch (root_node->trapezoid_type) {
-            case graph_enum::leaf_node: {
-                // 需要判断是否在梯形内
-                if (intersect(root_node->trapezoid_union_data.trapezoid, find_point)) {
-                    return root_node;
-                } else {
-                    return nullptr;
-                }
-            }
-            case graph_enum::point_node: {
-                // 需要判断需要查找的点是在当前点点左边还是右边？
-                // todo:还需要判断边界条件
-                if (find_point.x == root_node->trapezoid_union_data.segment_point.x &&
-                    left_or_right_point == point_enum::right_point) {
-                    return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
-                                                         have_help_point, help_point);
-                }
-                if (find_point.x >= root_node->trapezoid_union_data.segment_point.x) {
-                    return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
-                                                         have_help_point, help_point);
-                }
-                return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point, have_help_point,
-                                                     help_point);
-            }
-            case graph_enum::segment_node: {
-                // 第一个问题是这个点有多个线段应该怎么办？
-
-                Point_2 a = root_node->trapezoid_union_data.segment.start_point;
-                Point_2 b = root_node->trapezoid_union_data.segment.end_point;
-                Point_2 c = find_point;
-                // 这里还需要添加判断，
-                float temp = Point_2::single_area(a, b, c);
-                if (abs(temp) < 0.0000001) {
-                    float temp2 = Point_2::single_area(a, b, help_point);
-                    if (temp2 > 0.0000001) {
-                        return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
-                                                             have_help_point, help_point);
+        trapezoid_ptr root_node = root_node_para;
+        trapezoid_ptr result_node = nullptr;
+        while (root_node != nullptr)
+            switch (root_node->trapezoid_type) {
+                case graph_enum::leaf_node: {
+                    // 需要判断是否在梯形内
+                    if (intersect(root_node->trapezoid_union_data.trapezoid, find_point)) {
+                        return root_node;
                     } else {
-                        return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
-                                                             have_help_point, help_point);
+                        return nullptr;
                     }
-                } else if (temp > 0.0000001) {
-                    return find_point_in_trapezoid_graph(root_node->left, find_point, left_or_right_point,
-                                                         have_help_point, help_point);
-                } else {
-                    return find_point_in_trapezoid_graph(root_node->right, find_point, left_or_right_point,
-                                                         have_help_point, help_point);
                 }
+                case graph_enum::point_node: {
+                    // 需要判断需要查找的点是在当前点点左边还是右边？
+                    // todo:还需要判断边界条件
+                    if (find_point.x == root_node->trapezoid_union_data.segment_point.x &&
+                        left_or_right_point == point_enum::right_point) {
+                        root_node = root_node->left;
+                        continue;
+                    }
+                    if (find_point.x >= root_node->trapezoid_union_data.segment_point.x) {
+                        root_node = root_node->right;
+                        continue;
+                    }
+                    root_node = root_node->left;
+                    continue;
+                }
+                case graph_enum::segment_node: {
+                    // 第一个问题是这个点有多个线段应该怎么办？
+
+                    Point_2 a = root_node->trapezoid_union_data.segment.start_point;
+                    Point_2 b = root_node->trapezoid_union_data.segment.end_point;
+                    Point_2 c = find_point;
+                    // 这里还需要添加判断，
+                    float temp = Point_2::single_area(a, b, c);
+                    if (abs(temp) < 0.0000001) {
+                        float temp2 = Point_2::single_area(a, b, help_point);
+                        if (temp2 > 0.0000001) {
+                            root_node = root_node->left;
+                            continue;
+                        } else {
+                            root_node = root_node->right;
+                            continue;
+                        }
+                    } else if (temp > 0.0000001) {
+                        root_node = root_node->left;
+                        continue;
+                    } else {
+                        root_node = root_node->right;
+                        continue;
+                    }
+                }
+                default:
+                    return nullptr; // 只有三种类型，不会走到这里的
             }
-            default:
-                return nullptr;
-        }
     }
 
     static trapezoid_ptr find_right_trapezoid(trapezoid_ptr root_node, trapezoid_ptr trapezoid,
@@ -525,9 +529,10 @@ public:
         }
         auto left_centroid = left_para->trapezoid_union_data.trapezoid.get_centroid();
         auto right_centroid = right_para->trapezoid_union_data.trapezoid.get_centroid();
-        Trapezoid *left = &left_para->trapezoid_union_data.trapezoid;
-        Trapezoid *right = &right_para->trapezoid_union_data.trapezoid;
+        auto left = &left_para->trapezoid_union_data.trapezoid;
+        auto right = &right_para->trapezoid_union_data.trapezoid;
         // 上面两行最开始用的引用，但是我的目的应该是临时变量，需要使用指针，而不是引用
+        //
         if (right_centroid < left_centroid) {
             right = &left_para->trapezoid_union_data.trapezoid;
             left = &right_para->trapezoid_union_data.trapezoid;
@@ -559,8 +564,10 @@ public:
                 right_para->trapezoid_union_data.trapezoid.right_lower = lower_right_c;
                 right_para->trapezoid_union_data.trapezoid.right_upper = upper_right_c;
 
-                // trapezoid_graph_Node::replace_sub_tree(right_para, left_para);
+                trapezoid_graph_Node::replace_sub_tree(right_para, left_para);
                 // 上面这一行是有问题的，因为父结点可能不止一个，合并的时候是否会出现问题呢？
+                // 查找上下左右的时候是有问题的，不能通过指针来查找来
+                // find_all_leaf_node 没有问题，因为它是在通过层序进行查找
                 return true;
             }
         }
