@@ -33,6 +33,7 @@ namespace BIN_tree {
     }
 }
 
+
 template<typename T, typename function>
 std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result, T nil_ptr_or_index, function get_node) {
     std::queue<T> tem;
@@ -49,6 +50,29 @@ std::vector<T> &find_all_leaf_node(T node, std::vector<T> &result, T nil_ptr_or_
         }
         if (get_node(node_tem)->left == nil_ptr_or_index && get_node(node_tem)->right == nil_ptr_or_index) {
             result.push_back(node_tem); // 是叶子节点才添加到向量中准备之后的输出
+        }
+        tem.pop();
+    }
+    return result;
+}
+
+template<typename T, typename function>
+std::vector<T> *find_all_leaf_node(T node, T nil_ptr_or_index, function get_node) {
+    std::queue<T> tem;
+    auto result = new std::vector<T>;
+    if (node != nil_ptr_or_index) {
+        tem.push(node);
+    }
+    while (!tem.empty()) {
+        auto node_tem = tem.front();
+        if (get_node(node_tem)->left != nil_ptr_or_index) {
+            tem.push(get_node(node_tem)->left);
+        }
+        if (get_node(node_tem)->right != nil_ptr_or_index) {
+            tem.push(get_node(node_tem)->right);
+        }
+        if (get_node(node_tem)->left == nil_ptr_or_index && get_node(node_tem)->right == nil_ptr_or_index) {
+            result->push_back(node_tem); // 是叶子节点才添加到向量中准备之后的输出
         }
         tem.pop();
     }
@@ -505,6 +529,11 @@ T find_insert_position(T root, T new_node) {
     return find_insert_position(root, new_node,
                                 static_cast<T>(nullptr),
                                 [](T insert_node) { return insert_node; });
+}
+
+template<typename T>
+std::vector<T> *find_all_leaf_node(T node) {
+    return find_all_leaf_node(node, static_cast<T>(nullptr), [](T insert_node) { return insert_node; });
 }
 
 template<typename T>

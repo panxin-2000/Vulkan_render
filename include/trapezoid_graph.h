@@ -166,25 +166,37 @@ public:
 
             auto new_graph_node = replace_node_in_multi_trapezoid_left_in_right_out(
                 start_point_trapezoid, insert_segment);
+
+            // 拿到全部的leaf的结点
+
             trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
-            auto result = new std::vector<trapezoid_ptr>();
-            find_all_leaf_node(new_graph_node, *result);
+            auto result = find_all_leaf_node(new_graph_node);
             auto right_trapezoid = find_right_trapezoid(root_node, start_point_trapezoid, insert_segment);
             // 现在的代码其实写的并没有什么意识到应该这么写，但是写下去之后，发现这么写好像刚刚好
             while (right_trapezoid != end_point_trapezoid) {
                 // 执行操作，
                 auto intern_graph_node = replace_node_in_multi_trapezoid_left_out_right_out(
                     right_trapezoid, insert_segment);
+
+                // 拿到全部的leaf的结点
+
                 trapezoid_graph_Node::replace_sub_tree(right_trapezoid, intern_graph_node);
+                find_all_leaf_node(new_graph_node, *result);
                 right_trapezoid = find_right_trapezoid(root_node, right_trapezoid, insert_segment);
             }
             // 相等的时候，执行另一个操作
             auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(right_trapezoid, insert_segment);
             trapezoid_graph_Node::replace_sub_tree(end_point_trapezoid, last_graph_node);
+            find_all_leaf_node(last_graph_node, *result);
+
+            // 拿到全部的leaf的结点
+            merge_trapezoid_graph_Node(result);
 
             // 但是这里是需要合并的代码的
-            // 将所有的叶子结点添加到队列中
-            // 梯形需要合并，来减少梯形结点的数量。
+            // 怎么判断合并呢？
+            // 查看有没有重复的点，有重复的点，判断竖着的边和横着的边是否 共线，有两个共线就可以合并了
+            // 一个与其他不能合并的就删除，删到只剩一个退出，
+            // 两个能合并的，将合并之后的加入，原本的两个删除，新合并的替代原本的指向
 
 
             return root_node;
@@ -501,6 +513,80 @@ public:
         result_ptr->trapezoid_union_data.segment.end_point = B;
         result_ptr->trapezoid_type = graph_enum::segment_node;
         return result_ptr;
+    }
+
+    static bool merge_teo_trapezoid_node(trapezoid_graph_Node *left_para, trapezoid_graph_Node *right_para) {
+        // 先求重心， // 确定左右位置和是否是同一个梯形
+        if (left_para->trapezoid_type != graph_enum::leaf_node) {
+            return false;
+        }
+        if (right_para->trapezoid_type != graph_enum::leaf_node) {
+            return false;
+        }
+        auto left_centroid = left_para->trapezoid_union_data.trapezoid.get_centroid();
+        auto right_centroid = right_para->trapezoid_union_data.trapezoid.get_centroid();
+        Trapezoid *left = &left_para->trapezoid_union_data.trapezoid;
+        Trapezoid *right = &right_para->trapezoid_union_data.trapezoid;
+        // 上面两行最开始用的引用，但是我的目的应该是临时变量，需要使用指针，而不是引用
+        if (right_centroid < left_centroid) {
+            right = &left_para->trapezoid_union_data.trapezoid;
+            left = &right_para->trapezoid_union_data.trapezoid;
+        }
+
+        auto lower_left_b = left->right_lower;
+        auto lower_right_b = right->left_lower;
+        auto upper_left_b = left->right_upper;
+        auto upper_right_b = right->left_upper;
+
+        if (lower_left_b == lower_right_b &&
+            upper_left_b == upper_right_b) {
+            auto lower_left_a = left->left_lower;
+            auto lower_right_c = right->right_lower;
+            auto upper_left_a = left->left_upper;
+            auto upper_right_c = right->right_upper;
+            if (Point_2::is_anticlockwise(lower_left_a, lower_right_b, lower_right_c) ==
+                Point_2::anticlockwise::collinear &&
+                Point_2::is_anticlockwise(upper_left_a, upper_right_b, upper_right_c) ==
+                Point_2::anticlockwise::collinear) {
+                // 可以合并 执行合并操作
+                left_para->trapezoid_union_data.trapezoid.left_lower = lower_left_a;
+                left_para->trapezoid_union_data.trapezoid.left_upper = upper_left_a;
+                left_para->trapezoid_union_data.trapezoid.right_lower = lower_right_c;
+                left_para->trapezoid_union_data.trapezoid.right_upper = upper_right_c;
+
+                right_para->trapezoid_union_data.trapezoid.left_lower = lower_left_a;
+                right_para->trapezoid_union_data.trapezoid.left_upper = upper_left_a;
+                right_para->trapezoid_union_data.trapezoid.right_lower = lower_right_c;
+                right_para->trapezoid_union_data.trapezoid.right_upper = upper_right_c;
+
+                // trapezoid_graph_Node::replace_sub_tree(right_para, left_para);
+                // 上面这一行是有问题的，因为父结点可能不止一个，合并的时候是否会出现问题呢？
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static bool merge_trapezoid_graph_Node(std::vector<trapezoid_graph_Node<T> *> *trapezoid_vector) {
+        if (trapezoid_vector == nullptr) {
+            return false;
+        }
+        for (; trapezoid_vector->size() > 1;) {
+            int merge_falg = false;
+            for (int i = 0; i < trapezoid_vector->size() - 1; ++i) {
+                if (merge_teo_trapezoid_node(trapezoid_vector->at(i),
+                                             trapezoid_vector->at(trapezoid_vector->size() - 1))) {
+                    merge_falg = true;
+                    break;
+                }
+            }
+            if (merge_falg == true) {
+                auto last = trapezoid_vector->end();
+                // need free
+            }
+            trapezoid_vector->pop_back();
+        }
+        return true;
     }
 };
 

@@ -12,5 +12,10 @@ struct Trapezoid {
     Point_2 right_upper;
     Point_2 left_lower;
     Point_2 right_lower;
+
+public:
+    Point_2 get_centroid() const {
+        return {(left_upper + right_upper + left_lower + right_lower) / 4};
+    }
 };
 #endif //HELLO_MAC_TRAPEZOID_H

@@ -65,6 +65,11 @@ struct Triangle {
         return false;
     }
 
+
+    T get_centroid() const {
+        return {(a + b + c) / 3};
+    }
+
     // 先调用intersect，为true之后再调用这个，用于得到三个分量
     // 之后再想想办法，看看能否再优化了
     void point_position_of_triangle(T point, float &alpha, float &beta, float &gamma) {
