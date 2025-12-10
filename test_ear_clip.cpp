@@ -288,18 +288,12 @@ TEST(ear_clip, test_point_location) {
         half_edge_struct<vertex_xy> hf_2; // 这里还需要一个copy的函数
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
 
-        auto segments = hf.get_all_segments();
-        for (auto current_segment: segments) {
-            if (current_segment.start_point.x > current_segment.end_point.x) {
-                std::swap(current_segment.start_point, current_segment.end_point);
-            }
-        }
-
-        for (auto segment: segments) {
-            root = trapezoid_graph_Node<int>::add_a_segment(root, segment);
+        for (int i = 0; i < hf.half_edges.size(); ++i, ++i) {
+            root = trapezoid_graph_Node<int>::add_a_segment(root, &hf, i);
             auto result = find_all_leaf_node(root);
             std::cout << "result" << result->size() << std::endl;
         }
+
 
         auto result_2 = find_all_leaf_node(root);
         // 之后需要做什么呢？

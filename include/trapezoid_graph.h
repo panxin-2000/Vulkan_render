@@ -30,6 +30,7 @@ class trapezoid_graph_Node : public Tree_Node<trapezoid_graph_Node<T> > {
         }
     };
 
+    T data;
     my_union trapezoid_union_data;
 
     enum class graph_enum {
@@ -142,14 +143,23 @@ public:
                                              insert_segment.end_point);
     }
 
-    static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, Segment<Point_2> insert_segment) {
+    static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, half_edge_struct<vertex_xy> *hf, int half_edge_index) {
+        auto insert_segment = hf->get_segment(half_edge_index);
+        int upper_face_index = 0;
+        int lower_face_index = 0;
+        upper_face_index = hf->get_face_index(half_edge_index);
+        lower_face_index = hf->get_face_index(hf->get_opposite_edge_index(half_edge_index));
         if (insert_segment.start_point.x > insert_segment.end_point.x) {
             std::swap(insert_segment.start_point, insert_segment.end_point);
+            lower_face_index = hf->get_face_index(half_edge_index);
+            upper_face_index = hf->get_face_index(hf->get_opposite_edge_index(half_edge_index));
         }
         // 碰到了另一个问题，关于垂直的问题
         if (insert_segment.start_point.x == insert_segment.end_point.x) {
             if (insert_segment.start_point.y > insert_segment.end_point.y) {
                 std::swap(insert_segment.start_point, insert_segment.end_point);
+                lower_face_index = hf->get_face_index(half_edge_index);
+                upper_face_index = hf->get_face_index(hf->get_opposite_edge_index(half_edge_index));
             }
             insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
             insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
@@ -224,7 +234,7 @@ public:
 
 
     static trapezoid_ptr replace_node_in_one_trapezoid(
-        trapezoid_ptr root, Segment<Point_2> insert_segment) {
+        trapezoid_ptr root, Segment<Point_2> insert_segment, int upper_face_index = -1, int lower_face_index = -1) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
         auto left_point = insert_segment.start_point;
         auto right_point = insert_segment.end_point;
@@ -252,8 +262,8 @@ public:
             auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
             auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
-            auto S_trapezoid = init_four_points(G_point, H_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, I_point, J_point);
+            auto S_trapezoid = init_four_points(G_point, H_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, I_point, J_point, lower_face_index);
             auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
             // 梯形插入完成了，之后需要做什么呢？
             // 构造结构了，如果将原本的梯形替换为新的内容
@@ -278,8 +288,8 @@ public:
             //               |      T       |                  S_trapezoid         T_trapezoid
             //               C--------------D
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point, lower_face_index);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return EF_segment_node;
@@ -295,8 +305,8 @@ public:
             auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
             auto F_node = init_points_node(F_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
-            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point);
+            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point, lower_face_index);
             auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
             trapezoid_graph_Node::replace_sub_tree_left(F_node, EF_segment_node);
             trapezoid_graph_Node::replace_sub_tree_right(F_node, U_trapezoid);
@@ -316,8 +326,8 @@ public:
             auto E_node = init_points_node(E_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
-            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point, lower_face_index);
             trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
@@ -354,8 +364,8 @@ public:
             // 我这里给出了来的其实更加偏向于长方形不过用来做点点示意还是可以的
             auto H_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, F_point.x);
             auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
-            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point);
+            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point, lower_face_index);
             auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
             // 梯形插入完成了，之后需要做什么呢？
             // 构造结构了，如果将原本的梯形替换为新的内容
@@ -385,8 +395,8 @@ public:
             auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, E_point.x);
             auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
-            auto S_trapezoid = init_four_points(G_point, B_point, E_point, F_point);
-            auto T_trapezoid = init_four_points(E_point, F_point, I_point, D_point);
+            auto S_trapezoid = init_four_points(G_point, B_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, I_point, D_point, lower_face_index);
             // 梯形插入完成了，之后需要做什么呢？
             // 构造结构了，如果将原本的梯形替换为新的内容
             // 需要参考书上的图6-7 来构造相应的结构
@@ -405,7 +415,7 @@ public:
 
     //
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_in_right_out(
-        trapezoid_ptr root, Segment<Point_2> insert_segment) {
+        trapezoid_ptr root, Segment<Point_2> insert_segment, int upper_face_index = -1, int lower_face_index = -1) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
         auto left_point = insert_segment.start_point;
         auto right_point = insert_segment.end_point;
@@ -417,8 +427,8 @@ public:
         auto F_point = right_point;
         if (A_point == E_point || C_point == E_point) {
             auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
-            auto S_trapezoid = init_four_points(A_point, B_point, E_point, J_point);
-            auto T_trapezoid = init_four_points(E_point, J_point, C_point, D_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, J_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, J_point, C_point, D_point, lower_face_index);
             auto EF_segment_node = init_segment_node(E_point, F_point);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
@@ -441,8 +451,8 @@ public:
         auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
         auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
         auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
-        auto S_trapezoid = init_four_points(G_point, B_point, E_point, J_point);
-        auto T_trapezoid = init_four_points(E_point, J_point, I_point, D_point);
+        auto S_trapezoid = init_four_points(G_point, B_point, E_point, J_point, upper_face_index);
+        auto T_trapezoid = init_four_points(E_point, J_point, I_point, D_point, lower_face_index);
         // 梯形插入完成了，之后需要做什么呢？
         // 构造结构了，如果将原本的梯形替换为新的内容
         // 需要参考书上的图6-7 来构造相应的结构
@@ -458,7 +468,7 @@ public:
     }
 
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_out_right_in(
-        trapezoid_ptr root, Segment<Point_2> insert_segment) {
+        trapezoid_ptr root, Segment<Point_2> insert_segment, int upper_face_index = -1, int lower_face_index = -1) {
         // 最后还是需要返回的，因为根结点可能是会被改变的
         auto left_point = insert_segment.start_point;
         auto right_point = insert_segment.end_point;
@@ -470,8 +480,8 @@ public:
         auto F_point = right_point;
         if (B_point == F_point || D_point == F_point) {
             auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
-            auto S_trapezoid = init_four_points(A_point, B_point, J_point, F_point);
-            auto T_trapezoid = init_four_points(J_point, F_point, C_point, D_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, J_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(J_point, F_point, C_point, D_point, lower_face_index);
             auto EF_segment_node = init_segment_node(E_point, F_point);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
@@ -493,8 +503,8 @@ public:
         auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, F_point.x);
         auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
         auto R_trapezoid = init_four_points(G_point, B_point, I_point, D_point);
-        auto S_trapezoid = init_four_points(A_point, G_point, J_point, F_point);
-        auto T_trapezoid = init_four_points(J_point, F_point, C_point, I_point);
+        auto S_trapezoid = init_four_points(A_point, G_point, J_point, F_point, upper_face_index);
+        auto T_trapezoid = init_four_points(J_point, F_point, C_point, I_point, lower_face_index);
         // 梯形插入完成了，之后需要做什么呢？
         // 构造结构了，如果将原本的梯形替换为新的内容
         // 需要参考书上的图6-7 来构造相应的结构
@@ -510,7 +520,7 @@ public:
     }
 
     static trapezoid_ptr replace_node_in_multi_trapezoid_left_out_right_out(
-        trapezoid_ptr root, Segment<Point_2> insert_segment) {
+        trapezoid_ptr root, Segment<Point_2> insert_segment, int upper_face_index = -1, int lower_face_index = -1) {
         auto left_point = insert_segment.start_point;
         auto right_point = insert_segment.end_point;
         auto A_point = root->trapezoid_union_data.trapezoid.left_upper;
@@ -528,8 +538,8 @@ public:
         //            C---------------------------------D
         auto J_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, C_point.x);
         auto K_point = Segment<Point_2>::get_segment_point_on_x(E_point, F_point, D_point.x);
-        auto S_trapezoid = init_four_points(A_point, B_point, J_point, K_point);
-        auto T_trapezoid = init_four_points(J_point, K_point, C_point, D_point);
+        auto S_trapezoid = init_four_points(A_point, B_point, J_point, K_point, upper_face_index);
+        auto T_trapezoid = init_four_points(J_point, K_point, C_point, D_point, lower_face_index);
         auto EF_segment_node = init_segment_node(E_point, F_point);
         trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
         trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
@@ -555,13 +565,14 @@ public:
         return result_ptr;
     }
 
-    static trapezoid_ptr init_four_points(Point_2 A, Point_2 B, Point_2 C, Point_2 D) {
+    static trapezoid_ptr init_four_points(Point_2 A, Point_2 B, Point_2 C, Point_2 D, T data = -1) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {A};
         result_ptr->trapezoid_union_data.trapezoid.right_upper = {B};
         result_ptr->trapezoid_union_data.trapezoid.left_lower = {C};
         result_ptr->trapezoid_union_data.trapezoid.right_lower = {D};
         result_ptr->trapezoid_type = graph_enum::leaf_node;
+        result_ptr->data = data;
         return result_ptr;
     }
 
