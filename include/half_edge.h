@@ -704,6 +704,15 @@ struct half_edge_struct {
         return result;
     }
 
+    std::vector<Segment<> > get_all_segments() {
+        std::vector<Segment<> > result;
+        for (int i = 0; i < half_edges.size(); ++i, ++i) {
+            auto segment = get_segment(i);
+            result.emplace_back(segment);
+        }
+        return result;
+    }
+
     int get_same_edge_index(const int incident_half_edge) {
         return incident_half_edge - (incident_half_edge % 2);
     }
@@ -811,25 +820,25 @@ struct half_edge_struct {
 
 
     [[nodiscard]] std::vector<Point_2> get_vertices(const std::vector<Half_edge_v_index> &half_edge_indices) const {
-        std::vector<Point_2> segments{};
+        std::vector<Point_2> points{};
         for (auto half_edge_index: half_edge_indices) {
             Point_2 temp_point{};
             temp_point.x = vertices.at(half_edges.at(half_edge_index).vertex_index).x;
             temp_point.y = vertices.at(half_edges.at(half_edge_index).vertex_index).y;
-            segments.push_back(temp_point);
+            points.push_back(temp_point);
         }
-        return segments;
+        return points;
     }
 
     /**
      *
      * @tparam T
-     * @param result_segments
+     * @param result_triangles
      * @param without_hole true 时 不输出洞， false 输出洞
      * @return
      */
     template<typename T>
-    bool print_all_face_vertices(T &result_segments, bool without_hole) {
+    bool print_all_triangle_face(T &result_triangles, bool without_hole) {
         for (auto face: faces) {
             if (!without_hole || face.boundary_type != Face::BOUNDARY_TYPE::hole_face) {
                 auto temp = get_all_edge_of_face(face.bounding_half_edge);
@@ -843,7 +852,7 @@ struct half_edge_struct {
                         static_cast<vertex_base_type>(b),
                         static_cast<vertex_base_type>(c)
                     };
-                    result_segments.push_back(t);
+                    result_triangles.push_back(t);
                 } else {
                     return false;
                 }

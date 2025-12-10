@@ -143,6 +143,18 @@ public:
     }
 
     static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, Segment<Point_2> insert_segment) {
+        if (insert_segment.start_point.x > insert_segment.end_point.x) {
+            std::swap(insert_segment.start_point, insert_segment.end_point);
+        }
+        // 碰到了另一个问题，关于垂直的问题
+        if (insert_segment.start_point.x == insert_segment.end_point.x) {
+            if (insert_segment.start_point.y > insert_segment.end_point.y) {
+                std::swap(insert_segment.start_point, insert_segment.end_point);
+            }
+            insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
+            insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
+        }
+
         auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.start_point,
                                                                    point_enum::left_point, true,
                                                                    insert_segment.end_point);
@@ -178,6 +190,7 @@ public:
             auto right_trapezoid = find_right_trapezoid(root_node, start_point_trapezoid, insert_segment);
             // 现在的代码其实写的并没有什么意识到应该这么写，但是写下去之后，发现这么写好像刚刚好
             while (right_trapezoid != end_point_trapezoid) {
+                // 这里的循环有问题，right_trapezoid 的更新可能是不正确的，
                 // 执行操作，
                 auto intern_graph_node = replace_node_in_multi_trapezoid_left_out_right_out(
                     right_trapezoid, insert_segment);
@@ -189,7 +202,8 @@ public:
                 right_trapezoid = find_right_trapezoid(root_node, right_trapezoid, insert_segment);
             }
             // 相等的时候，执行另一个操作
-            auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(right_trapezoid, insert_segment);
+            auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(
+                right_trapezoid, insert_segment);
             trapezoid_graph_Node::replace_sub_tree(end_point_trapezoid, last_graph_node);
             find_all_leaf_node(last_graph_node, *result);
 
@@ -256,9 +270,56 @@ public:
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return E_node;
         } else if (A_point.x == E_point.x && B_point.x == F_point.x) {
+            //               A--------------B
+            //               |      S       |
+            //               |              |                            EF_segment_node
+            //               E--------------F                           /         \
+            //               |              |                          /           \
+            //               |      T       |                  S_trapezoid         T_trapezoid
+            //               C--------------D
             auto EF_segment_node = init_segment_node(E_point, F_point);
             auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point);
             auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+            return EF_segment_node;
+        } else if (A_point.x == E_point.x && B_point.x != F_point.x) {
+            //               A--------------H---------B                                  F_node
+            //               |      S       |         |                                 /       \
+            //               |              |         |                      EF_segment_node      U_trapezoid
+            //               E--------------F    U    |                     /         \
+            //               |              |         |                    /           \
+            //               |      T       |         |            S_trapezoid         T_trapezoid
+            //               C--------------J---------D
+            auto H_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, F_point.x);
+            auto J_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, H_point.x);
+            auto F_node = init_points_node(F_point);
+            auto EF_segment_node = init_segment_node(E_point, F_point);
+            auto S_trapezoid = init_four_points(A_point, H_point, E_point, F_point);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, J_point);
+            auto U_trapezoid = init_four_points(H_point, B_point, J_point, D_point);
+            trapezoid_graph_Node::replace_sub_tree_left(F_node, EF_segment_node);
+            trapezoid_graph_Node::replace_sub_tree_right(F_node, U_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
+            return EF_segment_node;
+        } else if (A_point.x != E_point.x && B_point.x == F_point.x) {
+            //     A---------G--------------B
+            //     |         |      S       |              E_node
+            //     |         |              |            /       \
+            //     |   R     E--------------F   U_trapezoid        EF_segment_node
+            //     |         |              |                     /         \
+            //     |         |      T       |                    /           \
+            //     C---------I--------------D            S_trapezoid         T_trapezoid
+            auto G_point = Segment<Point_2>::get_segment_point_on_x(A_point, B_point, E_point.x);
+            auto I_point = Segment<Point_2>::get_segment_point_on_x(C_point, D_point, E_point.x);
+            auto E_node = init_points_node(E_point);
+            auto EF_segment_node = init_segment_node(E_point, F_point);
+            auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
+            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point);
+            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point);
+            trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
+            trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
             return EF_segment_node;

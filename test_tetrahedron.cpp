@@ -20,7 +20,7 @@ TEST(tetrahedron, init_tetrahedron) {
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 
-    auto temp_flag = hf.print_all_face_vertices(result_segments, false);
+    auto temp_flag = hf.print_all_triangle_face(result_segments, false);
     if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
         std::sort(result_segments.begin(), result_segments.end(), std::less<>());
         for (int i = 0; i < result_segments.size(); ++i) {

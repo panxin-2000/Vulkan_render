@@ -173,7 +173,7 @@ TEST(ear_clip, ear_clip_half_edge) {
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         std::vector<Triangle<Point_2> > result_segments{};
-        auto temp_flag = hf.print_all_face_vertices(result_segments, true);
+        auto temp_flag = hf.print_all_triangle_face(result_segments, true);
         if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
                 EXPECT_EQ(result_segments.at(i)== expect_triangles.at(i), true) << "i value: " << i << std::endl;
@@ -268,7 +268,7 @@ TEST(ear_clip, test_point_location) {
         // 梯形的索引是怎么和我之前的索引相对应了起来呢？
         std::vector<Triangle<Point_2> > result_segments{};
 
-        auto temp_flag = hf.print_all_face_vertices(result_segments, true);
+        auto temp_flag = hf.print_all_triangle_face(result_segments, true);
         if (temp_flag == true) {
             std::random_device rd;
             std::mt19937 g(rd());
@@ -288,13 +288,19 @@ TEST(ear_clip, test_point_location) {
         half_edge_struct<vertex_xy> hf_2; // 这里还需要一个copy的函数
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
 
-        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {5, 3}});
-        // root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {4, 1}});
-        auto result = find_all_leaf_node(root);
-        root = trapezoid_graph_Node<int>::add_a_segment(root, {{3, 3}, {6, 1}});
-        auto result_1 = find_all_leaf_node(root);
+        auto segments = hf.get_all_segments();
+        for (auto current_segment: segments) {
+            if (current_segment.start_point.x > current_segment.end_point.x) {
+                std::swap(current_segment.start_point, current_segment.end_point);
+            }
+        }
 
-        root = trapezoid_graph_Node<int>::add_a_segment(root, {{5, 3}, {6, 1}});
+        for (auto segment: segments) {
+            root = trapezoid_graph_Node<int>::add_a_segment(root, segment);
+            auto result = find_all_leaf_node(root);
+            std::cout << "result" << result->size() << std::endl;
+        }
+
         auto result_2 = find_all_leaf_node(root);
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
