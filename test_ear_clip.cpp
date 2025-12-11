@@ -11,23 +11,6 @@
 #include "tree_function.h"
 
 
-#include <iostream>
-// GLEW
-#define GLEW_STATIC
-#include <GL/glew.h>
-// GLFW
-#include <GLFW/glfw3.h>
-#include "render/render_object_manage.h"
-
-// Function prototypes
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
-}
-
-// Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600;
-
 template<typename T>
 T &init_hf(T &hf) {
     auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
@@ -245,6 +228,25 @@ TEST(half_edge, test_face_and_point) {
 }
 
 
+void test_point_location(half_edge_struct<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
+                         Point_2 find_point) {
+    Face_v_index result_face_index = 0;
+    Half_edge_v_index edge_index = 0;
+    if (point_in_triangle_type::out_triangle ==
+        hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, find_point)) {
+        result_face_index = -1;
+    }
+    auto start_point_trapezoid = trapezoid_graph_Node<int>::find_point_in_trapezoid_graph(root, find_point);
+    if (start_point_trapezoid == nullptr) {
+        GTEST_FAIL() << "start_point_trapezoid == nullptr " << find_point << std::endl;
+    }
+    if (hf.faces.at(start_point_trapezoid->data).boundary_type == Face::BOUNDARY_TYPE::hole_face
+        && result_face_index == -1) {
+        GTEST_SUCCEED();
+    } else
+        EXPECT_EQ(result_face_index, start_point_trapezoid->data) << find_point;
+}
+
 TEST(ear_clip, test_point_location) {
     half_edge_struct<vertex_xy> hf{};
     hf = init_hf(hf);
@@ -280,10 +282,6 @@ TEST(ear_clip, test_point_location) {
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {-1, 2});
         EXPECT_EQ(8, result_face_index);
 
-        // 这里准备好了hf
-        // 首先需要什么呢？一个大的四边形，将全部的线段包裹起来
-        // 之后再做什么呢？随机添加线段？然后构建梯形？
-        // 梯形的索引是怎么和我之前的索引相对应了起来呢？
         std::vector<Triangle<Point_2> > result_segments{};
 
         auto temp_flag = hf.print_all_triangle_face(result_segments, true);
@@ -299,86 +297,27 @@ TEST(ear_clip, test_point_location) {
 
             std::shuffle(result_segments.begin(), result_segments.end(), g);
         }
-        // 其实最开始打乱不打乱都无所谓，因为如果能按照一个固定的规则来，其实更好进行验证每一步是否是正确的
 
         auto bounding_box = hf.calculate_aabb();
-        // 这里的结果是对的
-        half_edge_struct<vertex_xy> hf_2; // 这里还需要一个copy的函数
         auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
-
         for (int i = 0; i < hf.half_edges.size(); ++i, ++i) {
             root = trapezoid_graph_Node<int>::add_a_segment(root, &hf, i);
             auto result = find_all_leaf_node(root);
-            std::cout << "result" << result->size() << std::endl;
+            // std::cout << "result" << result->size() << std::endl;
         }
-
-
         auto result_2 = find_all_leaf_node(root);
 
-
-        glfwInit();
-        GLFWwindow *window;
-
-        // Set all the required options for GLFW
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-
-        // Create a GLFWwindow object that we can use for GLFW's functions
-        window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
-
-        // Set the required callback functions
-        glfwSetKeyCallback(window, key_callback);
-        std::thread t(start_render_manage_thread, window);
-        t.detach();
-
-        auto temp_trapezoid = new render_object();
-        /***************设置参数**********************/
-        std::vector<VertexAttrib> vertex_attribs;
-        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
-        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
-
-        std::vector<Point_3> vertices;
-        std::vector<unsigned int> indices;
-        for (auto result_segment: *result_2) {
-            indices.push_back(vertices.size() + 0);
-            indices.push_back(vertices.size() + 1);
-            indices.push_back(vertices.size() + 2);
-            indices.push_back(vertices.size() + 2);
-            indices.push_back(vertices.size() + 3);
-            indices.push_back(vertices.size() + 0);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_lower / 9); //0 1 2
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_lower / 9);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_upper / 9); // 2 3 0
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper / 9);
-        }
-        // 参数这里最重要的是下面的两行
-        temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        temp_trapezoid->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-
-        /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(temp_trapezoid);
-
-
-        while (!glfwWindowShouldClose(window)) {
-            // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
-            glfwPollEvents();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-
-        end_render_manage_thread();
-        // Terminate GLFW, clearing any resources allocated by GLFW.
-        glfwTerminate();
-
-        // 之后需要做什么呢？
-        // 之后就需要一个线段了，
-        // 添加第一个线段完成了
-        auto start_point_trapezoid = trapezoid_graph_Node<int>::find_point_in_trapezoid_graph(root, {3.5, 2.9});
-
-
-        int a = 90;
-        // std::copy(hf, hf_2);
+        test_point_location(hf, root, {1.1, 1.1});
+        test_point_location(hf, root, {1, 1});
+        test_point_location(hf, root, {5, 1.1});
+        test_point_location(hf, root, {5, 2.5});
+        test_point_location(hf, root, {3.2, 2.9});
+        test_point_location(hf, root, {2.9, 3});
+        test_point_location(hf, root, {2, 3});
+        test_point_location(hf, root, {-1, 3.1});
+        test_point_location(hf, root, {-1, 2});
+        test_point_location(hf, root, {2.9, 3});
+        test_point_location(hf, root, {1, 4});
     } else {
         FAIL() << "ear_clip_algorithm_half_edge return false " << std::endl;
     }

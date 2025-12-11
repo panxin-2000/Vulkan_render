@@ -156,27 +156,29 @@ public:
             upper_face_index = hf->get_face_index(hf->get_opposite_edge_index(half_edge_index));
         }
         // 碰到了另一个问题，关于垂直的问题
+        auto find_segment = insert_segment;
         if (insert_segment.start_point.x == insert_segment.end_point.x) {
             if (insert_segment.start_point.y > insert_segment.end_point.y) {
                 std::swap(insert_segment.start_point, insert_segment.end_point);
                 lower_face_index = hf->get_face_index(half_edge_index);
                 upper_face_index = hf->get_face_index(hf->get_opposite_edge_index(half_edge_index));
             }
-            insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
-            insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
+            find_segment.end_point.x = insert_segment.end_point.x + 0.00001;
+            find_segment.end_point.x = insert_segment.end_point.x + 0.00001;
         }
 
         // std::cout << "add_a_segment " << insert_segment << std::endl;
-        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.start_point,
+        auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, find_segment.start_point,
                                                                    point_enum::left_point, true,
-                                                                   insert_segment.end_point);
-        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.end_point,
+                                                                   find_segment.end_point);
+        auto end_point_trapezoid = find_point_in_trapezoid_graph(root_node, find_segment.end_point,
                                                                  point_enum::right_point, true,
-                                                                 insert_segment.start_point);
+                                                                 find_segment.start_point);
         if ((start_point_trapezoid != nullptr) && (end_point_trapezoid != nullptr) &&
             (start_point_trapezoid == end_point_trapezoid)) {
             // 判断是否在一个梯形中，之后 end_point_trapezoid 其实就不用再使用了
-            auto new_graph_node = replace_node_in_one_trapezoid(start_point_trapezoid, insert_segment);
+            auto new_graph_node = replace_node_in_one_trapezoid(start_point_trapezoid, insert_segment, upper_face_index,
+                                                                lower_face_index);
             // 将原本包含 start_point_trapezoid 的子树替换为 new_graph_node 的子树
             trapezoid_graph_Node::replace_sub_tree(start_point_trapezoid, new_graph_node);
             // 另一个地方也是有下面这样一行的代码的
@@ -193,7 +195,7 @@ public:
             // 之后是重合的时候是有左右两侧的线段的
 
             auto new_graph_node = replace_node_in_multi_trapezoid_left_in_right_out(
-                start_point_trapezoid, insert_segment);
+                start_point_trapezoid, insert_segment, upper_face_index, lower_face_index);
 
             // 拿到全部的leaf的结点
 
@@ -205,7 +207,7 @@ public:
                 // 这里的循环有问题，right_trapezoid 的更新可能是不正确的，
                 // 执行操作，
                 auto intern_graph_node = replace_node_in_multi_trapezoid_left_out_right_out(
-                    right_trapezoid, insert_segment);
+                    right_trapezoid, insert_segment, upper_face_index, lower_face_index);
 
                 // 拿到全部的leaf的结点
 
@@ -215,7 +217,7 @@ public:
             }
             // 相等的时候，执行另一个操作
             auto last_graph_node = replace_node_in_multi_trapezoid_left_out_right_in(
-                right_trapezoid, insert_segment);
+                right_trapezoid, insert_segment, upper_face_index, lower_face_index);
             trapezoid_graph_Node::replace_sub_tree(end_point_trapezoid, last_graph_node);
             find_all_leaf_node(last_graph_node, *result);
 
@@ -246,6 +248,16 @@ public:
         auto D_point = root->trapezoid_union_data.trapezoid.right_lower;
         auto E_point = left_point;
         auto F_point = right_point;
+
+        if (E_point == C_point && F_point == A_point) {
+            root->data = lower_face_index;
+            return root;
+        }
+        if (E_point == D_point && F_point == B_point) {
+            root->data = upper_face_index;
+            return root;
+        }
+
         if (A_point.x != E_point.x && B_point.x != F_point.x) {
             // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
             // 原本的root 被删除并释放内存  之后 被替换为了                           E_node
