@@ -18,6 +18,7 @@
 
 template<class T>
 class trapezoid_graph_Node : public Tree_Node<trapezoid_graph_Node<T> > {
+public:
     union my_union {
         Trapezoid trapezoid;
         Point_2 segment_point;

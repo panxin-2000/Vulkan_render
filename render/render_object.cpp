@@ -77,22 +77,22 @@ glm::vec3 pointLightPositions[] = {
 void render_object::render_object_shader_init() {
     const char *vertexShaderSource = "#version 330 core\n"
             "layout (location=0)in vec3 aPos;\n"
-            "layout (location=1)in vec3 color;\n"
-            "out vec3 COLOR;\n"
+            // "layout (location=1)in vec3 color;\n"
+            // "out vec3 COLOR;\n"
             "void main()\n"
             "{\n"
             "    gl_Position = vec4(aPos.x,aPos.y,aPos.z,1.0);\n"
-            "    COLOR = color;\n"
+            // "    COLOR = color;\n"
             "}\n";
 
     const char *fragmentShaderSource = "#version 330 core\n"
             "out vec4 FragColor;\n"
-            "in vec3 COLOR;\n"
+            // "in vec3 COLOR;\n"
             "float rand(int seed) {return fract(sin(float(seed)) * 43758.5453);}\n"
             "void main()\n"
             "{\n"
             "    int triID = gl_PrimitiveID;\n"
-            "    FragColor = vec4(COLOR, 1.0);\n"
+            "    FragColor = vec4(rand(triID), rand(triID+1), rand(triID+2), 1.0);\n"
             "}\n\0";
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource,NULL);
