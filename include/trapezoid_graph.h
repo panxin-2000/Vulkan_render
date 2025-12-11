@@ -327,8 +327,8 @@ public:
             auto E_node = init_points_node(E_point);
             auto EF_segment_node = init_segment_node(E_point, F_point);
             auto R_trapezoid = init_four_points(A_point, G_point, C_point, I_point);
-            auto S_trapezoid = init_four_points(A_point, B_point, E_point, F_point, upper_face_index);
-            auto T_trapezoid = init_four_points(E_point, F_point, C_point, D_point, lower_face_index);
+            auto S_trapezoid = init_four_points(G_point, B_point, E_point, F_point, upper_face_index);
+            auto T_trapezoid = init_four_points(E_point, F_point, I_point, D_point, lower_face_index);
             trapezoid_graph_Node::replace_sub_tree_left(E_node, R_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);

@@ -348,10 +348,10 @@ TEST(ear_clip, test_point_location) {
             indices.push_back(vertices.size() + 2);
             indices.push_back(vertices.size() + 3);
             indices.push_back(vertices.size() + 0);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_lower); //0 1 2
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_lower);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_upper); // 2 3 0
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper);
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_lower / 9); //0 1 2
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_lower / 9);
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_upper / 9); // 2 3 0
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper / 9);
         }
         // 参数这里最重要的是下面的两行
         temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
