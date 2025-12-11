@@ -56,6 +56,11 @@ file(GLOB_RECURSE RENDER
         "render/render_object_manage.cpp"
 )
 
+include_directories(windows)
+file(GLOB_RECURSE WINDOW
+        "windows/windows.cpp"
+)
+
 find_package(TBB REQUIRED)
 
 
