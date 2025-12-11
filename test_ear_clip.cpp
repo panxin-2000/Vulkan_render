@@ -10,6 +10,24 @@
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 
+
+#include <iostream>
+// GLEW
+#define GLEW_STATIC
+#include <GL/glew.h>
+// GLFW
+#include <GLFW/glfw3.h>
+#include "render/render_object_manage.h"
+
+// Function prototypes
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+// Window dimensions
+const GLuint WIDTH = 800, HEIGHT = 600;
+
 template<typename T>
 T &init_hf(T &hf) {
     auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
@@ -296,6 +314,36 @@ TEST(ear_clip, test_point_location) {
 
 
         auto result_2 = find_all_leaf_node(root);
+
+
+        glfwInit();
+        GLFWwindow *window;
+
+        // Set all the required options for GLFW
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+        // Create a GLFWwindow object that we can use for GLFW's functions
+        window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+
+        // Set the required callback functions
+        glfwSetKeyCallback(window, key_callback);
+        std::thread t(start_render_manage_thread, window);
+        t.detach();
+
+
+        while (!glfwWindowShouldClose(window)) {
+            // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
+            glfwPollEvents();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        end_render_manage_thread();
+        // Terminate GLFW, clearing any resources allocated by GLFW.
+        glfwTerminate();
+
         // 之后需要做什么呢？
         // 之后就需要一个线段了，
         // 添加第一个线段完成了
