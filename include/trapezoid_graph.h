@@ -166,6 +166,7 @@ public:
             insert_segment.end_point.x = insert_segment.end_point.x + 0.00001;
         }
 
+        // std::cout << "add_a_segment " << insert_segment << std::endl;
         auto start_point_trapezoid = find_point_in_trapezoid_graph(root_node, insert_segment.start_point,
                                                                    point_enum::left_point, true,
                                                                    insert_segment.end_point);

@@ -20,7 +20,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &output,
                                     const Point_2 &P) {
-        output << " x :  " << P.x << " y :  " << P.y;
+        output << "(x,y):(" << P.x << "," << P.y << ")" ;
         return output;
     }
 

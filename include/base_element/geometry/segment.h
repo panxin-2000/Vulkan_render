@@ -12,6 +12,12 @@ struct Segment {
     point_type start_point;
     point_type end_point;
 
+    friend std::ostream &operator<<(std::ostream &output,
+                                    const Segment &P) {
+        output << "start " << P.start_point << " end " << P.end_point;
+        return output;
+    }
+
 
     static point_type get_segment_point_on_x(point_type &start_point, point_type &end_point, float x) {
         point_type ab = start_point - end_point;
