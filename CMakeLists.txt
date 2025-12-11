@@ -29,6 +29,36 @@ FetchContent_Declare(
         GIT_TAG v1.17.0
 )
 
+
+include_directories(render)
+include_directories(/opt/homebrew/opt/glfw/include)
+
+link_directories(/opt/homebrew/opt/glfw/lib)
+link_directories(/opt/homebrew/opt/glew/lib)
+
+link_libraries("-framework OPENGL")
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+find_package(OpenGL REQUIRED)
+
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+
+find_package(GLEW COMPONENTS
+        GLEW::glew
+        REQUIRED)
+if (GLEW_FOUND)
+    add_definitions(-DGLEW_FOUND)
+    include_directories(${GLEW_INCLUDE_DIRS})
+endif ()
+
+file(GLOB_RECURSE RENDER
+        "render/render_object.cpp"
+        "render/render_object_manage.cpp"
+)
+
+find_package(TBB REQUIRED)
+
+
 ## 下面这行没有看懂什么意思，按照说明先复制过来了
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 #FetchContent_MakeAvailable() 命令会确保指定的依赖项已被填充
@@ -47,7 +77,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(hello_test
+add_executable(hello_test ${RENDER}
         hello_test.cpp
         add_char_calculata.cpp
         test_add_char_calculata.cpp
@@ -74,7 +104,7 @@ add_executable(hello_test
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test GTest::gtest_main)
+target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen)
 
 add_executable(test_mutex
         #        test_curve.cpp
