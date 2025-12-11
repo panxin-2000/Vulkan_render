@@ -313,7 +313,7 @@ public:
             trapezoid_graph_Node::replace_sub_tree_right(F_node, U_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
-            return EF_segment_node;
+            return F_node;
         } else if (A_point.x != E_point.x && B_point.x == F_point.x) {
             //     A---------G--------------B
             //     |         |      S       |              E_node
@@ -333,7 +333,7 @@ public:
             trapezoid_graph_Node::replace_sub_tree_right(E_node, EF_segment_node);
             trapezoid_graph_Node::replace_sub_tree_left(EF_segment_node, S_trapezoid);
             trapezoid_graph_Node::replace_sub_tree_right(EF_segment_node, T_trapezoid);
-            return EF_segment_node;
+            return E_node;
         } else if (A_point == E_point || C_point == E_point) {
             // 这其实是一种退化的 (degenerate) 情况
             // 找到左右的点，需要判断左右的点，其实都在当前区域内，这个由前置条件完成判断
