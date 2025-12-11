@@ -91,7 +91,7 @@ void render_object::render_object_shader_init() {
             "float rand(int seed) {return fract(sin(float(seed)) * 43758.5453);}\n"
             "void main()\n"
             "{\n"
-            "    int triID = gl_PrimitiveID;\n"
+            "    int triID = gl_PrimitiveID>>1;\n"
             "    FragColor = vec4(rand(triID), rand(triID+1), rand(triID+2), 1.0);\n"
             "}\n\0";
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
