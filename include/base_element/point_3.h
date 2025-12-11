@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_POINT_3_H
 #define HELLO_MAC_POINT_3_H
+#include "point_2.h"
 
 class Point_3 {
 public:
@@ -14,6 +15,9 @@ public:
 
 
     Point_3() {
+    }
+
+    Point_3(Point_2 xy) : x(xy.x), y(xy.y), z(0) {
     }
 
     Point_3(float x1, float y1, float z1) : x(x1), y(y1), z(z1) {
