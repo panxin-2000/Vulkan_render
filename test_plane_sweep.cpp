@@ -282,71 +282,74 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                         get_ray_need_sort.push_back(delete_node);
                     }
                 }
-                std::vector<binary_Tree_Node<ray_2d> *> sort_node;
+                // get_ray_need_sort 碰到的一个问题，最后一个交点的时候得到的为零，先这样解决
+                // 实际上的是怎么回事还需要研究
+                if (get_ray_need_sort.size() >= 2) {
+                    std::vector<binary_Tree_Node<ray_2d> *> sort_node;
 
-                std::set<binary_Tree_Node<ray_2d> *> pre_and_success;
-                // 最前面和最后面的两条线段，不在同一个交点的线段
+                    std::set<binary_Tree_Node<ray_2d> *> pre_and_success;
+                    // 最前面和最后面的两条线段，不在同一个交点的线段
 
-                binary_Tree_Node<ray_2d> *min_node = nullptr;
-                for (auto insert_node: get_ray_need_sort) {
-                    auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
-                    auto successor_half_edge_node = insert_node->tree_successor(insert_node);
-                    if (predecessor_half_edge_node != nullptr)
-                        pre_and_success.insert(predecessor_half_edge_node);
-                    else
-                        min_node = insert_node;
-                    if (successor_half_edge_node != nullptr)
-                        pre_and_success.insert(successor_half_edge_node);
-                }
-                for (auto insert_node: get_ray_need_sort) {
-                    pre_and_success.erase(insert_node);
-                }
-                auto x = intersect_vertex->x;
-                // 需要一个排序
-                std::sort(get_ray_need_sort.begin(), get_ray_need_sort.end(),
-                          [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
-                              const ray_2d &right = b->data;
-                              const ray_2d &left = a->data;
-                              float current_segment_y = left.y + left.gradient * (x - left.x);
-                              float right_segment_y = right.y + right.gradient * (x - right.x);
-                              if (abs(current_segment_y - right_segment_y) < 0.00001) {
-                                  if (left.gradient < right.gradient) {
-                                      return true; // 梯度的比较
+                    binary_Tree_Node<ray_2d> *min_node = nullptr;
+                    for (auto insert_node: get_ray_need_sort) {
+                        auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
+                        auto successor_half_edge_node = insert_node->tree_successor(insert_node);
+                        if (predecessor_half_edge_node != nullptr)
+                            pre_and_success.insert(predecessor_half_edge_node);
+                        else
+                            min_node = insert_node;
+                        if (successor_half_edge_node != nullptr)
+                            pre_and_success.insert(successor_half_edge_node);
+                    }
+                    for (auto insert_node: get_ray_need_sort) {
+                        pre_and_success.erase(insert_node);
+                    }
+                    auto x = intersect_vertex->x;
+                    // 需要一个排序
+                    std::sort(get_ray_need_sort.begin(), get_ray_need_sort.end(),
+                              [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
+                                  const ray_2d &right = b->data;
+                                  const ray_2d &left = a->data;
+                                  float current_segment_y = left.y + left.gradient * (x - left.x);
+                                  float right_segment_y = right.y + right.gradient * (x - right.x);
+                                  if (abs(current_segment_y - right_segment_y) < 0.00001) {
+                                      if (left.gradient < right.gradient) {
+                                          return true; // 梯度的比较
+                                      }
+                                      return false;
+                                  }
+                                  if (current_segment_y < right_segment_y) {
+                                      return true;
                                   }
                                   return false;
-                              }
-                              if (current_segment_y < right_segment_y) {
-                                  return true;
-                              }
-                              return false;
-                          });
-                if (min_node == nullptr) {
-                    // 下面这一行不对
-                    for (auto node: pre_and_success) {
-                        for (auto insert_node: get_ray_need_sort) {
-                            auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
-                            if (predecessor_half_edge_node == node) {
-                                min_node = insert_node;
+                              });
+                    if (min_node == nullptr) {
+                        // 下面这一行不对
+                        for (auto node: pre_and_success) {
+                            for (auto insert_node: get_ray_need_sort) {
+                                auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
+                                if (predecessor_half_edge_node == node) {
+                                    min_node = insert_node;
+                                }
                             }
                         }
                     }
-                }
-                assert(min_node != nullptr);
-                std::vector<ray_2d> ray_2d_vector;
-                for (auto insert_node: get_ray_need_sort) {
-                    ray_2d_vector.push_back(insert_node->data);
-                }
+                    assert(min_node != nullptr);
+                    std::vector<ray_2d> ray_2d_vector;
+                    for (auto insert_node: get_ray_need_sort) {
+                        ray_2d_vector.push_back(insert_node->data);
+                    }
 
-                for (auto temp_ray_2d: ray_2d_vector) {
-                    min_node->data = temp_ray_2d;
-                    min_node = min_node->tree_successor(min_node);
-                }
-                for (auto insert_node: get_ray_need_sort) {
-                    for (auto node: pre_and_success) {
-                        test_two_node_if_intersect(node, insert_node, hf, event_tree);
+                    for (auto temp_ray_2d: ray_2d_vector) {
+                        min_node->data = temp_ray_2d;
+                        min_node = min_node->tree_successor(min_node);
+                    }
+                    for (auto insert_node: get_ray_need_sort) {
+                        for (auto node: pre_and_success) {
+                            test_two_node_if_intersect(node, insert_node, hf, event_tree);
+                        }
                     }
                 }
-
 
                 // 遍历一遍，找到现在的顺序？ 不需要吧，随便找一个点，向前并向后，直到不在set中，就必然不是了
                 // 保存一下这个顺序，目前是已经知道相交点了，ray 也是能够得出的，应该是有排序的办法的
@@ -359,17 +362,25 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
             }
 
             result.push_back(*event_tree->tree_minimum_data());
-        }
-        if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::left) {
+        } else if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::left) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
             test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
-        }
-        if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::right) {
+        } else if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::right) {
             auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
+            if (delate_node == nullptr) {
+                std::vector<binary_Tree_Node<ray_2d> *> inorder;
+                auto result_vector = inorder_tree_walk_with_stack(ray_root, &inorder);
+                for (auto node: inorder) {
+                    if (node->data == ray_2d::get_ray_2d(hf, current_half_edge)) {
+                        delate_node = node;
+                        break;
+                    }
+                }
+            }
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
         }
         event_tree->delete_node(mini_node_index);
