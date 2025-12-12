@@ -106,9 +106,15 @@ public:
             // 不是引用不能修改其中的值，只是引用不能修改这个指针
             return nullptr;
         } else if (delete_node == root && delete_node->left != nullptr && delete_node->right == nullptr) {
-            return delete_node->left;
+            delete_node->left->parent = nullptr;
+            auto temp = delete_node->left;
+            delete_node->left = nullptr;
+            return temp;
         } else if (delete_node == root && delete_node->left == nullptr && delete_node->right != nullptr) {
-            return delete_node->right;
+            delete_node->right->parent = nullptr;
+            auto temp = delete_node->right;
+            delete_node->right = nullptr;
+            return temp;
         }
         if (delete_node->right == nullptr && delete_node->left == nullptr) {
             // 如果被删除的是叶子结点，那么就清除父结点的索引
