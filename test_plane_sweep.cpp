@@ -308,20 +308,7 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                     // 需要一个排序
                     std::sort(get_ray_need_sort.begin(), get_ray_need_sort.end(),
                               [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
-                                  const ray_2d &right = b->data;
-                                  const ray_2d &left = a->data;
-                                  float current_segment_y = left.y + left.gradient * (x - left.x);
-                                  float right_segment_y = right.y + right.gradient * (x - right.x);
-                                  if (abs(current_segment_y - right_segment_y) < 0.00001) {
-                                      if (left.gradient < right.gradient) {
-                                          return true; // 梯度的比较
-                                      }
-                                      return false;
-                                  }
-                                  if (current_segment_y < right_segment_y) {
-                                      return true;
-                                  }
-                                  return false;
+                                  return ray_2d::compare(a, b, x);
                               });
                     if (min_node == nullptr) {
                         // 下面这一行不对

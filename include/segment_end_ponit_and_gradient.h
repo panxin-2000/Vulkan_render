@@ -4,6 +4,7 @@
 
 #ifndef SEGMENT_END_PONIT_AND_GRADIENT_H
 #define SEGMENT_END_PONIT_AND_GRADIENT_H
+#include "binary_Tree_Node.h"
 #include "half_edge.h"
 
 struct ray_2d {
@@ -33,6 +34,25 @@ struct ray_2d {
         }
         return false;
     }
+
+    template<typename ptr>
+    static bool compare(ptr a, ptr b, float x) {
+        const ray_2d &right = b->data;
+        const ray_2d &left = a->data;
+        float current_segment_y = left.y + left.gradient * (x - left.x);
+        float right_segment_y = right.y + right.gradient * (x - right.x);
+        if (abs(current_segment_y - right_segment_y) < 0.00001) {
+            if (left.gradient < right.gradient) {
+                return true; // 梯度的比较
+            }
+            return false;
+        }
+        if (current_segment_y < right_segment_y) {
+            return true;
+        }
+        return false;
+    }
+
 
     static ray_2d &
     get_ray_2d(half_edge_struct<vertex_xy> &hf, int incident_half_edge);
