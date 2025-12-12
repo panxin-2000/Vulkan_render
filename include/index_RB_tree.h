@@ -6,6 +6,7 @@
 #define INDEX_RB_NODE_H
 #include "index_tree_base.h"
 #include "RB_tree_function.h"
+#include "index_RB_tree_node.h"
 
 
 template<typename T, typename index_node>
@@ -43,5 +44,8 @@ public:
         return delete_node;
     }
 };
+
+template<typename FT>
+using Index_RB_Binary_Tree = index_RB_tree<FT, index_RB_Tree_Node<FT> >;
 
 #endif //INDEX_RB_NODE_H

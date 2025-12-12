@@ -113,7 +113,7 @@ void init_all_segments(half_edge_struct<vertex_xy> &hf) {
 
 auto create_event_tree(
     half_edge_struct<vertex_xy> &hf) {
-    auto tree = new index_binary_Tree<event_point, index_Tree_Node<event_point> >;
+    auto tree = new Index_Binary_Tree<event_point>;
     for (auto half_edge: hf.half_edges) {
         event_point temp{};
         Segment<Point_2> current_segment = hf.get_segment(half_edge.twin_half_edge);

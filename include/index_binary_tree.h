@@ -116,4 +116,10 @@ public:
         return delete_node;
     }
 };
+
+template<typename FT>
+using Index_Binary_Tree = index_binary_Tree<FT, index_Tree_Node<FT> >;
+
+
+
 #endif //INDEX_BINARY_TREE_H
