@@ -52,6 +52,19 @@ public:
     }
 
 
+    static std::vector<ray_2d> get_data_vector(std::vector<ray_2d *> ray_2d_s, float sweep_line) {
+        std::vector<ray_2d> result;
+        std::sort(ray_2d_s.begin(), ray_2d_s.end(),
+                  [sweep_line](ray_2d *a, ray_2d *b) {
+                      return ray_2d::compare(*a, *b, sweep_line);
+                  });
+        for (auto insert_node: ray_2d_s) {
+            result.push_back(*insert_node);
+        }
+        return result;
+    }
+
+
     static ray_2d &
     get_ray_2d(half_edge_struct<vertex_xy> &hf, int incident_half_edge);
 };
