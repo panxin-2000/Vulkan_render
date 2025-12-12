@@ -99,16 +99,6 @@ struct event_point {
 };
 
 
-template<typename T>
-bool if_half_edge_in_tree(binary_Tree_Node<T> *root, T temp) {
-    if (tree_find_value(root, temp) == nullptr) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
-
 void init_all_segments(half_edge_struct<vertex_xy> &hf) {
     hf.create_loop({1, 2}, {2, 5});
     hf.create_loop({1, 2}, {4, 2});
@@ -120,19 +110,6 @@ void init_all_segments(half_edge_struct<vertex_xy> &hf) {
 
 // 上面给出了来的左右点是对的，之后给出的话，两条边，小的不一定是起点。
 
-std::priority_queue<event_point, std::vector<event_point>, std::greater<> > &create_event_queue(
-    half_edge_struct<vertex_xy> &hf) {
-    auto event_points = new std::priority_queue<event_point, std::vector<event_point>, std::greater<> >;
-    for (auto vertice: hf.vertices) {
-        event_point temp{};
-        temp.x = vertice.x;
-        temp.y = vertice.y;
-        temp.incident_half_edge = vertice.incident_half_edge;
-        temp.if_intersect = event_point::no_intersect;
-        event_points->push(temp);
-    }
-    return *event_points;
-}
 
 auto create_event_tree(
     half_edge_struct<vertex_xy> &hf) {
