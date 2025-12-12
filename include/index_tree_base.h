@@ -9,7 +9,7 @@
 #include "tree_node.h"
 #include "tree_function.h"
 #include "tree_node_index.h"
-#include "index_tree_node.h"
+#include "index_binary_tree_node.h"
 
 
 template<typename T, typename index_node>
@@ -141,6 +141,75 @@ public:
                                         get_nil_index());
         }
         return new_node_v_index;
+    }
+
+    T *get_data(v_index index) {
+        auto temp = get_node_from_v_index(index);
+        if (temp != nullptr)
+            return &temp->data;
+        return nullptr;
+    }
+
+    v_index predecessor(v_index index) {
+        return BIN_tree::tree_predecessor(index,
+                                          get_nil_index(),
+                                          std::bind(&index_tree_base::get_node_ptr, this,
+                                                    std::placeholders::_1));
+    }
+
+    const node *predecessor_node(v_index index) {
+        return get_node_from_v_index(predecessor(index));
+    }
+
+    const node *successor_node(v_index index) {
+        return get_node_from_v_index(successor(index));
+    }
+
+    const T *predecessor_data(v_index index) {
+        return get_data(predecessor(index));
+    }
+
+    const T *successor_data(v_index index) {
+        return get_data(successor(index));
+    }
+
+
+    v_index successor(v_index index) {
+        return BIN_tree::tree_successor(index,
+                                        get_nil_index(),
+                                        std::bind(&index_tree_base::get_node_ptr, this,
+                                                  std::placeholders::_1));
+    }
+
+    node *tree_find_node(T input_data) {
+        return get_node_from_v_index(tree_find_value(input_data));
+    }
+
+    T *tree_find_data(T input_data) {
+        return get_data(tree_find_value(input_data));
+    }
+
+    v_index minimum(v_index index) {
+        return BIN_tree::tree_minimum(index,
+                                      get_nil_index(),
+                                      std::bind(&index_tree_base::get_node_ptr, this,
+                                                std::placeholders::_1));
+    }
+
+    const node *minimum_node(v_index index) {
+        return get_node_from_v_index(minimum_node(index));
+    }
+
+    const T *minimum_data(v_index index) {
+        return get_data(minimum(index));
+    }
+
+    const T *tree_minimum_data() {
+        return get_data(minimum(get_root_index()));
+    }
+
+    const node *tree_minimum_data_node() {
+        return get_node_from_v_index(get_root_index());
     }
 };
 

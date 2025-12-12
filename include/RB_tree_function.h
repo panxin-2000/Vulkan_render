@@ -183,11 +183,13 @@ namespace BIN_tree {
                        get_node(delete_node)->left != nil_ptr_or_index &&
                        get_node(delete_node)->right == nil_ptr_or_index) {
                 get_node(get_node(delete_node)->left)->color = RB_Tree_BLACK;
+                clean_sub_tree_father(get_node(delete_node)->left, nil_ptr_or_index, get_node);
                 return get_node(delete_node)->left;
             } else if (delete_node == root &&
                        get_node(delete_node)->left == nil_ptr_or_index &&
                        get_node(delete_node)->right != nil_ptr_or_index) {
                 get_node(get_node(delete_node)->right)->color = RB_Tree_BLACK;
+                clean_sub_tree_father(get_node(delete_node)->right, nil_ptr_or_index, get_node);
                 return get_node(delete_node)->right;
             }
         }

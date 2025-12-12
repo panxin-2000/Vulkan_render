@@ -4,6 +4,7 @@
 
 #ifndef TREE_NODE_INDEX_H
 #define TREE_NODE_INDEX_H
+
 class v_index {
 public:
     int16_t number;
