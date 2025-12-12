@@ -15,13 +15,14 @@ struct ray_2d {
     bool operator<(const ray_2d &right) const {
         float current_segment_y = y + gradient * (right.compare_x_position - x);
         float right_segment_y = right.y + right.gradient * (right.compare_x_position - right.x);
-        if (current_segment_y < right_segment_y) {
-            return true;
-        }
         if (current_segment_y == right_segment_y) {
             if (gradient < right.gradient) {
                 return true; // 梯度的比较
             }
+            return false;
+        }
+        if (current_segment_y < right_segment_y) {
+            return true;
         }
         return false;
     }

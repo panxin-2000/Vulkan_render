@@ -249,9 +249,8 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
         // 居然有一个空指针检查在这里，终于的是很像唯一一个
         auto temo = event_tree->tree_minimum_data();
         auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
-        vertex_xy current_vertex{
-            event_tree->tree_minimum_data()->x, event_tree->tree_minimum_data()->y, current_half_edge
-        };
+        auto temp_x = event_tree->tree_minimum_data()->x;
+        auto temp_y = event_tree->tree_minimum_data()->y;
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
         if (event_tree->tree_minimum_data()->if_intersect == event_point::is_intersect) {
             // 是线段中的交点,之后应该如何处理呢？
@@ -308,11 +307,8 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                           [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
                               const ray_2d &right = b->data;
                               const ray_2d &left = a->data;
-                              // float current_segment_y = left.y + left.gradient * (x - left.x);
-                              // float right_segment_y = right.y + right.gradient * (x - right.x);
-                              float current_segment_y = left.y + left.gradient * (right.compare_x_position - x);
-                              float right_segment_y = right.y + right.gradient * (right.compare_x_position - right.x);
-
+                              float current_segment_y = left.y + left.gradient * (x - left.x);
+                              float right_segment_y = right.y + right.gradient * (x - right.x);
                               if (abs(current_segment_y - right_segment_y) < 0.00001) {
                                   if (left.gradient < right.gradient) {
                                       return true; // 梯度的比较
@@ -336,11 +332,14 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                     }
                 }
                 assert(min_node != nullptr);
-
-
+                std::vector<ray_2d> ray_2d_vector;
                 for (auto insert_node: get_ray_need_sort) {
-                    std::swap(min_node->data, insert_node->data);
-                    min_node = insert_node->tree_successor(insert_node);
+                    ray_2d_vector.push_back(insert_node->data);
+                }
+
+                for (auto temp_ray_2d: ray_2d_vector) {
+                    min_node->data = temp_ray_2d;
+                    min_node = min_node->tree_successor(min_node);
                 }
                 for (auto insert_node: get_ray_need_sort) {
                     for (auto node: pre_and_success) {
@@ -360,14 +359,16 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
             }
 
             result.push_back(*event_tree->tree_minimum_data());
-        } else if (if_half_edge_in_tree(ray_root, ray_2d::get_ray_2d(hf, current_half_edge)) == false) {
+        }
+        if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::left) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
             test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
-        } else {
+        }
+        if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::right) {
             auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
         }
