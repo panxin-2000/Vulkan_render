@@ -8,6 +8,7 @@
 #include "half_edge.h"
 
 struct ray_2d {
+public:
     float x, y;
     float gradient;
     float compare_x_position;
@@ -35,10 +36,7 @@ struct ray_2d {
         return false;
     }
 
-    template<typename ptr>
-    static bool compare(ptr a, ptr b, float x) {
-        const ray_2d &right = b->data;
-        const ray_2d &left = a->data;
+    static bool compare(const ray_2d &left, const ray_2d &right, float x) {
         float current_segment_y = left.y + left.gradient * (x - left.x);
         float right_segment_y = right.y + right.gradient * (x - right.x);
         if (abs(current_segment_y - right_segment_y) < 0.00001) {

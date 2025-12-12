@@ -240,32 +240,22 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
     auto event_tree = create_event_tree(hf);
 
     std::vector<event_point> result;
-
     binary_Tree_Node<ray_2d> *ray_root;
     ray_root = nullptr; // 忽然发现这里插入的时候是有问题的
     v_index mini_node_index;
     for (; mini_node_index = event_tree->minimum(event_tree->get_root_index()),
            event_tree->tree_minimum_data() != nullptr;) {
         // 居然有一个空指针检查在这里，终于的是很像唯一一个
-        auto temo = event_tree->tree_minimum_data();
+        auto current_for_min = event_tree->tree_minimum_data();
         auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
-        auto temp_x = event_tree->tree_minimum_data()->x;
-        auto temp_y = event_tree->tree_minimum_data()->y;
+        auto temp_x = current_for_min->x;
+        auto temp_y = current_for_min->y;
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
-        if (event_tree->tree_minimum_data()->if_intersect == event_point::is_intersect) {
-            // 是线段中的交点,之后应该如何处理呢？
-            // 问题是这应该携带什么信息？需要拿到是那两条边相交的，
-            // 之后应该如何处理呢？//交换,既然是相交的，那么他们之前一定是相邻的，交互两个结点就好
-            auto intersect_vertex = event_tree->tree_minimum_data();
-            // 右端点是需要删除的，删除之前判断，上下是否都在集合当中，是的话，删除，不需要重新检测，否则需要重新检测
-            // for (auto end_edge: intersect_vertex->clean_from_tree) {
-            //     auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, end_edge));
-            //     ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
-            // }
-            // 删除没有问题，重新插入有问题，不能在这里删除
-
+        if (current_for_min->if_intersect == event_point::is_intersect) {
+            auto intersect_vertex = current_for_min;
             if (intersect_vertex->re_insert_to_tree.size() == 0) {
             } else if (intersect_vertex->re_insert_to_tree.size() == 1) {
+                // size 为 1 时的专属优化， size 为 2 时也可以添加一个专属优化
                 for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
                     auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
                     auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
@@ -304,12 +294,6 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                     for (auto insert_node: get_ray_need_sort) {
                         pre_and_success.erase(insert_node);
                     }
-                    auto x = intersect_vertex->x;
-                    // 需要一个排序
-                    std::sort(get_ray_need_sort.begin(), get_ray_need_sort.end(),
-                              [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
-                                  return ray_2d::compare(a, b, x);
-                              });
                     if (min_node == nullptr) {
                         // 下面这一行不对
                         for (auto node: pre_and_success) {
@@ -321,54 +305,57 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                             }
                         }
                     }
+
+                    // 需要一个排序
+                    auto x = intersect_vertex->x;
+                    std::sort(get_ray_need_sort.begin(), get_ray_need_sort.end(),
+                              [x](binary_Tree_Node<ray_2d> *a, binary_Tree_Node<ray_2d> *b) {
+                                  return ray_2d::compare(a->data, b->data, x);
+                              });
+
                     assert(min_node != nullptr);
+                    // 取值，并按顺序赋值
                     std::vector<ray_2d> ray_2d_vector;
                     for (auto insert_node: get_ray_need_sort) {
                         ray_2d_vector.push_back(insert_node->data);
                     }
-
                     for (auto temp_ray_2d: ray_2d_vector) {
                         min_node->data = temp_ray_2d;
                         min_node = min_node->tree_successor(min_node);
                     }
+                    // 进行比较查看是否存在相交
                     for (auto insert_node: get_ray_need_sort) {
                         for (auto node: pre_and_success) {
                             test_two_node_if_intersect(node, insert_node, hf, event_tree);
                         }
                     }
                 }
-
-                // 遍历一遍，找到现在的顺序？ 不需要吧，随便找一个点，向前并向后，直到不在set中，就必然不是了
-                // 保存一下这个顺序，目前是已经知道相交点了，ray 也是能够得出的，应该是有排序的办法的
-                // 排序完之后呢？拿到之外的最下与最上，与每个都进行比较,也可以直到不相交时就停止上或者下
-                // 结束
-                // 一个比较奇怪的想法是，能够删除之后，再重新插入？次数会爆炸，不要紧，重点是确定进行比较的两个对象
-                // 重新插入时会调用光线的排序，红黑树，在这个的效率上必然不算高
-                // 这里有一个前提条件，就是到底交点的扫描线时，已经全部全部处理完成了
-                // 最大的问题是排序,先将左边的全部处理掉，再将交点处理，最后将右边的全部删除
             }
 
-            result.push_back(*event_tree->tree_minimum_data());
-        } else if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::left) {
+            result.push_back(*current_for_min);
+        } else if (current_for_min->left_or_right == event_point::left_or_right_type::left) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
             auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
             test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
             test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
-        } else if (event_tree->tree_minimum_data()->left_or_right == event_point::left_or_right_type::right) {
-            auto delate_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
-            if (delate_node == nullptr) {
+        } else if (current_for_min->left_or_right == event_point::left_or_right_type::right) {
+            auto delete_node = tree_find_value_with_sweep_line(ray_root, ray_2d::get_ray_2d(hf, current_half_edge),
+                                                               current_for_min->x - 0.00001,
+                                                               std::bind(&ray_2d::compare, std::placeholders::_1,
+                                                                         std::placeholders::_2, std::placeholders::_3));
+            if (delete_node == nullptr) {
                 std::vector<binary_Tree_Node<ray_2d> *> inorder;
                 auto result_vector = inorder_tree_walk_with_stack(ray_root, &inorder);
-                for (auto node: inorder) {
+                for (auto node: *result_vector) {
                     if (node->data == ray_2d::get_ray_2d(hf, current_half_edge)) {
-                        delate_node = node;
+                        delete_node = node;
                         break;
                     }
                 }
-            }
-            ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delate_node);
+            } // 一定要删除，通过循环的方式排出找不到的情况
+            ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delete_node);
         }
         event_tree->delete_node(mini_node_index);
     }
@@ -376,16 +363,6 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
     return result;
 }
 
-// 说一下上面的代码有哪些没有完成
-// 第一个没有完成的是，多个线段相交在同一位置时应该如何处理
-// 第二个其实是水平的线段，在我的代码中应该是垂直线段，斜率为无穷
-
-// 把把 queue 变成一个 tree 吗？ 为什么需要？ 一个需要排序的办法，插入时能够自定义
-
-// 忽然想清楚了，为什么两个树不能合并的原因了，事件点是线段的两端
-// 而另一棵树的排序只是和射线相关的内容
-
-// 忽然想到来另一个问题，那就是线段之间不可以重合
 
 TEST(test_edge, test_create_edge) {
     half_edge_struct<vertex_xy> hf;

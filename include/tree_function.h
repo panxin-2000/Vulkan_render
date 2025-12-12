@@ -8,6 +8,7 @@
 #include "tree_level.h"
 #include "tree_postorder.h"
 #include "tree_preorder.h"
+#include <queue>
 
 namespace BIN_tree {
     // T2 RB_Tree_Node<segment_vector>   T  segment_vector
@@ -31,6 +32,25 @@ namespace BIN_tree {
         }
         return result_node;
     }
+
+    template<typename value_type, typename ptr, typename function, typename function_compare>
+    ptr tree_find_value_with_sweep_line(ptr root, value_type data, float sweep_x, function_compare compare,
+                                        ptr nil_ptr_or_index, function get_node) {
+        ptr new_root = root;
+        ptr result_node = nil_ptr_or_index;
+        while (new_root != nil_ptr_or_index) {
+            if (get_node(new_root)->data == data) {
+                return new_root;
+            } else if (compare(get_node(new_root)->data, data, sweep_x)) {
+                // 这里的前后的顺序，需要与插入时比较相同
+                new_root = get_node(new_root)->right;
+            } else {
+                new_root = get_node(new_root)->left;
+            }
+        }
+        return result_node;
+    }
+
 
     // 这个函数有问题，所有情况下都不能使用
     // data 的区域应该是一个封闭空间，判断data的封闭空间是否在要判断的结点的封闭空间内
@@ -565,6 +585,12 @@ template<typename value_type, typename ptr>
 ptr tree_find_value(ptr root, value_type data) {
     return BIN_tree::tree_find_value(root, data, static_cast<ptr>(nullptr),
                                      [](ptr insert_node) { return insert_node; });
+}
+
+template<typename value_type, typename ptr, typename function_compare>
+ptr tree_find_value_with_sweep_line(ptr root, value_type data, float sweep_line, function_compare compare) {
+    return BIN_tree::tree_find_value_with_sweep_line(root, data, sweep_line, compare, static_cast<ptr>(nullptr),
+                                                     [](ptr insert_node) { return insert_node; });
 }
 
 template<typename T>
