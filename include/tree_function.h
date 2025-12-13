@@ -34,14 +34,14 @@ namespace BIN_tree {
     }
 
     template<typename value_type, typename ptr, typename function, typename function_compare>
-    ptr tree_find_value_with_sweep_line(ptr root, value_type data, float sweep_x, function_compare compare,
+    ptr tree_find_value_with_sweep_line(ptr root, value_type data, function_compare compare,
                                         ptr nil_ptr_or_index, function get_node) {
         ptr new_root = root;
         ptr result_node = nil_ptr_or_index;
         while (new_root != nil_ptr_or_index) {
             if (get_node(new_root)->data == data) {
                 return new_root;
-            } else if (compare(get_node(new_root)->data, data, sweep_x)) {
+            } else if (compare(get_node(new_root)->data, data)) {
                 // 这里的前后的顺序，需要与插入时比较相同
                 new_root = get_node(new_root)->right;
             } else {
@@ -588,8 +588,8 @@ ptr tree_find_value(ptr root, value_type data) {
 }
 
 template<typename value_type, typename ptr, typename function_compare>
-ptr tree_find_value_with_sweep_line(ptr root, value_type data, float sweep_line, function_compare compare) {
-    return BIN_tree::tree_find_value_with_sweep_line(root, data, sweep_line, compare, static_cast<ptr>(nullptr),
+ptr tree_find_value_with_sweep_line(ptr root, value_type data, function_compare compare) {
+    return BIN_tree::tree_find_value_with_sweep_line(root, data, compare, static_cast<ptr>(nullptr),
                                                      [](ptr insert_node) { return insert_node; });
 }
 

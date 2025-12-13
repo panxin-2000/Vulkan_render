@@ -310,9 +310,9 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
             check_pre_and_success(ray_root, hf, event_tree, current_half_edge);
         } else if (current_for_min->left_or_right == event_point::left_or_right_type::right) {
             auto delete_node = tree_find_value_with_sweep_line(ray_root, ray_2d::get_ray_2d(hf, current_half_edge),
-                                                               current_for_min->x - 0.00001,
                                                                std::bind(&ray_2d::compare, std::placeholders::_1,
-                                                                         std::placeholders::_2, std::placeholders::_3));
+                                                                         std::placeholders::_2,
+                                                                         current_for_min->x - 0.00001));
             assert(delete_node != nullptr); // 一定要删除，通过循环的方式排出找不到的情况
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delete_node);
         }
