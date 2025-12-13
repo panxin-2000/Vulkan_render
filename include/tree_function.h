@@ -513,8 +513,9 @@ RB_Tree_Node right_rotate_with_color(RB_Tree_Node node,
     if (node != nil_ptr_or_index && get_node(node)->left == nil_ptr_or_index) {
         return nil_ptr_or_index;
     }
-    auto temp_color = get_node(get_node(node)->left)->color;
-    get_node(get_node(node)->left)->color = get_node(node)->color;
+    auto temp = get_node(node)->left;
+    auto temp_color = get_node(temp)->color;
+    get_node(temp)->color = get_node(node)->color;
     get_node(node)->color = temp_color;
     BIN_tree::right_rotate(node, nil_ptr_or_index, get_node);
 }

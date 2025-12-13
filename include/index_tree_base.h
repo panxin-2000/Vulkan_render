@@ -24,7 +24,7 @@ public:
         if (in == get_nil_index()) {
             return nullptr;
         }
-        return &details.at(in.number);
+        return &details.at(in);
     }
 
     // 这里的操作是什么意思呢？
@@ -58,7 +58,7 @@ public:
     std::vector<T> *translate_data(std::vector<v_index> src_s) {
         auto result = new std::vector<T>();
         for (auto src: src_s) {
-            result->push_back(get_node(src).data);
+            result->push_back(get_node_ptr(src)->data);
         }
         return result;
     }
@@ -88,19 +88,16 @@ public:
         return last_result;
     }
 
-    node &get_node(v_index need) {
-        return details.at(need.number);
-    }
 
     node *get_node_ptr(v_index need) {
         if (need == get_nil_index()) {
             return nullptr;
         }
-        return &details.at(need.number);
+        return &details.at(need);
     }
 
-    node &get_root_node() {
-        return details.at(get_root_index().number);
+    node *get_root_node() {
+        return &details.at(get_root_index());
     }
 
     v_index get_nil_index() {
@@ -109,7 +106,7 @@ public:
 
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
     bool update_new_delete_node(v_index delete_node_index) {
-        get_node(delete_node_index).left = delete_v_index;
+        get_node_ptr(delete_node_index)->left = delete_v_index;
         delete_v_index = delete_node_index;
         return true;
     }
@@ -117,7 +114,7 @@ public:
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
     v_index get_one_delete_node() {
         auto new_node_v_index = delete_v_index;
-        delete_v_index = get_node(new_node_v_index).left;
+        delete_v_index = get_node_ptr(new_node_v_index)->left;
         return new_node_v_index;
     }
 
@@ -130,7 +127,7 @@ public:
         v_index new_node_v_index;
         if (delete_v_index == get_nil_index()) {
             node new_node{input_data, get_nil_index()};
-            new_node_v_index.number = details.size();
+            new_node_v_index = details.size();
             details.push_back(new_node);
         } else {
             new_node_v_index = get_one_delete_node();

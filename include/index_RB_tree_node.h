@@ -13,12 +13,12 @@ class index_RB_Tree_Node {
     using ptr = T *;
 
 public:
-    v_index left;
-    v_index right;
-    v_index parent;
+    v_index left: 21;
+    v_index right: 21;
+    v_index parent: 21;
 
 
-    RB_Tree_Node_color color;
+    v_index color: 1;
 
 public:
     T data;

@@ -5,21 +5,24 @@
 #ifndef TREE_NODE_INDEX_H
 #define TREE_NODE_INDEX_H
 
-class v_index {
-public:
-    v_index(int16_t number) : number(number) {
-    }
 
-    v_index() = default;
+using v_index = uint64_t;
 
-    int16_t number;
-
-    friend bool operator==(v_index left, v_index right) {
-        return left.number == right.number;
-    }
-
-    friend bool operator!=(v_index left, v_index right) {
-        return left.number != right.number;
-    }
-};
+// class v_index {
+// public:
+//     v_index(int16_t number) : number(number) {
+//     }
+//
+//     v_index() = default;
+//
+//     int16_t number;
+//
+//     friend bool operator==(v_index left, v_index right) {
+//         return left.number == right.number;
+//     }
+//
+//     friend bool operator!=(v_index left, v_index right) {
+//         return left.number != right.number;
+//     }
+// };
 #endif //TREE_NODE_INDEX_H
