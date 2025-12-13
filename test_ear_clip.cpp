@@ -4,9 +4,9 @@
 
 #include <random>
 #include <gtest/gtest.h>
-#include "include/base_element/geometry/triangle.h"
+#include "base_element/geometry/triangle.h"
 #include "ear_clip.h"
-#include "half_edge.h"
+#include "base_element/half_edge/half_edge_struct.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 
@@ -230,8 +230,8 @@ TEST(half_edge, test_face_and_point) {
 
 void test_point_location(half_edge_struct<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
                          Point_2 find_point) {
-    Face_v_index result_face_index = 0;
-    Half_edge_v_index edge_index = 0;
+    face_index result_face_index = 0;
+    half_edge_index edge_index = 0;
     if (point_in_triangle_type::out_triangle ==
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, find_point)) {
         result_face_index = -1;
@@ -263,8 +263,8 @@ TEST(ear_clip, test_point_location) {
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
-        Face_v_index result_face_index = 0;
-        Half_edge_v_index edge_index = 0;
+        face_index result_face_index = 0;
+        half_edge_index edge_index = 0;
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {1, 1});
         EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {5, 1.1});

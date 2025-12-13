@@ -6,7 +6,7 @@
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
 #include "ear_clip.h"
-#include "half_edge.h"
+#include "base_element/half_edge/half_edge_struct.h"
 #include "triangle_graph.h"
 
 namespace delaunay_triangulation {
@@ -96,6 +96,107 @@ namespace delaunay_triangulation {
     // 再之后需要做什么操作呢？
     // 检查边，查看是否需要flip
 
+    Triangle_node<Point_2> *make_Triangle_node(half_edge_struct<vertex_xy> *hf, int face_index) {
+        auto temp_flag = hf->get_triangle_face_vertex(face_index);
+        auto new_triangle_node = new Triangle_node<Point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index);
+        return new_triangle_node;
+    }
+
+    /**
+ * 这个函数的目的是为了判断是否非法？
+ * 什么样才算非法呢？
+ * 第四个点在前三个点组成的外接圆内
+ * flip之前，一个三角形非法，另一个也是非法的，可以用两个圆随意摆放得到这个结果
+ * 有一个前提条件，第四个点不能在三角形的内部
+ * @param hf
+ * @param half_edge_index
+ * @param vertex_index
+ * @return
+ */
+    bool legalize_edge(half_edge_struct<vertex_xy> *hf, half_edge_index half_edge_index, vertex_index vertex_index,
+                       Triangle_node_tree<Point_2> *tree) {
+        // 有了一个half_edge_index 能找到那个面
+        // 有了 face_index ,能够找到 三个顶点
+        // 还能找到反面，还能找到反面的顶点，不在 half_edge_index 上的顶点
+        // 找到 face_index 的三个顶点，计算出一个圆心和半径
+        // 反面的顶点 与 圆心和半径比较，判断是否在圆内
+        // 在圆内就是非法
+        // 非法就需要做什么呢？
+        // flip 对角线
+        // 然后再进行检测，还需要检测两个内容
+        // 能知道 half_edge_index 和 opposite_of_half_edge_index
+        // 两个face,总共有6条边，去掉 上面的两条边，再去掉与 vertex_index 连接的两条边
+        // 最后的得到剩余的两条边，重新调用这个函数，最后一个参数写什么呢？还是 vertex_index ,这个参数不需要改变
+        // 然后一个问题上，这个操作我放在哪里呢？ 我觉得放在另一个文件里面会稍微好一点
+        // 毕竟是操作half_edge数据结构本身的内容
+        // 但是也没有改变太多的内容
+        auto face_index = hf->get_face_index(half_edge_index);
+        auto all_edges_of_first_face = hf->get_all_edge_of_face(half_edge_index);
+        auto all_edges_of_second_face = hf->get_all_edge_of_face(hf->get_opposite_edge_index(half_edge_index));
+        // 下面的判断里面少了一步确定非凹，两个三角形组成了一个凹四边形 todo:
+        if (all_edges_of_first_face.size() == 3 &&
+            all_edges_of_second_face.size() == 3 &&
+            hf->if_convex_quadrangle(half_edge_index) &&
+            hf->get_face(hf->get_edge(hf->get_opposite_edge_index(half_edge_index)).incident_face).boundary_type !=
+            Face::BOUNDARY_TYPE::hole_face) {
+            //    B----------D
+            //    *  *       *
+            //    *    *     *
+            //    *      *   *
+            //    *        * *
+            //    A----------C
+            //  BC 两个点相互交换应该是没有问题的
+            auto BC_edge = half_edge_index;
+
+            auto AC_or_AB_edge = hf->get_pre_edge_index(half_edge_index);
+            auto AB_or_AC_edge = hf->get_next_edge_index(half_edge_index);
+
+            // 确定是 AC_or_AB 而不是 DB_or_DC
+            if (hf->get_edge(AC_or_AB_edge).vertex_index == vertex_index ||
+                hf->get_edge(AB_or_AC_edge).vertex_index == vertex_index) {
+                AC_or_AB_edge = hf->get_pre_edge_index(hf->get_opposite_edge_index(half_edge_index));
+                AB_or_AC_edge = hf->get_next_edge_index(hf->get_opposite_edge_index(half_edge_index));
+            }
+            auto A_point = hf->get_vertex(AC_or_AB_edge);
+            auto B_point = hf->get_vertex(half_edge_index);
+            auto D_point = hf->vertices.at(vertex_index);
+            auto C_point = hf->get_vertex(hf->get_opposite_edge_index(half_edge_index));
+            //
+
+            auto centre = Point_2::centre_of_a_circle(A_point, B_point, C_point);
+            if (Point_2::distance_compare(D_point - centre, C_point - centre)) {
+                // 当前是合法的
+            } else {
+                // 当前是非法的，需要执行flip操作，将原本的BC边切换为AC边
+                Triangle_node<Point_2> *triangle_node;
+                Triangle_node<Point_2> *triangle_node_2;
+                if (tree != nullptr) {
+                    auto centroid = hf->get_centroid(hf->get_face_index(half_edge_index));
+                    auto centroid_2 = hf->
+                            get_centroid(hf->get_face_index(hf->get_opposite_edge_index(half_edge_index)));
+                    triangle_node = tree->find_triangle_node(centroid);
+                    triangle_node_2 = tree->find_triangle_node(centroid_2);
+                }
+                hf->flip_edge(half_edge_index);
+                if (tree != nullptr) {
+                    auto new_triangle_node = make_Triangle_node(hf, hf->get_face_index(half_edge_index));
+                    auto new_2_triangle_node = make_Triangle_node(hf,
+                                                                  hf->get_face_index(
+                                                                      hf->get_opposite_edge_index(half_edge_index)));
+                    triangle_node->add_triangle_node(new_triangle_node);
+                    triangle_node->add_triangle_node(new_2_triangle_node);
+                    triangle_node_2->add_triangle_node(new_triangle_node);
+                    triangle_node_2->add_triangle_node(new_2_triangle_node);
+                }
+                // half_edge_index 这个索引并没有改变
+                // 但是边需要变更了，需要变更为 AB 或者 AC ，但是不能是 BD 或者 CD ,前面添加条件确定了
+                legalize_edge(hf, AC_or_AB_edge, vertex_index, tree);
+                legalize_edge(hf, AB_or_AC_edge, vertex_index, tree);
+            }
+        }
+        return false;
+    }
+
 
     Half_edge *delaunay_triangulation(std::vector<Point_2> input_points) {
         auto box = AABB_min_max<Point_2>(input_points);
@@ -111,15 +212,15 @@ namespace delaunay_triangulation {
 
 
         for (auto point: input_points) {
-            Face_v_index result_face_index = 0;
-            Half_edge_v_index edge_index = 0;
+            face_index result_face_index = 0;
+            half_edge_index edge_index = 0;
             auto triangle_node = tree->find_triangle_node(point); // 拿到结点
             // triangle_node只负责给出face_index,再去判断这个点是在三角形的边上还是内部(half_edge 给出)
             // 给出结果，相应结束的话，可以很快的结束这个问题
             if (triangle_node != nullptr) {
                 result_face_index = triangle_node->face_index;
             }
-            auto type_temp = hf->get_vertex_in_face(point,
+            auto type_temp = hf->if_vertex_in_face(point,
                                                     hf->get_face_incident_edge(result_face_index),
                                                     edge_index);
 
@@ -145,11 +246,11 @@ namespace delaunay_triangulation {
                 auto new_faces = hf->face_add_new_point(result_face_index, point, vertex_index);
                 for (auto face: new_faces) {
                     std::vector<Triangle<Point_2> > result_segments{};
-                    auto new_triangle_node = hf->make_Triangle_node(face);
+                    auto new_triangle_node = make_Triangle_node(hf, face);
                     triangle_node->add_triangle_node(new_triangle_node);
 
                     auto temp = hf->get_ab_edge_from_face_abc(face, vertex_index);
-                    hf->legalize_edge(temp, vertex_index, tree);
+                    legalize_edge(hf, temp, vertex_index, tree);
                     // 有问题，运行的时候发生了死循环
                 }
             } else if (type_temp == point_in_triangle_type::on_edge) {
@@ -166,13 +267,13 @@ namespace delaunay_triangulation {
 
                 ear_clip_triangulations(*hf, db_edge_index);
                 ear_clip_triangulations(*hf, hf->get_opposite_edge_index(db_edge_index)); {
-                    auto new_triangle_node = hf->make_Triangle_node(hf->get_face_index(ab_edge_index));
-                    auto new_2_triangle_node = hf->make_Triangle_node(hf->get_face_index(db_edge_index));
+                    auto new_triangle_node = make_Triangle_node(hf, hf->get_face_index(ab_edge_index));
+                    auto new_2_triangle_node = make_Triangle_node(hf, hf->get_face_index(db_edge_index));
                     triangle_node->add_triangle_node(new_triangle_node);
                     triangle_node->add_triangle_node(new_2_triangle_node);
                 } {
-                    auto new_triangle_node = hf->make_Triangle_node(hf->get_face_index(ba_edge_index));
-                    auto new_2_triangle_node = hf->make_Triangle_node(hf->get_face_index(bd_edge_index));
+                    auto new_triangle_node = make_Triangle_node(hf, hf->get_face_index(ba_edge_index));
+                    auto new_2_triangle_node = make_Triangle_node(hf, hf->get_face_index(bd_edge_index));
                     triangle_node_2->add_triangle_node(new_triangle_node);
                     triangle_node_2->add_triangle_node(new_2_triangle_node);
                 }
@@ -186,7 +287,7 @@ namespace delaunay_triangulation {
                 // 拿到的面的数量是不够的,应该是1，4，0，5的，但是目前数量不够
                 for (auto face: all_face_from_one_vertex) {
                     auto temp = hf->get_ab_edge_from_face_abc(face, vertex_index);
-                    hf->legalize_edge(temp, vertex_index, tree);
+                    legalize_edge(hf, temp, vertex_index, tree);
                 }
             }
         }

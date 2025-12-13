@@ -2,21 +2,23 @@
 // Created by 潘鑫 on 2025/10/24.
 //
 
-#include "half_edge.h"
+#include "base_element/half_edge/half_edge_struct.h"
 #include <gtest/gtest.h>
 
 TEST(tetrahedron, init_tetrahedron) {
     half_edge_struct<vertex_xyz> hf;
     auto b_half_edge_index = hf.create_loop({-1, 1, 0}, {0, -1, 0});
     auto c_half_edge_index = hf.add_edge(b_half_edge_index, {0, 0, 2});
-    auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)), {1, 1, 2});
-    hf.split_face(hf.get_opposite_edge_index(hf.get_pre_edge_index(d_half_edge_index)), hf.get_opposite_edge_index(c_half_edge_index));
+    auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)),
+                                         {1, 1, 2});
+    hf.split_face(hf.get_opposite_edge_index(hf.get_pre_edge_index(d_half_edge_index)),
+                  hf.get_opposite_edge_index(c_half_edge_index));
 
     std::vector<Triangle<Point_3> > expect_triangles{};
     std::vector<Triangle<Point_3> > result_segments{};
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}}); // blue
-    expect_triangles.push_back(Triangle<Point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}});  // yellow
-    expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}});  //  green
+    expect_triangles.push_back(Triangle<Point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}}); // yellow
+    expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}}); //  green
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 

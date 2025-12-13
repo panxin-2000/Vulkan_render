@@ -15,122 +15,49 @@
 // Created by 潘鑫 on 2025/10/21.
 //
 
-#include "base_element/point_3.h"
-#include "point_in_on_out_triangle.h"
-#include "triangle_graph.h"
-
-struct vertex_xy : public Point_2 {
-    using point_type = Point_2;
-
-    int incident_half_edge;
-
-    vertex_xy(float x1, float y1) : Point_2(x1, y1) {
-    }
-
-    vertex_xy(Point_2 point) : Point_2(point.x, point.y) {
-    }
-
-    vertex_xy(float x1, float y1, int incident_half_edge_1) : Point_2(x1, y1) {
-        incident_half_edge = incident_half_edge_1;
-    }
-
-    vertex_xy operator/(unsigned long number) const {
-        const vertex_xy result(x / number, y / number);
-        return result;
-    }
-
-    bool operator<(const vertex_xy &right) const {
-        if (y < right.y) {
-            // 先比较x轴，x轴小的为小
-            return true;
-        } else if (y == right.y && x < right.x) {
-            // 之后再比较y轴，y轴小的为小
-            return true;
-        } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {
-                // 值完全一样，比较是否是起点，是起点的边，
-                return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
-            }
-        }
-        return false;
-    }
-
-    bool operator==(const vertex_xy &right) const {
-        if (x == right.x && y == right.y && incident_half_edge == right.incident_half_edge) {
-            return true;
-        }
-        return false;
-    }
-};
+#include "../../point_in_on_out_triangle.h"
+#include "../../triangle_graph.h"
 
 
-struct vertex_xyz : public Point_3 {
-    int incident_half_edge;
-
-    vertex_xyz(float x1, float y1, float z1) : Point_3(x1, y1, z1) {
-    }
-
-    bool operator<(const vertex_xyz &right) const {
-        if (y < right.y) {
-            // 先比较x轴，x轴小的为小
-            return true;
-        } else if (y == right.y && x < right.x) {
-            // 之后再比较y轴，y轴小的为小
-            return true;
-        } else if (x == right.x && y == right.y) {
-            if (incident_half_edge % 2 == 0) {
-                // 值完全一样，比较是否是起点，是起点的边，
-                return true; // a起点，b不是起点，a小，a不是起点，那么b是不是起点都在a前，没什么关系
-            }
-        }
-        return false;
-    }
-
-    bool operator==(const vertex_xyz &right) const {
-        if (x == right.x && y == right.y && incident_half_edge == right.incident_half_edge) {
-            return true;
-        }
-        return false;
-    }
-};
+#include "base_element/half_edge/half_edge_vertex.h"
 
 
-using Half_edge_v_index = int;
-using Vertices_v_index = int;
-using Face_v_index = int;
+using half_edge_index = int;
+using vertex_index = int;
+using face_index = int;
 // 索引还是比较啊随意的，问题是如何建立一条边？
-
-struct Half_edge {
-    Vertices_v_index vertex_index;
-    Half_edge_v_index twin_half_edge;
-    Half_edge_v_index next_half_edge;
-    Half_edge_v_index pre_half_edge;
-    Face_v_index incident_face;
-};
-
-struct Face {
-    Half_edge_v_index bounding_half_edge;
-
-    enum BOUNDARY_TYPE {
-        bounding_face,
-        hole_face,
-    };
-
-    BOUNDARY_TYPE boundary_type;
-};
+#include "base_element/half_edge/half_edge.h"
+#include "base_element/half_edge/face.h"
 
 
-// 还需要有face
+// 还可以把half_edge和face也做出模版参数,方便进行扩展
 template<typename Vertex>
 struct half_edge_struct {
     std::vector<Half_edge> half_edges;
     std::vector<Vertex> vertices;
     std::vector<Face> faces;
-    std::vector<Face_v_index> faces_delete;
+    std::vector<face_index> faces_delete;
     using vertex_base_type = typename Vertex::point_type;
 
-    Half_edge_v_index add_edge(Vertex start_point,
-                               Vertex end_point) {
+    struct History {
+        std::vector<std::pair<vertex_index, Vertex> > vertices;
+        std::vector<std::pair<half_edge_index, Half_edge> > half_edges;
+        std::vector<std::pair<face_index, Face> > faces;
+    };
+
+    std::array<History, 10> history;
+    uint16_t current_history = 0;
+
+    // 还需要添加检查，不要造成重复添加值
+#define half_edges_change(index,detail)                            \
+    if constexpr(false){                                           \
+    auto &temp = history[current_history].half_edges;              \
+    temp.push_back(std::make_pair(index, half_edges.at(index)));   \
+    }                                                              \
+    half_edges.at(index).detail
+
+    half_edge_index add_edge(Vertex start_point,
+                             Vertex end_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         start_point.incident_half_edge = half_edges_size;
@@ -147,7 +74,7 @@ struct half_edge_struct {
     // 如果之前内部的面是空的话，那么不需要创建新的face
     // 如果不为空的话，那么是什么样子的呢？
     // 需要新建立一个面，并更改掉一些原本的内容
-    Half_edge_v_index add_edge(Half_edge_v_index current_edge, Vertex middle_point) {
+    half_edge_index add_edge(half_edge_index current_edge, Vertex middle_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int faces_size = faces.size();
@@ -202,20 +129,20 @@ struct half_edge_struct {
         return red_e;
     }
 
-    Half_edge_v_index add_half_edge(Vertices_v_index vertex_index,
-                                    Half_edge_v_index temp_twin_half_edge,
-                                    Half_edge_v_index next_half_edge,
-                                    Half_edge_v_index pre_half_edge,
-                                    Face_v_index incident_face) {
+    half_edge_index add_half_edge(vertex_index vertex_index,
+                                  half_edge_index temp_twin_half_edge,
+                                  half_edge_index next_half_edge,
+                                  half_edge_index pre_half_edge,
+                                  face_index incident_face) {
         add_half_edge(vertex_index, next_half_edge, pre_half_edge, incident_face);
     }
 
-    Half_edge_v_index add_half_edge(Vertices_v_index vertex_index,
-                                    Half_edge_v_index next_half_edge,
-                                    Half_edge_v_index pre_half_edge,
-                                    Face_v_index incident_face) {
+    half_edge_index add_half_edge(vertex_index vertex_index,
+                                  half_edge_index next_half_edge,
+                                  half_edge_index pre_half_edge,
+                                  face_index incident_face) {
         int half_edges_size = half_edges.size();
-        Half_edge_v_index twin_half_edge;
+        half_edge_index twin_half_edge;
         // half_edges_size 为 0 时， twin_half_edge = 1
         // half_edges_size 为 1 时， twin_half_edge = 0
         if (half_edges_size % 2 == 0) {
@@ -235,7 +162,7 @@ struct half_edge_struct {
         return half_edges_size;
     }
 
-    Half_edge_v_index delete_edge(Half_edge_v_index current_edge) {
+    half_edge_index delete_edge(half_edge_index current_edge) {
         auto opposite_edge_index = get_opposite_edge_index(current_edge);
         get_edge(get_edge(current_edge).pre_half_edge).next_half_edge = get_edge(opposite_edge_index).next_half_edge;
         get_edge(get_edge(opposite_edge_index).next_half_edge).pre_half_edge = get_edge(current_edge).pre_half_edge;
@@ -263,7 +190,7 @@ struct half_edge_struct {
      * @param d_point
      * @return
      */
-    Half_edge_v_index insert_edge(Half_edge_v_index current_edge, Vertex d_point) {
+    half_edge_index insert_edge(half_edge_index current_edge, Vertex d_point) {
         int half_edges_size = half_edges.size();
         int vertices_size = vertices.size();
         int insert_face = half_edges.at(current_edge).incident_face;
@@ -320,7 +247,7 @@ struct half_edge_struct {
     }
 
     // 返回AB边的索引,有一个前置要求，要求a,b,c三个点已经是逆时针了
-    Half_edge_v_index add_triangle(Vertex point_a, Vertex point_b, Vertex point_c) {
+    half_edge_index add_triangle(Vertex point_a, Vertex point_b, Vertex point_c) {
         auto half_edge_index_s = create_loop(point_b, point_a);
         auto first_half_edge = half_edge_index_s;
         add_edge(half_edge_index_s, point_c);
@@ -332,8 +259,8 @@ struct half_edge_struct {
     // 创建loop的时候只会创建一个面。，这个退化的线之内全部都是这个面
     // 返回 start_point 指向 end_point 索引的边，
     // 假设输入是 a , b , 那么返回的是 ab 的索引
-    Half_edge_v_index create_loop(Vertex start_point,
-                                  Vertex end_point) {
+    half_edge_index create_loop(Vertex start_point,
+                                Vertex end_point) {
         auto half_edges_size = half_edges.size();
         auto vertices_size = vertices.size();
         auto faces_size = faces.size();
@@ -357,12 +284,12 @@ struct half_edge_struct {
     }
 
     // 在一个两个顶点直接插入一条边，将原本的一个face，分为两个face
-    Half_edge_v_index split_face(Face_v_index split_face, Vertex first_point,
-                                 Vertex second_point) {
+    half_edge_index split_face(face_index split_face, Vertex first_point,
+                               Vertex second_point) {
         auto all_edges_first_point = get_all_edge_of_vertex(first_point);
         auto all_edges_second_point = get_all_edge_of_vertex(second_point);
-        Half_edge_v_index first_edge;
-        Half_edge_v_index second_edge;
+        half_edge_index first_edge;
+        half_edge_index second_edge;
         for (auto edge_first_point: all_edges_first_point) {
             if (get_edge(edge_first_point).incident_face == split_face) {
                 first_edge = edge_first_point;
@@ -378,11 +305,11 @@ struct half_edge_struct {
         return split_face(first_edge, second_point);
     }
 
-    Half_edge_v_index split_face(Half_edge_v_index first_edge,
-                                 Vertex second_point) {
-        Face_v_index split_face = get_edge(first_edge).incident_face;
+    half_edge_index split_face(half_edge_index first_edge,
+                               Vertex second_point) {
+        face_index split_face = get_edge(first_edge).incident_face;
         auto all_edges_second_point = get_all_edge_of_vertex(second_point);
-        Half_edge_v_index second_edge;
+        half_edge_index second_edge;
 
         for (auto edge_second_point: all_edges_second_point) {
             if (get_edge(edge_second_point).incident_face == split_face) {
@@ -395,8 +322,8 @@ struct half_edge_struct {
 
     // 最后开始做的时候没有写注释
     // 参考上面的代码，才能知道具体的内容是什么
-    Half_edge_v_index split_face(Half_edge_v_index first_edge,
-                                 Half_edge_v_index second_edge) {
+    half_edge_index split_face(half_edge_index first_edge,
+                               half_edge_index second_edge) {
         // first_edge 是我画的图中的 E_a
         // first_edge 是我画的图中的 E_h
         auto E_a = first_edge;
@@ -423,10 +350,12 @@ struct half_edge_struct {
             P_b, E_f,
             E_a, E_c, faces_size
         );
-        half_edges.at(E_c).next_half_edge = E_g;
-        half_edges.at(E_I).next_half_edge = E_f;
-        half_edges.at(E_h).pre_half_edge = E_f;
-        half_edges.at(E_a).pre_half_edge = E_g;
+
+
+        half_edges_change(E_c, next_half_edge) = E_g;
+        half_edges_change(E_I, next_half_edge) = E_f;
+        half_edges_change(E_h, pre_half_edge) = E_f;
+        half_edges_change(E_a, pre_half_edge) = E_g;
 
         // 下一步需要做什么呢？将整个E_a的循环全部都设置为
         set_face_for_edge_loop(E_a, faces_size); // 将被劈开的另一边全部设置为同一个face
@@ -437,8 +366,8 @@ struct half_edge_struct {
         return E_g;
     }
 
-    Half_edge_v_index
-    get_ab_edge_from_face_abc(Face_v_index face_index_para, Vertices_v_index vertex_c_index) {
+    half_edge_index
+    get_ab_edge_from_face_abc(face_index face_index_para, vertex_index vertex_c_index) {
         auto edge_indices = get_all_edge_of_face(get_face(face_index_para).bounding_half_edge);
         for (auto edge_index: edge_indices) {
             if (get_edge(edge_index).vertex_index != vertex_c_index ||
@@ -455,8 +384,8 @@ struct half_edge_struct {
      * @param vertex_index
      * @return 返回这三个face的索引
      */
-    std::vector<Face_v_index> face_add_new_point(int face_index_para, Vertex add_point, int &vertex_index) {
-        std::vector<Face_v_index> new_faces;
+    std::vector<face_index> face_add_new_point(int face_index_para, Vertex add_point, int &vertex_index) {
+        std::vector<face_index> new_faces;
         get_face(face_index_para).bounding_half_edge;
         auto all_edges_of_first_face = get_all_edge_of_face(get_face(face_index_para).bounding_half_edge);
         if (all_edges_of_first_face.size() == 3) {
@@ -507,6 +436,8 @@ struct half_edge_struct {
         return new_faces;
     }
 
+
+    /***************************下面的代码都不会更改原本的结构***********************************/
     /**
      * 一个边会有两个相邻的面，判断这两个相邻的面组成的多边形是否是凸的
      * @param edge_index
@@ -593,99 +524,6 @@ struct half_edge_struct {
         return false;
     }
 
-    /**
-     * 这个函数的目的是为了判断是否非法？
-     * 什么样才算非法呢？
-     * 第四个点在前三个点组成的外接圆内
-     * flip之前，一个三角形非法，另一个也是非法的，可以用两个圆随意摆放得到这个结果
-     * 有一个前提条件，第四个点不能在三角形的内部
-     * @param hf
-     * @param half_edge_index
-     * @param vertex_index
-     * @return
-     */
-    bool legalize_edge(Half_edge_v_index half_edge_index, Vertices_v_index vertex_index,
-                       Triangle_node_tree<Point_2> *tree) {
-        // 有了一个half_edge_index 能找到那个面
-        // 有了 face_index ,能够找到 三个顶点
-        // 还能找到反面，还能找到反面的顶点，不在 half_edge_index 上的顶点
-        // 找到 face_index 的三个顶点，计算出一个圆心和半径
-        // 反面的顶点 与 圆心和半径比较，判断是否在圆内
-        // 在圆内就是非法
-        // 非法就需要做什么呢？
-        // flip 对角线
-        // 然后再进行检测，还需要检测两个内容
-        // 能知道 half_edge_index 和 opposite_of_half_edge_index
-        // 两个face,总共有6条边，去掉 上面的两条边，再去掉与 vertex_index 连接的两条边
-        // 最后的得到剩余的两条边，重新调用这个函数，最后一个参数写什么呢？还是 vertex_index ,这个参数不需要改变
-        // 然后一个问题上，这个操作我放在哪里呢？ 我觉得放在另一个文件里面会稍微好一点
-        // 毕竟是操作half_edge数据结构本身的内容
-        // 但是也没有改变太多的内容
-        auto face_index = get_face_index(half_edge_index);
-        auto all_edges_of_first_face = get_all_edge_of_face(half_edge_index);
-        auto all_edges_of_second_face = get_all_edge_of_face(get_opposite_edge_index(half_edge_index));
-        // 下面的判断里面少了一步确定非凹，两个三角形组成了一个凹四边形 todo:
-        if (all_edges_of_first_face.size() == 3 &&
-            all_edges_of_second_face.size() == 3 &&
-            if_convex_quadrangle(half_edge_index) &&
-            get_face(get_edge(get_opposite_edge_index(half_edge_index)).incident_face).boundary_type !=
-            Face::BOUNDARY_TYPE::hole_face) {
-            //    B----------D
-            //    *  *       *
-            //    *    *     *
-            //    *      *   *
-            //    *        * *
-            //    A----------C
-            //  BC 两个点相互交换应该是没有问题的
-            auto BC_edge = half_edge_index;
-
-            auto AC_or_AB_edge = get_pre_edge_index(half_edge_index);
-            auto AB_or_AC_edge = get_next_edge_index(half_edge_index);
-
-            // 确定是 AC_or_AB 而不是 DB_or_DC
-            if (get_edge(AC_or_AB_edge).vertex_index == vertex_index ||
-                get_edge(AB_or_AC_edge).vertex_index == vertex_index) {
-                AC_or_AB_edge = get_pre_edge_index(get_opposite_edge_index(half_edge_index));
-                AB_or_AC_edge = get_next_edge_index(get_opposite_edge_index(half_edge_index));
-            }
-            auto A_point = get_vertex(AC_or_AB_edge);
-            auto B_point = get_vertex(half_edge_index);
-            auto D_point = vertices.at(vertex_index);
-            auto C_point = get_vertex(get_opposite_edge_index(half_edge_index));
-            //
-
-            auto centre = Point_2::centre_of_a_circle(A_point, B_point, C_point);
-            if (Point_2::distance_compare(D_point - centre, C_point - centre)) {
-                // 当前是合法的
-            } else {
-                // 当前是非法的，需要执行flip操作，将原本的BC边切换为AC边
-                Triangle_node<Point_2> *triangle_node;
-                Triangle_node<Point_2> *triangle_node_2;
-                if (tree != nullptr) {
-                    auto centroid = get_centroid(get_face_index(half_edge_index));
-                    auto centroid_2 = get_centroid(get_face_index(get_opposite_edge_index(half_edge_index)));
-                    triangle_node = tree->find_triangle_node(centroid);
-                    triangle_node_2 = tree->find_triangle_node(centroid_2);
-                }
-                flip_edge(half_edge_index);
-                if (tree != nullptr) {
-                    auto new_triangle_node = make_Triangle_node(get_face_index(half_edge_index));
-                    auto new_2_triangle_node = make_Triangle_node(
-                        get_face_index(get_opposite_edge_index(half_edge_index)));
-                    triangle_node->add_triangle_node(new_triangle_node);
-                    triangle_node->add_triangle_node(new_2_triangle_node);
-                    triangle_node_2->add_triangle_node(new_triangle_node);
-                    triangle_node_2->add_triangle_node(new_2_triangle_node);
-                }
-
-                // half_edge_index 这个索引并没有改变
-                // 但是边需要变更了，需要变更为 AB 或者 AC ，但是不能是 BD 或者 CD ,前面添加条件确定了
-                legalize_edge(AC_or_AB_edge, vertex_index, tree);
-                legalize_edge(AB_or_AC_edge, vertex_index, tree);
-            }
-        }
-        return false;
-    }
 
     Segment<Point_2> get_segment(int incident_half_edge) {
         // 稍微有一点点的问题啊？
@@ -736,41 +574,41 @@ struct half_edge_struct {
         return faces.at(face_index);
     }
 
-    [[nodiscard]] Half_edge_v_index &get_face_incident_edge(const int face_index) {
+    [[nodiscard]] half_edge_index &get_face_incident_edge(const int face_index) {
         return faces.at(face_index).bounding_half_edge;
     }
 
-    [[nodiscard]] Half_edge_v_index get_next_edge_index(const int half_edge_index) const {
+    [[nodiscard]] half_edge_index get_next_edge_index(const int half_edge_index) const {
         const int result = half_edges.at(half_edge_index).next_half_edge;
         return result;
     }
 
-    [[nodiscard]] Half_edge_v_index get_pre_edge_index(const int half_edge_index) const {
+    [[nodiscard]] half_edge_index get_pre_edge_index(const int half_edge_index) const {
         const int result = half_edges.at(half_edge_index).pre_half_edge;
         return result;
     }
 
-    [[nodiscard]] Half_edge_v_index get_twin_edge_index(const int half_edge_index) const {
+    [[nodiscard]] half_edge_index get_twin_edge_index(const int half_edge_index) const {
         const int result = half_edges.at(half_edge_index).twin_half_edge;
         return result;
     }
 
-    [[nodiscard]] Half_edge_v_index get_opposite_edge_index(const int half_edge_index) const {
+    [[nodiscard]] half_edge_index get_opposite_edge_index(const int half_edge_index) const {
         const int result = half_edges.at(half_edge_index).twin_half_edge;
         return result;
     }
 
-    [[nodiscard]] Vertices_v_index get_vertices_index(const int half_edge_index) const {
+    [[nodiscard]] vertex_index get_vertices_index(const int half_edge_index) const {
         const int result = half_edges.at(half_edge_index).vertex_index;
         return result;
     }
 
-    [[nodiscard]] Face_v_index get_face_index(Half_edge_v_index half_edge_index) {
+    [[nodiscard]] face_index get_face_index(half_edge_index half_edge_index) {
         return half_edges.at(half_edge_index).incident_face;
     }
 
-    std::vector<Half_edge_v_index> get_all_edge_of_vertex(int vertex_index) {
-        std::vector<Half_edge_v_index> result;
+    std::vector<half_edge_index> get_all_edge_of_vertex(int vertex_index) {
+        std::vector<half_edge_index> result;
         int current_half_edge_index = vertices.at(vertex_index).incident_half_edge;
         int first_half_edge = current_half_edge_index;
         while (true) {
@@ -784,18 +622,17 @@ struct half_edge_struct {
         }
     }
 
-    std::vector<Face_v_index> get_all_face_of_vertex(int vertex_index) {
+    std::vector<face_index> get_all_face_of_vertex(int vertex_index) {
         auto all_edges = get_all_edge_of_vertex(vertex_index);
-        std::vector<Face_v_index> result;
-        for (Half_edge_v_index single_edge: all_edges) {
+        std::vector<face_index> result;
+        for (half_edge_index single_edge: all_edges) {
             result.push_back(get_edge(single_edge).incident_face);
         }
         return result;
     }
 
-
-    std::vector<Half_edge_v_index> get_all_edge_of_face(const int half_edge_index_of_face) {
-        std::vector<Half_edge_v_index> result;
+    std::vector<half_edge_index> get_all_edge_of_face(const int half_edge_index_of_face) {
+        std::vector<half_edge_index> result;
         int current_half_edge_index = half_edge_index_of_face;
         int first_half_edge = current_half_edge_index;
         while (true) {
@@ -820,7 +657,7 @@ struct half_edge_struct {
     }
 
 
-    [[nodiscard]] std::vector<Point_2> get_vertices(const std::vector<Half_edge_v_index> &half_edge_indices) const {
+    [[nodiscard]] std::vector<Point_2> get_vertices(const std::vector<half_edge_index> &half_edge_indices) const {
         std::vector<Point_2> points{};
         for (auto half_edge_index: half_edge_indices) {
             Point_2 temp_point{};
@@ -864,24 +701,16 @@ struct half_edge_struct {
 
     Triangle<vertex_base_type> get_triangle_face_vertex(const int face_index_para) {
         auto temps = get_all_edge_of_face(get_face_incident_edge(face_index_para));
-        if (temps.size() == 3) {
-            auto a = get_vertex(temps.at(0));
-            auto b = get_vertex(temps.at(1));
-            auto c = get_vertex(temps.at(2));
+        auto a = get_vertex(temps.at(0));
+        auto b = get_vertex(temps.at(1));
+        auto c = get_vertex(temps.at(2));
 
-            Triangle<vertex_base_type> t{
-                static_cast<vertex_base_type>(a),
-                static_cast<vertex_base_type>(b),
-                static_cast<vertex_base_type>(c)
-            };
-            return t;
-        }
-    }
-
-    Triangle_node<Point_2> *make_Triangle_node(int face_index) {
-        auto temp_flag = get_triangle_face_vertex(face_index);
-        auto new_triangle_node = new Triangle_node<Point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index);
-        return new_triangle_node;
+        Triangle<vertex_base_type> t{
+            static_cast<vertex_base_type>(a),
+            static_cast<vertex_base_type>(b),
+            static_cast<vertex_base_type>(c)
+        };
+        return t;
     }
 
 
@@ -897,13 +726,13 @@ struct half_edge_struct {
     }
 
 
-    point_in_triangle_type get_vertex_in_which_face_for_test(Face_v_index &result_face_index,
-                                                             Half_edge_v_index &edge_index,
+    point_in_triangle_type get_vertex_in_which_face_for_test(face_index &result_face_index,
+                                                             half_edge_index &edge_index,
                                                              vertex_base_type vertex_in) {
         result_face_index = 0;
         for (auto face: faces) {
-            auto temps = get_vertex_in_face(vertex_in,
-                                            face.bounding_half_edge, edge_index);
+            auto temps = if_vertex_in_face(vertex_in,
+                                           face.bounding_half_edge, edge_index);
             if (temps == point_in_triangle_type::in_triangle || temps == point_in_triangle_type::on_edge)
                 return temps;
             result_face_index = result_face_index + 1;
@@ -911,8 +740,8 @@ struct half_edge_struct {
         return point_in_triangle_type::out_triangle;
     }
 
-    point_in_triangle_type get_vertex_in_face(vertex_base_type vertex_in, Half_edge_v_index half_edge_indices,
-                                              Half_edge_v_index &return_half_edge_indices) {
+    point_in_triangle_type if_vertex_in_face(vertex_base_type vertex_in, half_edge_index half_edge_indices,
+                                             half_edge_index &return_half_edge_indices) {
         auto temps = get_all_edge_of_face(half_edge_indices);
         for (auto temp: temps) {
             if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::clockwise) {
@@ -931,7 +760,7 @@ struct half_edge_struct {
     }
 
     Point_2::anticlockwise
-    get_vertex_in_the_edge_left(vertex_base_type vertex_in, Half_edge_v_index half_edge_indices) {
+    get_vertex_in_the_edge_left(vertex_base_type vertex_in, half_edge_index half_edge_indices) {
         auto a = get_vertex(half_edge_indices);
         auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
         return Point_2::is_anticlockwise(a, b, vertex_in);
