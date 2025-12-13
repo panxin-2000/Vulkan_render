@@ -25,7 +25,7 @@ public:
     }
 
 
-    ptr tree_predecessor(ptr tree_node) {
+    static ptr tree_predecessor(ptr tree_node) {
         return BIN_tree::tree_predecessor(tree_node,
                                           static_cast<ptr>(nullptr),
                                           [](ptr insert_node) { return insert_node; });

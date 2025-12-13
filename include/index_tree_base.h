@@ -208,6 +208,10 @@ public:
         return get_data(minimum(get_root_index()));
     }
 
+    v_index tree_minimum_index() {
+        return minimum(get_root_index());
+    }
+
     const node *tree_minimum_data_node() {
         return get_node_from_v_index(get_root_index());
     }

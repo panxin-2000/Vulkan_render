@@ -218,7 +218,7 @@ binary_Tree_Node<ray_2d> *get_mini_node(std::vector<binary_Tree_Node<ray_2d> *> 
     std::set<binary_Tree_Node<ray_2d> *> pre_and_success;
 
     for (auto insert_node: get_ray_need_sort) {
-        auto predecessor_half_edge_node = insert_node->tree_predecessor(insert_node);
+        auto predecessor_half_edge_node = binary_Tree_Node<ray_2d>::tree_predecessor(insert_node);
         if (predecessor_half_edge_node != nullptr)
             pre_and_success.insert(predecessor_half_edge_node);
         else
@@ -229,7 +229,7 @@ binary_Tree_Node<ray_2d> *get_mini_node(std::vector<binary_Tree_Node<ray_2d> *> 
     }
     if (pre_and_success.empty() == false) {
         min_node = *pre_and_success.begin();
-        min_node = min_node->tree_successor(min_node);
+        min_node = binary_Tree_Node<ray_2d>::tree_successor(min_node);
     }
     return min_node;
 }
@@ -238,8 +238,8 @@ template<typename T1>
 void check_pre_and_success(binary_Tree_Node<ray_2d> *ray_root, half_edge_struct<vertex_xy> &hf, T1 event_tree,
                            int re_insert_edge) {
     auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
-    auto predecessor_half_edge_node = current_half_edge_node->tree_predecessor(current_half_edge_node);
-    auto successor_half_edge_node = current_half_edge_node->tree_successor(current_half_edge_node);
+    auto predecessor_half_edge_node = binary_Tree_Node<ray_2d>::tree_predecessor(current_half_edge_node);
+    auto successor_half_edge_node = binary_Tree_Node<ray_2d>::tree_successor(current_half_edge_node);
     test_two_node_if_intersect(predecessor_half_edge_node, current_half_edge_node, hf, event_tree);
     test_two_node_if_intersect(current_half_edge_node, successor_half_edge_node, hf, event_tree);
 }
@@ -250,27 +250,26 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
     std::vector<event_point> result;
     binary_Tree_Node<ray_2d> *ray_root;
     ray_root = nullptr; // 忽然发现这里插入的时候是有问题的
-    v_index mini_node_index;
-    for (; mini_node_index = event_tree->minimum(event_tree->get_root_index()),
-           event_tree->tree_minimum_data() != nullptr;) {
+    for (; event_tree->tree_minimum_data() != nullptr;) {
         // 居然有一个空指针检查在这里，终于的是很像唯一一个
-        auto current_for_min = event_tree->tree_minimum_data();
+        auto mini_node_index = event_tree->tree_minimum_index();
+        auto current_loop_min = event_tree->tree_minimum_data();
         auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
-        auto temp_x = current_for_min->x;
-        auto temp_y = current_for_min->y;
+        auto temp_x = current_loop_min->x;
+        auto temp_y = current_loop_min->y;
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
-        if (current_for_min->if_intersect == event_point::is_intersect) {
-            auto intersect_vertex = current_for_min;
-            if (intersect_vertex->re_insert_to_tree.size() == 0) {
+        if (current_loop_min->if_intersect == event_point::is_intersect) {
+            auto intersect_event = current_loop_min;
+            if (intersect_event->re_insert_to_tree.size() == 0) {
                 // 有问题，可能少了一个判断
-            } else if (intersect_vertex->re_insert_to_tree.size() == 1) {
+            } else if (intersect_event->re_insert_to_tree.size() == 1) {
                 // size 为 1 时的专属优化， size 为 2 时也可以添加一个专属优化
-                for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
+                for (auto re_insert_edge: intersect_event->re_insert_to_tree) {
                     check_pre_and_success(ray_root, hf, event_tree, re_insert_edge);
                 }
-            } else if (intersect_vertex->re_insert_to_tree.size() >= 2) {
+            } else if (intersect_event->re_insert_to_tree.size() >= 2) {
                 std::vector<binary_Tree_Node<ray_2d> *> get_ray_need_sort;
-                for (auto re_insert_edge: intersect_vertex->re_insert_to_tree) {
+                for (auto re_insert_edge: intersect_event->re_insert_to_tree) {
                     auto delete_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
                     if (delete_node != nullptr) {
                         //正常情况下不应该有这个判断,tree_find_value 可能有问题
@@ -289,13 +288,13 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                     auto temp_min_node = min_node;
 
                     // 取值，并按顺序赋值
-                    auto ray_2d_vector = ray_2d::get_data_vector(ray_2d_s, intersect_vertex->x);
+                    auto ray_2d_vector = ray_2d::get_data_vector(ray_2d_s, intersect_event->x);
                     for (auto temp_ray_2d: ray_2d_vector) {
                         temp_min_node->data = temp_ray_2d;
-                        temp_min_node = temp_min_node->tree_successor(temp_min_node);
+                        temp_min_node = binary_Tree_Node<ray_2d>::tree_successor(temp_min_node);
                     }
                     auto max_node = temp_min_node;
-                    auto real_min_node = min_node->tree_predecessor(min_node);
+                    auto real_min_node = binary_Tree_Node<ray_2d>::tree_predecessor(min_node);
                     // 进行比较查看是否存在相交
                     for (auto insert_node: get_ray_need_sort) {
                         test_two_node_if_intersect(real_min_node, insert_node, hf, event_tree);
@@ -304,15 +303,15 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
                 }
             }
 
-            result.push_back(*current_for_min);
-        } else if (current_for_min->left_or_right == event_point::left_or_right_type::left) {
+            result.push_back(*current_loop_min);
+        } else if (current_loop_min->left_or_right == event_point::left_or_right_type::left) {
             ray_root = ray_root->tree_insert_value(ray_root, ray_2d::get_ray_2d(hf, current_half_edge));
             check_pre_and_success(ray_root, hf, event_tree, current_half_edge);
-        } else if (current_for_min->left_or_right == event_point::left_or_right_type::right) {
+        } else if (current_loop_min->left_or_right == event_point::left_or_right_type::right) {
             auto delete_node = tree_find_value_with_sweep_line(ray_root, ray_2d::get_ray_2d(hf, current_half_edge),
                                                                std::bind(&ray_2d::compare, std::placeholders::_1,
                                                                          std::placeholders::_2,
-                                                                         current_for_min->x - 0.00001));
+                                                                         current_loop_min->x - 0.00001));
             assert(delete_node != nullptr); // 一定要删除，通过循环的方式排出找不到的情况
             ray_root = ray_root->delete_node_from_binary_search_tree(ray_root, delete_node);
         }
