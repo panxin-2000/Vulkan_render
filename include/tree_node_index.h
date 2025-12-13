@@ -7,6 +7,11 @@
 
 class v_index {
 public:
+    v_index(int16_t number) : number(number) {
+    }
+
+    v_index() = default;
+
     int16_t number;
 
     friend bool operator==(v_index left, v_index right) {

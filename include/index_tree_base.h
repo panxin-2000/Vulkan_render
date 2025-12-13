@@ -104,9 +104,7 @@ public:
     }
 
     v_index get_nil_index() {
-        v_index result;
-        result.number = 0;
-        return result;
+        return {0};
     }
 
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
@@ -179,6 +177,10 @@ public:
                                         get_nil_index(),
                                         std::bind(&index_tree_base::get_node_ptr, this,
                                                   std::placeholders::_1));
+    }
+
+    v_index tree_find_index(T input_data) {
+        return tree_find_value(input_data);
     }
 
     node *tree_find_node(T input_data) {
