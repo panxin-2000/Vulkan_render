@@ -267,13 +267,12 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
         const auto mini_node_index = event_tree->tree_minimum_index();
         const auto current_loop_min = event_tree->tree_minimum_data();
         const auto current_half_edge = event_tree->tree_minimum_data()->incident_half_edge;
-        const auto current_data = ray_2d::get_ray_2d(hf, current_half_edge);
         auto temp_x = current_loop_min->x;
         auto temp_y = current_loop_min->y;
         // 上面一行没什么用，只是方便在调试时查看当前在哪里
         if (current_loop_min->if_intersect == event_point::is_intersect) {
             auto intersect_event = current_loop_min;
-            if (intersect_event->re_insert_to_tree.empty() == 0) {
+            if (intersect_event->re_insert_to_tree.empty() == true) {
                 // 有问题，可能少了一个判断
             } else if (intersect_event->re_insert_to_tree.size() == 1) {
                 // size 为 1 时的专属优化， size 为 2 时也可以添加一个专属优化
@@ -319,9 +318,11 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
 
             result.push_back(*current_loop_min);
         } else if (current_loop_min->left_or_right == event_point::left_or_right_type::left) {
+            const auto current_data = ray_2d::get_ray_2d(hf, current_half_edge); // 这里又出现了问题导致不能正常运行
             ray_root = ray_root->tree_insert_value(ray_root, current_data);
             check_pre_and_success(ray_root, hf, event_tree, current_half_edge);
         } else if (current_loop_min->left_or_right == event_point::left_or_right_type::right) {
+            const auto current_data = ray_2d::get_ray_2d(hf, current_half_edge); // 这里又出现了问题导致不能正常运行
             auto delete_node = tree_find_value_with_sweep_line(ray_root, current_data,
                                                                std::bind(&ray_2d::compare, std::placeholders::_1,
                                                                          std::placeholders::_2,
