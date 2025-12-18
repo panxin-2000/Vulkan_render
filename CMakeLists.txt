@@ -83,27 +83,27 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(hello_test ${RENDER}
-        hello_test.cpp
-        add_char_calculata.cpp
-        test_add_char_calculata.cpp
-        the_centre_of_a_circle.cpp
-        segment_end_ponit_and_gradient.cpp
-        longest_continuous_sequence.cpp
-        test_delaunay_triangulation.cpp
-        test_tetrahedron.cpp
-        convex_hull.cpp
-        bracket.cpp
-        cut_rod.cpp
-        test_tree_node.cpp
-        test_class.cpp
-        test_template.cpp
-        test_plane_sweep.cpp
-        ear_clip.cpp
-        test_ear_clip.cpp
-        test_mutex.cpp
-        test_intersect.cpp
-        test_signed_area.cpp
-        test_cut_rod.cpp)
+        test/hello_test.cpp
+        test/add_char_calculata.cpp
+        test/test_add_char_calculata.cpp
+        test/the_centre_of_a_circle.cpp
+        test/segment_end_ponit_and_gradient.cpp
+        test/longest_continuous_sequence.cpp
+        test/test_delaunay_triangulation.cpp
+        test/test_tetrahedron.cpp
+        test/convex_hull.cpp
+        test/bracket.cpp
+        test/cut_rod.cpp
+        test/test_tree_node.cpp
+        test/test_class.cpp
+        test/test_template.cpp
+        test/test_plane_sweep.cpp
+        test/ear_clip.cpp
+        test/test_ear_clip.cpp
+        test/test_mutex.cpp
+        test/test_intersect.cpp
+        test/test_signed_area.cpp
+        test/test_cut_rod.cpp)
 
 
 include_directories(/opt/homebrew/include/glm)
@@ -113,14 +113,14 @@ target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Ei
 
 add_executable(test_mutex
         #        test_curve.cpp
-        test_thread_fibonacci.cpp
-        test_dot_product.cpp
-        test_matrix_view_model_projection.cpp
-        test_mutex.cpp)
+        test/test_thread_fibonacci.cpp
+        test/test_dot_product.cpp
+        test/test_matrix_view_model_projection.cpp
+        test/test_mutex.cpp)
 gtest_discover_tests(test_mutex)
 target_link_libraries(test_mutex GTest::gtest_main)
 
-add_executable(fixture sample3.cpp include/sample3.h)
+add_executable(fixture test/sample3.cpp include/sample3.h)
 gtest_discover_tests(fixture)
 target_link_libraries(fixture GTest::gtest_main)
 
@@ -131,12 +131,11 @@ include_directories(include)
 include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3)
 add_executable(hello_mac
         include/run_time.cpp
-        main.cpp
-        make_heap.cpp
-        thread.cpp
-        cut_rod.cpp
-        run_priority_queue.cpp
-        run_queue.cpp
-        longest_continuous_sequence.cpp
-        set_graph.cpp)
+        test/make_heap.cpp
+        test/thread.cpp
+        test/cut_rod.cpp
+        test/run_priority_queue.cpp
+        test/run_queue.cpp
+        test/longest_continuous_sequence.cpp
+        test/set_graph.cpp)
 target_link_libraries(hello_mac ${CURSES_LIBRARIES})
