@@ -73,7 +73,7 @@ public:
     T centroid_point; // 重心
     T direction_interval; // 方向间隔
 
-    AABB_centroid() = delete;
+    AABB_centroid() = default;
 
     AABB_centroid(AABB_min_max<T> box) {
         centroid_point = (box.min_point + box.max_point) / 2;

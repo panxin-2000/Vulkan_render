@@ -146,6 +146,10 @@ public:
         if (abs(pos - pos_mouse_button_left_click) < error_between_click_and_release)
             ptr_event_queue->push({EventType::MouseClick, "mouse_button_left_click", pos});
         else {
+            ptr_event_queue->push({
+                EventType::MouseClick, "left_area_select",
+                {pos_mouse_button_left_click, pos}
+            });
         }
     }
 
@@ -153,6 +157,10 @@ public:
         if (abs(pos - pos_mouse_button_right_click) < error_between_click_and_release)
             ptr_event_queue->push({EventType::MouseClick, "mouse_button_right_click", pos});
         else {
+            ptr_event_queue->push({
+                EventType::MouseClick, "right_area_select",
+                {pos_mouse_button_right_click, pos}
+            });
         }
     }
 

@@ -7,11 +7,13 @@
 #include <string>
 
 #include "base_element/point_2.h"
+#include "base_element/geometry/AABB_bounding_box.h"
 
 // 事件类型枚举（扩展时新增枚举值即可）
 enum class EventType : uint32_t {
     key_combination, // 组合键事件
     MouseClick, // 鼠标点击事件
+    area_select, // 鼠标点击事件
     WindowResize, // 窗口大小变化事件
     EventType_max
 };
@@ -41,8 +43,10 @@ using mouse_position = Point_2;
 struct base_event_with_stamp : public base_event {
     std::chrono::milliseconds timestamp{0}; // 事件时间戳（高精度）
 
+
     union message_data {
         mouse_position pos;
+        AABB_centroid<Point_2> select_box;
     };
 
     message_data data;
@@ -58,6 +62,12 @@ struct base_event_with_stamp : public base_event {
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
         data.pos = pos;
+    }
+
+    base_event_with_stamp(EventType t, const std::string &event_name, AABB_centroid<Point_2> select_box)
+        : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
+              std::chrono::system_clock::now().time_since_epoch())) {
+        data.select_box = select_box;
     }
 
     virtual ~base_event_with_stamp() = default; // 虚析构保证派生类析构
