@@ -139,3 +139,44 @@ add_executable(hello_mac
         test/longest_continuous_sequence.cpp
         test/set_graph.cpp)
 target_link_libraries(hello_mac ${CURSES_LIBRARIES})
+
+
+
+
+
+
+
+
+
+
+
+
+
+include_directories(event)
+include_directories(labyrinth)
+include_directories(input_device)
+
+
+
+
+
+
+
+
+
+
+
+
+file(GLOB_RECURSE LABYRINTH
+        "labyrinth/labyrinth.cpp"
+        "labyrinth/set_graph.cpp"
+)
+file(GLOB_RECURSE INPUT_DEVICE
+        "input_device/key_map_value.cpp"
+)
+
+find_package(TBB REQUIRED)
+
+
+add_executable(learn_openGL main.cpp ${RENDER} ${INPUT_DEVICE} ${LABYRINTH})
+target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen)

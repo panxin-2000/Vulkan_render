@@ -12,15 +12,14 @@ public:
     float y;
     using point_type = Point_2;
 
-    Point_2() {
-    }
+    Point_2() = default;
 
     Point_2(float x1, float y1) : x(x1), y(y1) {
     }
 
     friend std::ostream &operator<<(std::ostream &output,
                                     const Point_2 &P) {
-        output << "(x,y):(" << P.x << "," << P.y << ")" ;
+        output << "(x,y):(" << P.x << "," << P.y << ")";
         return output;
     }
 

@@ -5,7 +5,6 @@
 #ifndef LEARN_OPENGL_VBO_OBJECT_H
 #define LEARN_OPENGL_VBO_OBJECT_H
 #include "buffer_object.h"
-#include <vector>
 
 class vertex_buffer_VBO : public GL_buffer_object<GL_ARRAY_BUFFER> {
 public:
@@ -74,9 +73,9 @@ struct Element_VBO_object {
 
     void update_buffer_data() {
         // if (need_update) {
-        currently_active = !currently_active;
-        VBO_new->update_buffer_data(render_size,render_data);
-        need_update = false;
+            currently_active = !currently_active;
+            VBO_new->update_buffer_data(render_size,render_data);
+            need_update = false;
         // }
     }
 
