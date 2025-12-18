@@ -41,6 +41,7 @@ public:
     using Labyrinth_mutex_type = std::mutex;
     Labyrinth_mutex_type change_vbo_date_mutex; // 同时只允许有一个线程更改数据
 
+    float zoom = 0;
 
     Labyrinth();
 
@@ -56,6 +57,8 @@ public:
     void run_init(const base_event_with_stamp &base_event);
 
     void run_step(const base_event_with_stamp &base_event);
+
+    void set_zoom(const base_event_with_stamp &base_event);
 
     bool change_square_color(int x, int y);
 

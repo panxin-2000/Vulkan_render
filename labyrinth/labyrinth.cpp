@@ -17,6 +17,10 @@ Labyrinth::Labyrinth() {
     vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Vertex), (void *) 0);
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
+    Shader_object::data_value_or_ptr data;
+    data.float_val = std::pow(1.5, zoom);
+    Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
+
     // 参数这里最重要的是下面的两行
     Labyrinth_cube->set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
     Labyrinth_cube->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
@@ -64,6 +68,13 @@ void Labyrinth::run_step(const base_event_with_stamp &base_event) {
         change_square_color_to_blue(u->self_position.x_position, u->self_position.y_position);
     }
     update();
+}
+
+void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
+    zoom = zoom + base_event.data.scroll.y * 0.01;
+    Shader_object::data_value_or_ptr data;
+    data.float_val = std::pow(1.5, zoom);
+    Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
 }
 
 

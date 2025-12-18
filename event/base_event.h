@@ -13,6 +13,7 @@
 enum class EventType : uint32_t {
     key_combination, // 组合键事件
     MouseClick, // 鼠标点击事件
+    scroll, // 鼠标滚动缩放事件
     area_select, // 鼠标点击事件
     WindowResize, // 窗口大小变化事件
     EventType_max
@@ -47,6 +48,7 @@ struct base_event_with_stamp : public base_event {
     union message_data {
         mouse_position pos;
         AABB_centroid<Point_2> select_box;
+        mouse_position scroll;
     };
 
     message_data data;

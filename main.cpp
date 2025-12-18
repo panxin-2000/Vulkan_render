@@ -146,20 +146,20 @@ int main() {
         base_observer<base_event> observer{EventType::MouseClick, "mouse_button_left_click"};
         observer.set_deal_function(std::bind(&Labyrinth::deal_event, labyrinth, std::placeholders::_1));
         observe_manage_instance::instance().addObserver(observer);
+    } {
+        base_observer<base_event> observer{EventType::scroll, "mouse_scroll_zoom"};
+        observer.set_deal_function(std::bind(&Labyrinth::set_zoom, labyrinth, std::placeholders::_1));
+        observe_manage_instance::instance().addObserver(observer);
     }
-    // 目前只有入队，没有新建立一个线程去处理
-
-    // drawFunction = std::bind(&Labyrinth::deal_event, labyrinth, std::placeholders::_1, std::placeholders::_2);
+    // 下一步做什么呢？ 将 zoom 与鼠标的偏移算出来
 
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
-        Shader_object::data_value_or_ptr data;
-        data.float_val = std::pow(1.5, zoom);
-        labyrinth->Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // std::cout << "data.float_val" << data.float_val << std::endl;
     }
+
+
     observe_manage_instance::instance().observer_manage_thread_close();
     end_render_manage_thread();
 
@@ -168,27 +168,7 @@ int main() {
     return 0;
 }
 
-// Is called whenever a key is pressed/released via GLFW
-// 下面的获取部分的内容其实主要是在mian函数中运行的
-// 稳定的话还是需要发送事件的。然后就在之后应该如何处理事件
-// 怎么完成两个函数的回调的呢？
-
-// 只要鼠标动了就会调用这里
-void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = ypos - lastY;
-    lastX = xpos;
-    lastY = ypos;
-}
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    // camera.ProcesssMouseScroll(static_cast<float>(yoffset));
-    // std::cout << "xoffset" << xoffset << "yoffset" << yoffset << std::endl;
-    zoom = zoom + (float) yoffset * 0.01;
+    Keyboard_Manage::instance().handle_scroll({(float) xoffset, (float) yoffset});
 }

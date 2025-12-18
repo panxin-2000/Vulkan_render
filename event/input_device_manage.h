@@ -142,6 +142,10 @@ public:
         pos_mouse_button_right_click = pos;
     }
 
+    void handle_scroll(mouse_position pos) const {
+        ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
+    }
+
     void handle_mouse_button_left_release(mouse_position pos) const {
         if (abs(pos - pos_mouse_button_left_click) < error_between_click_and_release)
             ptr_event_queue->push({EventType::MouseClick, "mouse_button_left_click", pos});
