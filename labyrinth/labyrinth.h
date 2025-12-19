@@ -7,11 +7,12 @@
 
 #include "base_event.h"
 #include "../render/render_object.h"
+#include "base_element/point_3.h"
 
 struct Vertex {
-    float position[3];
-    float color[3];
-    float texCoord[2];
+    Point_3 position;
+    Point_3 color;
+    Point_2 texCoord;
 };
 
 struct position {

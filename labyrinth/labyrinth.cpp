@@ -24,8 +24,8 @@ Labyrinth::Labyrinth() {
     // 参数这里最重要的是下面的两行
     Labyrinth_cube->set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
     Labyrinth_cube->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-    Labyrinth_cube->set_vertex_shader("/Users/panxin/CLionProjects/learn_openGL/render/shader/vertex.vert");
-    Labyrinth_cube->set_fragment_shader("/Users/panxin/CLionProjects/learn_openGL/render/shader/fragment.frag");
+    Labyrinth_cube->set_vertex_shader("render/shader/labyrinth.vert");
+    Labyrinth_cube->set_fragment_shader("render/shader/labyrinth.frag");
     /***************添加到渲染管理器**********************/
     add_object_to_render_manager(Labyrinth_cube);
 
@@ -94,8 +94,8 @@ void Labyrinth::init_render_object() {
 
 bool Labyrinth::add_box(position start_position, position end_position) {
     Vertex vertex; //一定会有四个点，分别是x最大和x最小，y最大和y最小
-    // x小y大      x大y大
-    // x小y小      x大y小
+    // x小y大 2     x大y大 3
+    // x小y小 0     x大y小 1
     // 默认情况下，逆时针的顶点连接顺序被定义为三角形的正面
     indices.push_back(vertices.size() + 0);
     indices.push_back(vertices.size() + 1);
@@ -103,23 +103,29 @@ bool Labyrinth::add_box(position start_position, position end_position) {
     indices.push_back(vertices.size() + 1);
     indices.push_back(vertices.size() + 3);
     indices.push_back(vertices.size() + 2);
-    vertex.position[0] = start_position.x < end_position.x ? start_position.x : end_position.x;
-    vertex.position[1] = start_position.y < end_position.y ? start_position.y : end_position.y;
-    vertex.position[2] = 0;
-    vertex.texCoord[0] = 0;
-    vertex.color[0] = 0.5f;
-    vertex.color[1] = 0;
-    vertex.color[2] = 0;
-    vertex.texCoord[1] = 0;
+    vertex.position.x = start_position.x < end_position.x ? start_position.x : end_position.x;
+    vertex.position.y = start_position.y < end_position.y ? start_position.y : end_position.y;
+    vertex.position.z = 0;
+    vertex.color.x = 0.5f;
+    vertex.color.y = 0;
+    vertex.color.z = 0;
+    vertex.texCoord.x = 0;
+    vertex.texCoord.y = 0;
     vertices.push_back(vertex);
-    vertex.position[0] = start_position.x > end_position.x ? start_position.x : end_position.x;
-    vertex.position[1] = start_position.y < end_position.y ? start_position.y : end_position.y;
+    vertex.position.x = start_position.x > end_position.x ? start_position.x : end_position.x;
+    vertex.position.y = start_position.y < end_position.y ? start_position.y : end_position.y;
+    vertex.texCoord.x = 1;
+    vertex.texCoord.y = 0;
     vertices.push_back(vertex);
-    vertex.position[0] = start_position.x < end_position.x ? start_position.x : end_position.x;
-    vertex.position[1] = start_position.y > end_position.y ? start_position.y : end_position.y;
+    vertex.position.x = start_position.x < end_position.x ? start_position.x : end_position.x;
+    vertex.position.y = start_position.y > end_position.y ? start_position.y : end_position.y;
+    vertex.texCoord.x = 0;
+    vertex.texCoord.y = 1;
     vertices.push_back(vertex);
-    vertex.position[0] = start_position.x > end_position.x ? start_position.x : end_position.x;
-    vertex.position[1] = start_position.y > end_position.y ? start_position.y : end_position.y;
+    vertex.position.x = start_position.x > end_position.x ? start_position.x : end_position.x;
+    vertex.position.y = start_position.y > end_position.y ? start_position.y : end_position.y;
+    vertex.texCoord.x = 1;
+    vertex.texCoord.y = 1;
     vertices.push_back(vertex);
 }
 
@@ -137,21 +143,17 @@ void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
 bool Labyrinth::change_square_color(int x, int y) {
     int a = x + y * width;
     // 不再对颜色进行重置
-    if (vertices[a * 4].color[1] == 1.0f) {
+    if (vertices[a * 4].color.y == 1.0f) {
         add_edge(*graph, x, y, up_x_decrease);
         add_edge(*graph, x, y, right_y_add);
         add_edge(*graph, x, y, left_y_decrease);
         add_edge(*graph, x, y, down_x_add);
         for (int i = a * 4; i < (a + 1) * 4; ++i) {
-            vertices[i].color[0] = 0.5f;
-            vertices[i].color[1] = 0.0f;
-            vertices[i].color[2] = 0.0f;
+            vertices[i].color = {0.5f, 0.0f, 0.0f};
         }
     } else {
         for (int i = a * 4; i < (a + 1) * 4; ++i) {
-            vertices[i].color[0] = 0.0f;
-            vertices[i].color[1] = 1.0f;
-            vertices[i].color[2] = 0.0f;
+            vertices[i].color = {0.0f, 1.0f, 0.0f};
         }
         delete_edge(*graph, x, y, up_x_decrease);
         delete_edge(*graph, x, y, right_y_add);
@@ -178,27 +180,21 @@ bool Labyrinth::display_result() {
 bool Labyrinth::change_square_color_to_red(int x, int y) {
     int a = x + y * width;
     for (int i = a * 4; i < (a + 1) * 4; ++i) {
-        vertices[i].color[0] = 1.0f;
-        vertices[i].color[1] = 0.0f;
-        vertices[i].color[2] = 0.0f;
+        vertices[i].color = {1.0f, 0.0f, 0.0f};
     }
 }
 
 bool Labyrinth::change_square_color_to_blue(int x, int y) {
     int a = x + y * width;
     for (int i = a * 4; i < (a + 1) * 4; ++i) {
-        vertices[i].color[0] = 0.0f;
-        vertices[i].color[1] = 0.0f;
-        vertices[i].color[2] = 1.0f;
+        vertices[i].color = {0.0f, 0.0f, 1.0f};
     }
 }
 
 bool Labyrinth::change_blue_color_to_red() {
     for (auto &vertex: vertices) {
-        if (vertex.color[2] == 1.0f) {
-            vertex.color[0] = 0.5f;
-            vertex.color[1] = 0;
-            vertex.color[2] = 0;
+        if (vertex.color.z == 1.0f) {
+            vertex.color = {0.5f, 0.0f, 0.0f};
         }
     } // 不再对颜色进行重置
 }
