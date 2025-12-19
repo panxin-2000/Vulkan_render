@@ -14,8 +14,8 @@
 template<typename T>
 inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
     // 一个点在平面一侧，另一个点在平面另一侧
-    auto start_distance = plane.distance_to_point(segment.start_point);
-    auto end_distance = plane.distance_to_point(segment.end_point);
+    auto start_distance = plane.distance(segment.start_point);
+    auto end_distance = plane.distance(segment.end_point);
     if (end_distance * start_distance <= 0) {
         return true;
     }
@@ -30,8 +30,8 @@ inline bool intersect(const Plane<T> &plane, const Ray<T> &ray) {
     // 上面还是麻烦了，判断光线起点在哪一侧
     // 平面的标记点，加上光线的方向，得到另一个点
     // 判断这个点是否和光线的起点在同一侧，在的话，就相交，否则不相交
-    auto start_distance = plane.distance_to_point(segment.start_point);
-    auto end_distance = plane.distance_to_point(plane.point + ray.direction);
+    auto start_distance = plane.distance(segment.start_point);
+    auto end_distance = plane.distance(plane.point + ray.direction);
     if (end_distance * start_distance <= 0) {
         return true;
     }
@@ -55,9 +55,9 @@ inline bool intersect(const Plane<T> &plane, const Straight_line<T> &straight_li
 template<typename T>
 inline bool intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
     // 三角形中，任意一个点在平面一侧，另一个点在平面另一侧
-    auto a_distance = plane.distance_to_point(triangle.a);
-    auto b_distance = plane.distance_to_point(triangle.b);
-    auto c_distance = plane.distance_to_point(triangle.c);
+    auto a_distance = plane.distance(triangle.a);
+    auto b_distance = plane.distance(triangle.b);
+    auto c_distance = plane.distance(triangle.c);
     if (a_distance * b_distance <= 0 ||
         b_distance * c_distance <= 0 ||
         c_distance * a_distance <= 0) {

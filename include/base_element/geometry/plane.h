@@ -14,8 +14,8 @@ public:
     point_type normal;
 
 
-    point_type distance(point_type p) {
-        return dot((p - point), normal);
+    float distance(point_type q) {
+        return dot(normal, (q - point)) / dot(normal, normal);
     }
 };
 

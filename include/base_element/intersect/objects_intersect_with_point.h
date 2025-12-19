@@ -97,5 +97,17 @@ inline bool intersect(const Plane<T> &plane, const T &test_point) {
     return false;
 }
 
+template<typename T>
+inline float distance_of_box_center(const AABB_centroid<T> &box, const T &test_point) {
+    T distance = box.centroid_point - test_point;
+    return dot(distance, distance);
+}
+
+template<typename T>
+inline float distance_of_box_center(const AABB_min_max<T> &box, const T &test_point) {
+    T distance = (box.max_point + box.min_point) / 2 - test_point;
+    return dot(distance, distance);
+}
+
 
 #endif //HELLO_MAC_INTERSECTION_H
