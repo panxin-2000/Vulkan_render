@@ -16,12 +16,14 @@ Labyrinth::Labyrinth() {
     std::vector<VertexAttrib> vertex_attribs;
     vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Vertex), (void *) 0);
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+    vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
     Shader_object::data_value_or_ptr data;
     data.float_val = std::pow(1.5, zoom);
     Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
 
     // 参数这里最重要的是下面的两行
+    Labyrinth_cube->add_texture_path("resoureces/picture.png", "ourTexture1");
     Labyrinth_cube->set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
     Labyrinth_cube->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
     Labyrinth_cube->set_vertex_shader("render/shader/labyrinth.vert");

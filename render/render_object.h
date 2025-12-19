@@ -47,6 +47,12 @@ public:
     render_object() {
     }
 
+    bool add_texture_path(char const *path, char const *texture_name) {
+        Texture_TBO texture;
+        texture.set_path(path, texture_name);
+        TBO.push_back(texture);
+    }
+
     void render_object_shader_init();
 
     ~render_object() {
@@ -109,6 +115,9 @@ public:
             VBO_object.initVBO(VAO_new);
             EBO_object.initEBO(VAO_new);
             initUBO(UBO_size, UBO_data);
+            for (int i = 0; i < TBO.size(); ++i) {
+                TBO.at(i).loadTexture();
+            }
             initialized_opengl = true;
         }
     }
@@ -165,6 +174,9 @@ public:
                 for (int i = 0; i < TBO.size(); ++i) {
                     glActiveTexture(GL_TEXTURE0 + i);
                     TBO.at(i).bind(); // 为什么会有多个区域呢？ 我记得好像是因为可能不同的属性会放置在不同的缓冲区
+                    glUniform1i(glGetUniformLocation(shader_object.get_shader_program(),
+                                                     TBO.at(i).get_texture_name()),
+                                i);
                 }
 
 

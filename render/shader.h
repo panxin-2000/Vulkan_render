@@ -153,8 +153,12 @@ public:
 
     // activate the shader
     // ------------------------------------------------------------------------
-    void use_shader_program() {
+    void use_shader_program() const {
         glUseProgram(shaderProgram);
+    }
+
+    GLuint get_shader_program() const {
+        return (shaderProgram);
     }
 
 

@@ -4,12 +4,15 @@
 
 #ifndef TEXTURE_TBO_H
 #define TEXTURE_TBO_H
+#include <iostream>
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include "stb_image.h"
 
 class Texture_TBO {
     GLuint TBO = 0;
+    std::string path;
+    std::string texture_name;
 
 public:
     void bind() {
@@ -18,10 +21,20 @@ public:
         }
     }
 
-    bool loadTexture(char const *path) {
+    bool set_path(char const *path, char const *texture_name) {
+        this->path = path;
+        this->texture_name = texture_name;
+    }
+
+    char const *get_texture_name() const {
+        return texture_name.c_str();
+    }
+
+
+    bool loadTexture() {
         glGenTextures(1, &TBO);
         int width, height, nrComponents;
-        unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+        unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
         if (data) {
             GLenum format;
             switch (nrComponents) {

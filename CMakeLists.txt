@@ -54,6 +54,7 @@ endif ()
 file(GLOB_RECURSE RENDER
         "render/render_object.cpp"
         "render/render_object_manage.cpp"
+        "render/stb_image.cpp"
 )
 
 include_directories(windows)
@@ -141,30 +142,9 @@ add_executable(hello_mac
 target_link_libraries(hello_mac ${CURSES_LIBRARIES})
 
 
-
-
-
-
-
-
-
-
-
-
-
 include_directories(event)
 include_directories(labyrinth)
 include_directories(input_device)
-
-
-
-
-
-
-
-
-
-
 
 
 file(GLOB_RECURSE LABYRINTH
