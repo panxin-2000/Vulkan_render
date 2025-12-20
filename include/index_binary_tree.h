@@ -4,6 +4,7 @@
 
 #ifndef INDEX_BINARY_TREE_H
 #define INDEX_BINARY_TREE_H
+#include "index_binary_tree_node.h"
 #include "index_tree_base.h"
 
 template<typename T, typename index_node>
