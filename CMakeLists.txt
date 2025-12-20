@@ -83,7 +83,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(hello_test ${RENDER}
+add_executable(hello_test ${RENDER} ${WINDOW}
         test/hello_test.cpp
         test/add_char_calculata.cpp
         test/test_add_char_calculata.cpp

@@ -10,6 +10,9 @@
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 
+#include "render_object_manage.h"
+#include "windows.h"
+
 
 template<typename T>
 T &init_hf(T &hf) {
@@ -306,6 +309,39 @@ TEST(ear_clip, test_point_location) {
             // std::cout << "result" << result->size() << std::endl;
         }
         auto result_2 = find_all_leaf_node(root);
+
+
+        auto temp_trapezoid = new render_object();
+        /***************设置参数**********************/
+        std::vector<VertexAttrib> vertex_attribs;
+        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
+        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+
+        std::vector<Point_3> vertices;
+        std::vector<unsigned int> indices;
+        for (auto result_segment: *result_2) {
+            indices.push_back(vertices.size() + 0);
+            indices.push_back(vertices.size() + 1);
+            indices.push_back(vertices.size() + 2);
+            indices.push_back(vertices.size() + 2);
+            indices.push_back(vertices.size() + 3);
+            indices.push_back(vertices.size() + 0);
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_lower); //0 1 2
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_lower);
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_upper); // 2 3 0
+            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper);
+        }
+        // 参数这里最重要的是下面的两行
+        temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
+        temp_trapezoid->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+        temp_trapezoid->set_vertex_shader("render/shader/different_color.vert");
+        temp_trapezoid->set_fragment_shader("render/shader/different_color.frag");
+
+        /***************添加到渲染管理器**********************/
+        add_object_to_render_manager(temp_trapezoid);
+
+        add_windows();
+
 
         test_point_location(hf, root, {1.1, 1.1});
         test_point_location(hf, root, {1, 1});
