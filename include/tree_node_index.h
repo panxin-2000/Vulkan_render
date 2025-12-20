@@ -4,7 +4,7 @@
 
 #ifndef TREE_NODE_INDEX_H
 #define TREE_NODE_INDEX_H
-
+#include "iostream"
 
 using v_index = uint64_t;
 
