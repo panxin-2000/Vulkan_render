@@ -13,7 +13,7 @@
 #include <GLFW/glfw3.h>
 #include "render_object_manage.h"
 
-void add_windows();
+void add_render_windows();
 
 
 #endif //HELLO_MAC_WINDOWS_H

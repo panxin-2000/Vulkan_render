@@ -54,6 +54,7 @@ struct vertex_xy : public Point_2 {
 
 
 struct vertex_xyz : public Point_3 {
+    using point_type = Point_3;
     int incident_half_edge;
 
     vertex_xyz(float x1, float y1, float z1) : Point_3(x1, y1, z1) {

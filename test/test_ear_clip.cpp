@@ -176,9 +176,38 @@ TEST(ear_clip, ear_clip_half_edge) {
     init_expect_triangles(expect_triangles);
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
-        std::vector<Triangle<Point_2> > result_segments{};
-        auto temp_flag = hf.print_all_triangle_face(result_segments, true);
-        if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
+        auto result_segments = hf.get_all_triangles_data(true);
+
+
+        auto temp_trapezoid = new render_object();
+        /***************设置参数**********************/
+        std::vector<VertexAttrib> vertex_attribs;
+        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
+        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+
+        std::vector<Point_3> vertices;
+        std::vector<unsigned int> indices;
+        for (auto result_segment: result_segments) {
+            indices.push_back(vertices.size() + 0);
+            indices.push_back(vertices.size() + 1);
+            indices.push_back(vertices.size() + 2);
+            vertices.emplace_back(result_segment.a);
+            vertices.emplace_back(result_segment.b);
+            vertices.emplace_back(result_segment.c);
+        }
+        // 参数这里最重要的是下面的两行
+        temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
+        temp_trapezoid->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+        temp_trapezoid->set_vertex_shader("render/shader/different_color.vert");
+        temp_trapezoid->set_fragment_shader("render/shader/different_color.frag");
+
+        /***************添加到渲染管理器**********************/
+        add_object_to_render_manager(temp_trapezoid);
+
+        add_render_windows();
+
+
+        if (result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
                 EXPECT_EQ(result_segments.at(i)== expect_triangles.at(i), true) << "i value: " << i << std::endl;
                 // 这里的打印也很方便，不出现错误的时候是不需要打印的
@@ -285,10 +314,8 @@ TEST(ear_clip, test_point_location) {
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {-1, 2});
         EXPECT_EQ(8, result_face_index);
 
-        std::vector<Triangle<Point_2> > result_segments{};
-
-        auto temp_flag = hf.print_all_triangle_face(result_segments, true);
-        if (temp_flag == true) {
+        auto result_segments = hf.get_all_triangles_data(true);
+        if (result_segments.empty() == false) {
             std::random_device rd;
             std::mt19937 g(rd());
             // obtain a time-based seed:
@@ -340,7 +367,7 @@ TEST(ear_clip, test_point_location) {
         /***************添加到渲染管理器**********************/
         add_object_to_render_manager(temp_trapezoid);
 
-        add_windows();
+        add_render_windows();
 
 
         test_point_location(hf, root, {1.1, 1.1});

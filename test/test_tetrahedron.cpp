@@ -15,15 +15,14 @@ TEST(tetrahedron, init_tetrahedron) {
                   hf.get_opposite_edge_index(c_half_edge_index));
 
     std::vector<Triangle<Point_3> > expect_triangles{};
-    std::vector<Triangle<Point_3> > result_segments{};
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, -1, 0}, {0, 0, 2}}); // blue
     expect_triangles.push_back(Triangle<Point_3>{{0, 0, 2}, {0, -1, 0}, {1, 1, 2}}); // yellow
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {0, 0, 2}, {1, 1, 2}}); //  green
     expect_triangles.push_back(Triangle<Point_3>{{-1, 1, 0}, {1, 1, 2}, {0, -1, 0}}); // last
     std::sort(expect_triangles.begin(), expect_triangles.end(), std::less<>());
 
-    auto temp_flag = hf.print_all_triangle_face(result_segments, false);
-    if (temp_flag == true && result_segments.size() == expect_triangles.size()) {
+    auto result_segments = hf.get_all_triangles_data(false);
+    if (result_segments.size() == expect_triangles.size()) {
         std::sort(result_segments.begin(), result_segments.end(), std::less<>());
         for (int i = 0; i < result_segments.size(); ++i) {
             EXPECT_EQ(result_segments.at(i)== expect_triangles.at(i), true) << "i value: " << i << std::endl;

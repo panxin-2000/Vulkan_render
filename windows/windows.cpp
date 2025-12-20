@@ -14,7 +14,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
 
-void add_windows() {
+void add_render_windows() {
     glfwInit();
     GLFWwindow *window;
 

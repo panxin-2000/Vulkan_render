@@ -91,6 +91,11 @@ public:
             glfwSwapBuffers(window);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
+        render_objects.clear();
+        need_init.clear();
+
+        have_object_need_update = false;
+        need_render = true;
     }
 
     void render_thread_stop() {

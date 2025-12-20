@@ -671,12 +671,11 @@ struct half_edge_struct {
     /**
      *
      * @tparam T
-     * @param result_triangles
      * @param without_hole true 时 不输出洞， false 输出洞
      * @return
      */
-    template<typename T>
-    bool print_all_triangle_face(T &result_triangles, bool without_hole) {
+    auto get_all_triangles_data(bool without_hole) {
+        std::vector<Triangle<vertex_base_type> > result_triangles;
         for (auto face: faces) {
             if (!without_hole || face.boundary_type != Face::BOUNDARY_TYPE::hole_face) {
                 auto temp = get_all_edge_of_face(face.bounding_half_edge);
@@ -685,12 +684,26 @@ struct half_edge_struct {
                     auto b = get_vertex(temp.at(1));
                     auto c = get_vertex(temp.at(2));
 
-                    Triangle<vertex_base_type> t{
-                        static_cast<vertex_base_type>(a),
-                        static_cast<vertex_base_type>(b),
-                        static_cast<vertex_base_type>(c)
-                    };
+                    Triangle<vertex_base_type> t{a, b, c};
                     result_triangles.push_back(t);
+                }
+            }
+        }
+        return result_triangles;
+    }
+
+    template<typename T>
+    bool get_triangle_vertex_index(T &result_triangles, bool without_hole) {
+        for (auto face: faces) {
+            if (!without_hole || face.boundary_type != Face::BOUNDARY_TYPE::hole_face) {
+                auto temp = get_all_edge_of_face(face.bounding_half_edge);
+                if (temp.size() == 3) {
+                    auto a = get_vertices_index(temp.at(0));
+                    auto b = get_vertices_index(temp.at(1));
+                    auto c = get_vertices_index(temp.at(2));
+                    result_triangles.push_back(a);
+                    result_triangles.push_back(b);
+                    result_triangles.push_back(c);
                 } else {
                     return false;
                 }
@@ -699,17 +712,17 @@ struct half_edge_struct {
         return true;
     }
 
+    std::vector<vertex_base_type> &get_vertices_vector() {
+        return vertices;
+    }
+
     Triangle<vertex_base_type> get_triangle_face_vertex(const int face_index_para) {
         auto temps = get_all_edge_of_face(get_face_incident_edge(face_index_para));
         auto a = get_vertex(temps.at(0));
         auto b = get_vertex(temps.at(1));
         auto c = get_vertex(temps.at(2));
 
-        Triangle<vertex_base_type> t{
-            static_cast<vertex_base_type>(a),
-            static_cast<vertex_base_type>(b),
-            static_cast<vertex_base_type>(c)
-        };
+        Triangle<vertex_base_type> t{a, b, c};
         return t;
     }
 
