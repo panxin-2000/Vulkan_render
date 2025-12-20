@@ -6,10 +6,8 @@
 #define INDEX_BINARY_TREE_NODE_H
 #include <vector>
 
-#include "tree_node.h"
 #include "tree_function.h"
 #include "tree_node_index.h"
-#include "index_binary_tree_node.h"
 
 
 template<typename T, typename index_node>
@@ -18,7 +16,7 @@ public:
     using node = index_node;
     std::vector<v_index> roots;
     std::vector<node> details;
-    v_index delete_v_index;
+    v_index delete_v_index = 0;
 
     node *get_node_from_v_index(v_index in) {
         if (in == get_nil_index()) {
@@ -38,7 +36,7 @@ public:
         return result;
     }
 
-    v_index get_root_index() {
+    [[nodiscard]] v_index get_root_index() const {
         if (roots.empty() == false)
             return roots.at(roots.size() - 1);
         else {
@@ -47,7 +45,7 @@ public:
         }
     }
 
-    std::vector<index_node *> *translate(std::vector<v_index> src_s) {
+    std::vector<index_node *> *translate(const std::vector<v_index> &src_s) {
         auto result = new std::vector<index_node *>();
         for (auto src: src_s) {
             result->push_back(get_node_ptr(src));
@@ -55,7 +53,7 @@ public:
         return result;
     }
 
-    std::vector<T> *translate_data(std::vector<v_index> src_s) {
+    std::vector<T> *translate_data(const std::vector<v_index> &src_s) {
         auto result = new std::vector<T>();
         for (auto src: src_s) {
             result->push_back(get_node_ptr(src)->data);
@@ -100,8 +98,8 @@ public:
         return &details.at(get_root_index());
     }
 
-    v_index get_nil_index() {
-        return {0};
+    [[nodiscard]] static v_index get_nil_index() {
+        return 0;
     }
 
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
