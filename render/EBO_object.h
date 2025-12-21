@@ -54,11 +54,13 @@ struct Element_EBO_object {
     }
 
     void initEBO(vertex_array_VAO *VAO_new) {
-        if (EBO_new != nullptr) {
-        } else {
-            EBO_new = new GL_buffer_object(VAO_new);
+        if (need_update) {
+            if (EBO_new != nullptr) {
+            } else {
+                EBO_new = new GL_buffer_object(VAO_new);
+            }
+            update_buffer_data();
         }
-        update_buffer_data();
     }
 
 #undef update_size

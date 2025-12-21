@@ -183,7 +183,7 @@ public:
                 if (EBO_object.EBO_new != nullptr) {
                     glDrawElements(GL_TRIANGLES, EBO_object.get_indices_size(), GL_UNSIGNED_INT, (void *) 0);
                 } else {
-                    glDrawArrays(GL_LINE_STRIP, 0, VBO_object.get_draw_count()); //count还是需要去获取的
+                    glDrawArrays(GL_TRIANGLES, 0, VBO_object.get_draw_count()); //count还是需要去获取的
                 }
                 glBindVertexArray(NULL_GPU_INDEX);
             }
