@@ -62,6 +62,19 @@ file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"
 )
 
+include_directories(event)
+include_directories(labyrinth)
+include_directories(input_device)
+
+
+file(GLOB_RECURSE LABYRINTH
+        "labyrinth/labyrinth.cpp"
+        "labyrinth/set_graph.cpp"
+)
+file(GLOB_RECURSE INPUT_DEVICE
+        "input_device/key_map_value.cpp"
+)
+
 find_package(TBB REQUIRED)
 
 
@@ -83,7 +96,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(hello_test ${RENDER} ${WINDOW}
+add_executable(hello_test ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
         test/hello_test.cpp
         test/add_char_calculata.cpp
         test/test_add_char_calculata.cpp
@@ -142,21 +155,10 @@ add_executable(hello_mac
 target_link_libraries(hello_mac ${CURSES_LIBRARIES})
 
 
-include_directories(event)
-include_directories(labyrinth)
-include_directories(input_device)
 
-
-file(GLOB_RECURSE LABYRINTH
-        "labyrinth/labyrinth.cpp"
-        "labyrinth/set_graph.cpp"
-)
-file(GLOB_RECURSE INPUT_DEVICE
-        "input_device/key_map_value.cpp"
-)
 
 find_package(TBB REQUIRED)
 
 
-add_executable(learn_openGL main.cpp ${RENDER} ${INPUT_DEVICE} ${LABYRINTH})
+add_executable(learn_openGL main.cpp ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
 target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen)

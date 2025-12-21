@@ -9,6 +9,7 @@
 #include <mutex>
 #include "base_event.h"
 #include "event_queue_mange.h"
+#include "input_device_manage.h"
 
 /**
  * 这个管理器的目的是，为了管理输出设备，目前是两个，一个是键盘，另一个是鼠标或者触摸板
