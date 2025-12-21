@@ -14,6 +14,7 @@
 
 class render_object_manage {
 private:
+    mutable std::mutex mtx; // 互斥锁（mutable支持const方法加锁）
     std::vector<render_object *> render_objects;
     std::vector<render_object *> need_init;
 
@@ -78,28 +79,32 @@ public:
         glEnable(GL_DEPTH_TEST);
 
         while (need_render) {
-            init_need_init_object(); // 主要是复制内存的操作
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            check_and_init_need_object();
-            check_and_update_need_object();
-            updata_and_render_object();
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); {
+                std::unique_lock<std::mutex> lock(mtx);
+                init_need_init_object(); // 主要是复制内存的操作
+                check_and_init_need_object();
+                check_and_update_need_object();
+                updata_and_render_object();
+            }
 
             glfwSwapBuffers(window);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        render_objects.clear();
-        need_init.clear();
+        // render_objects.clear();
+        // need_init.clear();
 
         have_object_need_update = false;
         need_render = true;
     }
 
     void render_thread_stop() {
+        std::unique_lock<std::mutex> lock(mtx);
         need_render = false;
+        render_objects.clear();
+        need_init.clear();
     }
 
 

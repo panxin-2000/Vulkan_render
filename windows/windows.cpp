@@ -40,7 +40,6 @@ void add_render_windows() {
     }
 
     end_render_manage_thread();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
