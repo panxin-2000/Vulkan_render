@@ -50,10 +50,6 @@ void glfwFocusCallback(GLFWwindow *window, int focused) {
 const GLuint WIDTH = 800, HEIGHT = 600;
 
 
-float lastX = WIDTH / 2, lastY = HEIGHT / 2;
-bool firstMouse = true;
-
-
 /**
  * 鼠标点击之后才会调用这个函数
  * @param window
@@ -67,21 +63,19 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     double double_xpos;
     double double_ypos;
     glfwGetCursorPos(window, &double_xpos, &double_ypos);
-    xpos = double_xpos, ypos = double_ypos;
+    xpos = ((double_xpos / WIDTH) - 0.5f) * 2, ypos = ((double_ypos / HEIGHT) - 0.5f) * -2;
+    // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
+    std::cout << "x: " << xpos << " y: " << ypos << std::endl;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        std::cout << "GLFW_MOUSE_BUTTON_LEFT,GLFW_PRESS " << std::endl;
         Keyboard_Manage::instance().handle_mouse_button_left_click({xpos, ypos});
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        std::cout << "GLFW_MOUSE_BUTTON_LEFT,GLFW_RELEASE " << std::endl;
         Keyboard_Manage::instance().handle_mouse_button_left_release({xpos, ypos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        std::cout << "GLFW_MOUSE_BUTTON_RIGHT,GLFW_PRESS " << std::endl;
         Keyboard_Manage::instance().handle_mouse_button_right_click({xpos, ypos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-        std::cout << "GLFW_MOUSE_BUTTON_RIGHT,GLFW_RELEASE " << std::endl;
         Keyboard_Manage::instance().handle_mouse_button_right_release({xpos, ypos});
     }
 }
@@ -109,7 +103,7 @@ void add_render_windows() {
     // 注册GLFW回调
 
     Keyboard_Manage::instance().init_eventQueueMgr(observe_manage_instance::get_event_queue());
-    Keyboard_Manage::instance().register_key_combination("'a'");
+    // Keyboard_Manage::instance().register_key_combination("'a'");
     glfwSetKeyCallback(window, glfwKeyCallback); // 键盘事件回调
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
 

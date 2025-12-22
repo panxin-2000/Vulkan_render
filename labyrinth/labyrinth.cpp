@@ -135,14 +135,19 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     // ypos = 300 - ypos;
-    auto x = base_event.data.pos.x;
-    auto y = base_event.data.pos.y;
-    change_square_color((int) (x / 800 * width), (int) (y / 600 * height));
+    auto x = base_event.data.pos.x / std::pow(1.5, zoom);
+    auto y = base_event.data.pos.y / std::pow(1.5, zoom);
+
+    change_square_color((int) ((x + 1) / 2 * width), (int) ((-y + 1) / 2 * height)
+    );
     // have_change_data = true;
     update();
 }
 
 bool Labyrinth::change_square_color(int x, int y) {
+    if (x > width || y > height || x < 0 || y < 0) {
+        return false;
+    }
     int a = x + y * width;
     // 不再对颜色进行重置
     if (vertices[a * 4].color.y == 1.0f) {

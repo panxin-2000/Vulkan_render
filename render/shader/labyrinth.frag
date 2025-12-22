@@ -8,5 +8,6 @@ float rand(int seed) {return fract(sin(float(seed)) * 43758.5453);}
 void main()
 {
     int triID = gl_PrimitiveID;
-    FragColor = texture(ourTexture1, UV_position_to_fragment);
+    //    FragColor = texture(ourTexture1, UV_position_to_fragment);
+    FragColor = vec4(COLOR, 1.0);
 }
