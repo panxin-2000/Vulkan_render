@@ -56,10 +56,6 @@ public:
         return result;
     }
 
-    bool operator==(const Point_2 &R) {
-        if (this->x == R.x && this->y == R.y) return true;
-        else return false;
-    }
 
     friend bool operator<(const Point_2 &L, const Point_2 &R) {
         if (L.x < R.x) {
@@ -78,7 +74,7 @@ public:
     }
 
     friend bool operator==(const Point_2 &L, const Point_2 &R) {
-        if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
+        if (abs(L.y - R.y) < 0.000001 && abs(L.x - R.x) < 0.000001) {
             return true;
         }
         return false;
@@ -108,14 +104,21 @@ public:
         return temp;
     }
 
-    Point_2 operator/(int number) const {
+    Point_2 operator/(const float number) const {
         Point_2 temp{0, 0};
         temp.x = this->x / number;
         temp.y = this->y / number;
         return temp;
     }
 
-    const Point_2 operator-(const Point_2 &R) const {
+    Point_2 operator*(const float number) const {
+        Point_2 temp{0, 0};
+        temp.x = this->x * number;
+        temp.y = this->y * number;
+        return temp;
+    }
+
+    Point_2 operator-(const Point_2 &R) const {
         Point_2 temp{0, 0};
         temp.x = this->x - R.x;
         temp.y = this->y - R.y;
@@ -123,7 +126,7 @@ public:
     }
 
     friend Point_2 abs(const Point_2 &R) {
-        Point_2 temp{std::abs(R.x), std::abs(R.y)};
+        const Point_2 temp{std::abs(R.x), std::abs(R.y)};
         return temp;
     }
 
@@ -133,7 +136,7 @@ public:
      * @param R
      * @return
      */
-    float single_area(const Point_2 &R) {
+    float single_area(const Point_2 &R) const {
         return this->x * R.y - this->y * R.x;
     }
 
