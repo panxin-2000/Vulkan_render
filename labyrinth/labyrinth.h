@@ -42,7 +42,7 @@ public:
     using Labyrinth_mutex_type = std::mutex;
     Labyrinth_mutex_type change_vbo_date_mutex; // 同时只允许有一个线程更改数据
 
-    float zoom = 0;
+    Point_2 zoom = {0, 0};
 
     Labyrinth();
 

@@ -18,9 +18,12 @@ Labyrinth::Labyrinth() {
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
-    Shader_object::data_value_or_ptr data;
-    data.float_val = std::pow(1.5, zoom);
-    Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
+    Shader_object::data_value_or_ptr data{};
+
+    Shader_object::set_mat3_value(data.mat_3, 0, 0, std::pow(1.5, zoom.x));
+    Shader_object::set_mat3_value(data.mat_3, 1, 1, std::pow(1.5, zoom.y));
+    Shader_object::set_mat3_value(data.mat_3, 2, 2, 1.0f);
+    Labyrinth_cube->add_uniform("value", Shader_object::gl_mat3, data);
 
     // 参数这里最重要的是下面的两行
     Labyrinth_cube->add_texture_path("resoureces/picture.png", "ourTexture1");
@@ -73,10 +76,14 @@ void Labyrinth::run_step(const base_event_with_stamp &base_event) {
 }
 
 void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
-    zoom = zoom + base_event.data.scroll.y * 0.01;
-    Shader_object::data_value_or_ptr data;
-    data.float_val = std::pow(1.5, zoom);
-    Labyrinth_cube->add_uniform("value", Shader_object::gl_float, data);
+    zoom = zoom + base_event.data.scroll * 0.01;
+    Shader_object::data_value_or_ptr data{};
+
+    Shader_object::set_mat3_value(data.mat_3, 0, 0, std::pow(1.5, zoom.x));
+    Shader_object::set_mat3_value(data.mat_3, 1, 1, std::pow(1.5, zoom.y));
+    Shader_object::set_mat3_value(data.mat_3, 2, 2, 1.0f);
+
+    Labyrinth_cube->add_uniform("value", Shader_object::gl_mat3, data);
 }
 
 
@@ -135,8 +142,8 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     // ypos = 300 - ypos;
-    auto x = base_event.data.pos.x / std::pow(1.5, zoom);
-    auto y = base_event.data.pos.y / std::pow(1.5, zoom);
+    auto x = base_event.data.pos.x / std::pow(1.5, zoom.x);
+    auto y = base_event.data.pos.y / std::pow(1.5, zoom.y);
 
     change_square_color((int) ((x + 1) / 2 * width), (int) ((-y + 1) / 2 * height)
     );

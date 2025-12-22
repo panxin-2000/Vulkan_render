@@ -45,6 +45,18 @@ public:
         float mat_4[16];
     };
 
+    static void set_mat2_value(float *address, const uint8_t row, const uint8_t column, const float value) {
+        address[column * 2 + row] = value;
+    }
+
+    static void set_mat3_value(float *address, const uint8_t row, const uint8_t column, const float value) {
+        address[column * 3 + row] = value;
+    }
+
+    static void set_mat4_value(float *address, const uint8_t row, const uint8_t column, const float value) {
+        address[column * 3 + row] = value;
+    }
+
     std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
 
     void add_uniform(const std::string &name, Uniforms_type uniforms_type, data_value_or_ptr &data,
