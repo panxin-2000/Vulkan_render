@@ -19,11 +19,12 @@ Labyrinth::Labyrinth() {
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
     Shader_object::data_value_or_ptr data{};
+    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
+                                                   {std::powf(1.5, zoom.x), std::powf(1.5, zoom.y), 1.0},
+                                                   {0.0f, 0.0f, 0.0f}, {offset});
 
-    Shader_object::set_mat3_value(data.mat_3, 0, 0, std::pow(1.5, zoom.x));
-    Shader_object::set_mat3_value(data.mat_3, 1, 1, std::pow(1.5, zoom.y));
-    Shader_object::set_mat3_value(data.mat_3, 2, 2, 1.0f);
-    Labyrinth_cube->add_uniform("value", Shader_object::gl_mat3, data);
+
+    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 
     // 参数这里最重要的是下面的两行
     Labyrinth_cube->add_texture_path("resoureces/picture.png", "ourTexture1");
@@ -78,12 +79,12 @@ void Labyrinth::run_step(const base_event_with_stamp &base_event) {
 void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
     zoom = zoom + base_event.data.scroll * 0.01;
     Shader_object::data_value_or_ptr data{};
+    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
+                                                   {std::powf(1.5, zoom.x), std::powf(1.5, zoom.y), 1.0},
+                                                   {0.0f, 0.0f, 0.0f}, {offset});
 
-    Shader_object::set_mat3_value(data.mat_3, 0, 0, std::pow(1.5, zoom.x));
-    Shader_object::set_mat3_value(data.mat_3, 1, 1, std::pow(1.5, zoom.y));
-    Shader_object::set_mat3_value(data.mat_3, 2, 2, 1.0f);
 
-    Labyrinth_cube->add_uniform("value", Shader_object::gl_mat3, data);
+    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
 

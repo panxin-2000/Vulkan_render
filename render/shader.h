@@ -11,6 +11,8 @@
 #include <iostream>
 #include <map>
 
+#include "base_element/point_3.h"
+
 class Shader_object {
 public:
     GLuint shaderProgram;
@@ -54,7 +56,18 @@ public:
     }
 
     static void set_mat4_value(float *address, const uint8_t row, const uint8_t column, const float value) {
-        address[column * 3 + row] = value;
+        address[column * 4 + row] = value;
+    }
+
+    static void set_model_transform_zoom_rotate(float *address, Point_3 zoom, Point_3 rotate, Point_3 offset) {
+        set_mat4_value(address, 0, 0, zoom.x);
+        set_mat4_value(address, 1, 1, zoom.y);
+        set_mat4_value(address, 2, 2, zoom.z);
+
+        set_mat4_value(address, 0, 3, offset.x);
+        set_mat4_value(address, 1, 3, offset.y);
+        set_mat4_value(address, 2, 3, offset.z);
+        set_mat4_value(address, 3, 3, 1);
     }
 
     std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
