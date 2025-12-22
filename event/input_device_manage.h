@@ -134,14 +134,16 @@ public:
         }
     }
 
-    void handle_mouse_button_left_click(mouse_position pos) {
+    void handle_mouse_click_left(mouse_position pos) {
         pos_mouse_button_left_click = pos;
         mouse_button_left_click = true;
+        ptr_event_queue->push({EventType::mouse_click_left, "mouse_click_left", pos});
     }
 
-    void handle_mouse_button_right_click(mouse_position pos) {
+    void handle_mouse_click_right(mouse_position pos) {
         pos_mouse_button_right_click = pos;
         mouse_button_right_click = true;
+        ptr_event_queue->push({EventType::mouse_click_right, "mouse_click_right", pos});
     }
 
 
@@ -152,11 +154,18 @@ public:
                 EventType::drag, "mouse_button_left_drag",
                 base_event_with_stamp::Drag{pos, error}
             });
+            // 检查 被选中的物品
+            // 检查 pos_mouse_button_left_click 是否已经在已经选择的物品了，是可以直接移动物品，否的话见下最后一行注释
+            // 那么就是下面的一个问题，物体的 pos_mouse_button_left_click 是否还需要更新呢？
             pos_mouse_button_left_click = pos;
+            // 更新是可以的，因为物体的移动是伴随 pos_mouse_button_left_click 移动的，
+            // 移动的事件是同步的
+
+            // 未选中时也需要处理这个事件，因为有一个选择框需要显示
         } else if (mouse_button_right_click == true && !(pos == pos_mouse_button_right_click)) {
             const auto error = pos - pos_mouse_button_right_click;
             ptr_event_queue->push({
-                EventType::drag, "mouse_button_left_drag",
+                EventType::drag, "mouse_button_right_drag",
                 base_event_with_stamp::Drag{pos, error}
             });
             pos_mouse_button_right_click = pos;
@@ -167,25 +176,31 @@ public:
         ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
     }
 
-    void handle_mouse_button_left_release(mouse_position pos) {
+    void handle_mouse_release_left(mouse_position pos) {
         mouse_button_left_click = false;
         if (abs(pos - pos_mouse_button_left_click) < error_between_click_and_release)
-            ptr_event_queue->push({EventType::MouseClick, "mouse_button_left_click", pos});
+            ptr_event_queue->push({EventType::mouse_release_left, "mouse_release_left", pos});
         else {
             ptr_event_queue->push({
-                EventType::MouseClick, "left_area_select",
+                EventType::area_select, "left_area_select",
                 AABB_centroid<Point_2>{pos_mouse_button_left_click, pos}
             });
         }
     }
 
-    void handle_mouse_button_right_release(mouse_position pos) {
+    // 选择与拖动的区别，如果已经在已经选择的物品了，那么可以直接移动物品
+    // 如果在首次的坐标不再选择的物品上，那么直接走到选择的逻辑
+    // 如果拖着事件已经中了，那么如果处理选择框的事件呢？
+    // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
+
+    void handle_mouse_release_right(mouse_position pos) {
         mouse_button_right_click = false;
         if (abs(pos - pos_mouse_button_right_click) < error_between_click_and_release)
-            ptr_event_queue->push({EventType::MouseClick, "mouse_button_right_click", pos});
+            ptr_event_queue->push({EventType::mouse_release_right, "mouse_release_right", pos});
         else {
+            // 最终松开时才会处理的选择的逻辑
             ptr_event_queue->push({
-                EventType::MouseClick, "right_area_select",
+                EventType::area_select, "right_area_select",
                 AABB_centroid<Point_2>{pos_mouse_button_right_click, pos}
             });
         }
@@ -214,7 +229,7 @@ private:
     bool mouse_button_right_click = false;
     mouse_position pos_mouse_button_left_click;
     mouse_position pos_mouse_button_right_click;
-    mouse_position error_between_click_and_release = {5, 5};
+    mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
     std::mutex _mutex; // 线程安全锁
     std::unordered_set<int> pressed_keys; // Set：当前按下的按键
     std::unordered_map<std::string, ComboRule> key_combination_rules; // 组合键规则映射

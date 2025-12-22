@@ -12,7 +12,10 @@
 // 事件类型枚举（扩展时新增枚举值即可）
 enum class EventType : uint32_t {
     key_combination, // 组合键事件
-    MouseClick, // 鼠标点击事件
+    mouse_click_left, // 鼠标点击事件
+    mouse_release_left, // 鼠标点击事件
+    mouse_click_right, // 鼠标点击事件
+    mouse_release_right, // 鼠标点击事件
     scroll, // 鼠标滚动缩放事件
     drag, // 鼠标拖动事件
     area_select, // 鼠标点击事件

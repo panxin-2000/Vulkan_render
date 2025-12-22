@@ -35,7 +35,7 @@ public:
                 case EventType::key_combination:
                     Keyboard_Manage::instance().register_key_combination(observer.event_name);
                     break;
-                case EventType::MouseClick:
+                case EventType::mouse_click_left:
                     break;
                 default: ;
             }
@@ -54,6 +54,20 @@ public:
     // 通知所有观察者（分发组合键事件）
     void notifyObservers(const T_event &event) {
         std::lock_guard<std::mutex> lock(_mutex);
+        const EventType temp_type = event.type;
+        switch (temp_type) {
+            case EventType::key_combination:
+                break;
+            case EventType::mouse_click_left:
+                // 保存首次点击的位置
+                break;
+            case EventType::mouse_click_right:
+                // 保存首次点击的位置
+                // 保存首次点击的位置
+                break;
+            default: ;
+        }
+
         for (auto observer: _observers[static_cast<unsigned long>(event.type)]) {
             if (observer.event_name == event.event_name) {
                 // 这里的判断少了一点内容

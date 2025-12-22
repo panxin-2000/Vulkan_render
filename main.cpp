@@ -18,7 +18,7 @@ int main() {
         observer.set_deal_function(std::bind(&Labyrinth::run_init, labyrinth, std::placeholders::_1));
         observe_manage_instance::instance().addObserver(observer);
     } {
-        base_observer<base_event> observer{EventType::MouseClick, "mouse_button_left_click"};
+        base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
         observer.set_deal_function(std::bind(&Labyrinth::deal_event, labyrinth, std::placeholders::_1));
         observe_manage_instance::instance().addObserver(observer);
     } {

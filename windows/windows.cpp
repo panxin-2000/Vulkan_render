@@ -28,7 +28,7 @@ const GLuint WIDTH = 800, HEIGHT = 600;
 // 只要鼠标动了就会调用这里
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos) {
     x_pos = ((x_pos / WIDTH) - 0.5f) * 2, y_pos = ((y_pos / HEIGHT) - 0.5f) * -2;
-    Keyboard_Manage::instance().handle_mouse_button_left_click({(float) x_pos, (float) y_pos});
+    Keyboard_Manage::instance().handle_drag({(float) x_pos, (float) y_pos});
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -71,16 +71,16 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
 #define key_instance Keyboard_Manage::instance()
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        key_instance.handle_mouse_button_left_click({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_click_left({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        key_instance.handle_mouse_button_left_release({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_release_left({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        key_instance.handle_mouse_button_right_click({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_click_right({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-        key_instance.handle_mouse_button_right_release({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_release_right({(float) x_pos, (float) y_pos});
     }
 #undef key_instance
 }
