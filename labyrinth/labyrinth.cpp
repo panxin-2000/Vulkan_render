@@ -86,13 +86,23 @@ void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
     Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
-void Labyrinth::set_drag(const base_event_with_stamp &base_event) {
+void Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
     // 还是需要拿到 zoom 来进行一些操作的，好处是不需要在设置时再计算exp之后的 zoom 值了
+
+    // 将一个物体从这里移动到了另一个位置，应该是和相机有关的
+
+    // 拿到相机的缩放，然后还原会世界的位置的移动的改变
+
+    // 再将值设置到物体的缩放中，而不影响其他物体的缩放
+    const base_event_with_stamp::Drag &drag = base_event.data.drag;
+
+    // 没有进入到这个事件的处理中
+
 
     Shader_object::data_value_or_ptr data{};
     Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                    {zoom.x, zoom.y, 1.0},
-                                                   {0.0f, 0.0f, 0.0f}, {offset});
+                                                   {0.0f, 0.0f, 0.0f}, {drag.skew});
     Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
@@ -151,8 +161,8 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 
 void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
-    auto x = base_event.data.pos.x / std::pow(1.5, zoom.x);
-    auto y = base_event.data.pos.y / std::pow(1.5, zoom.y);
+    auto x = base_event.data.pos.x / zoom.x;
+    auto y = base_event.data.pos.y / zoom.y;
     int x_int = (x + 1) / 2 * width;
     int y_int = (-y + 1) / 2 * height;
     change_square_color(x_int, y_int);

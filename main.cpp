@@ -8,7 +8,6 @@
 #include "event/observer_manage.h"
 
 
-
 int main() {
     auto labyrinth = new Labyrinth(); {
         base_observer<base_event> observer{EventType::key_combination, "'a'"};
@@ -25,6 +24,10 @@ int main() {
     } {
         base_observer<base_event> observer{EventType::scroll, "mouse_scroll_zoom"};
         observer.set_deal_function(std::bind(&Labyrinth::set_zoom, labyrinth, std::placeholders::_1));
+        observe_manage_instance::instance().addObserver(observer);
+    } {
+        base_observer<base_event> observer{EventType::drag, "mouse_button_left_drag"};
+        observer.set_deal_function(std::bind(&Labyrinth::set_position_offset, labyrinth, std::placeholders::_1));
         observe_manage_instance::instance().addObserver(observer);
     }
     add_render_windows();

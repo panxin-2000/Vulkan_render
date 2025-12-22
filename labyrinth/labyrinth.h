@@ -62,7 +62,7 @@ public:
 
     void set_zoom(const base_event_with_stamp &base_event);
 
-    void set_drag(const base_event_with_stamp &base_event);
+    void set_position_offset(const base_event_with_stamp &base_event);
 
     bool change_square_color(int x, int y);
 
