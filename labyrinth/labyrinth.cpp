@@ -19,8 +19,8 @@ Labyrinth::Labyrinth() {
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
     Shader_object::data_value_or_ptr data{};
-    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                   {std::powf(1.5, zoom.x), std::powf(1.5, zoom.y), 1.0},
+    Shader_object::set_model_transform_zoom_rotate(data.mat_4,
+                                                   {zoom.x, zoom.y, 1.0},
                                                    {0.0f, 0.0f, 0.0f}, {offset});
 
 
@@ -77,13 +77,22 @@ void Labyrinth::run_step(const base_event_with_stamp &base_event) {
 }
 
 void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
-    zoom = zoom + base_event.data.scroll * 0.01;
+    zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
+    zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
     Shader_object::data_value_or_ptr data{};
     Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                   {std::powf(1.5, zoom.x), std::powf(1.5, zoom.y), 1.0},
+                                                   {zoom.x, zoom.y, 1.0},
                                                    {0.0f, 0.0f, 0.0f}, {offset});
+    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
+}
 
+void Labyrinth::set_drag(const base_event_with_stamp &base_event) {
+    // 还是需要拿到 zoom 来进行一些操作的，好处是不需要在设置时再计算exp之后的 zoom 值了
 
+    Shader_object::data_value_or_ptr data{};
+    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
+                                                   {zoom.x, zoom.y, 1.0},
+                                                   {0.0f, 0.0f, 0.0f}, {offset});
     Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
