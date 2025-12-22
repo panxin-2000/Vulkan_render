@@ -22,8 +22,10 @@
 #include "input_device_manage.h"
 #include "observer_manage.h"
 
-
-void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+// 只要鼠标动了就会调用这里
+void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
+    Keyboard_Manage::instance().handle_mouse_button_left_click({(float) xpos, (float) ypos});
+}
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
@@ -58,26 +60,30 @@ const GLuint WIDTH = 800, HEIGHT = 600;
  * @param mods
  */
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
-    float xpos;
-    float ypos;
-    double double_xpos;
-    double double_ypos;
-    glfwGetCursorPos(window, &double_xpos, &double_ypos);
-    xpos = ((double_xpos / WIDTH) - 0.5f) * 2, ypos = ((double_ypos / HEIGHT) - 0.5f) * -2;
+    double x_pos;
+    double y_pos;
+    glfwGetCursorPos(window, &x_pos, &y_pos);
+    x_pos = ((x_pos / WIDTH) - 0.5f) * 2, y_pos = ((y_pos / HEIGHT) - 0.5f) * -2;
     // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
-    std::cout << "x: " << xpos << " y: " << ypos << std::endl;
+    std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
+#define key_instance Keyboard_Manage::instance()
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        Keyboard_Manage::instance().handle_mouse_button_left_click({xpos, ypos});
+        key_instance.handle_mouse_button_left_click({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        Keyboard_Manage::instance().handle_mouse_button_left_release({xpos, ypos});
+        key_instance.handle_mouse_button_left_release({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        Keyboard_Manage::instance().handle_mouse_button_right_click({xpos, ypos});
+        key_instance.handle_mouse_button_right_click({(float) x_pos, (float) y_pos});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-        Keyboard_Manage::instance().handle_mouse_button_right_release({xpos, ypos});
+        key_instance.handle_mouse_button_right_release({(float) x_pos, (float) y_pos});
     }
+#undef key_instance
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+    Keyboard_Manage::instance().handle_scroll({(float) xoffset, (float) yoffset});
 }
 
 #include "tbb/tbb.h"
@@ -109,7 +115,7 @@ void add_render_windows() {
 
 
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    // glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     // glfwSetCursorEnterCallback(window, function_name);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -137,9 +143,4 @@ void add_render_windows() {
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
-}
-
-
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    Keyboard_Manage::instance().handle_scroll({(float) xoffset, (float) yoffset});
 }

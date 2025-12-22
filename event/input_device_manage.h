@@ -136,34 +136,57 @@ public:
 
     void handle_mouse_button_left_click(mouse_position pos) {
         pos_mouse_button_left_click = pos;
+        mouse_button_left_click = true;
     }
 
     void handle_mouse_button_right_click(mouse_position pos) {
         pos_mouse_button_right_click = pos;
+        mouse_button_right_click = true;
+    }
+
+
+    void handle_drag(mouse_position pos) {
+        if (mouse_button_left_click == true && !(pos == pos_mouse_button_left_click)) {
+            const auto error = pos - pos_mouse_button_left_click;
+            ptr_event_queue->push({
+                EventType::drag, "mouse_button_left_drag",
+                base_event_with_stamp::Drag{pos, error}
+            });
+            pos_mouse_button_left_click = pos;
+        } else if (mouse_button_right_click == true && !(pos == pos_mouse_button_right_click)) {
+            const auto error = pos - pos_mouse_button_right_click;
+            ptr_event_queue->push({
+                EventType::drag, "mouse_button_left_drag",
+                base_event_with_stamp::Drag{pos, error}
+            });
+            pos_mouse_button_right_click = pos;
+        }
     }
 
     void handle_scroll(mouse_position pos) const {
         ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
     }
 
-    void handle_mouse_button_left_release(mouse_position pos) const {
+    void handle_mouse_button_left_release(mouse_position pos) {
+        mouse_button_left_click = false;
         if (abs(pos - pos_mouse_button_left_click) < error_between_click_and_release)
             ptr_event_queue->push({EventType::MouseClick, "mouse_button_left_click", pos});
         else {
             ptr_event_queue->push({
                 EventType::MouseClick, "left_area_select",
-                {pos_mouse_button_left_click, pos}
+                AABB_centroid<Point_2>{pos_mouse_button_left_click, pos}
             });
         }
     }
 
-    void handle_mouse_button_right_release(mouse_position pos) const {
+    void handle_mouse_button_right_release(mouse_position pos) {
+        mouse_button_right_click = false;
         if (abs(pos - pos_mouse_button_right_click) < error_between_click_and_release)
             ptr_event_queue->push({EventType::MouseClick, "mouse_button_right_click", pos});
         else {
             ptr_event_queue->push({
                 EventType::MouseClick, "right_area_select",
-                {pos_mouse_button_right_click, pos}
+                AABB_centroid<Point_2>{pos_mouse_button_right_click, pos}
             });
         }
     }
@@ -187,6 +210,8 @@ public:
     }
 
 private:
+    bool mouse_button_left_click = false;
+    bool mouse_button_right_click = false;
     mouse_position pos_mouse_button_left_click;
     mouse_position pos_mouse_button_right_click;
     mouse_position error_between_click_and_release = {5, 5};

@@ -14,10 +14,19 @@ enum class EventType : uint32_t {
     key_combination, // 组合键事件
     MouseClick, // 鼠标点击事件
     scroll, // 鼠标滚动缩放事件
+    drag, // 鼠标拖动事件
     area_select, // 鼠标点击事件
     WindowResize, // 窗口大小变化事件
     EventType_max
 };
+
+// 鼠标拖动事件
+// 这个事件其实是稍微有点难评的
+// 需要传入首次点击的位置
+// 然后还需要添加偏移的位置
+// 拖动是一个连续的事件，需要再次判断点击的位置，然后再次更新偏移的位置，
+// 一直循环，知道松开
+
 
 // 通用事件基类
 struct base_event {
@@ -44,11 +53,16 @@ using mouse_position = Point_2;
 struct base_event_with_stamp : public base_event {
     std::chrono::milliseconds timestamp{0}; // 事件时间戳（高精度）
 
+    struct Drag {
+        Point_2 start_pos;
+        Point_2 skew;
+    };
 
     union message_data {
         mouse_position pos;
         AABB_centroid<Point_2> select_box;
         mouse_position scroll;
+        Drag drag;
     };
 
     message_data data;
@@ -70,6 +84,12 @@ struct base_event_with_stamp : public base_event {
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
         data.select_box = select_box;
+    }
+
+    base_event_with_stamp(EventType t, const std::string &event_name, Drag drag)
+        : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
+              std::chrono::system_clock::now().time_since_epoch())) {
+        data.drag = drag;
     }
 
     virtual ~base_event_with_stamp() = default; // 虚析构保证派生类析构
