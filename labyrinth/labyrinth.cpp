@@ -141,13 +141,11 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 
 void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
-    // ypos = 300 - ypos;
     auto x = base_event.data.pos.x / std::pow(1.5, zoom.x);
     auto y = base_event.data.pos.y / std::pow(1.5, zoom.y);
-
-    change_square_color((int) ((x + 1) / 2 * width), (int) ((-y + 1) / 2 * height)
-    );
-    // have_change_data = true;
+    int x_int = (x + 1) / 2 * width;
+    int y_int = (-y + 1) / 2 * height;
+    change_square_color(x_int, y_int);
     update();
 }
 

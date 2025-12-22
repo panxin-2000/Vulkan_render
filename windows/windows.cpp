@@ -22,9 +22,13 @@
 #include "input_device_manage.h"
 #include "observer_manage.h"
 
+const GLuint WIDTH = 800, HEIGHT = 600;
+
+
 // 只要鼠标动了就会调用这里
-void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
-    Keyboard_Manage::instance().handle_mouse_button_left_click({(float) xpos, (float) ypos});
+void mouse_callback(GLFWwindow *window, double x_pos, double y_pos) {
+    x_pos = ((x_pos / WIDTH) - 0.5f) * 2, y_pos = ((y_pos / HEIGHT) - 0.5f) * -2;
+    Keyboard_Manage::instance().handle_mouse_button_left_click({(float) x_pos, (float) y_pos});
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -49,7 +53,6 @@ void glfwFocusCallback(GLFWwindow *window, int focused) {
 }
 
 // Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600;
 
 
 /**
