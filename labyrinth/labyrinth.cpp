@@ -95,6 +95,7 @@ void Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
 
     // 再将值设置到物体的缩放中，而不影响其他物体的缩放
     const base_event_with_stamp::Drag &drag = base_event.data.drag;
+    offset = offset + drag.skew;
 
     // 没有进入到这个事件的处理中
 
@@ -102,7 +103,7 @@ void Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
     Shader_object::data_value_or_ptr data{};
     Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                    {zoom.x, zoom.y, 1.0},
-                                                   {0.0f, 0.0f, 0.0f}, {drag.skew});
+                                                   {0.0f, 0.0f, 0.0f}, {offset});
     Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
