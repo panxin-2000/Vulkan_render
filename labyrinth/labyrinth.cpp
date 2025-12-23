@@ -160,10 +160,25 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 }
 
 
+// x: -0.936982 y: 0.948659
+// x: -0.936982 y: 0.948659
+//  offset x: 0 y: 0
+// x: -0.936982 y: 0.94944
+// x: -0.552598 y: 0.514779
+//  offset x: 0.38499 y: -0.434661
+// x: -0.552598 y: 0.514779
+// x: -0.552598 y: 0.514779
+//  offset x: 0.38499 y: -0.434661
+
 void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
-    auto x = base_event.data.pos.x / zoom.x;
-    auto y = base_event.data.pos.y / zoom.y;
+    // 有一点内容需要明确，offset 其实应该指的是迷宫方块左下角的坐标
+    auto x = (base_event.data.pos.x - offset.x) / zoom.x;
+    auto y = (base_event.data.pos.y - offset.y) / zoom.y;
+
+    std::cout << " offset x: " << offset.x << " y: " << offset.y << std::endl;
+
+    // 需要分清楚是哪两个坐标在转换，
     int x_int = (x + 1) / 2 * width;
     int y_int = (-y + 1) / 2 * height;
     change_square_color(x_int, y_int);
