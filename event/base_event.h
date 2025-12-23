@@ -61,9 +61,14 @@ struct base_event_with_stamp : public base_event {
         Point_2 skew;
     };
 
+    struct click_and_release_pos {
+        Point_2 click_pos;
+        Point_2 release_pos;
+    };
+
     union message_data {
         mouse_position pos;
-        AABB_centroid<Point_2> select_box;
+        click_and_release_pos select_box;
         mouse_position scroll;
         Drag drag;
     };
@@ -81,12 +86,6 @@ struct base_event_with_stamp : public base_event {
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
         data.pos = pos;
-    }
-
-    base_event_with_stamp(EventType t, const std::string &event_name, AABB_centroid<Point_2> select_box)
-        : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
-              std::chrono::system_clock::now().time_since_epoch())) {
-        data.select_box = select_box;
     }
 
     base_event_with_stamp(EventType t, const std::string &event_name, Drag drag)

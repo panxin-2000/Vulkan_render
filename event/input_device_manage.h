@@ -136,12 +136,14 @@ public:
 
     void handle_mouse_click_left(mouse_position pos) {
         pos_mouse_button_left_click = pos;
+        first_pos_mouse_left_click = pos;
         mouse_button_left_click = true;
         ptr_event_queue->push({EventType::mouse_click_left, "mouse_click_left", pos});
     }
 
     void handle_mouse_click_right(mouse_position pos) {
         pos_mouse_button_right_click = pos;
+        first_pos_mouse_right_click = pos;
         mouse_button_right_click = true;
         ptr_event_queue->push({EventType::mouse_click_right, "mouse_click_right", pos});
     }
@@ -176,14 +178,17 @@ public:
         ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
     }
 
-    void handle_mouse_release_left(mouse_position pos) {
+    void handle_mouse_release_left(const mouse_position release_pos) {
         mouse_button_left_click = false;
-        if (abs(pos - pos_mouse_button_left_click) < error_between_click_and_release)
-            ptr_event_queue->push({EventType::mouse_release_left, "mouse_release_left", pos});
+        if (abs(release_pos - first_pos_mouse_left_click) < error_between_click_and_release)
+            ptr_event_queue->push({
+                EventType::mouse_release_left, "mouse_release_left",
+                {first_pos_mouse_left_click, release_pos}
+            });
         else {
             ptr_event_queue->push({
                 EventType::area_select, "left_area_select",
-                AABB_centroid<Point_2>{pos_mouse_button_left_click, pos}
+                {first_pos_mouse_left_click, release_pos}
             });
         }
     }
@@ -193,15 +198,18 @@ public:
     // 如果拖着事件已经中了，那么如果处理选择框的事件呢？
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
 
-    void handle_mouse_release_right(mouse_position pos) {
+    void handle_mouse_release_right(const mouse_position release_pos) {
         mouse_button_right_click = false;
-        if (abs(pos - pos_mouse_button_right_click) < error_between_click_and_release)
-            ptr_event_queue->push({EventType::mouse_release_right, "mouse_release_right", pos});
+        if (abs(release_pos - first_pos_mouse_right_click) < error_between_click_and_release)
+            ptr_event_queue->push({
+                EventType::mouse_release_right, "mouse_release_right",
+                {first_pos_mouse_right_click, release_pos}
+            });
         else {
             // 最终松开时才会处理的选择的逻辑
             ptr_event_queue->push({
                 EventType::area_select, "right_area_select",
-                AABB_centroid<Point_2>{pos_mouse_button_right_click, pos}
+                {first_pos_mouse_right_click, release_pos}
             });
         }
     }
@@ -229,6 +237,8 @@ private:
     bool mouse_button_right_click = false;
     mouse_position pos_mouse_button_left_click;
     mouse_position pos_mouse_button_right_click;
+    mouse_position first_pos_mouse_left_click;
+    mouse_position first_pos_mouse_right_click;
     mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
     std::mutex _mutex; // 线程安全锁
     std::unordered_set<int> pressed_keys; // Set：当前按下的按键
