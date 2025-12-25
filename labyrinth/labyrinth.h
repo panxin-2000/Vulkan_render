@@ -78,6 +78,10 @@ public:
 
     ~Labyrinth();
 
+    void add_observer();
+
+    void remove_observer();
+
 
     bool add_square();
 
