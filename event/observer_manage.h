@@ -46,7 +46,7 @@ public:
     void removeObserver(T_observer &observer) {
         const EventType temp_type = observer.type;
         std::lock_guard<std::mutex> lock(_mutex);
-        auto temp = _observers[static_cast<unsigned long>(temp_type)];
+        auto &temp = _observers[static_cast<unsigned long>(temp_type)];
         temp.erase(
             std::remove(temp.begin(), temp.end(), observer), temp.end()
         );
@@ -67,7 +67,7 @@ public:
                 break;
             default: ;
         }
-        for (auto observer: _observers[static_cast<unsigned long>(event.type)]) {
+        for (auto &observer: _observers[static_cast<unsigned long>(event.type)]) {
             if (observer.event_name == event.event_name) {
                 // 这里的判断少了一点内容
 

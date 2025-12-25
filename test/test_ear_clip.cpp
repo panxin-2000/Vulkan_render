@@ -212,6 +212,8 @@ TEST(ear_clip, ear_clip_half_edge) {
 
         add_render_windows();
 
+        delete labyrinth;
+
 
         if (result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
