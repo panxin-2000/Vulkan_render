@@ -5,14 +5,22 @@
 
 #include "base_event.h"
 #include "base_observer.h"
+#include "input_component.h"
 #include "observer_manage.h"
 #include "render_object_manage.h"
 
-Labyrinth::Labyrinth() {
+Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
     init_render_object();
 
     /***************创建*******************/
-    Labyrinth_cube = new render_object();
+    Labyrinth_cube = AddComponent<render_object>("玩家渲染组件");
+    observer = AddComponent<InputComponent>("按键输入组件");
+
+    // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
+    // observe_manage_instance::instance().addObserver(*observer);
+    // base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
+    // observer.set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
+
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -42,55 +50,34 @@ Labyrinth::Labyrinth() {
     add_observer();
 }
 
-void Labyrinth::add_observer() { {
-        base_observer<base_event> observer{EventType::key_combination, "'a'"};
-        observer.set_deal_function(std::bind(&Labyrinth::run_step, this, std::placeholders::_1));
-        observe_manage_instance::instance().addObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::key_combination, "'q'"};
-        observer.set_deal_function(std::bind(&Labyrinth::run_init, this, std::placeholders::_1));
-        observe_manage_instance::instance().addObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
-        observer.set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
-        observe_manage_instance::instance().addObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::scroll, "mouse_scroll_zoom"};
-        observer.set_deal_function(std::bind(&Labyrinth::set_zoom, this, std::placeholders::_1));
-        observe_manage_instance::instance().addObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::drag, "mouse_button_left_drag"};
-        observer.set_deal_function(std::bind(&Labyrinth::set_position_offset, this, std::placeholders::_1));
-        observe_manage_instance::instance().addObserver(observer);
-    }
+void Labyrinth::add_observer() {
+    observer->Subscribe_Event(EventType::key_combination, "'a'",
+                                std::bind(&Labyrinth::run_step, this, std::placeholders::_1));
+    observer->Subscribe_Event(EventType::key_combination, "'q'",
+                                std::bind(&Labyrinth::run_init, this, std::placeholders::_1));
+    observer->Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
+                                std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
+    observer->Subscribe_Event(EventType::scroll, "mouse_scroll_zoom",
+                                std::bind(&Labyrinth::set_zoom, this, std::placeholders::_1));
+    observer->Subscribe_Event(EventType::drag, "mouse_button_left_drag",
+                                std::bind(&Labyrinth::set_position_offset, this, std::placeholders::_1));
 }
 
-void Labyrinth::remove_observer() { {
-        base_observer<base_event> observer{EventType::key_combination, "'a'"};
-        observer.set_deal_function(std::bind(&Labyrinth::run_step, this, std::placeholders::_1));
-        observe_manage_instance::instance().removeObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::key_combination, "'q'"};
-        observer.set_deal_function(std::bind(&Labyrinth::run_init, this, std::placeholders::_1));
-        observe_manage_instance::instance().removeObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
-        observer.set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
-        observe_manage_instance::instance().removeObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::scroll, "mouse_scroll_zoom"};
-        observer.set_deal_function(std::bind(&Labyrinth::set_zoom, this, std::placeholders::_1));
-        observe_manage_instance::instance().removeObserver(observer);
-    } {
-        base_observer<base_event> observer{EventType::drag, "mouse_button_left_drag"};
-        observer.set_deal_function(std::bind(&Labyrinth::set_position_offset, this, std::placeholders::_1));
-        observe_manage_instance::instance().removeObserver(observer);
-    }
+void Labyrinth::remove_observer() {
+    observer->Unsubscribe_Event(EventType::key_combination, "'a'",
+                                  std::bind(&Labyrinth::run_step, this, std::placeholders::_1));
+    observer->Unsubscribe_Event(EventType::key_combination, "'q'",
+                                  std::bind(&Labyrinth::run_init, this, std::placeholders::_1));
+    observer->Unsubscribe_Event(EventType::mouse_release_left, "mouse_release_left",
+                                  std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
+    observer->Unsubscribe_Event(EventType::scroll, "mouse_scroll_zoom",
+                                  std::bind(&Labyrinth::set_zoom, this, std::placeholders::_1));
+    observer->Unsubscribe_Event(EventType::drag, "mouse_button_left_drag",
+                                  std::bind(&Labyrinth::set_position_offset, this, std::placeholders::_1));
 }
 
 Labyrinth::~Labyrinth() {
     remove_observer();
-    delete Labyrinth_cube;
     delete_graph(*graph);
 }
 
@@ -109,7 +96,7 @@ void Labyrinth::update() {
 }
 
 
-void Labyrinth::run_init(const base_event_with_stamp &base_event) {
+bool Labyrinth::run_init(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     dijkstra_init(*graph, {0, 0}, {width - 1, height - 1},
                   vertices_priority_queue);
@@ -117,7 +104,7 @@ void Labyrinth::run_init(const base_event_with_stamp &base_event) {
     update();
 }
 
-void Labyrinth::run_step(const base_event_with_stamp &base_event) {
+bool Labyrinth::run_step(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     auto u = dijkstra_step(*graph, vertices_priority_queue);
     if (u != nullptr) {
@@ -126,7 +113,7 @@ void Labyrinth::run_step(const base_event_with_stamp &base_event) {
     update();
 }
 
-void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
+bool Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
     zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
     zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
     Shader_object::data_value_or_ptr data{};
@@ -136,7 +123,7 @@ void Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
     Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
 }
 
-void Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
+bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
     // 还是需要拿到 zoom 来进行一些操作的，好处是不需要在设置时再计算exp之后的 zoom 值了
 
     // 将一个物体从这里移动到了另一个位置，应该是和相机有关的
@@ -220,7 +207,7 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 // x: -0.552598 y: 0.514779
 //  offset x: 0.38499 y: -0.434661
 
-void Labyrinth::deal_event(const base_event_with_stamp &base_event) {
+bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     // 有一点内容需要明确，offset 其实应该指的是迷宫方块左下角的坐标
     auto x = (base_event.data.select_box.click_pos.x - offset.x) / zoom.x;

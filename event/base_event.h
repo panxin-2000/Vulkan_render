@@ -11,15 +11,17 @@
 
 // 事件类型枚举（扩展时新增枚举值即可）
 enum class EventType : uint32_t {
-    key_combination, // 组合键事件
-    mouse_click_left, // 鼠标点击事件
-    mouse_release_left, // 鼠标点击事件
-    mouse_click_right, // 鼠标点击事件
+    mouse_click_left,    // 鼠标点击事件
+    mouse_release_left,  // 鼠标点击事件
+    mouse_click_right,   // 鼠标点击事件
     mouse_release_right, // 鼠标点击事件
-    scroll, // 鼠标滚动缩放事件
-    drag, // 鼠标拖动事件
-    area_select, // 鼠标点击事件
-    WindowResize, // 窗口大小变化事件
+    scroll,              // 鼠标滚动缩放事件
+    drag,                // 鼠标拖动事件
+    area_select,         // 鼠标点击事件
+    // 上面的都是需要AABB包围盒的，问题是我要AABB包围盒放在哪里？
+    // 应该放置在
+    key_combination, // 组合键事件
+    WindowResize,    // 窗口大小变化事件
     EventType_max
 };
 
@@ -34,7 +36,7 @@ enum class EventType : uint32_t {
 // 通用事件基类
 struct base_event {
     EventType type = EventType::EventType_max; // 事件类型
-    std::string event_name; // 事件名称
+    std::string event_name;                    // 事件名称
 
     base_event() = default;
 

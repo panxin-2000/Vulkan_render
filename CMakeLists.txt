@@ -65,6 +65,8 @@ file(GLOB_RECURSE WINDOW
 include_directories(event)
 include_directories(labyrinth)
 include_directories(input_device)
+include_directories(component)
+include_directories(interactable_object)
 
 
 file(GLOB_RECURSE LABYRINTH
@@ -153,8 +155,6 @@ add_executable(hello_mac
         test/longest_continuous_sequence.cpp
         test/set_graph.cpp)
 target_link_libraries(hello_mac ${CURSES_LIBRARIES})
-
-
 
 
 find_package(TBB REQUIRED)

@@ -5,6 +5,7 @@
 #ifndef LEARN_OPENGL_KEYCOMBOOBSERVER_H
 #define LEARN_OPENGL_KEYCOMBOOBSERVER_H
 #include <iostream>
+#include "base_event.h"
 
 // 观察者抽象基类
 template<typename T_event>
@@ -21,13 +22,13 @@ public:
     using observer_event_type = T_event;
 
 
-    void set_deal_function(std::function<void(base_event_with_stamp)> function) {
+    void set_deal_function(std::function<bool (base_event_with_stamp)> function) {
         on_Event = function;
     }
 
 
     // 组合键事件回调接口
-    std::function<void(base_event_with_stamp)> on_Event;
+    std::function<bool (base_event_with_stamp)> on_Event;
 };
 
 

@@ -43,9 +43,10 @@ public:
     }
 
     // 移除观察者
-    void removeObserver(T_observer *observer, EventType type) {
+    void removeObserver(T_observer &observer) {
+        const EventType temp_type = observer.type;
         std::lock_guard<std::mutex> lock(_mutex);
-        auto temp = _observers[static_cast<unsigned long>(type)];
+        auto temp = _observers[static_cast<unsigned long>(temp_type)];
         temp.erase(
             std::remove(temp.begin(), temp.end(), observer), temp.end()
         );
@@ -63,15 +64,16 @@ public:
                 break;
             case EventType::mouse_click_right:
                 // 保存首次点击的位置
-                // 保存首次点击的位置
                 break;
             default: ;
         }
-
         for (auto observer: _observers[static_cast<unsigned long>(event.type)]) {
             if (observer.event_name == event.event_name) {
                 // 这里的判断少了一点内容
-                observer.on_Event(event);
+
+                // 处理到相应的事件之后就退出整个循环
+                if (observer.on_Event(event) == true)
+                    break;
             }
         }
     }
@@ -96,6 +98,11 @@ public:
         return;
     }
 
+    /**
+     * 这个函数什么时候能够调用呢？应该是调用不了的
+     * 因为没有_eventQueue 的打开的函数
+     * 还有就是因为创建全局实例的时候，只有一次，所以
+     */
     void observer_manage_thread_close() {
         _eventQueue.close();
     }

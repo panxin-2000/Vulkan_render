@@ -4,11 +4,16 @@
 
 #include <random>
 #include <gtest/gtest.h>
+
 #include "base_element/geometry/triangle.h"
 #include "ear_clip.h"
+#include "labyrinth.h"
+#include "observer_manage.h"
 #include "base_element/half_edge/half_edge_struct.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
+#include "base_event.h"
+#include "base_observer.h"
 
 #include "render_object_manage.h"
 #include "windows.h"
@@ -178,6 +183,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         auto result_segments = hf.get_all_triangles_data(true);
 
+        auto labyrinth = new Labyrinth("迷宫");
 
         auto temp_trapezoid = new render_object();
         /***************设置参数**********************/
@@ -405,7 +411,7 @@ TEST(unique_point, int) {
     auto new_p = set(std::move(p));
     EXPECT_EQ(*new_p, 5);
     EXPECT_EQ(p, nullptr);
-    std::move(new_p); // 只调用一个单独的move是没有什么作用的
+    std::move(new_p);                                 // 只调用一个单独的move是没有什么作用的
     std::shared_ptr<int> shared_p = std::move(new_p); // 还需要添加等号或者转移的实际操作才会生效
     EXPECT_EQ(*shared_p, 5);
 }
