@@ -52,20 +52,20 @@ Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
 
 void Labyrinth::add_observer() {
     observer->Subscribe_Event(EventType::key_combination, "'a'",
-                              std::bind(&Labyrinth::run_step, this, std::placeholders::_1));
+                              [this](auto &&PH1) { return run_step(std::forward<decltype(PH1)>(PH1)); });
     observer->Subscribe_Event(EventType::key_combination, "'q'",
-                              std::bind(&Labyrinth::run_init, this, std::placeholders::_1));
+                              [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
     observer->Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
-                              std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
+                              [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
     observer->Subscribe_Event(EventType::scroll, "mouse_scroll_zoom",
-                              std::bind(&Labyrinth::set_zoom, this, std::placeholders::_1));
+                              [this](auto &&PH1) { return set_zoom(std::forward<decltype(PH1)>(PH1)); });
     observer->Subscribe_Event(EventType::drag, "mouse_button_left_drag",
-                              std::bind(&Labyrinth::set_position_offset, this, std::placeholders::_1));
+                              [this](auto &&PH1) { return set_position_offset(std::forward<decltype(PH1)>(PH1)); });
 }
 
 
 Labyrinth::~Labyrinth() {
-    observer->Unsubscribe_Event_all();// 手动释放之后，再执行析构，否则析构过程中，执行了一个绑定的函数，结果是什么，确定不了
+    observer->Unsubscribe_Event_all(); // 手动释放之后，再执行析构，否则析构过程中，执行了一个绑定的函数，结果是什么，确定不了
     // 因为按键写成了全局的
     delete_graph(*graph);
 }
