@@ -72,11 +72,11 @@ struct Element_VBO_object {
     }
 
     void update_buffer_data() {
-        // if (need_update) {
+        if (need_update) {
             currently_active = !currently_active;
             VBO_new->update_buffer_data(render_size,render_data);
             need_update = false;
-        // }
+        }
     }
 
     int get_draw_count() {
