@@ -83,8 +83,6 @@ public:
 
     void add_observer();
 
-    void remove_observer();
-
 
     bool add_square();
 
