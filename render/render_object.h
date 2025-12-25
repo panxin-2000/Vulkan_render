@@ -20,6 +20,33 @@
 #include "texture_TBO.h"
 #include "shader.h"
 
+
+// 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
+enum class RenderLayer {
+    Background, // 背景
+    World, // 场景物体
+    Character, // 角色
+    Weapon, // 武器
+    UI // 界面
+};
+
+// 混合模式（透明/不透明渲染）
+enum class BlendMode {
+    Opaque, // 不透明（默认）
+    AlphaBlend, // 阿尔法混合（普通透明）
+    Additive, // 加法混合（发光效果）
+    Multiply // 乘法混合（暗化效果）
+};
+
+// 阴影模式
+enum class ShadowMode {
+    CastAndReceive, // 投射并接收阴影（默认）
+    CastOnly, // 仅投射阴影
+    ReceiveOnly, // 仅接收阴影
+    None // 无阴影
+};
+
+
 class render_object {
 private:
     vertex_array_VAO *VAO_new;
