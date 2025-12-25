@@ -185,7 +185,7 @@ TEST(ear_clip, ear_clip_half_edge) {
 
         auto labyrinth = new Labyrinth("迷宫");
 
-        auto temp_trapezoid = new render_object();
+        auto temp_trapezoid = new render_object(nullptr, "ear clip 后的三角形组");
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
@@ -344,7 +344,7 @@ TEST(ear_clip, test_point_location) {
         auto result_2 = find_all_leaf_node(root);
 
 
-        auto temp_trapezoid = new render_object();
+        auto temp_trapezoid = new render_object(nullptr, "梯形");
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
