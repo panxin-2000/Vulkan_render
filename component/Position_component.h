@@ -4,6 +4,8 @@
 
 #ifndef HELLO_MAC_RENDER_COMPONENT_H
 #define HELLO_MAC_RENDER_COMPONENT_H
+#include "base_event.h"
+#include "base_element/point_3.h"
 #include "component.h"
 #include "shader.h"
 
@@ -37,20 +39,10 @@ public:
         return true;
     }
 
-    bool update_position() {
-        if (const auto owner_ = get_owner(); owner_ != nullptr) {
-            // auto render = owner_->get_render_component();
-            // if (render != nullptr) {
-            // Shader_object::data_value_or_ptr data{};
-            // Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-            // {zoom.x, zoom.y, 1.0},
-            // {0.0f, 0.0f, 0.0f}, {offset});
-            // render->add_uniform("model_transform", Shader_object::gl_mat4, data);
-            // }
-        }
-    }
+    bool update_position();
 
-private:
+private
+:
     Point_2 zoom = {1, 1};
     Point_2 offset = {0, 0};
 };

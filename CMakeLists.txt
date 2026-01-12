@@ -161,6 +161,6 @@ find_package(TBB REQUIRED)
 
 
 add_executable(learn_openGL main.cpp
-#        component/Position_component.c
+        "component/Position_component.cpp"
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
 target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen)

@@ -5,13 +5,10 @@
 #ifndef LABYRINTH_H
 #define LABYRINTH_H
 
-#include "base_event.h"
-#include "base_element/point_3.h"
-// 下面的两行，不能放到最前面？
 #include "actor.h"
-#include "input_component.h"
 #include "Position_component.h"
 #include "render_component.h"
+#include "input_component.h"
 
 struct Vertex {
     Point_3 position;
