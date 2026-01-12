@@ -10,7 +10,7 @@
  * @param render_object
  * @return
  */
-bool add_object_to_render_manager(render_object *render_object) {
+bool add_object_to_render_manager(render_component *render_object) {
     render_object_manage::get_instance().add_render_object(render_object);
     return true;
 }

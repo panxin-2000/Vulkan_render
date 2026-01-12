@@ -5,7 +5,6 @@
 #ifndef HELLO_MAC_COMPONENT_H
 #define HELLO_MAC_COMPONENT_H
 #include <iostream>
-#include <vector>
 #include <memory>
 #include <string>
 
@@ -13,48 +12,41 @@
 class Actor;
 
 // ===================== 组件基类（模拟 UActorComponent） =====================
-class ActorComponent {
+class Actor_component {
 public:
-    // 构造函数：传入宿主指针
-    ActorComponent(Actor *owner, const std::string &compName)
-        : Owner(owner), ComponentName(compName), bIsActive(true) {
-        std::cout << "组件 [" << ComponentName << "] 已创建" << std::endl;
+    Actor_component(Actor *owner, const std::string &comp_name)
+        : owner(owner), component_name(comp_name), bIsActive(true) {
+        std::cout << "组件 [" << component_name << "] 已创建" << std::endl;
     }
 
-    // 虚析构函数：支持子类多态
-    virtual ~ActorComponent() {
-        std::cout << "组件 [" << ComponentName << "] 已销毁" << std::endl;
+    virtual ~Actor_component() {
+        std::cout << "组件 [" << component_name << "] 已销毁" << std::endl;
     }
 
-    // 组件初始化（生命周期函数）
-    virtual void Initialize() {
+    virtual void initialize() {
         if (bIsActive) {
-            std::cout << "组件 [" << ComponentName << "] 已初始化" << std::endl;
+            std::cout << "组件 [" << component_name << "] 已初始化" << std::endl;
         }
     }
 
-    // // 组件帧更新（生命周期函数）
-    // virtual void Tick(float DeltaTime) {
-    //     if (bIsActive) {
-    //         std::cout << "组件 [" << ComponentName << "] 正在更新（DeltaTime：" << DeltaTime << "）" << std::endl;
-    //     }
-    // }
-
-    // 激活/禁用组件
-    void SetActive(bool bActive) {
+    void set_active(bool bActive) {
         bIsActive = bActive;
-        std::cout << "组件 [" << ComponentName << "] " << (bActive ? "已激活" : "已禁用") << std::endl;
+        std::cout << "组件 [" << component_name << "] " << (bActive ? "已激活" : "已禁用") << std::endl;
     }
 
     // 获取组件名称
-    std::string GetComponentName() const {
-        return ComponentName;
+    std::string get_name() const {
+        return component_name;
+    }
+
+    Actor *get_owner() const {
+        return owner;
     }
 
 protected:
-    Actor *Owner;              // 组件所属宿主（不可为空）
-    std::string ComponentName; // 组件名称
-    bool bIsActive;            // 组件是否激活
+    Actor *owner;               // 组件所属宿主（不可为空）
+    std::string component_name; // 组件名称
+    bool bIsActive;             // 组件是否激活
 };
 
 

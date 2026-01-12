@@ -48,7 +48,7 @@ enum class ShadowMode {
 };
 
 
-class render_object : public ActorComponent {
+class render_component : public Actor_component {
 private:
     vertex_array_VAO *VAO_new;
 
@@ -72,8 +72,8 @@ private:
     const void *UBO_data;
 
 public:
-    render_object(Actor *owner, const std::string &compName)
-        : ActorComponent(owner, compName) {
+    render_component(Actor *owner, const std::string &compName)
+        : Actor_component(owner, compName) {
     }
 
     bool add_texture_path(char const *path, char const *texture_name) {
@@ -84,7 +84,7 @@ public:
 
     void render_object_shader_init();
 
-    ~render_object() {
+    ~render_component() {
         if (VBO_new != nullptr) {
             delete VBO_new;
         }

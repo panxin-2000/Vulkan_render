@@ -10,7 +10,6 @@
 #include <sstream>
 #include <iostream>
 #include <map>
-
 #include "base_element/point_3.h"
 
 class Shader_object {

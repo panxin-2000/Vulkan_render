@@ -12,9 +12,9 @@
 // 还好，只是要做AABB的二叉树，第一个问题事，如果AABB树相交应该怎么办
 
 
-template<typename T, typename index_node>
-class aabb_tree : public index_tree_base<T, index_node> {
-    using node = index_node;
+template<typename T>
+class aabb_tree : public index_tree_base<T, Quad_Tree_Node<T> > {
+    using node = Quad_Tree_Node<T>;
 
 public:
     v_index tree_insert_value(v_index root, T data) {
@@ -28,6 +28,9 @@ public:
         // 然后知道当前结点的位置和大小
         // 大小用于判断当前应该在哪一个层
         // 位置用于判断在四叉树的那个格子中
+        if (aabb_tree::get_root_index() == aabb_tree::get_nil_index()) {
+
+        }
         // auto temp = BIN_tree::add_new_node(aabb_tree::get_root_index(),
         //                                    new_node_v_index,
         //                                    aabb_tree::get_nil_index(),

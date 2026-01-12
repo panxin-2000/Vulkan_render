@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/2/26.
 //
 
-#include <render_object.h>
+#include <render_component.h>
 #include <iostream>
 #include <vector>
 #include <glm/glm.hpp>

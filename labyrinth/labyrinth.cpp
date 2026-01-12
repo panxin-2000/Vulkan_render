@@ -7,14 +7,16 @@
 #include "base_observer.h"
 #include "input_component.h"
 #include "observer_manage.h"
+#include "Position_component.h"
 #include "render_object_manage.h"
 
 Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
     init_render_object();
 
     /***************创建*******************/
-    Labyrinth_cube = AddComponent<render_object>("玩家渲染组件");
-    observer = AddComponent<InputComponent>("按键输入组件");
+    Labyrinth_cube = get_render_component();
+    observer = get_input_component();
+    position = add_position_component();
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
     // observe_manage_instance::instance().addObserver(*observer);
@@ -28,13 +30,7 @@ Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
-    Shader_object::data_value_or_ptr data{};
-    Shader_object::set_model_transform_zoom_rotate(data.mat_4,
-                                                   {zoom.x, zoom.y, 1.0},
-                                                   {0.0f, 0.0f, 0.0f}, {offset});
-
-
-    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
+    position->update_position();
 
     // 参数这里最重要的是下面的两行
     Labyrinth_cube->add_texture_path("resoureces/picture.png", "ourTexture1");
@@ -103,13 +99,9 @@ bool Labyrinth::run_step(const base_event_with_stamp &base_event) {
 }
 
 bool Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
-    zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
-    zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
-    Shader_object::data_value_or_ptr data{};
-    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                   {zoom.x, zoom.y, 1.0},
-                                                   {0.0f, 0.0f, 0.0f}, {offset});
-    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
+    // zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
+    // zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
+    position->update_position();
 }
 
 bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
@@ -121,16 +113,11 @@ bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
 
     // 再将值设置到物体的缩放中，而不影响其他物体的缩放
     const base_event_with_stamp::Drag &drag = base_event.data.drag;
-    offset = offset + drag.skew;
+    // offset = offset + drag.skew;
 
     // 没有进入到这个事件的处理中
 
-
-    Shader_object::data_value_or_ptr data{};
-    Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                   {zoom.x, zoom.y, 1.0},
-                                                   {0.0f, 0.0f, 0.0f}, {offset});
-    Labyrinth_cube->add_uniform("model_transform", Shader_object::gl_mat4, data);
+    position->update_position();
 }
 
 
@@ -148,7 +135,7 @@ void Labyrinth::init_render_object() {
 }
 
 
-bool Labyrinth::add_box(position start_position, position end_position) {
+bool Labyrinth::add_box(Position start_position, Position end_position) {
     Vertex vertex; //一定会有四个点，分别是x最大和x最小，y最大和y最小
     // x小y大 2     x大y大 3
     // x小y小 0     x大y小 1
@@ -199,18 +186,18 @@ bool Labyrinth::add_box(position start_position, position end_position) {
 bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     // 有一点内容需要明确，offset 其实应该指的是迷宫方块左下角的坐标
-    auto x = (base_event.data.select_box.click_pos.x - offset.x) / zoom.x;
-    auto y = (base_event.data.select_box.click_pos.y - offset.y) / zoom.y;
-    int x_int = (x + 1) / 2 * width;
-    int y_int = (-y + 1) / 2 * height;
-    auto e_x = (base_event.data.select_box.release_pos.x - offset.x) / zoom.x;
-    auto e_y = (base_event.data.select_box.release_pos.y - offset.y) / zoom.y;
-    int e_x_int = (e_x + 1) / 2 * width;
-    int e_y_int = (-e_y + 1) / 2 * height;
-    if (x_int == e_x_int && y_int == e_y_int) {
-        change_square_color(x_int, y_int);
-        update();
-    }
+    // auto x = (base_event.data.select_box.click_pos.x - offset.x) / zoom.x;
+    // auto y = (base_event.data.select_box.click_pos.y - offset.y) / zoom.y;
+    // int x_int = (x + 1) / 2 * width;
+    // int y_int = (-y + 1) / 2 * height;
+    // auto e_x = (base_event.data.select_box.release_pos.x - offset.x) / zoom.x;
+    // auto e_y = (base_event.data.select_box.release_pos.y - offset.y) / zoom.y;
+    // int e_x_int = (e_x + 1) / 2 * width;
+    // int e_y_int = (-e_y + 1) / 2 * height;
+    // if (x_int == e_x_int && y_int == e_y_int) {
+        // change_square_color(x_int, y_int);
+        // update();
+    // }
 }
 
 bool Labyrinth::change_square_color(int x, int y) {

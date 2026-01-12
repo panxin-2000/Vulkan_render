@@ -13,14 +13,14 @@
 #include "observer_manage.h"
 
 
-class InputComponent : public ActorComponent {
+class Input_Component : public Actor_component {
 public:
-    InputComponent(Actor *owner, const std::string &compName)
-        : ActorComponent(owner, compName) {
-        std::cout << "输入组件 [" << ComponentName << "] 已初始化（关联全局分发器）" << std::endl;
+    Input_Component(Actor *owner, const std::string &compName)
+        : Actor_component(owner, compName) {
+        std::cout << "输入组件 [" << component_name << "] 已初始化（关联全局分发器）" << std::endl;
     }
 
-    ~InputComponent() override {
+    ~Input_Component() override {
         for (auto observer: _observers) {
             observe_manage_instance::instance().removeObserver(observer);
         }
@@ -60,7 +60,7 @@ public:
         _observers.clear();
     }
 
-
+private:
     std::vector<base_observer<base_event> > _observers;
 };
 

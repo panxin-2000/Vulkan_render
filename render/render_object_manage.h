@@ -10,13 +10,13 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "render_object.h"
+#include "render_component.h"
 
 class render_object_manage {
 private:
     mutable std::mutex mtx; // 互斥锁（mutable支持const方法加锁）
-    std::vector<render_object *> render_objects;
-    std::vector<render_object *> need_init;
+    std::vector<render_component *> render_objects;
+    std::vector<render_component *> need_init;
 
     std::atomic<bool> have_object_need_update = false;
     std::atomic<bool> need_render = true;
@@ -66,7 +66,7 @@ public:
         have_object_need_update = status;
     }
 
-    void add_render_object(render_object *render_object) {
+    void add_render_object(render_component *render_object) {
         render_objects.push_back(render_object);
         need_init.push_back(render_object);
     }
@@ -122,7 +122,7 @@ public:
 };
 
 
-bool add_object_to_render_manager(render_object *render_object);
+bool add_object_to_render_manager(render_component *render_object);
 
 bool notify_render_manager_update_objects();
 

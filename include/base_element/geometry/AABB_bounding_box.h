@@ -75,6 +75,14 @@ public:
 
     AABB_centroid() = default;
 
+    auto get_centroid_point(AABB_centroid box) {
+        return centroid_point;
+    }
+
+    auto get_direction_interval(AABB_centroid box) {
+        return direction_interval;
+    }
+
     AABB_centroid(AABB_min_max<T> box) {
         centroid_point = (box.min_point + box.max_point) / 2;
         direction_interval = (box.max_point - box.min_point) / 2;

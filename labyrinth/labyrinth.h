@@ -6,11 +6,12 @@
 #define LABYRINTH_H
 
 #include "base_event.h"
-#include "../render/render_object.h"
 #include "base_element/point_3.h"
 // 下面的两行，不能放到最前面？
 #include "actor.h"
 #include "input_component.h"
+#include "Position_component.h"
+#include "render_component.h"
 
 struct Vertex {
     Point_3 position;
@@ -18,7 +19,7 @@ struct Vertex {
     Point_2 texCoord;
 };
 
-struct position {
+struct Position {
     float x;
     float y;
     float z;
@@ -28,8 +29,9 @@ struct position {
 
 class Labyrinth : public Actor {
 public:
-    render_object *Labyrinth_cube;
-    InputComponent *observer;
+    render_component *Labyrinth_cube;
+    Input_Component *observer;
+    Position_component *position;
     // 下面是在CPU内存上的数据，是三角的顶点和索引
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -45,8 +47,6 @@ public:
     using Labyrinth_mutex_type = std::mutex;
     Labyrinth_mutex_type change_vbo_date_mutex; // 同时只允许有一个线程更改数据
 
-    Point_2 zoom = {1, 1};
-    Point_2 offset = {0, 0};
 
     Labyrinth(const std::string &actorName);
 
@@ -86,7 +86,7 @@ public:
 
     bool add_square();
 
-    bool add_box(position start_position, position end_position);
+    bool add_box(Position start_position, Position end_position);
 };
 
 #endif //LABYRINTH_H
