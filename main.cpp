@@ -1,15 +1,9 @@
 #include <iostream>
 
-#include "labyrinth.h"
 #include "windows.h"
-#include "component/component.h"
-#include "component/music_component.h"
-#include "component/Position_component.h"
 
 #include "event/base_event.h"
-#include "event/base_observer.h"
-#include "event/observer_manage.h"
-#include "interactable_object/actor.h"
+#include "labyrinth.h"
 
 
 int main() {

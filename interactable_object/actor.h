@@ -12,6 +12,7 @@
 
 #include "Position_component.h"
 #include "render_component.h"
+#include "input_component.h"   // 只是把这个向后移动就没有问题了
 
 
 class Actor_component;
@@ -55,7 +56,7 @@ public:
     }
 
     Input_Component *add_input_component() {
-        // input = new Input_Component(this, "input");
+        input = new Input_Component(this, "input");
         // input->initialize();
         return input;
     }

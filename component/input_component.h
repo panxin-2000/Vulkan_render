@@ -4,12 +4,14 @@
 
 #ifndef HELLO_MAC_INPUT_COMPONENT_H
 #define HELLO_MAC_INPUT_COMPONENT_H
+
+#include "component.h"
+
 #include <iostream>
 #include <utility>
 
 #include "base_event.h"
 #include "base_observer.h"
-#include "component.h"
 #include "observer_manage.h"
 
 

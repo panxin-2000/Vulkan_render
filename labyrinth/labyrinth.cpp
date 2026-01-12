@@ -2,20 +2,16 @@
 // Created by 潘鑫 on 2025/3/2.
 //
 #include "labyrinth.h"
-
 #include "base_event.h"
-#include "base_observer.h"
-#include "input_component.h"
 #include "observer_manage.h"
-#include "Position_component.h"
 #include "render_object_manage.h"
 
 Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
     init_render_object();
 
     /***************创建*******************/
-    Labyrinth_cube = get_render_component();
-    observer = get_input_component();
+    Labyrinth_cube = add_render_component();
+    observer = add_input_component();
     position = add_position_component();
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
@@ -195,8 +191,8 @@ bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     // int e_x_int = (e_x + 1) / 2 * width;
     // int e_y_int = (-e_y + 1) / 2 * height;
     // if (x_int == e_x_int && y_int == e_y_int) {
-        // change_square_color(x_int, y_int);
-        // update();
+    // change_square_color(x_int, y_int);
+    // update();
     // }
 }
 
