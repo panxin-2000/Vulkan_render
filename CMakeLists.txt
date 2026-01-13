@@ -29,6 +29,13 @@ FetchContent_Declare(
         GIT_TAG v1.17.0
 )
 
+#  开发者常私下将其解读为 Entity Templates
+FetchContent_Declare(
+        entt
+        GIT_REPOSITORY https://github.com/skypjack/entt.git
+        GIT_TAG v3.16.0 # 建议使用 2026 年最新的稳定标签或 master 分支
+)
+
 
 include_directories(render)
 include_directories(/opt/homebrew/opt/glfw/include)
@@ -84,6 +91,7 @@ find_package(TBB REQUIRED)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 #FetchContent_MakeAvailable() 命令会确保指定的依赖项已被填充
 FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(entt)
 
 ## CMake Cookbook中关于添加gtest还添加了下面一行
 ## 用于查询内容是否已经被获取或填充
@@ -125,7 +133,7 @@ add_executable(hello_test ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen)
+target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT)
 
 add_executable(test_mutex
         #        test_curve.cpp
@@ -154,7 +162,7 @@ add_executable(hello_mac
         test/run_queue.cpp
         test/longest_continuous_sequence.cpp
         test/set_graph.cpp)
-target_link_libraries(hello_mac ${CURSES_LIBRARIES})
+target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT)
 
 
 find_package(TBB REQUIRED)
@@ -163,4 +171,4 @@ find_package(TBB REQUIRED)
 add_executable(learn_openGL main.cpp
         "component/Position_component.cpp"
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
-target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen)
+target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT)
