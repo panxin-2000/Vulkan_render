@@ -5,8 +5,12 @@
 #ifndef HELLO_MAC_RENDER_COMPONENT_H
 #define HELLO_MAC_RENDER_COMPONENT_H
 #include "base_event.h"
+#include "ECS.h"
 #include "base_element/point_3.h"
 #include "shader.h"
+#include <entt/entt.hpp>
+
+#include "render_component.h"
 
 
 class Position_component {
@@ -30,10 +34,23 @@ public:
         return true;
     }
 
-    bool update_position();
 
-private
-:
+    bool update_position() {
+        auto &storage = get_entt_instance().storage<Position_component>();
+
+
+        const auto entity = entt::to_entity(storage, *this);
+        if (auto *render = get_entt_instance().try_get<render_component>(entity)) {
+            Shader_object::data_value_or_ptr data{};
+            Shader_object::set_model_transform_zoom_rotate(data.vec_4,
+                                                           {zoom.x, zoom.y, 1.0},
+                                                           {0.0f, 0.0f, 0.0f}, {offset});
+            render->add_uniform("model_transform", Shader_object::gl_mat4, data);
+        }
+        return true;
+    }
+
+private:
     Point_2 zoom = {1, 1};
     Point_2 offset = {0, 0};
 };

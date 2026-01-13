@@ -5,7 +5,7 @@
 #ifndef LABYRINTH_H
 #define LABYRINTH_H
 
-#include "Position_component.h"
+#include "model_matrix_component.h"
 #include "render_component.h"
 #include "input_component.h"
 

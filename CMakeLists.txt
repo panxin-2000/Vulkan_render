@@ -33,7 +33,7 @@ FetchContent_Declare(
 FetchContent_Declare(
         entt
         GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v3.16.0 # 建议使用 2026 年最新的稳定标签或 master 分支
+        GIT_TAG v3.16.0
 )
 
 
@@ -169,6 +169,5 @@ find_package(TBB REQUIRED)
 
 
 add_executable(learn_openGL main.cpp
-        "component/Position_component.cpp"
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
 target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT)

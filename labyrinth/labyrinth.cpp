@@ -4,10 +4,11 @@
 #include "labyrinth.h"
 #include "base_event.h"
 #include "ECS.h"
+#include "entity_name_component.h"
 #include "observer_manage.h"
 #include "render_object_manage.h"
 
-Labyrinth::Labyrinth(const std::string &actorName) {
+Labyrinth::Labyrinth(const std::string &name) {
     init_render_object();
 
     /***************创建*******************/
@@ -15,6 +16,7 @@ Labyrinth::Labyrinth(const std::string &actorName) {
     get_entt_instance().emplace<render_component>(entity);
     get_entt_instance().emplace<Input_Component>(entity);
     get_entt_instance().emplace<Position_component>(entity);
+    get_entt_instance().emplace<Name_component>(entity, name);
 
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
