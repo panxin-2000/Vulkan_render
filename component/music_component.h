@@ -4,13 +4,13 @@
 
 #ifndef HELLO_MAC_MUSIC_COMPONENT_H
 #define HELLO_MAC_MUSIC_COMPONENT_H
-#include "component.h"
+#include <iostream>
+#include <string>
 
 
-class AudioComponent : public Actor_component {
+class AudioComponent {
 public:
-    AudioComponent(Actor *owner, const std::string &compName)
-        : Actor_component(owner, compName) {
+    AudioComponent() {
     }
 
     // 自定义功能：播放音效

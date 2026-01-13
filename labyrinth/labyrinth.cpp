@@ -3,16 +3,19 @@
 //
 #include "labyrinth.h"
 #include "base_event.h"
+#include "ECS.h"
 #include "observer_manage.h"
 #include "render_object_manage.h"
 
-Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
+Labyrinth::Labyrinth(const std::string &actorName) {
     init_render_object();
 
     /***************创建*******************/
-    Labyrinth_cube = add_render_component();
-    observer = add_input_component();
-    position = add_position_component();
+    entity = get_entt_instance().create();
+    get_entt_instance().emplace<render_component>(entity);
+    get_entt_instance().emplace<Input_Component>(entity);
+    get_entt_instance().emplace<Position_component>(entity);
+
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
     // observe_manage_instance::instance().addObserver(*observer);
@@ -26,16 +29,20 @@ Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
-    position->update_position();
+    auto &position = get_entt_instance().get<Position_component>(entity);
+
+    position.update_position();
 
     // 参数这里最重要的是下面的两行
-    Labyrinth_cube->add_texture_path("resoureces/picture.png", "ourTexture1");
-    Labyrinth_cube->set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
-    Labyrinth_cube->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-    Labyrinth_cube->set_vertex_shader("render/shader/labyrinth.vert");
-    Labyrinth_cube->set_fragment_shader("render/shader/labyrinth.frag");
+    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity);
+
+    Labyrinth_cube.add_texture_path("resoureces/picture.png", "ourTexture1");
+    Labyrinth_cube.set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
+    Labyrinth_cube.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+    Labyrinth_cube.set_vertex_shader("render/shader/labyrinth.vert");
+    Labyrinth_cube.set_fragment_shader("render/shader/labyrinth.frag");
     /***************添加到渲染管理器**********************/
-    add_object_to_render_manager(Labyrinth_cube);
+    add_object_to_render_manager(&Labyrinth_cube);
 
 
     graph = init_graph(height, width);
@@ -43,21 +50,24 @@ Labyrinth::Labyrinth(const std::string &actorName) : Actor(actorName) {
 }
 
 void Labyrinth::add_observer() {
-    observer->Subscribe_Event(EventType::key_combination, "'a'",
-                              [this](auto &&PH1) { return run_step(std::forward<decltype(PH1)>(PH1)); });
-    observer->Subscribe_Event(EventType::key_combination, "'q'",
-                              [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
-    observer->Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
-                              [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
-    observer->Subscribe_Event(EventType::scroll, "mouse_scroll_zoom",
-                              [this](auto &&PH1) { return set_zoom(std::forward<decltype(PH1)>(PH1)); });
-    observer->Subscribe_Event(EventType::drag, "mouse_button_left_drag",
-                              [this](auto &&PH1) { return set_position_offset(std::forward<decltype(PH1)>(PH1)); });
+    auto &observer = get_entt_instance().get<Input_Component>(entity);
+
+    observer.Subscribe_Event(EventType::key_combination, "'a'",
+                             [this](auto &&PH1) { return run_step(std::forward<decltype(PH1)>(PH1)); });
+    observer.Subscribe_Event(EventType::key_combination, "'q'",
+                             [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
+    observer.Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
+                             [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
+    observer.Subscribe_Event(EventType::scroll, "mouse_scroll_zoom",
+                             [this](auto &&PH1) { return set_zoom(std::forward<decltype(PH1)>(PH1)); });
+    observer.Subscribe_Event(EventType::drag, "mouse_button_left_drag",
+                             [this](auto &&PH1) { return set_position_offset(std::forward<decltype(PH1)>(PH1)); });
 }
 
 
 Labyrinth::~Labyrinth() {
-    observer->Unsubscribe_Event_all(); // 手动释放之后，再执行析构，否则析构过程中，执行了一个绑定的函数，结果是什么，确定不了
+    auto &observer = get_entt_instance().get<Input_Component>(entity);
+    observer.Unsubscribe_Event_all(); // 手动释放之后，再执行析构，否则析构过程中，执行了一个绑定的函数，结果是什么，确定不了
     // 因为按键写成了全局的
     delete_graph(*graph);
 }
@@ -71,7 +81,8 @@ void Labyrinth::update() {
     vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Vertex), (void *) 0);
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-    Labyrinth_cube->set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
+    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity);
+    Labyrinth_cube.set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
     /***************通知管理器更新渲染对象**********************/
     notify_render_manager_update_objects();
 }
@@ -97,7 +108,8 @@ bool Labyrinth::run_step(const base_event_with_stamp &base_event) {
 bool Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
     // zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
     // zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
-    position->update_position();
+    auto &position = get_entt_instance().get<Position_component>(entity);
+    position.update_position();
 }
 
 bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
@@ -112,8 +124,9 @@ bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
     // offset = offset + drag.skew;
 
     // 没有进入到这个事件的处理中
+    auto &position = get_entt_instance().get<Position_component>(entity);
 
-    position->update_position();
+    position.update_position();
 }
 
 

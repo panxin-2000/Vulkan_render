@@ -5,7 +5,6 @@
 #ifndef LABYRINTH_H
 #define LABYRINTH_H
 
-#include "actor.h"
 #include "Position_component.h"
 #include "render_component.h"
 #include "input_component.h"
@@ -23,12 +22,16 @@ struct Position {
 };
 
 #include "set_graph.h"
+#include <entt/entt.hpp>
 
-class Labyrinth : public Actor {
+
+class Labyrinth {
 public:
-    render_component *Labyrinth_cube;
-    Input_Component *observer;
-    Position_component *position;
+    entt::entity entity;
+
+    // render_component *Labyrinth_cube;
+    // Input_Component *observer;
+    // Position_component *position;
     // 下面是在CPU内存上的数据，是三角的顶点和索引
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;

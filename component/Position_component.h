@@ -6,27 +6,18 @@
 #define HELLO_MAC_RENDER_COMPONENT_H
 #include "base_event.h"
 #include "base_element/point_3.h"
-#include "component.h"
 #include "shader.h"
 
 
-class Position_component : public Actor_component {
+class Position_component {
 public:
-    Position_component(Actor *owner, const std::string &compName)
-        : Actor_component(owner, compName) {
+    Position_component() {
     }
 
     // 重写初始化：模拟加载模型
-    void initialize() override {
-        if (bIsActive) {
-            std::cout << "位置组件 [" << component_name << "]" << std::endl;
-        }
+    void initialize() {
     }
 
-    // 自定义功能：设置模型可见性
-    void set_visibility(bool bVisible) {
-        std::cout << "位置组件 [" << component_name << "] " << (bVisible ? "显示" : "隐藏") << "模型" << std::endl;
-    }
 
     bool set_zoom(const base_event_with_stamp &base_event) {
         zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);

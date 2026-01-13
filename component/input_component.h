@@ -5,7 +5,6 @@
 #ifndef HELLO_MAC_INPUT_COMPONENT_H
 #define HELLO_MAC_INPUT_COMPONENT_H
 
-#include "component.h"
 
 #include <iostream>
 #include <utility>
@@ -15,14 +14,12 @@
 #include "observer_manage.h"
 
 
-class Input_Component : public Actor_component {
+class Input_Component {
 public:
-    Input_Component(Actor *owner, const std::string &compName)
-        : Actor_component(owner, compName) {
-        std::cout << "输入组件 [" << component_name << "] 已初始化（关联全局分发器）" << std::endl;
+    Input_Component() {
     }
 
-    ~Input_Component() override {
+    ~Input_Component() {
         for (auto observer: _observers) {
             observe_manage_instance::instance().removeObserver(observer);
         }

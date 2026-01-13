@@ -15,7 +15,6 @@
 #include <GL/glew.h>
 
 #include "buffer_object.h"
-#include "component.h"
 #include "EBO_object.h"
 #include "VBO_object.h"
 #include "texture_TBO.h"
@@ -48,7 +47,7 @@ enum class ShadowMode {
 };
 
 
-class render_component : public Actor_component {
+class render_component {
 private:
     vertex_array_VAO *VAO_new;
 
@@ -72,8 +71,7 @@ private:
     const void *UBO_data;
 
 public:
-    render_component(Actor *owner, const std::string &compName)
-        : Actor_component(owner, compName) {
+    render_component() {
     }
 
     bool add_texture_path(char const *path, char const *texture_name) {

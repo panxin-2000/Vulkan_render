@@ -4,17 +4,18 @@
 
 #ifndef HELLO_MAC_SCENE_COMPONENT_H
 #define HELLO_MAC_SCENE_COMPONENT_H
-#include "component.h"
+#include <iostream>
+#include <vector>
+#include <entt/entt.hpp>
 
 
-class Scene_Component : public Actor_component {
+class Scene_Component {
 private:
-    std::vector<Actor *> parent;
-    std::vector<Actor *> children;
+    std::vector<entt::entity> parent;
+    std::vector<entt::entity> children;
 
 public:
-    Scene_Component(Actor *owner, const std::string &compName)
-        : Actor_component(owner, compName) {
+    Scene_Component() {
     }
 
 
