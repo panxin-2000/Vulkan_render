@@ -120,14 +120,24 @@ void on_key_press(const base_event_with_stamp &event) {
     // if (event.key_code == 27) /* 处理退出逻辑 */;
     auto &storage = get_entt_instance().storage<Position_component>();
 
-    auto view = get_entt_instance().view<Position_component>();
+    auto view = get_entt_instance().view<Position_component, Labyrinth>();
 
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
         auto &pos = view.get<Position_component>(entity);
+        auto &labyrinth = view.get<Labyrinth>(entity);
+
         auto temp_type = event.event_type;
         switch (temp_type) {
+            case EVT_KEY_A:
+                labyrinth.run_step(event);
+                break;
+            case EVT_KEY_Q:
+                labyrinth.run_init(event);
+                break;
             case MOUSE_LEFT:
+                if (event.event_code == KM_RELEASE)
+                    labyrinth.deal_event(event);
                 break;
             case MOUSE_RIGHT:
                 break;
@@ -140,8 +150,8 @@ void on_key_press(const base_event_with_stamp &event) {
                 pos.set_position_offset(event);
                 pos.update_position();
                 break;
-
-            default: ;
+            default:
+                break;
         }
     }
 }

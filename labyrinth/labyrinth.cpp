@@ -10,25 +10,20 @@
 
 
 void on_key_press(const KeyEvent &event) {
-    if (event.key_code == 27) /* 处理退出逻辑 */;
 }
 
-Labyrinth::Labyrinth(const std::string &name) {
+Labyrinth::Labyrinth(const std::string &name, entt::entity entity_) {
+    std::cout << "Labyrinth::Labyrinth()" << std::endl;
+
     init_render_object();
 
     /***************创建*******************/
-    entity = get_entt_instance().create();
+    entity = entity_;
     get_entt_instance().emplace<render_component>(entity);
     get_entt_instance().emplace<Input_Component>(entity);
     get_entt_instance().emplace<Position_component>(entity);
     get_entt_instance().emplace<Drag_event>(entity);
     get_entt_instance().emplace<Name_component>(entity, name);
-
-    // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
-    // observe_manage_instance::instance().addObserver(*observer);
-    // base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
-    // observer.set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
-
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -70,6 +65,7 @@ void Labyrinth::add_observer() {
 
 
 Labyrinth::~Labyrinth() {
+    std::cout << "Labyrinth::~Labyrinth()" << std::endl;
     delete_graph(*graph);
 }
 
@@ -158,16 +154,6 @@ bool Labyrinth::add_box(Position start_position, Position end_position) {
     vertices.push_back(vertex);
 }
 
-
-// x: -0.936982 y: 0.948659
-// x: -0.936982 y: 0.948659
-//  offset x: 0 y: 0
-// x: -0.936982 y: 0.94944
-// x: -0.552598 y: 0.514779
-//  offset x: 0.38499 y: -0.434661
-// x: -0.552598 y: 0.514779
-// x: -0.552598 y: 0.514779
-//  offset x: 0.38499 y: -0.434661
 
 bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);

@@ -86,6 +86,8 @@ public:
 
     ~Labyrinth();
 
+    Labyrinth(const std::string &name, entt::entity entity);
+
     void add_observer();
 
 

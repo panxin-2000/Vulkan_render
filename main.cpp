@@ -7,9 +7,10 @@
 
 
 int main() {
-    auto labyrinth = new Labyrinth("迷宫");
+    auto entity = get_entt_instance().create();
+    get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
+
 
     add_render_windows();
-
-    delete labyrinth;
+    get_entt_instance().clear();
 }
