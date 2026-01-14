@@ -20,8 +20,7 @@ public:
     // 构造函数：依赖注入事件队列管理器
     Keyboard_Manage() = default;
 
-    bool init_eventQueueMgr(queue_thread_safe<base_event_with_stamp> *eventQueueMgr, entt::dispatcher *dispatcher) {
-        ptr_event_queue = eventQueueMgr;
+    bool init_eventQueueMgr(entt::dispatcher *dispatcher) {
         dispatcher_ = dispatcher;
         return true;
     }
@@ -105,21 +104,6 @@ public:
         return keys;
     }
 
-    // 注册组合键规则（线程安全）
-    void register_key_combination(const std::string &key_combination_name) {
-        // std::vector<std::string> parts = splitKeyString(testCase);
-        auto temp = parseGLFWKeyString(key_combination_name);
-
-        std::lock_guard<std::mutex> lock(_mutex);
-        const ComboRule rule = temp;
-        key_combination_rules[key_combination_name] = rule;
-    }
-
-    // 注销组合键规则（线程安全）
-    void unregister_key_combination(const std::string &key_combination_name) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        key_combination_rules.erase(key_combination_name);
-    }
 
     // 处理GLFW按键按下事件（更新Set状态）
     void handleKeyDown(int keyCode) {
@@ -128,8 +112,6 @@ public:
         if (!pressed_keys.count(keyCode)) {
             // 不想重复处理一个已经按下的键
             pressed_keys.insert(keyCode); // Set更新按下状态
-
-            match_combination(); // 匹配组合键
         } else {
             // 其实还可以再加另一个时间戳，
             // 判断时间，然后超过一定时间之后，再更新时间戳，并进行按键的匹配操作
@@ -140,7 +122,6 @@ public:
         pos_mouse_button_left_click = pos;
         first_pos_mouse_left_click = pos;
         mouse_button_left_click = true;
-        ptr_event_queue->push({EventType::mouse_click_left, "mouse_click_left", pos});
         dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_left, "mouse_click_left", pos});
     }
 
@@ -148,7 +129,6 @@ public:
         pos_mouse_button_right_click = pos;
         first_pos_mouse_right_click = pos;
         mouse_button_right_click = true;
-        ptr_event_queue->push({EventType::mouse_click_right, "mouse_click_right", pos});
         dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_right, "mouse_click_right", pos});
     }
 
@@ -156,10 +136,6 @@ public:
     void handle_drag(mouse_position pos) {
         if (mouse_button_left_click == true && !(pos == pos_mouse_button_left_click)) {
             const auto error = pos - pos_mouse_button_left_click;
-            ptr_event_queue->push({
-                EventType::drag, "mouse_button_left_drag",
-                base_event_with_stamp::Drag{pos, error}
-            });
             dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::drag, "mouse_button_left_drag",
                 base_event_with_stamp::Drag{pos, error}
@@ -174,10 +150,6 @@ public:
             // 未选中时也需要处理这个事件，因为有一个选择框需要显示
         } else if (mouse_button_right_click == true && !(pos == pos_mouse_button_right_click)) {
             const auto error = pos - pos_mouse_button_right_click;
-            ptr_event_queue->push({
-                EventType::drag, "mouse_button_right_drag",
-                base_event_with_stamp::Drag{pos, error}
-            });
             dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::drag, "mouse_button_right_drag",
                 base_event_with_stamp::Drag{pos, error}
@@ -187,27 +159,18 @@ public:
     }
 
     void handle_scroll(mouse_position pos) {
-        ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
         dispatcher_->enqueue<base_event_with_stamp>(EventType::scroll, "mouse_scroll_zoom", pos);
     }
 
     void handle_mouse_release_left(const mouse_position release_pos) {
         mouse_button_left_click = false;
         if (abs(release_pos - first_pos_mouse_left_click) < error_between_click_and_release) {
-            ptr_event_queue->push({
-                EventType::mouse_release_left, "mouse_release_left",
-                {first_pos_mouse_left_click, release_pos}
-            });
             dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::mouse_release_left, "mouse_release_left",
                 {first_pos_mouse_left_click, release_pos}
             });
         } else {
             {
-                ptr_event_queue->push({
-                    EventType::area_select, "left_area_select",
-                    {first_pos_mouse_left_click, release_pos}
-                });
                 dispatcher_->enqueue<base_event_with_stamp>({
                     EventType::area_select, "left_area_select",
                     {first_pos_mouse_left_click, release_pos}
@@ -226,20 +189,12 @@ public:
         if (abs(release_pos - first_pos_mouse_right_click) < error_between_click_and_release)
         // dispatcher.enqueue<KeyEvent>(27, true);
         {
-            ptr_event_queue->push({
-                EventType::mouse_release_right, "mouse_release_right",
-                {first_pos_mouse_right_click, release_pos}
-            });
             dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::mouse_release_right, "mouse_release_right",
                 {first_pos_mouse_right_click, release_pos}
             });
         } else {
             // 最终松开时才会处理的选择的逻辑
-            ptr_event_queue->push({
-                EventType::area_select, "right_area_select",
-                {first_pos_mouse_right_click, release_pos}
-            });
             dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::area_select, "right_area_select",
                 {first_pos_mouse_right_click, release_pos}
@@ -272,33 +227,11 @@ private:
     mouse_position pos_mouse_button_right_click;
     mouse_position first_pos_mouse_left_click;
     mouse_position first_pos_mouse_right_click;
-    mouse_position error_between_click_and_release = {5, 5};          // 这里的范围有问题，需要更改
-    std::mutex _mutex;                                                // 线程安全锁
-    std::unordered_set<int> pressed_keys;                             // Set：当前按下的按键
-    std::unordered_map<std::string, ComboRule> key_combination_rules; // 组合键规则映射
-    queue_thread_safe<base_event_with_stamp> *ptr_event_queue;        // 依赖注入的事件队列管理器
+    mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
+    std::mutex _mutex;                                       // 线程安全锁
+    std::unordered_set<int> pressed_keys;                    // Set：当前按下的按键
 
     entt::dispatcher *dispatcher_;
-
-    // 组合键匹配：匹配成功则委托事件队列入队（内部辅助）
-    void match_combination() {
-        double now = glfwGetTime(); // GLFW时间戳
-        for (const auto &key: key_combination_rules) {
-            auto key_combination_name = key.first;
-            auto unordered_set_keys = key.second;
-            // 检查规则中所有按键是否都在Set中
-            bool exactMatch = std::all_of(unordered_set_keys.begin(), unordered_set_keys.end(),
-                                          [&](int k) { return pressed_keys.count(k); })
-                              && std::all_of(pressed_keys.begin(), pressed_keys.end(),
-                                             [&](int k) { return unordered_set_keys.count(k); });
-
-            // 匹配成功且未触发过 → 委托事件队列入队
-            if (exactMatch) {
-                ptr_event_queue->push({EventType::key_combination, key_combination_name});
-                dispatcher_->enqueue<base_event_with_stamp>({EventType::key_combination, key_combination_name});
-            }
-        }
-    }
 };
 
 

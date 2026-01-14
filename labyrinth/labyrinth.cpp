@@ -60,21 +60,18 @@ Labyrinth::Labyrinth(const std::string &name) {
 }
 
 void Labyrinth::add_observer() {
-    auto &observer = get_entt_instance().get<Input_Component>(entity);
+    // auto &observer = get_entt_instance().get<Input_Component>(entity);
 
-    observer.Subscribe_Event(EventType::key_combination, "'a'",
-                             [this](auto &&PH1) { return run_step(std::forward<decltype(PH1)>(PH1)); });
-    observer.Subscribe_Event(EventType::key_combination, "'q'",
-                             [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
-    observer.Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
-                             [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
+    // observer.Subscribe_Event(EventType::key_combination, "'a'",
+    // [this](auto &&PH1) { return run_step(std::forward<decltype(PH1)>(PH1)); });
+    // observer.Subscribe_Event(EventType::key_combination, "'q'",
+    // [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
+    // observer.Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
+    // [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
 }
 
 
 Labyrinth::~Labyrinth() {
-    auto &observer = get_entt_instance().get<Input_Component>(entity);
-    observer.Unsubscribe_Event_all(); // 手动释放之后，再执行析构，否则析构过程中，执行了一个绑定的函数，结果是什么，确定不了
-    // 因为按键写成了全局的
     delete_graph(*graph);
 }
 

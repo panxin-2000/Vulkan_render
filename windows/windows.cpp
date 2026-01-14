@@ -132,7 +132,6 @@ void on_key_press(const base_event_with_stamp &event) {
 
 
 void add_render_windows() {
-
     auto view = get_entt_instance().view<Position_component>();
     std::cout << "View size: " << view.size() << std::endl;
 
@@ -157,7 +156,7 @@ void add_render_windows() {
     dispatcher.sink<base_event_with_stamp>().connect<&on_key_press>();
 
 
-    Keyboard_Manage::instance().init_eventQueueMgr(observe_manage_instance::get_event_queue(), &dispatcher);
+    Keyboard_Manage::instance().init_eventQueueMgr(&dispatcher);
     // Keyboard_Manage::instance().register_key_combination("'a'");
     glfwSetKeyCallback(window, glfwKeyCallback);           // 键盘事件回调
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
@@ -176,10 +175,8 @@ void add_render_windows() {
     // 在渲染的线程中，检查哪些内容需要更新，然后更新缓存，之后再进行渲染
     // 如果没有需要更新缓存的内容，就不渲染
     std::thread t(start_render_manage_thread, window);
-    std::thread t2(observe_manage_instance::observer_manage_thread);
 
     t.detach();
-    t2.detach();
 
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();
@@ -187,7 +184,6 @@ void add_render_windows() {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         dispatcher.update(); // 统一分发执行
-        auto view = get_entt_instance().view<Position_component>();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
