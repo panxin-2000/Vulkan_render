@@ -16,13 +16,13 @@
 
 class Input_Component {
 public:
-    Input_Component() {
+    Input_Component(const std::function<bool (entt::entity, base_event_with_stamp)> &function) : on_Event(function) {
     }
 
     ~Input_Component() {
     }
 
-private:
+    const std::function<bool (entt::entity, base_event_with_stamp)> on_Event;
 };
 
 

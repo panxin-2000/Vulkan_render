@@ -80,6 +80,8 @@ public:
 
     bool deal_event(const base_event_with_stamp &base_event);
 
+    static bool on_Event(entt::entity entity, const base_event_with_stamp &event);
+
     bool display_result();
 
     bool change_blue_color_to_red();

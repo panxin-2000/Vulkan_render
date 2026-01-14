@@ -20,7 +20,8 @@ Labyrinth::Labyrinth(const std::string &name, entt::entity entity_) {
     /***************创建*******************/
     entity = entity_;
     get_entt_instance().emplace<render_component>(entity);
-    get_entt_instance().emplace<Input_Component>(entity);
+    get_entt_instance().emplace<Input_Component>(entity, on_Event);
+
     get_entt_instance().emplace<Position_component>(entity);
     get_entt_instance().emplace<Drag_event>(entity);
     get_entt_instance().emplace<Name_component>(entity, name);
@@ -51,6 +52,7 @@ Labyrinth::Labyrinth(const std::string &name, entt::entity entity_) {
     graph = init_graph(height, width);
     add_observer();
 }
+
 
 void Labyrinth::add_observer() {
     // auto &observer = get_entt_instance().get<Input_Component>(entity);
@@ -154,6 +156,45 @@ bool Labyrinth::add_box(Position start_position, Position end_position) {
     vertices.push_back(vertex);
 }
 
+bool Labyrinth::on_Event(entt::entity entity_, const base_event_with_stamp &event) {
+    auto temp_type = event.event_type;
+    switch (temp_type) {
+        case EVT_KEY_A:
+            if (auto *labyrinth1 = get_entt_instance().try_get<Labyrinth>(entity_)) {
+                if (event.event_code == KM_RELEASE)
+                    labyrinth1->run_step(event);
+            }
+            break;
+        case EVT_KEY_Q:
+            if (auto *labyrinth1 = get_entt_instance().try_get<Labyrinth>(entity_)) {
+                if (event.event_code == KM_RELEASE)
+                    labyrinth1->run_init(event);
+            }
+            break;
+        case MOUSE_LEFT:
+            if (auto *labyrinth1 = get_entt_instance().try_get<Labyrinth>(entity_)) {
+                if (event.event_code == KM_RELEASE)
+                    labyrinth1->deal_event(event);
+            }
+            break;
+        case MOUSE_RIGHT:
+            break;
+        case WHEEL_UP_MOUSE:
+            if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
+                position->set_zoom(event);
+                position->update_position();
+            }
+            break;
+        case MOUSE_MOVE:
+            if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
+                position->set_position_offset(event);
+                position->update_position();
+            }
+            break;
+        default:
+            break;
+    }
+}
 
 bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
