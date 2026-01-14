@@ -37,6 +37,9 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 
 void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    std::cout << "key: " << key << std::endl;
+
+    if (key == GLFW_KEY_UNKNOWN) return;
     // action: GLFW_PRESS（按下）、GLFW_RELEASE（松开）、GLFW_REPEAT（重复按下）
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
@@ -47,12 +50,6 @@ void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
     }
 }
 
-// GLFW窗口焦点回调（失去焦点时清空按键状态）
-void glfwFocusCallback(GLFWwindow *window, int focused) {
-    if (!focused) {
-        Keyboard_Manage::instance().clearState(); // 防止窗口失焦后按键状态残留
-    }
-}
 
 // Window dimensions
 
@@ -73,22 +70,46 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
 #define key_instance Keyboard_Manage::instance()
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        key_instance.handle_mouse_click_left({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_click_left({static_cast<float>(x_pos), static_cast<float>(y_pos)});
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
-        key_instance.handle_mouse_release_left({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_release_left({static_cast<float>(x_pos), static_cast<float>(y_pos)});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-        key_instance.handle_mouse_click_right({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_click_right({static_cast<float>(x_pos), static_cast<float>(y_pos)});
     }
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
-        key_instance.handle_mouse_release_right({(float) x_pos, (float) y_pos});
+        key_instance.handle_mouse_release_right({static_cast<float>(x_pos), static_cast<float>(y_pos)});
     }
 #undef key_instance
 }
 
+
+// GLFW窗口焦点回调（失去焦点时清空按键状态）
+void glfwFocusCallback(GLFWwindow *window, int focused) {
+    if (focused == GLFW_FALSE) {
+        Keyboard_Manage::instance().clear_focus();
+        glfwSetKeyCallback(window, nullptr); // 键盘事件回调
+
+        // glfwSetInputMode(window, GLFW_CURSOR, nullptr);
+        glfwSetCursorPosCallback(window, nullptr);
+        glfwSetScrollCallback(window, nullptr);
+        // glfwSetCursorEnterCallback(window, nullptr);
+        glfwSetMouseButtonCallback(window, nullptr);
+    } else {
+        Keyboard_Manage::instance().set_focus();
+        glfwSetKeyCallback(window, glfwKeyCallback); // 键盘事件回调
+
+        // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetCursorPosCallback(window, mouse_callback);
+        glfwSetScrollCallback(window, scroll_callback);
+        // glfwSetCursorEnterCallback(window, function_name);
+        glfwSetMouseButtonCallback(window, mouse_button_callback);
+    }
+}
+
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    Keyboard_Manage::instance().handle_scroll({(float) xoffset, (float) yoffset});
+    Keyboard_Manage::instance().handle_scroll({static_cast<float>(xoffset), static_cast<float>(yoffset)});
 }
 
 #include "tbb/tbb.h"
@@ -100,27 +121,22 @@ void on_key_press(const base_event_with_stamp &event) {
     auto &storage = get_entt_instance().storage<Position_component>();
 
     auto view = get_entt_instance().view<Position_component>();
-    std::cout << "View size: " << view.size() << std::endl;
 
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
         auto &pos = view.get<Position_component>(entity);
-        const EventType temp_type = event.type;
+        auto temp_type = event.event_type;
         switch (temp_type) {
-            case EventType::key_combination:
+            case MOUSE_LEFT:
                 break;
-            case EventType::mouse_click_left:
-                // 保存首次点击的位置
+            case MOUSE_RIGHT:
                 break;
-            case EventType::mouse_click_right:
-                // 保存首次点击的位置
-                break;
-            case EventType::scroll:
+            case WHEEL_UP_MOUSE:
                 pos.set_zoom(event);
                 pos.update_position();
 
                 break;
-            case EventType::drag:
+            case MOUSE_MOVE:
                 pos.set_position_offset(event);
                 pos.update_position();
                 break;
@@ -132,9 +148,6 @@ void on_key_press(const base_event_with_stamp &event) {
 
 
 void add_render_windows() {
-    auto view = get_entt_instance().view<Position_component>();
-    std::cout << "View size: " << view.size() << std::endl;
-
     int major, minor, rev;
     glfwGetVersion(&major, &minor, &rev);
     std::cout << "GLFW 运行时版本：" << major << "." << minor << "." << rev << std::endl;
@@ -158,9 +171,9 @@ void add_render_windows() {
 
     Keyboard_Manage::instance().init_eventQueueMgr(&dispatcher);
     // Keyboard_Manage::instance().register_key_combination("'a'");
-    glfwSetKeyCallback(window, glfwKeyCallback);           // 键盘事件回调
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
 
+    glfwSetKeyCallback(window, glfwKeyCallback); // 键盘事件回调
 
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -181,7 +194,6 @@ void add_render_windows() {
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();
         // glfwPollEvents();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         dispatcher.update(); // 统一分发执行
 

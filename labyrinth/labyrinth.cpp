@@ -23,8 +23,6 @@ Labyrinth::Labyrinth(const std::string &name) {
     get_entt_instance().emplace<Position_component>(entity);
     get_entt_instance().emplace<Drag_event>(entity);
     get_entt_instance().emplace<Name_component>(entity, name);
-    auto view = get_entt_instance().view<Position_component>();
-    std::cout << "View size: " << view.size() << std::endl;
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
     // observe_manage_instance::instance().addObserver(*observer);
@@ -178,12 +176,12 @@ bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     auto offset = position.get_offset();
     auto zoom = position.get_zoom();
 
-    auto x = (base_event.data.select_box.click_pos.x - offset.x) / zoom.x;
-    auto y = (base_event.data.select_box.click_pos.y - offset.y) / zoom.y;
+    auto x = (base_event.click_position.x - offset.x) / zoom.x;
+    auto y = (base_event.click_position.y - offset.y) / zoom.y;
     int x_int = (x + 1) / 2 * width;
     int y_int = (-y + 1) / 2 * height;
-    auto e_x = (base_event.data.select_box.release_pos.x - offset.x) / zoom.x;
-    auto e_y = (base_event.data.select_box.release_pos.y - offset.y) / zoom.y;
+    auto e_x = (base_event.current_position.x - offset.x) / zoom.x;
+    auto e_y = (base_event.current_position.y - offset.y) / zoom.y;
     int e_x_int = (e_x + 1) / 2 * width;
     int e_y_int = (-e_y + 1) / 2 * height;
     if (x_int == e_x_int && y_int == e_y_int) {

@@ -105,78 +105,75 @@ public:
     }
 
 
-    // 处理GLFW按键按下事件（更新Set状态）
-    void handleKeyDown(int keyCode) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        if (keyCode == GLFW_KEY_UNKNOWN) return;
-        if (!pressed_keys.count(keyCode)) {
-            // 不想重复处理一个已经按下的键
-            pressed_keys.insert(keyCode); // Set更新按下状态
-        } else {
-            // 其实还可以再加另一个时间戳，
-            // 判断时间，然后超过一定时间之后，再更新时间戳，并进行按键的匹配操作
-        }
-    }
-
     void handle_mouse_click_left(mouse_position pos) {
-        pos_mouse_button_left_click = pos;
-        first_pos_mouse_left_click = pos;
+        manage_click_position = pos;
         mouse_button_left_click = true;
-        dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_left, "mouse_click_left", pos});
+        dispatcher_->enqueue<base_event_with_stamp>({
+            MOUSE_LEFT,
+            KM_CLICK,
+            pos,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            KM_SHIFT
+        });
     }
 
     void handle_mouse_click_right(mouse_position pos) {
-        pos_mouse_button_right_click = pos;
-        first_pos_mouse_right_click = pos;
+        manage_click_position = pos;
         mouse_button_right_click = true;
-        dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_right, "mouse_click_right", pos});
+        dispatcher_->enqueue<base_event_with_stamp>({
+            MOUSE_RIGHT,
+            KM_CLICK,
+            pos,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            KM_SHIFT
+        });
     }
 
 
     void handle_drag(mouse_position pos) {
-        if (mouse_button_left_click == true && !(pos == pos_mouse_button_left_click)) {
-            const auto error = pos - pos_mouse_button_left_click;
+        manage_current_position = pos;
+        if ((mouse_button_left_click == true || mouse_button_right_click == true)
+            && !(pos == manage_move_position)) {
             dispatcher_->enqueue<base_event_with_stamp>({
-                EventType::drag, "mouse_button_left_drag",
-                base_event_with_stamp::Drag{pos, error}
+                MOUSE_MOVE,
+                KM_CLICK,
+                pos,
+                manage_move_position,
+                manage_click_position,
+                manage_scroll,
+                KM_SHIFT
             });
-            // 检查 被选中的物品
-            // 检查 pos_mouse_button_left_click 是否已经在已经选择的物品了，是可以直接移动物品，否的话见下最后一行注释
-            // 那么就是下面的一个问题，物体的 pos_mouse_button_left_click 是否还需要更新呢？
-            pos_mouse_button_left_click = pos;
-            // 更新是可以的，因为物体的移动是伴随 pos_mouse_button_left_click 移动的，
-            // 移动的事件是同步的
-
-            // 未选中时也需要处理这个事件，因为有一个选择框需要显示
-        } else if (mouse_button_right_click == true && !(pos == pos_mouse_button_right_click)) {
-            const auto error = pos - pos_mouse_button_right_click;
-            dispatcher_->enqueue<base_event_with_stamp>({
-                EventType::drag, "mouse_button_right_drag",
-                base_event_with_stamp::Drag{pos, error}
-            });
-            pos_mouse_button_right_click = pos;
         }
+        manage_move_position = pos;
     }
 
     void handle_scroll(mouse_position pos) {
-        dispatcher_->enqueue<base_event_with_stamp>(EventType::scroll, "mouse_scroll_zoom", pos);
+        dispatcher_->enqueue<base_event_with_stamp>({
+            WHEEL_UP_MOUSE,
+            KM_CLICK,
+            pos,
+            manage_move_position,
+            manage_click_position,
+            pos,
+            KM_SHIFT
+        });
     }
 
     void handle_mouse_release_left(const mouse_position release_pos) {
         mouse_button_left_click = false;
-        if (abs(release_pos - first_pos_mouse_left_click) < error_between_click_and_release) {
-            dispatcher_->enqueue<base_event_with_stamp>({
-                EventType::mouse_release_left, "mouse_release_left",
-                {first_pos_mouse_left_click, release_pos}
-            });
-        } else {
-            {
-                dispatcher_->enqueue<base_event_with_stamp>({
-                    EventType::area_select, "left_area_select",
-                    {first_pos_mouse_left_click, release_pos}
-                });
-            }
-        }
+        dispatcher_->enqueue<base_event_with_stamp>({
+            MOUSE_LEFT,
+            KM_RELEASE,
+            release_pos,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            KM_SHIFT
+        });
     }
 
     // 选择与拖动的区别，如果已经在已经选择的物品了，那么可以直接移动物品
@@ -184,36 +181,64 @@ public:
     // 如果拖着事件已经中了，那么如果处理选择框的事件呢？
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
 
+
     void handle_mouse_release_right(const mouse_position release_pos) {
         mouse_button_right_click = false;
-        if (abs(release_pos - first_pos_mouse_right_click) < error_between_click_and_release)
-        // dispatcher.enqueue<KeyEvent>(27, true);
-        {
-            dispatcher_->enqueue<base_event_with_stamp>({
-                EventType::mouse_release_right, "mouse_release_right",
-                {first_pos_mouse_right_click, release_pos}
-            });
-        } else {
-            // 最终松开时才会处理的选择的逻辑
-            dispatcher_->enqueue<base_event_with_stamp>({
-                EventType::area_select, "right_area_select",
-                {first_pos_mouse_right_click, release_pos}
-            });
-        }
+        dispatcher_->enqueue<base_event_with_stamp>({
+            MOUSE_RIGHT,
+            KM_RELEASE,
+            release_pos,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            KM_SHIFT
+        });
+    }
+
+
+    // 处理GLFW按键按下事件（更新Set状态）
+    void handleKeyDown(int keyCode) {
+        dispatcher_->enqueue<base_event_with_stamp>({
+            static_cast<wmEventType>(keyCode),
+            KM_PRESS,
+            manage_current_position,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        });
     }
 
     // 处理GLFW按键松开事件（更新Set状态）
     void handleKeyUp(int keyCode) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        if (keyCode == GLFW_KEY_UNKNOWN) return;
-        pressed_keys.erase(keyCode); // Set移除松开状态
+        dispatcher_->enqueue<base_event_with_stamp>({
+            static_cast<wmEventType>(keyCode),
+            KM_RELEASE,
+            manage_current_position,
+            manage_move_position,
+            manage_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        });
+        manage_event_type = EVENT_NONE;
     }
 
     // 清空所有状态（窗口失焦时）
-    void clearState() {
+    void clear_focus() {
         std::lock_guard<std::mutex> lock(_mutex);
+        focus = false;
         pressed_keys.clear();
     }
+
+    void set_focus() {
+        std::lock_guard<std::mutex> lock(_mutex);
+        focus = true;
+    }
+
+    [[nodiscard]] bool get_focus() const {
+        return focus;
+    }
+
 
     static Keyboard_Manage &instance() {
         static auto *instance = new Keyboard_Manage();
@@ -221,12 +246,16 @@ public:
     }
 
 private:
+    bool focus = true;
     bool mouse_button_left_click = false;
     bool mouse_button_right_click = false;
-    mouse_position pos_mouse_button_left_click;
-    mouse_position pos_mouse_button_right_click;
-    mouse_position first_pos_mouse_left_click;
-    mouse_position first_pos_mouse_right_click;
+    wmEventType manage_event_type;
+    wmEventModifierFlag manage_modifier_flag;
+
+    mouse_position manage_current_position = {0, 0};
+    mouse_position manage_move_position = {0, 0};
+    mouse_position manage_click_position = {0, 0};
+    mouse_position manage_scroll = {0, 0};
     mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
     std::mutex _mutex;                                       // 线程安全锁
     std::unordered_set<int> pressed_keys;                    // Set：当前按下的按键

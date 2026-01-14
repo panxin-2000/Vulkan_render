@@ -24,13 +24,12 @@ public:
 
 
     bool set_zoom(const base_event_with_stamp &base_event) {
-        zoom.x = zoom.x * std::powf(1.5, base_event.data.scroll.x * 0.01);
-        zoom.y = zoom.y * std::powf(1.5, base_event.data.scroll.y * 0.01);
+        zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
+        zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
     }
 
     bool set_position_offset(const base_event_with_stamp &base_event) {
-        const base_event_with_stamp::Drag &drag = base_event.data.drag;
-        offset = offset + drag.skew;
+        offset = offset + base_event.current_position - base_event.move_position;
         return true;
     }
 
