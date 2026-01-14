@@ -127,6 +127,7 @@ public:
         if (!pressed_keys.count(keyCode)) {
             // 不想重复处理一个已经按下的键
             pressed_keys.insert(keyCode); // Set更新按下状态
+
             match_combination(); // 匹配组合键
         } else {
             // 其实还可以再加另一个时间戳，
@@ -201,6 +202,8 @@ public:
     void handle_mouse_release_right(const mouse_position release_pos) {
         mouse_button_right_click = false;
         if (abs(release_pos - first_pos_mouse_right_click) < error_between_click_and_release)
+            // dispatcher.enqueue<KeyEvent>(27, true);
+
             ptr_event_queue->push({
                 EventType::mouse_release_right, "mouse_release_right",
                 {first_pos_mouse_right_click, release_pos}

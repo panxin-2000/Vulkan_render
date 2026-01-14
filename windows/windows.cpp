@@ -113,7 +113,7 @@ void add_render_windows() {
 
     Keyboard_Manage::instance().init_eventQueueMgr(observe_manage_instance::get_event_queue());
     // Keyboard_Manage::instance().register_key_combination("'a'");
-    glfwSetKeyCallback(window, glfwKeyCallback); // 键盘事件回调
+    glfwSetKeyCallback(window, glfwKeyCallback);           // 键盘事件回调
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
 
 
@@ -136,6 +136,7 @@ void add_render_windows() {
     t2.detach();
 
     while (!glfwWindowShouldClose(window)) {
+        glfwWaitEvents();
         glfwPollEvents();
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

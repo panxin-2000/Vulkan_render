@@ -50,6 +50,14 @@ public:
         return true;
     }
 
+    Point_2 get_zoom() const {
+        return zoom;
+    }
+
+    Point_2 get_offset() const {
+        return offset;
+    }
+
 private:
     Point_2 zoom = {1, 1};
     Point_2 offset = {0, 0};

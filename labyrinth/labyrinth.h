@@ -15,6 +15,11 @@ struct Vertex {
     Point_2 texCoord;
 };
 
+struct KeyEvent {
+    int key_code;
+    bool pressed;
+};
+
 struct Position {
     float x;
     float y;
