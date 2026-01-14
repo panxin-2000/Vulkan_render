@@ -7,7 +7,7 @@
 #include <entt/entt.hpp>
 
 
-class World {
+class entt_user {
 public:
     // 获取全局唯一的注册表引用
     static entt::registry &get() {
@@ -16,12 +16,12 @@ public:
     }
 
 private:
-    World() = default; // 禁用构造
+    entt_user() = default; // 禁用构造
 };
 
 
 static entt::registry &get_entt_instance() {
-    return World::get();
+    return entt_user::get();
 }
 
 
