@@ -21,6 +21,8 @@
 #include "base_observer.h"
 #include "input_device_manage.h"
 #include "observer_manage.h"
+#include "ECS.h"
+
 
 const GLuint WIDTH = 800, HEIGHT = 600;
 
@@ -93,7 +95,47 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
 GLFWwindow *window;
 
 
+void on_key_press(const base_event_with_stamp &event) {
+    // if (event.key_code == 27) /* 处理退出逻辑 */;
+    auto &storage = get_entt_instance().storage<Position_component>();
+
+    auto view = get_entt_instance().view<Position_component>();
+    std::cout << "View size: " << view.size() << std::endl;
+
+    for (auto entity: view) {
+        // 这种方式获取组件在内存中是最高效的
+        auto &pos = view.get<Position_component>(entity);
+        const EventType temp_type = event.type;
+        switch (temp_type) {
+            case EventType::key_combination:
+                break;
+            case EventType::mouse_click_left:
+                // 保存首次点击的位置
+                break;
+            case EventType::mouse_click_right:
+                // 保存首次点击的位置
+                break;
+            case EventType::scroll:
+                pos.set_zoom(event);
+                pos.update_position();
+
+                break;
+            case EventType::drag:
+                pos.set_position_offset(event);
+                pos.update_position();
+                break;
+
+            default: ;
+        }
+    }
+}
+
+
 void add_render_windows() {
+
+    auto view = get_entt_instance().view<Position_component>();
+    std::cout << "View size: " << view.size() << std::endl;
+
     int major, minor, rev;
     glfwGetVersion(&major, &minor, &rev);
     std::cout << "GLFW 运行时版本：" << major << "." << minor << "." << rev << std::endl;
@@ -111,7 +153,11 @@ void add_render_windows() {
 
     // 注册GLFW回调
 
-    Keyboard_Manage::instance().init_eventQueueMgr(observe_manage_instance::get_event_queue());
+    entt::dispatcher dispatcher;
+    dispatcher.sink<base_event_with_stamp>().connect<&on_key_press>();
+
+
+    Keyboard_Manage::instance().init_eventQueueMgr(observe_manage_instance::get_event_queue(), &dispatcher);
     // Keyboard_Manage::instance().register_key_combination("'a'");
     glfwSetKeyCallback(window, glfwKeyCallback);           // 键盘事件回调
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
@@ -137,7 +183,12 @@ void add_render_windows() {
 
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();
-        glfwPollEvents();
+        // glfwPollEvents();
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        dispatcher.update(); // 统一分发执行
+        auto view = get_entt_instance().view<Position_component>();
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 

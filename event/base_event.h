@@ -25,6 +25,11 @@ enum class EventType : uint32_t {
     EventType_max
 };
 
+
+struct Drag_event {
+};
+
+
 // 鼠标拖动事件
 // 这个事件其实是稍微有点难评的
 // 需要传入首次点击的位置
@@ -79,18 +84,18 @@ struct base_event_with_stamp : public base_event {
 
     base_event_with_stamp() = default;
 
-    base_event_with_stamp(EventType t, const std::string &event_name)
+    base_event_with_stamp(const EventType t, const std::string &event_name)
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
     }
 
-    base_event_with_stamp(EventType t, const std::string &event_name, mouse_position pos)
+    base_event_with_stamp(const EventType t, const std::string &event_name, mouse_position pos)
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
         data.pos = pos;
     }
 
-    base_event_with_stamp(EventType t, const std::string &event_name, Drag drag)
+    base_event_with_stamp(const EventType t, const std::string &event_name, Drag drag)
         : base_event(t, event_name), timestamp(std::chrono::duration_cast<std::chrono::milliseconds>(
               std::chrono::system_clock::now().time_since_epoch())) {
         data.drag = drag;

@@ -21,24 +21,16 @@ Labyrinth::Labyrinth(const std::string &name) {
     get_entt_instance().emplace<render_component>(entity);
     get_entt_instance().emplace<Input_Component>(entity);
     get_entt_instance().emplace<Position_component>(entity);
+    get_entt_instance().emplace<Drag_event>(entity);
     get_entt_instance().emplace<Name_component>(entity, name);
-
+    auto view = get_entt_instance().view<Position_component>();
+    std::cout << "View size: " << view.size() << std::endl;
 
     // observer->set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
     // observe_manage_instance::instance().addObserver(*observer);
     // base_observer<base_event> observer{EventType::mouse_release_left, "mouse_release_left"};
     // observer.set_deal_function(std::bind(&Labyrinth::deal_event, this, std::placeholders::_1));
 
-    entt::dispatcher dispatcher;
-
-    // 接收者的逻辑
-
-
-    // 注册监听
-    dispatcher.sink<KeyEvent>().connect<&on_key_press>();
-
-    // 在输入循环中触发
-    // dispatcher.enqueue<KeyEvent>(27, true);
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -50,7 +42,6 @@ Labyrinth::Labyrinth(const std::string &name) {
 
     position.update_position();
 
-    dispatcher.update(); // 统一分发执行
 
     // 参数这里最重要的是下面的两行
     auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity);
@@ -77,10 +68,6 @@ void Labyrinth::add_observer() {
                              [this](auto &&PH1) { return run_init(std::forward<decltype(PH1)>(PH1)); });
     observer.Subscribe_Event(EventType::mouse_release_left, "mouse_release_left",
                              [this](auto &&PH1) { return deal_event(std::forward<decltype(PH1)>(PH1)); });
-    observer.Subscribe_Event(EventType::scroll, "mouse_scroll_zoom",
-                             [this](auto &&PH1) { return set_zoom(std::forward<decltype(PH1)>(PH1)); });
-    observer.Subscribe_Event(EventType::drag, "mouse_button_left_drag",
-                             [this](auto &&PH1) { return set_position_offset(std::forward<decltype(PH1)>(PH1)); });
 }
 
 
@@ -122,27 +109,6 @@ bool Labyrinth::run_step(const base_event_with_stamp &base_event) {
         change_square_color_to_blue(u->self_position.x_position, u->self_position.y_position);
     }
     update();
-}
-
-bool Labyrinth::set_zoom(const base_event_with_stamp &base_event) {
-    auto &position = get_entt_instance().get<Position_component>(entity);
-    position.set_zoom(base_event);
-    position.update_position();
-}
-
-bool Labyrinth::set_position_offset(const base_event_with_stamp &base_event) {
-    // 还是需要拿到 zoom 来进行一些操作的，好处是不需要在设置时再计算exp之后的 zoom 值了
-
-    // 将一个物体从这里移动到了另一个位置，应该是和相机有关的
-
-    // 拿到相机的缩放，然后还原会世界的位置的移动的改变
-
-    // 再将值设置到物体的缩放中，而不影响其他物体的缩放
-    // 没有进入到这个事件的处理中
-    auto &position = get_entt_instance().get<Position_component>(entity);
-    position.set_position_offset(base_event);
-
-    position.update_position();
 }
 
 

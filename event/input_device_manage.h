@@ -20,8 +20,9 @@ public:
     // 构造函数：依赖注入事件队列管理器
     Keyboard_Manage() = default;
 
-    bool init_eventQueueMgr(queue_thread_safe<base_event_with_stamp> *eventQueueMgr) {
+    bool init_eventQueueMgr(queue_thread_safe<base_event_with_stamp> *eventQueueMgr, entt::dispatcher *dispatcher) {
         ptr_event_queue = eventQueueMgr;
+        dispatcher_ = dispatcher;
         return true;
     }
 
@@ -41,7 +42,7 @@ public:
     static std::vector<std::string> splitKeyString(const std::string &keyStr) {
         std::vector<std::string> keys;
         std::string currentContent; // 存储当前单引号内的内容
-        bool inQuote = false; // 是否进入单引号范围
+        bool inQuote = false;       // 是否进入单引号范围
 
         for (char ch: keyStr) {
             // 修复：通过编码判断单引号（半角'=0x27，全角’=0x2019）
@@ -140,6 +141,7 @@ public:
         first_pos_mouse_left_click = pos;
         mouse_button_left_click = true;
         ptr_event_queue->push({EventType::mouse_click_left, "mouse_click_left", pos});
+        dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_left, "mouse_click_left", pos});
     }
 
     void handle_mouse_click_right(mouse_position pos) {
@@ -147,6 +149,7 @@ public:
         first_pos_mouse_right_click = pos;
         mouse_button_right_click = true;
         ptr_event_queue->push({EventType::mouse_click_right, "mouse_click_right", pos});
+        dispatcher_->enqueue<base_event_with_stamp>({EventType::mouse_click_right, "mouse_click_right", pos});
     }
 
 
@@ -154,6 +157,10 @@ public:
         if (mouse_button_left_click == true && !(pos == pos_mouse_button_left_click)) {
             const auto error = pos - pos_mouse_button_left_click;
             ptr_event_queue->push({
+                EventType::drag, "mouse_button_left_drag",
+                base_event_with_stamp::Drag{pos, error}
+            });
+            dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::drag, "mouse_button_left_drag",
                 base_event_with_stamp::Drag{pos, error}
             });
@@ -171,26 +178,41 @@ public:
                 EventType::drag, "mouse_button_right_drag",
                 base_event_with_stamp::Drag{pos, error}
             });
+            dispatcher_->enqueue<base_event_with_stamp>({
+                EventType::drag, "mouse_button_right_drag",
+                base_event_with_stamp::Drag{pos, error}
+            });
             pos_mouse_button_right_click = pos;
         }
     }
 
-    void handle_scroll(mouse_position pos) const {
+    void handle_scroll(mouse_position pos) {
         ptr_event_queue->push({EventType::scroll, "mouse_scroll_zoom", pos});
+        dispatcher_->enqueue<base_event_with_stamp>(EventType::scroll, "mouse_scroll_zoom", pos);
     }
 
     void handle_mouse_release_left(const mouse_position release_pos) {
         mouse_button_left_click = false;
-        if (abs(release_pos - first_pos_mouse_left_click) < error_between_click_and_release)
+        if (abs(release_pos - first_pos_mouse_left_click) < error_between_click_and_release) {
             ptr_event_queue->push({
                 EventType::mouse_release_left, "mouse_release_left",
                 {first_pos_mouse_left_click, release_pos}
             });
-        else {
-            ptr_event_queue->push({
-                EventType::area_select, "left_area_select",
+            dispatcher_->enqueue<base_event_with_stamp>({
+                EventType::mouse_release_left, "mouse_release_left",
                 {first_pos_mouse_left_click, release_pos}
             });
+        } else {
+            {
+                ptr_event_queue->push({
+                    EventType::area_select, "left_area_select",
+                    {first_pos_mouse_left_click, release_pos}
+                });
+                dispatcher_->enqueue<base_event_with_stamp>({
+                    EventType::area_select, "left_area_select",
+                    {first_pos_mouse_left_click, release_pos}
+                });
+            }
         }
     }
 
@@ -202,15 +224,23 @@ public:
     void handle_mouse_release_right(const mouse_position release_pos) {
         mouse_button_right_click = false;
         if (abs(release_pos - first_pos_mouse_right_click) < error_between_click_and_release)
-            // dispatcher.enqueue<KeyEvent>(27, true);
-
+        // dispatcher.enqueue<KeyEvent>(27, true);
+        {
             ptr_event_queue->push({
                 EventType::mouse_release_right, "mouse_release_right",
                 {first_pos_mouse_right_click, release_pos}
             });
-        else {
+            dispatcher_->enqueue<base_event_with_stamp>({
+                EventType::mouse_release_right, "mouse_release_right",
+                {first_pos_mouse_right_click, release_pos}
+            });
+        } else {
             // 最终松开时才会处理的选择的逻辑
             ptr_event_queue->push({
+                EventType::area_select, "right_area_select",
+                {first_pos_mouse_right_click, release_pos}
+            });
+            dispatcher_->enqueue<base_event_with_stamp>({
                 EventType::area_select, "right_area_select",
                 {first_pos_mouse_right_click, release_pos}
             });
@@ -242,11 +272,13 @@ private:
     mouse_position pos_mouse_button_right_click;
     mouse_position first_pos_mouse_left_click;
     mouse_position first_pos_mouse_right_click;
-    mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
-    std::mutex _mutex; // 线程安全锁
-    std::unordered_set<int> pressed_keys; // Set：当前按下的按键
+    mouse_position error_between_click_and_release = {5, 5};          // 这里的范围有问题，需要更改
+    std::mutex _mutex;                                                // 线程安全锁
+    std::unordered_set<int> pressed_keys;                             // Set：当前按下的按键
     std::unordered_map<std::string, ComboRule> key_combination_rules; // 组合键规则映射
-    queue_thread_safe<base_event_with_stamp> *ptr_event_queue; // 依赖注入的事件队列管理器
+    queue_thread_safe<base_event_with_stamp> *ptr_event_queue;        // 依赖注入的事件队列管理器
+
+    entt::dispatcher *dispatcher_;
 
     // 组合键匹配：匹配成功则委托事件队列入队（内部辅助）
     void match_combination() {
@@ -263,6 +295,7 @@ private:
             // 匹配成功且未触发过 → 委托事件队列入队
             if (exactMatch) {
                 ptr_event_queue->push({EventType::key_combination, key_combination_name});
+                dispatcher_->enqueue<base_event_with_stamp>({EventType::key_combination, key_combination_name});
             }
         }
     }
