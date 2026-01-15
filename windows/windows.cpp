@@ -41,8 +41,10 @@ void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 
     if (key == GLFW_KEY_UNKNOWN) return;
     // action: GLFW_PRESS（按下）、GLFW_RELEASE（松开）、GLFW_REPEAT（重复按下）
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+        return;
+    }
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         Keyboard_Manage::instance().handleKeyDown(key);
     } else if (action == GLFW_RELEASE) {
@@ -178,7 +180,11 @@ void add_render_windows() {
 
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();
-        // glfwPollEvents();
+        if (GLFW_TRUE == glfwWindowShouldClose(window)) {
+            break;
+        }
+
+        glfwPollEvents();
 
         dispatcher.update(); // 统一分发执行
 

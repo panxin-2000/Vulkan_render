@@ -183,9 +183,15 @@ TEST(ear_clip, ear_clip_half_edge) {
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         auto result_segments = hf.get_all_triangles_data(true);
 
-        auto labyrinth = new Labyrinth("迷宫");
+        auto entity = get_entt_instance().create();
+        get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
+        auto &labyrinth = get_entt_instance().get<Labyrinth>(entity);
 
-        auto temp_trapezoid = new render_component(nullptr, "ear clip 后的三角形组");
+        auto entity_2 = get_entt_instance().create();
+        get_entt_instance().emplace<render_component>(entity_2);
+        auto &temp_trapezoid = get_entt_instance().get<render_component>(entity_2);
+
+
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
@@ -202,17 +208,18 @@ TEST(ear_clip, ear_clip_half_edge) {
             vertices.emplace_back(result_segment.c);
         }
         // 参数这里最重要的是下面的两行
-        temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        temp_trapezoid->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-        temp_trapezoid->set_vertex_shader("render/shader/different_color.vert");
-        temp_trapezoid->set_fragment_shader("render/shader/different_color.frag");
+        temp_trapezoid.set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
+        temp_trapezoid.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+        temp_trapezoid.set_vertex_shader("render/shader/different_color.vert");
+        temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
 
         /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(temp_trapezoid);
+        add_object_to_render_manager(&temp_trapezoid);
 
         add_render_windows();
 
-        delete labyrinth;
+        if (get_entt_instance().valid(entity))
+            get_entt_instance().destroy(entity);
 
 
         if (result_segments.size() == expect_triangles.size()) {
@@ -345,8 +352,9 @@ TEST(ear_clip, test_point_location) {
         }
         auto result_2 = find_all_leaf_node(root);
 
-
-        auto temp_trapezoid = new render_component(nullptr, "梯形");
+        auto entity_2 = get_entt_instance().create();
+        get_entt_instance().emplace<render_component>(entity_2);
+        auto &temp_trapezoid = get_entt_instance().get<render_component>(entity_2);
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
@@ -367,13 +375,13 @@ TEST(ear_clip, test_point_location) {
             vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper);
         }
         // 参数这里最重要的是下面的两行
-        temp_trapezoid->set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        temp_trapezoid->set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-        temp_trapezoid->set_vertex_shader("render/shader/different_color.vert");
-        temp_trapezoid->set_fragment_shader("render/shader/different_color.frag");
+        temp_trapezoid.set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
+        temp_trapezoid.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+        temp_trapezoid.set_vertex_shader("render/shader/different_color.vert");
+        temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
 
         /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(temp_trapezoid);
+        add_object_to_render_manager(&temp_trapezoid);
 
         add_render_windows();
 
