@@ -12,5 +12,8 @@ int main() {
 
 
     add_render_windows();
-    get_entt_instance().clear();
+    if (get_entt_instance().valid(entity))
+        get_entt_instance().destroy(entity);
+
+
 }

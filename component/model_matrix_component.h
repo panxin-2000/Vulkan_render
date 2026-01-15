@@ -13,7 +13,7 @@
 #include "render_component.h"
 
 
-class Position_component {
+class Position_component : public NonCopyable{
 public:
     Position_component() {
     }

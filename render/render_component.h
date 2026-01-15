@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include  "APP_utility_mixins.h"
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -47,25 +47,31 @@ enum class ShadowMode {
 };
 
 
-class render_component {
+class render_component : public NonCopyable {
 private:
     vertex_array_VAO *VAO_new = nullptr;
 
-    Element_EBO_object EBO_object;
-    Element_VBO_object VBO_object;
+    Element_EBO_object EBO_object = {};
+    Element_VBO_object VBO_object = {};
     Element_EBO *EBO_new = nullptr;;
     vertex_buffer_VBO *VBO_new = nullptr;;
-    std::vector<Texture_TBO> TBO;
+    std::vector<Texture_TBO> TBO = {};
 
     GLsizei indices_size = NULL_GPU_INDEX;
     int draw_number = 1;
-    Shader_object shader_object;
+    Shader_object shader_object = {};
     int draw_count = 0;
     bool initialized_opengl = false;
 
 public:
     render_component() {
     }
+
+    render_component(const render_component &) = delete;
+
+    // 2. 禁止拷贝赋值运算符
+    render_component &operator=(const render_component &) = delete;
+
 
     bool add_texture_path(char const *path, char const *texture_name) {
         Texture_TBO texture;
@@ -151,13 +157,6 @@ public:
         }
     }
 
-    // EBO 是三角形顶点的索引，
-    // EBO 其实会和绘制的元素强相关，GL_TRIANGLES GL_LINE_STRIP 应该是都不一样的，比如条带三角形
-
-
-    // 还更简洁的只更新其中一部分数据的内容
-
-
     void update_data() {
         EBO_object.update_buffer_data();
         VBO_object.update_buffer_data();
@@ -171,12 +170,6 @@ public:
     void draw() {
         if (VBO_object.get_draw_count() > 0) {
             shader_object.use_shader_program();
-            // 之后就是
-            // GLint viewLoc = glGetUniformLocation(skyboxShader.Program, "view");
-            // GLint cubemap = glGetUniformLocation(skyboxShader.Program, "cubemap");
-            // glUniform1i(cubemap, 0);
-            // GLint viewLoc = glGetUniformLocation(skyboxShader.Program, "view");
-            // glUniformMatrix4fv(viewLoc, 1, GL_FALSE, (const GLfloat *) &view);
 
             for (int i = 0; i < draw_number; ++i) {
                 init_and_bind_VAO();
@@ -189,8 +182,6 @@ public:
                                                      TBO.at(i).get_texture_name()),
                                 i);
                 }
-
-
                 if (EBO_object.EBO_new != nullptr) {
                     glDrawElements(GL_TRIANGLES, EBO_object.get_indices_size(), GL_UNSIGNED_INT, (void *) 0);
                 } else {

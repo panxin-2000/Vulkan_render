@@ -14,7 +14,7 @@
 #include "observer_manage.h"
 
 
-class Input_Component {
+class Input_Component : public NonCopyable{
 public:
     Input_Component(const std::function<bool (entt::entity, base_event_with_stamp)> &function) : on_Event(function) {
     }
