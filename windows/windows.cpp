@@ -192,7 +192,6 @@ void add_render_windows() {
     }
 
 
-    // observe_manage_instance::instance().observer_manage_thread_close();
     end_render_manage_thread();
 
     // Terminate GLFW, clearing any resources allocated by GLFW.

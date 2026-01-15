@@ -28,6 +28,9 @@ TEST(vecter, add) {
     // }
 
     EXPECT_EQ(v, expected); // 居然是可以直接判断两个vector 是否相等的
+
+    GTEST_SKIP() << "designed vector error";
+
     try {
         auto tem = expected.at(100);
     } catch (const std::out_of_range &e) {

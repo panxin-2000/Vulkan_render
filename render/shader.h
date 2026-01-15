@@ -10,17 +10,34 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+
+#include "VAO_object.h"
 #include "base_element/point_3.h"
 
 class Shader_object {
 public:
     GLuint shaderProgram;
+    GLuint UBO = NULL_GPU_INDEX;
 
     Shader_object() = default;
+
+    ~Shader_object() {
+        if (shaderProgram != NULL_GPU_INDEX) {
+            glDeleteShader(shaderProgram);
+            shaderProgram = NULL_GPU_INDEX;
+        }
+        if (UBO != NULL_GPU_INDEX) {
+            glDeleteBuffers(1, &UBO);
+            UBO = NULL_GPU_INDEX;
+        }
+    }
+
 
     const char *vertexPath;
     const char *fragmentPath;
     const char *geometryPath;
+    GLsizeiptr UBO_size;
+    const void *UBO_data;
 
     enum Uniforms_type {
         gl_bool,
@@ -45,6 +62,12 @@ public:
         float mat_3[9];
         float mat_4[16];
     };
+
+    void set_UBO_parameter(GLsizeiptr UBO_size,
+                           const void *UBO_data) {
+        this->UBO_size = UBO_size;
+        this->UBO_data = UBO_data;
+    }
 
     static void set_mat2_value(float *address, const uint8_t row, const uint8_t column, const float value) {
         address[column * 2 + row] = value;
@@ -161,7 +184,13 @@ public:
             checkCompileErrors(geometry, "GEOMETRY");
         }
         // shader Program
-        shaderProgram = glCreateProgram();
+        if (shaderProgram != NULL_GPU_INDEX)
+            shaderProgram = glCreateProgram();
+        else {
+            glDeleteShader(shaderProgram);
+            shaderProgram = NULL_GPU_INDEX;
+            shaderProgram = glCreateProgram();
+        }
         glAttachShader(shaderProgram, vertex);
         glAttachShader(shaderProgram, fragment);
         if (geometryPath != nullptr)
@@ -173,6 +202,16 @@ public:
         glDeleteShader(fragment);
         if (geometryPath != nullptr)
             glDeleteShader(geometry);
+
+        initUBO(UBO_size, UBO_data);
+    }
+
+    void initUBO(GLsizeiptr size, const void *data) {
+        glGenBuffers(1, &UBO);
+        glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+        // 分配内存并传入数据（GL_STATIC_DRAW表示数据不频繁修改）
+        glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, NULL_GPU_INDEX);
     }
 
     // activate the shader
@@ -187,6 +226,7 @@ public:
 
 
     void update_uniforms() {
+        use_shader_program();
         for (auto pair: uniforms_map) {
             auto &[name, data] = pair;
             std::apply([this,name](auto &&PH2, auto &&PH3, auto &&PH4) {

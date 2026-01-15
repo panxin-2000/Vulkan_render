@@ -49,26 +49,19 @@ enum class ShadowMode {
 
 class render_component {
 private:
-    vertex_array_VAO *VAO_new;
+    vertex_array_VAO *VAO_new = nullptr;
 
     Element_EBO_object EBO_object;
     Element_VBO_object VBO_object;
-    Element_EBO *EBO_new;
-    GLuint UBO = NULL_GPU_INDEX;
-    vertex_buffer_VBO *VBO_new;
+    Element_EBO *EBO_new = nullptr;;
+    vertex_buffer_VBO *VBO_new = nullptr;;
     std::vector<Texture_TBO> TBO;
 
     GLsizei indices_size = NULL_GPU_INDEX;
     int draw_number = 1;
-    GLuint vertexShader;
-    GLuint fragmentShader;
-    GLuint shaderProgram; //??
     Shader_object shader_object;
     int draw_count = 0;
     bool initialized_opengl = false;
-
-    GLsizeiptr UBO_size;
-    const void *UBO_data;
 
 public:
     render_component() {
@@ -85,16 +78,18 @@ public:
     ~render_component() {
         if (VBO_new != nullptr) {
             delete VBO_new;
+            VBO_new = nullptr;
         }
         if (VAO_new != nullptr) {
             delete VAO_new;
+            VAO_new = nullptr;
         }
         if (EBO_new != NULL_GPU_INDEX) {
             delete EBO_new;
+            EBO_new = nullptr;
         }
-        if (UBO != NULL_GPU_INDEX) {
-            glDeleteBuffers(1, &UBO);
-        }
+
+        // delete shader_object;
     }
 
     void set_vertex_shader(const char *path) {
@@ -130,8 +125,7 @@ public:
 
     void set_UBO_parameter(GLsizeiptr UBO_size,
                            const void *UBO_data) {
-        this->UBO_size = UBO_size;
-        this->UBO_data = UBO_data;
+        shader_object.set_UBO_parameter(UBO_size, UBO_data);
     }
 
 
@@ -141,7 +135,6 @@ public:
             init_and_bind_VAO();
             VBO_object.initVBO(VAO_new);
             EBO_object.initEBO(VAO_new);
-            initUBO(UBO_size, UBO_data);
             for (int i = 0; i < TBO.size(); ++i) {
                 TBO.at(i).loadTexture();
             }
@@ -160,15 +153,6 @@ public:
 
     // EBO 是三角形顶点的索引，
     // EBO 其实会和绘制的元素强相关，GL_TRIANGLES GL_LINE_STRIP 应该是都不一样的，比如条带三角形
-
-
-    void initUBO(GLsizeiptr size, const void *data) {
-        glGenBuffers(1, &UBO);
-        glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-        // 分配内存并传入数据（GL_STATIC_DRAW表示数据不频繁修改）
-        glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW);
-        glBindBuffer(GL_UNIFORM_BUFFER, NULL_GPU_INDEX);
-    }
 
 
     // 还更简洁的只更新其中一部分数据的内容
