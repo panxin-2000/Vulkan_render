@@ -117,6 +117,7 @@ add_executable(hello_test ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
         test/test_tetrahedron.cpp
         test/convex_hull.cpp
         test/bracket.cpp
+        test/test_factory.cpp
         test/cut_rod.cpp
         test/test_tree_node.cpp
         test/test_class.cpp
