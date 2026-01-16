@@ -40,38 +40,37 @@ public:
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
         // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-        std::vector<Point_3> vertices;
-        std::vector<unsigned int> indices;
+        std::vector<Point_3> *vertices = new std::vector<Point_3>;
+        std::vector<unsigned int> *indices = new std::vector<unsigned int>;
         int min_x = 0;
         int min_y = 0;
         int max_x = 800;
         int max_y = 600;
-        indices.push_back(vertices.size() + 0);
-        indices.push_back(vertices.size() + 1);
-        indices.push_back(vertices.size() + 2);
-        indices.push_back(vertices.size() + 2);
-        indices.push_back(vertices.size() + 3);
-        indices.push_back(vertices.size() + 0);
-        vertices.emplace_back(min_x, min_y, 0); //0 1 2
-        vertices.emplace_back(max_x, min_y, 0);
-        vertices.emplace_back(max_x, max_y, 0); // 2 3 0
-        vertices.emplace_back(min_x, max_y, 0);
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 3);
+        indices->push_back(vertices->size() + 0);
+        vertices->emplace_back(min_x, min_y, 0); //0 1 2
+        vertices->emplace_back(max_x, min_y, 0);
+        vertices->emplace_back(max_x, max_y, 0); // 2 3 0
+        vertices->emplace_back(min_x, max_y, 0);
         // 参数这里最重要的是下面的两行
 
         // 参数这里最重要的是下面的两行
-        render.set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        render.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
+        render.set_VBO_parameter(vertices->size() * sizeof(Point_3), vertices->data(), vertex_attribs);
+        render.set_EBO_parameter(indices->size() * sizeof(GLuint), indices->data(), indices->size());
         render.set_vertex_shader("render/shader/different_color.vert");
         render.set_fragment_shader("render/shader/different_color.frag");
 
         auto &position = get_entt_instance().get<Position_component>(entity_);
         position.update_2D_position_matrix();
 
+        add_object_to_render_manager(&render);
+
         // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。
         /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(&render);
-        add_render_windows();  // 为什么一定是要在这里？ 难道全局实例化是有问题的
-
     };
 
 

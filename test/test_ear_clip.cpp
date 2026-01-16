@@ -179,6 +179,7 @@ TEST(ear_clip, ear_clip_half_edge) {
 
     std::vector<Triangle<Point_2> > expect_triangles{};
     init_expect_triangles(expect_triangles);
+    GTEST_SKIP() << "screen display";
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         auto result_segments = hf.get_all_triangles_data(true);
@@ -351,6 +352,9 @@ TEST(ear_clip, test_point_location) {
             // std::cout << "result" << result->size() << std::endl;
         }
         auto result_2 = find_all_leaf_node(root);
+
+        GTEST_SKIP() << "screen display";
+
 
         auto entity_2 = get_entt_instance().create();
         get_entt_instance().emplace<render_component>(entity_2);

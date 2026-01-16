@@ -15,7 +15,7 @@ int main() {
     auto entity_2 = get_entt_instance().create();
     get_entt_instance().emplace<UI_button>(entity_2, "按钮1", entity_2);
 
-    // add_render_windows();
+    add_render_windows();
     // if (get_entt_instance().valid(entity))
     // get_entt_instance().destroy(entity);
 }

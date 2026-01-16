@@ -12,6 +12,7 @@
 
 #include "render_component.h"
 
+
 class render_object_manage {
 private:
     mutable std::mutex mtx; // 互斥锁（mutable支持const方法加锁）
@@ -22,8 +23,40 @@ private:
     std::atomic<bool> need_render = true;
 
 public:
+    // 1. 禁用拷贝：防止克隆
+    render_object_manage(const render_object_manage &) = delete;
+
+    render_object_manage &operator=(const render_object_manage &) = delete;
+
+    // 2. 禁用移动：防止所有权转移
+    render_object_manage(render_object_manage &&) = delete;
+
+    render_object_manage &operator=(render_object_manage &&) = delete;
+
+private:
+    render_object_manage() {
+        /* 初始化代码 */
+        std::cout << "[render_object_manage]" << std::endl;
+    }
+
+    ~render_object_manage() {
+        /* 释放代码 */
+    }
+
+public:
+    // static render_object_manage &get_instance() {
+    //     static auto *instance = new render_object_manage();
+    //     return *instance;
+    // }
+
+    // 另一种单例的办法
     static render_object_manage &get_instance() {
-        static auto *instance = new render_object_manage();
+        static render_object_manage *instance = nullptr;
+        static std::once_flag flag;
+        // 线程安全：由系统保证 inside 的 lambda 只执行一次
+        std::call_once(flag, []() {
+            instance = new render_object_manage();
+        });
         return *instance;
     }
 
