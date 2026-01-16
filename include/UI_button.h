@@ -6,11 +6,12 @@
 #define HELLO_MAC_UI_BUTTON_H
 
 
-#include "render_component.h"
+#include "Render_thread_data.h"
 #include "input_component.h"
 #include "base_event.h"
 #include "ECS.h"
 #include "entity_name_component.h"
+#include "model_matrix_component.h"
 #include "observer_manage.h"
 #include "render_object_manage.h"
 
@@ -20,12 +21,12 @@ private:
 
 public:
     UI_button(const std::string &name, entt::entity entity) {
-        std::cout << "Labyrinth::Labyrinth()" << std::endl;
+        std::cout << "UI_button" << std::endl;
 
 
         /***************创建*******************/
         entity_ = entity;
-        get_entt_instance().emplace<render_component>(entity);
+        get_entt_instance().emplace<logic_render_data>(entity);
         get_entt_instance().emplace<Input_Component>(entity, on_Event);
 
         get_entt_instance().emplace<Position_component>(entity);
@@ -33,19 +34,21 @@ public:
         get_entt_instance().emplace<Name_component>(entity, name);
 
 
-        auto &render = get_entt_instance().get<render_component>(entity);
+        auto &render = get_entt_instance().get<logic_render_data>(entity);
 
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
         // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-        std::vector<Point_3> *vertices = new std::vector<Point_3>;
-        std::vector<unsigned int> *indices = new std::vector<unsigned int>;
-        int min_x = 0;
-        int min_y = 0;
-        int max_x = 800;
-        int max_y = 600;
+        auto vertices = std::make_shared<std::vector<Point_3> >();
+        auto indices = std::make_shared<std::vector<unsigned int> >();
+        // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+
+        int min_x = 0.2;
+        int min_y = 0.2;
+        int max_x = 0.3;
+        int max_y = 0.3;
         indices->push_back(vertices->size() + 0);
         indices->push_back(vertices->size() + 1);
         indices->push_back(vertices->size() + 2);
@@ -59,8 +62,8 @@ public:
         // 参数这里最重要的是下面的两行
 
         // 参数这里最重要的是下面的两行
-        render.set_VBO_parameter(vertices->size() * sizeof(Point_3), vertices->data(), vertex_attribs);
-        render.set_EBO_parameter(indices->size() * sizeof(GLuint), indices->data(), indices->size());
+        render.set_vertices(vertices);
+        render.set_indices(indices);
         render.set_vertex_shader("render/shader/different_color.vert");
         render.set_fragment_shader("render/shader/different_color.frag");
 

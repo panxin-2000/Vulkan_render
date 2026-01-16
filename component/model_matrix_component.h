@@ -10,7 +10,6 @@
 #include "shader.h"
 #include <entt/entt.hpp>
 
-#include "render_component.h"
 
 
 class Position_component : public NonCopyable {
@@ -39,12 +38,12 @@ public:
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto *render = get_entt_instance().try_get<render_component>(entity)) {
-            Shader_object::data_value_or_ptr data{};
+        if (auto *render = get_entt_instance().try_get<logic_render_data>(entity)) {
+            data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            {zoom.x, zoom.y, 1.0},
                                                            {0.0f, 0.0f, 0.0f}, {offset});
-            render->add_uniform("model_transform", Shader_object::gl_mat4, data);
+            render->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }
@@ -54,13 +53,13 @@ public:
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto *render = get_entt_instance().try_get<render_component>(entity)) {
-            Shader_object::data_value_or_ptr data{};
+        if (auto *render = get_entt_instance().try_get<logic_render_data>(entity)) {
+            data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            // {0.01f , 0.01f, 1.0},
                                                            {2.0f / get_win_WIDTH(), 2.0f / get_win_HEIGHT(), 1.0},
                                                            {0.0f, 0.0f, 0.0f}, {-1, -1, 0});
-            render->add_uniform("model_transform", Shader_object::gl_mat4, data);
+            render->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }

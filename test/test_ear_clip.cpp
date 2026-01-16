@@ -189,8 +189,8 @@ TEST(ear_clip, ear_clip_half_edge) {
         auto &labyrinth = get_entt_instance().get<Labyrinth>(entity);
 
         auto entity_2 = get_entt_instance().create();
-        get_entt_instance().emplace<render_component>(entity_2);
-        auto &temp_trapezoid = get_entt_instance().get<render_component>(entity_2);
+        get_entt_instance().emplace<Render_thread_data>(entity_2);
+        auto &temp_trapezoid = get_entt_instance().get<Render_thread_data>(entity_2);
 
 
         /***************设置参数**********************/
@@ -357,8 +357,8 @@ TEST(ear_clip, test_point_location) {
 
 
         auto entity_2 = get_entt_instance().create();
-        get_entt_instance().emplace<render_component>(entity_2);
-        auto &temp_trapezoid = get_entt_instance().get<render_component>(entity_2);
+        get_entt_instance().emplace<Render_thread_data>(entity_2);
+        auto &temp_trapezoid = get_entt_instance().get<Render_thread_data>(entity_2);
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);

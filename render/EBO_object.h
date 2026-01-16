@@ -7,9 +7,11 @@
 
 #include "VAO_object.h"
 #include "buffer_object.h"
+#include "shader_common.h"
 
 
 using Element_EBO = GL_buffer_object<GL_ELEMENT_ARRAY_BUFFER>;
+
 
 struct Element_EBO_detail {
     GLsizeiptr EBO_size;

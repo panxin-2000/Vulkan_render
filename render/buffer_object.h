@@ -13,6 +13,10 @@
 template<GLuint type_value = GL_ELEMENT_ARRAY_BUFFER>
 class GL_buffer_object {
 public:
+    GLuint buffer_object = NULL_GPU_INDEX;
+    const vertex_array_VAO *VAO_new;
+
+public:
     void bind() const {
         glBindBuffer(type_value, buffer_object);
     }
@@ -21,8 +25,6 @@ public:
         glBindBuffer(type_value, NULL_GPU_INDEX);
     }
 
-    GLuint buffer_object = NULL_GPU_INDEX;
-    const vertex_array_VAO *VAO_new;
 
     GL_buffer_object(const vertex_array_VAO *temp_VAO) {
         VAO_new = temp_VAO;

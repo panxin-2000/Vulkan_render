@@ -10,19 +10,142 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "render_component.h"
+#include "shader_common.h"
+#include "Render_thread_data.h"
+#include "logic_render_data.h"
 
+static void create_vertex_buffer(const Vertices_type &share_point,
+                                 std::map<Vertices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            it->second.shared_number++;
+        } else {
+            unsigned int buffer = 0;
+            glGenBuffers(1, &buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, buffer);
+            glBufferData(GL_ARRAY_BUFFER, share_point->size() * sizeof(Point_3), share_point->data(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, NULL_GPU_INDEX);
+            map->insert({share_point, {buffer, 1}});
+            // 创建VBO
+        }
+    }
+}
+
+static void bind_vertex_buffer(const Vertices_type &share_point,
+                               std::map<Vertices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            glBindBuffer(GL_ARRAY_BUFFER, it->second.buffer);
+        }
+    }
+}
+
+
+static void create_element_buffer(const Indices_type &share_point,
+                                  std::map<Indices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            it->second.shared_number++;
+        } else {
+            unsigned int buffer = 0;
+            glGenBuffers(1, &buffer);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, share_point->size() * sizeof(unsigned int), share_point->data(),
+                         GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL_GPU_INDEX);
+            map->insert({share_point, {buffer, 1}});
+            // 创建EBO
+        }
+    }
+}
+
+static void bind_element_buffer(const Indices_type &share_point,
+                                std::map<Indices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, it->second.buffer);
+        }
+    }
+}
 
 class render_object_manage {
 private:
     mutable std::mutex mtx; // 互斥锁（mutable支持const方法加锁）
-    std::vector<render_component *> render_objects;
-    std::vector<render_component *> need_init;
+
+    std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
+
+    class two_data {
+    public:
+        logic_render_data *logic_data = nullptr;
+        Render_thread_data *render_data;
+
+        two_data() {
+        }
+
+        ~two_data() {
+        }
+    };
+
+    std::vector<two_data> render_objects;
+    std::vector<logic_render_data *> need_init;
 
     std::atomic<bool> have_object_need_update = false;
     std::atomic<bool> need_render = true;
 
+
+    std::map<std::string, shader_and_share> vertex_shader_map_;
+    std::map<std::string, shader_and_share> fragment_shader_map_;
+    std::map<std::string, shader_and_share> geometry_shader_map_;
+    std::map<Vertices_type, buffer_and_share> vertices_map_;
+    std::map<Indices_type, buffer_and_share> indices_map_;
+
 public:
+    void init_logic_need_resources() {
+        for (auto user_render_component: need_init) {
+            Shader_object::create_vertex_shader(user_render_component->vertexPath_, &vertex_shader_map_);
+            Shader_object::create_fragment_shader(user_render_component->fragmentPath_, &fragment_shader_map_);
+            Shader_object::create_geometry_shader(user_render_component->geometryPath_, &geometry_shader_map_);
+            create_vertex_buffer(user_render_component->vertices_, &vertices_map_);
+            create_element_buffer(user_render_component->indices_, &indices_map_);
+
+            // 内容都创建完成了。之后应该怎么做呢？ 绑定。
+        }
+    }
+
+    void init_render_resources() {
+        for (auto user_render_component: need_init) {
+            two_data data;
+            data.logic_data = user_render_component;
+            data.render_data = new Render_thread_data;
+            data.render_data->init_and_bind_VAO();
+            bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
+
+            for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
+                glVertexAttribPointer(i, user_render_component->vertex_attribs[i].size,
+                                      user_render_component->vertex_attribs[i].type,
+                                      user_render_component->vertex_attribs[i].normalized,
+                                      user_render_component->vertex_attribs[i].stride,
+                                      user_render_component->vertex_attribs[i].pointer);
+                glEnableVertexAttribArray(i);
+            }
+
+            bind_element_buffer(user_render_component->indices_, &indices_map_);
+
+
+            data.render_data->size = user_render_component->indices_->size();
+            data.render_data->shader_object_.Shader_init(user_render_component,
+                                                         &vertex_shader_map_,
+                                                         &fragment_shader_map_,
+                                                         &geometry_shader_map_);
+            data.render_data->shader_object_.update_uniforms(&user_render_component->uniforms_map);
+            render_objects.push_back(data);
+        }
+    }
+
     // 1. 禁用拷贝：防止克隆
     render_object_manage(const render_object_manage &) = delete;
 
@@ -71,12 +194,12 @@ public:
      *
      */
     void check_and_update_need_object() {
-        if (have_object_need_update == true) {
-            for (int i = 0; i < render_objects.size(); ++i) {
-                render_objects.at(i)->update_data();
-            }
-            have_object_need_update = false;
-        }
+        // if (have_object_need_update == true) {
+        // for (int i = 0; i < render_objects.size(); ++i) {
+        // render_objects.at(i)->update_data();
+        // }
+        // have_object_need_update = false;
+        // }
     }
 
     void check_and_init_need_object() {
@@ -84,14 +207,13 @@ public:
 
     void updata_and_render_object() {
         for (int i = 0; i < render_objects.size(); ++i) {
-            render_objects.at(i)->draw();
+            render_objects.at(i).render_data->draw();
         }
     }
 
     void init_need_init_object() {
-        for (int i = 0; i < need_init.size(); ++i) {
-            need_init.at(i)->init_opengl_start_data();
-        }
+        init_logic_need_resources();
+        init_render_resources();
         need_init.clear();
     }
 
@@ -99,8 +221,7 @@ public:
         have_object_need_update = status;
     }
 
-    void add_render_object(render_component *render_object) {
-        render_objects.push_back(render_object);
+    void add_render_object(logic_render_data *render_object) {
         need_init.push_back(render_object);
     }
 
@@ -118,7 +239,6 @@ public:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); {
                 std::unique_lock<std::mutex> lock(mtx);
                 init_need_init_object(); // 主要是复制内存的操作
-                check_and_init_need_object();
                 check_and_update_need_object();
                 updata_and_render_object();
             }
@@ -126,8 +246,6 @@ public:
             glfwSwapBuffers(window);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        // render_objects.clear();
-        // need_init.clear();
 
         have_object_need_update = false;
         need_render = true;
@@ -155,7 +273,7 @@ public:
 };
 
 
-bool add_object_to_render_manager(render_component *render_object);
+bool add_object_to_render_manager(logic_render_data *render_object);
 
 bool notify_render_manager_update_objects();
 

@@ -1,0 +1,97 @@
+//
+// Created by 潘鑫 on 2026/1/16.
+//
+
+#ifndef HELLO_MAC_LOGIC_RENDER_DATA_H
+#define HELLO_MAC_LOGIC_RENDER_DATA_H
+
+#include <map>
+
+#include "APP_utility_mixins.h"
+#include "shader_common.h"
+
+
+class logic_render_data : public NonCopyable {
+public:
+    logic_render_data() {
+        // p_render_component = new render_component;
+    }
+
+    ~logic_render_data() {
+    }
+
+    mutable std::mutex mtx;
+    Vertices_type vertices_;
+    Indices_type indices_;
+    std::vector<VertexAttrib> vertex_attribs;
+    std::string texture_path_;
+    std::string texture_name_;
+    std::string vertexPath_;
+    std::string fragmentPath_;
+    std::string geometryPath_;
+    GPUPrimType prim_type_;
+    std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
+
+
+    enum status_change {
+        vertices_changed = 1 << 0,
+        indices_changed = 1 << 1,
+        texture_path_changed = 1 << 2,
+        texture_name_changed = 1 << 3,
+        vertex_path_changed = 1 << 4,
+        fragment_path_changed = 1 << 5,
+        geometry_path_changed = 1 << 6,
+        primitive_type_changed = 1 << 7,
+        uniform_buffer_changed = 1 << 8,
+    };
+
+#define add_mutex std::lock_guard<std::mutex> lock(mtx);
+
+    void set_vertices(std::shared_ptr<std::vector<Point_3> > vertices) {
+        add_mutex;
+        vertices_ = std::move(vertices);
+    }
+
+    void set_indices(std::shared_ptr<std::vector<unsigned int> > indices) {
+        add_mutex;
+        indices_ = std::move(indices);
+    }
+
+    void set_texture(const std::string &path, const std::string &texture_name) {
+        add_mutex;
+        this->texture_path_ = path;
+        this->texture_name_ = texture_name;
+    }
+
+    void set_vertex_shader(const std::string &path) {
+        add_mutex;
+        vertexPath_ = path;
+    }
+
+    void set_fragment_shader(const std::string &path) {
+        add_mutex;
+        fragmentPath_ = path;
+    }
+
+    void set_geometry_shader(const std::string &path) {
+        add_mutex;
+        geometryPath_ = path;
+    }
+
+
+    void add_uniform(const std::string &name, Uniforms_type uniforms_type, data_value_or_ptr &data,
+                     uint8_t number = 1) {
+        add_mutex;
+        auto [it, success] =
+                uniforms_map.insert({name, std::make_tuple(uniforms_type, data, number)});
+        if (!success) {
+            it->second = std::make_tuple(uniforms_type, data, number);
+        }
+    }
+
+private:
+    // render_component *p_render_component;
+};
+
+
+#endif //HELLO_MAC_LOGIC_RENDER_DATA_H

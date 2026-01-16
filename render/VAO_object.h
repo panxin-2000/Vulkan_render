@@ -7,32 +7,7 @@
 
 #define GLEW_STATIC
 #include <GL/glew.h>
-#define NULL_GPU_INDEX 0
-
-
-struct VertexAttrib {
-    GLint size;
-    GLenum type;
-    GLboolean normalized;
-    GLsizei stride;
-    const void *pointer;
-
-    /**
-     *
-     * @param size 表示有几个数据
-     * @param type 类型，表示其中单个数据的类型
-     * @param normalized 是否需要归一化
-     * @param stride 间隔，重新下一个数据需要间隔多远
-     * @param pointer 访问时是否需要便宜
-     */
-    VertexAttrib(GLint size,
-                 GLenum type,
-                 GLboolean normalized,
-                 GLsizei stride,
-                 const void *pointer
-    ) : size(size), type(type), normalized(normalized), stride(stride), pointer(pointer) {
-    }
-};
+#include "shader_common.h"
 
 class vertex_array_VAO {
     GLuint buffer_object = NULL_GPU_INDEX;

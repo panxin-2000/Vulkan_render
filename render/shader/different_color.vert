@@ -7,5 +7,6 @@ uniform mat4 model_transform;  // 2d的 大小。
 void main()
 {
     vec4 pos = model_transform * vec4(aPos, 1.0);
-    gl_Position = pos;
+    //    gl_Position = pos;
+    gl_Position = vec4(aPos, 1.0);
 }
