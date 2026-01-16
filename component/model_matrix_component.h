@@ -13,7 +13,7 @@
 #include "render_component.h"
 
 
-class Position_component : public NonCopyable{
+class Position_component : public NonCopyable {
 public:
     Position_component() {
     }
@@ -44,6 +44,22 @@ public:
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            {zoom.x, zoom.y, 1.0},
                                                            {0.0f, 0.0f, 0.0f}, {offset});
+            render->add_uniform("model_transform", Shader_object::gl_mat4, data);
+        }
+        return true;
+    }
+
+    bool update_2D_position_matrix() {
+        auto &storage = get_entt_instance().storage<Position_component>();
+
+
+        const auto entity = entt::to_entity(storage, *this);
+        if (auto *render = get_entt_instance().try_get<render_component>(entity)) {
+            Shader_object::data_value_or_ptr data{};
+            Shader_object::set_model_transform_zoom_rotate(data.vec_4,
+                                                           // {0.01f , 0.01f, 1.0},
+                                                           {2.0f / get_win_WIDTH(), 2.0f / get_win_HEIGHT(), 1.0},
+                                                           {0.0f, 0.0f, 0.0f}, {-1, -1, 0});
             render->add_uniform("model_transform", Shader_object::gl_mat4, data);
         }
         return true;

@@ -32,7 +32,7 @@ struct Position {
 
 class Labyrinth {
 public:
-    entt::entity entity;
+    entt::entity entity_;
 
     // render_component *Labyrinth_cube;
     // Input_Component *observer;

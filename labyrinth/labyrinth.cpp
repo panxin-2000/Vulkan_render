@@ -12,19 +12,19 @@
 void on_key_press(const KeyEvent &event) {
 }
 
-Labyrinth::Labyrinth(const std::string &name, entt::entity entity_) {
+Labyrinth::Labyrinth(const std::string &name, entt::entity entity) {
     std::cout << "Labyrinth::Labyrinth()" << std::endl;
 
     init_render_object();
 
     /***************创建*******************/
-    entity = entity_;
-    get_entt_instance().emplace<render_component>(entity);
-    get_entt_instance().emplace<Input_Component>(entity, on_Event);
+    entity_ = entity;
+    get_entt_instance().emplace<render_component>(entity_);
+    get_entt_instance().emplace<Input_Component>(entity_, on_Event);
 
-    get_entt_instance().emplace<Position_component>(entity);
-    get_entt_instance().emplace<Drag_event>(entity);
-    get_entt_instance().emplace<Name_component>(entity, name);
+    get_entt_instance().emplace<Position_component>(entity_);
+    get_entt_instance().emplace<Drag_event>(entity_);
+    get_entt_instance().emplace<Name_component>(entity_, name);
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -32,13 +32,13 @@ Labyrinth::Labyrinth(const std::string &name, entt::entity entity_) {
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
     vertex_attribs.emplace_back(2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (6 * sizeof(float)));
 
-    auto &position = get_entt_instance().get<Position_component>(entity);
+    auto &position = get_entt_instance().get<Position_component>(entity_);
 
     position.update_position();
 
 
     // 参数这里最重要的是下面的两行
-    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity);
+    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity_);
 
     Labyrinth_cube.add_texture_path("resoureces/picture.png", "ourTexture1");
     Labyrinth_cube.set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
@@ -80,7 +80,7 @@ void Labyrinth::update() {
     vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Vertex), (void *) 0);
     vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity);
+    auto &Labyrinth_cube = get_entt_instance().get<render_component>(entity_);
     Labyrinth_cube.set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
     /***************通知管理器更新渲染对象**********************/
     notify_render_manager_update_objects();
@@ -199,7 +199,7 @@ bool Labyrinth::on_Event(entt::entity entity_, const base_event_with_stamp &even
 bool Labyrinth::deal_event(const base_event_with_stamp &base_event) {
     std::lock_guard<Labyrinth_mutex_type> lock(change_vbo_date_mutex);
     // 有一点内容需要明确，offset 其实应该指的是迷宫方块左下角的坐标
-    auto &position = get_entt_instance().get<Position_component>(entity);
+    auto &position = get_entt_instance().get<Position_component>(entity_);
     auto offset = position.get_offset();
     auto zoom = position.get_zoom();
 

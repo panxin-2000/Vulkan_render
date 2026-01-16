@@ -24,12 +24,9 @@
 #include "ECS.h"
 
 
-const GLuint WIDTH = 800, HEIGHT = 600;
-
-
 // 只要鼠标动了就会调用这里
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos) {
-    x_pos = ((x_pos / WIDTH) - 0.5f) * 2, y_pos = ((y_pos / HEIGHT) - 0.5f) * -2;
+    x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
     Keyboard_Manage::instance().handle_drag({(float) x_pos, (float) y_pos});
 }
 
@@ -67,7 +64,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     double x_pos;
     double y_pos;
     glfwGetCursorPos(window, &x_pos, &y_pos);
-    x_pos = ((x_pos / WIDTH) - 0.5f) * 2, y_pos = ((y_pos / HEIGHT) - 0.5f) * -2;
+    x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
     // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
     std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
 #define key_instance Keyboard_Manage::instance()
@@ -148,7 +145,7 @@ void add_render_windows() {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr);
+    window = glfwCreateWindow(get_win_WIDTH(), get_win_HEIGHT(), "LearnOpenGL", nullptr, nullptr);
 
     // 注册GLFW回调
 

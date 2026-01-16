@@ -210,7 +210,7 @@ public:
         glGenBuffers(1, &UBO);
         glBindBuffer(GL_UNIFORM_BUFFER, UBO);
         // 分配内存并传入数据（GL_STATIC_DRAW表示数据不频繁修改）
-        glBufferData(GL_UNIFORM_BUFFER, size, data, GL_STATIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, 4 * 16 * 5, data, GL_STATIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, NULL_GPU_INDEX);
     }
 
