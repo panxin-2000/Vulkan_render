@@ -76,7 +76,6 @@ class render_object_manage {
 private:
     mutable std::mutex mtx; // 互斥锁（mutable支持const方法加锁）
 
-    std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
 
     class two_data {
     public:
@@ -193,7 +192,7 @@ public:
     /**
      *
      */
-    void check_and_update_need_object() {
+    void update_render_data() {
         // if (have_object_need_update == true) {
         // for (int i = 0; i < render_objects.size(); ++i) {
         // render_objects.at(i)->update_data();
@@ -202,10 +201,8 @@ public:
         // }
     }
 
-    void check_and_init_need_object() {
-    }
 
-    void updata_and_render_object() {
+    void render_object_function() {
         for (int i = 0; i < render_objects.size(); ++i) {
             render_objects.at(i).render_data->draw();
         }
@@ -239,8 +236,8 @@ public:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); {
                 std::unique_lock<std::mutex> lock(mtx);
                 init_need_init_object(); // 主要是复制内存的操作
-                check_and_update_need_object();
-                updata_and_render_object();
+                update_render_data();
+                render_object_function();
             }
 
             glfwSwapBuffers(window);
