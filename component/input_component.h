@@ -8,13 +8,14 @@
 
 #include <iostream>
 #include <utility>
+#include <entt/entt.hpp>
 
 #include "base_event.h"
 #include "base_observer.h"
 #include "observer_manage.h"
 
 
-class Input_Component : public NonCopyable{
+class Input_Component : public NonCopyable {
 public:
     Input_Component(const std::function<bool (entt::entity, base_event_with_stamp)> &function) : on_Event(function) {
     }

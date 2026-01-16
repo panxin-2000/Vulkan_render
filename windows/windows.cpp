@@ -22,6 +22,8 @@
 #include "input_device_manage.h"
 #include "observer_manage.h"
 #include "ECS.h"
+#include "input_component.h"
+#include "model_matrix_component.h"
 
 
 // 只要鼠标动了就会调用这里

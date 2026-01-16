@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <GLFW/glfw3.h>
 #include "../input_device/key_map_value.h"
+#include <entt/entt.hpp>
 
 // 组合键状态管理器（仅负责按键状态+组合键匹配）
 class Keyboard_Manage {
