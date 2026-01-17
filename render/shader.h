@@ -151,14 +151,14 @@ public:
     }
 
 
-    void Shader_init(logic_render_data *render,
-                     std::map<std::string, shader_and_share> *vertex_shader_map,
-                     std::map<std::string, shader_and_share> *fragment_shader_map,
-                     std::map<std::string, shader_and_share> *geometry_shader_map) {
+    void shader_init_and_attach(logic_render_data *render,
+                                std::map<std::string, shader_and_share> *vertex_shader_map,
+                                std::map<std::string, shader_and_share> *fragment_shader_map,
+                                std::map<std::string, shader_and_share> *geometry_shader_map) {
         // shader Program
         if (render == nullptr)
             return;
-        if (shaderProgram != NULL_GPU_INDEX)
+        if (shaderProgram == NULL_GPU_INDEX)
             shaderProgram = glCreateProgram();
         else {
             glDeleteShader(shaderProgram);

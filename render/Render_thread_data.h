@@ -26,21 +26,19 @@
 
 class Render_thread_data : public NonCopyable {
 private:
-    vertex_array_VAO *VAO_new = nullptr;
     std::vector<Texture_TBO> TBO;
 
 public:
+    vertex_array_VAO *VAO_new = nullptr;
     Shader_object shader_object_ = {};
     int size;
 
     Render_thread_data() {
     }
 
-    Render_thread_data(const Render_thread_data &) = delete;
 
-    // 2. 禁止拷贝赋值运算符
-    Render_thread_data &operator=(const Render_thread_data &) = delete;
-
+    ~Render_thread_data() {
+    }
 
     bool add_texture_path(char const *path, char const *texture_name) {
         Texture_TBO texture;
@@ -48,13 +46,8 @@ public:
         TBO.push_back(texture);
     }
 
-    void render_object_shader_init();
 
-    ~Render_thread_data() {
-        // delete shader_object_;
-    }
-
-    void init_and_bind_VAO() {
+    void create_and_bind_VAO() {
         if (VAO_new == nullptr) {
             VAO_new = new vertex_array_VAO;
             VAO_new->bind();
@@ -66,7 +59,7 @@ public:
     void draw() {
         shader_object_.use_shader_program();
 
-        init_and_bind_VAO();
+        VAO_new->bind();
 
         for (int i = 0; i < TBO.size(); ++i) {
             glActiveTexture(GL_TEXTURE0 + i);

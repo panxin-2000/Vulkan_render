@@ -115,12 +115,12 @@ public:
         }
     }
 
-    void init_render_resources() {
+    void init_VAO_bind_buffer() {
         for (auto user_render_component: need_init) {
             two_data data;
             data.logic_data = user_render_component;
             data.render_data = new Render_thread_data;
-            data.render_data->init_and_bind_VAO();
+            data.render_data->create_and_bind_VAO();
             bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
 
             for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
@@ -133,10 +133,13 @@ public:
             }
 
             bind_element_buffer(user_render_component->indices_, &indices_map_);
+            data.render_data->VAO_new->un_bind();
 
 
             data.render_data->size = user_render_component->indices_->size();
-            data.render_data->shader_object_.Shader_init(user_render_component,
+
+            // shader_attach
+            data.render_data->shader_object_.shader_init_and_attach(user_render_component,
                                                          &vertex_shader_map_,
                                                          &fragment_shader_map_,
                                                          &geometry_shader_map_);
@@ -210,7 +213,7 @@ public:
 
     void init_need_init_object() {
         init_logic_need_resources();
-        init_render_resources();
+        init_VAO_bind_buffer();
         need_init.clear();
     }
 
