@@ -18,18 +18,6 @@ entt::entity create_button(const std::string &name,
     return entity;
 }
 
-entt::entity create_block(const std::string &name,
-                          int min_x,
-                          int min_y,
-                          int max_x,
-                          int max_y) {
-    auto entity = get_entt_instance().create();
-
-
-    get_entt_instance().emplace<UI_block>(entity, name, entity, min_x, min_y, max_x, max_y);
-    return entity;
-}
-
 
 entt::entity block_add_button(entt::entity block_entity,
                               const std::string &name,
@@ -61,9 +49,10 @@ int main() {
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
 
 
-    auto block_entity = create_block("功能", 10, 10, 220, 220);
-    block_add_button(block_entity, "按钮1", 420, 420, 430, 430);
-    block_add_button(block_entity, "按钮2", 35, 20, 45, 30);
+    auto block_entity = new UI_block("功能", 10, 10, 220, 220);
+    block_entity->add_button("按钮1", 420, 420, 430, 430);
+    block_entity->add_button("按钮2", 35, 20, 45, 30);
+
     // create_button("按钮2", 35, 20, 45, 30);
 
     add_render_windows();

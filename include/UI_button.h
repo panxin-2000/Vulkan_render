@@ -32,6 +32,7 @@ public:
         entity_ = entity;
         get_entt_instance().emplace<logic_render_data>(entity);
         get_entt_instance().emplace<Input_Component>(entity, on_Event);
+        get_entt_instance().emplace<Scene_Component>(entity_);
 
         get_entt_instance().emplace<Position_component>(entity);
         get_entt_instance().emplace<Drag_event>(entity);

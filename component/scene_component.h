@@ -15,21 +15,57 @@ private:
     std::vector<entt::entity> children;
 
 public:
-    Scene_Component() {
+    void add_parent(entt::entity entity) {
+        parent.push_back(entity);
     }
 
-
-    // 重写初始化：模拟加载模型
-    void Initialize() override {
-        if (bIsActive) {
-            std::cout << "场景组件 [" << component_name << "] 已加载模型" << std::endl;
-        }
+    void remove_parent(entt::entity entity) {
+        parent.erase(std::remove(parent.begin(), parent.end(), entity), parent.end());
     }
 
-    // 自定义功能：设置模型可见性
-    void set_visibility(bool bVisible) {
-        std::cout << "场景组件 [" << component_name << "] " << (bVisible ? "显示" : "隐藏") << "模型" << std::endl;
+    void remove_children(entt::entity entity) {
+        parent.erase(std::remove(parent.begin(), parent.end(), entity), parent.end());
+    }
+
+    void add_child(entt::entity entity) {
+        children.push_back(entity);
     }
 };
+
+
+class scene_root {
+public:
+    // 获取全局唯一的注册表引用
+    static entt::entity &get() {
+        static entt::entity instance = get_entt_instance().create();;
+        static std::once_flag flag;
+
+        std::call_once(flag, []() {
+            get_entt_instance().emplace<Scene_Component>(instance);
+        });
+        return instance;
+    }
+
+private:
+    scene_root() = default; // 禁用构造
+};
+
+
+static entt::entity &get_scene_root() {
+    return scene_root::get();
+}
+
+/**
+ * 将一个节点添加到根节点
+ * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加
+ */
+inline void scene_root_add_child(entt::entity entity) {
+    auto root = get_scene_root();
+    auto &parent_scene = get_entt_instance().get<Scene_Component>(root);
+    auto &children_scene = get_entt_instance().get<Scene_Component>(entity);
+    parent_scene.add_child(entity);
+    children_scene.add_child(entity);
+}
+
 
 #endif //HELLO_MAC_SCENE_COMPONENT_H
