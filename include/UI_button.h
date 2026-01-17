@@ -45,10 +45,10 @@ public:
         auto indices = std::make_shared<std::vector<unsigned int> >();
         // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
 
-        float min_x = 0.2f;
-        float min_y = 0.2f;
-        float max_x = 0.3f;
-        float max_y = 0.3f;
+        float min_x = 20;
+        float min_y = 20;
+        float max_x = 30;
+        float max_y = 30;
         indices->push_back(vertices->size() + 0);
         indices->push_back(vertices->size() + 1);
         indices->push_back(vertices->size() + 2);
