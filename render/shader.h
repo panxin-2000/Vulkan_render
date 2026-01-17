@@ -10,7 +10,6 @@
 
 #include "shader_common.h"
 #include "logic_render_data.h"
-#include "VAO_object.h"
 #include "base_element/point_3.h"
 
 

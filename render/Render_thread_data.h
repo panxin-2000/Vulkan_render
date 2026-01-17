@@ -14,8 +14,6 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-#include "buffer_object.h"
-#include "EBO_object.h"
 #include "VBO_object.h"
 #include "texture_TBO.h"
 #include "shader.h"
@@ -30,13 +28,22 @@ private:
 
 public:
     GLuint VAO;
-    vertex_array_VAO *VAO_new = nullptr;
     Shader_object shader_object_ = {};
     int size;
 
     Render_thread_data() {
+    }
+
+    bool create_VAO() {
         glGenVertexArrays(1, &VAO);
+    }
+
+    bool bindVAO() {
         glBindVertexArray(VAO);
+    }
+
+    bool unbindVAO() {
+        glBindVertexArray(NULL_GPU_INDEX);
     }
 
 
@@ -50,19 +57,12 @@ public:
     }
 
 
-    void create_and_bind_VAO() {
-        if (VAO_new == nullptr) {
-            VAO_new = new vertex_array_VAO;
-            VAO_new->bind();
-        } else {
-            VAO_new->bind();
-        }
-    }
-
     void draw() {
         shader_object_.use_shader_program();
 
-        VAO_new->bind();
+        bindVAO();
+
+        glBindVertexArray(VAO);
 
         for (int i = 0; i < TBO.size(); ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
@@ -72,11 +72,12 @@ public:
                         i);
         }
         // if (EBO_object.EBO_new != nullptr) {
+
         glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, (void *) 0);
         // } else {
         // glDrawArrays(GL_TRIANGLES, 0, VBO_object.get_draw_count()); //count还是需要去获取的
         // }
-        glBindVertexArray(NULL_GPU_INDEX);
+        unbindVAO();
     }
 };
 
