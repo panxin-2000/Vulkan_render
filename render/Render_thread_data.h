@@ -81,5 +81,16 @@ public:
     }
 };
 
+class union_render_data {
+public:
+    logic_render_data *logic_data = nullptr;
+    Render_thread_data *render_data;
+
+    union_render_data() {
+    }
+
+    ~union_render_data() {
+    }
+};
 
 #endif //CUBE_H

@@ -215,7 +215,7 @@ TEST(ear_clip, ear_clip_half_edge) {
         temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
 
         /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(&temp_trapezoid);
+        add_object_to_render(&temp_trapezoid);
 
         add_render_windows();
 
@@ -385,7 +385,7 @@ TEST(ear_clip, test_point_location) {
         temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
 
         /***************添加到渲染管理器**********************/
-        add_object_to_render_manager(&temp_trapezoid);
+        add_object_to_render(&temp_trapezoid);
 
         add_render_windows();
         get_entt_instance().destroy(entity_2);

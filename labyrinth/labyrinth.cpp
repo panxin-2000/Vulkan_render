@@ -83,7 +83,6 @@
 //     auto &Labyrinth_cube = get_entt_instance().get<Render_thread_data>(entity_);
 //     Labyrinth_cube.set_VBO_parameter(vertices.size() * sizeof(Vertex), vertices.data(), vertex_attribs);
 //     /***************通知管理器更新渲染对象**********************/
-//     notify_render_manager_update_objects();
 // }
 //
 //

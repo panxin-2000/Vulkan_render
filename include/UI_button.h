@@ -71,7 +71,7 @@ public:
         auto &position = get_entt_instance().get<Position_component>(entity_);
         position.update_2D_position_matrix();
 
-        add_object_to_render_manager(&render);
+        add_object_to_render(&render);
 
         // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。
         /***************添加到渲染管理器**********************/

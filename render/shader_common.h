@@ -9,6 +9,8 @@
 
 #include <base_element/point_3.h>
 
+#define NULL_GPU_INDEX 0
+
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {
     Background, // 背景
@@ -94,7 +96,6 @@ union data_value_or_ptr {
     float mat_4[16];
 };
 
-#define NULL_GPU_INDEX 0
 
 
 struct VertexAttrib {
@@ -118,6 +119,10 @@ struct VertexAttrib {
                  const void *pointer
     ) : size(size), type(type), normalized(normalized), stride(stride), pointer(pointer) {
     }
+
+
+
 };
+
 
 #endif //HELLO_MAC_SHADER_COMMON_H
