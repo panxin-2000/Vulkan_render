@@ -13,7 +13,7 @@
 #include "entity_name_component.h"
 #include "model_matrix_component.h"
 #include "observer_manage.h"
-#include "render_object_manage.h"
+#include "logic_render_data.h"
 #include "scene_component.h"
 #include "UI_button.h"
 
@@ -130,6 +130,14 @@ public:
                 }
                 break;
             case MOUSE_MOVE:
+                if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
+                    std::cout << "UI_button MOUSE_LEFT" << std::endl;
+                    position->set_position_offset(event);
+                    position->update_2D_position_matrix();
+                    if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
+                        render->set_status_change(uniform_buffer_changed);
+                    }
+                }
 
                 break;
             default:

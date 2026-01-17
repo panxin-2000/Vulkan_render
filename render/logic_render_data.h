@@ -11,6 +11,59 @@
 #include "shader_common.h"
 
 
+#include <type_traits>
+
+// 使用 template 和 underlying_type 彻底通用化
+#define ENABLE_BITWISE_OPERATORS(EnumType)                                \
+inline EnumType operator|(EnumType a, EnumType b) {                       \
+    using T = std::underlying_type_t<EnumType>;                           \
+    return static_cast<EnumType>(static_cast<T>(a) | static_cast<T>(b));  \
+}                                                                         \
+inline EnumType& operator|=(EnumType& a, EnumType b) {                    \
+    a = a | b;                                                            \
+    return a;                                                             \
+}                                                                         \
+inline bool operator&(EnumType a, EnumType b) {                           \
+    using T = std::underlying_type_t<EnumType>;                           \
+    return static_cast<bool>(static_cast<T>(a) & static_cast<T>(b));      \
+}
+
+/**
+ * vertices_changed         <br>
+ * indices_changed          <br>
+ * texture_path_changed     <br>
+ * texture_name_changed     <br>
+ * vertex_path_changed      <br>
+ * fragment_path_changed    <br>
+ * geometry_path_changed    <br>
+ * primitive_type_changed   <br>
+ * uniform_buffer_changed   <br>
+ */
+enum status_change : uint16_t {
+    vertices_changed = 1 << 0,
+    indices_changed = 1 << 1,
+    texture_path_changed = 1 << 2,
+    texture_name_changed = 1 << 3,
+    vertex_path_changed = 1 << 4,
+    fragment_path_changed = 1 << 5,
+    geometry_path_changed = 1 << 6,
+    primitive_type_changed = 1 << 7,
+    uniform_buffer_changed = 1 << 8,
+};
+
+ENABLE_BITWISE_OPERATORS(status_change)
+
+
+bool add_object_to_render(logic_render_data *render_object);
+
+bool update_object_to_render(logic_render_data *render_object);
+
+bool clean_object_to_render(logic_render_data *render_object);
+
+void start_render_manage_thread(GLFWwindow *window);
+
+void end_render_manage_thread();
+
 class logic_render_data : public NonCopyable {
 public:
     logic_render_data() {
@@ -41,17 +94,18 @@ public:
     std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
 
 
-    enum status_change {
-        vertices_changed = 1 << 0,
-        indices_changed = 1 << 1,
-        texture_path_changed = 1 << 2,
-        texture_name_changed = 1 << 3,
-        vertex_path_changed = 1 << 4,
-        fragment_path_changed = 1 << 5,
-        geometry_path_changed = 1 << 6,
-        primitive_type_changed = 1 << 7,
-        uniform_buffer_changed = 1 << 8,
-    };
+    status_change status_;
+
+
+    void set_status_change(const status_change status) {
+        status_ = status_ | status;
+        update_object_to_render(this);
+    }
+
+    status_change get_status_change() const {
+        return status_;
+    }
+
 
 #define add_mutex std::lock_guard<std::mutex> lock(mtx);
 

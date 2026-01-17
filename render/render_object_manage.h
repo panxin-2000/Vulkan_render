@@ -47,31 +47,52 @@ public:
     // 然后会发现另外一个问题，那就是帧的问题，比如两个帧或者三个帧，
     // 假设是两个帧，那么更新的时候更新的变量是未渲染的帧，
     // 然后再是渲染的时候，渲染完成之后将该变量重新置位
-    /**
-     *
-     */
-    void update_render_data() {
-        // if (have_object_need_update == true) {
-        // for (int i = 0; i < render_objects.size(); ++i) {
-        // render_objects.at(i)->update_data();
-        // }
-        // have_object_need_update = false;
-        // }
-    }
-
 
     void render_object_function() {
         for (int i = 0; i < render_objects.size(); ++i) {
-            std::cout << render_objects.at(i).logic_data->debug_name << std::endl;
+            // std::cout << render_objects.at(i).logic_data->debug_name << std::endl;
             render_objects.at(i).render_data->draw();
         }
     }
 
-    void init_need_init_object() {
+    void init_need_objects() {
         init_logic_need_resources();
         init_VAO_bind_buffer();
         need_init.clear();
     }
+
+    void update_need_objects() {
+        for (auto user_render_component: need_update) {
+            if (user_render_component->get_status_change() & vertices_changed) {
+            }
+            if (user_render_component->get_status_change() & indices_changed) {
+            }
+            if (user_render_component->get_status_change() & texture_path_changed) {
+            }
+            if (user_render_component->get_status_change() & texture_name_changed) {
+            }
+            if (user_render_component->get_status_change() & vertex_path_changed) {
+            }
+            if (user_render_component->get_status_change() & fragment_path_changed) {
+            }
+            if (user_render_component->get_status_change() & geometry_path_changed) {
+            }
+            if (user_render_component->get_status_change() & primitive_type_changed) {
+            }
+            if (user_render_component->get_status_change() & uniform_buffer_changed) {
+                for (const auto &render_object: render_objects) {
+                    if (render_object.logic_data == user_render_component)
+                        render_object.render_data->shader_object_.update_uniforms(&user_render_component->uniforms_map);
+                }
+            }
+        }
+        need_update.clear();
+    }
+
+    void clean_need_objects() {
+        need_clean.clear();
+    }
+
 
     void add_render_object_need_init(logic_render_data *render_object);
 
@@ -93,13 +114,14 @@ public:
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); {
                 {
                     std::unique_lock<std::mutex> lock(mtx);
-                    init_need_init_object(); // 主要是复制内存的操作
-                    update_render_data();
+                    init_need_objects(); // 主要是复制内存的操作
+                    update_need_objects();
                 }
                 render_object_function();
             }
             glfwSwapBuffers(window);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            clean_need_objects();
         }
         have_object_need_update = false;
         need_render = true;
@@ -142,14 +164,4 @@ private:
     //    比如参数配置，这些都是需要在绘制前
 };
 
-
-bool add_object_to_render(logic_render_data *render_object);
-
-bool update_object_to_render(logic_render_data *render_object);
-
-bool clean_object_to_render(logic_render_data *render_object);
-
-void start_render_manage_thread(GLFWwindow *window);
-
-void end_render_manage_thread();
 #endif //RENDER_OBJECT_MANAGE_H

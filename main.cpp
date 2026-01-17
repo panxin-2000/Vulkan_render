@@ -50,8 +50,8 @@ int main() {
 
 
     auto block_entity = new UI_block("功能", 10, 10, 220, 220);
-    block_entity->add_button("按钮1", 420, 420, 430, 430);
-    block_entity->add_button("按钮2", 35, 20, 45, 30);
+    block_entity->add_button("按钮1", 420, 420, 480, 480);
+    block_entity->add_button("按钮2", 35, 20, 145, 130);
 
     // create_button("按钮2", 35, 20, 45, 30);
 

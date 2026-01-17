@@ -90,7 +90,7 @@ public:
 
                 break;
             case MOUSE_LEFT:
-                std::cout << "MOUSE_LEFT" << std::endl; // 也是能够进入的，需要更改事件的分发
+                std::cout << "MOUSE_LEFT" << std::endl;
                 break;
             case MOUSE_RIGHT:
                 break;
@@ -101,8 +101,14 @@ public:
                 }
                 break;
             case MOUSE_MOVE:
-
-                break;
+                if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
+                    std::cout << "UI_button MOUSE_LEFT" << std::endl;
+                    position->set_position_offset(event);
+                    position->update_2D_position_matrix();
+                    if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
+                        render->set_status_change(uniform_buffer_changed);
+                    }
+                }
             default:
                 break;
         }

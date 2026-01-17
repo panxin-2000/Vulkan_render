@@ -104,10 +104,10 @@ void render_object_manage::add_render_object_need_init(logic_render_data *render
 
 void render_object_manage::add_render_object_need_update(logic_render_data *render_object) {
     std::unique_lock<std::mutex> lock(mtx);
-    need_init.push_back(render_object);
+    need_update.push_back(render_object);
 }
 
 void render_object_manage::add_render_object_need_clean(logic_render_data *render_object) {
     std::unique_lock<std::mutex> lock(mtx);
-    need_init.push_back(render_object);
+    need_clean.push_back(render_object);
 }
