@@ -140,9 +140,9 @@ public:
 
             // shader_attach
             data.render_data->shader_object_.shader_init_and_attach(user_render_component,
-                                                         &vertex_shader_map_,
-                                                         &fragment_shader_map_,
-                                                         &geometry_shader_map_);
+                                                                    &vertex_shader_map_,
+                                                                    &fragment_shader_map_,
+                                                                    &geometry_shader_map_);
             data.render_data->shader_object_.update_uniforms(&user_render_component->uniforms_map);
             render_objects.push_back(data);
         }
@@ -225,12 +225,37 @@ public:
         need_init.push_back(render_object);
     }
 
+    GLuint init_sky(void) {
+        float skyboxVertices[] = {
+            // positions
+            -1.0f, 1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, 1.0f, -1.0f,
+            -1.0f, 1.0f, -1.0f,
+
+        };
+        GLuint sky_VBO, sky_VAO;
+        glGenVertexArrays(1, &sky_VAO);
+        glGenBuffers(1, &sky_VBO);
+        glBindVertexArray(sky_VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, sky_VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid *) 0);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0); // Unbind VAO
+        return sky_VAO;
+    }
 
     void render_thread(GLFWwindow *window) {
         glfwMakeContextCurrent(window);
         glewExperimental = GL_TRUE;
         glewInit();
         glEnable(GL_DEPTH_TEST);
+
+        GLuint tem = init_sky();
+
 
         while (need_render) {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -240,7 +265,12 @@ public:
                 std::unique_lock<std::mutex> lock(mtx);
                 init_need_init_object(); // 主要是复制内存的操作
                 update_render_data();
-                render_object_function();
+                glBindVertexArray(tem);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindVertexArray(NULL_GPU_INDEX);
+
+
+                // render_object_function();
             }
 
             glfwSwapBuffers(window);
