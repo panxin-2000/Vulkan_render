@@ -27,6 +27,7 @@ public:
 
     std::vector<vertex_and_attributes> vertex_and_attributes;
 
+    std::string debug_name;
     mutable std::mutex mtx;
     Vertices_type vertices_;
     Indices_type indices_;
@@ -57,6 +58,14 @@ public:
     void set_vertices(std::shared_ptr<std::vector<Point_3> > vertices) {
         add_mutex;
         vertices_ = std::move(vertices);
+    }
+
+    auto get_vertices() const {
+        return vertices_;
+    }
+
+    auto get_indices() const {
+        return indices_;
     }
 
     void set_indices(std::shared_ptr<std::vector<unsigned int> > indices) {

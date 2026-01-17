@@ -1,9 +1,9 @@
 //
-// Created by 潘鑫 on 2026/1/16.
+// Created by 潘鑫 on 2026/1/17.
 //
 
-#ifndef HELLO_MAC_UI_BUTTON_H
-#define HELLO_MAC_UI_BUTTON_H
+#ifndef HELLO_MAC_UI_BLOCK_H
+#define HELLO_MAC_UI_BLOCK_H
 
 
 #include "Render_thread_data.h"
@@ -15,17 +15,17 @@
 #include "observer_manage.h"
 #include "render_object_manage.h"
 
-class UI_button {
+class UI_block {
 private:
     entt::entity entity_;
 
 public:
-    UI_button(const std::string &name, entt::entity entity,
-              int min_x = 20,
-              int min_y = 20,
-              int max_x = 30,
-              int max_y = 30) {
-        std::cout << "UI_button" << std::endl;
+    UI_block(const std::string &name, entt::entity entity,
+             int min_x = 20,
+             int min_y = 20,
+             int max_x = 30,
+             int max_y = 30) {
+        std::cout << "UI_block" << std::endl;
 
 
         /***************创建*******************/
@@ -62,8 +62,8 @@ public:
         // 参数这里最重要的是下面的两行
 
         // 参数这里最重要的是下面的两行
-        render.debug_name = name;
         render.set_vertices(vertices);
+        render.debug_name = name;
         render.set_indices(indices);
         render.vertex_attribs = vertex_attribs;
         render.set_vertex_shader("render/shader/different_color.vert");
@@ -108,4 +108,5 @@ public:
     }
 };
 
-#endif //HELLO_MAC_UI_BUTTON_H
+
+#endif //HELLO_MAC_UI_BLOCK_H

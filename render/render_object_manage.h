@@ -62,6 +62,7 @@ public:
 
     void render_object_function() {
         for (int i = 0; i < render_objects.size(); ++i) {
+            std::cout << render_objects.at(i).logic_data->debug_name << std::endl;
             render_objects.at(i).render_data->draw();
         }
     }
@@ -83,7 +84,7 @@ public:
         glfwMakeContextCurrent(window);
         glewExperimental = GL_TRUE;
         glewInit();
-        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_DEPTH_TEST);
 
         while (need_render) {
             glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
