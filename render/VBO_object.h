@@ -48,8 +48,14 @@ static void create_element_buffer(const Indices_type &share_point,
             unsigned int buffer = 0;
             glGenBuffers(1, &buffer);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer);
+            // 设置大小和数量，之后会固定，并上传
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, share_point->size() * sizeof(unsigned int), share_point->data(),
                          GL_STATIC_DRAW);
+
+            // 示例：从第 100 个字节开始，更新 50 字节的数据
+            // 只能更新还在固定内存区域内的数据，更新时需要提交提前计算
+            // glBufferSubData(GL_ARRAY_BUFFER, 100, 50, newDataPtr);
+
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL_GPU_INDEX);
             map->insert({share_point, {buffer, 1}});
             // 创建EBO

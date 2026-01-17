@@ -61,6 +61,7 @@ endif ()
 file(GLOB_RECURSE RENDER
         "render/render_object.cpp"
         "render/render_object_manage.cpp"
+        "render/gpu_thread.cpp"
         "render/stb_image.cpp"
 )
 

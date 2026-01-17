@@ -81,6 +81,15 @@ enum Uniforms_type {
     gl_mat2,
     gl_mat3,
     gl_mat4,
+    gl_byte,
+    gl_short,
+    gl_int_vec2,
+    gl_int_vec3,
+    gl_int_vec4,
+    gl_unint,
+    gl_unint_vec2,
+    gl_unint_vec3,
+    gl_unint_vec4,
 };
 
 
@@ -96,32 +105,25 @@ union data_value_or_ptr {
     float mat_4[16];
 };
 
-
+int get_glenum_length(GLenum type);
 
 struct VertexAttrib {
     GLint size;
     GLenum type;
     GLboolean normalized;
-    GLsizei stride;
-    const void *pointer;
     /**
      *
      * @param size 表示有几个数据
      * @param type 类型，表示其中单个数据的类型
      * @param normalized 是否需要归一化
      * @param stride 间隔，重新下一个数据需要间隔多远
-     * @param pointer 访问时是否需要便宜
+     * @param pointer 访问时是否需要偏移
      */
     VertexAttrib(GLint size,
                  GLenum type,
-                 GLboolean normalized,
-                 GLsizei stride,
-                 const void *pointer
-    ) : size(size), type(type), normalized(normalized), stride(stride), pointer(pointer) {
+                 GLboolean normalized
+    ) : size(size), type(type), normalized(normalized) {
     }
-
-
-
 };
 
 

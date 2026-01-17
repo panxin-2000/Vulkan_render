@@ -42,7 +42,7 @@ public:
 
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
-        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
+        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
         // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
         auto vertices = std::make_shared<std::vector<Point_3> >();

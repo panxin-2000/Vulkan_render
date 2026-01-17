@@ -55,13 +55,22 @@ void render_object_manage::init_VAO_bind_buffer() {
         data.render_data->create_VAO();
         data.render_data->bindVAO();
         bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
+        int stride = 0;
+        for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
+            stride += user_render_component->vertex_attribs[i].size * get_glenum_length(
+                user_render_component->vertex_attribs[i].type);
+        }
+
+        int pointer = 0;
         for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
             glVertexAttribPointer(i, user_render_component->vertex_attribs[i].size,
                                   user_render_component->vertex_attribs[i].type,
                                   user_render_component->vertex_attribs[i].normalized,
-                                  user_render_component->vertex_attribs[i].stride,
-                                  user_render_component->vertex_attribs[i].pointer);
+                                  stride,
+                                  (const void *) pointer);
             glEnableVertexAttribArray(i);
+            pointer += user_render_component->vertex_attribs[i].size *
+                    get_glenum_length(user_render_component->vertex_attribs[i].type);
         }
 
         bind_element_buffer(user_render_component->indices_, &indices_map_);
