@@ -45,10 +45,10 @@ public:
         auto indices = std::make_shared<std::vector<unsigned int> >();
         // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
 
-        int min_x = 0.2;
-        int min_y = 0.2;
-        int max_x = 0.3;
-        int max_y = 0.3;
+        float min_x = 0.2f;
+        float min_y = 0.2f;
+        float max_x = 0.3f;
+        float max_y = 0.3f;
         indices->push_back(vertices->size() + 0);
         indices->push_back(vertices->size() + 1);
         indices->push_back(vertices->size() + 2);
@@ -64,6 +64,7 @@ public:
         // 参数这里最重要的是下面的两行
         render.set_vertices(vertices);
         render.set_indices(indices);
+        render.vertex_attribs = vertex_attribs;
         render.set_vertex_shader("render/shader/different_color.vert");
         render.set_fragment_shader("render/shader/different_color.frag");
 
