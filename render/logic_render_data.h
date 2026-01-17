@@ -20,6 +20,13 @@ public:
     ~logic_render_data() {
     }
 
+    struct vertex_and_attributes {
+        Vertices_type vertices_;
+        std::vector<VertexAttrib> vertex_attribs;
+    };
+
+    std::vector<vertex_and_attributes> vertex_and_attributes;
+
     mutable std::mutex mtx;
     Vertices_type vertices_;
     Indices_type indices_;
