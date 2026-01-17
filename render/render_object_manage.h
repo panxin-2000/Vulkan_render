@@ -120,8 +120,28 @@ public:
             two_data data;
             data.logic_data = user_render_component;
             data.render_data = new Render_thread_data;
-            data.render_data->create_and_bind_VAO();
+            // data.render_data->create_and_bind_VAO();
             bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
+
+            float skyboxVertices[] = {
+                // positions
+                -0.9f, 1.0f, -1.0f,
+                -1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, -1.0f, -1.0f,
+                1.0f, 1.0f, -1.0f,
+                -1.0f, 1.0f, -1.0f,
+
+            };
+            GLuint sky_VBO;
+            // glGenBuffers(1, &sky_VBO);
+            // glBindBuffer(GL_ARRAY_BUFFER, sky_VBO);
+            // glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
+
+
+            // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid *) 0);
+            // glEnableVertexAttribArray(0);
+
 
             for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
                 glVertexAttribPointer(i, user_render_component->vertex_attribs[i].size,
@@ -132,13 +152,17 @@ public:
                 glEnableVertexAttribArray(i);
             }
 
-            bind_element_buffer(user_render_component->indices_, &indices_map_);
-            data.render_data->VAO_new->un_bind();
+            // bind_element_buffer(user_render_component->indices_, &indices_map_);
+            // data.render_data->VAO_new->un_bind();
+            glBindVertexArray(0); // Unbind VAO
 
 
             data.render_data->size = user_render_component->indices_->size();
 
             // shader_attach
+            // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid *) 0);
+            // glEnableVertexAttribArray(0);
+
             data.render_data->shader_object_.shader_init_and_attach(user_render_component,
                                                                     &vertex_shader_map_,
                                                                     &fragment_shader_map_,
@@ -265,8 +289,11 @@ public:
                 std::unique_lock<std::mutex> lock(mtx);
                 init_need_init_object(); // 主要是复制内存的操作
                 update_render_data();
-                glBindVertexArray(tem);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+                // glBindVertexArray(tem);
+                // render_objects.at(0).render_data->VAO_new->bind();
+                glBindVertexArray(render_objects.at(0).render_data->VAO);
+
+                glDrawArrays(GL_TRIANGLES, 0, 3);
                 glBindVertexArray(NULL_GPU_INDEX);
 
 

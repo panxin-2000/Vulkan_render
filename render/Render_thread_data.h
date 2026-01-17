@@ -29,11 +29,14 @@ private:
     std::vector<Texture_TBO> TBO;
 
 public:
+    GLuint VAO;
     vertex_array_VAO *VAO_new = nullptr;
     Shader_object shader_object_ = {};
     int size;
 
     Render_thread_data() {
+        glGenVertexArrays(1, &VAO);
+        glBindVertexArray(VAO);
     }
 
 
