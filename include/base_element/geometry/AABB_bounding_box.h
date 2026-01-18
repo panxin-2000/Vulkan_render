@@ -70,7 +70,7 @@ public:
 template<typename T>
 class AABB_centroid {
 public:
-    T centroid_point; // 重心
+    T centroid_point;     // 重心
     T direction_interval; // 方向间隔
 
     AABB_centroid() = default;
@@ -111,11 +111,22 @@ public:
         direction_interval = (max_point - min_point) / 2;
     }
 
-    AABB_centroid(T l_points, T r_points) {
-        T min_point = T::max_two_point(l_points, r_points);
-        T max_point = T::max_two_point(l_points, r_points);
-        centroid_point = (min_point + max_point) / 2;
-        direction_interval = (max_point - min_point) / 2;
+    /**
+     *
+     * @param l_points 直接给值时是中心点
+     * @param r_points 直接给值时是每个方向的大小，(半径)
+     * @param value_or_need_calculate 直接给值(false) 还是需要计算(true)
+     */
+    AABB_centroid(T l_points, T r_points, bool value_or_need_calculate = true) {
+        if (value_or_need_calculate == true) {
+            T min_point = T::max_two_point(l_points, r_points);
+            T max_point = T::max_two_point(l_points, r_points);
+            centroid_point = (min_point + max_point) / 2;
+            direction_interval = (max_point - min_point) / 2;
+        } else {
+            centroid_point = l_points;
+            direction_interval = r_points;
+        }
     }
 };
 

@@ -24,6 +24,7 @@
 #include "ECS.h"
 #include "input_component.h"
 #include "model_matrix_component.h"
+    #include "scene_component.h"
 
 
 // 只要鼠标动了就会调用这里
@@ -119,15 +120,22 @@ GLFWwindow *window;
 
 void on_key_press(const base_event_with_stamp &event) {
     // if (event.key_code == 27) /* 处理退出逻辑 */;
-    auto &storage = get_entt_instance().storage<Position_component>();
+    auto &storage = get_entt_instance().storage<Scene_Component>();
 
-    auto view = get_entt_instance().view<Input_Component>();
+    auto view = get_entt_instance().view<Scene_Component, Input_Component>();
+
+    std::vector<entt::entity> all_node_need_check;
 
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
-
-        auto &input = view.get<Input_Component>(entity);
-        if (input.on_Event != nullptr && input.on_Event(entity, event) == true)
+        all_node_need_check.push_back(entity);
+    }
+    mouse_position current_position = event.current_position;
+    // 找到当前区域的一个递归栈
+    std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
+    for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
+        auto &input = view.get<Input_Component>(*it);
+        if (input.on_Event != nullptr && input.on_Event(*it, event) == true)
             break;
     }
 }

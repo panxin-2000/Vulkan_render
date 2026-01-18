@@ -21,10 +21,10 @@ private:
 
 public:
     UI_button(const std::string &name, entt::entity entity,
-              int min_x = 20,
-              int min_y = 20,
-              int max_x = 30,
-              int max_y = 30) {
+              float min_x = 20,
+              float min_y = 20,
+              float max_x = 30,
+              float max_y = 30) {
         std::cout << "UI_button" << std::endl;
 
 
@@ -32,9 +32,11 @@ public:
         entity_ = entity;
         get_entt_instance().emplace<logic_render_data>(entity);
         get_entt_instance().emplace<Input_Component>(entity, on_Event);
-        get_entt_instance().emplace<Scene_Component>(entity_);
 
-        get_entt_instance().emplace<Position_component>(entity);
+        get_entt_instance().emplace<Scene_Component>(entity);
+        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+            scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
+        }
         get_entt_instance().emplace<Drag_event>(entity);
         get_entt_instance().emplace<Name_component>(entity, name);
 
@@ -70,7 +72,7 @@ public:
         render.set_vertex_shader("render/shader/different_color.vert");
         render.set_fragment_shader("render/shader/different_color.frag");
 
-        auto &position = get_entt_instance().get<Position_component>(entity_);
+        auto &position = get_entt_instance().get<Scene_Component>(entity_);
         position.update_2D_position_matrix();
 
         add_object_to_render(&render);
@@ -95,16 +97,16 @@ public:
             case MOUSE_RIGHT:
                 break;
             case WHEEL_UP_MOUSE:
-                if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
-                    position->set_zoom(event);
-                    position->update_position();
+                if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
+                    scene_node->set_zoom(event);
+                    scene_node->update_position();
                 }
                 break;
             case MOUSE_MOVE:
-                if (auto *position = get_entt_instance().try_get<Position_component>(entity_)) {
+                if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
                     std::cout << "UI_button MOUSE_LEFT" << std::endl;
-                    position->set_position_offset(event);
-                    position->update_2D_position_matrix();
+                    scene_node->set_position_offset(event);
+                    scene_node->update_2D_position_matrix();
                     if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
                         render->set_status_change(uniform_buffer_changed);
                     }
