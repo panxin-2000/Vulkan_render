@@ -112,10 +112,12 @@ public:
                     std::cout << "UI_button" << name.name << " MOUSE_LEFT" << std::endl;
                     scene_node->set_position_offset(event);
                     scene_node->update_2D_position_matrix();
-                    // if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
-                    // render->set_status_change(uniform_buffer_changed);
-                    // }
+                    if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
+                        render->set_status_change(uniform_buffer_changed);
+                    }
+                    // 包围盒的位置还需要同步更新
                 }
+                break;
             default:
                 return false;
         }

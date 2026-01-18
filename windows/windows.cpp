@@ -30,7 +30,7 @@
 
 // 只要鼠标动了就会调用这里
 void mouse_callback(GLFWwindow *window, double x_pos, double y_pos) {
-    x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
+    // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
     Keyboard_Manage::instance().handle_drag({(float) x_pos, (float) y_pos});
 }
 
@@ -208,7 +208,7 @@ void add_render_windows() {
 
         dispatcher.update(); // 统一分发执行
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
 

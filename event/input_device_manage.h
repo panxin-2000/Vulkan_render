@@ -113,7 +113,7 @@ public:
             MOUSE_LEFT,
             KM_CLICK,
             pos,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             KM_SHIFT
@@ -127,7 +127,7 @@ public:
             MOUSE_RIGHT,
             KM_CLICK,
             pos,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             KM_SHIFT
@@ -138,18 +138,18 @@ public:
     void handle_drag(mouse_position pos) {
         manage_current_position = pos;
         if ((mouse_button_left_click == true || mouse_button_right_click == true)
-            && !(pos == manage_move_position)) {
+            && !(pos == manage_last_position)) {
             dispatcher_->enqueue<base_event_with_stamp>({
                 MOUSE_MOVE,
                 KM_CLICK,
-                pos,
-                manage_move_position,
+                manage_current_position,
+                manage_last_position,
                 manage_click_position,
                 manage_scroll,
                 KM_SHIFT
             });
         }
-        manage_move_position = pos;
+        manage_last_position = pos;
     }
 
     void handle_scroll(mouse_position pos) {
@@ -157,7 +157,7 @@ public:
             WHEEL_UP_MOUSE,
             KM_CLICK,
             pos,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             pos,
             KM_SHIFT
@@ -170,7 +170,7 @@ public:
             MOUSE_LEFT,
             KM_RELEASE,
             release_pos,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             KM_SHIFT
@@ -189,7 +189,7 @@ public:
             MOUSE_RIGHT,
             KM_RELEASE,
             release_pos,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             KM_SHIFT
@@ -203,7 +203,7 @@ public:
             static_cast<wmEventType>(keyCode),
             KM_PRESS,
             manage_current_position,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             manage_modifier_flag
@@ -216,7 +216,7 @@ public:
             static_cast<wmEventType>(keyCode),
             KM_RELEASE,
             manage_current_position,
-            manage_move_position,
+            manage_last_position,
             manage_click_position,
             manage_scroll,
             manage_modifier_flag
@@ -254,10 +254,10 @@ private:
     wmEventModifierFlag manage_modifier_flag;
 
     mouse_position manage_current_position = {0, 0};
-    mouse_position manage_move_position = {0, 0};
+    mouse_position manage_last_position = {0, 0};
     mouse_position manage_click_position = {0, 0};
     mouse_position manage_scroll = {0, 0};
-    mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改
+    mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改，当是屏幕像素时，就没有改的必要了
     std::mutex _mutex;                                       // 线程安全锁
     std::unordered_set<int> pressed_keys;                    // Set：当前按下的按键
 

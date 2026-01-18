@@ -232,7 +232,7 @@ public:
     wmEventType event_type;
     Event_code event_code;           // 用于标记当前鼠标或者键盘的某个按键是什么状态
     mouse_position current_position; // 当前的鼠标位置
-    mouse_position move_position;
+    mouse_position last_position;
     mouse_position click_position;
     Point_2 scroll;
     wmEventModifierFlag modifier_flag;
@@ -251,7 +251,7 @@ public:
           event_type(event_type),
           event_code(event_code),
           current_position(current_position),
-          move_position(move_position),
+          last_position(move_position),
           click_position(click_position),
           scroll(scroll),
           modifier_flag(modifier_flag) {
