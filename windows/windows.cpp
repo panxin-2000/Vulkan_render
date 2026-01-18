@@ -129,26 +129,41 @@ void on_key_press(const base_event_with_stamp &event) {
 
     std::vector<entt::entity> all_node_need_check;
 
+    static entt::entity last_work = get_scene_root();
+    mouse_position current_position = event.current_position;
+
+    auto &name = view.get<Name_component>(last_work);
+    std::cout << "last work name: " << name.name << std::endl;
+    if (Scene_Component::check_entity_intersect_point(last_work, current_position))
+        if (const auto input = get_entt_instance().try_get<Input_Component>(last_work)) {
+            if (input->on_Event != nullptr && input->on_Event(last_work, event) == true) {
+                last_work = last_work;
+                return;
+            }
+        }
+    last_work = get_scene_root();
+
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
         all_node_need_check.push_back(entity);
         auto &name = view.get<Name_component>(entity);
         auto &scene = view.get<Scene_Component>(entity);
-        std::cout << "name: " << name.name
-                << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval << std::endl;
+        // std::cout << "name: " << name.name
+        //         << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval << std::endl;
     }
-    mouse_position current_position = event.current_position;
     // 找到当前区域的一个递归栈
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
-    std::cout << "UI stack size: " << UI_stack.size() << std::endl;
-    for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-        auto &name = view.get<Name_component>(*it);
-        std::cout << "name: " << name.name << std::endl;
-    }
+    // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
+    // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
+    //     auto &name = view.get<Name_component>(*it);
+    //     std::cout << "name: " << name.name << std::endl;
+    // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = get_entt_instance().try_get<Input_Component>(*it)) {
-            if (input->on_Event != nullptr && input->on_Event(*it, event) == true)
+            if (input->on_Event != nullptr && input->on_Event(*it, event) == true) {
+                last_work = *it;
                 break;
+            }
         }
     }
 }

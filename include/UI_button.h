@@ -96,7 +96,7 @@ public:
 
                 break;
             case MOUSE_LEFT:
-                std::cout << "MOUSE_LEFT" << std::endl;
+                std::cout << " button  MOUSE_LEFT" << std::endl;
                 break;
             case MOUSE_RIGHT:
                 break;
