@@ -223,7 +223,7 @@ void add_render_windows() {
 
         dispatcher.update(); // 统一分发执行
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
 

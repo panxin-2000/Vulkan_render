@@ -114,9 +114,10 @@ public:
         // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
         Point_2 move = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
-        std::cout << "move x: " << move.x << " y: " << move.y << std::endl;
-        offset.x = offset.x + move.x / get_win_WIDTH() * 2;
-        offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
+        offset = offset + move;
+        // std::cout << "move x: " << move.x << " y: " << move.y << std::endl;
+        // offset.x = offset.x + move.x / get_win_WIDTH() * 2;
+        // offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
         return true;
     }
 };
