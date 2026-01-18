@@ -49,7 +49,7 @@ int main() {
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
 
 
-    auto block_entity = new UI_block("功能", 10, 10, 220, 220);
+    auto block_entity = new UI_block("功能块", 10, 10, 220, 220);
     block_entity->add_button("按钮1", 420, 420, 480, 480);
     block_entity->add_button("按钮2", 35, 20, 145, 130);
 

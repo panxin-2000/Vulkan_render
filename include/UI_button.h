@@ -21,10 +21,10 @@ private:
 
 public:
     UI_button(const std::string &name, entt::entity entity,
-              float min_x = 20,
-              float min_y = 20,
-              float max_x = 30,
-              float max_y = 30) {
+              float min_x,
+              float min_y,
+              float max_x,
+              float max_y) {
         std::cout << "UI_button" << std::endl;
 
 
@@ -104,16 +104,18 @@ public:
                 break;
             case MOUSE_MOVE:
                 if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
-                    std::cout << "UI_button MOUSE_LEFT" << std::endl;
+                    auto &name = get_entt_instance().get<Name_component>(entity_);
+                    std::cout << "UI_button" << name.name << " MOUSE_LEFT" << std::endl;
                     scene_node->set_position_offset(event);
                     scene_node->update_2D_position_matrix();
-                    if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
-                        render->set_status_change(uniform_buffer_changed);
-                    }
+                    // if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
+                    // render->set_status_change(uniform_buffer_changed);
+                    // }
                 }
             default:
-                break;
+                return false;
         }
+        return true;
     }
 };
 

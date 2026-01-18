@@ -46,7 +46,7 @@ public:
 
     static void set_model_transform_zoom_rotate(float *address, Point_3 zoom, Point_3 rotate, Point_3 offset) {
         set_mat4_value(address, 0, 0, zoom.x);
-        set_mat4_value(address, 1, 1, zoom.y);
+        set_mat4_value(address, 1, 1, -zoom.y);
         set_mat4_value(address, 2, 2, zoom.z);
 
         set_mat4_value(address, 0, 3, offset.x);

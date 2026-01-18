@@ -119,7 +119,7 @@ public:
      */
     AABB_centroid(T l_points, T r_points, bool value_or_need_calculate = true) {
         if (value_or_need_calculate == true) {
-            T min_point = T::max_two_point(l_points, r_points);
+            T min_point = T::min_two_point(l_points, r_points);
             T max_point = T::max_two_point(l_points, r_points);
             centroid_point = (min_point + max_point) / 2;
             direction_interval = (max_point - min_point) / 2;

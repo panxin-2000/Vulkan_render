@@ -25,7 +25,6 @@ static entt::registry &get_entt_instance() {
 }
 
 
-
 static inline int get_win_WIDTH() {
     return 800;
 }
@@ -33,7 +32,6 @@ static inline int get_win_WIDTH() {
 static inline int get_win_HEIGHT() {
     return 600;
 }
-
 
 
 #endif //HELLO_MAC_ECS_H

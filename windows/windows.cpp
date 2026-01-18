@@ -22,9 +22,10 @@
 #include "input_device_manage.h"
 #include "observer_manage.h"
 #include "ECS.h"
+#include "entity_name_component.h"
 #include "input_component.h"
 #include "model_matrix_component.h"
-    #include "scene_component.h"
+#include "scene_component.h"
 
 
 // 只要鼠标动了就会调用这里
@@ -66,10 +67,12 @@ void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 void mouse_button_callback(GLFWwindow *window, int button, int action, int mods) {
     double x_pos;
     double y_pos;
+
     glfwGetCursorPos(window, &x_pos, &y_pos);
-    x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
-    // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
     std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
+    // 由窗口具体的窗口自己去更改吧。
+    // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
+    // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
 #define key_instance Keyboard_Manage::instance()
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         key_instance.handle_mouse_click_left({static_cast<float>(x_pos), static_cast<float>(y_pos)});
@@ -122,21 +125,31 @@ void on_key_press(const base_event_with_stamp &event) {
     // if (event.key_code == 27) /* 处理退出逻辑 */;
     auto &storage = get_entt_instance().storage<Scene_Component>();
 
-    auto view = get_entt_instance().view<Scene_Component, Input_Component>();
+    auto view = get_entt_instance().view<Name_component, Scene_Component, Input_Component>();
 
     std::vector<entt::entity> all_node_need_check;
 
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
         all_node_need_check.push_back(entity);
+        auto &name = view.get<Name_component>(entity);
+        auto &scene = view.get<Scene_Component>(entity);
+        std::cout << "name: " << name.name
+                << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval << std::endl;
     }
     mouse_position current_position = event.current_position;
     // 找到当前区域的一个递归栈
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
+    std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-        auto &input = view.get<Input_Component>(*it);
-        if (input.on_Event != nullptr && input.on_Event(*it, event) == true)
-            break;
+        auto &name = view.get<Name_component>(*it);
+        std::cout << "name: " << name.name << std::endl;
+    }
+    for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
+        if (const auto input = get_entt_instance().try_get<Input_Component>(*it)) {
+            if (input->on_Event != nullptr && input->on_Event(*it, event) == true)
+                break;
+        }
     }
 }
 

@@ -23,10 +23,10 @@ private:
 
 public:
     UI_block(const std::string &name,
-             float min_x = 20,
-             float min_y = 20,
-             float max_x = 30,
-             float max_y = 30) {
+             float min_x,
+             float min_y,
+             float max_x,
+             float max_y) {
         std::cout << "UI_block" << std::endl;
         entity_ = get_entt_instance().create();
 
@@ -38,6 +38,7 @@ public:
         if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
             scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
         }
+        scene_root_add_child(entity_);
         get_entt_instance().emplace<Drag_event>(entity_);
         get_entt_instance().emplace<Name_component>(entity_, name); {
             auto &render = get_entt_instance().get<logic_render_data>(entity_);
@@ -107,7 +108,7 @@ public:
         auto &parent_scene = get_entt_instance().get<Scene_Component>(entity_);
         auto &children_scene = get_entt_instance().get<Scene_Component>(entity);
         parent_scene.add_child(entity);
-        children_scene.add_child(entity);
+        children_scene.add_parent(entity);
     }
 
 
@@ -133,18 +134,20 @@ public:
                 break;
             case MOUSE_MOVE:
                 if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
-                    std::cout << "UI_button MOUSE_LEFT" << std::endl;
+                    auto &name = get_entt_instance().get<Name_component>(entity_);
+                    std::cout << "UI_button" << name.name << " MOUSE_LEFT" << std::endl;
                     scene_node->set_position_offset(event);
                     scene_node->update_2D_position_matrix();
-                    if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
-                        render->set_status_change(uniform_buffer_changed);
-                    }
+                    // if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
+                    // render->set_status_change(uniform_buffer_changed);
+                    // }
                 }
 
                 break;
             default:
-                break;
+                return false;
         }
+        return true;
     }
 };
 

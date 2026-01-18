@@ -16,30 +16,38 @@
 class Scene_Component {
 private:
     std::vector<entt::entity> parent;
-    std::vector<entt::entity> children;
     Point_2 zoom = {1, 1};
     Point_2 offset = {0, 0};
-    AABB_centroid<Point_2> bounding_box_; // 每次都直接计算吧。
 
 public:
     void set_bounding_box(Point_2 min, Point_2 max) {
         bounding_box_ = AABB_centroid<Point_2>(min, max);
     }
 
+    std::vector<entt::entity> children;
 
-    bool UI_stack_intersect_detail(std::vector<entt::entity> *return_value, const Point_2 &current_position) const {
-        for (const entt::entity entity: children) {
-            if (intersect(bounding_box_, current_position)) {
-                return_value->push_back(entity);
-                if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
-                    return scene_node->UI_stack_intersect_detail(return_value, current_position);
-                }
+    AABB_centroid<Point_2> bounding_box_; // 每次都直接计算吧。
+
+    static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
+        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+            if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
-            } else {
-                // 当前这个实体没有找到，下一个
             }
         }
-        // 全部没有找到
+        return false;
+    }
+
+    static bool check_entity_children_intersect_point(std::vector<entt::entity> *return_value,
+                                                      entt::entity entity,
+                                                      const Point_2 &current_position) {
+        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+            for (const entt::entity children_entity: scene_node->children) {
+                if (check_entity_intersect_point(children_entity, current_position)) {
+                    return_value->push_back(children_entity);
+                    check_entity_children_intersect_point(return_value, children_entity, current_position);
+                }
+            }
+        }
         return false;
     }
 
@@ -75,7 +83,7 @@ public:
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            // {0.01f , 0.01f, 1.0},
                                                            {2.0f / get_win_WIDTH(), 2.0f / get_win_HEIGHT(), 1.0},
-                                                           {0.0f, 0.0f, 0.0f}, {-1 + offset.x, -1 + offset.y, 0});
+                                                           {0.0f, 0.0f, 0.0f}, {-1 + offset.x, 1 + offset.y, 0});
             render->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
@@ -102,7 +110,11 @@ public:
     }
 
     bool set_position_offset(const base_event_with_stamp &base_event) {
-        offset = offset + base_event.current_position - base_event.move_position;
+        // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
+        // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
+        Point_2 move = base_event.current_position - base_event.move_position;
+        offset.x = offset.x + move.x / get_win_WIDTH();
+        offset.y = offset.y + move.y / get_win_HEIGHT();
         return true;
     }
 };
@@ -116,12 +128,23 @@ public:
         static std::once_flag flag;
 
         std::call_once(flag, []() {
-            get_entt_instance().emplace<Scene_Component>(instance);
-        });
+                           get_entt_instance().emplace<Scene_Component>(instance);
+                           get_entt_instance().emplace<Name_component>(instance, "scene_root");
+                           if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(instance)) {
+                               scene_node->set_bounding_box({0, 0},
+                                                            {
+                                                                static_cast<float>(get_win_WIDTH()),
+                                                                static_cast<float>(get_win_HEIGHT())
+                                                            });
+                           }
+                       }
+        );
+
         return instance;
     }
 
-private:
+private
+:
     scene_root() = default; // 禁用构造
 };
 
@@ -133,10 +156,8 @@ static entt::entity &get_scene_root() {
 inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_position) {
     std::vector<entt::entity> return_value;
     auto scene_root_node = get_scene_root();
-
-    if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(scene_root_node)) {
-        scene_node->UI_stack_intersect_detail(&return_value, current_position);
-    }
+    return_value.push_back(scene_root_node);
+    Scene_Component::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
     return return_value;
 }
 
@@ -150,7 +171,7 @@ inline void scene_root_add_child(entt::entity entity) {
     auto &parent_scene = get_entt_instance().get<Scene_Component>(root);
     auto &children_scene = get_entt_instance().get<Scene_Component>(entity);
     parent_scene.add_child(entity);
-    children_scene.add_child(entity);
+    children_scene.add_parent(entity);
 }
 
 
