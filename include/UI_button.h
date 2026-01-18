@@ -20,28 +20,32 @@ private:
     entt::entity entity_;
 
 public:
-    UI_button(const std::string &name, entt::entity entity,
+    entt::entity get_entity() const {
+        return entity_;
+    }
+
+    UI_button(const std::string &name,
               float min_x,
               float min_y,
               float max_x,
               float max_y) {
         std::cout << "UI_button" << std::endl;
 
+        entity_ = get_entt_instance().create();
 
         /***************创建*******************/
-        entity_ = entity;
-        get_entt_instance().emplace<logic_render_data>(entity);
-        get_entt_instance().emplace<Input_Component>(entity, on_Event);
+        get_entt_instance().emplace<logic_render_data>(entity_);
+        get_entt_instance().emplace<Input_Component>(entity_, on_Event);
 
-        get_entt_instance().emplace<Scene_Component>(entity);
-        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+        get_entt_instance().emplace<Scene_Component>(entity_);
+        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
             scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
         }
-        get_entt_instance().emplace<Drag_event>(entity);
-        get_entt_instance().emplace<Name_component>(entity, name);
+        get_entt_instance().emplace<Drag_event>(entity_);
+        get_entt_instance().emplace<Name_component>(entity_, name);
 
 
-        auto &render = get_entt_instance().get<logic_render_data>(entity);
+        auto &render = get_entt_instance().get<logic_render_data>(entity_);
 
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
