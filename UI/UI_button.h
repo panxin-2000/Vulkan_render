@@ -31,7 +31,9 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
     switch (temp_type) {
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
-            g_entt().destroy(entity_);
+            if (g_entt().valid(entity_))
+                g_entt().destroy(entity_);
+            return OPERATOR_FINISHED;
             break;
 
         case EVT_KEY_ESCAPE:
@@ -50,7 +52,7 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
             if (event.event_code == KM_RELEASE) {
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
-                auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
+                // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
                 return OPERATOR_FINISHED;
             }
             break;
@@ -64,8 +66,10 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
             break;
         case MOUSE_MOVE:
             if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
-                auto &name = g_entt().get<Name_component>(entity_);
-                std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
+                if (g_entt().all_of<Scene_Component>(entity_)) {
+                    auto &name = g_entt().get<Name_component>(entity_);
+                    // std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
+                }
                 scene_node->set_position_offset(event);
                 scene_node->update_2D_position_matrix();
                 if (auto *render = g_entt().try_get<logic_render_data *>(entity_)) {
@@ -88,6 +92,9 @@ entt::entity UI_button(const std::string &name,
                        float max_x,
                        float max_y) {
     std::cout << "UI_button" << std::endl;
+    std::string_view df = "";
+
+    LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
 
     entt::entity entity_ = g_entt().create();
 
@@ -103,42 +110,46 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Name_component>(entity_, name);
 
 
-    auto render = g_entt().get<logic_render_data *>(entity_);
+    if (g_entt().all_of<logic_render_data *>(entity_)) {
+        auto render = g_entt().get<logic_render_data *>(entity_);
 
-    /***************设置参数**********************/
-    std::vector<VertexAttrib> vertex_attribs;
-    vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
-    // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+        /***************设置参数**********************/
+        std::vector<VertexAttrib> vertex_attribs;
+        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
+        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-    auto vertices = std::make_shared<std::vector<Point_3> >();
-    auto indices = std::make_shared<std::vector<unsigned int> >();
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+        auto vertices = std::make_shared<std::vector<Point_3> >();
+        auto indices = std::make_shared<std::vector<unsigned int> >();
+        // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
 
-    indices->push_back(vertices->size() + 0);
-    indices->push_back(vertices->size() + 1);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 3);
-    indices->push_back(vertices->size() + 0);
-    vertices->emplace_back(min_x, min_y, 0); //0 1 2
-    vertices->emplace_back(max_x, min_y, 0);
-    vertices->emplace_back(max_x, max_y, 0); // 2 3 0
-    vertices->emplace_back(min_x, max_y, 0);
-    // 参数这里最重要的是下面的两行
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 3);
+        indices->push_back(vertices->size() + 0);
+        vertices->emplace_back(min_x, min_y, 0); //0 1 2
+        vertices->emplace_back(max_x, min_y, 0);
+        vertices->emplace_back(max_x, max_y, 0); // 2 3 0
+        vertices->emplace_back(min_x, max_y, 0);
+        // 参数这里最重要的是下面的两行
 
-    // 参数这里最重要的是下面的两行
-    render->debug_name = name;
-    render->set_vertices(vertices);
-    render->set_indices(indices);
-    render->vertex_attribs = vertex_attribs;
-    render->set_vertex_shader("render/shader/different_color.vert");
-    render->set_fragment_shader("render/shader/different_color.frag");
+        // 参数这里最重要的是下面的两行
+        render->debug_name = name;
+        render->set_vertices(vertices);
+        render->set_indices(indices);
+        render->vertex_attribs = vertex_attribs;
+        render->set_vertex_shader("render/shader/different_color.vert");
+        render->set_fragment_shader("render/shader/different_color.frag");
 
-    auto &position = g_entt().get<Scene_Component>(entity_);
-    position.update_2D_position_matrix();
-    scene_root_add_child(entity_);
-    add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+        add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+    }
 
+    if (g_entt().all_of<Scene_Component>(entity_)) {
+        auto &position = g_entt().get<Scene_Component>(entity_);
+        position.update_2D_position_matrix();
+        scene_root_add_child(entity_);
+    }
     return entity_;
 
     // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。

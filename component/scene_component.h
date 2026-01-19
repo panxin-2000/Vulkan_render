@@ -27,16 +27,22 @@ public:
     }
 
     ~Scene_Component() {
-        auto children_temp = children;
-        auto parent_temp = parent;
-        for (auto it = children.rbegin(); it != children.rend(); ++it) {
-            bool clear_parent_relation(const entt::entity children_entity);
-            clear_parent_relation(*it);
-        }
-        for (auto it = children_temp.rbegin(); it != children_temp.rend(); ++it) {
-            bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
-            add_relation(parent_temp, *it);
-        }
+        bool clear_parent_relation(const entt::entity children_entity);
+        clear_parent_relation(parent);
+
+        for (auto it = children.rbegin(); it != children.rend(); ++it)
+            if (g_entt().valid(*it))
+                g_entt().destroy(*it);
+        // auto children_temp = children;
+        // auto parent_temp = parent;
+        // for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        //     bool clear_parent_relation(const entt::entity children_entity);
+        //     clear_parent_relation(*it);
+        // }
+        // for (auto it = children_temp.rbegin(); it != children_temp.rend(); ++it) {
+        //     bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
+        //     add_relation(parent_temp, *it);
+        // }
     }
 
 
@@ -65,7 +71,7 @@ public:
         return false;
     }
 
-    void add_parent(entt::entity entity) {
+    void add_parent_relation(entt::entity entity) {
         parent = entity;
     }
 
@@ -73,16 +79,15 @@ public:
         return parent;
     }
 
-
-    void remove_parent() {
+    void remove_parent_ralation() {
         parent = entt::null;
     }
 
-    void remove_children(entt::entity entity) {
+    void remove_children_relation(entt::entity entity) {
         children.erase(std::remove(children.begin(), children.end(), entity), children.end());
     }
 
-    void add_child(entt::entity entity) {
+    void add_child_relation(entt::entity entity) {
         children.push_back(entity);
     }
 
@@ -201,11 +206,13 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
  * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加
  */
 inline void scene_root_add_child(entt::entity entity) {
-    auto root = get_scene_root();
-    auto &parent_scene = g_entt().get<Scene_Component>(root);
-    auto &children_scene = g_entt().get<Scene_Component>(entity);
-    parent_scene.add_child(entity);
-    children_scene.add_parent(root);
+    if (g_entt().all_of<Scene_Component>(entity)) {
+        auto root = get_scene_root();
+        auto &parent_scene = g_entt().get<Scene_Component>(root);
+        auto &children_scene = g_entt().get<Scene_Component>(entity);
+        parent_scene.add_child_relation(entity);
+        children_scene.add_parent_relation(root);
+    }
 }
 
 inline void scene_add_child(entt::entity parent_entity, entt::entity children_entity) {
@@ -214,19 +221,19 @@ inline void scene_add_child(entt::entity parent_entity, entt::entity children_en
         auto &parent_scene = g_entt().get<Scene_Component>(parent_entity);
         auto &children_scene = g_entt().get<Scene_Component>(children_entity);
 
-        parent_scene.add_child(children_entity);
-        children_scene.add_parent(parent_entity);
+        parent_scene.add_child_relation(children_entity);
+        children_scene.add_parent_relation(parent_entity);
     }
 }
 
 inline bool add_relation(const entt::entity parent_entity, const entt::entity children_entity) {
     if (g_entt().all_of<Scene_Component>(parent_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
-        entity_scene.add_child(children_entity);
+        entity_scene.add_child_relation(children_entity);
     }
     if (g_entt().all_of<Scene_Component>(children_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
-        entity_scene.add_parent(parent_entity);
+        entity_scene.add_parent_relation(parent_entity);
     }
     return true;
 }
@@ -242,11 +249,11 @@ static entt::entity get_parent(const entt::entity entity) {
 inline bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity) {
     if (g_entt().all_of<Scene_Component>(parent_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
-        entity_scene.remove_children(children_entity);
+        entity_scene.remove_children_relation(children_entity);
     }
     if (g_entt().all_of<Scene_Component>(children_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
-        entity_scene.remove_parent();
+        entity_scene.remove_parent_ralation();
     }
     return true;
 }
@@ -256,5 +263,6 @@ inline bool clear_parent_relation(const entt::entity children_entity) {
     clear_relation(parent_scene, children_entity);
     return true;
 }
+
 
 #endif //HELLO_MAC_SCENE_COMPONENT_H

@@ -9,6 +9,8 @@
 
 
 int main() {
+    LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+
     // auto entity = get_entt_instance().create();
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
 
@@ -19,5 +21,5 @@ int main() {
 
     // create_button("按钮2", 35, 20, 45, 30);
 
-    add_render_windows();
+    // add_render_windows();
 }

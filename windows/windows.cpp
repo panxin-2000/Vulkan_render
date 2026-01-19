@@ -153,11 +153,11 @@ void on_key_press(const base_event_with_stamp &event) {
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
         all_node_need_check.push_back(entity);
-        auto &name = view.get<Name_component>(entity);
-        auto &scene = view.get<Scene_Component>(entity);
-        std::cout << (uint32_t) entity << " name: " << name.name
-                << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval
-                << (uint32_t) scene.get_parent() << std::endl;
+        // auto &name = view.get<Name_component>(entity);
+        // auto &scene = view.get<Scene_Component>(entity);
+        // std::cout << (uint32_t) entity << " name: " << name.name
+        //         << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval
+        //         << (uint32_t) scene.get_parent() << std::endl;
     }
     // 找到当前区域的一个递归栈
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
@@ -224,9 +224,8 @@ void add_render_windows() {
     // 另一个线程，完全负责渲染，另一个线程负责准备内容，
     // 在渲染的线程中，检查哪些内容需要更新，然后更新缓存，之后再进行渲染
     // 如果没有需要更新缓存的内容，就不渲染
-    std::thread t(start_render_manage_thread, window);
-
-    t.detach();
+    // std::thread t(start_render_manage_thread, window);
+    // t.detach();
 
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();

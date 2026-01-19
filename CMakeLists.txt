@@ -27,6 +27,7 @@ FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.17.0
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 
 #  开发者常私下将其解读为 Entity Templates
@@ -34,8 +35,19 @@ FetchContent_Declare(
         entt
         GIT_REPOSITORY https://github.com/skypjack/entt.git
         GIT_TAG v3.16.0
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 
+FetchContent_Declare(
+        quill
+        GIT_REPOSITORY https://github.com/odygrd/quill.git
+        GIT_TAG v11.0.2  # 明确指向某个标签
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(quill)
+
+# 极致性能优化
+#set(QUILL_USE_BOUNDED_QUEUE ON CACHE BOOL "" FORCE)
 
 include_directories(utility)
 include_directories(render)
@@ -165,7 +177,7 @@ add_executable(hello_mac
         test/run_queue.cpp
         test/longest_continuous_sequence.cpp
         test/set_graph.cpp)
-target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT)
+target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
 
 
 find_package(TBB REQUIRED)
@@ -173,4 +185,5 @@ find_package(TBB REQUIRED)
 
 add_executable(learn_openGL main.cpp
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
-target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT)
+target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
+
