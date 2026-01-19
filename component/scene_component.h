@@ -127,6 +127,11 @@ public:
     }
 };
 
+// 回调函数
+static inline void cleanup_logic_render_data(entt::registry &reg, entt::entity ent) {
+    if (auto render_data = reg.try_get<logic_render_data *>(ent))
+        clean_object_to_render(*render_data);
+}
 
 class scene_root {
 public:
@@ -145,6 +150,8 @@ public:
                                                                 static_cast<float>(get_win_HEIGHT())
                                                             });
                            }
+                           // 在系统初始化时
+                           get_entt_instance().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
                        }
         );
 

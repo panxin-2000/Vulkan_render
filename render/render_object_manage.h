@@ -90,6 +90,9 @@ public:
     }
 
     void clean_need_objects() {
+        for (auto render_component: need_clean) {
+            std::cout << " clean_need_objects" << std::endl;
+        }
         need_clean.clear();
     }
 
