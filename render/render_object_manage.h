@@ -91,6 +91,17 @@ public:
 
     void clean_need_objects() {
         for (auto render_component: need_clean) {
+            auto it = std::find_if(render_objects.begin(), render_objects.end(),
+                                   [render_component](const union_render_data &item) {
+                                       return item.logic_data == render_component;
+                                   });
+
+            if (it != render_objects.end()) {
+                // 如果该指针指向的内存需要手动释放，先在这里处理
+                // delete static_cast<SomeType*>(it->ptr);
+
+                render_objects.erase(it);
+            }
             std::cout << " clean_need_objects" << std::endl;
         }
         need_clean.clear();
