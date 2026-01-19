@@ -69,8 +69,8 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
                 std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
                 scene_node->set_position_offset(event);
                 scene_node->update_2D_position_matrix();
-                if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
-                    render->set_status_change(uniform_buffer_changed);
+                if (auto *render = get_entt_instance().try_get<logic_render_data *>(entity_)) {
+                    (*render)->set_status_change(uniform_buffer_changed);
                 }
                 // 包围盒的位置还需要同步更新
                 return OPERATOR_RUNNING_MODAL;
@@ -93,7 +93,7 @@ entt::entity UI_button(const std::string &name,
     entt::entity entity_ = get_entt_instance().create();
 
     /***************创建*******************/
-    get_entt_instance().emplace<logic_render_data>(entity_);
+    get_entt_instance().emplace<logic_render_data *>(entity_, new logic_render_data);
     get_entt_instance().emplace<Input_Component>(entity_, on_Event);
 
     get_entt_instance().emplace<Scene_Component>(entity_);
@@ -104,7 +104,7 @@ entt::entity UI_button(const std::string &name,
     get_entt_instance().emplace<Name_component>(entity_, name);
 
 
-    auto &render = get_entt_instance().get<logic_render_data>(entity_);
+    auto render = get_entt_instance().get<logic_render_data *>(entity_);
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -128,17 +128,17 @@ entt::entity UI_button(const std::string &name,
     // 参数这里最重要的是下面的两行
 
     // 参数这里最重要的是下面的两行
-    render.debug_name = name;
-    render.set_vertices(vertices);
-    render.set_indices(indices);
-    render.vertex_attribs = vertex_attribs;
-    render.set_vertex_shader("render/shader/different_color.vert");
-    render.set_fragment_shader("render/shader/different_color.frag");
+    render->debug_name = name;
+    render->set_vertices(vertices);
+    render->set_indices(indices);
+    render->vertex_attribs = vertex_attribs;
+    render->set_vertex_shader("render/shader/different_color.vert");
+    render->set_fragment_shader("render/shader/different_color.frag");
 
     auto &position = get_entt_instance().get<Scene_Component>(entity_);
     position.update_2D_position_matrix();
 
-    add_object_to_render(&render);
+    add_object_to_render(render);
 
     return entity_;
 

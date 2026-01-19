@@ -78,7 +78,7 @@ public:
     bool update_2D_position_matrix() {
         const auto &storage = get_entt_instance().storage<Scene_Component>();
         const auto entity = entt::to_entity(storage, *this);
-        if (auto *render = get_entt_instance().try_get<logic_render_data>(entity)) {
+        if (auto render = get_entt_instance().try_get<logic_render_data *>(entity)) {
             data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            // {0.01f , 0.01f, 1.0},
@@ -89,7 +89,7 @@ public:
                                                                ((offset.y / get_win_HEIGHT()) - 0.5f) * -2,
                                                                0
                                                            });
-            render->add_uniform("model_transform", gl_mat4, data);
+            (*render)->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }
@@ -99,12 +99,12 @@ public:
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto *render = get_entt_instance().try_get<logic_render_data>(entity)) {
+        if (auto render = get_entt_instance().try_get<logic_render_data *>(entity)) {
             data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            {zoom.x, zoom.y, 1.0},
                                                            {0.0f, 0.0f, 0.0f}, {offset});
-            render->add_uniform("model_transform", gl_mat4, data);
+            (*render)->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }
@@ -129,8 +129,8 @@ public:
 
 // 回调函数
 static inline void cleanup_logic_render_data(entt::registry &reg, entt::entity ent) {
-    if (auto render_data = reg.try_get<logic_render_data>(ent))
-        clean_object_to_render(render_data);
+    if (auto render_data = reg.try_get<logic_render_data *>(ent))
+        clean_object_to_render(*render_data);
 }
 
 class scene_root {
@@ -151,7 +151,7 @@ public:
                                                             });
                            }
                            // 在系统初始化时
-                           get_entt_instance().on_destroy<logic_render_data>().connect<&cleanup_logic_render_data>();
+                           get_entt_instance().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
                        }
         );
 

@@ -97,8 +97,8 @@ public:
                                    });
 
             if (it != render_objects.end()) {
-                // 如果该指针指向的内存需要手动释放，先在这里处理
-                // delete static_cast<SomeType*>(it->ptr);
+                // render_component 只能在这里释放，害怕entt 释放之后会覆盖
+                // 那么这里拿到的资源的字符串就不对了
 
                 render_objects.erase(it);
             }
