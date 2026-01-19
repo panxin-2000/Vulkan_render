@@ -26,6 +26,18 @@ public:
         bounding_box_ = AABB_centroid<Point_2>(min, max);
     }
 
+    ~Scene_Component() {
+        auto children_temp = children;
+        auto parent_temp = parent;
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            bool clear_parent_relation(const entt::entity children_entity);
+            clear_parent_relation(*it);
+        }
+        for (auto it = children_temp.rbegin(); it != children_temp.rend(); ++it) {
+            bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
+            add_relation(parent_temp, *it);
+        }
+    }
 
 
     AABB_centroid<Point_2> bounding_box_; // 每次都直接计算吧。
