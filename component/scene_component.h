@@ -83,7 +83,12 @@ public:
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            // {0.01f , 0.01f, 1.0},
                                                            {2.0f / get_win_WIDTH(), 2.0f / get_win_HEIGHT(), 1.0},
-                                                           {0.0f, 0.0f, 0.0f}, {-1 + offset.x, 1 + offset.y, 0});
+                                                           {0.0f, 0.0f, 0.0f},
+                                                           {
+                                                               ((offset.x / get_win_WIDTH()) - 0.5f) * 2,
+                                                               ((offset.y / get_win_HEIGHT()) - 0.5f) * -2,
+                                                               0
+                                                           });
             render->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
@@ -115,7 +120,7 @@ public:
         Point_2 move = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
         offset = offset + move;
-        // std::cout << "move x: " << move.x << " y: " << move.y << std::endl;
+        // std::cout << "move x: " << offset.x << " y: " << offset.y << std::endl;
         // offset.x = offset.x + move.x / get_win_WIDTH() * 2;
         // offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
         return true;
