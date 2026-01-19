@@ -85,6 +85,10 @@ public:
         /***************添加到渲染管理器**********************/
     };
 
+    // 按键和鼠标有两种截然不同的策略，基本上，所以的鼠标的点击时并没有反应，但是呢？
+    // 松开时 采取执行按键设计的动作
+
+    // 键盘是另一种操作，按下时就去执行响应的动作，有时会增加弹窗来进行确认
 
     static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_stamp &event) {
         auto temp_type = event.event_type;
@@ -97,12 +101,14 @@ public:
                 if (event.event_code == KM_PRESS) {
                     std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
                     // 需要增加模态的处理 返回结束模态 先用按下的状态，之后再更改
+                    return OPERATOR_RUNNING_MODAL;
                 }
                 break;
             case MOUSE_LEFT:
                 if (event.event_code == KM_PRESS) {
                     std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
                     // 需要增加模态的处理 返回锁定模态
+                    return OPERATOR_RUNNING_MODAL;
                 }
                 if (event.event_code == KM_RELEASE) {
                     std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;

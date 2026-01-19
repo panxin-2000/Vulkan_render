@@ -4,8 +4,8 @@
 
 #include "event/base_event.h"
 #include "labyrinth.h"
-#include "UI_block.h"
-#include "include/UI_button.h"
+#include "UI/UI_block.h"
+#include "UI/UI_button.h"
 
 
 int main() {

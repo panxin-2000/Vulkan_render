@@ -132,14 +132,21 @@ void on_key_press(const base_event_with_stamp &event) {
     static entt::entity last_work = get_scene_root();
     mouse_position current_position = event.current_position;
 
+    // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
+    // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
     std::cout << "last work name: " << name.name << std::endl;
     if (Scene_Component::check_entity_intersect_point(last_work, current_position))
         if (const auto input = get_entt_instance().try_get<Input_Component>(last_work)) {
-            if (input->on_Event != nullptr && input->on_Event(last_work, event) & OPERATOR_RUNNING_MODAL) {
-                last_work = last_work;
-            } else {
-                last_work = get_scene_root();
+            if (input->on_Event != nullptr) {
+                auto status = input->on_Event(last_work, event);
+                if (OPERATOR_RUNNING_MODAL & status) {
+                    last_work = last_work;
+                    return;
+                } else if (OPERATOR_FINISHED & status) {
+                    last_work = get_scene_root();
+                    return;
+                }
             }
         }
 
@@ -160,11 +167,16 @@ void on_key_press(const base_event_with_stamp &event) {
     // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = get_entt_instance().try_get<Input_Component>(*it)) {
-            if (input->on_Event != nullptr &&
-                ~input->on_Event(*it, event) & OPERATOR_PASS_THROUGH) {
-                // on_Event 中不包含 OPERATOR_PASS_THROUGH 时不再传递
-                last_work = *it;
-                break;
+            if (input->on_Event != nullptr) {
+                auto status = input->on_Event(*it, event);
+                if (OPERATOR_RUNNING_MODAL & status) {
+                    last_work = *it;
+                    break;
+                } else if (OPERATOR_PASS_THROUGH & status) {
+                    continue;
+                } else {
+                    break;
+                }
             }
         }
     }
