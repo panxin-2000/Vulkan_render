@@ -84,6 +84,7 @@ file(GLOB_RECURSE WINDOW
 )
 
 include_directories(event)
+include_directories(singleton)
 include_directories(labyrinth)
 include_directories(input_device)
 include_directories(component)

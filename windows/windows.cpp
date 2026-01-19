@@ -21,7 +21,6 @@
 #include "base_observer.h"
 #include "input_device_manage.h"
 #include "observer_manage.h"
-#include "ECS.h"
 #include "entity_name_component.h"
 #include "input_component.h"
 #include "model_matrix_component.h"
@@ -187,7 +186,7 @@ void on_key_press(const base_event_with_stamp &event) {
 void add_render_windows() {
     int major, minor, rev;
     glfwGetVersion(&major, &minor, &rev);
-    std::cout << "GLFW 运行时版本：" << major << "." << minor << "." << rev << std::endl;
+    LOG_INFO(g_log(), "GLFW 运行时版本：{} . {} . {}", major, minor, rev);
 
     // Init GLFW
     glfwInit();
@@ -224,8 +223,8 @@ void add_render_windows() {
     // 另一个线程，完全负责渲染，另一个线程负责准备内容，
     // 在渲染的线程中，检查哪些内容需要更新，然后更新缓存，之后再进行渲染
     // 如果没有需要更新缓存的内容，就不渲染
-    // std::thread t(start_render_manage_thread, window);
-    // t.detach();
+    std::thread t(start_render_manage_thread, window);
+    t.detach();
 
     while (!glfwWindowShouldClose(window)) {
         glfwWaitEvents();
@@ -236,6 +235,10 @@ void add_render_windows() {
         glfwPollEvents();
 
         dispatcher.update(); // 统一分发执行
+
+        auto view = g_entt().view<PendingDestroyTag>();
+        g_entt().destroy(view.begin(), view.end());
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

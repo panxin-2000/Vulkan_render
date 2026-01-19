@@ -1,37 +1,10 @@
 //
-// Created by 潘鑫 on 2026/1/13.
+// Created by 潘鑫 on 2026/1/20.
 //
 
-#ifndef HELLO_MAC_ECS_H
-#define HELLO_MAC_ECS_H
-#include <entt/entt.hpp>
+#ifndef HELLO_MAC_QUILL_LOG_H
+#define HELLO_MAC_QUILL_LOG_H
 
-
-class entt_user {
-public:
-    // 获取全局唯一的注册表引用
-    static entt::registry &get() {
-        static entt::registry instance;
-        return instance;
-    }
-
-private:
-    entt_user() = default; // 禁用构造
-};
-
-
-static entt::registry &g_entt() {
-    return entt_user::get();
-}
-
-
-static inline int get_win_WIDTH() {
-    return 800;
-}
-
-static inline int get_win_HEIGHT() {
-    return 600;
-}
 
 #include "quill/Backend.h"
 #include "quill/Frontend.h"
@@ -39,7 +12,6 @@ static inline int get_win_HEIGHT() {
 #include "quill/Logger.h"
 #include "quill/sinks/FileSink.h"
 #include "quill/sinks/ConsoleSink.h"
-
 
 class quill_log {
 public:
@@ -58,9 +30,4 @@ public:
     }
 };
 
-static quill::Logger *g_log() {
-    return quill_log::get();
-}
-
-
-#endif //HELLO_MAC_ECS_H
+#endif //HELLO_MAC_QUILL_LOG_H

@@ -8,11 +8,10 @@
 #include <vector>
 #include <entt/entt.hpp>
 #include "base_event.h"
-#include "ECS.h"
 #include "base_element/point_3.h"
 #include "shader.h"
 #include "base_element/intersect/objects_intersect_with_point.h"
-
+#include "global_singleton.h"
 
 class Scene_Component {
 private:
@@ -31,8 +30,9 @@ public:
         clear_parent_relation(parent);
 
         for (auto it = children.rbegin(); it != children.rend(); ++it)
-            if (g_entt().valid(*it))
-                g_entt().destroy(*it);
+            if (g_entt().valid(*it)) {
+                g_entt().emplace_or_replace<PendingDestroyTag>(*it);
+            }
         // auto children_temp = children;
         // auto parent_temp = parent;
         // for (auto it = children.rbegin(); it != children.rend(); ++it) {

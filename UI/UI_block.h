@@ -7,7 +7,6 @@
 
 
 #include "input_component.h"
-#include "ECS.h"
 #include "entity_name_component.h"
 #include "observer_manage.h"
 #include "scene_component.h"

@@ -52,21 +52,13 @@ void start_render_manage_thread(GLFWwindow *window);
 void end_render_manage_thread();
 
 class logic_render_data : public NonCopyable {
-public:
-    logic_render_data() {
-        // p_render_component = new render_component;
-    }
-
-    ~logic_render_data() {
-    }
-
     struct vertex_and_attributes {
         Vertices_type vertices_;
         std::vector<VertexAttrib> vertex_attribs;
     };
 
+public:
     std::vector<vertex_and_attributes> vertex_and_attributes;
-
     std::string debug_name;
     mutable std::mutex mtx;
     Vertices_type vertices_;
@@ -79,9 +71,15 @@ public:
     std::string geometryPath_;
     GPUPrimType prim_type_;
     std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
-
-
     status_change status_;
+
+
+    logic_render_data() {
+        // p_render_component = new render_component;
+    }
+
+    ~logic_render_data() {
+    }
 
 
     void set_status_change(const status_change status) {
@@ -145,9 +143,6 @@ public:
             it->second = std::make_tuple(uniforms_type, data, number);
         }
     }
-
-private:
-    // render_component *p_render_component;
 };
 
 

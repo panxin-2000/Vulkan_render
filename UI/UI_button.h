@@ -9,8 +9,8 @@
 #include "Render_thread_data.h"
 #include "input_component.h"
 #include "base_event.h"
-#include "ECS.h"
 #include "entity_name_component.h"
+#include "global_singleton.h"
 #include "model_matrix_component.h"
 #include "observer_manage.h"
 #include "render_object_manage.h"
@@ -31,11 +31,13 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
     switch (temp_type) {
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
-            if (g_entt().valid(entity_))
-                g_entt().destroy(entity_);
-            return OPERATOR_FINISHED;
+            if (event.event_code == KM_PRESS)
+                if (g_entt().valid(entity_)) {
+                    g_entt().emplace_or_replace<PendingDestroyTag>(entity_);
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
             break;
-
         case EVT_KEY_ESCAPE:
             if (event.event_code == KM_PRESS) {
                 std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
@@ -52,7 +54,7 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
             if (event.event_code == KM_RELEASE) {
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
-                // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
+                auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
                 return OPERATOR_FINISHED;
             }
             break;
