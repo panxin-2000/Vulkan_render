@@ -111,7 +111,7 @@ public:
         mouse_button_left_click = true;
         dispatcher_->enqueue<base_event_with_stamp>({
             MOUSE_LEFT,
-            KM_CLICK,
+            KM_PRESS,
             pos,
             manage_last_position,
             manage_click_position,
@@ -125,7 +125,7 @@ public:
         mouse_button_right_click = true;
         dispatcher_->enqueue<base_event_with_stamp>({
             MOUSE_RIGHT,
-            KM_CLICK,
+            KM_PRESS,
             pos,
             manage_last_position,
             manage_click_position,
@@ -141,7 +141,7 @@ public:
             && !(pos == manage_last_position)) {
             dispatcher_->enqueue<base_event_with_stamp>({
                 MOUSE_MOVE,
-                KM_CLICK,
+                KM_PRESS,
                 manage_current_position,
                 manage_last_position,
                 manage_click_position,
@@ -155,7 +155,7 @@ public:
     void handle_scroll(mouse_position pos) {
         dispatcher_->enqueue<base_event_with_stamp>({
             WHEEL_UP_MOUSE,
-            KM_CLICK,
+            KM_PRESS,
             pos,
             manage_last_position,
             manage_click_position,

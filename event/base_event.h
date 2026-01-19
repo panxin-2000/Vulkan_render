@@ -8,6 +8,7 @@
 
 #include "base_element/point_2.h"
 #include "base_element/geometry/AABB_bounding_box.h"
+#include "utility.h"
 
 // 事件类型枚举（扩展时新增枚举值即可）
 enum class EventType : uint32_t {
@@ -213,17 +214,38 @@ using mouse_position = Point_2;
 
 enum Event_code {
     KM_ANY = -1,
-    KM_NOTHING = 0,
-    KM_PRESS = 1,
-    KM_RELEASE = 2,
-    KM_CLICK = 3,
-    KM_DBL_CLICK = 4,
+    KM_NOTHING = 0,   // 没事
+    KM_PRESS = 1,     // 刚刚按下时触发一次
+    KM_RELEASE = 2,   // 释放时触发的
+    KM_CLICK = 3,     // 下面这两个需要的处理稍微有点多
+    KM_DBL_CLICK = 4, //
     /**
      * \note The cursor location at the point dragging starts is set to #wmEvent.prev_press_xy
      * some operators such as box selection should use this location instead of #wmEvent.xy.
      */
     KM_PRESS_DRAG = 5,
 };
+
+/**
+ * Operator type return flags: exec(), invoke() modal(), return values.
+ */
+enum wmOperatorStatus {
+    OPERATOR_RUNNING_MODAL = (1 << 0),
+    OPERATOR_CANCELLED = (1 << 1),
+    OPERATOR_FINISHED = (1 << 2),
+    /** Add this flag if the event should pass through. */
+    OPERATOR_PASS_THROUGH = (1 << 3),
+    /** In case operator got executed outside WM code (like via file-select). */
+    OPERATOR_HANDLED = (1 << 4),
+    /**
+     * Used for operators that act indirectly (eg. popup menu).
+     * \note this isn't great design (using operators to trigger UI) avoid where possible.
+     */
+    OPERATOR_INTERFACE = (1 << 5),
+};
+
+ENABLE_BITWISE_OPERATORS(wmOperatorStatus)
+
 
 // 通用事件基类
 class base_event_with_stamp {

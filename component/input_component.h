@@ -17,17 +17,18 @@
 
 class Input_Component {
 public:
-    Input_Component(const std::function<bool (entt::entity, base_event_with_stamp)> &function) : on_Event(function) {
+    Input_Component(const std::function<wmOperatorStatus (entt::entity, base_event_with_stamp)> &function) : on_Event(
+        function) {
     }
 
     ~Input_Component() {
     }
 
-    std::function<bool (entt::entity, base_event_with_stamp)> on_Event;
+    std::function<wmOperatorStatus (entt::entity, base_event_with_stamp)> on_Event;
 };
 
 inline void set_Input_Component_on_Event_function(
-    const std::function<bool(entt::entity, base_event_with_stamp)> &function) {
+    const std::function<wmOperatorStatus(entt::entity, base_event_with_stamp)> &function) {
 }
 
 

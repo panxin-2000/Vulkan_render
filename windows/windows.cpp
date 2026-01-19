@@ -42,10 +42,10 @@ void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 
     if (key == GLFW_KEY_UNKNOWN) return;
     // action: GLFW_PRESS（按下）、GLFW_RELEASE（松开）、GLFW_REPEAT（重复按下）
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GL_TRUE);
-        return;
-    }
+    // if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    //     glfwSetWindowShouldClose(window, GL_TRUE);
+    //     return;
+    // }
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         Keyboard_Manage::instance().handleKeyDown(key);
     } else if (action == GLFW_RELEASE) {
@@ -136,12 +136,12 @@ void on_key_press(const base_event_with_stamp &event) {
     std::cout << "last work name: " << name.name << std::endl;
     if (Scene_Component::check_entity_intersect_point(last_work, current_position))
         if (const auto input = get_entt_instance().try_get<Input_Component>(last_work)) {
-            if (input->on_Event != nullptr && input->on_Event(last_work, event) == true) {
+            if (input->on_Event != nullptr && input->on_Event(last_work, event) & OPERATOR_RUNNING_MODAL) {
                 last_work = last_work;
-                return;
+            } else {
+                last_work = get_scene_root();
             }
         }
-    last_work = get_scene_root();
 
     for (auto entity: view) {
         // 这种方式获取组件在内存中是最高效的
@@ -160,7 +160,9 @@ void on_key_press(const base_event_with_stamp &event) {
     // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = get_entt_instance().try_get<Input_Component>(*it)) {
-            if (input->on_Event != nullptr && input->on_Event(*it, event) == true) {
+            if (input->on_Event != nullptr &&
+                ~input->on_Event(*it, event) & OPERATOR_PASS_THROUGH) {
+                // on_Event 中不包含 OPERATOR_PASS_THROUGH 时不再传递
                 last_work = *it;
                 break;
             }

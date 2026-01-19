@@ -86,17 +86,29 @@ public:
     };
 
 
-    static bool on_Event(entt::entity entity_, const base_event_with_stamp &event) {
+    static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_stamp &event) {
         auto temp_type = event.event_type;
         switch (temp_type) {
             case EVT_KEY_A:
 
                 break;
-            case EVT_KEY_Q:
 
+            case EVT_KEY_ESCAPE:
+                if (event.event_code == KM_PRESS) {
+                    std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
+                    // 需要增加模态的处理 返回结束模态 先用按下的状态，之后再更改
+                }
                 break;
             case MOUSE_LEFT:
-                std::cout << " button  MOUSE_LEFT" << std::endl;
+                if (event.event_code == KM_PRESS) {
+                    std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
+                    // 需要增加模态的处理 返回锁定模态
+                }
+                if (event.event_code == KM_RELEASE) {
+                    std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
+                    // 需要增加模态的处理 返回结束模态
+                    return OPERATOR_FINISHED;
+                }
                 break;
             case MOUSE_RIGHT:
                 break;
@@ -109,19 +121,20 @@ public:
             case MOUSE_MOVE:
                 if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
                     auto &name = get_entt_instance().get<Name_component>(entity_);
-                    std::cout << "UI_button" << name.name << " MOUSE_LEFT" << std::endl;
+                    std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
                     scene_node->set_position_offset(event);
                     scene_node->update_2D_position_matrix();
                     if (auto *render = get_entt_instance().try_get<logic_render_data>(entity_)) {
                         render->set_status_change(uniform_buffer_changed);
                     }
                     // 包围盒的位置还需要同步更新
+                    return OPERATOR_RUNNING_MODAL;
                 }
                 break;
             default:
-                return false;
+                return OPERATOR_PASS_THROUGH;
         }
-        return true;
+        return OPERATOR_HANDLED;
     }
 };
 

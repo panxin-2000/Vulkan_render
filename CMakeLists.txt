@@ -37,6 +37,7 @@ FetchContent_Declare(
 )
 
 
+include_directories(utility)
 include_directories(render)
 include_directories(/opt/homebrew/opt/glfw/include)
 
