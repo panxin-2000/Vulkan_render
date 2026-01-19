@@ -21,7 +21,7 @@ entt::entity UI_block(const std::string &name,
     auto entity_ = UI_button(name, min_x, min_y, max_x, max_y);
     std::cout << "UI_block" << std::endl;
     // set_Input_Component_on_Event_function()
-    scene_root_add_child(entity_);
+    return entity_;
 }
 
 /**
@@ -40,13 +40,10 @@ entt::entity add_button(entt::entity entity_, const std::string &name,
                         int max_x,
                         int max_y) {
     auto UI_entity = UI_button(name, min_x, min_y, max_x, max_y);
-    auto &parent_scene = get_entt_instance().get<Scene_Component>(entity_);
-    auto &children_scene = get_entt_instance().get<Scene_Component>(UI_entity);
-    parent_scene.add_child(UI_entity);
-    children_scene.add_parent(entity_);
+    clear_parent_relation(UI_entity);
+    add_relation(entity_, UI_entity);
     return UI_entity;
 }
-
 
 
 #endif //HELLO_MAC_UI_BLOCK_H

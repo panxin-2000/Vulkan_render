@@ -38,7 +38,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 
 void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    std::cout << "key: " << key << std::endl;
+    // std::cout << "key: " << key << std::endl;
 
     if (key == GLFW_KEY_UNKNOWN) return;
     // action: GLFW_PRESS（按下）、GLFW_RELEASE（松开）、GLFW_REPEAT（重复按下）
@@ -123,9 +123,9 @@ GLFWwindow *window;
 
 void on_key_press(const base_event_with_stamp &event) {
     // if (event.key_code == 27) /* 处理退出逻辑 */;
-    auto &storage = get_entt_instance().storage<Scene_Component>();
+    auto &storage = g_entt().storage<Scene_Component>();
 
-    auto view = get_entt_instance().view<Name_component, Scene_Component, Input_Component>();
+    auto view = g_entt().view<Name_component, Scene_Component, Input_Component>();
 
     std::vector<entt::entity> all_node_need_check;
 
@@ -135,9 +135,9 @@ void on_key_press(const base_event_with_stamp &event) {
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
-    std::cout << "last work name: " << name.name << std::endl;
+    // std::cout << "last work name: " << name.name << std::endl;
     if (Scene_Component::check_entity_intersect_point(last_work, current_position))
-        if (const auto input = get_entt_instance().try_get<Input_Component>(last_work)) {
+        if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(last_work, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
@@ -155,8 +155,9 @@ void on_key_press(const base_event_with_stamp &event) {
         all_node_need_check.push_back(entity);
         auto &name = view.get<Name_component>(entity);
         auto &scene = view.get<Scene_Component>(entity);
-        // std::cout << "name: " << name.name
-        //         << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval << std::endl;
+        std::cout << (uint32_t) entity << " name: " << name.name
+                << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval
+                << (uint32_t) scene.get_parent() << std::endl;
     }
     // 找到当前区域的一个递归栈
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
@@ -166,7 +167,7 @@ void on_key_press(const base_event_with_stamp &event) {
     //     std::cout << "name: " << name.name << std::endl;
     // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-        if (const auto input = get_entt_instance().try_get<Input_Component>(*it)) {
+        if (const auto input = g_entt().try_get<Input_Component>(*it)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(*it, event);
                 if (OPERATOR_RUNNING_MODAL & status) {

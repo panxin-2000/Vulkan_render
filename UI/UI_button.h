@@ -31,7 +31,7 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
     switch (temp_type) {
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
-            get_entt_instance().destroy(entity_);
+            g_entt().destroy(entity_);
             break;
 
         case EVT_KEY_ESCAPE:
@@ -51,25 +51,24 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
                 auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
-                scene_root_add_child(block_entity);
                 return OPERATOR_FINISHED;
             }
             break;
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
+            if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
                 scene_node->set_zoom(event);
                 scene_node->update_position();
             }
             break;
         case MOUSE_MOVE:
-            if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
-                auto &name = get_entt_instance().get<Name_component>(entity_);
+            if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
+                auto &name = g_entt().get<Name_component>(entity_);
                 std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
                 scene_node->set_position_offset(event);
                 scene_node->update_2D_position_matrix();
-                if (auto *render = get_entt_instance().try_get<logic_render_data *>(entity_)) {
+                if (auto *render = g_entt().try_get<logic_render_data *>(entity_)) {
                     (*render)->set_status_change(uniform_buffer_changed);
                 }
                 // 包围盒的位置还需要同步更新
@@ -90,21 +89,21 @@ entt::entity UI_button(const std::string &name,
                        float max_y) {
     std::cout << "UI_button" << std::endl;
 
-    entt::entity entity_ = get_entt_instance().create();
+    entt::entity entity_ = g_entt().create();
 
     /***************创建*******************/
-    get_entt_instance().emplace<logic_render_data *>(entity_, new logic_render_data);
-    get_entt_instance().emplace<Input_Component>(entity_, on_Event);
+    g_entt().emplace<logic_render_data *>(entity_, new logic_render_data);
+    g_entt().emplace<Input_Component>(entity_, on_Event);
 
-    get_entt_instance().emplace<Scene_Component>(entity_);
-    if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity_)) {
+    g_entt().emplace<Scene_Component>(entity_);
+    if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
-    get_entt_instance().emplace<Drag_event>(entity_);
-    get_entt_instance().emplace<Name_component>(entity_, name);
+    g_entt().emplace<Drag_event>(entity_);
+    g_entt().emplace<Name_component>(entity_, name);
 
 
-    auto render = get_entt_instance().get<logic_render_data *>(entity_);
+    auto render = g_entt().get<logic_render_data *>(entity_);
 
     /***************设置参数**********************/
     std::vector<VertexAttrib> vertex_attribs;
@@ -135,10 +134,10 @@ entt::entity UI_button(const std::string &name,
     render->set_vertex_shader("render/shader/different_color.vert");
     render->set_fragment_shader("render/shader/different_color.frag");
 
-    auto &position = get_entt_instance().get<Scene_Component>(entity_);
+    auto &position = g_entt().get<Scene_Component>(entity_);
     position.update_2D_position_matrix();
-
-    add_object_to_render(render);
+    scene_root_add_child(entity_);
+    add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
 
     return entity_;
 

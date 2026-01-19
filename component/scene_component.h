@@ -13,23 +13,25 @@
 #include "shader.h"
 #include "base_element/intersect/objects_intersect_with_point.h"
 
+
 class Scene_Component {
 private:
-    std::vector<entt::entity> parent;
+    entt::entity parent = entt::null;
     Point_2 zoom = {1, 1};
     Point_2 offset = {0, 0};
+    std::vector<entt::entity> children;
 
 public:
     void set_bounding_box(Point_2 min, Point_2 max) {
         bounding_box_ = AABB_centroid<Point_2>(min, max);
     }
 
-    std::vector<entt::entity> children;
+
 
     AABB_centroid<Point_2> bounding_box_; // 每次都直接计算吧。
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+        if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
             if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
             }
@@ -40,7 +42,7 @@ public:
     static bool check_entity_children_intersect_point(std::vector<entt::entity> *return_value,
                                                       entt::entity entity,
                                                       const Point_2 &current_position) {
-        if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(entity)) {
+        if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
             for (const entt::entity children_entity: scene_node->children) {
                 if (check_entity_intersect_point(children_entity, current_position)) {
                     return_value->push_back(children_entity);
@@ -52,15 +54,20 @@ public:
     }
 
     void add_parent(entt::entity entity) {
-        parent.push_back(entity);
+        parent = entity;
     }
 
-    void remove_parent(entt::entity entity) {
-        parent.erase(std::remove(parent.begin(), parent.end(), entity), parent.end());
+    entt::entity get_parent() const {
+        return parent;
+    }
+
+
+    void remove_parent() {
+        parent = entt::null;
     }
 
     void remove_children(entt::entity entity) {
-        parent.erase(std::remove(parent.begin(), parent.end(), entity), parent.end());
+        children.erase(std::remove(children.begin(), children.end(), entity), children.end());
     }
 
     void add_child(entt::entity entity) {
@@ -76,9 +83,9 @@ public:
     }
 
     bool update_2D_position_matrix() {
-        const auto &storage = get_entt_instance().storage<Scene_Component>();
+        const auto &storage = g_entt().storage<Scene_Component>();
         const auto entity = entt::to_entity(storage, *this);
-        if (auto render = get_entt_instance().try_get<logic_render_data *>(entity)) {
+        if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
             data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            // {0.01f , 0.01f, 1.0},
@@ -95,11 +102,11 @@ public:
     }
 
     bool update_position() {
-        const auto &storage = get_entt_instance().storage<Scene_Component>();
+        const auto &storage = g_entt().storage<Scene_Component>();
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto render = get_entt_instance().try_get<logic_render_data *>(entity)) {
+        if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
             data_value_or_ptr data{};
             Shader_object::set_model_transform_zoom_rotate(data.vec_4,
                                                            {zoom.x, zoom.y, 1.0},
@@ -128,8 +135,8 @@ public:
 };
 
 // 回调函数
-static inline void cleanup_logic_render_data(entt::registry &reg, entt::entity ent) {
-    if (auto render_data = reg.try_get<logic_render_data *>(ent))
+static inline void cleanup_logic_render_data(entt::registry &reg, const entt::entity ent) {
+    if (const auto render_data = reg.try_get<logic_render_data *>(ent))
         clean_object_to_render(*render_data);
 }
 
@@ -137,13 +144,13 @@ class scene_root {
 public:
     // 获取全局唯一的注册表引用
     static entt::entity &get() {
-        static entt::entity instance = get_entt_instance().create();;
+        static entt::entity instance = g_entt().create();;
         static std::once_flag flag;
 
         std::call_once(flag, []() {
-                           get_entt_instance().emplace<Scene_Component>(instance);
-                           get_entt_instance().emplace<Name_component>(instance, "scene_root");
-                           if (auto *scene_node = get_entt_instance().try_get<Scene_Component>(instance)) {
+                           g_entt().emplace<Scene_Component>(instance);
+                           g_entt().emplace<Name_component>(instance, "scene_root");
+                           if (auto *scene_node = g_entt().try_get<Scene_Component>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {
                                                                 static_cast<float>(get_win_WIDTH()),
@@ -151,7 +158,7 @@ public:
                                                             });
                            }
                            // 在系统初始化时
-                           get_entt_instance().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
+                           g_entt().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
                        }
         );
 
@@ -170,7 +177,7 @@ static entt::entity &get_scene_root() {
 
 inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_position) {
     std::vector<entt::entity> return_value;
-    auto scene_root_node = get_scene_root();
+    const auto scene_root_node = get_scene_root();
     return_value.push_back(scene_root_node);
     Scene_Component::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
     return return_value;
@@ -183,11 +190,59 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
  */
 inline void scene_root_add_child(entt::entity entity) {
     auto root = get_scene_root();
-    auto &parent_scene = get_entt_instance().get<Scene_Component>(root);
-    auto &children_scene = get_entt_instance().get<Scene_Component>(entity);
+    auto &parent_scene = g_entt().get<Scene_Component>(root);
+    auto &children_scene = g_entt().get<Scene_Component>(entity);
     parent_scene.add_child(entity);
-    children_scene.add_parent(entity);
+    children_scene.add_parent(root);
 }
 
+inline void scene_add_child(entt::entity parent_entity, entt::entity children_entity) {
+    if (g_entt().all_of<Scene_Component>(parent_entity) &&
+        g_entt().all_of<Scene_Component>(children_entity)) {
+        auto &parent_scene = g_entt().get<Scene_Component>(parent_entity);
+        auto &children_scene = g_entt().get<Scene_Component>(children_entity);
+
+        parent_scene.add_child(children_entity);
+        children_scene.add_parent(parent_entity);
+    }
+}
+
+inline bool add_relation(const entt::entity parent_entity, const entt::entity children_entity) {
+    if (g_entt().all_of<Scene_Component>(parent_entity)) {
+        auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
+        entity_scene.add_child(children_entity);
+    }
+    if (g_entt().all_of<Scene_Component>(children_entity)) {
+        auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
+        entity_scene.add_parent(parent_entity);
+    }
+    return true;
+}
+
+static entt::entity get_parent(const entt::entity entity) {
+    if (g_entt().all_of<Scene_Component>(entity)) {
+        const auto &entity_scene = g_entt().get<Scene_Component>(entity);
+        return entity_scene.get_parent();
+    }
+    return entt::null;
+}
+
+inline bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity) {
+    if (g_entt().all_of<Scene_Component>(parent_entity)) {
+        auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
+        entity_scene.remove_children(children_entity);
+    }
+    if (g_entt().all_of<Scene_Component>(children_entity)) {
+        auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
+        entity_scene.remove_parent();
+    }
+    return true;
+}
+
+inline bool clear_parent_relation(const entt::entity children_entity) {
+    const auto parent_scene = get_parent(children_entity);
+    clear_relation(parent_scene, children_entity);
+    return true;
+}
 
 #endif //HELLO_MAC_SCENE_COMPONENT_H

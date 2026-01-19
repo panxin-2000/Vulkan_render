@@ -20,7 +20,7 @@ private:
 };
 
 
-static entt::registry &get_entt_instance() {
+static entt::registry &g_entt() {
     return entt_user::get();
 }
 
