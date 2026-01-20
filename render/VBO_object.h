@@ -37,6 +37,20 @@ static void create_vertex_buffer(const Vertices_type &share_point,
     }
 }
 
+static void delete_vertex_buffer(const Vertices_type &share_point,
+                                 std::map<Vertices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            it->second.shared_number--;
+            if (it->second.shared_number == 0) {
+                glDeleteBuffers(1, &it->second.buffer);
+                map->erase(it);
+            }
+        }
+    }
+}
+
 
 static void create_element_buffer(const Indices_type &share_point,
                                   std::map<Indices_type, buffer_and_share> *map) {
@@ -59,6 +73,20 @@ static void create_element_buffer(const Indices_type &share_point,
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, NULL_GPU_INDEX);
             map->insert({share_point, {buffer, 1}});
             // 创建EBO
+        }
+    }
+}
+
+static void delete_element_buffer(const Indices_type &share_point,
+                                  std::map<Indices_type, buffer_and_share> *map) {
+    if (share_point != nullptr) {
+        auto it = map->find(share_point);
+        if (it != map->end()) {
+            it->second.shared_number--;
+            if (it->second.shared_number == 0) {
+                glDeleteBuffers(1, &it->second.buffer);
+                map->erase(it);
+            }
         }
     }
 }

@@ -87,6 +87,20 @@ public:
         }
     }
 
+    static void delete_vertex_shader(const std::string &path,
+                                     std::map<std::string, shader_and_share> *map) {
+        if (path.empty() == false) {
+            auto it = map->find(path);
+            if (it != map->end()) {
+                it->second.shared_number--;
+                if (it->second.shared_number == 0) {
+                    glDeleteShader(it->second.shader);
+                    map->erase(it);
+                }
+            }
+        }
+    }
+
     static void create_fragment_shader(const std::string &path,
                                        std::map<std::string, shader_and_share> *map) {
         if (path.empty() == false) {
@@ -118,6 +132,20 @@ public:
         }
     }
 
+    static void delete_fragment_shader(const std::string &path,
+                                       std::map<std::string, shader_and_share> *map) {
+        if (path.empty() == false) {
+            auto it = map->find(path);
+            if (it != map->end()) {
+                it->second.shared_number--;
+                if (it->second.shared_number == 0) {
+                    glDeleteShader(it->second.shader);
+                    map->erase(it);
+                }
+            }
+        }
+    }
+
     static void create_geometry_shader(const std::string &path,
                                        std::map<std::string, shader_and_share> *map) {
         if (path.empty() == false) {
@@ -145,6 +173,20 @@ public:
                 checkCompileErrors(shader, "GEOMETRY");
                 map->insert({path, {shader, 1}});
                 // 创建EBO
+            }
+        }
+    }
+
+    static void delete_geometry_shader(const std::string &path,
+                                       std::map<std::string, shader_and_share> *map) {
+        if (path.empty() == false) {
+            auto it = map->find(path);
+            if (it != map->end()) {
+                it->second.shared_number--;
+                if (it->second.shared_number == 0) {
+                    glDeleteShader(it->second.shader);
+                    map->erase(it);
+                }
             }
         }
     }

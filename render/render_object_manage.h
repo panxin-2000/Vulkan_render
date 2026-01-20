@@ -99,7 +99,12 @@ public:
             if (it != render_objects.end()) {
                 // render_component 只能在这里释放，害怕entt 释放之后会覆盖
                 // 那么这里拿到的资源的字符串就不对了
-
+                Shader_object::delete_vertex_shader(it->logic_data->vertexPath_, &vertex_shader_map_);
+                Shader_object::delete_fragment_shader(it->logic_data->fragmentPath_, &fragment_shader_map_);
+                Shader_object::delete_geometry_shader(it->logic_data->geometryPath_, &geometry_shader_map_);
+                delete_vertex_buffer(it->logic_data->vertices_, &vertices_map_);
+                delete_element_buffer(it->logic_data->indices_, &indices_map_);
+                // 还差一些内容
                 render_objects.erase(it);
             }
             std::cout << " clean_need_objects" << std::endl;
