@@ -132,4 +132,32 @@ struct VertexAttrib {
 };
 
 
+class Texture_TBO {
+public:
+    std::string path_;
+    std::string texture_name_;
+    GLuint texture_;
+    GLenum target_;
+
+    void bind() {
+        if (texture_ != 0) {
+            glBindTexture(target_, texture_);
+        }
+    }
+
+    bool set_texture(const GLuint texture, const GLenum target) {
+        texture_ = texture;
+        target_ = target;
+    }
+
+    bool set_path(const std::string &path, const std::string &texture_name) {
+        this->path_ = path;
+        this->texture_name_ = texture_name;
+        return true;
+    }
+
+    char const *get_texture_name() const {
+        return texture_name_.c_str();
+    }
+};
 #endif //HELLO_MAC_SHADER_COMMON_H

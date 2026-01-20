@@ -9,16 +9,10 @@
 #include <GL/glew.h>
 #include "stb_image.h"
 
-class Texture_TBO {
+class Texture_logic {
 public:
     std::string path_;
     std::string texture_name_;
-
-    void bind() {
-        // if (TBO != 0) {
-        // glBindTexture(GL_TEXTURE_2D, TBO);
-        // }
-    }
 
     bool set_path(const std::string &path, const std::string &texture_name) {
         this->path_ = path;

@@ -13,7 +13,7 @@
 
 #include <type_traits>
 
-#include "texture_TBO.h"
+#include "Texture_logic.h"
 #include "utility.h"
 
 
@@ -57,7 +57,7 @@ class logic_render_data : public NonCopyable {
     };
 
 public:
-    std::vector<Texture_TBO> textures;
+    std::vector<Texture_logic> textures;
     std::vector<vertex_and_attributes> vertex_and_attributes;
     std::string debug_name;
     mutable std::mutex mtx;
@@ -114,7 +114,7 @@ public:
 
     void set_texture(const std::string &path, const std::string &texture_name) {
         add_mutex;
-        Texture_TBO temp;
+        Texture_logic temp;
         temp.set_path(path, texture_name);
         textures.push_back(temp);
     }
