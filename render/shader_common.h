@@ -60,6 +60,11 @@ struct shader_and_share {
     uint16_t shared_number;
 };
 
+struct texture_and_share {
+    unsigned int texture;
+    uint16_t shared_number;
+};
+
 
 struct buffer_and_share {
     unsigned int buffer;

@@ -29,6 +29,7 @@ private:
     std::map<std::string, shader_and_share> vertex_shader_map_;
     std::map<std::string, shader_and_share> fragment_shader_map_;
     std::map<std::string, shader_and_share> geometry_shader_map_;
+    std::map<std::string, texture_and_share> texture_map_;
     std::map<Vertices_type, buffer_and_share> vertices_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
 
