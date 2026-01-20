@@ -15,7 +15,7 @@
 #include <GL/glew.h>
 
 #include "VBO_object.h"
-#include "texture_TBO.h"
+#include "Texture_logic.h"
 #include "shader.h"
 
 
@@ -24,12 +24,29 @@
 
 class Render_thread_data : public NonCopyable {
 private:
-    std::vector<Texture_TBO> TBO;
 
 public:
     GLuint VAO;
+    std::vector<Texture_TBO> TBO_s_;
     Shader_object shader_object_ = {};
-    int size;
+    int size_;
+    bool have_indices_ = false;
+
+    int get_draw_size() const {
+        return size_;
+    }
+
+    void set_have_indices_(bool have_indices) {
+        have_indices_ = have_indices;
+    }
+
+    bool get_have_indices() const {
+        return have_indices_;
+    }
+
+    void set_draw_size(const int size) {
+        size_ = size;
+    }
 
     Render_thread_data() {
     }
@@ -38,46 +55,39 @@ public:
         glGenVertexArrays(1, &VAO);
     }
 
-    bool bindVAO() {
+    bool bind_VAO() const {
         glBindVertexArray(VAO);
+        return true;
     }
 
-    bool unbindVAO() {
+    bool unbind_VAO() const {
         glBindVertexArray(NULL_GPU_INDEX);
+        return true;
     }
 
 
     ~Render_thread_data() {
     }
 
-    bool add_texture_path(char const *path, char const *texture_name) {
-        Texture_TBO texture;
-        texture.set_path(path, texture_name);
-        TBO.push_back(texture);
-    }
-
 
     void draw() {
         shader_object_.use_shader_program();
 
-        bindVAO();
+        bind_VAO();
 
-        glBindVertexArray(VAO);
-
-        for (int i = 0; i < TBO.size(); ++i) {
+        for (int i = 0; i < TBO_s_.size(); ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
-            TBO.at(i).bind(); // 为什么会有多个区域呢？ 我记得好像是因为可能不同的属性会放置在不同的缓冲区
-            glUniform1i(glGetUniformLocation(shader_object_.get_shader_program(),
-                                             TBO.at(i).get_texture_name()),
-                        i);
-        }
-        // if (EBO_object.EBO_new != nullptr) {
+            TBO_s_.at(i).bind(); // 为什么会有多个区域呢？ 我记得好像是因为可能不同的属性会放置在不同的缓冲区
 
-        glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, (void *) 0);
-        // } else {
-        // glDrawArrays(GL_TRIANGLES, 0, VBO_object.get_draw_count()); //count还是需要去获取的
-        // }
-        unbindVAO();
+            glUniform1i(glGetUniformLocation(shader_object_.get_shader_program(),
+                                             TBO_s_.at(i).get_texture_name()), i);
+        }
+        if (get_have_indices() == true) {
+            glDrawElements(GL_TRIANGLES, get_draw_size(), GL_UNSIGNED_INT, (void *) 0);
+        } else {
+            glDrawArrays(GL_TRIANGLES, 0, get_draw_size());
+        }
+        unbind_VAO();
     }
 };
 

@@ -53,14 +53,12 @@ void render_object_manage::init_VAO_bind_buffer() {
         data.logic_data = user_render_component;
         data.render_data = new Render_thread_data;
         data.render_data->create_VAO();
-        data.render_data->bindVAO();
+        data.render_data->bind_VAO();
         bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
         int stride = 0;
-        for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
-            stride += user_render_component->vertex_attribs[i].size * get_glenum_length(
-                user_render_component->vertex_attribs[i].type);
+        for (const auto &vertex_attrib: user_render_component->vertex_attribs) {
+            stride += vertex_attrib.size * get_glenum_length(vertex_attrib.type);
         }
-
         int pointer = 0;
         for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
             glVertexAttribPointer(i, user_render_component->vertex_attribs[i].size,
@@ -74,9 +72,17 @@ void render_object_manage::init_VAO_bind_buffer() {
         }
 
         bind_element_buffer(user_render_component->indices_, &indices_map_);
-        data.render_data->unbindVAO();
+        data.render_data->unbind_VAO();
+        if (user_render_component->indices_ != nullptr)
+            data.render_data->set_draw_size(user_render_component->indices_->size());
+        else
+            data.render_data->set_draw_size(user_render_component->vertices_->size());
 
-        data.render_data->size = user_render_component->indices_->size();
+        for (const auto &texture_logic: user_render_component->textures) {
+            Texture_TBO temp;
+            temp.set_path(texture_logic.path_, texture_logic.texture_name_);
+            // temp.set_texture(); // 需要查找后设置。
+        }
 
         data.render_data->shader_object_.shader_init_and_attach(user_render_component,
                                                                 &vertex_shader_map_,
