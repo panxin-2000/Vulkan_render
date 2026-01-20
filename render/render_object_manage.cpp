@@ -4,6 +4,8 @@
 
 #include "render_object_manage.h"
 
+#include "texture.h"
+
 /**
  * 添加 render_object 到管理，并进行初始化，现在是加入时就初始化，
  * 之后，复杂了之后，可以是需要渲染时再初始化并渲染
@@ -42,6 +44,7 @@ void render_object_manage::init_logic_need_resources() {
         Shader_object::create_geometry_shader(user_render_component->geometryPath_, &geometry_shader_map_);
         create_vertex_buffer(user_render_component->vertices_, &vertices_map_);
         create_element_buffer(user_render_component->indices_, &indices_map_);
+        create_texture(user_render_component->textures, &texture_map_);
 
         // 内容都创建完成了。之后应该怎么做呢？ 绑定。
     }
@@ -81,7 +84,7 @@ void render_object_manage::init_VAO_bind_buffer() {
         for (const auto &texture_logic: user_render_component->textures) {
             Texture_TBO temp;
             temp.set_path(texture_logic.path_, texture_logic.texture_name_);
-            // temp.set_texture(); // 需要查找后设置。
+            // temp.set_texture(); // 需要查找后设置。// todo:
         }
 
         data.render_data->shader_object_.shader_init_and_attach(user_render_component,
