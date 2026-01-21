@@ -51,19 +51,13 @@ bool clean_object_to_render(logic_render_data *render_object);
 
 
 class logic_render_data : public NonCopyable {
-    struct vertex_and_attributes {
-        Vertices_type vertices_;
-        std::vector<VertexAttrib> vertex_attribs;
-    };
 
 public:
     std::vector<Texture_logic> textures;
-    std::vector<vertex_and_attributes> vertex_and_attributes;
+    std::vector<vertex_and_attributes> vertex_and_attributes_;
     std::string debug_name;
     mutable std::mutex mtx;
-    Vertices_type vertices_;
     Indices_type indices_;
-    std::vector<VertexAttrib> vertex_attribs;
     std::string texture_path_;
     std::string texture_name_;
     std::string vertexPath_;
@@ -81,6 +75,10 @@ public:
     ~logic_render_data() {
     }
 
+    void push_vertex_and_attributes(vertex_and_attributes temp) {
+        vertex_and_attributes_.push_back(temp);
+    }
+
 
     void set_status_change(const status_change status) {
         status_ = status_ | status;
@@ -94,14 +92,6 @@ public:
 
 #define add_mutex std::lock_guard<std::mutex> lock(mtx);
 
-    void set_vertices(std::shared_ptr<std::vector<Point_3> > vertices) {
-        add_mutex;
-        vertices_ = std::move(vertices);
-    }
-
-    auto get_vertices() const {
-        return vertices_;
-    }
 
     auto get_indices() const {
         return indices_;

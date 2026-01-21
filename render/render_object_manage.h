@@ -103,8 +103,11 @@ public:
                 Shader_object::delete_vertex_shader(it->logic_data->vertexPath_, &vertex_shader_map_);
                 Shader_object::delete_fragment_shader(it->logic_data->fragmentPath_, &fragment_shader_map_);
                 Shader_object::delete_geometry_shader(it->logic_data->geometryPath_, &geometry_shader_map_);
-                delete_vertex_buffer(it->logic_data->vertices_, &vertices_map_);
+                for (auto temp: it->logic_data->vertex_and_attributes_) {
+                    delete_vertex_buffer(temp.vertices_, &vertices_map_);
+                }
                 delete_element_buffer(it->logic_data->indices_, &indices_map_);
+
                 // 还差一些内容
                 render_objects.erase(it);
             }

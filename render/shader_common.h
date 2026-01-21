@@ -76,6 +76,7 @@ class logic_render_data;
 using Vertices_type = std::shared_ptr<std::vector<Point_3> >;
 using Indices_type = std::shared_ptr<std::vector<unsigned int> >;
 
+
 enum Uniforms_type {
     gl_bool,
     gl_int,
@@ -129,6 +130,11 @@ struct VertexAttrib {
                  GLboolean normalized
     ) : size(size), type(type), normalized(normalized) {
     }
+};
+
+struct vertex_and_attributes {
+    Vertices_type vertices_;
+    std::vector<VertexAttrib> vertex_attribs;
 };
 
 

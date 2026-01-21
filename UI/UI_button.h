@@ -137,10 +137,10 @@ entt::entity UI_button(const std::string &name,
         // 参数这里最重要的是下面的两行
 
         // 参数这里最重要的是下面的两行
+        vertex_and_attributes temp = {vertices, vertex_attribs};
         render->debug_name = name;
-        render->set_vertices(vertices);
+        render->push_vertex_and_attributes(temp);
         render->set_indices(indices);
-        render->vertex_attribs = vertex_attribs;
         render->set_vertex_shader("render/shader/different_color.vert");
         render->set_fragment_shader("render/shader/different_color.frag");
 

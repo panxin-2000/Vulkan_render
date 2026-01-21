@@ -42,7 +42,9 @@ void render_object_manage::init_logic_need_resources() {
         Shader_object::create_vertex_shader(user_render_component->vertexPath_, &vertex_shader_map_);
         Shader_object::create_fragment_shader(user_render_component->fragmentPath_, &fragment_shader_map_);
         Shader_object::create_geometry_shader(user_render_component->geometryPath_, &geometry_shader_map_);
-        create_vertex_buffer(user_render_component->vertices_, &vertices_map_);
+        for (auto temp: user_render_component->vertex_and_attributes_) {
+            create_vertex_buffer(temp.vertices_, &vertices_map_);
+        }
         create_element_buffer(user_render_component->indices_, &indices_map_);
         create_texture(user_render_component->textures, &texture_map_);
 
@@ -57,29 +59,36 @@ void render_object_manage::init_VAO_bind_buffer() {
         data.render_data = new Render_thread_data;
         data.render_data->create_VAO();
         data.render_data->bind_VAO();
-        bind_vertex_buffer(user_render_component->vertices_, &vertices_map_);
-        int stride = 0;
-        for (const auto &vertex_attrib: user_render_component->vertex_attribs) {
-            stride += vertex_attrib.size * get_glenum_length(vertex_attrib.type);
-        }
-        int pointer = 0;
-        for (int i = 0; i < user_render_component->vertex_attribs.size(); ++i) {
-            glVertexAttribPointer(i, user_render_component->vertex_attribs[i].size,
-                                  user_render_component->vertex_attribs[i].type,
-                                  user_render_component->vertex_attribs[i].normalized,
-                                  stride,
-                                  (const void *) pointer);
-            glEnableVertexAttribArray(i);
-            pointer += user_render_component->vertex_attribs[i].size *
-                    get_glenum_length(user_render_component->vertex_attribs[i].type);
-        }
 
+        for (auto temp: user_render_component->vertex_and_attributes_) {
+            bind_vertex_buffer(temp.vertices_, &vertices_map_);
+            int stride = 0;
+            for (const auto &vertex_attrib: temp.vertex_attribs) {
+                stride += vertex_attrib.size * get_glenum_length(vertex_attrib.type);
+            }
+            int pointer = 0;
+            for (int i = 0; i < temp.vertex_attribs.size(); ++i) {
+                glVertexAttribPointer(i, temp.vertex_attribs[i].size,
+                                      temp.vertex_attribs[i].type,
+                                      temp.vertex_attribs[i].normalized,
+                                      stride,
+                                      (const void *) pointer);
+                glEnableVertexAttribArray(i);
+                pointer += temp.vertex_attribs[i].size *
+                        get_glenum_length(temp.vertex_attribs[i].type);
+            }
+        }
         bind_element_buffer(user_render_component->indices_, &indices_map_);
         data.render_data->unbind_VAO();
-        if (user_render_component->indices_ != nullptr)
+        if (user_render_component->indices_ != nullptr) {
             data.render_data->set_draw_size(user_render_component->indices_->size());
-        else
-            data.render_data->set_draw_size(user_render_component->vertices_->size());
+            data.render_data->set_have_indices_(true);
+        } else {
+            if (user_render_component->vertex_and_attributes_.empty() != false) {
+                data.render_data->set_draw_size(user_render_component->vertex_and_attributes_.at(0).vertices_->size());
+            }
+            data.render_data->set_have_indices_(false);
+        }
 
         for (const auto &texture_logic: user_render_component->textures) {
             Texture_TBO temp;
