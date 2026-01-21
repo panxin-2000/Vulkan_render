@@ -73,7 +73,7 @@ struct buffer_and_share {
 
 class logic_render_data;
 
-using Vertices_type = std::shared_ptr<std::vector<Point_3> >;
+using Vertices_type = std::shared_ptr<void>;
 using Indices_type = std::shared_ptr<std::vector<unsigned int> >;
 
 
@@ -134,6 +134,8 @@ struct VertexAttrib {
 
 struct vertex_and_attributes {
     Vertices_type vertices_;
+    void *data;
+    unsigned long size;
     std::vector<VertexAttrib> vertex_attribs;
 };
 

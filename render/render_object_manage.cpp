@@ -43,7 +43,7 @@ void render_object_manage::init_logic_need_resources() {
         Shader_object::create_fragment_shader(user_render_component->fragmentPath_, &fragment_shader_map_);
         Shader_object::create_geometry_shader(user_render_component->geometryPath_, &geometry_shader_map_);
         for (auto temp: user_render_component->vertex_and_attributes_) {
-            create_vertex_buffer(temp.vertices_, &vertices_map_);
+            create_vertex_buffer(temp.vertices_, temp.size, temp.data, &vertices_map_);
         }
         create_element_buffer(user_render_component->indices_, &indices_map_);
         create_texture(user_render_component->textures, &texture_map_);
@@ -85,7 +85,7 @@ void render_object_manage::init_VAO_bind_buffer() {
             data.render_data->set_have_indices_(true);
         } else {
             if (user_render_component->vertex_and_attributes_.empty() != false) {
-                data.render_data->set_draw_size(user_render_component->vertex_and_attributes_.at(0).vertices_->size());
+                // data.render_data->set_draw_size(user_render_component->vertex_and_attributes_.at(0).vertices_->size());
             }
             data.render_data->set_have_indices_(false);
         }

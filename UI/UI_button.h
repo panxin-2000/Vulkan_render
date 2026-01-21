@@ -118,9 +118,14 @@ entt::entity UI_button(const std::string &name,
         /***************设置参数**********************/
         std::vector<VertexAttrib> vertex_attribs;
         vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
+        vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
         // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-        auto vertices = std::make_shared<std::vector<Point_3> >();
+        struct pos_and_uv {
+            float x, y, z, u, v;
+        };
+
+        auto vertices = std::make_shared<std::vector<pos_and_uv> >();
         auto indices = std::make_shared<std::vector<unsigned int> >();
         // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
 
@@ -130,19 +135,22 @@ entt::entity UI_button(const std::string &name,
         indices->push_back(vertices->size() + 2);
         indices->push_back(vertices->size() + 3);
         indices->push_back(vertices->size() + 0);
-        vertices->emplace_back(min_x, min_y, 0); //0 1 2
-        vertices->emplace_back(max_x, min_y, 0);
-        vertices->emplace_back(max_x, max_y, 0); // 2 3 0
-        vertices->emplace_back(min_x, max_y, 0);
+        vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0}); //0 1 2
+        vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 1, 0});
+        vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 1, 1}); // 2 3 0
+        vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 1});
         // 参数这里最重要的是下面的两行
 
         // 参数这里最重要的是下面的两行
-        vertex_and_attributes temp = {vertices, vertex_attribs};
+        const vertex_and_attributes temp = {
+            vertices, vertices->data(), vertices->size() * sizeof(pos_and_uv), vertex_attribs
+        };
         render->debug_name = name;
         render->push_vertex_and_attributes(temp);
         render->set_indices(indices);
         render->set_vertex_shader("render/shader/different_color.vert");
         render->set_fragment_shader("render/shader/different_color.frag");
+        render->set_texture("resoureces/picture.png", "ourTexture1");
 
         add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
     }

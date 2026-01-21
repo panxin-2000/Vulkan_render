@@ -19,7 +19,7 @@ static void bind_vertex_buffer(const Vertices_type &share_point,
 }
 
 
-static void create_vertex_buffer(const Vertices_type &share_point,
+static void create_vertex_buffer(const Vertices_type &share_point, uint64_t size, void *data,
                                  std::map<Vertices_type, buffer_and_share> *map) {
     if (share_point != nullptr) {
         auto it = map->find(share_point);
@@ -29,7 +29,7 @@ static void create_vertex_buffer(const Vertices_type &share_point,
             unsigned int buffer = 0;
             glGenBuffers(1, &buffer);
             glBindBuffer(GL_ARRAY_BUFFER, buffer);
-            glBufferData(GL_ARRAY_BUFFER, share_point->size() * sizeof(Point_3), share_point->data(), GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
             glBindBuffer(GL_ARRAY_BUFFER, NULL_GPU_INDEX);
             map->insert({share_point, {buffer, 1}});
             // 创建VBO
