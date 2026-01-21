@@ -51,7 +51,6 @@ bool clean_object_to_render(logic_render_data *render_object);
 
 
 class logic_render_data : public NonCopyable {
-
 public:
     std::vector<Texture_logic> textures;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
@@ -105,6 +104,7 @@ public:
     void set_texture(const std::string &path, const std::string &texture_name) {
         add_mutex;
         Texture_logic temp;
+        temp.texture_type_ = texture_2d;
         temp.set_path(path, texture_name);
         textures.push_back(temp);
     }

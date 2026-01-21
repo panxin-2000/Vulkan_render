@@ -93,7 +93,14 @@ void render_object_manage::init_VAO_bind_buffer() {
         for (const auto &texture_logic: user_render_component->textures) {
             Texture_TBO temp;
             temp.set_path(texture_logic.path_, texture_logic.texture_name_);
-            // temp.set_texture(); // 需要查找后设置。// todo:
+            if (texture_logic.path_.empty() == false) {
+                auto it = texture_map_.find(texture_logic.path_);
+                if (it != texture_map_.end()) {
+                    temp.texture_ = it->second.texture;
+                    temp.target_ = GL_TEXTURE_2D;
+                }
+            }
+            data.render_data->TBO_s_.push_back(temp);
         }
 
         data.render_data->shader_object_.shader_init_and_attach(user_render_component,

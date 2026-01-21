@@ -144,8 +144,8 @@ class Texture_TBO {
 public:
     std::string path_;
     std::string texture_name_;
-    GLuint texture_;
-    GLenum target_;
+    GLuint texture_ = 0;
+    GLenum target_ = 0;
 
     void bind() {
         if (texture_ != 0) {
