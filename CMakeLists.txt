@@ -78,6 +78,12 @@ file(GLOB_RECURSE RENDER
         "render/stb_image.cpp"
 )
 
+file(GLOB_RECURSE vulkan_code
+        "vulkan_code/glfw_vulkan.cpp"
+        "vulkan_code/vulkan_utility.cpp"
+)
+include_directories(vulkan_code)
+
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"
@@ -187,6 +193,6 @@ find_package(TBB REQUIRED)
 
 
 add_executable(learn_openGL main.cpp
-        ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW})
+        ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
 
