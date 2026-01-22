@@ -150,6 +150,39 @@ file(GLOB_RECURSE INPUT_DEVICE
 find_package(TBB REQUIRED)
 
 
+#######################################vulkan#####################################
+
+# Use FindVulkan module added with CMAKE 3.7
+if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
+    message(STATUS "Using module to find Vulkan")
+    find_package(Vulkan REQUIRED)
+endif ()
+
+## 关于vulkan的内容，尽量聚拢到一起
+IF (NOT Vulkan_FOUND)
+    message(FATAL_ERROR "Could not find Vulkan library!")
+ELSE ()
+
+    message(STATUS "Vulkan include direction" : ${Vulkan_INCLUDE_DIR})
+    message(STATUS "Vulkan LIBRARY direction" : ${Vulkan_LIBRARY})
+    string(REGEX REPLACE "libvulkan.dylib" "" VULKAN_LIBRARIES_DIRECTORY ${Vulkan_LIBRARY})
+    message(STATUS "Vulkan include_directories" : ${VULKAN_LIBRARIES_DIRECTORY})
+    include_directories(${Vulkan_INCLUDE_DIR})
+    link_directories(${VULKAN_LIBRARIES_DIRECTORY})  # 一个稍微好一点的方式去除掉了最后的文件的内容，而不是用绝对的字符串
+    #    我个人感觉find之后引用相应的文件夹比较好，所以我改到这里的了，至于之后链接，这个没有办法了，需要看相应的应用层面的事情了
+    # Force validation at compile time
+    if (FORCE_VALIDATION)
+        add_definitions(-DFORCE_VALIDATION)
+    endif ()
+ENDIF ()
+
+
+set(LIBRARIES "Vulkan::Vulkan")
+
+#######################################vulkan#####################################
+
+
+
 ## 下面这行没有看懂什么意思，按照说明先复制过来了
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 #FetchContent_MakeAvailable() 命令会确保指定的依赖项已被填充

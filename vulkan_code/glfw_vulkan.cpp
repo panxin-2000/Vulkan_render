@@ -3,15 +3,11 @@
 //
 
 // 下面这个只能在一个 cpp 文件中定义
-#define VOLK_IMPLEMENTATION
 
 #include "glfw_vulkan.h"
 
 
 vulkan_create_screen::vulkan_create_screen() {
-    if (volkInitialize() != VK_SUCCESS) {
-        return;
-    }
     glfwInit();
 
     // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -21,8 +17,12 @@ vulkan_create_screen::vulkan_create_screen() {
     // glfwSetWindowUserPointer(window_, this);
 
     createInstance();
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
+    {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
+    }
 
     createSurface();
 
@@ -35,37 +35,45 @@ vulkan_create_screen::~vulkan_create_screen() {
 
 void vulkan_create_screen::createInstance() {
     VkApplicationInfo appInfo{};
-    appInfo.pApplicationName = ApplicationName.c_str();
-    appInfo.applicationVersion = applicationVersion;
-    appInfo.pEngineName = EngineName.c_str();
-    appInfo.engineVersion = engineVersion;
-    appInfo.apiVersion = apiVersion;
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "ApplicationName.c_str()";
+    appInfo.applicationVersion = 123;
+    appInfo.pEngineName = "EngineName.c_str()";
+    appInfo.engineVersion = 12;
+    appInfo.apiVersion = VK_API_VERSION_1_0;
     appInfo.pNext = nullptr;
 
+    std::vector<const char *> instanceExtensions;
+
+
     VkInstanceCreateInfo instanceCreateInfo{};
-    instanceCreateInfo.pApplicationInfo = nullptr;
-    add_platform_need_instance_extensions(instanceCreateInfo, instanceExtensions);
-#ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
-    // VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    // add_validationLayers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
-#else
+    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instanceCreateInfo.pApplicationInfo = &appInfo;
+    instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    instanceExtensions.push_back("VK_KHR_surface");
+    instanceExtensions.push_back("VK_EXT_metal_surface");
+    instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+    instanceExtensions.push_back("VK_KHR_portability_enumeration");
 
-#endif
+    instanceCreateInfo.enabledExtensionCount = instanceExtensions.size();
+    instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-    uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-    for (auto extension: extensions) {
-        instanceExtensions.push_back(extension);
+    auto err = vkCreateInstance(&instanceCreateInfo, nullptr, &instance_); {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
+    } {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
+    } {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
     }
-    instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-
-    if (instanceExtensions.size() > 0) {
-        instanceCreateInfo.enabledExtensionCount = instanceExtensions.size();
-        instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
-    }
-    VK_CHECK_RESULT(vkCreateInstance(&instanceCreateInfo, Allocator,&instance_));
 }
 
 void vulkan_create_screen::createSurface() {

@@ -10,9 +10,6 @@
 #include <string>
 #include <vector>
 
-#define GLEW_STATIC
-#include <GLFW/glfw3.h>
-
 class vulkan_create_screen {
 public:
     // ApplicationInfo 的参数
