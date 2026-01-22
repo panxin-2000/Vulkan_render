@@ -82,7 +82,9 @@ include_directories(windows)
 file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"
 )
-
+if (APPLE)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
+endif ()
 include_directories(event)
 include_directories(singleton)
 include_directories(labyrinth)
