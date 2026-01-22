@@ -25,5 +25,5 @@ int main() {
 
     // create_button("按钮2", 35, 20, 45, 30);
 
-    add_render_windows();
+    // add_render_windows();
 }

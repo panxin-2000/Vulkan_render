@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#define GLEW_STATIC
+#include <GLFW/glfw3.h>
 
 class vulkan_create_screen {
 public:
@@ -28,10 +30,20 @@ public:
     ~vulkan_create_screen();
 
     // 需要给外部看到的变量
-    VkInstance instance{VK_NULL_HANDLE};
+    GLFWwindow *window_ = nullptr;
+    VkInstance instance_ = VK_NULL_HANDLE;
+    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
+    VkDevice device_ = VK_NULL_HANDLE;
 
 private:
     void createInstance();
+
+    void createSurface();
+
+    bool choose_one_physical_device(VkPhysicalDevice &PhysicalDevice);
+
+    void createDevice();
 };
 
 

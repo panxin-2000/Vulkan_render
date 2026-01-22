@@ -2,6 +2,46 @@ cmake_minimum_required(VERSION 3.27)
 project(hello_mac)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
+
+
+IF (WIN32)
+    # Nothing here (yet)
+ELSEIF (APPLE)
+    link_libraries(${Vulkan_LIBRARY} "-framework AppKit" "-framework QuartzCore")         #这一行不知道有什么作用，但是 target_link_libraries 我还是知道有什么作用的
+ELSE (WIN32)
+    link_libraries(${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${Vulkan_LIBRARY} ${DIRECTFB_LIBRARIES} ${WAYLAND_CLIENT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+ENDIF (WIN32)
+
+#######################################vulkan#####################################
+
+
+# Use FindVulkan module added with CMAKE 3.7
+if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
+    message(STATUS "Using module to find Vulkan")
+    find_package(Vulkan REQUIRED)
+endif ()
+
+# 关于vulkan的内容，尽量聚拢到一起
+IF (NOT Vulkan_FOUND)
+    message(FATAL_ERROR "Could not find Vulkan library!")
+ELSE ()
+
+    message(STATUS "Vulkan include direction" : ${Vulkan_INCLUDE_DIR})
+    message(STATUS "Vulkan LIBRARY direction" : ${Vulkan_LIBRARY})
+    string(REGEX REPLACE "libvulkan.dylib" "" VULKAN_LIBRARIES_DIRECTORY ${Vulkan_LIBRARY})
+    message(STATUS "Vulkan include_directories" : ${VULKAN_LIBRARIES_DIRECTORY})
+    include_directories(${Vulkan_INCLUDE_DIR})
+    link_directories(${VULKAN_LIBRARIES_DIRECTORY})  # 一个稍微好一点的方式去除掉了最后的文件的内容，而不是用绝对的字符串
+    #    我个人感觉find之后引用相应的文件夹比较好，所以我改到这里的了，至于之后链接，这个没有办法了，需要看相应的应用层面的事情了
+    # Force validation at compile time
+    if (FORCE_VALIDATION)
+        add_definitions(-DFORCE_VALIDATION)
+    endif ()
+ENDIF ()
+
+#######################################vulkan#####################################
 
 
 find_package(Curses REQUIRED)
@@ -194,5 +234,5 @@ find_package(TBB REQUIRED)
 
 add_executable(learn_openGL main.cpp
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
-target_link_libraries(learn_openGL GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(learn_openGL GLFW Vulkan::Vulkan TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
 

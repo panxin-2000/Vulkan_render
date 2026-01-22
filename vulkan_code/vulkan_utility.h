@@ -16,4 +16,20 @@ void add_validationLayers(VkInstanceCreateInfo &instanceCreateInfo, VkDebugUtils
 
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,
                                            std::vector<const char *> &instanceExtensions);
+
+std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance);
+
+std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysicalDevice &device);
+
+bool check_have_present_support(const VkPhysicalDevice &device,
+                                VkQueueFamilyProperties &queueFamily,
+                                const int queueFamilyIndex,
+                                const VkSurfaceKHR &surface);
+
+
+bool check_have_queue_graphics(const VkQueueFamilyProperties &queueFamily);
+
+bool check_have_queue_compute(const VkQueueFamilyProperties &queueFamily);
+
+bool check_have_queue_transfer(const VkQueueFamilyProperties &queueFamily);
 #endif //HELLO_MAC_VULKAN_UTILITY_H

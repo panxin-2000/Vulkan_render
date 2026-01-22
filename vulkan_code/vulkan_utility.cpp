@@ -5,8 +5,9 @@
 #include <iostream>
 #include <vector>
 #include <volk.h>
+#include "vulkan_utility.h"
 
-static std::vector<std::string> get_instance_extensions(void) {
+std::vector<std::string> get_instance_extensions(void) {
     std::vector<std::string> supportedInstanceExtensions;
     uint32_t extCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
@@ -69,4 +70,51 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
         instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
     }
 #endif
+}
+
+std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance) {
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+    return devices;
+}
+
+std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysicalDevice &device) {
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    return queueFamilies;
+}
+
+
+bool check_have_present_support(const VkPhysicalDevice &device,
+                                VkQueueFamilyProperties &queueFamily,
+                                const int queueFamilyIndex,
+                                const VkSurfaceKHR &surface) {
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(device, queueFamilyIndex, surface, &presentSupport);
+    if (presentSupport)
+        return true;
+    return false;
+}
+
+bool check_have_queue_graphics(const VkQueueFamilyProperties &queueFamily) {
+    if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+        return true;
+    return false;
+}
+
+bool check_have_queue_compute(const VkQueueFamilyProperties &queueFamily) {
+    if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        return true;
+    return false;
+}
+
+bool check_have_queue_transfer(const VkQueueFamilyProperties &queueFamily) {
+    if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+        return true;
+    return false;
 }
