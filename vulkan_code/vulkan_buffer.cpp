@@ -95,12 +95,14 @@ void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device,
 
     VkBuffer stagingBuffer{};
     VkDeviceMemory stagingBufferMemory{};
-    createBuffer(physicalDevice, device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    createBuffer(physicalDevice, device, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  stagingBuffer, stagingBufferMemory);
 
     void *data;
-    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data); //参数错误，以改正
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, buffer_data, (size_t) bufferSize);
     //还有其他的传递数值的办法吗？知道memcpy可能会被内核给优化过，最终调用DMA
     //有明显提示调用DMA的函数吗？在这里如何创建多个线程来完成这个工作？
@@ -110,7 +112,31 @@ void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesBuffer, vertexBufferMemory);
     copyBuffer(device, commandPool, graphicsQueue, stagingBuffer, verticesBuffer, bufferSize);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
 
+// 这个函数和上一个函数是一样的
+void createIndexBuffer(VkPhysicalDevice physicalDevice, VkDevice device,
+                       VkCommandPool commandPool, VkQueue graphicsQueue,
+                       void *buffer_data, uint32_t size, VkBuffer &verticesBuffer,
+                       VkDeviceMemory &vertexBufferMemory) {
+    VkDeviceSize bufferSize = size;
+    VkBuffer stagingBuffer{};
+    VkDeviceMemory stagingBufferMemory{};
+    createBuffer(physicalDevice, device, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
+    void *data;
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, buffer_data, (size_t) bufferSize);
+    vkUnmapMemory(device, stagingBufferMemory);
+    createBuffer(physicalDevice, device, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesBuffer, vertexBufferMemory);
+    copyBuffer(device, commandPool, graphicsQueue, stagingBuffer, verticesBuffer, bufferSize);
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
