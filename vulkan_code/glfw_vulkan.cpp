@@ -3,11 +3,15 @@
 //
 
 // 下面这个只能在一个 cpp 文件中定义
+#define VOLK_IMPLEMENTATION
 
 #include "glfw_vulkan.h"
 
 
 vulkan_create_screen::vulkan_create_screen() {
+    if (volkInitialize() != VK_SUCCESS) {
+        return;
+    }
     glfwInit();
 
     // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -16,8 +20,7 @@ vulkan_create_screen::vulkan_create_screen() {
     // window_ = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
     // glfwSetWindowUserPointer(window_, this);
 
-    createInstance();
-    {
+    createInstance(); {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
         std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -30,35 +33,49 @@ vulkan_create_screen::vulkan_create_screen() {
 }
 
 vulkan_create_screen::~vulkan_create_screen() {
+    volkFinalize();
 }
 
 
 void vulkan_create_screen::createInstance() {
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "ApplicationName.c_str()";
-    appInfo.applicationVersion = 123;
-    appInfo.pEngineName = "EngineName.c_str()";
-    appInfo.engineVersion = 12;
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.pApplicationName = ApplicationName.c_str();
+    appInfo.applicationVersion = applicationVersion;
+    appInfo.pEngineName = EngineName.c_str();
+    appInfo.engineVersion = engineVersion;
+    appInfo.apiVersion = apiVersion;
     appInfo.pNext = nullptr;
-
-    std::vector<const char *> instanceExtensions;
-
 
     VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &appInfo;
-    instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    add_platform_need_instance_extensions(instanceCreateInfo, instanceExtensions);
+
+#ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
+    // VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    // add_validationLayers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
+#else
+
+#endif
     instanceExtensions.push_back("VK_KHR_surface");
-    instanceExtensions.push_back("VK_EXT_metal_surface");
     instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
-    instanceExtensions.push_back("VK_KHR_portability_enumeration");
 
     instanceCreateInfo.enabledExtensionCount = instanceExtensions.size();
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-    auto err = vkCreateInstance(&instanceCreateInfo, nullptr, &instance_); {
+    if (instanceExtensions.size() > 0) {
+        instanceCreateInfo.enabledExtensionCount = instanceExtensions.size();
+        instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
+    } else {
+        instanceCreateInfo.enabledExtensionCount = 0;
+        instanceCreateInfo.ppEnabledExtensionNames = nullptr;
+    }
+    auto err = vkCreateInstance(&instanceCreateInfo, nullptr, &instance_);
+    if (err != VK_SUCCESS) {
+    } else {
+        volkLoadInstance(instance_);
+    } {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
         std::vector<VkPhysicalDevice> devices(deviceCount);

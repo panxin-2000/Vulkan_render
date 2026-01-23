@@ -4,8 +4,7 @@
 
 #ifndef HELLO_MAC_VULKAN_GLOBAL_MACRO_H
 #define HELLO_MAC_VULKAN_GLOBAL_MACRO_H
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "volk.h"
 
 #include <iostream>
 #include <assert.h>

@@ -42,6 +42,7 @@ ELSE ()
 ENDIF ()
 
 #######################################vulkan#####################################
+add_definitions(-DVK_NO_PROTOTYPES)
 
 
 find_package(Curses REQUIRED)
@@ -180,7 +181,6 @@ ENDIF ()
 set(LIBRARIES "Vulkan::Vulkan")
 
 #######################################vulkan#####################################
-
 
 
 ## 下面这行没有看懂什么意思，按照说明先复制过来了

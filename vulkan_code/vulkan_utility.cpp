@@ -56,6 +56,13 @@ void add_validationLayers(VkInstanceCreateInfo &instanceCreateInfo, VkDebugUtils
     }
 }
 
+/**
+ *  VK_EXT_metal_surface
+ *  VK_KHR_portability_enumeration
+ *  instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+ * @param instanceCreateInfo
+ * @param instanceExtensions
+ */
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,
                                            std::vector<const char *> &instanceExtensions) {
 #if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)) && defined(VK_KHR_portability_enumeration)
