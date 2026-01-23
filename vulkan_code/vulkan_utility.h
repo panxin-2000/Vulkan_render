@@ -12,16 +12,14 @@
 
 #include "vulkan_global_macro.h"
 
+#include "vulkan_validation_layer.h"
 
 std::vector<std::string> get_instance_extensions(void);
 
-void add_validationLayers(VkInstanceCreateInfo &instanceCreateInfo, VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfo,
-                          std::vector<const char *> &instanceExtensions);
 
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,
                                            std::vector<const char *> &instanceExtensions);
 
-void add_device_validation_layers(VkDeviceCreateInfo &createInfo);
 
 std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance);
 

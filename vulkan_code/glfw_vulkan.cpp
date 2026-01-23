@@ -48,7 +48,7 @@ void vulkan_create_screen::createInstance() {
 
 #ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    add_validationLayers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
+    add_instance_validation_layers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
 #else
 
 #endif
