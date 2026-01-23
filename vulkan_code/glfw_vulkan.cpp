@@ -16,24 +16,13 @@ vulkan_create_screen::vulkan_create_screen() {
         return;
     }
 #endif
-    glfwInit();
-
-    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-    // window_ = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
-    // glfwSetWindowUserPointer(window_, this);
-
-    createInstance(); {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
-    }
+    createInstance();
 
     createSurface();
 
     choose_one_physical_device(physical_device_);
+
+    //
 }
 
 vulkan_create_screen::~vulkan_create_screen() {
@@ -57,8 +46,8 @@ void vulkan_create_screen::createInstance() {
     add_platform_need_instance_extensions(instanceCreateInfo, instanceExtensions);
 
 #ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
-    // VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    // add_validationLayers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    add_validationLayers(instanceCreateInfo, debugCreateInfo, instanceExtensions);
 #else
 
 #endif
@@ -81,27 +70,20 @@ void vulkan_create_screen::createInstance() {
 #ifdef ENGINE_USE_VOLK
         volkLoadInstance(instance_);
 #endif
-    } {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
-    } {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
-    } {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
     }
 }
 
 void vulkan_create_screen::createSurface() {
-    if (auto value = glfwCreateWindowSurface(instance_, window_, Allocator, &surface_) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
+    glfwInit();
+    if (GLFW_TRUE == glfwVulkanSupported()) {
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        window_ = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
+        glfwSetWindowUserPointer(window_, this);
+        auto result = glfwCreateWindowSurface(instance_, window_, Allocator, &surface_);
+        if (result != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
     }
 }
 
@@ -117,11 +99,12 @@ bool vulkan_create_screen::choose_one_physical_device(VkPhysicalDevice &Physical
             bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
             if (temp_1 && temp_2 && temp_3 && temp_4) {
                 PhysicalDevice = physical_device;
+                return true;
             }
-
             queueFamilyIndex++;
         }
     }
+    return false;
 }
 
 uint32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
