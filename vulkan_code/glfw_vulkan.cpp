@@ -3,15 +3,19 @@
 //
 
 // 下面这个只能在一个 cpp 文件中定义
+#ifdef ENGINE_USE_VOLK
 #define VOLK_IMPLEMENTATION
-
+#include <volk.h>
+#endif
 #include "glfw_vulkan.h"
 
 
 vulkan_create_screen::vulkan_create_screen() {
+#ifdef ENGINE_USE_VOLK
     if (volkInitialize() != VK_SUCCESS) {
         return;
     }
+#endif
     glfwInit();
 
     // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -74,7 +78,9 @@ void vulkan_create_screen::createInstance() {
     auto err = vkCreateInstance(&instanceCreateInfo, nullptr, &instance_);
     if (err != VK_SUCCESS) {
     } else {
+#ifdef ENGINE_USE_VOLK
         volkLoadInstance(instance_);
+#endif
     } {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);

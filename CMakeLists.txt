@@ -42,7 +42,10 @@ ELSE ()
 ENDIF ()
 
 #######################################vulkan#####################################
+
+
 add_definitions(-DVK_NO_PROTOTYPES)
+add_definitions(-DENGINE_USE_VOLK)
 
 
 find_package(Curses REQUIRED)

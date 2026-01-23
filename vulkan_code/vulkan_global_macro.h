@@ -4,7 +4,13 @@
 
 #ifndef HELLO_MAC_VULKAN_GLOBAL_MACRO_H
 #define HELLO_MAC_VULKAN_GLOBAL_MACRO_H
-#include "volk.h"
+
+#ifdef ENGINE_USE_VOLK
+#include <volk.h>
+#else
+#include <vulkan/vulkan.h>
+#endif
+
 
 #include <iostream>
 #include <assert.h>
