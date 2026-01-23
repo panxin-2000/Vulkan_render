@@ -21,6 +21,8 @@ void add_validationLayers(VkInstanceCreateInfo &instanceCreateInfo, VkDebugUtils
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,
                                            std::vector<const char *> &instanceExtensions);
 
+void add_device_validation_layers(VkDeviceCreateInfo &createInfo);
+
 std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance);
 
 std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysicalDevice &device);

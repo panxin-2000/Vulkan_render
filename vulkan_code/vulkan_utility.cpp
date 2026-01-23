@@ -50,10 +50,16 @@ void add_validationLayers(VkInstanceCreateInfo &instanceCreateInfo, VkDebugUtils
                       VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
             instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-            instanceCreateInfo.enabledLayerCount = 0;
+            instanceCreateInfo.enabledLayerCount = validationLayers.size();
             instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
         }
     }
+}
+
+
+void add_device_validation_layers(VkDeviceCreateInfo &createInfo) {
+    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    createInfo.ppEnabledLayerNames = validationLayers.data();
 }
 
 /**

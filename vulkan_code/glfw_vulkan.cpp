@@ -22,6 +22,7 @@ vulkan_create_screen::vulkan_create_screen() {
 
     choose_one_physical_device(physical_device_);
 
+    createDevice();
     //
 }
 
@@ -107,7 +108,7 @@ bool vulkan_create_screen::choose_one_physical_device(VkPhysicalDevice &Physical
     return false;
 }
 
-uint32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
+int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
     auto family_properties = get_queue_family_properties(physical_device);
     int queueFamilyIndex = 0;
     for (auto family_property: family_properties) {
@@ -116,83 +117,79 @@ uint32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfa
         bool temp_3 = check_have_queue_graphics(family_property);
         bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
         if (temp_1 && temp_2 && temp_3 && temp_4) {
-            //
+            return queueFamilyIndex;
         }
-        return queueFamilyIndex;
         queueFamilyIndex++;
     }
-    return 0;
+    return -1;
 }
 
 
-// void vulkan_create_screen::createDevice() {
-//     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-//     const float defaultQueuePriority(0.0f);
-//     // Graphics queue
-//     if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT) {
-//         // getQueueFamilyIndex 这个函数很好
-//         queueFamilyIndices.graphics = getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
-//         VkDeviceQueueCreateInfo queueInfo{};
-//         queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-//         queueInfo.queueFamilyIndex = queueFamilyIndices.graphics;
-//         queueInfo.queueCount = 1;
-//         queueInfo.pQueuePriorities = &defaultQueuePriority;
-//         queueCreateInfos.push_back(queueInfo);
-//     } else {
-//         queueFamilyIndices.graphics = 0;
-//     }
-//     // Dedicated compute queue
-//     if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT) {
-//         queueFamilyIndices.compute = getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
-//         if (queueFamilyIndices.compute != queueFamilyIndices.graphics) {
-//             // If compute family index differs, we need an additional queue create info for the compute queue
-//             VkDeviceQueueCreateInfo queueInfo{};
-//             queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-//             queueInfo.queueFamilyIndex = queueFamilyIndices.compute;
-//             queueInfo.queueCount = 1;
-//             queueInfo.pQueuePriorities = &defaultQueuePriority;
-//             queueCreateInfos.push_back(queueInfo);
-//         }
-//     } else {
-//         // Else we use the same queue
-//         queueFamilyIndices.compute = queueFamilyIndices.graphics;
-//     }
-//
-//
-//     // Dedicated transfer queue
-//     if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT) {
-//         queueFamilyIndices.transfer = getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
-//         if ((queueFamilyIndices.transfer != queueFamilyIndices.graphics) && (
-//                 queueFamilyIndices.transfer != queueFamilyIndices.compute)) {
-//             // If transfer family index differs, we need an additional queue create info for the transfer queue
-//             VkDeviceQueueCreateInfo queueInfo{};
-//             queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-//             queueInfo.queueFamilyIndex = queueFamilyIndices.transfer;
-//             queueInfo.queueCount = 1;
-//             queueInfo.pQueuePriorities = &defaultQueuePriority;
-//             queueCreateInfos.push_back(queueInfo);
-//         }
-//     } else {
-//         // Else we use the same queue
-//         queueFamilyIndices.transfer = queueFamilyIndices.graphics;
-//     }
-//
-//
-//     VkDeviceCreateInfo createInfo{};
-//     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-//     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-//     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-//     createInfo.pEnabledFeatures = &deviceFeatures;
-//     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-//     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-//     if (enableValidationLayers) {
-//         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-//         createInfo.ppEnabledLayerNames = validationLayers.data();
-//     } else {
-//         createInfo.enabledLayerCount = 0;
-//     }
-//     if (vkCreateDevice(physical_device_, &createInfo, Allocator, &device_) != VK_SUCCESS) {
-//     }
-//     vkGetDeviceQueue(device_, indices.graphicsFamily.value(), 0, &graphicsQueue);
-//     vkGetDeviceQueue(device_, indices.presentFamily.value(), 0, &presentQueue);
-// }
+void vulkan_create_screen::createDevice() {
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+    const float defaultQueuePriority(0.0f);
+    // Graphics queue
+    if (1) {
+        // getQueueFamilyIndex 这个函数很好
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &defaultQueuePriority;
+        queueCreateInfos.push_back(queueInfo);
+    } else {
+    }
+    // Dedicated compute queue
+    if (1) {
+        // If compute family index differs, we need an additional queue create info for the compute queue
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);;
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &defaultQueuePriority;
+        queueCreateInfos.push_back(queueInfo);
+    } else {
+        // Else we use the same queue
+    }
+    // Dedicated transfer queue
+    if (1) {
+        // If transfer family index differs, we need an additional queue create info for the transfer queue
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &defaultQueuePriority;
+        queueCreateInfos.push_back(queueInfo);
+    } else {
+        // Else we use the same queue
+    }
+    std::vector<const char *> device_extensions;
+    device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    // device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    device_extensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    device_extensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE; // 仅开启各向异性过滤
+    // 还有很多的特征，按照需要添加。
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+    createInfo.ppEnabledExtensionNames = device_extensions.data();
+#ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
+    add_device_validation_layers(createInfo);
+#else
+    createInfo.enabledLayerCount = 0;
+#endif
+    if (vkCreateDevice(physical_device_, &createInfo, Allocator, &device_) != VK_SUCCESS) {
+    }
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &graphicsQueue);
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &presentQueue);
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &transferQueue);
+    //  graphicsQueue presentQueue transferQueue 大概率是相同的，提交任务时需要加锁
+}
