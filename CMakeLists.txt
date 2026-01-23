@@ -125,6 +125,8 @@ file(GLOB_RECURSE RENDER
 file(GLOB_RECURSE vulkan_code
         "vulkan_code/glfw_vulkan.cpp"
         "vulkan_code/vulkan_utility.cpp"
+        "vulkan_code/vulkan_read_attribute.cpp"
+        "vulkan_code/vulkan_validation_layer.cpp"
 )
 include_directories(vulkan_code)
 

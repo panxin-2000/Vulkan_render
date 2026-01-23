@@ -7,20 +7,6 @@
 #include <volk.h>
 #include "vulkan_utility.h"
 
-std::vector<std::string> get_instance_extensions() {
-    std::vector<std::string> supportedInstanceExtensions;
-    uint32_t extCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extCount, nullptr);
-    if (extCount > 0) {
-        std::vector<VkExtensionProperties> extensions(extCount);
-        if (vkEnumerateInstanceExtensionProperties(nullptr, &extCount, &extensions.front()) == VK_SUCCESS) {
-            for (VkExtensionProperties &extension: extensions) {
-                supportedInstanceExtensions.emplace_back(extension.extensionName);
-            }
-        }
-    }
-    return supportedInstanceExtensions;
-}
 
 
 /**
@@ -34,7 +20,7 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
                                            std::vector<const char *> &instanceExtensions) {
 #if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)) && defined(VK_KHR_portability_enumeration)
     {
-        auto supportedInstanceExtensions = get_instance_extensions();
+        auto supportedInstanceExtensions = get_all_instance_extensions();
         // SRS - When running on iOS/macOS with MoltenVK and VK_KHR_portability_enumeration is defined and supported by the instance, enable the extension and the flag
         if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(),
                       VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
@@ -46,22 +32,7 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
 #endif
 }
 
-std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance) {
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-    return devices;
-}
 
-std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysicalDevice &device) {
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-    return queueFamilies;
-}
 
 
 bool check_have_present_support(const VkPhysicalDevice &device,

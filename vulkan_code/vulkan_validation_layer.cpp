@@ -32,7 +32,7 @@ void add_instance_validation_layers(VkInstanceCreateInfo &instanceCreateInfo,
                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugCreateInfo.pfnUserCallback = debugCallback;
-        auto supportedInstanceExtensions = get_instance_extensions();
+        auto supportedInstanceExtensions = get_all_instance_extensions();
         if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(),
                       VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
             instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
