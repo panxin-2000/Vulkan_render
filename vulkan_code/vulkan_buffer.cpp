@@ -36,3 +36,81 @@ void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize
     }
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
+
+
+VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool) {
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer,
+                           VkQueue graphicsQueue) {
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
+
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+
+
+void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkBuffer srcBuffer,
+                VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
+}
+
+void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device,
+                        VkCommandPool commandPool, VkQueue graphicsQueue,
+                        void *buffer_data, uint32_t size, VkBuffer &verticesBuffer,
+                        VkDeviceMemory &vertexBufferMemory) {
+    // VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    VkDeviceSize bufferSize = size;
+
+    VkBuffer stagingBuffer{};
+    VkDeviceMemory stagingBufferMemory{};
+    createBuffer(physicalDevice, device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
+
+    void *data;
+    vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data); //参数错误，以改正
+    memcpy(data, buffer_data, (size_t) bufferSize);
+    //还有其他的传递数值的办法吗？知道memcpy可能会被内核给优化过，最终调用DMA
+    //有明显提示调用DMA的函数吗？在这里如何创建多个线程来完成这个工作？
+    //实际中有可能减少这一步吗？
+    vkUnmapMemory(device, stagingBufferMemory); //参数错误，以改正
+    createBuffer(physicalDevice, device, bufferSize,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesBuffer, vertexBufferMemory);
+    copyBuffer(device, commandPool, graphicsQueue, stagingBuffer, verticesBuffer, bufferSize);
+
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMemory, nullptr);
+}
