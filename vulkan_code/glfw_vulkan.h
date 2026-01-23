@@ -39,8 +39,12 @@ public:
     std::vector<VkImageView> swapChainImageViews;
 
 
-private:
+    // 只是复制，没有具体的想应该如何管理
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 
+private:
     void createInstance();
 
     void createSurface();
@@ -50,6 +54,12 @@ private:
     void createDevice();
 
     void create_swapchain();
+
+    void createDepthResources();
+
+
+    // 临时，之后需修改
+    VkExtent2D get_current_extent();
 };
 
 

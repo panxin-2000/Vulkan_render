@@ -4,9 +4,11 @@
 
 #include "vulkan_buffer.h"
 
+uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                     VkDeviceMemory &bufferMemory) {
+void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage,
+                  VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                  VkDeviceMemory &bufferMemory) {
     VkBufferCreateInfo bufferCreateInfo{};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferCreateInfo.size = size;
@@ -25,7 +27,7 @@ void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyF
     VkMemoryAllocateInfo memAllocateInfo{};
     memAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memAllocateInfo.allocationSize = memRequirements.size;
-    memAllocateInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits,
+    memAllocateInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits,
                                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     //      下面一行有个错误，以改正
@@ -33,5 +35,4 @@ void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyF
         throw std::runtime_error("failed to allocate vertex buffer memory !");
     }
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
-
 }

@@ -27,7 +27,20 @@ VkImageView createImageView(const VkDevice device,
 }
 
 
-void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
+}
+
+void createImage(VkPhysicalDevice physicalDevice, VkDevice device, uint32_t width, uint32_t height, VkFormat format,
+                 VkImageTiling tiling,
+                 VkImageUsageFlags usage,
                  VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -54,7 +67,7 @@ void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");

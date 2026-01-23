@@ -12,7 +12,7 @@ VkImageView createImageView(const VkDevice device,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags);
 
-void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+void createImage( VkPhysicalDevice physicalDevice, VkDevice device,uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                  VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
 #endif //HELLO_MAC_VULKAN_IMAGE_H

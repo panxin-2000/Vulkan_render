@@ -9,6 +9,8 @@
 #endif
 #include "glfw_vulkan.h"
 
+#include "vulkan_image.h"
+
 
 vulkan_create_screen::vulkan_create_screen() {
 #ifdef ENGINE_USE_VOLK
@@ -238,26 +240,12 @@ VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &
 }
 
 
-VkImageView createImageView(const VkDevice device,
-                            const VkImage image,
-                            const VkFormat format,
-                            const VkImageAspectFlags aspectFlags) {
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    VkImageView imageView;
-    if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image view!");
-    }
-    return imageView;
+
+
+VkExtent2D vulkan_create_screen::get_current_extent() {
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device_, surface_);
+    const VkExtent2D extent = chooseSwapExtent(window_, swapChainSupport.capabilities);
+    return extent;
 }
 
 
@@ -329,4 +317,15 @@ void vulkan_create_screen::create_swapchain() {
         swapChainImageViews[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
                                                  VK_IMAGE_ASPECT_COLOR_BIT);
     }
+}
+
+
+void vulkan_create_screen::createDepthResources() {
+    VkFormat depthFormat = findDepthFormat(physical_device_);
+    auto swapChainExtent = get_current_extent();
+    createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage,
+                depthImageMemory);
+    depthImageView = createImageView(device_, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }

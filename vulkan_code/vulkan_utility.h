@@ -30,4 +30,11 @@ bool check_have_queue_graphics(const VkQueueFamilyProperties &queueFamily);
 bool check_have_queue_compute(const VkQueueFamilyProperties &queueFamily);
 
 bool check_have_queue_transfer(const VkQueueFamilyProperties &queueFamily);
+
+VkFormat findDepthFormat(const VkPhysicalDevice &physicalDevice);
+
+VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+                             VkFormatFeatureFlags features, const VkPhysicalDevice &physicalDevice);
+
+
 #endif //HELLO_MAC_VULKAN_UTILITY_H
