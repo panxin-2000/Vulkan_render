@@ -7,6 +7,8 @@
 #include <volk.h>
 #include "vulkan_utility.h"
 
+#include <fstream>
+
 
 /**
  *  VK_EXT_metal_surface
@@ -82,4 +84,51 @@ VkFormat findDepthFormat(const VkPhysicalDevice &physicalDevice) {
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
         physicalDevice
     );
+}
+
+
+static std::vector<char> readFile(const std::string &filename) {
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("failed to open file!");
+    }
+
+    size_t fileSize = (size_t) file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+
+    return buffer;
+}
+
+int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
+    auto family_properties = get_queue_family_properties(physical_device);
+    int queueFamilyIndex = 0;
+    for (auto family_property: family_properties) {
+        bool temp_1 = check_have_queue_compute(family_property);
+        bool temp_2 = check_have_queue_graphics(family_property);
+        bool temp_3 = check_have_queue_graphics(family_property);
+        bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
+        if (temp_1 && temp_2 && temp_3 && temp_4) {
+            return queueFamilyIndex;
+        }
+        queueFamilyIndex++;
+    }
+    return -1;
+}
+
+void createCommandPool(const VkPhysicalDevice &physical_device, VkDevice device, VkSurfaceKHR surface,
+                       VkCommandPool &commandPool) {
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = get_queue_family_index(physical_device, surface);
+
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool!");
+    }
 }

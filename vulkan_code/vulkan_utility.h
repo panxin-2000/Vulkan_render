@@ -36,5 +36,5 @@ VkFormat findDepthFormat(const VkPhysicalDevice &physicalDevice);
 VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
                              VkFormatFeatureFlags features, const VkPhysicalDevice &physicalDevice);
 
-
+int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_);
 #endif //HELLO_MAC_VULKAN_UTILITY_H

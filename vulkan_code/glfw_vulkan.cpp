@@ -110,21 +110,7 @@ bool vulkan_create_screen::choose_one_physical_device(VkPhysicalDevice &Physical
     return false;
 }
 
-int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
-    auto family_properties = get_queue_family_properties(physical_device);
-    int queueFamilyIndex = 0;
-    for (auto family_property: family_properties) {
-        bool temp_1 = check_have_queue_compute(family_property);
-        bool temp_2 = check_have_queue_graphics(family_property);
-        bool temp_3 = check_have_queue_graphics(family_property);
-        bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
-        if (temp_1 && temp_2 && temp_3 && temp_4) {
-            return queueFamilyIndex;
-        }
-        queueFamilyIndex++;
-    }
-    return -1;
-}
+
 
 
 void vulkan_create_screen::createDevice() {
