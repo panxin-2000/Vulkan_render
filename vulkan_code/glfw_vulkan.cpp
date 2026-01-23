@@ -77,7 +77,7 @@ void vulkan_create_screen::createInstance() {
 void vulkan_create_screen::createSurface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window_ = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
