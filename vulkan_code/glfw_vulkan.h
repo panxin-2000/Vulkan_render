@@ -35,8 +35,12 @@ public:
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
     VkQueue transferQueue = VK_NULL_HANDLE;
+    VkSwapchainKHR swapChain_ = VK_NULL_HANDLE;
+    std::vector<VkImageView> swapChainImageViews;
+
 
 private:
+
     void createInstance();
 
     void createSurface();
@@ -44,6 +48,8 @@ private:
     bool choose_one_physical_device(VkPhysicalDevice &PhysicalDevice);
 
     void createDevice();
+
+    void create_swapchain();
 };
 
 
