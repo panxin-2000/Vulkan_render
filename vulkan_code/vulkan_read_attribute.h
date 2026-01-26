@@ -26,13 +26,14 @@ VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &devic
 
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-VkExtent2D get_swap_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface, GLFWwindow *window);
+VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface,
+                                          GLFWwindow *window);
 
-uint32_t get_rational_image_Count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
+uint32_t get_rational_image_count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
+VkSurfaceFormatKHR choose_swap_surface_format(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
-VkPresentModeKHR chooseSwapPresentMode(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
+VkPresentModeKHR choose_swap_present_mode(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 
 #endif //HELLO_MAC_VULKAN_READ_ATTRIBUTE_H

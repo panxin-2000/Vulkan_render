@@ -84,7 +84,7 @@ SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, co
     return details;
 }
 
-VkExtent2D get_swap_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface, GLFWwindow *window) {
+VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface, GLFWwindow *window) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
@@ -107,7 +107,7 @@ VkExtent2D get_swap_rational_extent(const VkPhysicalDevice &device, const VkSurf
     }
 }
 
-uint32_t get_rational_image_Count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
+uint32_t get_rational_image_count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
     uint32_t imageCount = get_max_Frames_In_Flight(); // 这里的值其实不能写死，应该由双缓冲函数三缓冲决定
@@ -118,7 +118,7 @@ uint32_t get_rational_image_Count(const VkPhysicalDevice &device, const VkSurfac
     return imageCount;
 }
 
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
+VkSurfaceFormatKHR choose_swap_surface_format(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     std::vector<VkSurfaceFormatKHR> formats;
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
@@ -137,7 +137,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(const VkPhysicalDevice &device, const
     return formats[0];
 }
 
-VkPresentModeKHR chooseSwapPresentMode(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
+VkPresentModeKHR choose_swap_present_mode(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     std::vector<VkPresentModeKHR> presentModes;
     uint32_t presentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);

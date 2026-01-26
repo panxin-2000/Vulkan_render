@@ -256,19 +256,18 @@ void VKDevice::create_VMA() {
 }
 
 
-
-
 void VKDevice::create_swap_chain() {
     // Swap chain
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
 
+    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
 
-    const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+    uint32_t imageCount = get_rational_image_count(physical_device_, surface_);
 
-    uint32_t imageCount = get_rational_image_Count(physical_device_, surface_);
+    VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
 
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
-
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(physical_device_, surface_);
+    VkPresentModeKHR presentMode = choose_swap_present_mode(physical_device_, surface_);
 
     VkSwapchainCreateInfoKHR swapchainCI{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -279,32 +278,18 @@ void VKDevice::create_swap_chain() {
         .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-        .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE, // todo
+
+        // .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .preTransform = capabilities.currentTransform, //
+
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+        .presentMode = presentMode,
+        .clipped = VK_TRUE,
+        .oldSwapchain = VK_NULL_HANDLE,
     };
     chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
-    //
-    //     .surface = surface_,
-    // .minImageCount = imageCount,
-    // .imageFormat = surfaceFormat.format,
-    // .imageColorSpace = surfaceFormat.colorSpace,
-    // .imageExtent = extent,
-    // .imageArrayLayers = 1,
-    // .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-    // .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE, // todo
-    //
-    // .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-    // // .preTransform = surface_caps_.currentTransform,
-    //
-    // .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-    // .presentMode = presentMode,
-    // .clipped = VK_TRUE,
-    // .oldSwapchain = VK_NULL_HANDLE,
-
-    // QueueFamilyIndices indices = find_Queue_Families(physicalDevice);
-    // uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
     // if (indices.graphicsFamily != indices.presentFamily) {
     // createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
@@ -313,33 +298,10 @@ void VKDevice::create_swap_chain() {
     // } else {
     // createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     // }
-
-
-    std::vector<VkImage> swapChainImages; // 两个image 由 swapChain_管理，就不放到类中了
-
-    //这里的设置重新设置的操作很细节
-    vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swapChainImages.data());
-    //        swapChainImages这个变量是全局变量，但是在这里才确定了数量和地址
-    //        下面还有一个resize，先假定那个resize不会更改地址
-    //        实际上是确定不会更改地址的，为什么要在下面再 resize 一遍呢？
-    //        因为是不一样的，VkImage 和 VkImageView
-
-
-    // swapChainImageFormat = surfaceFormat.format; // render pass 的时候还需要使用
-    // swapChainExtent = extent;
-
-    swap_chain_image_views_.resize(swapChainImages.size());
-
-    for (size_t i = 0; i < swapChainImages.size(); i++) {
-        swap_chain_image_views_[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
-                                                     VK_IMAGE_ASPECT_COLOR_BIT);
-    }
 }
 
 void VKDevice::create_swap_chain_image_view() {
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
+    VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
     chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
     swap_chain_images_.resize(imageCount);
@@ -386,7 +348,7 @@ void VKDevice::create_depth_image_view() {
             break;
         }
     }
-    const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
 
     assert(depth_format_ != VK_FORMAT_UNDEFINED);
     VkImageCreateInfo depthImageCI{

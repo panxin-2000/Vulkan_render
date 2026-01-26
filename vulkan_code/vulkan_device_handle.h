@@ -80,12 +80,12 @@ public:
     void destroy();
 
     [[nodiscard]] VkExtent2D get_current_extent() const {
-        const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+        const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
         return extent;
     }
 
     [[nodiscard]] const VkFormat &get_image_format() const {
-        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
+        VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
         return surfaceFormat.format;
     }
 
