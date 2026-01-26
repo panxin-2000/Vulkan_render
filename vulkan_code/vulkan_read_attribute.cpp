@@ -122,8 +122,9 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkPhysicalDevice device, const VkSurf
         formats.resize(formatCount);
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, formats.data());
     }
+    // VK_FORMAT_B8G8R8A8_SRGB 和 how to vulkan 2026 重的值是不一致的
     for (const auto &availableFormat: formats) {
-        if (availableFormat.format == VK_FORMAT_R8G8B8A8_SRGB &&
+        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
             return availableFormat;
         }
