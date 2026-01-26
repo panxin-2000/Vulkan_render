@@ -61,9 +61,10 @@ VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &devic
  * vkGetPhysicalDeviceSurfacePresentModesKHR
  *
  * @param device
+ * @param surface
  * @return
  */
-SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     SwapChainSupportDetails details;
     // details.capabilities 物理设备表面功能
     VkSurfaceCapabilitiesKHR temp;
@@ -83,7 +84,9 @@ SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurface
     return details;
 }
 
-VkExtent2D get_swap_rational_extent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D get_swap_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface, GLFWwindow *window) {
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
@@ -104,7 +107,9 @@ VkExtent2D get_swap_rational_extent(GLFWwindow *window, const VkSurfaceCapabilit
     }
 }
 
-uint32_t get_rational_image_Count(const VkSurfaceCapabilitiesKHR &capabilities) {
+uint32_t get_rational_image_Count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
     uint32_t imageCount = get_max_Frames_In_Flight(); // 这里的值其实不能写死，应该由双缓冲函数三缓冲决定
     if (capabilities.maxImageCount > 0 &&
         imageCount > capabilities.maxImageCount) {
@@ -113,7 +118,7 @@ uint32_t get_rational_image_Count(const VkSurfaceCapabilitiesKHR &capabilities) 
     return imageCount;
 }
 
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkPhysicalDevice device, const VkSurfaceKHR &surface) {
+VkSurfaceFormatKHR chooseSwapSurfaceFormat(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     std::vector<VkSurfaceFormatKHR> formats;
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
@@ -132,7 +137,7 @@ VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkPhysicalDevice device, const VkSurf
     return formats[0];
 }
 
-VkPresentModeKHR chooseSwapPresentMode(VkPhysicalDevice device, VkSurfaceKHR surface) {
+VkPresentModeKHR chooseSwapPresentMode(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     std::vector<VkPresentModeKHR> presentModes;
     uint32_t presentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);

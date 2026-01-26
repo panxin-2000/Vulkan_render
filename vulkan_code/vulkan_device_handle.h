@@ -55,7 +55,6 @@ public:
     VkImageView depth_image_view_;
 
     VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-    VkSurfaceCapabilitiesKHR surface_caps_{};
     uint32_t queue_family_{0};
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
@@ -80,10 +79,10 @@ public:
 
     void destroy();
 
-
-    // 临时，之后需修改
-    VkExtent2D get_current_extent();
-
+    [[nodiscard]] VkExtent2D get_current_extent() const {
+        const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+        return extent;
+    }
 
     [[nodiscard]] const VkFormat &get_image_format() const {
         VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
@@ -146,6 +145,8 @@ public:
     }
 
     [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const {
+        VkSurfaceCapabilitiesKHR surface_caps_{};
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_);
         return surface_caps_;
     }
 };

@@ -247,6 +247,7 @@ int main(int argc, char *argv[]) {
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
         };
+        auto temp_extent = handle.get_current_extent();
         VkRenderingAttachmentInfo depthAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = handle.get_depth_image_view(),
@@ -258,10 +259,7 @@ int main(int argc, char *argv[]) {
         VkRenderingInfo renderingInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
             .renderArea{
-                .extent{
-                    .width = handle.get_surface_caps().currentExtent.width,
-                    .height = handle.get_surface_caps().currentExtent.height
-                }
+                .extent = temp_extent,
             },
             .layerCount = 1,
             .colorAttachmentCount = 1,
@@ -270,16 +268,14 @@ int main(int argc, char *argv[]) {
         };
         vkCmdBeginRendering(cb, &renderingInfo);
         VkViewport vp{
-            .width = static_cast<float>(handle.get_surface_caps().currentExtent.width),
-            .height = static_cast<float>(handle.get_surface_caps().currentExtent.height), .minDepth = 0.0f,
+            .width = static_cast<float>(temp_extent.width),
+            .height = static_cast<float>(temp_extent.height),
+            .minDepth = 0.0f,
             .maxDepth = 1.0f
         };
         vkCmdSetViewport(cb, 0, 1, &vp);
         VkRect2D scissor{
-            .extent{
-                .width = handle.get_surface_caps().currentExtent.width,
-                .height = handle.get_surface_caps().currentExtent.height
-            }
+            .extent = temp_extent,
         };
         vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         vkCmdSetScissor(cb, 0, 1, &scissor);

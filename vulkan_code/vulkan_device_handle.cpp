@@ -256,22 +256,15 @@ void VKDevice::create_VMA() {
 }
 
 
-VkExtent2D VKDevice::get_current_extent() {
-    // todo: 这个函数应该是稍微有点重复了的，一会儿转移
-    VkSurfaceCapabilitiesKHR surface_caps;
-    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps));
-    const VkExtent2D extent = get_swap_rational_extent(window_, surface_caps);
-    return extent;
-}
 
 
 void VKDevice::create_swap_chain() {
     // Swap chain
 
-    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_));
-    const VkExtent2D extent = get_swap_rational_extent(window_, surface_caps_);
 
-    uint32_t imageCount = get_rational_image_Count(surface_caps_);
+    const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+
+    uint32_t imageCount = get_rational_image_Count(physical_device_, surface_);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
 
@@ -368,6 +361,9 @@ void VKDevice::create_swap_chain_image_view() {
     }
 }
 
+/**
+ * 虽然不用，暂时先留着
+ */
 void VKDevice::create_depth_resources() {
     // VkFormat depthFormat = findDepthFormat(physical_device_);
     // auto swapChainExtent = get_current_extent();
@@ -390,14 +386,16 @@ void VKDevice::create_depth_image_view() {
             break;
         }
     }
+    const VkExtent2D extent = get_swap_rational_extent(physical_device_, surface_, window_);
+
     assert(depth_format_ != VK_FORMAT_UNDEFINED);
     VkImageCreateInfo depthImageCI{
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
         .format = depth_format_,
         .extent{
-            .width = surface_caps_.currentExtent.width,
-            .height = surface_caps_.currentExtent.height,
+            .width = extent.width,
+            .height = extent.height,
             .depth = 1
         },
         .mipLevels = 1,
