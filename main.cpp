@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     descriptor.update_descriptor_sets(textureDescriptors);
     // 到这里的时候贴图就更新完毕了
     auto pipelineLayout = descriptor.CreatePipelineLayout();
-    auto shaderModule = createshaderModule(handle);
+    auto shaderModule = create_shader_module(handle, "assets/shader.slang");
     auto shaderStages = createShaderStages(shaderModule);
 
     pipeline = create_pipeline(handle, shaderStages, pipelineLayout);
