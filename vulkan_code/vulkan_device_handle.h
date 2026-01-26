@@ -43,6 +43,7 @@ public:
     VkQueue graphics_queue_ = VK_NULL_HANDLE;
     VkQueue present_queue_ = VK_NULL_HANDLE;
     VkQueue transfer_queue_ = VK_NULL_HANDLE;
+    VkQueue compute_queue_ = VK_NULL_HANDLE;
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
@@ -55,15 +56,24 @@ public:
     VkImageView depth_image_view_;
 
     VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-    uint32_t queue_family_{0};
+    uint32_t queue_family_{0};                // 不清楚是否能够删除
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
-public:
+    struct {
+        uint32_t graphics;
+        uint32_t compute;
+        uint32_t transfer;
+    } queueFamilyIndices; // 不用给到外部，
+
+
+private:
     void create_instance();
 
     void create_surface();
 
     bool choose_one_physical_device();
+
+    uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
     void create_device();
 
@@ -76,6 +86,22 @@ public:
     void create_swap_chain_image_view();
 
     void create_depth_image_view();
+
+public:
+    /**
+     * 顺序不能更改
+     */
+    void init_device_handle() {
+        create_instance();
+        create_surface();
+        choose_one_physical_device();
+        create_device();
+        create_VMA();
+        create_swap_chain();
+        create_swap_chain_image_view();
+        create_depth_image_view();
+    }
+
 
     void destroy();
 

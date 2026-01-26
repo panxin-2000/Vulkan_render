@@ -97,54 +97,118 @@ void VKDevice::create_surface() {
 
 bool VKDevice::choose_one_physical_device() {
     auto physical_devices = get_all_physical_devices(instance_);
-    // for (auto physical_device: physical_devices) {
-    //     auto family_properties = get_queue_family_properties(physical_device);
-    //     int queueFamilyIndex = 0;
-    //     for (auto family_property: family_properties) {
-    //         bool temp_1 = check_have_queue_compute(family_property);
-    //         bool temp_2 = check_have_queue_graphics(family_property);
-    //         bool temp_3 = check_have_queue_graphics(family_property);
-    //         bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
-    //         if (temp_1 && temp_2 && temp_3 && temp_4) {
-    //             PhysicalDevice = physical_device;
-    //             return true;
-    //         }
-    //         queueFamilyIndex++;
-    //     }
-    // }
-    // return false;
-    uint32_t deviceIndex{0};
-    // if (argc > 1) {
-    // deviceIndex = std::stoi(argv[1]);
-    // assert(deviceIndex < deviceCount);
-    // }
-    VkPhysicalDeviceProperties2 deviceProperties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
-    vkGetPhysicalDeviceProperties2(physical_devices[deviceIndex], &deviceProperties);
-    std::cout << "Selected device: " << deviceProperties.properties.deviceName << "\n";
-    // Find a queue family for graphics
-    uint32_t queueFamilyCount{0};
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[deviceIndex], &queueFamilyCount, nullptr);
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[deviceIndex], &queueFamilyCount, queueFamilies.data());
-    for (size_t i = 0; i < queueFamilies.size(); i++) {
-        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            queue_family_ = i;
-            break;
+    for (auto physical_device: physical_devices) {
+        auto family_properties = get_queue_family_properties(physical_device);
+        int queueFamilyIndex = 0;
+        for (auto family_property: family_properties) {
+            bool temp_1 = check_have_queue_compute(family_property);
+            bool temp_2 = check_have_queue_graphics(family_property);
+            bool temp_3 = check_have_queue_graphics(family_property);
+            bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
+            if (temp_1 && temp_2 && temp_3 && temp_4) {
+                physical_device_ = physical_device;
+                VkPhysicalDeviceProperties2 deviceProperties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+                vkGetPhysicalDeviceProperties2(physical_device_, &deviceProperties);
+                std::cout << "Selected device: " << deviceProperties.properties.deviceName << "\n";
+                return true;
+            }
+            queueFamilyIndex++;
+        }
+    }
+}
+
+
+uint32_t VKDevice::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
+    auto queueFamilyProperties = get_queue_family_properties(physical_device_);
+
+    // Dedicated queue for compute
+    // Try to find a queue family index that supports compute but not graphics
+    if ((queueFlags & VK_QUEUE_COMPUTE_BIT) == queueFlags) {
+        for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
+            if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) &&
+                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
+                return i;
+            }
         }
     }
 
-    physical_device_ = physical_devices[deviceIndex];
-    return true; // how to vulkan 版的内容
+    // Dedicated queue for transfer
+    // Try to find a queue family index that supports transfer but not graphics and compute
+    if ((queueFlags & VK_QUEUE_TRANSFER_BIT) == queueFlags) {
+        for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
+            if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
+                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
+                return i;
+            }
+        }
+    }
+
+    // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
+    for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
+        if ((queueFamilyProperties[i].queueFlags & queueFlags) == queueFlags) {
+            return i;
+        }
+    }
+
+    throw std::runtime_error("Could not find a matching queue family index");
 }
 
 
 void VKDevice::create_device() {
     // Logical device
-    const float qfpriorities{1.0f};
-    VkDeviceQueueCreateInfo queueCI{
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = queue_family_, .queueCount = 1,
-        .pQueuePriorities = &qfpriorities
-    };
+
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+    const float defaultQueuePriority(0.0f); // 1.0 表示最高优先级，0.0 表示最低优先级
+    VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
+    // Graphics queue
+    if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT) {
+        queueFamilyIndices.graphics = getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueInfo.queueFamilyIndex = queueFamilyIndices.graphics;
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &defaultQueuePriority;
+        queueCreateInfos.push_back(queueInfo);
+    } else {
+        queueFamilyIndices.graphics = 0;
+    }
+
+    // Dedicated compute queue
+    if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT) {
+        queueFamilyIndices.compute = getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
+        if (queueFamilyIndices.compute != queueFamilyIndices.graphics) {
+            // If compute family index differs, we need an additional queue create info for the compute queue
+            VkDeviceQueueCreateInfo queueInfo{};
+            queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueInfo.queueFamilyIndex = queueFamilyIndices.compute;
+            queueInfo.queueCount = 1;
+            queueInfo.pQueuePriorities = &defaultQueuePriority;
+            queueCreateInfos.push_back(queueInfo);
+        }
+    } else {
+        // Else we use the same queue
+        queueFamilyIndices.compute = queueFamilyIndices.graphics;
+    }
+    // Dedicated transfer queue
+    if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT) {
+        queueFamilyIndices.transfer = getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
+        if ((queueFamilyIndices.transfer != queueFamilyIndices.graphics) && (
+                queueFamilyIndices.transfer != queueFamilyIndices.compute)) {
+            // If transfer family index differs, we need an additional queue create info for the transfer queue
+            VkDeviceQueueCreateInfo queueInfo{};
+            queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueInfo.queueFamilyIndex = queueFamilyIndices.transfer;
+            queueInfo.queueCount = 1;
+            queueInfo.pQueuePriorities = &defaultQueuePriority;
+            queueCreateInfos.push_back(queueInfo);
+        }
+    } else {
+        // Else we use the same queue
+        queueFamilyIndices.transfer = queueFamilyIndices.graphics;
+    }
+
+
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .descriptorIndexing = true,
         .descriptorBindingVariableDescriptorCount = true, .runtimeDescriptorArray = true, .bufferDeviceAddress = true
@@ -160,83 +224,30 @@ void VKDevice::create_device() {
     VkDeviceCreateInfo deviceCI{
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .pNext = &enabledVk13Features,
-        .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = &queueCI,
+        .queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
+        .pQueueCreateInfos = queueCreateInfos.data(),
         .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
         .ppEnabledExtensionNames = deviceExtensions.data(),
         .pEnabledFeatures = &enabledVk10Features
     };
-    chk(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
-    vkGetDeviceQueue(device_, queue_family_, 0, &graphics_queue_);
-    return; // how to vulkan 的 内容
-
-
-    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-    const float defaultQueuePriority(0.0f);
-    // Graphics queue
-    if (1) {
-        // getQueueFamilyIndex 这个函数很好
-        VkDeviceQueueCreateInfo queueInfo{};
-        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);
-        queueInfo.queueCount = 1;
-        queueInfo.pQueuePriorities = &defaultQueuePriority;
-        queueCreateInfos.push_back(queueInfo);
-    } else {
-    }
-    // Dedicated compute queue
-    if (1) {
-        // If compute family index differs, we need an additional queue create info for the compute queue
-        VkDeviceQueueCreateInfo queueInfo{};
-        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);;
-        queueInfo.queueCount = 1;
-        queueInfo.pQueuePriorities = &defaultQueuePriority;
-        queueCreateInfos.push_back(queueInfo);
-    } else {
-        // Else we use the same queue
-    }
-    // Dedicated transfer queue
-    if (1) {
-        // If transfer family index differs, we need an additional queue create info for the transfer queue
-        VkDeviceQueueCreateInfo queueInfo{};
-        queueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueInfo.queueFamilyIndex = get_queue_family_index(physical_device_, surface_);
-        queueInfo.queueCount = 1;
-        queueInfo.pQueuePriorities = &defaultQueuePriority;
-        queueCreateInfos.push_back(queueInfo);
-    } else {
-        // Else we use the same queue
-    }
-    std::vector<const char *> device_extensions;
-    device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    // device_extensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    device_extensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    device_extensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    deviceFeatures.samplerAnisotropy = VK_TRUE; // 仅开启各向异性过滤
-    // 还有很多的特征，按照需要添加。
-
-    VkDeviceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.pQueueCreateInfos = queueCreateInfos.data();
-    createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
-    createInfo.ppEnabledExtensionNames = device_extensions.data();
 #ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
-    add_device_validation_layers(createInfo);
+    add_device_validation_layers(deviceCI);
 #else
     createInfo.enabledLayerCount = 0;
 #endif
-    if (vkCreateDevice(physical_device_, &createInfo, Allocator, &device_) != VK_SUCCESS) {
-    }
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &graphics_queue_);
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &present_queue_);
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &transfer_queue_);
-    //  graphicsQueue presentQueue transferQueue 大概率是相同的，提交任务时需要加锁
+    chk(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
+#ifdef ENGINE_USE_VOLK
+    volkLoadDevice(device_);
+#endif
+    // 如果想高效的一步
+    // queueFamilyIndices.graphics
+    // queueFamilyIndices.compute
+    // queueFamilyIndices.transfer
+    // 都应该在不同的 index , getQueueFamilyIndex 必然要更改
+    vkGetDeviceQueue(device_, queueFamilyIndices.graphics, 0, &graphics_queue_);
+    vkGetDeviceQueue(device_, queueFamilyIndices.compute, 0, &compute_queue_);
+    vkGetDeviceQueue(device_, queueFamilyIndices.transfer, 0, &transfer_queue_);
+    return;
 }
 
 void VKDevice::create_VMA() {

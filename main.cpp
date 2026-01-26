@@ -105,14 +105,7 @@ glm::vec3 objectRotations[3]{};
 
 
 int main(int argc, char *argv[]) {
-    handle.create_instance();
-    handle.choose_one_physical_device();
-    handle.create_device();
-    handle.create_VMA();
-    handle.create_surface();
-    handle.create_swap_chain();
-    handle.create_swap_chain_image_view();
-    handle.create_depth_image_view();
+    handle.init_device_handle();
 
     // Window and surface
     Descriptor_Pool descriptor_pool(&handle, 250);
