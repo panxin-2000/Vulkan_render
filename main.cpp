@@ -6,14 +6,14 @@
 #include "labyrinth.h"
 #include "UI/UI_block.h"
 #include "UI/UI_button.h"
-#include "vulkan_code/glfw_vulkan.h"
+#include "vulkan_code/vulkan_device_handle.h"
 
 
 int main() {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
 
 
-    vulkan_create_screen temp;
+    VKDevice temp;
 
     // auto entity = get_entt_instance().create();
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);

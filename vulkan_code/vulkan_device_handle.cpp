@@ -5,14 +5,29 @@
 // 下面这个只能在一个 cpp 文件中定义
 #ifdef ENGINE_USE_VOLK
 #define VOLK_IMPLEMENTATION
+#define VMA_IMPLEMENTATION
+
 #include <volk.h>
 #endif
-#include "glfw_vulkan.h"
+#include "vulkan_device_handle.h"
 
 #include "vulkan_image.h"
 
+static inline void chk(VkResult result) {
+    if (result != VK_SUCCESS) {
+        std::cerr << "Vulkan call returned an error (" << result << ")\n";
+        exit(result);
+    }
+}
 
-vulkan_create_screen::vulkan_create_screen() {
+static inline void chk(bool result) {
+    if (!result) {
+        std::cerr << "Call returned an error\n";
+        exit(result);
+    }
+}
+
+VKDevice::VKDevice() {
 #ifdef ENGINE_USE_VOLK
     if (volkInitialize() != VK_SUCCESS) {
         return;
@@ -28,12 +43,12 @@ vulkan_create_screen::vulkan_create_screen() {
     //
 }
 
-vulkan_create_screen::~vulkan_create_screen() {
+VKDevice::~VKDevice() {
     volkFinalize();
 }
 
 
-void vulkan_create_screen::createInstance() {
+void VKDevice::createInstance() {
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = ApplicationName.c_str();
@@ -76,7 +91,7 @@ void vulkan_create_screen::createInstance() {
     }
 }
 
-void vulkan_create_screen::createSurface() {
+void VKDevice::createSurface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
@@ -90,30 +105,80 @@ void vulkan_create_screen::createSurface() {
     }
 }
 
-bool vulkan_create_screen::choose_one_physical_device(VkPhysicalDevice &PhysicalDevice) {
+bool VKDevice::choose_one_physical_device(VkPhysicalDevice &PhysicalDevice) {
     auto physical_devices = get_all_physical_devices(instance_);
-    for (auto physical_device: physical_devices) {
-        auto family_properties = get_queue_family_properties(physical_device);
-        int queueFamilyIndex = 0;
-        for (auto family_property: family_properties) {
-            bool temp_1 = check_have_queue_compute(family_property);
-            bool temp_2 = check_have_queue_graphics(family_property);
-            bool temp_3 = check_have_queue_graphics(family_property);
-            bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
-            if (temp_1 && temp_2 && temp_3 && temp_4) {
-                PhysicalDevice = physical_device;
-                return true;
-            }
-            queueFamilyIndex++;
+    // for (auto physical_device: physical_devices) {
+    //     auto family_properties = get_queue_family_properties(physical_device);
+    //     int queueFamilyIndex = 0;
+    //     for (auto family_property: family_properties) {
+    //         bool temp_1 = check_have_queue_compute(family_property);
+    //         bool temp_2 = check_have_queue_graphics(family_property);
+    //         bool temp_3 = check_have_queue_graphics(family_property);
+    //         bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
+    //         if (temp_1 && temp_2 && temp_3 && temp_4) {
+    //             PhysicalDevice = physical_device;
+    //             return true;
+    //         }
+    //         queueFamilyIndex++;
+    //     }
+    // }
+    // return false;
+    uint32_t deviceIndex{0};
+    // if (argc > 1) {
+    // deviceIndex = std::stoi(argv[1]);
+    // assert(deviceIndex < deviceCount);
+    // }
+    VkPhysicalDeviceProperties2 deviceProperties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+    vkGetPhysicalDeviceProperties2(physical_devices[deviceIndex], &deviceProperties);
+    std::cout << "Selected device: " << deviceProperties.properties.deviceName << "\n";
+    // Find a queue family for graphics
+    uint32_t queueFamilyCount{0};
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[deviceIndex], &queueFamilyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[deviceIndex], &queueFamilyCount, queueFamilies.data());
+    for (size_t i = 0; i < queueFamilies.size(); i++) {
+        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            queueFamily = i;
+            break;
         }
     }
-    return false;
+
+    physical_device_ = physical_devices[deviceIndex];
+    return true; // how to vulkan 版的内容
 }
 
 
+void VKDevice::createDevice() {
+    // Logical device
+    const float qfpriorities{1.0f};
+    VkDeviceQueueCreateInfo queueCI{
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = queueFamily, .queueCount = 1,
+        .pQueuePriorities = &qfpriorities
+    };
+    VkPhysicalDeviceVulkan12Features enabledVk12Features{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES, .descriptorIndexing = true,
+        .descriptorBindingVariableDescriptorCount = true, .runtimeDescriptorArray = true, .bufferDeviceAddress = true
+    };
+    VkPhysicalDeviceVulkan13Features enabledVk13Features{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &enabledVk12Features,
+        .synchronization2 = true, .dynamicRendering = true
+    };
+    const std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    const VkPhysicalDeviceFeatures enabledVk10Features{.samplerAnisotropy = VK_TRUE};
+    VkDeviceCreateInfo deviceCI{
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .pNext = &enabledVk13Features,
+        .queueCreateInfoCount = 1,
+        .pQueueCreateInfos = &queueCI,
+        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+        .ppEnabledExtensionNames = deviceExtensions.data(),
+        .pEnabledFeatures = &enabledVk10Features
+    };
+    chk(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
+    vkGetDeviceQueue(device_, queueFamily, 0, &graphicsQueue);
+    return; // how to vulkan 的 内容
 
 
-void vulkan_create_screen::createDevice() {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
     const float defaultQueuePriority(0.0f);
     // Graphics queue
@@ -182,6 +247,22 @@ void vulkan_create_screen::createDevice() {
     //  graphicsQueue presentQueue transferQueue 大概率是相同的，提交任务时需要加锁
 }
 
+void VKDevice::createVMA() {
+    // VMA
+    VmaVulkanFunctions vkFunctions{
+        .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
+        .vkGetDeviceProcAddr = vkGetDeviceProcAddr,
+        .vkCreateImage = vkCreateImage
+    };
+    VmaAllocatorCreateInfo allocatorCI{
+        .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+        .physicalDevice = physical_device_,
+        .device = device_, .pVulkanFunctions = &vkFunctions,
+        .instance = instance_
+    };
+    chk(vmaCreateAllocator(&allocatorCI, &allocator));
+}
+
 
 VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
     for (const auto &availableFormat: availableFormats) {
@@ -226,16 +307,33 @@ VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &
 }
 
 
-
-
-VkExtent2D vulkan_create_screen::get_current_extent() {
+VkExtent2D VKDevice::get_current_extent() {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device_, surface_);
     const VkExtent2D extent = chooseSwapExtent(window_, swapChainSupport.capabilities);
     return extent;
 }
 
 
-void vulkan_create_screen::create_swapchain() {
+void VKDevice::create_swapchain() {
+    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surfaceCaps));
+    // Swap chain
+    VkSwapchainCreateInfoKHR swapchainCI{
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface = surface_,
+        .minImageCount = surfaceCaps.minImageCount,
+        .imageFormat = imageFormat,
+        .imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR,
+        .imageExtent{.width = surfaceCaps.currentExtent.width, .height = surfaceCaps.currentExtent.height},
+        .imageArrayLayers = 1,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = VK_PRESENT_MODE_FIFO_KHR
+    };
+    chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swapchain));
+    return; // how to vulkan
+
+
     //querySwapChainSupport 在选择物理设备的时候检查过
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device_, surface_);
 
@@ -278,16 +376,16 @@ void vulkan_create_screen::create_swapchain() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapChain_) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
     std::vector<VkImage> swapChainImages; // 两个image 由 swapChain_管理，就不放到类中了
 
     //这里的设置重新设置的操作很细节
-    vkGetSwapchainImagesKHR(device_, swapChain_, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device_, swapChain_, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, swapChainImages.data());
     //        swapChainImages这个变量是全局变量，但是在这里才确定了数量和地址
     //        下面还有一个resize，先假定那个resize不会更改地址
     //        实际上是确定不会更改地址的，为什么要在下面再 resize 一遍呢？
@@ -297,21 +395,97 @@ void vulkan_create_screen::create_swapchain() {
     // swapChainImageFormat = surfaceFormat.format; // render pass 的时候还需要使用
     // swapChainExtent = extent;
 
-    swapChainImageViews.resize(swapChainImages.size());
+    swapchainImageViews.resize(swapChainImages.size());
 
     for (size_t i = 0; i < swapChainImages.size(); i++) {
-        swapChainImageViews[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
+        swapchainImageViews[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
                                                  VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
+void VKDevice::creare_swapchain_image_view() {
+    uint32_t imageCount{0};
+    chk(vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, nullptr));
+    swapchainImages.resize(imageCount);
+    chk(vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, swapchainImages.data()));
+    swapchainImageViews.resize(imageCount);
+    for (auto i = 0; i < imageCount; i++) {
+        VkImageViewCreateInfo viewCI{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = swapchainImages[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = imageFormat,
+            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
+        };
+        chk(vkCreateImageView(device_, &viewCI, nullptr, &swapchainImageViews[i]));
+    }
+}
 
-void vulkan_create_screen::createDepthResources() {
-    VkFormat depthFormat = findDepthFormat(physical_device_);
-    auto swapChainExtent = get_current_extent();
-    createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage,
-                depthImageMemory);
-    depthImageView = createImageView(device_, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+void VKDevice::createDepthResources() {
+    // VkFormat depthFormat = findDepthFormat(physical_device_);
+    // auto swapChainExtent = get_current_extent();
+    // createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
+    //             VK_IMAGE_TILING_OPTIMAL,
+    //             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage,
+    //             depthImageMemory);
+    // depthImageView = createImageView(device_, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
+
+void VKDevice::creare_depth_image_view() {
+    // Depth attachment
+    std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
+    for (VkFormat &format: depthFormatList) {
+        VkFormatProperties2 formatProperties{.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        vkGetPhysicalDeviceFormatProperties2(physical_device_, format, &formatProperties);
+        if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            depthFormat = format;
+            break;
+        }
+    }
+    assert(depthFormat != VK_FORMAT_UNDEFINED);
+    VkImageCreateInfo depthImageCI{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = depthFormat,
+        .extent{.width = surfaceCaps.currentExtent.width, .height = surfaceCaps.currentExtent.height, .depth = 1},
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+    VmaAllocationCreateInfo allocCI{
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
+    };
+    chk(vmaCreateImage(allocator, &depthImageCI, &allocCI, &depthImage, &depthImageAllocation, nullptr));
+    VkImageViewCreateInfo depthViewCI{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = depthImage, .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = depthFormat,
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .levelCount = 1, .layerCount = 1}
+    };
+    chk(vkCreateImageView(device_, &depthViewCI, nullptr, &depthImageView));
+}
+
+void VKDevice::destroy() {
+    vmaDestroyImage(allocator, depthImage, depthImageAllocation);
+    vkDestroyImageView(device_, depthImageView, nullptr);
+    for (auto i = 0; i < swapchainImageViews.size(); i++) {
+        vkDestroyImageView(device_, swapchainImageViews[i], nullptr);
+    }
+
+
+    vkDestroySwapchainKHR(device_, swapchain, nullptr);
+    vkDestroySurfaceKHR(instance_, surface_, nullptr);
+
+    VmaTotalStatistics stats;
+    vmaCalculateStatistics(allocator, &stats);
+
+    // 获取全局未销毁的分配总数
+    uint32_t activeAllocCount = stats.total.statistics.allocationCount;
+
+    vmaDestroyAllocator(allocator);
+    vkDestroyDevice(device_, nullptr);
+    vkDestroyInstance(instance_, nullptr);
+    glfwDestroyWindow(window_);
+    glfwTerminate();
 }
