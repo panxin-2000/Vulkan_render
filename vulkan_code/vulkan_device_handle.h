@@ -48,15 +48,14 @@ public:
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
     std::vector<VkImageView> swap_chain_image_views_;
 
-    std::vector<VkImage> swap_chain_images_; // 为什么会多一个这个？
-
+    // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
+    std::vector<VkImage> swap_chain_images_;
 
     VkImage depth_image_;
     VkImageView depth_image_view_;
 
     VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
     VkSurfaceCapabilitiesKHR surface_caps_{};
-    VkFormat image_format_{VK_FORMAT_B8G8R8A8_SRGB};
     uint32_t queue_family_{0};
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
@@ -87,7 +86,8 @@ public:
 
 
     [[nodiscard]] const VkFormat &get_image_format() const {
-        return image_format_;
+        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
+        return surfaceFormat.format;
     }
 
     [[nodiscard]] const VkFormat &get_depth_format() const {

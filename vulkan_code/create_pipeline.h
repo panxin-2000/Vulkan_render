@@ -15,7 +15,6 @@ uint32_t to_u32(T val) {
 }
 
 
-
 VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                            VkPipelineLayout pipelineLayout) {
     // Pipeline
@@ -64,9 +63,10 @@ VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCr
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1,
         .pAttachments = &blendAttachment
     };
+    VkFormat pColorAttachmentFormats = handle.get_image_format();
     VkPipelineRenderingCreateInfo renderingCI{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &handle.get_image_format(), .depthAttachmentFormat = handle.get_depth_format()
+        .pColorAttachmentFormats = &pColorAttachmentFormats, .depthAttachmentFormat = handle.get_depth_format()
     };
     VkGraphicsPipelineCreateInfo pipelineCI{
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

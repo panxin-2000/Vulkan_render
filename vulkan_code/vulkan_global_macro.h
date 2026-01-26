@@ -16,6 +16,11 @@
 #include <assert.h>
 #define Allocator nullptr
 
+constexpr uint32_t maxFramesInFlight{2};
+
+inline uint32_t get_max_Frames_In_Flight() {
+    return maxFramesInFlight;
+}
 
 // todo : 将res值变成具体的错误字符串
 #define VK_CHECK_RESULT(f)						    \

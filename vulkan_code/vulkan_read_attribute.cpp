@@ -55,7 +55,6 @@ VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &devic
 }
 
 
-
 /**
  * vkGetPhysicalDeviceSurfaceCapabilitiesKHR
  * vkGetPhysicalDeviceSurfaceFormatsKHR
@@ -66,24 +65,85 @@ VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &devic
  */
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
     SwapChainSupportDetails details;
+    // details.capabilities 物理设备表面功能
+    VkSurfaceCapabilitiesKHR temp;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &temp);
+    std::cout << "min Image Count : " << temp.minImageCount << std::endl;
+    std::cout << "max Image Count : " << temp.maxImageCount << std::endl;
+    std::cout << "current Extent x : " << temp.currentExtent.width << std::endl;
+    std::cout << "current Extent y : " << temp.currentExtent.height << std::endl;
+    std::cout << "min Image Extent x : " << temp.minImageExtent.width << std::endl;
+    std::cout << "min Image Extent y : " << temp.minImageExtent.height << std::endl;
+    std::cout << "max Image Extent x : " << temp.maxImageExtent.width << std::endl;
+    std::cout << "max Image Extent y : " << temp.maxImageExtent.height << std::endl;
+    std::cout << "max Image Array Layers : " << temp.maxImageArrayLayers << std::endl;
+    details.capabilities = temp;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
+    return details;
+}
+
+VkExtent2D get_swap_rational_extent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities) {
+    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+        return capabilities.currentExtent;
+    } else {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        VkExtent2D actualExtent = {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
+                                        capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height,
+                                         capabilities.maxImageExtent.height);
+
+        return actualExtent;
+    }
+}
+
+uint32_t get_rational_image_Count(const VkSurfaceCapabilitiesKHR &capabilities) {
+    uint32_t imageCount = get_max_Frames_In_Flight(); // 这里的值其实不能写死，应该由双缓冲函数三缓冲决定
+    if (capabilities.maxImageCount > 0 &&
+        imageCount > capabilities.maxImageCount) {
+        imageCount = capabilities.maxImageCount;
+    }
+    return imageCount;
+}
+
+VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkPhysicalDevice device, const VkSurfaceKHR &surface) {
+    std::vector<VkSurfaceFormatKHR> formats;
     uint32_t formatCount;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
-        details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+        formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, formats.data());
     }
+    for (const auto &availableFormat: formats) {
+        if (availableFormat.format == VK_FORMAT_R8G8B8A8_SRGB &&
+            availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return availableFormat;
+        }
+    }
+    return formats[0];
+}
 
+VkPresentModeKHR chooseSwapPresentMode(VkPhysicalDevice device, VkSurfaceKHR surface) {
+    std::vector<VkPresentModeKHR> presentModes;
     uint32_t presentModeCount;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
-        details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+        presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, presentModes.data());
     }
-
-    return details;
+    for (const auto &availablePresentMode: presentModes) {
+        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+            return availablePresentMode;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
 }

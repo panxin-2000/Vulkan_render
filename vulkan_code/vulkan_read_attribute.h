@@ -5,6 +5,8 @@
 #ifndef HELLO_MAC_VULKAN_READ_ATTRIBUTE_H
 #define HELLO_MAC_VULKAN_READ_ATTRIBUTE_H
 #include "vulkan_global_macro.h"
+#include "glfw/glfw3.h"
+
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -23,5 +25,13 @@ std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysica
 VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &device);
 
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+VkExtent2D get_swap_rational_extent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities);
+
+uint32_t get_rational_image_Count(const VkSurfaceCapabilitiesKHR &capabilities);
+
+VkSurfaceFormatKHR chooseSwapSurfaceFormat(VkPhysicalDevice device, const VkSurfaceKHR &surface);
+
+VkPresentModeKHR chooseSwapPresentMode(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 #endif //HELLO_MAC_VULKAN_READ_ATTRIBUTE_H

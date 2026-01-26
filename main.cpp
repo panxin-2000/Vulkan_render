@@ -22,7 +22,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <thread>
 
-constexpr uint32_t maxFramesInFlight{2};
 uint32_t imageIndex{0};
 uint32_t frameIndex{0};
 bool updateSwapchain{false};

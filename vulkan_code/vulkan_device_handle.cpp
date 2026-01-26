@@ -256,66 +256,34 @@ void VKDevice::create_VMA() {
 }
 
 
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
-    for (const auto &availableFormat: availableFormats) {
-        if (availableFormat.format == VK_FORMAT_R8G8B8A8_SRGB &&
-            availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            return availableFormat;
-        }
-    }
-
-    return availableFormats[0];
-}
-
-VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
-    for (const auto &availablePresentMode: availablePresentModes) {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-            return availablePresentMode;
-        }
-    }
-
-    return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities) {
-    if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-        return capabilities.currentExtent;
-    } else {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-
-        VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
-        };
-
-        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width,
-                                        capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height,
-                                         capabilities.maxImageExtent.height);
-
-        return actualExtent;
-    }
-}
-
-
 VkExtent2D VKDevice::get_current_extent() {
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device_, surface_);
-    const VkExtent2D extent = chooseSwapExtent(window_, swapChainSupport.capabilities);
+    // todo: 这个函数应该是稍微有点重复了的，一会儿转移
+    VkSurfaceCapabilitiesKHR surface_caps;
+    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps));
+    const VkExtent2D extent = get_swap_rational_extent(window_, surface_caps);
     return extent;
 }
 
 
 void VKDevice::create_swap_chain() {
-    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_));
     // Swap chain
+
+    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_));
+    const VkExtent2D extent = get_swap_rational_extent(window_, surface_caps_);
+
+    uint32_t imageCount = get_rational_image_Count(surface_caps_);
+
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
+
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(physical_device_, surface_);
+
     VkSwapchainCreateInfoKHR swapchainCI{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface_,
-        .minImageCount = surface_caps_.minImageCount,
-        .imageFormat = image_format_,
-        .imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR,
-        .imageExtent{.width = surface_caps_.currentExtent.width, .height = surface_caps_.currentExtent.height},
+        .minImageCount = imageCount,
+        .imageFormat = surfaceFormat.format,
+        .imageColorSpace = surfaceFormat.colorSpace,
+        .imageExtent = extent,
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
@@ -324,32 +292,24 @@ void VKDevice::create_swap_chain() {
     };
     chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
+    //
+    //     .surface = surface_,
+    // .minImageCount = imageCount,
+    // .imageFormat = surfaceFormat.format,
+    // .imageColorSpace = surfaceFormat.colorSpace,
+    // .imageExtent = extent,
+    // .imageArrayLayers = 1,
+    // .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+    // .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE, // todo
+    //
+    // .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+    // // .preTransform = surface_caps_.currentTransform,
+    //
+    // .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+    // .presentMode = presentMode,
+    // .clipped = VK_TRUE,
+    // .oldSwapchain = VK_NULL_HANDLE,
 
-
-    //querySwapChainSupport 在选择物理设备的时候检查过
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device_, surface_);
-
-    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = chooseSwapExtent(window_, swapChainSupport.capabilities);
-
-    //        swapChainSupport.capabilities.minImageCount  的值在Mac上是2
-    uint32_t imageCount = 2;
-    if (swapChainSupport.capabilities.maxImageCount > 0 &&
-        imageCount > swapChainSupport.capabilities.maxImageCount) {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
-    }
-
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = surface_;
-
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = surfaceFormat.format;
-    createInfo.imageColorSpace = surfaceFormat.colorSpace;
-    createInfo.imageExtent = extent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     // QueueFamilyIndices indices = find_Queue_Families(physicalDevice);
     // uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
@@ -358,19 +318,9 @@ void VKDevice::create_swap_chain() {
     // createInfo.queueFamilyIndexCount = 2;
     // createInfo.pQueueFamilyIndices = queueFamilyIndices;
     // } else {
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     // }
 
-    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = presentMode;
-    createInfo.clipped = VK_TRUE;
-
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swap_chain_) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create swap chain!");
-    }
 
     std::vector<VkImage> swapChainImages; // 两个image 由 swapChain_管理，就不放到类中了
 
@@ -391,11 +341,12 @@ void VKDevice::create_swap_chain() {
 
     for (size_t i = 0; i < swapChainImages.size(); i++) {
         swap_chain_image_views_[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
-                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+                                                     VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
 void VKDevice::create_swap_chain_image_view() {
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(physical_device_, surface_);
     uint32_t imageCount{0};
     chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
     swap_chain_images_.resize(imageCount);
@@ -403,9 +354,15 @@ void VKDevice::create_swap_chain_image_view() {
     swap_chain_image_views_.resize(imageCount);
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = swap_chain_images_[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = image_format_,
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = swap_chain_images_[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = surfaceFormat.format,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
         };
         chk(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
     }
@@ -438,7 +395,11 @@ void VKDevice::create_depth_image_view() {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
         .format = depth_format_,
-        .extent{.width = surface_caps_.currentExtent.width, .height = surface_caps_.currentExtent.height, .depth = 1},
+        .extent{
+            .width = surface_caps_.currentExtent.width,
+            .height = surface_caps_.currentExtent.height,
+            .depth = 1
+        },
         .mipLevels = 1,
         .arrayLayers = 1,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -451,9 +412,15 @@ void VKDevice::create_depth_image_view() {
     };
     chk(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation, nullptr));
     VkImageViewCreateInfo depthViewCI{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = depth_image_, .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = depth_image_,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format = depth_format_,
-        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .levelCount = 1, .layerCount = 1}
+        .subresourceRange{
+            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .levelCount = 1,
+            .layerCount = 1
+        }
     };
     chk(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
 }
