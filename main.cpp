@@ -106,14 +106,14 @@ glm::vec3 objectRotations[3]{};
 
 
 int main(int argc, char *argv[]) {
-    handle.createInstance();
+    handle.create_instance();
     handle.choose_one_physical_device();
-    handle.createDevice();
-    handle.createVMA();
-    handle.createSurface();
-    handle.create_swapchain();
-    handle.creare_swapchain_image_view();
-    handle.creare_depth_image_view();
+    handle.create_device();
+    handle.create_VMA();
+    handle.create_surface();
+    handle.create_swap_chain();
+    handle.create_swap_chain_image_view();
+    handle.create_depth_image_view();
 
     // Window and surface
     Descriptor_Pool descriptor_pool(&handle, 250);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
         // Sync
         chk(vkWaitForFences(handle.get_device(), 1, &fences[frameIndex], true, UINT64_MAX));
         chk(vkResetFences(handle.get_device(), 1, &fences[frameIndex]));
-        chkSwapchain(vkAcquireNextImageKHR(handle.get_device(), handle.get_swapchain(), UINT64_MAX,
+        chkSwapchain(vkAcquireNextImageKHR(handle.get_device(), handle.get_swap_chain(), UINT64_MAX,
                                            presentSemaphores[frameIndex], VK_NULL_HANDLE,
                                            &imageIndex));
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
                 .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                 .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                .image = handle.get_swapchain_images()[imageIndex],
+                .image = handle.get_swap_chain_images()[imageIndex],
                 .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
             },
             VkImageMemoryBarrier2{
@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
             .dstAccessMask = 0,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .image = handle.get_swapchain_images()[imageIndex],
+            .image = handle.get_swap_chain_images()[imageIndex],
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         };
         VkDependencyInfo barrierPresentDependencyInfo{
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
             .waitSemaphoreCount = 1,
             .pWaitSemaphores = &renderSemaphores[imageIndex], // 不需要++ ？？可以，
             .swapchainCount = 1,
-            .pSwapchains = &handle.get_swapchain(),
+            .pSwapchains = &handle.get_swap_chain(),
             .pImageIndices = &imageIndex
         };
         chkSwapchain(vkQueuePresentKHR(handle.get_queue(), &presentInfo));

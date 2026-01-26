@@ -6,7 +6,6 @@
 #define HELLO_MAC_GLFW_VULKAN_H
 
 #include "vulkan_utility.h"
-#include <cassert>
 #include <string>
 #include <vector>
 #include <vk_mem_alloc.h>
@@ -22,11 +21,11 @@ struct Vertex {
 class VKDevice {
 public:
     // ApplicationInfo 的参数
-    std::string ApplicationName = "Vulkan Example";
-    std::string EngineName = "no engine";
-    uint32_t applicationVersion = 102;
-    uint32_t engineVersion = 0;
-    uint32_t apiVersion = VK_API_VERSION_1_3;
+    std::string application_name_ = "Vulkan Example";
+    std::string engine_name_ = "no engine";
+    uint32_t application_version_ = 102;
+    uint32_t engine_version_ = 0;
+    uint32_t api_version_ = VK_API_VERSION_1_3;
 
 
     std::vector<const char *> instanceExtensions;
@@ -41,44 +40,44 @@ public:
     VkSurfaceKHR surface_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkDevice device_ = VK_NULL_HANDLE;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-    VkQueue presentQueue = VK_NULL_HANDLE;
-    VkQueue transferQueue = VK_NULL_HANDLE;
+    VkQueue graphics_queue_ = VK_NULL_HANDLE;
+    VkQueue present_queue_ = VK_NULL_HANDLE;
+    VkQueue transfer_queue_ = VK_NULL_HANDLE;
 
 
-    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-    std::vector<VkImageView> swapchainImageViews;
+    VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
+    std::vector<VkImageView> swap_chain_image_views_;
 
-    std::vector<VkImage> swapchainImages; // 为什么会多一个这个？
+    std::vector<VkImage> swap_chain_images_; // 为什么会多一个这个？
 
 
-    VkImage depthImage;
-    VkImageView depthImageView;
+    VkImage depth_image_;
+    VkImageView depth_image_view_;
 
-    VmaAllocator allocator = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-    VkSurfaceCapabilitiesKHR surfaceCaps{};
-    const VkFormat imageFormat{VK_FORMAT_B8G8R8A8_SRGB};
-    uint32_t queueFamily{0};
-    VkFormat depthFormat{VK_FORMAT_UNDEFINED};
+    VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
+    VkSurfaceCapabilitiesKHR surface_caps_{};
+    VkFormat image_format_{VK_FORMAT_B8G8R8A8_SRGB};
+    uint32_t queue_family_{0};
+    VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
 public:
-    void createInstance();
+    void create_instance();
 
-    void createSurface();
+    void create_surface();
 
     bool choose_one_physical_device();
 
-    void createDevice();
+    void create_device();
 
-    void createVMA();
+    void create_VMA();
 
-    void create_swapchain();
+    void create_swap_chain();
 
-    void createDepthResources();
+    void create_depth_resources();
 
-    void creare_swapchain_image_view();
+    void create_swap_chain_image_view();
 
-    void creare_depth_image_view();
+    void create_depth_image_view();
 
     void destroy();
 
@@ -87,67 +86,67 @@ public:
     VkExtent2D get_current_extent();
 
 
-    const VkFormat &get_imageFormat() {
-        return imageFormat;
+    [[nodiscard]] const VkFormat &get_image_format() const {
+        return image_format_;
     }
 
-    const VkFormat get_depthFormat() {
-        return depthFormat;
+    [[nodiscard]] const VkFormat &get_depth_format() const {
+        return depth_format_;
     }
 
 
     VmaAllocation depthImageAllocation; // ????? 这是一个什么东西？
 
-    uint32_t get_queue_Family() {
-        return queueFamily;
+    [[nodiscard]] uint32_t get_queue_Family() const {
+        return queue_family_;
     }
 
-    const VkInstance &get_instance() {
+    [[nodiscard]] const VkInstance &get_instance() const {
         return instance_;
     }
 
-    const VkDevice &get_device() {
+    [[nodiscard]] const VkDevice &get_device() const {
         return device_;
     }
 
-    const VkQueue &get_queue() {
-        return graphicsQueue;
+    [[nodiscard]] const VkQueue &get_queue() const {
+        return graphics_queue_;
     }
 
-    const VkSurfaceKHR &get_surface() {
+    [[nodiscard]] const VkSurfaceKHR &get_surface() const {
         return surface_;
     }
 
-    const VkSwapchainKHR &get_swapchain() const {
-        return swapchain;
+    [[nodiscard]] const VkSwapchainKHR &get_swap_chain() const {
+        return swap_chain_;
     }
 
-    const std::vector<VkImageView> &get_swap_image_view() {
-        return swapchainImageViews;
+    [[nodiscard]] const std::vector<VkImageView> &get_swap_image_view() const {
+        return swap_chain_image_views_;
     }
 
     VkImage &get_depth_image() {
-        return depthImage;
+        return depth_image_;
     }
 
-    const VkImageView &get_depth_image_view() {
-        return depthImageView;
+    [[nodiscard]] const VkImageView &get_depth_image_view() const {
+        return depth_image_view_;
     }
 
-    const VmaAllocator &get_allocator() {
-        return allocator;
+    [[nodiscard]] const VmaAllocator &get_allocator() const {
+        return allocator_;
     }
 
-    const GLFWwindow *get_window() {
+    [[nodiscard]] const GLFWwindow *get_window() const {
         return window_;
     }
 
-    std::vector<VkImage> get_swapchain_images() {
-        return swapchainImages;
+    [[nodiscard]] std::vector<VkImage> get_swap_chain_images() const {
+        return swap_chain_images_;
     }
 
-    VkSurfaceCapabilitiesKHR get_surface_caps() {
-        return surfaceCaps;
+    [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const {
+        return surface_caps_;
     }
 };
 

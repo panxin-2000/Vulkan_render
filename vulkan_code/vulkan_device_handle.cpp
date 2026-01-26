@@ -35,17 +35,17 @@ VKDevice::~VKDevice() {
 }
 
 
-void VKDevice::createInstance() {
+void VKDevice::create_instance() {
     if (volkInitialize() != VK_SUCCESS) {
         return;
     }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = ApplicationName.c_str();
-    appInfo.applicationVersion = applicationVersion;
-    appInfo.pEngineName = EngineName.c_str();
-    appInfo.engineVersion = engineVersion;
-    appInfo.apiVersion = apiVersion;
+    appInfo.pApplicationName = application_name_.c_str();
+    appInfo.applicationVersion = application_version_;
+    appInfo.pEngineName = engine_name_.c_str();
+    appInfo.engineVersion = engine_version_;
+    appInfo.apiVersion = api_version_;
     appInfo.pNext = nullptr;
 
     VkInstanceCreateInfo instanceCreateInfo{};
@@ -81,7 +81,7 @@ void VKDevice::createInstance() {
     }
 }
 
-void VKDevice::createSurface() {
+void VKDevice::create_surface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
@@ -128,7 +128,7 @@ bool VKDevice::choose_one_physical_device() {
     vkGetPhysicalDeviceQueueFamilyProperties(physical_devices[deviceIndex], &queueFamilyCount, queueFamilies.data());
     for (size_t i = 0; i < queueFamilies.size(); i++) {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            queueFamily = i;
+            queue_family_ = i;
             break;
         }
     }
@@ -138,11 +138,11 @@ bool VKDevice::choose_one_physical_device() {
 }
 
 
-void VKDevice::createDevice() {
+void VKDevice::create_device() {
     // Logical device
     const float qfpriorities{1.0f};
     VkDeviceQueueCreateInfo queueCI{
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = queueFamily, .queueCount = 1,
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, .queueFamilyIndex = queue_family_, .queueCount = 1,
         .pQueuePriorities = &qfpriorities
     };
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
@@ -167,7 +167,7 @@ void VKDevice::createDevice() {
         .pEnabledFeatures = &enabledVk10Features
     };
     chk(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
-    vkGetDeviceQueue(device_, queueFamily, 0, &graphicsQueue);
+    vkGetDeviceQueue(device_, queue_family_, 0, &graphics_queue_);
     return; // how to vulkan 的 内容
 
 
@@ -233,13 +233,13 @@ void VKDevice::createDevice() {
 #endif
     if (vkCreateDevice(physical_device_, &createInfo, Allocator, &device_) != VK_SUCCESS) {
     }
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &graphicsQueue);
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &presentQueue);
-    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &transferQueue);
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &graphics_queue_);
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &present_queue_);
+    vkGetDeviceQueue(device_, get_queue_family_index(physical_device_, surface_), 0, &transfer_queue_);
     //  graphicsQueue presentQueue transferQueue 大概率是相同的，提交任务时需要加锁
 }
 
-void VKDevice::createVMA() {
+void VKDevice::create_VMA() {
     // VMA
     VmaVulkanFunctions vkFunctions{
         .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
@@ -252,7 +252,7 @@ void VKDevice::createVMA() {
         .device = device_, .pVulkanFunctions = &vkFunctions,
         .instance = instance_
     };
-    chk(vmaCreateAllocator(&allocatorCI, &allocator));
+    chk(vmaCreateAllocator(&allocatorCI, &allocator_));
 }
 
 
@@ -306,23 +306,23 @@ VkExtent2D VKDevice::get_current_extent() {
 }
 
 
-void VKDevice::create_swapchain() {
-    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surfaceCaps));
+void VKDevice::create_swap_chain() {
+    chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_));
     // Swap chain
     VkSwapchainCreateInfoKHR swapchainCI{
         .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface = surface_,
-        .minImageCount = surfaceCaps.minImageCount,
-        .imageFormat = imageFormat,
+        .minImageCount = surface_caps_.minImageCount,
+        .imageFormat = image_format_,
         .imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR,
-        .imageExtent{.width = surfaceCaps.currentExtent.width, .height = surfaceCaps.currentExtent.height},
+        .imageExtent{.width = surface_caps_.currentExtent.width, .height = surface_caps_.currentExtent.height},
         .imageArrayLayers = 1,
         .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
         .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = VK_PRESENT_MODE_FIFO_KHR
     };
-    chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swapchain));
+    chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
 
 
@@ -368,16 +368,16 @@ void VKDevice::create_swapchain() {
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swap_chain_) != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
     std::vector<VkImage> swapChainImages; // 两个image 由 swapChain_管理，就不放到类中了
 
     //这里的设置重新设置的操作很细节
-    vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swapChainImages.data());
     //        swapChainImages这个变量是全局变量，但是在这里才确定了数量和地址
     //        下面还有一个resize，先假定那个resize不会更改地址
     //        实际上是确定不会更改地址的，为什么要在下面再 resize 一遍呢？
@@ -387,31 +387,31 @@ void VKDevice::create_swapchain() {
     // swapChainImageFormat = surfaceFormat.format; // render pass 的时候还需要使用
     // swapChainExtent = extent;
 
-    swapchainImageViews.resize(swapChainImages.size());
+    swap_chain_image_views_.resize(swapChainImages.size());
 
     for (size_t i = 0; i < swapChainImages.size(); i++) {
-        swapchainImageViews[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
+        swap_chain_image_views_[i] = createImageView(device_, swapChainImages[i], surfaceFormat.format,
                                                  VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
-void VKDevice::creare_swapchain_image_view() {
+void VKDevice::create_swap_chain_image_view() {
     uint32_t imageCount{0};
-    chk(vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, nullptr));
-    swapchainImages.resize(imageCount);
-    chk(vkGetSwapchainImagesKHR(device_, swapchain, &imageCount, swapchainImages.data()));
-    swapchainImageViews.resize(imageCount);
+    chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
+    swap_chain_images_.resize(imageCount);
+    chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swap_chain_images_.data()));
+    swap_chain_image_views_.resize(imageCount);
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = swapchainImages[i],
-            .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = imageFormat,
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = swap_chain_images_[i],
+            .viewType = VK_IMAGE_VIEW_TYPE_2D, .format = image_format_,
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         };
-        chk(vkCreateImageView(device_, &viewCI, nullptr, &swapchainImageViews[i]));
+        chk(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
     }
 }
 
-void VKDevice::createDepthResources() {
+void VKDevice::create_depth_resources() {
     // VkFormat depthFormat = findDepthFormat(physical_device_);
     // auto swapChainExtent = get_current_extent();
     // createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
@@ -422,23 +422,23 @@ void VKDevice::createDepthResources() {
 }
 
 
-void VKDevice::creare_depth_image_view() {
+void VKDevice::create_depth_image_view() {
     // Depth attachment
     std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
     for (VkFormat &format: depthFormatList) {
         VkFormatProperties2 formatProperties{.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
         vkGetPhysicalDeviceFormatProperties2(physical_device_, format, &formatProperties);
         if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            depthFormat = format;
+            depth_format_ = format;
             break;
         }
     }
-    assert(depthFormat != VK_FORMAT_UNDEFINED);
+    assert(depth_format_ != VK_FORMAT_UNDEFINED);
     VkImageCreateInfo depthImageCI{
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
-        .format = depthFormat,
-        .extent{.width = surfaceCaps.currentExtent.width, .height = surfaceCaps.currentExtent.height, .depth = 1},
+        .format = depth_format_,
+        .extent{.width = surface_caps_.currentExtent.width, .height = surface_caps_.currentExtent.height, .depth = 1},
         .mipLevels = 1,
         .arrayLayers = 1,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -449,33 +449,33 @@ void VKDevice::creare_depth_image_view() {
     VmaAllocationCreateInfo allocCI{
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
     };
-    chk(vmaCreateImage(allocator, &depthImageCI, &allocCI, &depthImage, &depthImageAllocation, nullptr));
+    chk(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation, nullptr));
     VkImageViewCreateInfo depthViewCI{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = depthImage, .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = depthFormat,
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = depth_image_, .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = depth_format_,
         .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT, .levelCount = 1, .layerCount = 1}
     };
-    chk(vkCreateImageView(device_, &depthViewCI, nullptr, &depthImageView));
+    chk(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
 }
 
 void VKDevice::destroy() {
-    vmaDestroyImage(allocator, depthImage, depthImageAllocation);
-    vkDestroyImageView(device_, depthImageView, nullptr);
-    for (auto i = 0; i < swapchainImageViews.size(); i++) {
-        vkDestroyImageView(device_, swapchainImageViews[i], nullptr);
+    vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
+    vkDestroyImageView(device_, depth_image_view_, nullptr);
+    for (auto i = 0; i < swap_chain_image_views_.size(); i++) {
+        vkDestroyImageView(device_, swap_chain_image_views_[i], nullptr);
     }
 
 
-    vkDestroySwapchainKHR(device_, swapchain, nullptr);
+    vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
 
     VmaTotalStatistics stats;
-    vmaCalculateStatistics(allocator, &stats);
+    vmaCalculateStatistics(allocator_, &stats);
 
     // 获取全局未销毁的分配总数
     uint32_t activeAllocCount = stats.total.statistics.allocationCount;
 
-    vmaDestroyAllocator(allocator);
+    vmaDestroyAllocator(allocator_);
     vkDestroyDevice(device_, nullptr);
     vkDestroyInstance(instance_, nullptr);
     glfwDestroyWindow(window_);
