@@ -157,7 +157,7 @@ file(GLOB_RECURSE RENDER
 )
 
 file(GLOB_RECURSE vulkan_code
-#        "vulkan_code/glfw_vulkan.cpp"
+        #        "vulkan_code/glfw_vulkan.cpp"
         "vulkan_code/vulkan_utility.cpp"
         "vulkan_code/vulkan_read_attribute.cpp"
         "vulkan_code/vulkan_validation_layer.cpp"
@@ -173,7 +173,7 @@ file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"
 )
 if (APPLE)
-    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT)
+    add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT -DVK_ENABLE_BETA_EXTENSIONS)
 endif ()
 include_directories(event)
 include_directories(singleton)
@@ -319,17 +319,14 @@ add_executable(learn_openGL main.cpp assets/shader.slang
 
 
 target_compile_definitions(learn_openGL PRIVATE VK_NO_PROTOTYPES)
-add_definitions(-DVK_USE_PLATFORM_MACOS_MVK)
 
 
 set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-
 target_link_libraries(learn_openGL PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
 
 target_link_libraries(learn_openGL PRIVATE ktx slang)
-target_compile_definitions(learn_openGL PRIVATE VK_USE_PLATFORM_MACOS_MVK)
 target_link_libraries(learn_openGL PRIVATE volk)
 target_link_libraries(learn_openGL PRIVATE GLFW)
 target_link_libraries(learn_openGL PRIVATE GPUOpen::VulkanMemoryAllocator)

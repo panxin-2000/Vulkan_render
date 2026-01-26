@@ -13,6 +13,11 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+struct Vertex {
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+};
 
 class VKDevice {
 public:
@@ -61,7 +66,7 @@ public:
 
     void createSurface();
 
-    bool choose_one_physical_device(VkPhysicalDevice &PhysicalDevice);
+    bool choose_one_physical_device();
 
     void createDevice();
 

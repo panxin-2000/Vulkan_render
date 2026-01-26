@@ -28,19 +28,6 @@ static inline void chk(bool result) {
 }
 
 VKDevice::VKDevice() {
-#ifdef ENGINE_USE_VOLK
-    if (volkInitialize() != VK_SUCCESS) {
-        return;
-    }
-#endif
-    createInstance();
-
-    createSurface();
-
-    choose_one_physical_device(physical_device_);
-
-    createDevice();
-    //
 }
 
 VKDevice::~VKDevice() {
@@ -49,6 +36,9 @@ VKDevice::~VKDevice() {
 
 
 void VKDevice::createInstance() {
+    if (volkInitialize() != VK_SUCCESS) {
+        return;
+    }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = ApplicationName.c_str();
@@ -96,7 +86,7 @@ void VKDevice::createSurface() {
     if (GLFW_TRUE == glfwVulkanSupported()) {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window_ = glfwCreateWindow(800, 600, "Vulkan", nullptr, nullptr);
+        window_ = glfwCreateWindow(1280, 720, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
         auto result = glfwCreateWindowSurface(instance_, window_, Allocator, &surface_);
         if (result != VK_SUCCESS) {
@@ -105,7 +95,7 @@ void VKDevice::createSurface() {
     }
 }
 
-bool VKDevice::choose_one_physical_device(VkPhysicalDevice &PhysicalDevice) {
+bool VKDevice::choose_one_physical_device() {
     auto physical_devices = get_all_physical_devices(instance_);
     // for (auto physical_device: physical_devices) {
     //     auto family_properties = get_queue_family_properties(physical_device);
@@ -163,7 +153,9 @@ void VKDevice::createDevice() {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &enabledVk12Features,
         .synchronization2 = true, .dynamicRendering = true
     };
-    const std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+
     const VkPhysicalDeviceFeatures enabledVk10Features{.samplerAnisotropy = VK_TRUE};
     VkDeviceCreateInfo deviceCI{
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

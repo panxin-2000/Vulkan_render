@@ -9,6 +9,7 @@
 
 #include "/usr/local/lib/slang/include/slang.h"
 #include "/usr/local/lib/slang/include/slang-com-ptr.h"
+#include "vulkan_device_handle.h"
 
 Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
 
@@ -18,15 +19,17 @@ VkShaderModule createshaderModule(VKDevice &handle) {
 
     // Initialize Slang shader compiler
     slang::createGlobalSession(slangGlobalSession.writeRef());
-    auto slangTargets{
-        std::to_array<slang::TargetDesc>({
-            {.format{SLANG_SPIRV}, .profile{slangGlobalSession->findProfile("spirv_1_4")}}
-        })
+    std::vector<slang::TargetDesc> slangTargets{
+        {
+            .format{SLANG_SPIRV},
+            .profile{slangGlobalSession->findProfile("spirv_1_4")}
+        }
     };
-    auto slangOptions{
-        std::to_array<slang::CompilerOptionEntry>({
-            {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1}}
-        })
+    std::vector<slang::CompilerOptionEntry> slangOptions{
+        {
+            slang::CompilerOptionName::EmitSpirvDirectly,
+            {slang::CompilerOptionValueKind::Int, 1}
+        }
     };
     slang::SessionDesc slangSessionDesc{
         .targets{slangTargets.data()}, .targetCount{SlangInt(slangTargets.size())},
