@@ -30,7 +30,7 @@ public:
 
     std::vector<const char *> instanceExtensions;
 
-    VKDevice();
+    VKDevice() = default;
 
     ~VKDevice();
 

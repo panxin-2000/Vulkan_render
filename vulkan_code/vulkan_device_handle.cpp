@@ -27,8 +27,6 @@ static inline void chk(bool result) {
     }
 }
 
-VKDevice::VKDevice() {
-}
 
 VKDevice::~VKDevice() {
     volkFinalize();
