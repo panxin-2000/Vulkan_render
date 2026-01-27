@@ -314,7 +314,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
 
-add_executable(learn_openGL main.cpp assets/shader.slang
+add_executable(learn_openGL main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
 
