@@ -26,6 +26,18 @@ struct ShaderDataBuffer {
     void *mapped{nullptr};
 };
 
+static inline void chkSwapchain(VkResult result) {
+    if (result < VK_SUCCESS) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            // updateSwapchain = true;
+            return;
+        }
+        std::cerr << "Vulkan call returned an error (" << result << ")\n";
+        exit(result);
+    }
+}
+
+
 class Engine {
     VKDevice *handle_;
     VkCommandPool commandPool{VK_NULL_HANDLE};
@@ -35,6 +47,16 @@ class Engine {
     std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
     std::vector<VkSemaphore> renderSemaphores;
 
+    /**
+     * frameIndex 正在渲染的一帧图像
+     * imageIndex swap chain 创建的 image 的索引
+     * 可能会有三个 image 交替显示到屏幕
+     * 但是永远只有 一个 image 用于渲染
+     * 屏幕绘制比较快的话，三缓冲没有太大的作用
+    * 屏幕绘制比较慢的话，丢弃过时帧，选择最新帧绘制，开始渲染到开始显示的延迟的延迟不一致的问题
+     */
+    uint32_t frameIndex{0}; //
+
 public:
     Engine(VKDevice *handle) : handle_{handle} {
     }
@@ -43,12 +65,24 @@ public:
         return fences;
     }
 
+    VkFence &get_current_fences() {
+        return get_fences()[frameIndex];
+    }
+
     std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
         return presentSemaphores;
     }
 
+    VkSemaphore &get_current_presentSemaphores() {
+        return get_presentSemaphores()[frameIndex];
+    }
+
     std::vector<VkSemaphore> &get_renderSemaphores() {
         return renderSemaphores;
+    }
+
+    VkSemaphore &get_current_renderSemaphores() {
+        return get_renderSemaphores()[frameIndex];
     }
 
     VkCommandPool &get_command_pool() {
@@ -59,8 +93,16 @@ public:
         return commandBuffers;
     }
 
+    VkCommandBuffer &get_current_command_buffer() {
+        return get_command_buffers()[frameIndex];
+    }
+
     std::array<ShaderDataBuffer, maxFramesInFlight> &get_shader_data_buffer() {
         return shaderDataBuffers;
+    }
+
+    ShaderDataBuffer &get_current_shader_data_buffer() {
+        return get_shader_data_buffer()[frameIndex];
     }
 
     void create_command_buffer() {
@@ -130,6 +172,45 @@ public:
         }
     }
 
+    void put_one_image_to_screen(uint32_t &imageIndex) {
+        // Submit to graphics queue
+        VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
+        auto cb = get_current_command_buffer();
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &get_current_presentSemaphores(),
+            .pWaitDstStageMask = &waitStages,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cb,
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores = &get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
+        };
+        VK_CHECK_RESULT(vkQueueSubmit(handle_->get_queue(), 1, &submitInfo, get_current_fences()));
+
+        frameIndex = (frameIndex + 1) % maxFramesInFlight;
+        VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
+            .swapchainCount = 1,
+            .pSwapchains = &handle_->get_swap_chain(),
+            .pImageIndices = &imageIndex
+        };
+        chkSwapchain(vkQueuePresentKHR(handle_->get_queue(), &presentInfo));
+    }
+
+    void get_one_image_can_render(uint32_t &imageIndex) {
+        VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+        VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
+        chkSwapchain(vkAcquireNextImageKHR(handle_->get_device(),
+                                           handle_->get_swap_chain(),
+                                           UINT64_MAX,
+                                           get_current_presentSemaphores(),
+                                           VK_NULL_HANDLE,
+                                           &imageIndex));
+    }
 
     void destroy() {
         VK_CHECK_RESULT(vkDeviceWaitIdle(handle_->get_device()));

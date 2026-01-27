@@ -25,7 +25,6 @@
 #include "engine.h"
 
 uint32_t imageIndex{0};
-uint32_t frameIndex{0};
 bool updateSwapchain{false};
 
 
@@ -36,16 +35,16 @@ static inline void chk(VkResult result) {
     }
 }
 
-static inline void chkSwapchain(VkResult result) {
-    if (result < VK_SUCCESS) {
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            updateSwapchain = true;
-            return;
-        }
-        std::cerr << "Vulkan call returned an error (" << result << ")\n";
-        exit(result);
-    }
-}
+// static inline void chkSwapchain(VkResult result) {
+//     if (result < VK_SUCCESS) {
+//         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+//             updateSwapchain = true;
+//             return;
+//         }
+//         std::cerr << "Vulkan call returned an error (" << result << ")\n";
+//         exit(result);
+//     }
+// }
 
 static inline void chk(bool result) {
     if (!result) {
@@ -125,12 +124,10 @@ int main(int argc, char *argv[]) {
     // Render loop
     while (!glfwWindowShouldClose(handle.window_)) {
         glfwPollEvents();
+
         // Sync
-        chk(vkWaitForFences(handle.get_device(), 1, &engine.get_fences()[frameIndex], true, UINT64_MAX));
-        chk(vkResetFences(handle.get_device(), 1, &engine.get_fences()[frameIndex]));
-        chkSwapchain(vkAcquireNextImageKHR(handle.get_device(), handle.get_swap_chain(), UINT64_MAX,
-                                           engine.get_presentSemaphores()[frameIndex], VK_NULL_HANDLE,
-                                           &imageIndex));
+
+        engine.get_one_image_can_render(imageIndex);
 
 
         // Update shader data
@@ -141,10 +138,10 @@ int main(int argc, char *argv[]) {
             shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
                                       glm::quat(objectRotations[i]));
         }
-        memcpy(engine.get_shader_data_buffer()[frameIndex].mapped, &shaderData, sizeof(ShaderData));
+        memcpy(engine.get_current_shader_data_buffer().mapped, &shaderData, sizeof(ShaderData));
 
         // Build command buffer
-        auto cb = engine.get_command_buffers()[frameIndex];
+        auto cb = engine.get_current_command_buffer();
         chk(vkResetCommandBuffer(cb, 0));
         VkCommandBufferBeginInfo cbBI{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
@@ -229,7 +226,7 @@ int main(int argc, char *argv[]) {
         vkCmdBindVertexBuffers(cb, 0, 1, &vBuffer, &vOffset);
         vkCmdBindIndexBuffer(cb, vBuffer, vBufSize, VK_INDEX_TYPE_UINT16);
         vkCmdPushConstants(cb, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
-                           &engine.get_shader_data_buffer()[frameIndex].deviceAddress);
+                           &engine.get_current_shader_data_buffer().deviceAddress);
         vkCmdDrawIndexed(cb, indexCount, 3, 0, 0, 0);
         vkCmdEndRendering(cb);
         VkImageMemoryBarrier2 barrierPresent{
@@ -250,32 +247,7 @@ int main(int argc, char *argv[]) {
         vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
         chk(vkEndCommandBuffer(cb));
 
-
-        // Submit to graphics queue
-        VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
-        VkSubmitInfo submitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &engine.get_presentSemaphores()[frameIndex],
-            .pWaitDstStageMask = &waitStages,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cb,
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &engine.get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
-        };
-        chk(vkQueueSubmit(handle.get_queue(), 1, &submitInfo, engine.get_fences()[frameIndex]));
-
-        frameIndex = (frameIndex + 1) % maxFramesInFlight;
-        VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &engine.get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
-            .swapchainCount = 1,
-            .pSwapchains = &handle.get_swap_chain(),
-            .pImageIndices = &imageIndex
-        };
-        chkSwapchain(vkQueuePresentKHR(handle.get_queue(), &presentInfo));
+        engine.put_one_image_to_screen(imageIndex);
         // Event polling
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
