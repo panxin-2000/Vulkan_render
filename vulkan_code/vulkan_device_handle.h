@@ -65,6 +65,7 @@ public:
         uint32_t transfer;
     } queueFamilyIndices; // 不用给到外部，
 
+    bool framebufferResized = false;
 
 private:
     void create_instance();
@@ -79,7 +80,7 @@ private:
 
     void create_VMA();
 
-    void create_swap_chain();
+    void create_swap_chain(VkSwapchainKHR old_swap_chain);
 
     void create_depth_resources();
 
@@ -97,11 +98,27 @@ public:
         choose_one_physical_device();
         create_device();
         create_VMA();
-        create_swap_chain();
+        create_swap_chain(VK_NULL_HANDLE);
         create_swap_chain_image_view();
         create_depth_image_view();
     }
 
+    void recreate_swap_chain() {
+        std::cout << "recreate_swap_chain" << std::endl;
+        framebufferResized = false;
+        vkDeviceWaitIdle(device_);
+        const auto old_swap_chain = swap_chain_;
+        create_swap_chain(old_swap_chain);
+        vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
+        vkDestroyImageView(device_, depth_image_view_, nullptr);
+        for (auto i = 0; i < swap_chain_image_views_.size(); i++) {
+            vkDestroyImageView(device_, swap_chain_image_views_[i], nullptr);
+        }
+        vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+
+        create_swap_chain_image_view();
+        create_depth_image_view();
+    }
 
     void destroy();
 

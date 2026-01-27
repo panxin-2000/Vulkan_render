@@ -26,19 +26,6 @@ struct ShaderDataBuffer {
     void *mapped{nullptr};
 };
 
-bool updateSwapchain{false};
-
-static inline void chkSwapchain(VkResult result) {
-    if (result < VK_SUCCESS) {
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            // updateSwapchain = true;
-            return;
-        }
-        std::cerr << "Vulkan call returned an error (" << result << ")\n";
-        exit(result);
-    }
-}
-
 
 class Engine {
     VKDevice *handle_;
@@ -212,23 +199,56 @@ public:
             .pSwapchains = &handle_->get_swap_chain(),
             .pImageIndices = &imageIndex
         };
-        chkSwapchain(vkQueuePresentKHR(handle_->get_queue(), &presentInfo));
+        auto result = vkQueuePresentKHR(handle_->get_queue(), &presentInfo);
+        if (result == VK_SUCCESS) {
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_->framebufferResized) {
+            handle_->recreate_swap_chain();
+            destroy_and_recreate_fence_and_semaphore();
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            std::cout << "failed to acquire swap chain image!" << std::endl;
+        }
     }
 
     /**
      *
      * @param imageIndex 必须用 imageIndex 去找图像资源
      */
-    void get_one_image_can_render() {
+    bool get_one_image_can_render() {
         // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
         VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+        auto result = vkAcquireNextImageKHR(handle_->get_device(),
+                                            handle_->get_swap_chain(),
+                                            UINT64_MAX,
+                                            get_current_presentSemaphores(),
+                                            VK_NULL_HANDLE,
+                                            &imageIndex);
+
+        if (result == VK_SUCCESS) {
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_->framebufferResized) {
+            handle_->recreate_swap_chain();
+            destroy_and_recreate_fence_and_semaphore();
+            return false;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            std::cout << "failed to acquire swap chain image!" << std::endl;
+        }
         VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
-        chkSwapchain(vkAcquireNextImageKHR(handle_->get_device(),
-                                           handle_->get_swap_chain(),
-                                           UINT64_MAX,
-                                           get_current_presentSemaphores(),
-                                           VK_NULL_HANDLE,
-                                           &imageIndex));
+        return true;
+    }
+
+
+    void destroy_and_recreate_fence_and_semaphore() {
+        for (auto i = 0; i < maxFramesInFlight; i++) {
+            vkDestroyFence(handle_->get_device(), fences[i], nullptr);                //  这里还需要
+            vkDestroySemaphore(handle_->get_device(), presentSemaphores[i], nullptr); //
+        }
+        for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
+            vkDestroySemaphore(handle_->get_device(), render_to_image_semaphores_[i], nullptr);
+        }
+        create_fences();
+        create_present_Semaphores();
+        create_renderSemaphores();
+        imageIndex = 0;
+        frameIndex = 0;
     }
 
     void destroy() {

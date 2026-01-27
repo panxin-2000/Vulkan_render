@@ -25,9 +25,6 @@
 #include "engine.h"
 
 
-
-
-
 const uint32_t WIDTH = 1280;
 const uint32_t HEIGHT = 720;
 
@@ -94,7 +91,9 @@ int main(int argc, char *argv[]) {
 
         // Sync
 
-        engine.get_one_image_can_render();
+        if (false == engine.get_one_image_can_render()) {
+            continue;
+        }
 
 
         // Update shader data

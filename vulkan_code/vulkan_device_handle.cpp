@@ -14,7 +14,6 @@
 #include "vulkan_image.h"
 
 
-
 VKDevice::~VKDevice() {
     volkFinalize();
 }
@@ -66,6 +65,11 @@ void VKDevice::create_instance() {
     }
 }
 
+static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+    auto app = reinterpret_cast<VKDevice *>(glfwGetWindowUserPointer(window));
+    app->framebufferResized = true;
+}
+
 void VKDevice::create_surface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
@@ -73,6 +77,7 @@ void VKDevice::create_surface() {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window_ = glfwCreateWindow(1280, 720, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
+        glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
         auto result = glfwCreateWindowSurface(instance_, window_, Allocator, &surface_);
         if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
@@ -252,7 +257,7 @@ void VKDevice::create_VMA() {
 }
 
 
-void VKDevice::create_swap_chain() {
+void VKDevice::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // Swap chain
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
@@ -282,10 +287,12 @@ void VKDevice::create_swap_chain() {
         .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
         .presentMode = presentMode,
         .clipped = VK_TRUE,
-        .oldSwapchain = VK_NULL_HANDLE,
+        .oldSwapchain = old_swap_chain,
     };
     VK_CHECK_RESULT(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
+    // VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
+    // 确保每个窗口只创建一个 VkSurfaceKHR 对象
 
     // if (indices.graphicsFamily != indices.presentFamily) {
     // createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
