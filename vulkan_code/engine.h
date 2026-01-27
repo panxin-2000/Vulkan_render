@@ -52,6 +52,15 @@ public:
     Engine(VKDevice *handle) : handle_{handle} {
     }
 
+    void init() {
+        create_command_pool();
+        create_command_buffer();
+        create_shader_data_buffer();
+        create_fences();
+        create_present_Semaphores();
+        create_renderSemaphores();
+    }
+
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences;
     }
@@ -213,26 +222,36 @@ public:
      *
      * @param imageIndex 必须用 imageIndex 去找图像资源
      */
-    bool get_one_image_can_render() {
+    void get_one_image_can_render() {
         // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
         VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+        VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
         auto result = vkAcquireNextImageKHR(handle_->get_device(),
                                             handle_->get_swap_chain(),
                                             UINT64_MAX,
                                             get_current_presentSemaphores(),
                                             VK_NULL_HANDLE,
                                             &imageIndex);
-
         if (result == VK_SUCCESS) {
         } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_->framebufferResized) {
             handle_->recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
-            return false;
+            VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+            VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
+            auto result = vkAcquireNextImageKHR(handle_->get_device(),
+                                                handle_->get_swap_chain(),
+                                                UINT64_MAX,
+                                                get_current_presentSemaphores(),
+                                                VK_NULL_HANDLE,
+                                                &imageIndex);
+            if (result == VK_SUCCESS) {
+            } else {
+                std::cout << "failed to acquire swap chain image after recreate!" << std::endl;
+                exit(0);
+            }
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             std::cout << "failed to acquire swap chain image!" << std::endl;
         }
-        VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
-        return true;
     }
 
 
