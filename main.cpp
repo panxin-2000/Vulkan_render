@@ -24,7 +24,6 @@
 
 #include "engine.h"
 
-uint32_t imageIndex{0};
 bool updateSwapchain{false};
 
 
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]) {
 
         // Sync
 
-        engine.get_one_image_can_render(imageIndex);
+        engine.get_one_image_can_render();
 
 
         // Update shader data
@@ -156,7 +155,7 @@ int main(int argc, char *argv[]) {
                 .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                 .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                 .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-                .image = handle.get_swap_chain_images()[imageIndex],
+                .image = engine.get_current_swap_chain_image(),
                 .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
             },
             VkImageMemoryBarrier2{
@@ -181,7 +180,7 @@ int main(int argc, char *argv[]) {
         vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
         VkRenderingAttachmentInfo colorAttachmentInfo{
             .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView = handle.get_swap_image_view()[imageIndex],
+            .imageView = engine.get_current_swap_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -237,7 +236,7 @@ int main(int argc, char *argv[]) {
             .dstAccessMask = 0,
             .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-            .image = handle.get_swap_chain_images()[imageIndex],
+            .image = engine.get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         };
         VkDependencyInfo barrierPresentDependencyInfo{
@@ -247,7 +246,7 @@ int main(int argc, char *argv[]) {
         vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
         chk(vkEndCommandBuffer(cb));
 
-        engine.put_one_image_to_screen(imageIndex);
+        engine.put_one_image_to_screen();
         // Event polling
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }

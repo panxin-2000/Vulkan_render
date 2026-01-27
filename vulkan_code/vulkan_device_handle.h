@@ -146,7 +146,7 @@ public:
         return swap_chain_;
     }
 
-    [[nodiscard]] const std::vector<VkImageView> &get_swap_image_view() const {
+    [[nodiscard]] const std::vector<VkImageView> &get_swap_image_views() const {
         return swap_chain_image_views_;
     }
 
@@ -166,7 +166,7 @@ public:
         return window_;
     }
 
-    [[nodiscard]] std::vector<VkImage> get_swap_chain_images() const {
+    [[nodiscard]] const std::vector<VkImage> &get_swap_chain_images() const {
         return swap_chain_images_;
     }
 

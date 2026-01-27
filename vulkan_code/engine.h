@@ -45,7 +45,7 @@ class Engine {
     std::array<ShaderDataBuffer, maxFramesInFlight> shaderDataBuffers;
     std::array<VkFence, maxFramesInFlight> fences;
     std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
-    std::vector<VkSemaphore> renderSemaphores;
+    std::vector<VkSemaphore> render_to_image_semaphores_;
 
     /**
      * frameIndex 正在渲染的一帧图像
@@ -56,6 +56,8 @@ class Engine {
     * 屏幕绘制比较慢的话，丢弃过时帧，选择最新帧绘制，开始渲染到开始显示的延迟的延迟不一致的问题
      */
     uint32_t frameIndex{0}; //
+
+    uint32_t imageIndex{0};
 
 public:
     Engine(VKDevice *handle) : handle_{handle} {
@@ -77,12 +79,12 @@ public:
         return get_presentSemaphores()[frameIndex];
     }
 
-    std::vector<VkSemaphore> &get_renderSemaphores() {
-        return renderSemaphores;
+    std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
+        return render_to_image_semaphores_;
     }
 
     VkSemaphore &get_current_renderSemaphores() {
-        return get_renderSemaphores()[frameIndex];
+        return get_can_render_to_image_semaphores()[frameIndex];
     }
 
     VkCommandPool &get_command_pool() {
@@ -103,6 +105,15 @@ public:
 
     ShaderDataBuffer &get_current_shader_data_buffer() {
         return get_shader_data_buffer()[frameIndex];
+    }
+
+
+    const VkImage &get_current_swap_chain_image() {
+        return handle_->get_swap_chain_images()[imageIndex];
+    }
+
+    const VkImageView &get_current_swap_image_view() {
+        return handle_->get_swap_image_views()[imageIndex];
     }
 
     void create_command_buffer() {
@@ -166,13 +177,14 @@ public:
 
     void create_renderSemaphores() {
         VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-        renderSemaphores.resize(handle_->get_swap_image_view().size());
-        for (auto &semaphore: renderSemaphores) {
+        render_to_image_semaphores_.resize(handle_->get_swap_image_views().size());
+        std::cout << "get_swap_image_view size : " << render_to_image_semaphores_.size() << "\n";
+        for (auto &semaphore: render_to_image_semaphores_) {
             VK_CHECK_RESULT(vkCreateSemaphore(handle_->get_device(), &semaphoreCI, nullptr, &semaphore));
         }
     }
 
-    void put_one_image_to_screen(uint32_t &imageIndex) {
+    void put_one_image_to_screen() {
         // Submit to graphics queue
         VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
@@ -185,7 +197,7 @@ public:
             .commandBufferCount = 1,
             .pCommandBuffers = &cb,
             .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
+            .pSignalSemaphores = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         };
         VK_CHECK_RESULT(vkQueueSubmit(handle_->get_queue(), 1, &submitInfo, get_current_fences()));
 
@@ -193,7 +205,7 @@ public:
         VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &get_renderSemaphores()[imageIndex], // 不需要++ ？？可以，
+            .pWaitSemaphores = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
             .swapchainCount = 1,
             .pSwapchains = &handle_->get_swap_chain(),
             .pImageIndices = &imageIndex
@@ -201,7 +213,11 @@ public:
         chkSwapchain(vkQueuePresentKHR(handle_->get_queue(), &presentInfo));
     }
 
-    void get_one_image_can_render(uint32_t &imageIndex) {
+    /**
+     *
+     * @param imageIndex 必须用 imageIndex 去找图像资源
+     */
+    void get_one_image_can_render() {
         VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
         VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
         chkSwapchain(vkAcquireNextImageKHR(handle_->get_device(),
@@ -220,8 +236,8 @@ public:
             vmaUnmapMemory(handle_->get_allocator(), shaderDataBuffers[i].allocation);
             vmaDestroyBuffer(handle_->get_allocator(), shaderDataBuffers[i].buffer, shaderDataBuffers[i].allocation);
         }
-        for (auto i = 0; i < renderSemaphores.size(); i++) {
-            vkDestroySemaphore(handle_->get_device(), renderSemaphores[i], nullptr);
+        for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
+            vkDestroySemaphore(handle_->get_device(), render_to_image_semaphores_[i], nullptr);
         }
     }
 };
