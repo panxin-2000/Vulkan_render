@@ -15,7 +15,7 @@
 #include "base_event.h"
 #include "base_observer.h"
 
-#include "logic_render_data.h"
+#include "../render_common/logic_render_data.h"
 #include "windows.h"
 
 

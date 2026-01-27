@@ -6,46 +6,17 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
 
-IF (WIN32)
-    # Nothing here (yet)
-ELSEIF (APPLE)
-    link_libraries(${Vulkan_LIBRARY} "-framework AppKit" "-framework QuartzCore")         #这一行不知道有什么作用，但是 target_link_libraries 我还是知道有什么作用的
-ELSE (WIN32)
-    link_libraries(${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${Vulkan_LIBRARY} ${DIRECTFB_LIBRARIES} ${WAYLAND_CLIENT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-ENDIF (WIN32)
-
-#######################################vulkan#####################################
-
-
-# Use FindVulkan module added with CMAKE 3.7
-if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
-    message(STATUS "Using module to find Vulkan")
-    find_package(Vulkan REQUIRED)
-endif ()
-
-# 关于vulkan的内容，尽量聚拢到一起
-IF (NOT Vulkan_FOUND)
-    message(FATAL_ERROR "Could not find Vulkan library!")
-ELSE ()
-
-    message(STATUS "Vulkan include direction" : ${Vulkan_INCLUDE_DIR})
-    message(STATUS "Vulkan LIBRARY direction" : ${Vulkan_LIBRARY})
-    string(REGEX REPLACE "libvulkan.dylib" "" VULKAN_LIBRARIES_DIRECTORY ${Vulkan_LIBRARY})
-    message(STATUS "Vulkan include_directories" : ${VULKAN_LIBRARIES_DIRECTORY})
-    include_directories(${Vulkan_INCLUDE_DIR})
-    link_directories(${VULKAN_LIBRARIES_DIRECTORY})  # 一个稍微好一点的方式去除掉了最后的文件的内容，而不是用绝对的字符串
-    #    我个人感觉find之后引用相应的文件夹比较好，所以我改到这里的了，至于之后链接，这个没有办法了，需要看相应的应用层面的事情了
-    # Force validation at compile time
-    if (FORCE_VALIDATION)
-        add_definitions(-DFORCE_VALIDATION)
-    endif ()
-ENDIF ()
-
-#######################################vulkan#####################################
-
-
-#add_definitions(-DVK_NO_PROTOTYPES)   // 这行加上是有问题的，implicit function declarations 有这样一个错误
-add_definitions(-DENGINE_USE_VOLK)
+#IF (WIN32)
+#    # Nothing here (yet)
+#ELSEIF (APPLE)
+#    # 如果使用的 glfw 那么是不用的
+#    link_libraries(${Vulkan_LIBRARY} "-framework AppKit" "-framework QuartzCore")
+#    # 这一行不知道有什么作用，但是 target_link_libraries 我还是知道有什么作用的
+#    # -framework AppKit: 必须链接。用于处理窗口管理和用户界面（如 NSView），这是创建 Vulkan Surface 的基础
+#    # -framework QuartzCore: 必须链接。它提供了 CAMetalLayer，因为在 macOS 上，Vulkan 是通过 MoltenVK 转换到 Metal 运行的，而 Metal 依赖于该框架。
+#ELSE (WIN32)
+#    link_libraries(${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${Vulkan_LIBRARY} ${DIRECTFB_LIBRARIES} ${WAYLAND_CLIENT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+#ENDIF (WIN32)
 
 
 find_package(Curses REQUIRED)
@@ -90,19 +61,90 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(quill)
 
-FetchContent_Declare(
-        VulkanMemoryAllocator
-        GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-        GIT_TAG v3.1.0  # 建议指定一个稳定的发布版本
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
-        SYSTEM
-)
 
-FetchContent_MakeAvailable(VulkanMemoryAllocator)
+set(WITH_VULKAN_BACKEND ON)
+set(WITH_OPENGL_BACKEND O FF)
 
 
+if (WITH_VULKAN_BACKEND)
+    add_definitions(-DWITH_VULKAN_BACKEND)
+    #######################################vulkan#####################################
+    # Use FindVulkan module added with CMAKE 3.7
+    if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
+        message(STATUS "Using module to find Vulkan")
+        find_package(Vulkan REQUIRED)
+    endif ()
+
+    # 关于vulkan的内容，尽量聚拢到一起
+    IF (NOT Vulkan_FOUND)
+        message(FATAL_ERROR "Could not find Vulkan library!")
+    ELSE ()
+
+        message(STATUS "Vulkan include direction" : ${Vulkan_INCLUDE_DIR})
+        message(STATUS "Vulkan LIBRARY direction" : ${Vulkan_LIBRARY})
+        string(REGEX REPLACE "libvulkan.dylib" "" VULKAN_LIBRARIES_DIRECTORY ${Vulkan_LIBRARY})
+        message(STATUS "Vulkan include_directories" : ${VULKAN_LIBRARIES_DIRECTORY})
+        include_directories(${Vulkan_INCLUDE_DIR})
+        link_directories(${VULKAN_LIBRARIES_DIRECTORY})  # 一个稍微好一点的方式去除掉了最后的文件的内容，而不是用绝对的字符串
+        #    我个人感觉find之后引用相应的文件夹比较好，所以我改到这里的了，至于之后链接，这个没有办法了，需要看相应的应用层面的事情了
+        # Force validation at compile time
+        if (FORCE_VALIDATION)
+            add_definitions(-DFORCE_VALIDATION)
+        endif ()
+    ENDIF ()
+
+    #######################################vulkan#####################################
+
+
+    add_definitions(-DENGINE_USE_VOLK)
+    FetchContent_Declare(
+            VulkanMemoryAllocator
+            GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+            GIT_TAG v3.1.0  # 建议指定一个稳定的发布版本
+            GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+            SYSTEM
+    )
+    FetchContent_MakeAvailable(VulkanMemoryAllocator)
+
+
+    include_directories(external/ktx/include)
+    include_directories(external/ktx/other_include)
+
+
+    set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
+    set(KTX_SOURCES
+            ${KTX_DIR}/lib/texture.c
+            ${KTX_DIR}/lib/hashlist.c
+            ${KTX_DIR}/lib/checkheader.c
+            ${KTX_DIR}/lib/swap.c
+            ${KTX_DIR}/lib/memstream.c
+            ${KTX_DIR}/lib/filestream.c
+            ${KTX_DIR}/lib/vkloader.c)
+    add_library(ktx STATIC ${KTX_SOURCES})
+
+
+    file(GLOB_RECURSE vulkan_code
+            #        "vulkan_code/glfw_vulkan.cpp"
+            "vulkan_code/vulkan_utility.cpp"
+            "vulkan_code/vulkan_read_attribute.cpp"
+            "vulkan_code/vulkan_validation_layer.cpp"
+            "vulkan_code/vulkan_image.cpp"
+            "vulkan_code/vulkan_buffer.cpp"
+            "vulkan_code/vulkan_device_handle.cpp"
+            "vulkan_code/transfer_texture_to_gpu.cpp"
+    )
+    include_directories(vulkan_code)
+
+endif ()
 # 极致性能优化
 #set(QUILL_USE_BOUNDED_QUEUE ON CACHE BOOL "" FORCE)
+
+
+if (WITH_OPENGL_BACKEND)
+    add_definitions(-DWITH_OPENGL_BACKEND)
+    link_libraries("-framework OPENGL")
+
+endif ()
 
 include_directories(utility)
 include_directories(render)
@@ -114,27 +156,8 @@ link_directories(/opt/homebrew/opt/glew/lib)
 link_directories(/usr/local/lib/slang/lib)
 
 
-# Volk, VMA, glm and Slang are taken from the SDK
-include_directories($ENV{VULKAN_SDK}/include)
-# These are not part of the SDK
 include_directories(external/tinyobj)
-include_directories(external/ktx/include)
-include_directories(external/ktx/other_include)
 
-
-set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
-set(KTX_SOURCES
-        ${KTX_DIR}/lib/texture.c
-        ${KTX_DIR}/lib/hashlist.c
-        ${KTX_DIR}/lib/checkheader.c
-        ${KTX_DIR}/lib/swap.c
-        ${KTX_DIR}/lib/memstream.c
-        ${KTX_DIR}/lib/filestream.c
-        ${KTX_DIR}/lib/vkloader.c)
-
-add_library(ktx STATIC ${KTX_SOURCES})
-
-link_libraries("-framework OPENGL")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(OpenGL REQUIRED)
@@ -150,23 +173,10 @@ if (GLEW_FOUND)
 endif ()
 
 file(GLOB_RECURSE RENDER
-        "render/render_object.cpp"
-        "render/render_object_manage.cpp"
-        "render/gpu_thread.cpp"
-        "render/stb_image.cpp"
+
+        "render_common/stb_image.cpp"
 )
 
-file(GLOB_RECURSE vulkan_code
-        #        "vulkan_code/glfw_vulkan.cpp"
-        "vulkan_code/vulkan_utility.cpp"
-        "vulkan_code/vulkan_read_attribute.cpp"
-        "vulkan_code/vulkan_validation_layer.cpp"
-        "vulkan_code/vulkan_image.cpp"
-        "vulkan_code/vulkan_buffer.cpp"
-        "vulkan_code/vulkan_device_handle.cpp"
-        "vulkan_code/transfer_texture_to_gpu.cpp"
-)
-include_directories(vulkan_code)
 
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
@@ -314,20 +324,20 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
 
-add_executable(learn_openGL main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
+add_executable(learn_render main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
         ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
 
-target_compile_definitions(learn_openGL PRIVATE VK_NO_PROTOTYPES)
+target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
 
 
 set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(learn_openGL PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(learn_render PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
 
-target_link_libraries(learn_openGL PRIVATE ktx slang)
-target_link_libraries(learn_openGL PRIVATE volk)
-target_link_libraries(learn_openGL PRIVATE GLFW)
-target_link_libraries(learn_openGL PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(learn_render PRIVATE ktx slang)
+target_link_libraries(learn_render PRIVATE volk)
+target_link_libraries(learn_render PRIVATE GLFW)
+target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
