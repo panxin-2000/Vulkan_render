@@ -13,19 +13,6 @@
 
 #include "vulkan_image.h"
 
-static inline void chk(VkResult result) {
-    if (result != VK_SUCCESS) {
-        std::cerr << "Vulkan call returned an error (" << result << ")\n";
-        exit(result);
-    }
-}
-
-static inline void chk(bool result) {
-    if (!result) {
-        std::cerr << "Call returned an error\n";
-        exit(result);
-    }
-}
 
 
 VKDevice::~VKDevice() {
@@ -233,7 +220,7 @@ void VKDevice::create_device() {
 #else
     createInfo.enabledLayerCount = 0;
 #endif
-    chk(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
+    VK_CHECK_RESULT(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
 #ifdef ENGINE_USE_VOLK
     volkLoadDevice(device_);
 #endif
@@ -261,7 +248,7 @@ void VKDevice::create_VMA() {
         .device = device_, .pVulkanFunctions = &vkFunctions,
         .instance = instance_
     };
-    chk(vmaCreateAllocator(&allocatorCI, &allocator_));
+    VK_CHECK_RESULT(vmaCreateAllocator(&allocatorCI, &allocator_));
 }
 
 
@@ -297,7 +284,7 @@ void VKDevice::create_swap_chain() {
         .clipped = VK_TRUE,
         .oldSwapchain = VK_NULL_HANDLE,
     };
-    chk(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
+    VK_CHECK_RESULT(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
 
     // if (indices.graphicsFamily != indices.presentFamily) {
@@ -312,9 +299,9 @@ void VKDevice::create_swap_chain() {
 void VKDevice::create_swap_chain_image_view() {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
-    chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
     swap_chain_images_.resize(imageCount);
-    chk(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swap_chain_images_.data()));
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swap_chain_images_.data()));
     swap_chain_image_views_.resize(imageCount);
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{
@@ -328,7 +315,7 @@ void VKDevice::create_swap_chain_image_view() {
                 .layerCount = 1
             }
         };
-        chk(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
+        VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
     }
 }
 
@@ -379,7 +366,7 @@ void VKDevice::create_depth_image_view() {
     VmaAllocationCreateInfo allocCI{
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
     };
-    chk(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation, nullptr));
+    VK_CHECK_RESULT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation, nullptr));
     VkImageViewCreateInfo depthViewCI{
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image = depth_image_,
@@ -391,7 +378,7 @@ void VKDevice::create_depth_image_view() {
             .layerCount = 1
         }
     };
-    chk(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
+    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
 }
 
 void VKDevice::destroy() {

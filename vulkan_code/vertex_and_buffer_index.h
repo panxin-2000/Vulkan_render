@@ -15,7 +15,8 @@ std::tuple<VkBuffer, uint32_t, uint32_t> create_mesh_data(VKDevice &handle, VmaA
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
-    chk(tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, "assets/suzanne.obj"));
+    auto result = tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, "assets/suzanne.obj");
+    // todo : result need check
     const VkDeviceSize indexCount{shapes[0].mesh.indices.size()};
     std::vector<Vertex> vertices{};
     std::vector<uint16_t> indices{};
@@ -46,9 +47,9 @@ std::tuple<VkBuffer, uint32_t, uint32_t> create_mesh_data(VKDevice &handle, VmaA
                  VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
-    chk(vmaCreateBuffer(handle.get_allocator(), &bufferCI, &bufferAllocCI, &vBuffer, &vBufferAllocation, nullptr));
+    VK_CHECK_RESULT(vmaCreateBuffer(handle.get_allocator(), &bufferCI, &bufferAllocCI, &vBuffer, &vBufferAllocation, nullptr));
     void *bufferPtr{nullptr};
-    chk(vmaMapMemory(handle.get_allocator(), vBufferAllocation, &bufferPtr));
+    VK_CHECK_RESULT(vmaMapMemory(handle.get_allocator(), vBufferAllocation, &bufferPtr));
     memcpy(bufferPtr, vertices.data(), vBufSize);
     memcpy(((char *) bufferPtr) + vBufSize, indices.data(), iBufSize);
     vmaUnmapMemory(handle.get_allocator(), vBufferAllocation);

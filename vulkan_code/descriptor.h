@@ -49,7 +49,7 @@ public:
             .bindingCount = 1,
             .pBindings = &descLayoutBindingTex
         };
-        chk(vkCreateDescriptorSetLayout(handle->get_device(), &descLayoutTexCI, nullptr, &descriptorSetLayoutTex));
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle->get_device(), &descLayoutTexCI, nullptr, &descriptorSetLayoutTex));
     }
 
     /**
@@ -72,7 +72,7 @@ public:
             .descriptorSetCount = 1,       // // 打算分配的集合数量
             .pSetLayouts = &descriptorSetLayoutTex     // 指向布局数组的指针,长度必须等于 descriptorSetCount
         };
-        chk(vkAllocateDescriptorSets(handle->get_device(), &texDescSetAlloc, &descriptor_set_texture));
+        VK_CHECK_RESULT(vkAllocateDescriptorSets(handle->get_device(), &texDescSetAlloc, &descriptor_set_texture));
     }
 
 
@@ -97,7 +97,7 @@ public:
             .pushConstantRangeCount = 1,
             .pPushConstantRanges = &pushConstantRange
         };
-        chk(vkCreatePipelineLayout(handle->get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
+        VK_CHECK_RESULT(vkCreatePipelineLayout(handle->get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
         return pipelineLayout;
     }
 

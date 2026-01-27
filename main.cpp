@@ -24,33 +24,8 @@
 
 #include "engine.h"
 
-bool updateSwapchain{false};
 
 
-static inline void chk(VkResult result) {
-    if (result != VK_SUCCESS) {
-        std::cerr << "Vulkan call returned an error (" << result << ")\n";
-        exit(result);
-    }
-}
-
-// static inline void chkSwapchain(VkResult result) {
-//     if (result < VK_SUCCESS) {
-//         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-//             updateSwapchain = true;
-//             return;
-//         }
-//         std::cerr << "Vulkan call returned an error (" << result << ")\n";
-//         exit(result);
-//     }
-// }
-
-static inline void chk(bool result) {
-    if (!result) {
-        std::cerr << "Call returned an error\n";
-        exit(result);
-    }
-}
 
 
 const uint32_t WIDTH = 1280;
@@ -72,14 +47,7 @@ VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
 
 VKDevice handle;
 
-// VkCommandPool commandPool{VK_NULL_HANDLE};
 VkPipeline pipeline{VK_NULL_HANDLE};
-// VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};  // 直接注释后就能用，运气稍微有点好
-
-// std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
-// std::array<VkFence, maxFramesInFlight> fences;
-// std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
-// std::vector<VkSemaphore> renderSemaphores;
 
 
 glm::vec3 camPos{0.0f, 0.0f, -6.0f};
@@ -141,11 +109,11 @@ int main(int argc, char *argv[]) {
 
         // Build command buffer
         auto cb = engine.get_current_command_buffer();
-        chk(vkResetCommandBuffer(cb, 0));
+        VK_CHECK_RESULT(vkResetCommandBuffer(cb, 0));
         VkCommandBufferBeginInfo cbBI{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
         };
-        chk(vkBeginCommandBuffer(cb, &cbBI));
+        VK_CHECK_RESULT(vkBeginCommandBuffer(cb, &cbBI));
         std::array<VkImageMemoryBarrier2, 2> outputBarriers{
             VkImageMemoryBarrier2{
                 .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -244,7 +212,7 @@ int main(int argc, char *argv[]) {
             .pImageMemoryBarriers = &barrierPresent
         };
         vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
-        chk(vkEndCommandBuffer(cb));
+        VK_CHECK_RESULT(vkEndCommandBuffer(cb));
 
         engine.put_one_image_to_screen();
         // Event polling

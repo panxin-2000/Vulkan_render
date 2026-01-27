@@ -26,6 +26,8 @@ struct ShaderDataBuffer {
     void *mapped{nullptr};
 };
 
+bool updateSwapchain{false};
+
 static inline void chkSwapchain(VkResult result) {
     if (result < VK_SUCCESS) {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -218,6 +220,7 @@ public:
      * @param imageIndex 必须用 imageIndex 去找图像资源
      */
     void get_one_image_can_render() {
+        // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
         VK_CHECK_RESULT(vkWaitForFences(handle_->get_device(), 1, &get_current_fences(), true, UINT64_MAX));
         VK_CHECK_RESULT(vkResetFences(handle_->get_device(), 1, &get_current_fences()));
         chkSwapchain(vkAcquireNextImageKHR(handle_->get_device(),

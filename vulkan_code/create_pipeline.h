@@ -83,7 +83,7 @@ VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCr
         .pDynamicState = &dynamicState,
         .layout = pipelineLayout
     };
-    chk(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &pipeline));
+    VK_CHECK_RESULT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &pipeline));
     return pipeline;
 }
 #endif //HOWTOVULKAN_CREATE_PIPELINE_H
