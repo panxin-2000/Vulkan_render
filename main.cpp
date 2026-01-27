@@ -22,6 +22,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <thread>
 
+#include "engine.h"
+
 uint32_t imageIndex{0};
 uint32_t frameIndex{0};
 bool updateSwapchain{false};
@@ -72,11 +74,11 @@ VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
 
 VKDevice handle;
 
-VkCommandPool commandPool{VK_NULL_HANDLE};
+// VkCommandPool commandPool{VK_NULL_HANDLE};
 VkPipeline pipeline{VK_NULL_HANDLE};
 // VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};  // 直接注释后就能用，运气稍微有点好
 
-std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
+// std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
 std::array<VkFence, maxFramesInFlight> fences;
 std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
 std::vector<VkSemaphore> renderSemaphores;
@@ -147,21 +149,13 @@ int main(int argc, char *argv[]) {
     for (auto &semaphore: renderSemaphores) {
         chk(vkCreateSemaphore(handle.get_device(), &semaphoreCI, nullptr, &semaphore));
     }
-    // Command pool
-    VkCommandPoolCreateInfo commandPoolCI{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = handle.get_queue_Family()
-    };
-    chk(vkCreateCommandPool(handle.get_device(), &commandPoolCI, nullptr, &commandPool));
-    VkCommandBufferAllocateInfo cbAllocCI{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, .commandPool = commandPool,
-        .commandBufferCount = maxFramesInFlight
-    };
-    chk(vkAllocateCommandBuffers(handle.get_device(), &cbAllocCI, commandBuffers.data()));
+    Engine engine(&handle);
+    engine.create_command_pool();
+    engine.create_command_buffer();
 
     // 目的是为了简化函数，
     // Texture images
-    auto textureDescriptors = create_textures_to_gpu(&handle, commandPool);
+    auto textureDescriptors = create_textures_to_gpu(&handle, engine.get_command_pool());
 
     descriptor.CreateDescriptorSetLayout(textureDescriptors.size());
     descriptor.AllocateDescriptorSets(textureDescriptors.size());
@@ -194,7 +188,7 @@ int main(int argc, char *argv[]) {
         memcpy(shaderDataBuffers[frameIndex].mapped, &shaderData, sizeof(ShaderData));
 
         // Build command buffer
-        auto cb = commandBuffers[frameIndex];
+        auto cb = engine.get_command_buffers()[frameIndex];
         chk(vkResetCommandBuffer(cb, 0));
         VkCommandBufferBeginInfo cbBI{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
@@ -348,7 +342,7 @@ int main(int argc, char *argv[]) {
     descriptor_pool.destroy();
     vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
     vkDestroyPipeline(handle.get_device(), pipeline, nullptr);
-    vkDestroyCommandPool(handle.get_device(), commandPool, nullptr);
+    vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
     vkDestroyShaderModule(handle.get_device(), shaderModule, nullptr);
 
     handle.destroy();

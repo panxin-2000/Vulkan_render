@@ -26,7 +26,7 @@ public:
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, .maxSets = 1, .poolSizeCount = 1,
             .pPoolSizes = &poolSize
         };
-        chk(vkCreateDescriptorPool(handle_->get_device(), &descPoolCI, nullptr, &descriptorPool));
+        VK_CHECK_RESULT(vkCreateDescriptorPool(handle_->get_device(), &descPoolCI, nullptr, &descriptorPool));
     }
 
     VkDescriptorPool &get_pool() {
