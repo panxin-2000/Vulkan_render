@@ -63,7 +63,6 @@ public:
     std::string fragmentPath_;
     std::string geometryPath_;
     GPUPrimType prim_type_;
-    std::map<std::string, std::tuple<Uniforms_type, data_value_or_ptr, uint8_t> > uniforms_map;
     status_change status_;
 
 
@@ -122,17 +121,6 @@ public:
     void set_geometry_shader(const std::string &path) {
         add_mutex;
         geometryPath_ = path;
-    }
-
-
-    void add_uniform(const std::string &name, Uniforms_type uniforms_type, data_value_or_ptr &data,
-                     uint8_t number = 1) {
-        add_mutex;
-        auto [it, success] =
-                uniforms_map.insert({name, std::make_tuple(uniforms_type, data, number)});
-        if (!success) {
-            it->second = std::make_tuple(uniforms_type, data, number);
-        }
     }
 };
 

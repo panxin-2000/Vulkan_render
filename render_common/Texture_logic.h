@@ -5,10 +5,6 @@
 #ifndef TEXTURE_TBO_H
 #define TEXTURE_TBO_H
 #include <iostream>
-#define GLEW_STATIC
-#include <GL/glew.h>
-#include "stb_image.h"
-
 
 enum texture_type {
     texture_2d,

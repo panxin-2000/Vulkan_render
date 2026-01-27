@@ -4,12 +4,8 @@
 
 #ifndef HELLO_MAC_SHADER_COMMON_H
 #define HELLO_MAC_SHADER_COMMON_H
-#define GLEW_STATIC
-#include <GL/glew.h>
 
 #include <base_element/point_3.h>
-
-#define NULL_GPU_INDEX 0
 
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {
@@ -77,46 +73,10 @@ using Vertices_type = std::shared_ptr<void>;
 using Indices_type = std::shared_ptr<std::vector<unsigned int> >;
 
 
-enum Uniforms_type {
-    gl_bool,
-    gl_int,
-    gl_float,
-    gl_vec2,
-    gl_vec3,
-    gl_vec4,
-    gl_mat2,
-    gl_mat3,
-    gl_mat4,
-    gl_byte,
-    gl_short,
-    gl_int_vec2,
-    gl_int_vec3,
-    gl_int_vec4,
-    gl_unint,
-    gl_unint_vec2,
-    gl_unint_vec3,
-    gl_unint_vec4,
-};
-
-
-union data_value_or_ptr {
-    bool bool_val;
-    int int_val;
-    float float_val;
-    float vec_2[2];
-    float vec_3[3];
-    float vec_4[4];
-    float mat_2[4];
-    float mat_3[9];
-    float mat_4[16];
-};
-
-int get_glenum_length(GLenum type);
-
 struct VertexAttrib {
-    GLint size;
-    GLenum type;
-    GLboolean normalized;
+    uint32_t size;
+    unsigned int type;
+    bool normalized;
     /**
      *
      * @param size 表示有几个数据
@@ -125,9 +85,9 @@ struct VertexAttrib {
      * @param stride 间隔，重新下一个数据需要间隔多远
      * @param pointer 访问时是否需要偏移
      */
-    VertexAttrib(GLint size,
-                 GLenum type,
-                 GLboolean normalized
+    VertexAttrib(uint32_t size,
+                 unsigned int type,
+                 bool normalized
     ) : size(size), type(type), normalized(normalized) {
     }
 };
@@ -144,19 +104,6 @@ class Texture_TBO {
 public:
     std::string path_;
     std::string texture_name_;
-    GLuint texture_ = 0;
-    GLenum target_ = 0;
-
-    void bind() {
-        if (texture_ != 0) {
-            glBindTexture(target_, texture_);
-        }
-    }
-
-    bool set_texture(const GLuint texture, const GLenum target) {
-        texture_ = texture;
-        target_ = target;
-    }
 
     bool set_path(const std::string &path, const std::string &texture_name) {
         this->path_ = path;
