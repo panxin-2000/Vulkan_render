@@ -18,6 +18,8 @@ struct MatrixPMV {
     mat4 projection;
     mat4 view;
     mat4 model[3];
+    vec4 light_pos;
+    uint selected;
 };
 
 layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer buffer_references
@@ -33,6 +35,10 @@ layout (push_constant) uniform PushConstants
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec3 outColor;
 layout (location = 2) out vec2 outUV;
+layout (location = 3) out vec3 out_Factor;
+layout (location = 4) out vec3 out_LightVec;
+layout (location = 5) out vec3 out_ViewVec;
+layout (location = 6) flat out uint out_InstanceIndex;
 
 void main()
 {
@@ -43,5 +49,11 @@ void main()
     outNormal = inNormal;
     //    outColor = inColor;
     outUV = inUV;
+    out_Factor = (r_buffer.matrixpmv.selected == gl_InstanceIndex ? vec3(3.0f, 3.0f, 3.0f) : vec3(1.0f, 1.0f, 1.0f));
+    out_InstanceIndex = gl_InstanceIndex;
+
     gl_Position = projection_1 * view_1 * model_1 * vec4(inPos.xyz, 1.0);
+    vec4 fragPos = view_1 * model_1 * vec4(inPos.xyz, 1.0);
+    out_LightVec = r_buffer.matrixpmv.light_pos.xyz - fragPos.xyz;
+    out_ViewVec = -fragPos.xyz;
 }
