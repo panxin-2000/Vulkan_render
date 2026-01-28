@@ -20,14 +20,14 @@ struct MatrixPMV {
     mat4 model[3];
 };
 
-layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer PositionReferences
+layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer buffer_references
 {
     MatrixPMV matrixpmv;
 };
 
 layout (push_constant) uniform PushConstants
 {
-    PositionReferences pushConstants;
+    buffer_references r_buffer;
 };
 
 layout (location = 0) out vec3 outNormal;
@@ -36,9 +36,9 @@ layout (location = 2) out vec2 outUV;
 
 void main()
 {
-    mat4 projection_1 = pushConstants.matrixpmv.projection;
-    mat4 view_1 = pushConstants.matrixpmv.view;
-    mat4 model_1 = pushConstants.matrixpmv.model[gl_InstanceIndex];
+    mat4 projection_1 = r_buffer.matrixpmv.projection;
+    mat4 view_1 = r_buffer.matrixpmv.view;
+    mat4 model_1 = r_buffer.matrixpmv.model[gl_InstanceIndex];
 
     outNormal = inNormal;
     //    outColor = inColor;
