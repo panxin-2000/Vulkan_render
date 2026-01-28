@@ -8,10 +8,40 @@
 #include "vulkan_device_handle.h"
 #include <tiny_obj_loader.h>
 
+struct Model_mesh {
+    // 不做
+    VkBuffer vertices_buffer = VK_NULL_HANDLE;
+    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
+    VkBuffer indices_buffer = VK_NULL_HANDLE;
+    VkDeviceSize indices_offset = 0; // 以字节为单位的偏移
+    VkIndexType index_type = VK_INDEX_TYPE_UINT16;
 
-std::tuple<VkBuffer, uint32_t, uint32_t> create_mesh_data(VKDevice &handle, VmaAllocation &vBufferAllocation) {
+    union {
+        VkDrawIndexedIndirectCommand indexed_command = {};
+        VkDrawIndirectCommand vertex_command;
+    };
+
+    void draw(const VkCommandBuffer &cb) {
+        vkCmdBindVertexBuffers(cb, 0, 1, &vertices_buffer, &vertices_offset);
+        if (indices_buffer != VK_NULL_HANDLE) {
+            vkCmdBindIndexBuffer(cb, indices_buffer, indices_offset, index_type);
+            vkCmdDrawIndexed(cb, indexed_command.indexCount,
+                             indexed_command.instanceCount,
+                             indexed_command.firstIndex,
+                             indexed_command.vertexOffset,
+                             indexed_command.firstInstance);
+        } else {
+            vkCmdDraw(cb, vertex_command.vertexCount,
+                      vertex_command.instanceCount,
+                      vertex_command.firstVertex,
+                      vertex_command.firstInstance);
+        }
+    }
+};
+
+Model_mesh create_mesh_data(VKDevice &handle, VmaAllocation &vBufferAllocation) {
     VkBuffer vBuffer{VK_NULL_HANDLE};
-
+    Model_mesh mesh{};
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -47,13 +77,25 @@ std::tuple<VkBuffer, uint32_t, uint32_t> create_mesh_data(VKDevice &handle, VmaA
                  VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
-    VK_CHECK_RESULT(vmaCreateBuffer(handle.get_allocator(), &bufferCI, &bufferAllocCI, &vBuffer, &vBufferAllocation, nullptr));
+    VK_CHECK_RESULT(
+        vmaCreateBuffer(handle.get_allocator(), &bufferCI, &bufferAllocCI, &vBuffer, &vBufferAllocation, nullptr));
     void *bufferPtr{nullptr};
     VK_CHECK_RESULT(vmaMapMemory(handle.get_allocator(), vBufferAllocation, &bufferPtr));
     memcpy(bufferPtr, vertices.data(), vBufSize);
     memcpy(((char *) bufferPtr) + vBufSize, indices.data(), iBufSize);
     vmaUnmapMemory(handle.get_allocator(), vBufferAllocation);
-    return {vBuffer, vBufSize, indexCount};
+
+    mesh.vertices_buffer = vBuffer;
+    mesh.indices_buffer = vBuffer;
+    // mesh.indices_offset = vBufSize;
+    mesh.indexed_command.indexCount = indexCount;
+    mesh.indexed_command.firstIndex = vBufSize / 2; // // 索引缓冲区的起始偏移（以索引为单位）确实是可以通过计算偏移的
+    mesh.indexed_command.vertexOffset = 0;
+    mesh.indexed_command.instanceCount = 3;
+    mesh.indexed_command.firstInstance = 0;
+
+
+    return mesh;
 }
 
 #endif //HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H
