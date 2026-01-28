@@ -106,10 +106,11 @@ static std::vector<char> readFile(const std::string &filename) {
     return buffer;
 }
 
-inline VkShaderModule create_shader_module(const VKDevice &handle,
-                                           const std::string &vertex_path,
-                                           const std::string &fragment_path,
-                                           const std::string &geometry_path) {
+inline std::vector<VkPipelineShaderStageCreateInfo> create_shader_module(const VKDevice &handle,
+                                                                         const std::string &vertex_path,
+                                                                         const std::string &fragment_path,
+                                                                         const std::string &geometry_path) {
+
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     if (!vertex_path.empty() && !fragment_path.empty()) {
         auto vertShaderCode = readFile(vertex_path);
@@ -145,6 +146,7 @@ inline VkShaderModule create_shader_module(const VKDevice &handle,
         ShaderStageInfo.pName = "main";
         shaderStages.push_back(ShaderStageInfo);
     }
+    return shaderStages;
 }
 
 

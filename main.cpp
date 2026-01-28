@@ -81,21 +81,23 @@ int main(int argc, char *argv[]) {
     descriptor.update_descriptor_sets(textureDescriptors);
     // 到这里的时候贴图就更新完毕了
     auto pipelineLayout = descriptor.CreatePipelineLayout();
-    auto shaderModule = create_shader_module(handle, "assets/shader.slang");
-    auto shaderStages = createShaderStages(shaderModule);
+    // auto shaderModule = create_shader_module(handle, "assets/shader.slang");
+
+
+    // auto shaderStages = createShaderStages(shaderModule);
+    auto shaderStages = create_shader_module(handle,
+                                             "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                                             "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
+                                             "");
 
     pipeline = create_pipeline(handle, shaderStages, pipelineLayout);
     // Render loop
     while (!glfwWindowShouldClose(handle.window_)) {
         glfwPollEvents();
 
-        // Sync
-
         engine.get_one_image_can_render();
         update_shader_data(engine);
-        // build_command_buffer();
         build_command_buffer(engine, pipeline, pipelineLayout, descriptor, mesh);
-
         engine.put_one_image_to_screen();
         // Event polling
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -110,7 +112,10 @@ int main(int argc, char *argv[]) {
     vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
     vkDestroyPipeline(handle.get_device(), pipeline, nullptr);
     vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
-    vkDestroyShaderModule(handle.get_device(), shaderModule, nullptr);
+    // vkDestroyShaderModule(handle.get_device(), shaderModule, nullptr);
+    for (auto shaderStage: shaderStages) {
+        vkDestroyShaderModule(handle.get_device(), shaderStage.module, nullptr);
+    }
 
     handle.destroy();
 }
