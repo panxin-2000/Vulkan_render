@@ -9,7 +9,6 @@
 #include <thread>
 
 
-struct shader_and_share;
 class logic_render_data;
 
 class vk_render_manage {
@@ -19,13 +18,12 @@ private:
     std::vector<logic_render_data *> need_init;
     std::vector<logic_render_data *> need_update;
     std::vector<logic_render_data *> need_clean;
+    // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
-    std::atomic<bool> have_object_need_update = false;
-    std::atomic<bool> need_render = true;
 
-    std::map<std::string, shader_and_share> vertex_shader_map_;
-    std::map<std::string, shader_and_share> fragment_shader_map_;
-    std::map<std::string, shader_and_share> geometry_shader_map_;
+    // std::map<std::string, shader_and_share> vertex_shader_map_;
+    // std::map<std::string, shader_and_share> fragment_shader_map_;
+    // std::map<std::string, shader_and_share> geometry_shader_map_;
     // std::map<std::string, texture_and_share> texture_map_;
     // std::map<Vertices_type, buffer_and_share> vertices_map_;
     // std::map<Indices_type, buffer_and_share> indices_map_;
@@ -42,10 +40,8 @@ public:
         return *instance;
     }
 
-
+// 不应该是 clear 函数，应该是从其中拿出一个
     void update_need_objects() {
-        for (auto user_render_component: need_update) {
-        }
         need_update.clear();
     }
 
@@ -71,29 +67,6 @@ public:
     void add_render_object_need_clean(logic_render_data *render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_clean.push_back(render_object);
-    }
-
-
-    void render_thread() {
-        while (need_render) {
-            {
-                std::unique_lock<std::mutex> lock(mtx);
-                init_need_objects(); // 主要是复制内存的操作
-                update_need_objects();
-            }
-            render_object_function();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            clean_need_objects();
-        }
-        have_object_need_update = false;
-        need_render = true;
-    }
-
-    void render_thread_stop() {
-        std::unique_lock<std::mutex> lock(mtx);
-        need_render = false;
-        render_objects.clear();
-        need_init.clear();
     }
 
 private:

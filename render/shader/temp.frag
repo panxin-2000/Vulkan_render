@@ -24,6 +24,7 @@ float hash(int xy) {
 
 void main()
 {
-    //    outFragColor = texture(samplerColorMap, inUV) * vec4(inColor, 1.0);
+    //    outFragColor = vec4(0.5, 0.6, 0.7, 1.0);
     outFragColor = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
+    // gl_PrimitiveID 需要 VkPhysicalDeviceFeatures::geometryShader 但是有错误 Validation Error 应付是可以不管的
 }
