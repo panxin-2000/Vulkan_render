@@ -341,3 +341,42 @@ target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
+add_custom_command(
+        TARGET learn_render
+        PRE_BUILD
+        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.vert -o
+        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.vert.spv
+)
+add_custom_command(
+        TARGET learn_render
+        PRE_BUILD
+        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag -o
+        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag.spv
+)
+
+
+# 自动执行命令编译 glsl 的脚本
+#cmake_minimum_required(VERSION 3.19)
+#project(Test)
+#
+#set( ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+#
+#set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
+#file(GLOB SHADERS ${SHADER_DIR}/*.vert ${SHADER_DIR}/*.frag ${SHADER_DIR}/*.comp ${SHADER_DIR}/*.geom ${SHADER_DIR}/*.tesc ${SHADER_DIR}/*.tese ${SHADER_DIR}/*.mesh ${SHADER_DIR}/*.task ${SHADER_DIR}/*.rgen ${SHADER_DIR}/*.rchit ${SHADER_DIR}/*.rmiss)
+#
+#file(GLOB SPV_SHADERS ${SHADER_DIR}/*.spv)
+#
+#find_package(Vulkan)
+#
+#foreach(SHADER IN LISTS SHADERS)
+#get_filename_component(FILENAME ${SHADER} NAME)
+#add_custom_command(OUTPUT ${SHADER_DIR}/shaders/${FILENAME}.spv
+#COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${SHADER} -o ${SHADER_DIR}/shaders/${FILENAME}.spv
+#DEPENDS ${SHADER}
+#COMMENT "Compiling ${FILENAME}")
+#endForeach()
+#
+#add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
+#
+#add_executable(Test main.cpp ${SHADERS})
+#add_dependencies(Test shaders)
