@@ -5,7 +5,6 @@
 #ifndef HOWTOVULKAN_DESCRIPTOR_H
 #define HOWTOVULKAN_DESCRIPTOR_H
 #include "vulkan_device_handle.h"
-
 #include "descriptor_pool.h"
 
 
@@ -98,6 +97,10 @@ public:
      */
     void AllocateDescriptorSets(uint32_t size) {
         uint32_t variableDescCount{size};
+        // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
+        // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
+        // 上限约束： 你在 pDescriptorCounts 中指定的数值，不能超过你在 VkDescriptorSetLayoutBinding 中定义的 descriptorCount（即最大上限）。
+        // 特性开启： 需要在物理设备特性中开启 descriptorIndexing 的相关支持，具体可参考 Vulkan 硬件数据库 检查你的显卡是否支持 runtimeDescriptorArray
         VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescCountAI{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
             .descriptorSetCount = 1,
