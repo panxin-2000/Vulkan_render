@@ -63,7 +63,7 @@ FetchContent_MakeAvailable(quill)
 
 
 set(WITH_VULKAN_BACKEND ON)
-set(WITH_OPENGL_BACKEND O FF)
+set(WITH_OPENGL_BACKEND OFF)
 
 
 if (WITH_VULKAN_BACKEND)

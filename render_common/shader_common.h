@@ -7,6 +7,8 @@
 
 #include <base_element/point_3.h>
 
+#include "volk.h"
+
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {
     Background, // 背景
@@ -52,7 +54,12 @@ enum GPUPrimType : int8_t {
 
 
 struct shader_and_share {
+#ifdef WITH_VULKAN_BACKEND
+    std::vector<VkPipelineShaderStageCreateInfo> *shader;
+#elif  WITH_OPENGL_BACKEND
     unsigned int shader;
+#endif
+
     uint16_t shared_number;
 };
 

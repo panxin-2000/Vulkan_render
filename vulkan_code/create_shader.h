@@ -47,9 +47,9 @@ inline VkShaderModule create_shader_module(const VKDevice &handle, std::string p
     slangModule->getTargetCode(0, spirv.writeRef());
 
     VkShaderModuleCreateInfo shaderModuleCI{
-        .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
         .codeSize = spirv->getBufferSize(),
-        .pCode = (uint32_t *) spirv->getBufferPointer()
+        .pCode    = (uint32_t *) spirv->getBufferPointer()
     };
     VkShaderModule shaderModule{};
     VK_CHECK_RESULT(vkCreateShaderModule(handle.get_device(), &shaderModuleCI, nullptr, &shaderModule));
@@ -59,16 +59,16 @@ inline VkShaderModule create_shader_module(const VKDevice &handle, std::string p
 std::vector<VkPipelineShaderStageCreateInfo> createShaderStages(VkShaderModule shaderModule) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages{
         {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage  = VK_SHADER_STAGE_VERTEX_BIT,
             .module = shaderModule,
-            .pName = "main"
+            .pName  = "main"
         },
         {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = shaderModule,
-            .pName = "main"
+            .pName  = "main"
         }
     };
 
@@ -77,9 +77,9 @@ std::vector<VkPipelineShaderStageCreateInfo> createShaderStages(VkShaderModule s
 
 VkShaderModule createShaderModule(const VKDevice &handle, const std::vector<char> &code) {
     VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+    createInfo.pCode    = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
@@ -88,6 +88,19 @@ VkShaderModule createShaderModule(const VKDevice &handle, const std::vector<char
 
     return shaderModule;
 }
+
+// 之后再优化函数
+// std::optional<VkShaderModule> create_shader_module(const VKDevice &handle, const std::vector<char> &code) {
+//     VkShaderModuleCreateInfo createInfo{};
+//     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+//     createInfo.codeSize = code.size();
+//     createInfo.pCode    = reinterpret_cast<const uint32_t *>(code.data());
+//     VkShaderModule shaderModule;
+//     if (vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+//         return {};
+//     }
+//     return shaderModule;
+// }
 
 static std::vector<char> readFile(const std::string &filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -111,7 +124,6 @@ inline std::vector<VkPipelineShaderStageCreateInfo> create_shader_module(const V
                                                                          const std::string &vertex_path,
                                                                          const std::string &fragment_path,
                                                                          const std::string &geometry_path) {
-
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     if (!vertex_path.empty() && !fragment_path.empty()) {
         auto vertShaderCode = readFile(vertex_path);
@@ -124,27 +136,27 @@ inline std::vector<VkPipelineShaderStageCreateInfo> create_shader_module(const V
 
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
         vertShaderStageInfo.module = vertShaderModule;
-        vertShaderStageInfo.pName = "main";
+        vertShaderStageInfo.pName  = "main";
 
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragShaderStageInfo.module = fragShaderModule;
-        fragShaderStageInfo.pName = "main"; //运行我们把多个着色器程序放到一个文件中
+        fragShaderStageInfo.pName  = "main"; //运行我们把多个着色器程序放到一个文件中
         shaderStages.push_back(vertShaderStageInfo);
         shaderStages.push_back(fragShaderStageInfo);
     }
     if (!geometry_path.empty()) {
         auto geometryShaderCode = readFile(geometry_path);
-        VkShaderModule temp = createShaderModule(handle, geometryShaderCode);
+        VkShaderModule temp     = createShaderModule(handle, geometryShaderCode);
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
-        ShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        ShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        ShaderStageInfo.stage  = VK_SHADER_STAGE_GEOMETRY_BIT;
         ShaderStageInfo.module = temp;
-        ShaderStageInfo.pName = "main";
+        ShaderStageInfo.pName  = "main";
         shaderStages.push_back(ShaderStageInfo);
     }
     return shaderStages;

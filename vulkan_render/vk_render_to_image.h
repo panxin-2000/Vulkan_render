@@ -25,6 +25,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "logic_render_data.h"
+#include "vulkan_render_manage.h"
+
 VkPipeline pipeline{VK_NULL_HANDLE};
 VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
 
@@ -56,9 +59,17 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
+    std::map<logic_render_data *, shader_and_share> pipelineShaderStage_maps_;
+    std::map<std::string, texture_and_share> texture_map_;
+    std::map<Vertices_type, buffer_and_share> vertices_map_;
+    std::map<Indices_type, buffer_and_share> indices_map_;
+
+    VKDevice *handle_;
+
 public:
     void render_thread(VKDevice &handle) {
         if (need_render == running) {
+            handle_ = &handle;
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
@@ -86,8 +97,8 @@ public:
                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                  "");
-
-        pipeline = create_pipeline(handle, shaderStages, pipelineLayout);
+        auto shaderStages_new = new decltype (shaderStages)(shaderStages);
+        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout);
 
 
         while (need_render == running) {
@@ -150,8 +161,41 @@ public:
         return *instance;
     }
 
+    void create_vertex_shader(logic_render_data *data,
+                              std::map<logic_render_data *, shader_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                it->second.shared_number++;
+            } else {
+                auto shaderStages = create_shader_module(*handle_,
+                                                         data->vertexPath_,
+                                                         data->fragmentPath_,
+                                                         data->geometryPath_);
+                const auto shaderStages_new = new decltype (shaderStages)(shaderStages);
+                map->insert({data, {shaderStages_new, 1}});
+            }
+        }
+    }
+
 private:
     void init_need_objects() {
+        while (true) {
+            auto render_data = vk_render::instance().get_need_init();
+            if (render_data.has_value()) {
+                create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
+
+                for (const auto &temp: render_data.value()->vertex_and_attributes_) {
+                    create_vertex_buffer(temp.vertices_, temp.size, temp.data, &vertices_map_);
+                }
+                create_element_buffer(render_data.value()->indices_, &indices_map_);
+                create_texture(render_data.value()->textures, &texture_map_);
+
+                render_data.value()->fragmentPath_;
+            } else {
+                break;
+            }
+        }
     }
 
 
