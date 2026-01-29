@@ -11,7 +11,9 @@
 
 class logic_render_data;
 
-class vk_render_manage {
+
+
+class vk_render {
 private:
     mutable std::mutex mtx;
     // std::vector<union_render_data> render_objects;
@@ -20,27 +22,19 @@ private:
     std::vector<logic_render_data *> need_clean;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
-
-    // std::map<std::string, shader_and_share> vertex_shader_map_;
-    // std::map<std::string, shader_and_share> fragment_shader_map_;
-    // std::map<std::string, shader_and_share> geometry_shader_map_;
-    // std::map<std::string, texture_and_share> texture_map_;
-    // std::map<Vertices_type, buffer_and_share> vertices_map_;
-    // std::map<Indices_type, buffer_and_share> indices_map_;
-
 public:
     void init_logic_need_resources();
 
-    static vk_render_manage &get_instance() {
-        static vk_render_manage *instance = nullptr;
+    static vk_render &instance() {
+        static vk_render *instance = nullptr;
         static std::once_flag flag;
         std::call_once(flag, []() {
-            instance = new vk_render_manage();
+            instance = new vk_render();
         });
         return *instance;
     }
 
-// 不应该是 clear 函数，应该是从其中拿出一个
+    // 不应该是 clear 函数，应该是从其中拿出一个
     void update_need_objects() {
         need_update.clear();
     }
@@ -70,19 +64,19 @@ public:
     }
 
 private:
-    vk_render_manage() {
+    vk_render() {
     }
 
-    ~vk_render_manage() {
+    ~vk_render() {
     }
 
-    vk_render_manage(const vk_render_manage &) = delete;
+    vk_render(const vk_render &) = delete;
 
-    vk_render_manage &operator=(const vk_render_manage &) = delete;
+    vk_render &operator=(const vk_render &) = delete;
 
-    vk_render_manage(vk_render_manage &&) = delete;
+    vk_render(vk_render &&) = delete;
 
-    vk_render_manage &operator=(vk_render_manage &&) = delete;
+    vk_render &operator=(vk_render &&) = delete;
 };
 
 

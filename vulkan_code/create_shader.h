@@ -6,6 +6,7 @@
 #define HOWTOVULKAN_CREATE_SHADER_H
 #include <vector>
 #include <volk.h>
+#include <fstream>
 
 #include "/usr/local/lib/slang/include/slang.h"
 #include "/usr/local/lib/slang/include/slang-com-ptr.h"
