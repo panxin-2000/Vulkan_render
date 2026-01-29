@@ -179,6 +179,7 @@ file(GLOB_RECURSE RENDER
 )
 
 
+include_directories(render_common)
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"
@@ -200,6 +201,7 @@ file(GLOB_RECURSE LABYRINTH
 )
 file(GLOB_RECURSE INPUT_DEVICE
         "input_device/key_map_value.cpp"
+        "input_device/device_input_event_deal.cpp"
 )
 
 find_package(TBB REQUIRED)

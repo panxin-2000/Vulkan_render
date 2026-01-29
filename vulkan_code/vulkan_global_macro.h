@@ -14,7 +14,7 @@
 
 #include <iostream>
 #include <assert.h>
-#define Allocator nullptr
+#define VK_ORIGINAL_Allocator nullptr
 
 constexpr uint32_t maxFramesInFlight{2};
 

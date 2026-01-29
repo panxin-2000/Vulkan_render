@@ -29,13 +29,13 @@
  * uniform_buffer_changed   <br>
  */
 enum status_change : uint16_t {
-    vertices_changed = 1 << 0,
-    indices_changed = 1 << 1,
-    texture_path_changed = 1 << 2,
-    texture_name_changed = 1 << 3,
-    vertex_path_changed = 1 << 4,
-    fragment_path_changed = 1 << 5,
-    geometry_path_changed = 1 << 6,
+    vertices_changed       = 1 << 0,
+    indices_changed        = 1 << 1,
+    texture_path_changed   = 1 << 2,
+    texture_name_changed   = 1 << 3,
+    vertex_path_changed    = 1 << 4,
+    fragment_path_changed  = 1 << 5,
+    geometry_path_changed  = 1 << 6,
     primitive_type_changed = 1 << 7,
     uniform_buffer_changed = 1 << 8,
 };
@@ -43,11 +43,14 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-bool add_object_to_render(logic_render_data *render_object);
+inline bool add_object_to_render(logic_render_data *render_object) {
+}
 
-bool update_object_to_render(logic_render_data *render_object);
+inline bool update_object_to_render(logic_render_data *render_object) {
+}
 
-bool clean_object_to_render(logic_render_data *render_object);
+inline bool clean_object_to_render(logic_render_data *render_object) {
+}
 
 
 class logic_render_data : public NonCopyable {

@@ -1,19 +1,39 @@
 #include <GLFW/glfw3.h>
-#include "base_event.h"
+#include "../event/base_event.h"
+#include "entity_name_component.h"
+#include "global_singleton.h"
+#include "input_component.h"
+#include "../event/input_device_manage.h"
+#include "scene_component.h"
 
 
+void glfwFocusCallback(GLFWwindow *window, int focused);
+
+void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+void mouse_callback(GLFWwindow *window, double x_pos, double y_pos);
+
+void scroll_callback(GLFWwindow *window, double x_offset, double y_offset);
+
+void mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
 
 entt::dispatcher dispatcher;
+
+void on_key_press(const base_event_with_stamp &event);
+
+
+void deal_glfw_event() {
+    dispatcher.update();
+}
+
 
 void register_glfw(GLFWwindow *window) {
     dispatcher.sink<base_event_with_stamp>().connect<&on_key_press>();
 
 
     Keyboard_Manage::instance().init_eventQueueMgr(&dispatcher);
-    // Keyboard_Manage::instance().register_key_combination("'a'");
     glfwSetWindowFocusCallback(window, glfwFocusCallback); // 窗口焦点回调
-
-    glfwSetKeyCallback(window, glfwKeyCallback); // 键盘事件回调
+    glfwSetKeyCallback(window, glfwKeyCallback);           // 键盘事件回调
 
     // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
@@ -25,23 +45,21 @@ void register_glfw(GLFWwindow *window) {
 
 void on_key_press(const base_event_with_stamp &event) {
     // if (event.key_code == 27) /* 处理退出逻辑 */;
-    auto &storage = g_entt().storage < Scene_Component > ();
+    // auto &storage = g_entt().storage<Scene_Component>();
 
-    auto view = g_entt().view < Name_component, Scene_Component, Input_Component
-    >
-    ();
+    const auto view = g_entt().view<Name_component, Scene_Component, Input_Component>();
 
     std::vector<entt::entity> all_node_need_check;
 
-    static entt::entity last_work = get_scene_root();
-    mouse_position current_position = event.current_position;
+    static entt::entity last_work         = get_scene_root();
+    const mouse_position current_position = event.current_position;
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
     // std::cout << "last work name: " << name.name << std::endl;
     if (Scene_Component::check_entity_intersect_point(last_work, current_position))
-        if (const auto input = g_entt().try_get < Input_Component > (last_work)) {
+        if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(last_work, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
@@ -71,7 +89,7 @@ void on_key_press(const base_event_with_stamp &event) {
     //     std::cout << "name: " << name.name << std::endl;
     // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-        if (const auto input = g_entt().try_get < Input_Component > (*it)) {
+        if (const auto input = g_entt().try_get<Input_Component>(*it)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(*it, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
@@ -111,8 +129,8 @@ void glfwFocusCallback(GLFWwindow *window, int focused) {
     }
 }
 
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
-    Keyboard_Manage::instance().handle_scroll({static_cast<float>(xoffset), static_cast<float>(yoffset)});
+void scroll_callback(GLFWwindow *window, double x_offset, double y_offset) {
+    Keyboard_Manage::instance().handle_scroll({static_cast<float>(x_offset), static_cast<float>(y_offset)});
 }
 
 
@@ -152,7 +170,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 }
 
 
-void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+void glfwKeyCallback(GLFWwindow *window, const int key, int scancode, const int action, int mods) {
     // std::cout << "key: " << key << std::endl;
 
     if (key == GLFW_KEY_UNKNOWN) return;
@@ -170,9 +188,7 @@ void glfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int 
 
 
 // 只要鼠标动了就会调用这里
-void mouse_callback(GLFWwindow *window, double x_pos, double y_pos) {
+void mouse_callback(GLFWwindow *window, const double x_pos, const double y_pos) {
     // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
-    Keyboard_Manage::instance().handle_drag({(float) x_pos, (float) y_pos});
+    Keyboard_Manage::instance().handle_drag({static_cast<float>(x_pos), static_cast<float>(y_pos)});
 }
-
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);

@@ -107,31 +107,31 @@ public:
 
 
     void handle_mouse_click_left(mouse_position pos) {
-        manage_click_position = pos;
+        manage_click_position   = pos;
         mouse_button_left_click = true;
         dispatcher_->enqueue<base_event_with_stamp>({
-            MOUSE_LEFT,
-            KM_PRESS,
-            pos,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            KM_SHIFT
-        });
+                                                        MOUSE_LEFT,
+                                                        KM_PRESS,
+                                                        pos,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        KM_SHIFT
+                                                    });
     }
 
     void handle_mouse_click_right(mouse_position pos) {
-        manage_click_position = pos;
+        manage_click_position    = pos;
         mouse_button_right_click = true;
         dispatcher_->enqueue<base_event_with_stamp>({
-            MOUSE_RIGHT,
-            KM_PRESS,
-            pos,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            KM_SHIFT
-        });
+                                                        MOUSE_RIGHT,
+                                                        KM_PRESS,
+                                                        pos,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        KM_SHIFT
+                                                    });
     }
 
 
@@ -140,41 +140,41 @@ public:
         if ((mouse_button_left_click == true || mouse_button_right_click == true)
             && !(pos == manage_last_position)) {
             dispatcher_->enqueue<base_event_with_stamp>({
-                MOUSE_MOVE,
-                KM_PRESS,
-                manage_current_position,
-                manage_last_position,
-                manage_click_position,
-                manage_scroll,
-                KM_SHIFT
-            });
+                                                            MOUSE_MOVE,
+                                                            KM_PRESS,
+                                                            manage_current_position,
+                                                            manage_last_position,
+                                                            manage_click_position,
+                                                            manage_scroll,
+                                                            KM_SHIFT
+                                                        });
         }
         manage_last_position = pos;
     }
 
     void handle_scroll(mouse_position pos) {
         dispatcher_->enqueue<base_event_with_stamp>({
-            WHEEL_UP_MOUSE,
-            KM_PRESS,
-            pos,
-            manage_last_position,
-            manage_click_position,
-            pos,
-            KM_SHIFT
-        });
+                                                        WHEEL_UP_MOUSE,
+                                                        KM_PRESS,
+                                                        pos,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        pos,
+                                                        KM_SHIFT
+                                                    });
     }
 
     void handle_mouse_release_left(const mouse_position release_pos) {
         mouse_button_left_click = false;
         dispatcher_->enqueue<base_event_with_stamp>({
-            MOUSE_LEFT,
-            KM_RELEASE,
-            release_pos,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            KM_SHIFT
-        });
+                                                        MOUSE_LEFT,
+                                                        KM_RELEASE,
+                                                        release_pos,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        KM_SHIFT
+                                                    });
     }
 
     // 选择与拖动的区别，如果已经在已经选择的物品了，那么可以直接移动物品
@@ -186,41 +186,41 @@ public:
     void handle_mouse_release_right(const mouse_position release_pos) {
         mouse_button_right_click = false;
         dispatcher_->enqueue<base_event_with_stamp>({
-            MOUSE_RIGHT,
-            KM_RELEASE,
-            release_pos,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            KM_SHIFT
-        });
+                                                        MOUSE_RIGHT,
+                                                        KM_RELEASE,
+                                                        release_pos,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        KM_SHIFT
+                                                    });
     }
 
 
     // 处理GLFW按键按下事件（更新Set状态）
     void handleKeyDown(int keyCode) {
         dispatcher_->enqueue<base_event_with_stamp>({
-            static_cast<wmEventType>(keyCode),
-            KM_PRESS,
-            manage_current_position,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            manage_modifier_flag
-        });
+                                                        static_cast<wmEventType>(keyCode),
+                                                        KM_PRESS,
+                                                        manage_current_position,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        manage_modifier_flag
+                                                    });
     }
 
     // 处理GLFW按键松开事件（更新Set状态）
     void handleKeyUp(int keyCode) {
         dispatcher_->enqueue<base_event_with_stamp>({
-            static_cast<wmEventType>(keyCode),
-            KM_RELEASE,
-            manage_current_position,
-            manage_last_position,
-            manage_click_position,
-            manage_scroll,
-            manage_modifier_flag
-        });
+                                                        static_cast<wmEventType>(keyCode),
+                                                        KM_RELEASE,
+                                                        manage_current_position,
+                                                        manage_last_position,
+                                                        manage_click_position,
+                                                        manage_scroll,
+                                                        manage_modifier_flag
+                                                    });
         manage_event_type = EVENT_NONE;
     }
 
@@ -247,16 +247,16 @@ public:
     }
 
 private:
-    bool focus = true;
-    bool mouse_button_left_click = false;
+    bool focus                    = true;
+    bool mouse_button_left_click  = false;
     bool mouse_button_right_click = false;
     wmEventType manage_event_type;
     wmEventModifierFlag manage_modifier_flag;
 
-    mouse_position manage_current_position = {0, 0};
-    mouse_position manage_last_position = {0, 0};
-    mouse_position manage_click_position = {0, 0};
-    mouse_position manage_scroll = {0, 0};
+    mouse_position manage_current_position         = {0, 0};
+    mouse_position manage_last_position            = {0, 0};
+    mouse_position manage_click_position           = {0, 0};
+    mouse_position manage_scroll                   = {0, 0};
     mouse_position error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改，当是屏幕像素时，就没有改的必要了
     std::mutex _mutex;                                       // 线程安全锁
     std::unordered_set<int> pressed_keys;                    // Set：当前按下的按键

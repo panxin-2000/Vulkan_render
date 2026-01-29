@@ -35,11 +35,7 @@ static inline int get_win_HEIGHT() {
 
 class logic_render_object;
 
-bool add_object_to_render(logic_render_data *render_object);
 
-bool update_object_to_render(logic_render_data *render_object);
-
-bool clean_object_to_render(logic_render_data *render_object);
 
 void start_render_manage_thread(GLFWwindow *window);
 

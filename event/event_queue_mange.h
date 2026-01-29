@@ -22,11 +22,11 @@ public:
     using ValueType = T;
 
 private:
-    std::queue<ValueType> queue_; // 底层队列
-    mutable std::mutex mtx_; // 互斥锁（mutable支持const方法加锁）
+    std::queue<ValueType> queue_;          // 底层队列
+    mutable std::mutex mtx_;               // 互斥锁（mutable支持const方法加锁）
     std::condition_variable cv_not_empty_; // 队列非空条件变量
-    std::condition_variable cv_not_full_; // 队列非满条件变量（仅MAX_SIZE>0时生效）
-    std::atomic<bool> is_closed_; // 队列关闭状态
+    std::condition_variable cv_not_full_;  // 队列非满条件变量（仅MAX_SIZE>0时生效）
+    std::atomic<bool> is_closed_;          // 队列关闭状态
 public:
     static constexpr size_t MaxSize = MAX_SIZE; // 编译期可见的最大容量
 

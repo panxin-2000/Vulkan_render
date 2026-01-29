@@ -78,7 +78,7 @@ void VKDevice::create_surface() {
         window_ = glfwCreateWindow(1280, 720, "Vulkan", nullptr, nullptr);
         glfwSetWindowUserPointer(window_, this);
         glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
-        auto result = glfwCreateWindowSurface(instance_, window_, Allocator, &surface_);
+        auto result = glfwCreateWindowSurface(instance_, window_, VK_ORIGINAL_Allocator, &surface_);
         if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to create window surface!");
         }
