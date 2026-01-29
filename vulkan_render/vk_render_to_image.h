@@ -61,7 +61,7 @@ class vk_render_GPU {
 
     std::map<logic_render_data *, shader_and_share> pipelineShaderStage_maps_;
     std::map<std::string, texture_and_share> texture_map_;
-    std::map<Vertices_type, buffer_and_share> vertices_map_;
+    std::map<Shared_ptr_of_vertices, buffer_and_share> vertices_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
 
     VKDevice *handle_;
@@ -78,7 +78,8 @@ public:
         Descriptor descriptor(&handle, &descriptor_pool);
 
         // Mesh data
-        auto mesh = create_mesh_data(handle, vBufferAllocation);
+        auto [vertices, indices] = load_model();
+        auto mesh                = create_mesh_data(handle, vertices, indices, vBufferAllocation);
 
         Engine engine(handle);
         engine.init();
@@ -98,7 +99,8 @@ public:
                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                  "");
         auto shaderStages_new = new decltype (shaderStages)(shaderStages);
-        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout);
+        auto vertexInputState = position_normal_uv();
+        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout, &vertexInputState);
 
 
         while (need_render == running) {
@@ -180,16 +182,19 @@ public:
 
 private:
     void init_need_objects() {
-        while (true) {
+        while (false) { // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
             auto render_data = vk_render::instance().get_need_init();
             if (render_data.has_value()) {
                 create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
 
+
                 for (const auto &temp: render_data.value()->vertex_and_attributes_) {
-                    create_vertex_buffer(temp.vertices_, temp.size, temp.data, &vertices_map_);
+                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                    auto mesh = create_mesh_data(*handle_, temp, render_data.value()->indices_,
+                                                 vBufferAllocation);
                 }
-                create_element_buffer(render_data.value()->indices_, &indices_map_);
-                create_texture(render_data.value()->textures, &texture_map_);
+                // create_element_buffer(render_data.value()->indices_, &indices_map_);
+                // create_texture(render_data.value()->textures, &texture_map_);
 
                 render_data.value()->fragmentPath_;
             } else {

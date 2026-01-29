@@ -76,7 +76,7 @@ struct buffer_and_share {
 
 class logic_render_data;
 
-using Vertices_type = std::shared_ptr<void>;
+using Shared_ptr_of_vertices = std::shared_ptr<void>;
 
 // 一般情况下是这两种选择
 // VK_INDEX_TYPE_UINT16 = 0,
@@ -104,7 +104,7 @@ struct VertexAttrib {
 };
 
 struct vertex_and_attributes {
-    Vertices_type vertices_;
+    Shared_ptr_of_vertices shared_ptr_of_vertices_;
     void *data;
     unsigned long size;
     std::vector<VertexAttrib> vertex_attribs;
