@@ -7,7 +7,10 @@
 
 #include "vulkan_device_handle.h"
 
-void render_thread_stop();
 
 void render_thread_start(VKDevice &handle);
+
+void render_thread_stop();
+
+void render_thread_stop_and_wait();
 #endif //HELLO_MAC_BACKEND_H

@@ -191,6 +191,7 @@ include_directories(event)
 include_directories(singleton)
 include_directories(labyrinth)
 include_directories(input_device)
+include_directories(vulkan_render)
 include_directories(component)
 include_directories(interactable_object)
 

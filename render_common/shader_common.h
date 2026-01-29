@@ -70,7 +70,11 @@ struct buffer_and_share {
 class logic_render_data;
 
 using Vertices_type = std::shared_ptr<void>;
-using Indices_type = std::shared_ptr<std::vector<unsigned int> >;
+
+// 一般情况下是这两种选择
+// VK_INDEX_TYPE_UINT16 = 0,
+// VK_INDEX_TYPE_UINT32 = 1,
+using Indices_type = std::shared_ptr<std::vector<u_int16_t> >;
 
 
 struct VertexAttrib {
@@ -106,7 +110,7 @@ public:
     std::string texture_name_;
 
     bool set_path(const std::string &path, const std::string &texture_name) {
-        this->path_ = path;
+        this->path_         = path;
         this->texture_name_ = texture_name;
         return true;
     }

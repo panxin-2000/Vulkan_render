@@ -12,6 +12,10 @@ void render_thread_stop() {
     vk_render_GPU::instance().render_thread_stop();
 }
 
+void render_thread_stop_and_wait() {
+    vk_render_GPU::instance().render_thread_stop_and_wait();
+}
+
 
 void render_thread_start(VKDevice &handle) {
     std::thread t([&handle]() {

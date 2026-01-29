@@ -16,6 +16,7 @@
 #include "Texture_logic.h"
 #include "utility.h"
 
+#include "vulkan_render_manage.h"
 
 /**
  * vertices_changed         <br>
@@ -29,6 +30,7 @@
  * uniform_buffer_changed   <br>
  */
 enum status_change : uint16_t {
+    no_change              = 0,
     vertices_changed       = 1 << 0,
     indices_changed        = 1 << 1,
     texture_path_changed   = 1 << 2,
@@ -44,36 +46,48 @@ ENABLE_BITWISE_OPERATORS(status_change)
 
 
 inline bool add_object_to_render(logic_render_data *render_object) {
+    vk_render::instance().render_object_need_init(render_object);
+    return true;
 }
 
 inline bool update_object_to_render(logic_render_data *render_object) {
+    vk_render::instance().render_object_need_init(render_object);
+    return true;
 }
 
 inline bool clean_object_to_render(logic_render_data *render_object) {
+    vk_render::instance().render_object_need_init(render_object);
+    return true;
 }
 
 
 class logic_render_data : public NonCopyable {
+#define add_mutex std::lock_guard<std::mutex> lock(mtx);
+
+private:
+    mutable std::mutex mtx;
+
 public:
-    std::vector<Texture_logic> textures;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
     std::string debug_name;
-    mutable std::mutex mtx;
     Indices_type indices_;
+    GPUPrimType prim_type_ = GPU_PRIM_TRIS;
+    status_change status_  = no_change;
+
+    // material 相关的内容
+    std::vector<Texture_logic> textures;
     std::string texture_path_;
     std::string texture_name_;
     std::string vertexPath_;
-    std::string fragmentPath_;
     std::string geometryPath_;
-    GPUPrimType prim_type_;
-    status_change status_;
+    std::string fragmentPath_;
 
+    logic_render_data() = default;
 
-    logic_render_data() {
-        // p_render_component = new render_component;
-    }
+    ~logic_render_data() = default;
 
-    ~logic_render_data() {
+    void set_prim_type(const GPUPrimType prim_type) {
+        prim_type_ = prim_type;
     }
 
     void push_vertex_and_attributes(vertex_and_attributes temp) {
@@ -91,14 +105,11 @@ public:
     }
 
 
-#define add_mutex std::lock_guard<std::mutex> lock(mtx);
-
-
     auto get_indices() const {
         return indices_;
     }
 
-    void set_indices(std::shared_ptr<std::vector<unsigned int> > indices) {
+    void set_indices(Indices_type indices) {
         add_mutex;
         indices_ = std::move(indices);
     }
@@ -125,6 +136,7 @@ public:
         add_mutex;
         geometryPath_ = path;
     }
+#undef add_mutex
 };
 
 

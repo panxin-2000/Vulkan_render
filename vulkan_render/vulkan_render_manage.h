@@ -4,7 +4,6 @@
 
 #ifndef HELLO_MAC_VULKAN_RENDER_MANAGE_H
 #define HELLO_MAC_VULKAN_RENDER_MANAGE_H
-#include <map>
 #include <mutex>
 #include <thread>
 
@@ -12,14 +11,13 @@
 class logic_render_data;
 
 
-
 class vk_render {
 private:
     mutable std::mutex mtx;
     // std::vector<union_render_data> render_objects;
-    std::vector<logic_render_data *> need_init;
-    std::vector<logic_render_data *> need_update;
-    std::vector<logic_render_data *> need_clean;
+    std::queue<logic_render_data *> need_init;
+    std::queue<logic_render_data *> need_update;
+    std::queue<logic_render_data *> need_clean;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
 public:
@@ -34,33 +32,63 @@ public:
         return *instance;
     }
 
-    // 不应该是 clear 函数，应该是从其中拿出一个
-    void update_need_objects() {
-        need_update.clear();
+
+    void clean_vk_render() {
+        while (!need_init.empty()) {
+            need_init.pop();
+        }
+        while (!need_update.empty()) {
+            need_update.pop();
+        }
+        while (!need_clean.empty()) {
+            need_clean.pop();
+        }
     }
 
-    void init_need_objects() {
-        need_clean.clear();
-    }
-
-    void clean_need_objects() {
-        need_clean.clear();
-    }
-
-
-    void add_render_object_need_init(logic_render_data *render_object) {
+    std::optional<logic_render_data *> get_need_init() {
         std::unique_lock<std::mutex> lock(mtx);
-        need_init.push_back(render_object);
+        if (!need_init.empty()) {
+            logic_render_data *val = need_init.front();
+            need_init.pop();
+            return val;
+        }
+        return std::nullopt;
     }
 
-    void add_render_object_need_update(logic_render_data *render_object) {
+    std::optional<logic_render_data *> get_need_update() {
         std::unique_lock<std::mutex> lock(mtx);
-        need_update.push_back(render_object);
+        if (!need_init.empty()) {
+            logic_render_data *val = need_init.front();
+            need_init.pop();
+            return val;
+        }
+        return std::nullopt;
     }
 
-    void add_render_object_need_clean(logic_render_data *render_object) {
+    std::optional<logic_render_data *> get_need_clean() {
         std::unique_lock<std::mutex> lock(mtx);
-        need_clean.push_back(render_object);
+        if (!need_init.empty()) {
+            logic_render_data *val = need_init.front();
+            need_init.pop();
+            return val;
+        }
+        return std::nullopt;
+    }
+
+
+    void render_object_need_init(logic_render_data *render_object) {
+        std::unique_lock<std::mutex> lock(mtx);
+        need_init.push(render_object);
+    }
+
+    void render_object_need_update(logic_render_data *render_object) {
+        std::unique_lock<std::mutex> lock(mtx);
+        need_update.push(render_object);
+    }
+
+    void render_object_need_clean(logic_render_data *render_object) {
+        std::unique_lock<std::mutex> lock(mtx);
+        need_clean.push(render_object);
     }
 
 private:
@@ -68,8 +96,10 @@ private:
     }
 
     ~vk_render() {
+        clean_vk_render();
     }
 
+public:
     vk_render(const vk_render &) = delete;
 
     vk_render &operator=(const vk_render &) = delete;

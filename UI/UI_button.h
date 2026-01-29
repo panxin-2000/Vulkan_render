@@ -104,39 +104,43 @@ entt::entity UI_button(const std::string &name,
     if (g_entt().all_of<logic_render_data *>(entity_)) {
         auto render = g_entt().get<logic_render_data *>(entity_);
 
-        /***************设置参数**********************/
-        std::vector<VertexAttrib> vertex_attribs;
-        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
-        vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
-        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+        /***************设置顶点与索引参数**********************/
+        {
+            std::vector<VertexAttrib> vertex_attribs;
+            vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
+            vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
+            // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-        struct pos_and_uv {
-            float x, y, z, u, v;
-        };
+            struct pos_and_uv {
+                float x, y, z, u, v;
+            };
 
-        auto vertices = std::make_shared<std::vector<pos_and_uv> >();
-        auto indices  = std::make_shared<std::vector<unsigned int> >();
-        // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+            auto vertices = std::make_shared<std::vector<pos_and_uv> >();
+            auto indices  = std::make_shared<std::vector<uint16_t> >();
+            // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+            {
+                indices->push_back(vertices->size() + 0);
+                indices->push_back(vertices->size() + 1);
+                indices->push_back(vertices->size() + 2);
+                indices->push_back(vertices->size() + 2);
+                indices->push_back(vertices->size() + 3);
+                indices->push_back(vertices->size() + 0);
+                vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0}); //0 1 2
+                vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 1, 0});
+                vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 1, 1}); // 2 3 0
+                vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 1});
+            }
+            // 参数这里最重要的是下面的两行
 
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 3);
-        indices->push_back(vertices->size() + 0);
-        vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0}); //0 1 2
-        vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 1, 0});
-        vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 1, 1}); // 2 3 0
-        vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 1});
-        // 参数这里最重要的是下面的两行
-
-        // 参数这里最重要的是下面的两行
-        const vertex_and_attributes temp = {
-            vertices, vertices->data(), vertices->size() * sizeof(pos_and_uv), vertex_attribs
-        };
-        render->debug_name = name;
-        render->push_vertex_and_attributes(temp);
-        render->set_indices(indices);
+            // 参数这里最重要的是下面的两行
+            const vertex_and_attributes temp = {
+                vertices, vertices->data(), vertices->size() * sizeof(pos_and_uv), vertex_attribs
+            };
+            render->debug_name = name;
+            render->push_vertex_and_attributes(temp); // 没有给一个vector ，稍微有点不方便
+            render->set_indices(indices);
+        }
+        /***************设置着色器与贴图**********************/
         render->set_vertex_shader("render/shader/different_color.vert");
         render->set_fragment_shader("render/shader/different_color.frag");
         render->set_texture("resoureces/picture.png", "ourTexture1");
