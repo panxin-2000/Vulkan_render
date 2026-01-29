@@ -73,7 +73,6 @@ bool load_model_to_vector(std::shared_ptr<std::vector<Vertex> > &vertices,
 
 std::pair<vertex_and_attributes, Indices_type> load_model() {
     vertex_and_attributes vertices{};
-    Indices_type indices{};
     // std::shared_ptr<std::vector<Vertex> > &vertices; std::shared_ptr<std::vector<uint16_t> > &indices;
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
@@ -81,7 +80,7 @@ std::pair<vertex_and_attributes, Indices_type> load_model() {
     vertices.shared_ptr_of_vertices_ = sp_vertices;
     vertices.data                    = sp_vertices->data();
     vertices.size                    = sp_vertices->size() * sizeof(Vertex);
-    return {vertices, indices};
+    return {vertices, sp_indices};
 }
 
 

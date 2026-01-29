@@ -12,6 +12,7 @@
 #include "base_element/intersect/objects_intersect_with_point.h"
 #include "global_singleton.h"
 #include "logic_render_data.h"
+#include "backend.h"
 
 class Scene_Component {
 private:

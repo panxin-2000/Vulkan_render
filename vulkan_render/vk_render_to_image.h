@@ -182,21 +182,24 @@ public:
 
 private:
     void init_need_objects() {
-        while (false) { // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
-            auto render_data = vk_render::instance().get_need_init();
+        while (true) {
+            // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
+            auto render_data = vk_render_queue::instance().get_need_init();
             if (render_data.has_value()) {
-                create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
+                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
 
-
-                for (const auto &temp: render_data.value()->vertex_and_attributes_) {
-                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                    auto mesh = create_mesh_data(*handle_, temp, render_data.value()->indices_,
-                                                 vBufferAllocation);
-                }
+                // create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
+                //
+                //
+                // for (const auto &temp: render_data.value()->vertex_and_attributes_) {
+                //     // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                //     auto mesh = create_mesh_data(*handle_, temp, render_data.value()->indices_,
+                //                                  vBufferAllocation);
+                // }
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
 
-                render_data.value()->fragmentPath_;
+                // render_data.value()->fragmentPath_;
             } else {
                 break;
             }
@@ -209,12 +212,28 @@ private:
     }
 
     void update_need_objects() {
+        while (true) {
+            auto render_data = vk_render_queue::instance().get_need_update();
+            if (render_data.has_value()) {
+                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
+            } else {
+                break;
+            }
+        }
         // 内存内容的更新
         // 先查找放置在哪里来
         // 之后再更新数据
     }
 
     void clean_need_objects() {
+        while (true) {
+            auto render_data = vk_render_queue::instance().get_need_clean();
+            if (render_data.has_value()) {
+                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
+            } else {
+                break;
+            }
+        }
         // 简单的将内存区域标记为没有内容
         // init_need_objects 再根据需要进行移动或者拼接操作
     }

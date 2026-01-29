@@ -9,14 +9,10 @@
 
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
-
-
 #include <type_traits>
-
 #include "Texture_logic.h"
 #include "utility.h"
 
-#include "vulkan_render_manage.h"
 
 /**
  * vertices_changed         <br>
@@ -45,20 +41,7 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-inline bool add_object_to_render(logic_render_data *render_object) {
-    vk_render::instance().render_object_need_init(render_object);
-    return true;
-}
 
-inline bool update_object_to_render(logic_render_data *render_object) {
-    vk_render::instance().render_object_need_init(render_object);
-    return true;
-}
-
-inline bool clean_object_to_render(logic_render_data *render_object) {
-    vk_render::instance().render_object_need_init(render_object);
-    return true;
-}
 
 
 class logic_render_data : public NonCopyable {
@@ -97,7 +80,7 @@ public:
 
     void set_status_change(const status_change status) {
         status_ = status_ | status;
-        update_object_to_render(this);
+        // update_object_to_render(this);
     }
 
     status_change get_status_change() const {

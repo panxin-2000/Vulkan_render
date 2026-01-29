@@ -6,12 +6,13 @@
 #define HELLO_MAC_VULKAN_RENDER_MANAGE_H
 #include <mutex>
 #include <thread>
-
+#include "global_singleton.h"
+#include "logic_render_data.h"
 
 class logic_render_data;
 
 
-class vk_render {
+class vk_render_queue {
 private:
     mutable std::mutex mtx;
     // std::vector<union_render_data> render_objects;
@@ -23,11 +24,11 @@ private:
 public:
     void init_logic_need_resources();
 
-    static vk_render &instance() {
-        static vk_render *instance = nullptr;
+    static vk_render_queue &instance() {
+        static vk_render_queue *instance = nullptr;
         static std::once_flag flag;
         std::call_once(flag, []() {
-            instance = new vk_render();
+            instance = new vk_render_queue();
         });
         return *instance;
     }
@@ -79,34 +80,37 @@ public:
     void render_object_need_init(logic_render_data *render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_init.push(render_object);
+        LOG_INFO(g_log(), "add {} to vk_render_queue ", render_object->debug_name);
     }
 
     void render_object_need_update(logic_render_data *render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_update.push(render_object);
+        LOG_INFO(g_log(), "update {} to vk_render_queue ", render_object->debug_name);
     }
 
     void render_object_need_clean(logic_render_data *render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_clean.push(render_object);
+        LOG_INFO(g_log(), "clean {} to vk_render_queue ", render_object->debug_name);
     }
 
 private:
-    vk_render() {
+    vk_render_queue() {
     }
 
-    ~vk_render() {
+    ~vk_render_queue() {
         clean_vk_render();
     }
 
 public:
-    vk_render(const vk_render &) = delete;
+    vk_render_queue(const vk_render_queue &) = delete;
 
-    vk_render &operator=(const vk_render &) = delete;
+    vk_render_queue &operator=(const vk_render_queue &) = delete;
 
-    vk_render(vk_render &&) = delete;
+    vk_render_queue(vk_render_queue &&) = delete;
 
-    vk_render &operator=(vk_render &&) = delete;
+    vk_render_queue &operator=(vk_render_queue &&) = delete;
 };
 
 
