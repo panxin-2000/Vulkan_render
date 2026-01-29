@@ -26,6 +26,51 @@ public:
         return descriptor_set_texture;
     }
 
+    /**
+     *
+     * @param type             VkDescriptorType    uniform sampler2D 或 uniform 相关
+     * @param stageFlags       VK_SHADER_STAGE_VERTEX_BIT  VK_SHADER_STAGE_FRAGMENT_BIT
+     * @param binding          layout (binding = 1)   layout (binding = 2)  layout (binding = 3)
+     * @param descriptorCount  []中的数量，layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
+     * @return
+     */
+    static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
+        const VkDescriptorType type,
+        const VkShaderStageFlags stageFlags,
+        const uint32_t binding,
+        const uint32_t descriptorCount = 1) {
+        VkDescriptorSetLayoutBinding setLayoutBinding{};
+        setLayoutBinding.descriptorType = type;
+        setLayoutBinding.stageFlags = stageFlags;
+        setLayoutBinding.binding = binding;
+        setLayoutBinding.descriptorCount = descriptorCount;
+        return setLayoutBinding;
+    }
+
+    static inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
+        const std::vector<VkDescriptorSetLayoutBinding> &bindings, void *pNext = nullptr) {
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
+        descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutCreateInfo.pBindings = bindings.data();
+        descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        descriptorSetLayoutCreateInfo.pNext = pNext; // 新增加的一行
+        return descriptorSetLayoutCreateInfo;
+    }
+
+    // static inline VkDescriptorBindingFlags DescriptorBindingFlags(const VkDescriptorBindingFlagBits flag_bits) {
+    //     const VkDescriptorBindingFlags descVariableFlag{static_cast<VkDescriptorBindingFlags>(flag_bits)};
+    //     return descVariableFlag;
+    // }
+
+    static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
+        const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
+        const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+            .bindingCount = static_cast<uint32_t>(descVariableFlags.size()),
+            .pBindingFlags = descVariableFlags.data(),
+        };
+        return descBindingFlags;
+    }
 
     /**
      *
@@ -33,23 +78,18 @@ public:
      */
     void CreateDescriptorSetLayout(uint32_t size) {
         // Descriptor (indexing)
-        VkDescriptorBindingFlags descVariableFlag{VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT};
-        VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO, .bindingCount = 1,
-            .pBindingFlags = &descVariableFlag
+        const std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+            descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                       size),
         };
-        VkDescriptorSetLayoutBinding descLayoutBindingTex{
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = size,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+        const std::vector<VkDescriptorBindingFlags> descVariableFlags{
+            VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT,
         };
-        VkDescriptorSetLayoutCreateInfo descLayoutTexCI{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = &descBindingFlags,
-            .bindingCount = 1,
-            .pBindings = &descLayoutBindingTex
-        };
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle->get_device(), &descLayoutTexCI, nullptr, &descriptorSetLayoutTex));
+        // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
+        const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
+        const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
+        VK_CHECK_RESULT(
+            vkCreateDescriptorSetLayout(handle->get_device(), &descriptorLayout, nullptr, &descriptorSetLayoutTex));
     }
 
     /**
@@ -69,19 +109,15 @@ public:
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, .
             pNext = &variableDescCountAI,
             .descriptorPool = descriptor_pool_->get_pool(),
-            .descriptorSetCount = 1,       // // 打算分配的集合数量
-            .pSetLayouts = &descriptorSetLayoutTex     // 指向布局数组的指针,长度必须等于 descriptorSetCount
+            .descriptorSetCount = 1,               // // 打算分配的集合数量
+            .pSetLayouts = &descriptorSetLayoutTex // 指向布局数组的指针,长度必须等于 descriptorSetCount
         };
         VK_CHECK_RESULT(vkAllocateDescriptorSets(handle->get_device(), &texDescSetAlloc, &descriptor_set_texture));
     }
 
 
-
-
-
     void Destroy() {
         vkDestroyDescriptorSetLayout(handle->get_device(), descriptorSetLayoutTex, nullptr);
-
     }
 
 
