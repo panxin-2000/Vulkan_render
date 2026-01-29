@@ -64,24 +64,9 @@ inline auto position_normal_uv() {
 
 
 VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                           VkPipelineLayout pipelineLayout) {
+                           VkPipelineLayout pipelineLayout, VkPipelineVertexInputStateCreateInfo *vertexInputState) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
-    VkVertexInputBindingDescription vertexBinding{
-        .binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-    };
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
-        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
-        {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
-    };
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = 1,
-        .pVertexBindingDescriptions      = &vertexBinding,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions    = vertexAttributes.data(),
-    };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
         .sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -120,7 +105,7 @@ VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCr
         .pNext               = &renderingCI,
         .stageCount          = to_u32(shaderStages.size()),
         .pStages             = shaderStages.data(),
-        .pVertexInputState   = &vertexInputState,
+        .pVertexInputState   = vertexInputState,
         .pInputAssemblyState = &inputAssemblyState,
         .pViewportState      = &viewportState,
         .pRasterizationState = &rasterizationState,

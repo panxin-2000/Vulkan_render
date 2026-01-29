@@ -99,8 +99,8 @@ public:
                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                  "");
         auto shaderStages_new = new decltype (shaderStages)(shaderStages);
-        auto vertexInputState = position_normal_uv();
-        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout);
+        const auto vertexInputState = position_normal_uv();
+        pipeline = create_pipeline(handle, shaderStages, pipelineLayout, vertexInputState.vertexInputState_copy.get());
 
 
         while (need_render == running) {
