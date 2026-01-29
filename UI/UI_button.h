@@ -6,14 +6,12 @@
 #define HELLO_MAC_UI_BUTTON_H
 
 
-#include "Render_thread_data.h"
 #include "input_component.h"
 #include "base_event.h"
 #include "entity_name_component.h"
 #include "global_singleton.h"
-#include "model_matrix_component.h"
 #include "observer_manage.h"
-#include "render_object_manage.h"
+#include "logic_render_data.h"
 
 entt::entity UI_button(const std::string &name,
                        float min_x,
@@ -33,7 +31,7 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
                 if (g_entt().valid(entity_)) {
-                    g_entt().emplace_or_replace<PendingDestroyTag>(entity_);
+                    g_entt().emplace_or_replace<Destroy_tag>(entity_);
                     return OPERATOR_FINISHED;
                 }
             return OPERATOR_PASS_THROUGH;
@@ -62,21 +60,12 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
             break;
         case WHEEL_UP_MOUSE:
             if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
-                scene_node->set_zoom(event);
-                scene_node->update_position();
+                scene_node->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
             if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
-                if (g_entt().all_of<Scene_Component>(entity_)) {
-                    auto &name = g_entt().get<Name_component>(entity_);
-                    // std::cout << "UI_button" << name.name << " MOUSE_MOVE" << std::endl;
-                }
-                scene_node->set_position_offset(event);
-                scene_node->update_2D_position_matrix();
-                if (auto *render = g_entt().try_get<logic_render_data *>(entity_)) {
-                    (*render)->set_status_change(uniform_buffer_changed);
-                }
+                scene_node->set_position_offset(entity_, event);
                 // 包围盒的位置还需要同步更新
                 return OPERATOR_RUNNING_MODAL;
             }
@@ -126,7 +115,7 @@ entt::entity UI_button(const std::string &name,
         };
 
         auto vertices = std::make_shared<std::vector<pos_and_uv> >();
-        auto indices = std::make_shared<std::vector<unsigned int> >();
+        auto indices  = std::make_shared<std::vector<unsigned int> >();
         // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
 
         indices->push_back(vertices->size() + 0);

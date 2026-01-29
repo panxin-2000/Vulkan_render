@@ -43,10 +43,15 @@ int main(int argc, char *argv[]) {
         if (GLFW_TRUE == glfwWindowShouldClose(handle.window_)) {
             break;
         }
-        glfwPollEvents();                               // Event polling
-        deal_glfw_event();                              // 统一分发执行
-        auto view = g_entt().view<PendingDestroyTag>(); //得到哪些需要销毁
-        g_entt().destroy(view.begin(), view.end());     // 执行销毁程序
+        glfwPollEvents();  // Event polling
+        deal_glfw_event(); // 统一分发执行
+        {
+            auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁
+            g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+        } {
+            auto view = g_entt().view<Position_update_tag>(); //得到哪些需要销毁
+            // g_entt().destroy(view.begin(), view.end());       // todo : 添加新的函数
+        }
 
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

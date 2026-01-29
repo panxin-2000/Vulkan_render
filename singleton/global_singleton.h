@@ -36,12 +36,11 @@ static inline int get_win_HEIGHT() {
 class logic_render_object;
 
 
-
-void start_render_manage_thread(GLFWwindow *window);
-
-void end_render_manage_thread();
-
-struct PendingDestroyTag {
+struct Destroy_tag {
 };
+
+struct Position_update_tag {
+};
+
 
 #endif //HELLO_MAC_GLOBAL_SINGLETON_H

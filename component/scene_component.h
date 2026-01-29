@@ -9,29 +9,29 @@
 #include <entt/entt.hpp>
 #include "base_event.h"
 #include "base_element/point_3.h"
-#include "shader.h"
 #include "base_element/intersect/objects_intersect_with_point.h"
 #include "global_singleton.h"
+#include "logic_render_data.h"
 
 class Scene_Component {
 private:
     entt::entity parent = entt::null;
-    Point_2 zoom = {1, 1};
-    Point_2 offset = {0, 0};
+    Point_2 zoom        = {1, 1};
+    Point_2 offset      = {0, 0};
     std::vector<entt::entity> children;
 
 public:
-    void set_bounding_box(Point_2 min, Point_2 max) {
+    void set_bounding_box(const Point_2 min, const Point_2 max) {
         bounding_box_ = AABB_centroid<Point_2>(min, max);
     }
 
     ~Scene_Component() {
-        bool clear_parent_relation(const entt::entity children_entity);
+        bool clear_parent_relation(entt::entity children_entity);
         clear_parent_relation(parent);
 
         for (auto it = children.rbegin(); it != children.rend(); ++it)
             if (g_entt().valid(*it)) {
-                g_entt().emplace_or_replace<PendingDestroyTag>(*it);
+                g_entt().emplace_or_replace<Destroy_tag>(*it);
             }
         // auto children_temp = children;
         // auto parent_temp = parent;
@@ -91,59 +91,54 @@ public:
         children.push_back(entity);
     }
 
-    Point_2 get_zoom() const {
+    [[nodiscard]] Point_2 get_zoom() const {
         return zoom;
     }
 
-    Point_2 get_offset() const {
+    [[nodiscard]] Point_2 get_offset() const {
         return offset;
     }
 
-    bool update_2D_position_matrix() {
+    bool update_2D_position_matrix() const {
         const auto &storage = g_entt().storage<Scene_Component>();
-        const auto entity = entt::to_entity(storage, *this);
+        const auto entity   = entt::to_entity(storage, *this);
         if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
-            data_value_or_ptr data{};
-            Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                           // {0.01f , 0.01f, 1.0},
-                                                           {2.0f / get_win_WIDTH(), 2.0f / get_win_HEIGHT(), 1.0},
-                                                           {0.0f, 0.0f, 0.0f},
-                                                           {
-                                                               ((offset.x / get_win_WIDTH()) - 0.5f) * 2,
-                                                               ((offset.y / get_win_HEIGHT()) - 0.5f) * -2,
-                                                               0
-                                                           });
-            (*render)->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }
 
-    bool update_position() {
+    bool update_position() const {
         const auto &storage = g_entt().storage<Scene_Component>();
 
 
         const auto entity = entt::to_entity(storage, *this);
         if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
-            data_value_or_ptr data{};
-            Shader_object::set_model_transform_zoom_rotate(data.vec_4,
-                                                           {zoom.x, zoom.y, 1.0},
-                                                           {0.0f, 0.0f, 0.0f}, {offset});
-            (*render)->add_uniform("model_transform", gl_mat4, data);
         }
         return true;
     }
 
-    bool set_zoom(const base_event_with_stamp &base_event) {
+    bool set_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
         zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
         zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
+        g_entt().emplace_or_replace<Position_update_tag>(entity);
+        for (auto it = children.rbegin(); it != children.rend(); ++it)
+            if (g_entt().valid(*it)) {
+                g_entt().emplace_or_replace<Position_update_tag>(*it);
+            }
+        return true;
     }
 
-    bool set_position_offset(const base_event_with_stamp &base_event) {
+    bool set_position_offset(const entt::entity entity, const base_event_with_stamp &base_event) {
         // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
         // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
-        Point_2 move = base_event.current_position - base_event.last_position;
+        Point_2 move                 = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
-        offset = offset + move;
+        offset                       = offset + move;
+        g_entt().emplace_or_replace<Position_update_tag>(entity);
+        for (auto it = children.rbegin(); it != children.rend(); ++it)
+            if (g_entt().valid(*it)) {
+                g_entt().emplace_or_replace<Position_update_tag>(*it);
+            }
         // std::cout << "move x: " << offset.x << " y: " << offset.y << std::endl;
         // offset.x = offset.x + move.x / get_win_WIDTH() * 2;
         // offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
@@ -177,7 +172,7 @@ public:
                            // 在系统初始化时
                            g_entt().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
                        }
-        );
+                      );
 
         return instance;
     }
@@ -207,8 +202,8 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
  */
 inline void scene_root_add_child(entt::entity entity) {
     if (g_entt().all_of<Scene_Component>(entity)) {
-        auto root = get_scene_root();
-        auto &parent_scene = g_entt().get<Scene_Component>(root);
+        auto root            = get_scene_root();
+        auto &parent_scene   = g_entt().get<Scene_Component>(root);
         auto &children_scene = g_entt().get<Scene_Component>(entity);
         parent_scene.add_child_relation(entity);
         children_scene.add_parent_relation(root);
@@ -218,7 +213,7 @@ inline void scene_root_add_child(entt::entity entity) {
 inline void scene_add_child(entt::entity parent_entity, entt::entity children_entity) {
     if (g_entt().all_of<Scene_Component>(parent_entity) &&
         g_entt().all_of<Scene_Component>(children_entity)) {
-        auto &parent_scene = g_entt().get<Scene_Component>(parent_entity);
+        auto &parent_scene   = g_entt().get<Scene_Component>(parent_entity);
         auto &children_scene = g_entt().get<Scene_Component>(children_entity);
 
         parent_scene.add_child_relation(children_entity);
