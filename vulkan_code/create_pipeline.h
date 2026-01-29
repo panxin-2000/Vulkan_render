@@ -33,23 +33,33 @@ inline VkPipelineVertexInputStateCreateInfo create_vertex_input_state() {
     return vertexInputState;
 }
 
-inline VkPipelineVertexInputStateCreateInfo position_normal_uv() {
-    VkVertexInputBindingDescription vertexBinding{
-        .binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+inline auto position_normal_uv() {
+    std::vector<VkVertexInputBindingDescription> vertexBindings{
+        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
     };
+    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
     std::vector<VkVertexInputAttributeDescription> vertexAttributes{
         {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
         {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
         {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
     };
+    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
     VkPipelineVertexInputStateCreateInfo vertexInputState{
         .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = 1,
-        .pVertexBindingDescriptions      = &vertexBinding,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions    = vertexAttributes.data(),
+        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
+        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
+        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
     };
-    return vertexInputState;
+    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
+
+    struct Return_struct {
+        std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
+        std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
+        std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
+    };
+    Return_struct return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
+    return return_struct;
 }
 
 
@@ -110,7 +120,7 @@ VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCr
         .pNext               = &renderingCI,
         .stageCount          = to_u32(shaderStages.size()),
         .pStages             = shaderStages.data(),
-        .pVertexInputState   = vertexInputState,
+        .pVertexInputState   = &vertexInputState,
         .pInputAssemblyState = &inputAssemblyState,
         .pViewportState      = &viewportState,
         .pRasterizationState = &rasterizationState,
