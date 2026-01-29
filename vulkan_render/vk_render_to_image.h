@@ -100,7 +100,7 @@ public:
                                                  "");
         auto shaderStages_new = new decltype (shaderStages)(shaderStages);
         auto vertexInputState = position_normal_uv();
-        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout, &vertexInputState);
+        pipeline              = create_pipeline(handle, shaderStages, pipelineLayout);
 
 
         while (need_render == running) {
