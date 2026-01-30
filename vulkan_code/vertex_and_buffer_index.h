@@ -42,12 +42,12 @@ struct Model_mesh {
 };
 
 
-bool load_model_to_vector(std::shared_ptr<std::vector<Vertex> > &vertices,
+bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<Vertex> > &vertices,
                           std::shared_ptr<std::vector<uint16_t> > &indices) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
-    auto result = tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, "assets/suzanne.obj");
+    auto result = tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, path.c_str());
     // todo : result need check
     if (result == false) {
         return false;
@@ -71,12 +71,12 @@ bool load_model_to_vector(std::shared_ptr<std::vector<Vertex> > &vertices,
     }
 }
 
-std::pair<vertex_and_attributes, Indices_type> load_model() {
+std::pair<vertex_and_attributes, Indices_type> load_model(const std::string &path) {
     vertex_and_attributes vertices{};
     // std::shared_ptr<std::vector<Vertex> > &vertices; std::shared_ptr<std::vector<uint16_t> > &indices;
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
-    load_model_to_vector(sp_vertices, sp_indices);
+    load_model_to_vector(path, sp_vertices, sp_indices);
     vertices.shared_ptr_of_vertices_ = sp_vertices;
     vertices.data                    = sp_vertices->data();
     vertices.size                    = sp_vertices->size() * sizeof(Vertex);

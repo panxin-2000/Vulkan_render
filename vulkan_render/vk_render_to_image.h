@@ -78,7 +78,7 @@ public:
         Descriptor descriptor(&handle, &descriptor_pool);
 
         // Mesh data
-        auto [vertices, indices] = load_model();
+        auto [vertices, indices] = load_model("assets/suzanne.obj");
         auto mesh                = create_mesh_data(handle, vertices, indices, vBufferAllocation);
 
         Engine engine(handle);
