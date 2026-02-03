@@ -114,6 +114,15 @@ struct buffer_and_share {
     uint16_t shared_number;
 };
 
+struct pipeline_and_share {
+#ifdef WITH_VULKAN_BACKEND
+    VkPipeline pipeline = VK_NULL_HANDLE;
+#elif  WITH_OPENGL_BACKEND
+    unsigned int buffer;
+#endif
+    uint16_t shared_number = 0;
+};
+
 class logic_render_data;
 
 using Shared_ptr_of_vertices = std::shared_ptr<void>;

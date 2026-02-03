@@ -28,7 +28,6 @@
 #include "logic_render_data.h"
 #include "vulkan_render_manage.h"
 
-VkPipeline pipeline{VK_NULL_HANDLE};
 
 glm::vec3 camPos{0.0f, 0.0f, -6.0f};
 glm::vec3 objectRotations[3]{};
@@ -61,26 +60,23 @@ class vk_render_GPU {
     std::map<logic_render_data *, shader_and_share> pipelineShaderStage_maps_;
     std::map<std::string, texture_and_share> texture_map_;
     std::map<logic_render_data *, buffer_and_share> mesh_map_;
+    std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
 
-    std::vector<logic_render_data *> need_render_object;
+    std::vector<logic_render_data *> need_render_objects;
 
     VKDevice *handle_;
 
 public:
     void render_thread(VKDevice &handle) {
         if (need_render == running) {
-            handle_ = &handle;
             return; // 已经在运行中了，直接返回
         }
+        handle_     = &handle;
         need_render = running; // 设置为运行中
         Descriptor_Pool descriptor_pool(&handle, 250);
         descriptor_pool.init_Descriptor_Pool();
         Descriptor descriptor(&handle, &descriptor_pool);
-
-        // Mesh data
-        auto [vertices, indices] = load_model("assets/suzanne.obj");
-        auto mesh                = create_mesh_data(handle, vertices, indices);
 
         Engine engine(handle);
         engine.init();
@@ -95,14 +91,6 @@ public:
         auto pipelineLayout = descriptor.CreatePipelineLayout();
         // 有点难整理清楚
 
-        auto shaderStages = create_shader_module(handle,
-                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
-                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
-                                                 "");
-        auto shaderStages_new = new decltype (shaderStages)(shaderStages);
-        const auto vertexInputState = position_normal_uv();
-        pipeline = create_pipeline(handle, shaderStages, pipelineLayout, vertexInputState.vertexInputState_copy.get());
-
 
         while (need_render == running) {
             {
@@ -112,28 +100,38 @@ public:
             }
             engine.get_one_image_can_render();
             update_shader_data(engine); // 这里是一个需要同步的点
-            build_command_buffer(engine, pipeline, pipelineLayout, descriptor, mesh);
+            for (auto need_render_object: need_render_objects) {
+                auto shaderStages = find_vertex_and_fragment_shader(need_render_object, &pipelineShaderStage_maps_);
+                if (shaderStages == nullptr) {
+                    continue;
+                }
+                const auto vertexInputState = position_normal_uv();
+                auto pipeline_t = find_pipeline(need_render_object, pipelineLayout, *shaderStages, &pipeline_map_);
+                auto mesh = find_mesh(need_render_object, &mesh_map_);
+                if (mesh == nullptr) {
+                    continue;
+                }
+                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor, *mesh);
+            }
             engine.put_one_image_to_screen();
 
             // render_object_function();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             clean_need_objects();
         }
-        clean_all_object();
 
         engine.destroy();
+        clean_all_mesh_object();
 
-        vmaDestroyBuffer(handle.get_allocator(), mesh.vertices_buffer, mesh.vBufferAllocation); // 暂时先不清理->不清理会直接爆异常
         destroy_texture(&handle);
         descriptor.Destroy();
         descriptor_pool.destroy();
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        vkDestroyPipeline(handle.get_device(), pipeline, nullptr);
-        vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
-        // vkDestroyShaderModule(handle.get_device(), shaderModule, nullptr);
-        for (auto shaderStage: shaderStages) {
-            vkDestroyShaderModule(handle.get_device(), shaderStage.module, nullptr);
+        for (const auto &[key, value]: pipeline_map_) {
+            vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
         }
+        vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
+        clean_all_shader_object();
         have_object_need_update = false;
         need_render             = not_start;
     }
@@ -164,8 +162,8 @@ public:
         return *instance;
     }
 
-    void create_vertex_shader(logic_render_data *data,
-                              std::map<logic_render_data *, shader_and_share> *map) {
+    void create_vertex_and_fragment_shader(logic_render_data *data,
+                                           std::map<logic_render_data *, shader_and_share> *map) {
         if (data != nullptr) {
             auto it = map->find(data);
             if (it != map->end()) {
@@ -180,6 +178,31 @@ public:
             }
         }
     }
+
+    std::vector<VkPipelineShaderStageCreateInfo> *find_vertex_and_fragment_shader(logic_render_data *data,
+        std::map<logic_render_data *, shader_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                return it->second.shader;
+            } else {
+                return nullptr;
+            }
+        }
+    }
+
+    Model_mesh *find_mesh(logic_render_data *data,
+                          std::map<logic_render_data *, buffer_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                return &it->second.mesh;
+            } else {
+                return nullptr;
+            }
+        }
+    }
+
 
     void create_mesh(logic_render_data *data,
                      std::map<logic_render_data *, buffer_and_share> *map) {
@@ -203,16 +226,48 @@ public:
         }
     }
 
-private:
+    VkPipeline find_pipeline(logic_render_data *data, VkPipelineLayout pipelineLayout,
+                             std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                             std::map<logic_render_data *, pipeline_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                return it->second.pipeline;
+            } else {
+                return create_pipeline_to_map(data, pipelineLayout, shaderStages, map);
+            }
+        }
+    }
+
+    VkPipeline create_pipeline_to_map(logic_render_data *data, VkPipelineLayout pipelineLayout,
+                                      std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                      std::map<logic_render_data *, pipeline_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                it->second.shared_number++;
+                return it->second.pipeline;
+            } else {
+                const auto vertexInputState = position_normal_uv();
+                auto pipeline               = create_pipeline(*handle_, shaderStages, pipelineLayout,
+                                                vertexInputState.vertexInputState_copy.get());
+                map->insert({data, {pipeline, 1}});
+                return pipeline;
+            }
+        }
+    }
+
+private
+:
     void init_need_objects() {
         while (true) {
             // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
             auto render_data = vk_render_queue::instance().get_need_init();
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
-                need_render_object.push_back(render_data.value());
-                // create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
-                // create_mesh(render_data.value(), &mesh_map_);
+                need_render_objects.push_back(render_data.value());
+                create_vertex_and_fragment_shader(render_data.value(), &pipelineShaderStage_maps_);
+                create_mesh(render_data.value(), &mesh_map_);
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
@@ -223,8 +278,21 @@ private:
     }
 
 
-    void clean_all_object() {
+    void clean_all_mesh_object() {
         // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
+        for (const auto &[key, value]: mesh_map_) {
+            vmaDestroyBuffer(handle_->get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
+            // ->不清理会直接爆异常
+        }
+    }
+
+    void clean_all_shader_object() {
+        // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
+        for (const auto &[key, value]: pipelineShaderStage_maps_) {
+            for (auto shaderStage: *value.shader) {
+                vkDestroyShaderModule(handle_->get_device(), shaderStage.module, nullptr);
+            }
+        }
     }
 
     void update_need_objects() {
