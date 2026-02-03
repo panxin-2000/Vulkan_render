@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_SHADER_COMMON_H
 #define HELLO_MAC_SHADER_COMMON_H
 
+#include <vk_mem_alloc.h>
 #include <base_element/point_3.h>
 
 #include "volk.h"
@@ -68,9 +69,48 @@ struct texture_and_share {
     uint16_t shared_number;
 };
 
+#ifdef WITH_VULKAN_BACKEND
+
+struct Model_mesh {
+    // 不做
+    VkBuffer vertices_buffer        = VK_NULL_HANDLE;
+    VmaAllocation vBufferAllocation = VK_NULL_HANDLE;
+    VkDeviceSize vertices_offset    = 0; // 以字节为单位的偏移
+    VkBuffer indices_buffer         = VK_NULL_HANDLE;
+    VkDeviceSize indices_offset     = 0; // 以字节为单位的偏移
+    VkIndexType index_type          = VK_INDEX_TYPE_UINT16;
+
+    union {
+        VkDrawIndexedIndirectCommand indexed_command = {};
+        VkDrawIndirectCommand vertex_command;
+    };
+
+    void draw(const VkCommandBuffer &cb) {
+        vkCmdBindVertexBuffers(cb, 0, 1, &vertices_buffer, &vertices_offset);
+        if (indices_buffer != VK_NULL_HANDLE) {
+            vkCmdBindIndexBuffer(cb, indices_buffer, indices_offset, index_type);
+            vkCmdDrawIndexed(cb, indexed_command.indexCount,
+                             indexed_command.instanceCount,
+                             indexed_command.firstIndex,
+                             indexed_command.vertexOffset,
+                             indexed_command.firstInstance);
+        } else {
+            vkCmdDraw(cb, vertex_command.vertexCount,
+                      vertex_command.instanceCount,
+                      vertex_command.firstVertex,
+                      vertex_command.firstInstance);
+        }
+    }
+};
+#endif
+
 
 struct buffer_and_share {
+#ifdef WITH_VULKAN_BACKEND
+    Model_mesh mesh;
+#elif  WITH_OPENGL_BACKEND
     unsigned int buffer;
+#endif
     uint16_t shared_number;
 };
 

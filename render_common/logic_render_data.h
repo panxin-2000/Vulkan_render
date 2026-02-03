@@ -41,9 +41,6 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-
-
-
 class logic_render_data : public NonCopyable {
 #define add_mutex std::lock_guard<std::mutex> lock(mtx);
 
@@ -51,6 +48,7 @@ private:
     mutable std::mutex mtx;
 
 public:
+    std::string mesh_path_;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
     std::string debug_name;
     Indices_type indices_;

@@ -10,37 +10,6 @@
 
 #include "shader_common.h"
 
-struct Model_mesh {
-    // 不做
-    VkBuffer vertices_buffer     = VK_NULL_HANDLE;
-    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
-    VkBuffer indices_buffer      = VK_NULL_HANDLE;
-    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
-    VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
-
-    union {
-        VkDrawIndexedIndirectCommand indexed_command = {};
-        VkDrawIndirectCommand vertex_command;
-    };
-
-    void draw(const VkCommandBuffer &cb) {
-        vkCmdBindVertexBuffers(cb, 0, 1, &vertices_buffer, &vertices_offset);
-        if (indices_buffer != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer(cb, indices_buffer, indices_offset, index_type);
-            vkCmdDrawIndexed(cb, indexed_command.indexCount,
-                             indexed_command.instanceCount,
-                             indexed_command.firstIndex,
-                             indexed_command.vertexOffset,
-                             indexed_command.firstInstance);
-        } else {
-            vkCmdDraw(cb, vertex_command.vertexCount,
-                      vertex_command.instanceCount,
-                      vertex_command.firstVertex,
-                      vertex_command.firstInstance);
-        }
-    }
-};
-
 
 bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<Vertex> > &vertices,
                           std::shared_ptr<std::vector<uint16_t> > &indices) {
@@ -84,9 +53,11 @@ std::pair<vertex_and_attributes, Indices_type> load_model(const std::string &pat
 }
 
 
-Model_mesh create_mesh_data(VKDevice &handle, vertex_and_attributes vertices, Indices_type indices_,
-                            VmaAllocation &vBufferAllocation) {
+inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attributes &vertices,
+                                   const Indices_type &indices_) {
     VkBuffer vBuffer{VK_NULL_HANDLE};
+    VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
+
     Model_mesh mesh{};
     // 到这里应该是结束了一部分内容了吧
     VkDeviceSize vBufSize{vertices.size};
@@ -109,8 +80,9 @@ Model_mesh create_mesh_data(VKDevice &handle, vertex_and_attributes vertices, In
     memcpy(((char *) bufferPtr) + vBufSize, indices_->data(), iBufSize);
     vmaUnmapMemory(handle.get_allocator(), vBufferAllocation);
 
-    mesh.vertices_buffer = vBuffer;
-    mesh.indices_buffer  = vBuffer;
+    mesh.vertices_buffer   = vBuffer;
+    mesh.vBufferAllocation = vBufferAllocation;
+    mesh.indices_buffer    = vBuffer;
     // mesh.indices_offset = vBufSize;
     mesh.indexed_command.indexCount    = indices_->size(); // 是可以这么替换的
     mesh.indexed_command.firstIndex    = vBufSize / 2;     // 索引缓冲区的起始偏移（以索引为单位）确实是可以通过计算偏移的

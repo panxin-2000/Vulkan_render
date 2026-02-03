@@ -29,7 +29,6 @@
 #include "vulkan_render_manage.h"
 
 VkPipeline pipeline{VK_NULL_HANDLE};
-VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
 
 glm::vec3 camPos{0.0f, 0.0f, -6.0f};
 glm::vec3 objectRotations[3]{};
@@ -61,8 +60,10 @@ class vk_render_GPU {
 
     std::map<logic_render_data *, shader_and_share> pipelineShaderStage_maps_;
     std::map<std::string, texture_and_share> texture_map_;
-    std::map<Shared_ptr_of_vertices, buffer_and_share> vertices_map_;
+    std::map<logic_render_data *, buffer_and_share> mesh_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
+
+    std::vector<logic_render_data *> need_render_object;
 
     VKDevice *handle_;
 
@@ -79,7 +80,7 @@ public:
 
         // Mesh data
         auto [vertices, indices] = load_model("assets/suzanne.obj");
-        auto mesh                = create_mesh_data(handle, vertices, indices, vBufferAllocation);
+        auto mesh                = create_mesh_data(handle, vertices, indices);
 
         Engine engine(handle);
         engine.init();
@@ -122,7 +123,7 @@ public:
 
         engine.destroy();
 
-        vmaDestroyBuffer(handle.get_allocator(), mesh.vertices_buffer, vBufferAllocation); // 暂时先不清理->不清理会直接爆异常
+        vmaDestroyBuffer(handle.get_allocator(), mesh.vertices_buffer, mesh.vBufferAllocation); // 暂时先不清理->不清理会直接爆异常
         destroy_texture(&handle);
         descriptor.Destroy();
         descriptor_pool.destroy();
@@ -180,6 +181,28 @@ public:
         }
     }
 
+    void create_mesh(logic_render_data *data,
+                     std::map<logic_render_data *, buffer_and_share> *map) {
+        if (data != nullptr) {
+            auto it = map->find(data);
+            if (it != map->end()) {
+                it->second.shared_number++;
+            } else {
+                if (data->mesh_path_.empty() == false) {
+                    auto [vertices, indices] = load_model(data->mesh_path_);
+                    const auto mesh          = create_mesh_data(*handle_, vertices, indices);
+                    map->insert({data, {mesh, 1}});
+                } else {
+                    for (const auto &temp: data->vertex_and_attributes_) {
+                        // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                        auto mesh = create_mesh_data(*handle_, temp, data->indices_);
+                        map->insert({data, {mesh, 1}});
+                    }
+                }
+            }
+        }
+    }
+
 private:
     void init_need_objects() {
         while (true) {
@@ -187,19 +210,12 @@ private:
             auto render_data = vk_render_queue::instance().get_need_init();
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
-
+                need_render_object.push_back(render_data.value());
                 // create_vertex_shader(render_data.value(), &pipelineShaderStage_maps_);
-                //
-                //
-                // for (const auto &temp: render_data.value()->vertex_and_attributes_) {
-                //     // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                //     auto mesh = create_mesh_data(*handle_, temp, render_data.value()->indices_,
-                //                                  vBufferAllocation);
-                // }
+                // create_mesh(render_data.value(), &mesh_map_);
+
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
-
-                // render_data.value()->fragmentPath_;
             } else {
                 break;
             }
