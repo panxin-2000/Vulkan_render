@@ -125,10 +125,7 @@ inline auto vertex_input_position() {
 }
 
 
-inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages) {
-    if (shaderStages.empty() == true) {
-        return VK_NULL_HANDLE;
-    }
+inline VkDescriptorSetLayout create_descriptorSetLayout(VKDevice &handle) {
     VkDescriptorSetLayout descriptorSetLayout;
 
     VkDescriptorSetLayoutBinding setLayoutBinding   = {};
@@ -142,7 +139,6 @@ inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelin
     setLayoutBinding_2.binding                      = 1;
     setLayoutBinding_2.descriptorCount              = 1;
 
-
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.push_back(setLayoutBinding);
     setLayoutBindings.push_back(setLayoutBinding_2);
@@ -153,6 +149,14 @@ inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelin
     descriptorLayout.bindingCount                    = static_cast<uint32_t>(setLayoutBindings.size());
 
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &descriptorSetLayout));
+    return descriptorSetLayout;
+}
+
+inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                         VkDescriptorSetLayout &descriptorSetLayout) {
+    if (shaderStages.empty() == true) {
+        return VK_NULL_HANDLE;
+    }
 
 
     VkPipelineLayout pipelineLayout;
