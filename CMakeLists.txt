@@ -357,6 +357,18 @@ add_custom_command(
         COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag -o
         ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag.spv
 )
+add_custom_command(
+        TARGET learn_render
+        PRE_BUILD
+        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.vert -o
+        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.vert.spv
+)
+add_custom_command(
+        TARGET learn_render
+        PRE_BUILD
+        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.frag -o
+        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.frag.spv
+)
 
 
 # 自动执行命令编译 glsl 的脚本
