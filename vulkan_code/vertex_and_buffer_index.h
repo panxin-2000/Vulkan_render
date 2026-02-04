@@ -11,8 +11,8 @@
 #include "shader_common.h"
 
 
-bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<Vertex> > &vertices,
-                          std::shared_ptr<std::vector<uint16_t> > &indices) {
+inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<Vertex> > &vertices,
+                                 std::shared_ptr<std::vector<uint16_t> > &indices) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -40,7 +40,7 @@ bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<V
     }
 }
 
-std::pair<vertex_and_attributes, Indices_type> load_model(const std::string &path) {
+inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::string &path) {
     vertex_and_attributes vertices{};
     // std::shared_ptr<std::vector<Vertex> > &vertices; std::shared_ptr<std::vector<uint16_t> > &indices;
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
@@ -94,4 +94,39 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
     return mesh;
 }
 
+
+inline void create_mesh(const VKDevice &handle, logic_render_data *data,
+                        std::map<logic_render_data *, buffer_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            it->second.shared_number++;
+        } else {
+            if (data->mesh_path_.empty() == false) {
+                auto [vertices, indices] = load_model(data->mesh_path_);
+                const auto mesh          = create_mesh_data(handle, vertices, indices);
+                map->insert({data, {mesh, 1}});
+            } else {
+                for (const auto &temp: data->vertex_and_attributes_) {
+                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                    auto mesh = create_mesh_data(handle, temp, data->indices_);
+                    map->insert({data, {mesh, 1}});
+                }
+            }
+        }
+    }
+}
+
+
+inline Model_mesh *find_mesh(logic_render_data *data,
+                             std::map<logic_render_data *, buffer_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            return &it->second.mesh;
+        } else {
+            return nullptr;
+        }
+    }
+}
 #endif //HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H

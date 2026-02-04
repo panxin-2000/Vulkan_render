@@ -6,6 +6,8 @@
 #define HOWTOVULKAN_CREATE_PIPELINE_H
 #include <vector>
 #include <volk.h>
+
+#include "logic_render_data.h"
 #include "vulkan_device_handle.h"
 
 template<typename T>
@@ -33,7 +35,17 @@ inline VkPipelineVertexInputStateCreateInfo create_vertex_input_state() {
     return vertexInputState;
 }
 
-inline auto position_normal_uv() {
+struct PipelineVertexInputState {
+    std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
+    std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
+    std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
+
+    VkPipelineVertexInputStateCreateInfo *get_to_bind() const {
+        return vertexInputState_copy.get();
+    }
+};
+
+inline auto vertex_input_position_normal_uv() {
     std::vector<VkVertexInputBindingDescription> vertexBindings{
         {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
     };
@@ -53,18 +65,69 @@ inline auto position_normal_uv() {
     };
     auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
 
-    struct Return_struct {
-        std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
-        std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
-        std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
+
+    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
+    return return_struct;
+}
+
+inline auto vertex_input_position_uv() {
+    struct Vertex {
+        glm::vec3 pos;
+        glm::vec2 uv;
     };
-    Return_struct return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
+    std::vector<VkVertexInputBindingDescription> vertexBindings{
+        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
+    };
+    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
+        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
+        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
+    };
+    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
+    VkPipelineVertexInputStateCreateInfo vertexInputState{
+        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
+        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
+        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
+    };
+    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
+
+
+    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
+    return return_struct;
+}
+
+inline auto vertex_input_position() {
+    struct Vertex {
+        glm::vec3 pos;
+    };
+    std::vector<VkVertexInputBindingDescription> vertexBindings{
+        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
+    };
+    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
+        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
+    };
+    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
+    VkPipelineVertexInputStateCreateInfo vertexInputState{
+        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
+        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
+        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
+    };
+    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
+
+
+    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
     return return_struct;
 }
 
 
-VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                           VkPipelineLayout pipelineLayout, VkPipelineVertexInputStateCreateInfo *vertexInputState) {
+inline VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                  VkPipelineLayout pipelineLayout,
+                                  VkPipelineVertexInputStateCreateInfo *vertexInputState) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
 
@@ -117,5 +180,37 @@ VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCr
     };
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &pipeline));
     return pipeline;
+}
+
+
+inline VkPipeline create_pipeline_to_map(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
+                                         std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                         std::map<logic_render_data *, pipeline_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            it->second.shared_number++;
+            return it->second.pipeline;
+        } else {
+            const auto vertexInputState = vertex_input_position_normal_uv();
+            auto pipeline               = create_pipeline(handle, shaderStages, pipelineLayout,
+                                            vertexInputState.get_to_bind());
+            map->insert({data, {pipeline, 1}});
+            return pipeline;
+        }
+    }
+}
+
+inline VkPipeline find_pipeline(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
+                                std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                std::map<logic_render_data *, pipeline_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            return it->second.pipeline;
+        } else {
+            return create_pipeline_to_map(handle, data, pipelineLayout, shaderStages, map);
+        }
+    }
 }
 #endif //HOWTOVULKAN_CREATE_PIPELINE_H

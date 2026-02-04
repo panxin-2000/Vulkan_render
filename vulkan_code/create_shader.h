@@ -10,6 +10,7 @@
 
 #include "/usr/local/lib/slang/include/slang.h"
 #include "/usr/local/lib/slang/include/slang-com-ptr.h"
+#include "logic_render_data.h"
 #include "vulkan_device_handle.h"
 
 Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
@@ -162,5 +163,33 @@ inline std::vector<VkPipelineShaderStageCreateInfo> create_shader_module(const V
     return shaderStages;
 }
 
+inline void create_vertex_and_fragment_shader(const VKDevice &handle, logic_render_data *data,
+                                              std::map<logic_render_data *, shader_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            it->second.shared_number++;
+        } else {
+            auto shaderStages = create_shader_module(handle,
+                                                     data->vertexPath_,
+                                                     data->fragmentPath_,
+                                                     data->geometryPath_);
+            const auto shaderStages_new = new decltype (shaderStages)(shaderStages);
+            map->insert({data, {shaderStages_new, 1}});
+        }
+    }
+}
+
+inline std::vector<VkPipelineShaderStageCreateInfo> *find_vertex_and_fragment_shader(logic_render_data *data,
+    std::map<logic_render_data *, shader_and_share> *map) {
+    if (data != nullptr) {
+        auto it = map->find(data);
+        if (it != map->end()) {
+            return it->second.shader;
+        } else {
+            return nullptr;
+        }
+    }
+}
 
 #endif //HOWTOVULKAN_CREATE_SHADER_H

@@ -42,7 +42,7 @@ void update_shader_data(Engine &engine) {
     for (auto i = 0; i < 3; i++) {
         auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
         shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
-                                   glm::quat(objectRotations[i]));
+                               glm::quat(objectRotations[i]));
     }
     memcpy(engine.get_current_shader_data_buffer().mapped, &shaderData, sizeof(ShaderData));
 }
@@ -100,13 +100,16 @@ public:
             }
             engine.get_one_image_can_render();
             update_shader_data(engine); // 这里是一个需要同步的点
+
+
             for (auto need_render_object: need_render_objects) {
                 auto shaderStages = find_vertex_and_fragment_shader(need_render_object, &pipelineShaderStage_maps_);
                 if (shaderStages == nullptr) {
                     continue;
                 }
-                const auto vertexInputState = position_normal_uv();
-                auto pipeline_t = find_pipeline(need_render_object, pipelineLayout, *shaderStages, &pipeline_map_);
+                const auto vertexInputState = vertex_input_position_normal_uv();
+                auto pipeline_t             = find_pipeline(*handle_, need_render_object, pipelineLayout, *shaderStages,
+                                                            &pipeline_map_);
                 auto mesh = find_mesh(need_render_object, &mesh_map_);
                 if (mesh == nullptr) {
                     continue;
@@ -162,101 +165,6 @@ public:
         return *instance;
     }
 
-    void create_vertex_and_fragment_shader(logic_render_data *data,
-                                           std::map<logic_render_data *, shader_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                it->second.shared_number++;
-            } else {
-                auto shaderStages = create_shader_module(*handle_,
-                                                         data->vertexPath_,
-                                                         data->fragmentPath_,
-                                                         data->geometryPath_);
-                const auto shaderStages_new = new decltype (shaderStages)(shaderStages);
-                map->insert({data, {shaderStages_new, 1}});
-            }
-        }
-    }
-
-    std::vector<VkPipelineShaderStageCreateInfo> *find_vertex_and_fragment_shader(logic_render_data *data,
-        std::map<logic_render_data *, shader_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                return it->second.shader;
-            } else {
-                return nullptr;
-            }
-        }
-    }
-
-    Model_mesh *find_mesh(logic_render_data *data,
-                          std::map<logic_render_data *, buffer_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                return &it->second.mesh;
-            } else {
-                return nullptr;
-            }
-        }
-    }
-
-
-    void create_mesh(logic_render_data *data,
-                     std::map<logic_render_data *, buffer_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                it->second.shared_number++;
-            } else {
-                if (data->mesh_path_.empty() == false) {
-                    auto [vertices, indices] = load_model(data->mesh_path_);
-                    const auto mesh          = create_mesh_data(*handle_, vertices, indices);
-                    map->insert({data, {mesh, 1}});
-                } else {
-                    for (const auto &temp: data->vertex_and_attributes_) {
-                        // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                        auto mesh = create_mesh_data(*handle_, temp, data->indices_);
-                        map->insert({data, {mesh, 1}});
-                    }
-                }
-            }
-        }
-    }
-
-    VkPipeline find_pipeline(logic_render_data *data, VkPipelineLayout pipelineLayout,
-                             std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                             std::map<logic_render_data *, pipeline_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                return it->second.pipeline;
-            } else {
-                return create_pipeline_to_map(data, pipelineLayout, shaderStages, map);
-            }
-        }
-    }
-
-    VkPipeline create_pipeline_to_map(logic_render_data *data, VkPipelineLayout pipelineLayout,
-                                      std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                      std::map<logic_render_data *, pipeline_and_share> *map) {
-        if (data != nullptr) {
-            auto it = map->find(data);
-            if (it != map->end()) {
-                it->second.shared_number++;
-                return it->second.pipeline;
-            } else {
-                const auto vertexInputState = position_normal_uv();
-                auto pipeline               = create_pipeline(*handle_, shaderStages, pipelineLayout,
-                                                vertexInputState.vertexInputState_copy.get());
-                map->insert({data, {pipeline, 1}});
-                return pipeline;
-            }
-        }
-    }
-
 private
 :
     void init_need_objects() {
@@ -266,8 +174,8 @@ private
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
                 need_render_objects.push_back(render_data.value());
-                create_vertex_and_fragment_shader(render_data.value(), &pipelineShaderStage_maps_);
-                create_mesh(render_data.value(), &mesh_map_);
+                create_vertex_and_fragment_shader(*handle_, render_data.value(), &pipelineShaderStage_maps_);
+                create_mesh(*handle_, render_data.value(), &mesh_map_);
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
