@@ -125,33 +125,6 @@ inline auto vertex_input_position() {
 }
 
 
-inline VkDescriptorSetLayout create_descriptorSetLayout(VKDevice &handle) {
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    VkDescriptorSetLayoutBinding setLayoutBinding   = {};
-    setLayoutBinding.descriptorType                 = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    setLayoutBinding.stageFlags                     = VK_SHADER_STAGE_COMPUTE_BIT;
-    setLayoutBinding.binding                        = 0;
-    setLayoutBinding.descriptorCount                = 1;
-    VkDescriptorSetLayoutBinding setLayoutBinding_2 = {};
-    setLayoutBinding_2.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    setLayoutBinding_2.stageFlags                   = VK_SHADER_STAGE_COMPUTE_BIT;
-    setLayoutBinding_2.binding                      = 1;
-    setLayoutBinding_2.descriptorCount              = 1;
-
-    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-    setLayoutBindings.push_back(setLayoutBinding);
-    setLayoutBindings.push_back(setLayoutBinding_2);
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayout = {};
-    descriptorLayout.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayout.pBindings                       = setLayoutBindings.data();
-    descriptorLayout.bindingCount                    = static_cast<uint32_t>(setLayoutBindings.size());
-
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &descriptorSetLayout));
-    return descriptorSetLayout;
-}
-
 inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                          VkDescriptorSetLayout &descriptorSetLayout) {
     if (shaderStages.empty() == true) {
