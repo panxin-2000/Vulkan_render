@@ -161,6 +161,23 @@ inline VkShaderModule find_one_shader_module(const VKDevice &handle, const std::
 }
 
 
+inline std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VKDevice &handle,
+    const std::string &compute_path) {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    VkShaderModule computeShaderModule = find_one_shader_module(handle, compute_path,
+                                                                VKDevice::get().get_shader_map());
+    if (computeShaderModule != VK_NULL_HANDLE) {
+        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
+        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        ShaderStageInfo.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
+        ShaderStageInfo.module = computeShaderModule;
+        ShaderStageInfo.pName  = "main";
+        shaderStages.push_back(ShaderStageInfo);
+    }
+    return shaderStages;
+}
+
+
 inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VKDevice &handle,
     const std::string &vertex_path,
     const std::string &fragment_path,
