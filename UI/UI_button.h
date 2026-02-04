@@ -112,7 +112,7 @@ entt::entity UI_button(const std::string &name,
             // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
             struct pos_and_uv {
-                float x, y, z, u, v;
+                float x, y, z, a, b, c, u, v;
             };
 
             auto vertices = std::make_shared<std::vector<pos_and_uv> >();
@@ -125,10 +125,10 @@ entt::entity UI_button(const std::string &name,
                 indices->push_back(vertices->size() + 2);
                 indices->push_back(vertices->size() + 3);
                 indices->push_back(vertices->size() + 0);
-                vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0}); //0 1 2
-                vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 1, 0});
-                vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 1, 1}); // 2 3 0
-                vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 1});
+                vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0, 0, 0, 0}); //0 1 2
+                vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 0, 0, 0, 1, 0});
+                vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 0, 0, 0, 1, 1}); // 2 3 0
+                vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 0, 0, 0, 1});
             }
             // 参数这里最重要的是下面的两行
 
@@ -141,9 +141,9 @@ entt::entity UI_button(const std::string &name,
             render->set_indices(indices);
         }
         /***************设置着色器与贴图**********************/
-        render->set_vertex_shader("render/shader/different_color.vert");
-        render->set_fragment_shader("render/shader/different_color.frag");
-        render->set_texture("resoureces/picture.png", "ourTexture1");
+        render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv");
+        render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
+        // render->set_texture("resoureces/picture.png", "ourTexture1");
 
         add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
     }

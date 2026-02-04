@@ -52,6 +52,7 @@ void update_shader_data(Engine &engine) {
         auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
         shaderData.model[i] = glm::mat4(1.0f);
     }
+    memcpy(engine.get_current_shader_data_buffer().mapped, &shaderData, sizeof(ShaderData));
     memcpy(static_cast<char *>(engine.get_current_shader_data_buffer().mapped) + sizeof(ShaderData),
            &shaderData, sizeof(ShaderData));
 }
