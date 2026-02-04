@@ -2,3 +2,5 @@
 cmake-build-debug/
 .DS_Store
 cmake-build-release/
+/render/shader/temp.frag.spv
+/render/shader/temp.vert.spv
