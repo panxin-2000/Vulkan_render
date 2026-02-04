@@ -149,7 +149,7 @@ void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
     double y_pos;
 
     glfwGetCursorPos(window, &x_pos, &y_pos);
-    std::cout << "x: " << x_pos << " y: " << y_pos << std::endl;
+    LOG_INFO(g_log(), "mouse x: {:4d} y: {:4d} ", (int)x_pos, (int)y_pos);
     // 由窗口具体的窗口自己去更改吧。
     // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
     // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间

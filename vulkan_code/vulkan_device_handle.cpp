@@ -12,6 +12,7 @@
 #include "vulkan_device_handle.h"
 
 #include "vulkan_image.h"
+#include "global_singleton.h"
 
 
 VKDevice::~VKDevice() {
@@ -99,7 +100,7 @@ bool VKDevice::choose_one_physical_device() {
                 physical_device_ = physical_device;
                 VkPhysicalDeviceProperties2 deviceProperties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
                 vkGetPhysicalDeviceProperties2(physical_device_, &deviceProperties);
-                std::cout << "Selected device: " << deviceProperties.properties.deviceName << "\n";
+                LOG_INFO(g_log(), "Selected device:  {}!", deviceProperties.properties.deviceName);
                 return true;
             }
             queueFamilyIndex++;

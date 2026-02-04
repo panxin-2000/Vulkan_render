@@ -181,7 +181,7 @@ public:
     void create_renderSemaphores() {
         VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         render_to_image_semaphores_.resize(handle_.get_swap_image_views().size());
-        std::cout << "get_swap_image_view size : " << render_to_image_semaphores_.size() << "\n";
+        LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
         for (auto &semaphore: render_to_image_semaphores_) {
             VK_CHECK_RESULT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &semaphore));
         }
