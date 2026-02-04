@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include "global_singleton.h"
+#include "logic_render_data.h"
 
 
 struct Vertex {
@@ -24,10 +25,10 @@ class VKDevice {
 public:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
-    std::string engine_name_ = "no engine";
+    std::string engine_name_      = "no engine";
     uint32_t application_version_ = 102;
-    uint32_t engine_version_ = 0;
-    uint32_t api_version_ = VK_API_VERSION_1_3;
+    uint32_t engine_version_      = 0;
+    uint32_t api_version_         = VK_API_VERSION_1_3;
 
 
     std::vector<const char *> instanceExtensions;
@@ -37,15 +38,15 @@ public:
     ~VKDevice();
 
     // 需要给外部看到的变量
-    GLFWwindow *window_ = nullptr;
-    VkInstance instance_ = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_ = VK_NULL_HANDLE;
+    GLFWwindow *window_               = nullptr;
+    VkInstance instance_              = VK_NULL_HANDLE;
+    VkSurfaceKHR surface_             = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
-    VkDevice device_ = VK_NULL_HANDLE;
-    VkQueue graphics_queue_ = VK_NULL_HANDLE;
-    VkQueue present_queue_ = VK_NULL_HANDLE;
-    VkQueue transfer_queue_ = VK_NULL_HANDLE;
-    VkQueue compute_queue_ = VK_NULL_HANDLE;
+    VkDevice device_                  = VK_NULL_HANDLE;
+    VkQueue graphics_queue_           = VK_NULL_HANDLE;
+    VkQueue present_queue_            = VK_NULL_HANDLE;
+    VkQueue transfer_queue_           = VK_NULL_HANDLE;
+    VkQueue compute_queue_            = VK_NULL_HANDLE;
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
@@ -69,7 +70,35 @@ public:
 
     bool framebufferResized = false;
 
+
+    auto &get_indices_map() {
+        return indices_map_;
+    }
+
+    auto &get_pipeline_map() {
+        return pipeline_map_;
+    }
+
+    auto &get_mesh_map() {
+        return mesh_map_;
+    }
+
+    auto &get_texture_map() {
+        return texture_map_;
+    }
+
+    auto &get_shader_map() {
+        return shader_maps_;
+    }
+
 private:
+    std::map<std::string, shader_and_share> shader_maps_;
+    std::map<std::string, texture_and_share> texture_map_;
+    std::map<logic_render_data *, buffer_and_share> mesh_map_;
+    std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
+    std::map<Indices_type, buffer_and_share> indices_map_;
+
+
     void create_instance();
 
     void create_surface();
@@ -91,6 +120,8 @@ private:
     void create_depth_image_view();
 
 public:
+    static VKDevice &get();
+
     /**
      * 顺序不能更改
      */

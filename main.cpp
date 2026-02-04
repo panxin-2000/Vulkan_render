@@ -19,13 +19,11 @@ void register_glfw(GLFWwindow *window);
 
 void deal_glfw_event();
 
-VKDevice handle;
-
 
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+    auto handle = VKDevice::get();
 
-    handle.init_device_handle();
     render_thread_start(handle);
 
     // auto entity = get_entt_instance().create();

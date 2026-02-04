@@ -67,11 +67,6 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-    std::map<logic_render_data *, shader_and_share> pipelineShaderStage_maps_;
-    std::map<std::string, texture_and_share> texture_map_;
-    std::map<logic_render_data *, buffer_and_share> mesh_map_;
-    std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
-    std::map<Indices_type, buffer_and_share> indices_map_;
 
     std::vector<logic_render_data *> need_render_objects;
 
@@ -114,14 +109,16 @@ public:
 
             begin_rendering(engine);
             for (auto need_render_object: need_render_objects) {
-                auto shaderStages = find_shaders(need_render_object, &pipelineShaderStage_maps_);
-                if (shaderStages == nullptr) {
+                auto shaderStages = find_graphics_shader_module(*handle_, need_render_object->vertexPath_,
+                                                                need_render_object->fragmentPath_,
+                                                                need_render_object->geometryPath_);
+                if (shaderStages.empty() == true) {
                     continue;
                 }
                 const auto vertexInputState = vertex_input_position_normal_uv();
-                auto pipeline_t             = find_pipeline(*handle_, need_render_object, pipelineLayout, *shaderStages,
-                                                &pipeline_map_);
-                auto mesh = find_mesh(need_render_object, &mesh_map_);
+                auto pipeline_t             = find_pipeline(*handle_, need_render_object, pipelineLayout, shaderStages,
+                                                VKDevice::get().get_pipeline_map());
+                auto mesh = find_mesh(need_render_object, VKDevice::get().get_mesh_map());
                 if (mesh == nullptr) {
                     continue;
                 }
@@ -142,7 +139,8 @@ public:
         descriptor.Destroy();
         descriptor_pool.destroy();
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        for (const auto &[key, value]: pipeline_map_) {
+        auto pipeline_map = VKDevice::get().get_pipeline_map();
+        for (const auto &[key, value]: pipeline_map) {
             vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
         }
         vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
@@ -186,8 +184,10 @@ private
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
                 need_render_objects.push_back(render_data.value());
-                create_vertex_and_fragment_shader(*handle_, render_data.value(), &pipelineShaderStage_maps_);
-                create_mesh(*handle_, render_data.value(), &mesh_map_);
+                find_graphics_shader_module(*handle_, render_data.value()->vertexPath_,
+                                            render_data.value()->fragmentPath_,
+                                            render_data.value()->geometryPath_);
+                create_mesh(*handle_, render_data.value(), VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
@@ -200,7 +200,7 @@ private
 
     void clean_all_mesh_object() {
         // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-        for (const auto &[key, value]: mesh_map_) {
+        for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
             vmaDestroyBuffer(handle_->get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
             // ->不清理会直接爆异常
         }
@@ -208,10 +208,8 @@ private
 
     void clean_all_shader_object() {
         // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-        for (const auto &[key, value]: pipelineShaderStage_maps_) {
-            for (auto shaderStage: *value.shader) {
-                vkDestroyShaderModule(handle_->get_device(), shaderStage.module, nullptr);
-            }
+        for (const auto &[key, value]: VKDevice::get().get_shader_map()) {
+            vkDestroyShaderModule(handle_->get_device(), value.shader, nullptr);
         }
     }
 

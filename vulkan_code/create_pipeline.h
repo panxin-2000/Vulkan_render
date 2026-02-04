@@ -185,17 +185,17 @@ inline VkPipeline create_pipeline(VKDevice &handle, std::vector<VkPipelineShader
 
 inline VkPipeline create_pipeline_to_map(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
                                          std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                         std::map<logic_render_data *, pipeline_and_share> *map) {
+                                         std::map<logic_render_data *, pipeline_and_share> &map) {
     if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
+        auto it = map.find(data);
+        if (it != map.end()) {
             it->second.shared_number++;
             return it->second.pipeline;
         } else {
             const auto vertexInputState = vertex_input_position_normal_uv();
             auto pipeline               = create_pipeline(handle, shaderStages, pipelineLayout,
                                             vertexInputState.get_to_bind());
-            map->insert({data, {pipeline, 1}});
+            map.insert({data, {pipeline, 1}});
             return pipeline;
         }
     }
@@ -203,10 +203,10 @@ inline VkPipeline create_pipeline_to_map(VKDevice &handle, logic_render_data *da
 
 inline VkPipeline find_pipeline(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
                                 std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                std::map<logic_render_data *, pipeline_and_share> *map) {
+                                std::map<logic_render_data *, pipeline_and_share> &map) {
     if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
+        auto it = map.find(data);
+        if (it != map.end()) {
             return it->second.pipeline;
         } else {
             return create_pipeline_to_map(handle, data, pipelineLayout, shaderStages, map);

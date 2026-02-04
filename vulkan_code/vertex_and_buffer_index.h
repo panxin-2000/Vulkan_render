@@ -96,21 +96,21 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
 
 
 inline void create_mesh(const VKDevice &handle, logic_render_data *data,
-                        std::map<logic_render_data *, buffer_and_share> *map) {
+                        std::map<logic_render_data *, buffer_and_share> &map) {
     if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
+        auto it = map.find(data);
+        if (it != map.end()) {
             it->second.shared_number++;
         } else {
             if (data->mesh_path_.empty() == false) {
                 auto [vertices, indices] = load_model(data->mesh_path_);
                 const auto mesh          = create_mesh_data(handle, vertices, indices);
-                map->insert({data, {mesh, 1}});
+                map.insert({data, {mesh, 1}});
             } else {
                 for (const auto &temp: data->vertex_and_attributes_) {
                     // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
                     auto mesh = create_mesh_data(handle, temp, data->indices_);
-                    map->insert({data, {mesh, 1}});
+                    map.insert({data, {mesh, 1}});
                 }
             }
         }
@@ -119,10 +119,10 @@ inline void create_mesh(const VKDevice &handle, logic_render_data *data,
 
 
 inline Model_mesh *find_mesh(logic_render_data *data,
-                             std::map<logic_render_data *, buffer_and_share> *map) {
+                             std::map<logic_render_data *, buffer_and_share> &map) {
     if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
+        auto it = map.find(data);
+        if (it != map.end()) {
             return &it->second.mesh;
         } else {
             return nullptr;

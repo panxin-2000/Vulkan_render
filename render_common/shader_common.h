@@ -56,7 +56,7 @@ enum GPUPrimType : int8_t {
 
 struct shader_and_share {
 #ifdef WITH_VULKAN_BACKEND
-    std::vector<VkPipelineShaderStageCreateInfo> *shader;
+    VkShaderModule shader;
 #elif  WITH_OPENGL_BACKEND
     unsigned int shader;
 #endif

@@ -86,6 +86,8 @@ VkShaderModule createShaderModule(const VKDevice &handle, const std::vector<char
     if (vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }
+    VKDevice::get().get_shader_map();
+
 
     return shaderModule;
 }
@@ -121,75 +123,83 @@ static std::vector<char> readFile(const std::string &filename) {
     return buffer;
 }
 
-inline std::vector<VkPipelineShaderStageCreateInfo> create_shader_module(const VKDevice &handle,
-                                                                         const std::string &vertex_path,
-                                                                         const std::string &fragment_path,
-                                                                         const std::string &geometry_path) {
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    if (!vertex_path.empty() && !fragment_path.empty()) {
-        auto vertShaderCode = readFile(vertex_path);
-        auto fragShaderCode = readFile(fragment_path);
-        // 原本问题在这里，没有办法正确的读取文件
-        // 还需要正确配置路径
 
-        VkShaderModule vertShaderModule = createShaderModule(handle, vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(handle, fragShaderCode);
+inline VkShaderModule create_one_shader_module(const VKDevice &handle, const std::string &path,
+                                               std::map<std::string, shader_and_share> &map) {
+    if (!path.empty()) {
+        const auto shader_code = readFile(path);
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = shader_code.size();
+        createInfo.pCode    = reinterpret_cast<const uint32_t *>(shader_code.data());
 
-
-        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-        vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = vertShaderModule;
-        vertShaderStageInfo.pName  = "main";
-
-        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-        fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = fragShaderModule;
-        fragShaderStageInfo.pName  = "main"; //运行我们把多个着色器程序放到一个文件中
-        shaderStages.push_back(vertShaderStageInfo);
-        shaderStages.push_back(fragShaderStageInfo);
+        VkShaderModule shaderModule = VK_NULL_HANDLE;
+        auto vk_result              = vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule);
+        if (vk_result != VK_SUCCESS) {
+            return VK_NULL_HANDLE;
+            LOG_ERROR(g_log(), "vkCreateShaderModule error {}!", path);
+        } else {
+            auto it = map.find(path);
+            if (it != map.end()) {
+                it->second.shared_number++;
+            } else {
+                map.insert({path, {shaderModule, 1}});
+            }
+        }
+        return shaderModule;
     }
-    if (!geometry_path.empty()) {
-        auto geometryShaderCode = readFile(geometry_path);
-        VkShaderModule temp     = createShaderModule(handle, geometryShaderCode);
+    return VK_NULL_HANDLE;
+}
+
+inline VkShaderModule find_one_shader_module(const VKDevice &handle, const std::string &path,
+                                             std::map<std::string, shader_and_share> &map) {
+    auto it = map.find(path);
+    if (it != map.end()) {
+        return it->second.shader;
+    }
+    return create_one_shader_module(handle, path, map);
+}
+
+
+inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VKDevice &handle,
+    const std::string &vertex_path,
+    const std::string &fragment_path,
+    const std::string &geometry_path) {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+
+    VkShaderModule vertShaderModule = find_one_shader_module(handle, vertex_path,
+                                                             VKDevice::get().get_shader_map());
+    VkShaderModule fragShaderModule = find_one_shader_module(handle, fragment_path,
+                                                             VKDevice::get().get_shader_map());
+    VkShaderModule geometry_shader_module = find_one_shader_module(handle, geometry_path,
+                                                                   VKDevice::get().get_shader_map());
+
+    if (vertShaderModule != VK_NULL_HANDLE) {
+        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
+        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        ShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+        ShaderStageInfo.module = vertShaderModule;
+        ShaderStageInfo.pName  = "main";
+        shaderStages.push_back(ShaderStageInfo);
+    }
+    if (fragShaderModule != VK_NULL_HANDLE) {
+        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
+        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        ShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+        ShaderStageInfo.module = fragShaderModule;
+        ShaderStageInfo.pName  = "main"; //运行我们把多个着色器程序放到一个文件中
+        shaderStages.push_back(ShaderStageInfo);
+    }
+    if (geometry_shader_module != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
         ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         ShaderStageInfo.stage  = VK_SHADER_STAGE_GEOMETRY_BIT;
-        ShaderStageInfo.module = temp;
+        ShaderStageInfo.module = geometry_shader_module;
         ShaderStageInfo.pName  = "main";
         shaderStages.push_back(ShaderStageInfo);
     }
     return shaderStages;
 }
 
-inline void create_vertex_and_fragment_shader(const VKDevice &handle, logic_render_data *data,
-                                              std::map<logic_render_data *, shader_and_share> *map) {
-    if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
-            it->second.shared_number++;
-        } else {
-            auto shaderStages = create_shader_module(handle,
-                                                     data->vertexPath_,
-                                                     data->fragmentPath_,
-                                                     data->geometryPath_);
-            const auto shaderStages_new = new decltype (shaderStages)(shaderStages);
-            map->insert({data, {shaderStages_new, 1}});
-        }
-    }
-}
-
-inline std::vector<VkPipelineShaderStageCreateInfo> *find_shaders(logic_render_data *data,
-    std::map<logic_render_data *, shader_and_share> *map) {
-    if (data != nullptr) {
-        auto it = map->find(data);
-        if (it != map->end()) {
-            return it->second.shader;
-        } else {
-            return nullptr;
-        }
-    }
-}
 
 #endif //HOWTOVULKAN_CREATE_SHADER_H
