@@ -92,7 +92,7 @@ public:
                             descriptorSetLayoutTex));
     }
 
-    inline VkDescriptorSetLayout create_descriptorSetLayout(VKDevice &handle) {
+    inline VkDescriptorSetLayout create_descriptor_set_layout(VKDevice &handle) {
         VkDescriptorSetLayout descriptorSetLayout;
 
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
