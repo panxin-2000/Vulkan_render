@@ -180,7 +180,7 @@ inline void create_vertex_and_fragment_shader(const VKDevice &handle, logic_rend
     }
 }
 
-inline std::vector<VkPipelineShaderStageCreateInfo> *find_vertex_and_fragment_shader(logic_render_data *data,
+inline std::vector<VkPipelineShaderStageCreateInfo> *find_shaders(logic_render_data *data,
     std::map<logic_render_data *, shader_and_share> *map) {
     if (data != nullptr) {
         auto it = map->find(data);

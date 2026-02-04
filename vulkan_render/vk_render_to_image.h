@@ -42,7 +42,7 @@ void update_shader_data(Engine &engine) {
     for (auto i = 0; i < 3; i++) {
         auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
         shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
-                               glm::quat(objectRotations[i]));
+                                   glm::quat(objectRotations[i]));
     }
     memcpy(engine.get_current_shader_data_buffer().mapped, &shaderData, sizeof(ShaderData));
 }
@@ -102,20 +102,22 @@ public:
             update_shader_data(engine); // 这里是一个需要同步的点
 
 
+            begin_rendering(engine);
             for (auto need_render_object: need_render_objects) {
-                auto shaderStages = find_vertex_and_fragment_shader(need_render_object, &pipelineShaderStage_maps_);
+                auto shaderStages = find_shaders(need_render_object, &pipelineShaderStage_maps_);
                 if (shaderStages == nullptr) {
                     continue;
                 }
                 const auto vertexInputState = vertex_input_position_normal_uv();
                 auto pipeline_t             = find_pipeline(*handle_, need_render_object, pipelineLayout, *shaderStages,
-                                                            &pipeline_map_);
+                                                &pipeline_map_);
                 auto mesh = find_mesh(need_render_object, &mesh_map_);
                 if (mesh == nullptr) {
                     continue;
                 }
                 build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor, *mesh);
             }
+            end_rendering(engine);
             engine.put_one_image_to_screen();
 
             // render_object_function();
