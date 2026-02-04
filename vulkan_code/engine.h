@@ -121,9 +121,9 @@ public:
 
     void create_command_buffer() {
         VkCommandBufferAllocateInfo cbAllocCI{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool = commandPool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool        = commandPool,
+            .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = maxFramesInFlight
         };
         VK_CHECK_RESULT(vkAllocateCommandBuffers(handle_.get_device(), &cbAllocCI, commandBuffers.data()));
@@ -132,8 +132,8 @@ public:
     void create_command_pool() {
         // Command pool
         VkCommandPoolCreateInfo commandPoolCI{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             .queueFamilyIndex = handle_.get_queue_Family()
         };
         VK_CHECK_RESULT(vkCreateCommandPool(handle_.get_device(), &commandPoolCI, nullptr, &commandPool));
@@ -143,7 +143,7 @@ public:
         // Shader data buffers
         for (auto i = 0; i < maxFramesInFlight; i++) {
             VkBufferCreateInfo uBufferCI{
-                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = sizeof(ShaderData),
+                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = sizeof(ShaderData) * 10,
                 .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
             };
             VmaAllocationCreateInfo uBufferAllocCI{
@@ -153,10 +153,12 @@ public:
                 .usage = VMA_MEMORY_USAGE_AUTO
             };
             VK_CHECK_RESULT(
-                vmaCreateBuffer(handle_.get_allocator(), &uBufferCI, &uBufferAllocCI, &shaderDataBuffers[i].buffer,
-                    &shaderDataBuffers[i].allocation, nullptr));
+                            vmaCreateBuffer(handle_.get_allocator(), &uBufferCI, &uBufferAllocCI, &shaderDataBuffers[i].
+                                buffer,
+                                &shaderDataBuffers[i].allocation, nullptr));
             VK_CHECK_RESULT(
-                vmaMapMemory(handle_.get_allocator(), shaderDataBuffers[i].allocation, &shaderDataBuffers[i].mapped));
+                            vmaMapMemory(handle_.get_allocator(), shaderDataBuffers[i].allocation, &shaderDataBuffers[i]
+                                .mapped));
             VkBufferDeviceAddressInfo uBufferBdaInfo{
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO, .buffer = shaderDataBuffers[i].buffer
             };
@@ -193,25 +195,25 @@ public:
         // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
         auto cb = get_current_command_buffer();
         VkSubmitInfo submitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &get_current_presentSemaphores(),
-            .pWaitDstStageMask = &waitStages,
-            .commandBufferCount = 1,
-            .pCommandBuffers = &cb,
+            .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount   = 1,
+            .pWaitSemaphores      = &get_current_presentSemaphores(),
+            .pWaitDstStageMask    = &waitStages,
+            .commandBufferCount   = 1,
+            .pCommandBuffers      = &cb,
             .signalSemaphoreCount = 1,
-            .pSignalSemaphores = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
+            .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         };
         VK_CHECK_RESULT(vkQueueSubmit(handle_.get_queue(), 1, &submitInfo, get_current_fences()));
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
         VkPresentInfoKHR presentInfo{
-            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-            .swapchainCount = 1,
-            .pSwapchains = &handle_.get_swap_chain(),
-            .pImageIndices = &imageIndex
+            .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
+            .swapchainCount     = 1,
+            .pSwapchains        = &handle_.get_swap_chain(),
+            .pImageIndices      = &imageIndex
         };
         auto result = vkQueuePresentKHR(handle_.get_queue(), &presentInfo);
         if (result == VK_SUCCESS) {

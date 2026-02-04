@@ -37,6 +37,7 @@ const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
 void update_shader_data(Engine &engine) {
+    // 我想更改某些内容的话，需要从这里下手
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
     shaderData.view       = glm::translate(glm::mat4(1.0f), camPos);
     for (auto i = 0; i < 3; i++) {
@@ -45,6 +46,14 @@ void update_shader_data(Engine &engine) {
                                    glm::quat(objectRotations[i]));
     }
     memcpy(engine.get_current_shader_data_buffer().mapped, &shaderData, sizeof(ShaderData));
+    shaderData.projection = glm::mat4(1.0f);
+    shaderData.view       = glm::mat4(1.0f);
+    for (auto i = 0; i < 3; i++) {
+        auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
+        shaderData.model[i] = glm::mat4(1.0f);
+    }
+    memcpy(static_cast<char *>(engine.get_current_shader_data_buffer().mapped) + sizeof(ShaderData),
+           &shaderData, sizeof(ShaderData));
 }
 
 #include <map>
