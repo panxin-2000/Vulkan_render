@@ -101,8 +101,10 @@ void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout 
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                             &descriptor.get_descriptor_set_texture(), 0,
                             nullptr);
+
+    auto tem_address = engine.get_current_shader_data_buffer().deviceAddress + constants_offset;
     vkCmdPushConstants(cb, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
-                       &engine.get_current_shader_data_buffer().deviceAddress + constants_offset);
+                       &tem_address);
     mesh.draw(cb);
 }
 
