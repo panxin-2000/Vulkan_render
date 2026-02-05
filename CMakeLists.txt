@@ -165,6 +165,10 @@ find_package(OpenGL REQUIRED)
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 
+find_package(spirv_cross_core REQUIRED)
+find_package(spirv_cross_glsl REQUIRED)
+find_package(spirv_cross_cpp REQUIRED)
+
 find_package(GLEW COMPONENTS
         GLEW::glew
         REQUIRED)
@@ -343,6 +347,8 @@ target_link_libraries(learn_render PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnT
 target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE GLFW)
+target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
+
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 add_custom_command(

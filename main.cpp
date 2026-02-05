@@ -1,56 +1,68 @@
-#include <iostream>
-#include <regex>
-#include <string>
+/* Copyright (c) 2025-2026, Sascha Willems
+ * SPDX-License-Identifier: MIT
+ */
 
-int main() {
-    std::string glsl = R"(
-        // Binding 0 : Position storage buffer
-        layout(std140, binding = 0) buffer Pos
+#include <GLFW/glfw3.h>
+
+#include <thread>
+#include "vulkan_render/backend.h"
+#include "vulkan_render/vulkan_render_manage.h"
+#include "vulkan_device_handle.h"
+#include "event/base_event.h"
+#include "labyrinth.h"
+#include "UI/UI_block.h"
+#include "UI/UI_button.h"
+
+#include "global_singleton.h"
+
+void register_glfw(GLFWwindow *window);
+
+void deal_glfw_event();
+
+
+int main(int argc, char *argv[]) {
+    LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+    auto handle = VKDevice::get();
+
+    render_thread_start(handle);
+
+    // auto entity = get_entt_instance().create();
+    // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
+    register_glfw(handle.window_);
+
+    auto block_entity = UI_block("功能块", -0.5, -0.5, 0.5, 0.5);
+    // add_button(block_entity, "按钮1", 420, 420, 480, 480);
+    // add_button(block_entity, "按钮2", 35, 20, 145, 130);
+
+    auto render        = new logic_render_data;
+    render->debug_name = "blender Suzanne";
+    render->mesh_path_ = "assets/suzanne.obj";
+    render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv");
+    render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv");
+
+    add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+
+    // Render loop
+    while (!glfwWindowShouldClose(handle.window_)) {
+        glfwWaitEvents();
+        if (GLFW_TRUE == glfwWindowShouldClose(handle.window_)) {
+            break;
+        }
+        glfwPollEvents();  // Event polling
+        deal_glfw_event(); // 统一分发执行
         {
-           Particle particles[ ];
-        };
+            auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁
+            g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+        } {
+            auto view = g_entt().view<Position_update_tag>(); //得到哪些需要销毁
+            // g_entt().destroy(view.begin(), view.end());       // todo : 添加新的函数
+        }
 
-        layout (local_size_x = 256) in;
 
-        layout (binding = 1) uniform UBO
-        {
-            float deltaT;
-            int particleCount;
-            float gravity;
-            float power;
-            float soften;
-        } ubo;
-    )";
-
-    /**
-     * Regex Breakdown:
-     * (?:buffer|uniform)     : Matches either buffer or uniform keyword
-     * \s+(\w+)               : Group 2: The Block Type Name (Pos, UBO)
-     * [\s\S]*?\{             : Skip to the opening brace
-     * ([\s\S]*?)             : Group 3: The Content inside {}
-     * \}\s*(\w+)?            : Group 4: The Instance Name (Optional, e.g., ubo)
-     * \s*;                   : Matches the trailing semicolon
-     */
-    std::regex
-            block_re(R"(layout\s*\([\s\S]*?binding\s*=\s*(\d+)[\s\S]*?\)\s*(?:buffer|uniform)\s+(\w+)[\s\S]*?\{([\s\S]*?)\}\s*(\w+)?\s*;)");
-
-    auto blocks_begin = std::sregex_iterator(glsl.begin(), glsl.end(), block_re);
-    auto blocks_end   = std::sregex_iterator();
-
-    for (std::sregex_iterator i = blocks_begin; i != blocks_end; ++i) {
-        std::smatch match      = *i;
-        std::string binding_id = match[1];
-        std::string block_type = match[2];
-        std::string content    = match[3];
-        std::string instance   = match[4].matched ? match[4].str() : "(Anonymous)";
-
-        std::cout << ">>> Found Resource <<<" << std::endl;
-        std::cout << "Binding:  " << binding_id << std::endl;
-        std::cout << "Block:    " << block_type << std::endl;
-        std::cout << "Instance: " << instance << std::endl;
-        std::cout << "Content: " << std::endl << content << std::endl;
-        std::cout << "-----------------------" << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    return 0;
+    render_thread_stop_and_wait();
+
+    handle.destroy();
 }

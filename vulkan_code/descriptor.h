@@ -6,6 +6,7 @@
 #define HOWTOVULKAN_DESCRIPTOR_H
 #include "vulkan_device_handle.h"
 #include "descriptor_pool.h"
+#include <spirv_cross/spirv_glsl.hpp>
 
 
 class Descriptor {
@@ -91,6 +92,65 @@ public:
                         vkCreateDescriptorSetLayout(handle->get_device(), &descriptorLayout, nullptr, &
                             descriptorSetLayoutTex));
     }
+
+
+    struct ResourceInfo {
+        std::string name;
+        std::string type; // e.g., "UBO", "SSBO"
+        size_t size;
+    };
+
+
+    void print_sorted_resources(const std::vector<uint32_t> &spirv_binary) {
+        const spirv_cross::CompilerGLSL compiler(spirv_binary);
+        spirv_cross::ShaderResources resources = compiler.get_shader_resources();
+
+        // Use a map to automatically sort by Binding ID (the key)
+        std::map<uint32_t, ResourceInfo> sorted_bindings;
+
+        // 1. Collect Uniform Buffers
+        for (auto &res: resources.uniform_buffers) {
+            uint32_t binding         = compiler.get_decoration(res.id, spv::DecorationBinding);
+            size_t size              = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
+            sorted_bindings[binding] = {res.name, "Uniform Buffer", size};
+        }
+
+        // 2. Collect Storage Buffers
+        for (auto &res: resources.storage_buffers) {
+            uint32_t binding         = compiler.get_decoration(res.id, spv::DecorationBinding);
+            sorted_bindings[binding] = {res.name, "Storage Buffer", 0}; // SSBO size can be dynamic
+        }
+
+
+        // 3. Collect Sampled Images (Textures)
+        for (auto &res: resources.sampled_images) {
+            uint32_t binding         = compiler.get_decoration(res.id, spv::DecorationBinding);
+            sorted_bindings[binding] = {res.name, "Texture/Sampler", 0};
+        }
+
+        // 4. Print results (Map iteration is always sorted by key)
+        std::cout << "--- Resources Sorted by Binding ---" << std::endl;
+        for (auto const &[binding, info]: sorted_bindings) {
+            std::cout << "Binding [" << binding << "]: "
+                    << info.name << " (" << info.type << ")";
+            if (info.size > 0) std::cout << " | Size: " << info.size << " bytes";
+            std::cout << std::endl;
+        }
+    }
+
+
+    void read_spv_file(std::string file_name) {
+        std::ifstream file("/Users/panxin/CLionProjects/Vulkan/shaders/glsl/computenbody/particle_calculate.comp.spv",
+                           std::ios::binary | std::ios::ate);
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<uint32_t> spirv_binary(size / sizeof(uint32_t));
+        file.read((char *) spirv_binary.data(), size);
+
+        print_sorted_resources(spirv_binary);
+    }
+
 
     inline VkDescriptorSetLayout create_descriptor_set_layout(VKDevice &handle) {
         VkDescriptorSetLayout descriptorSetLayout;
