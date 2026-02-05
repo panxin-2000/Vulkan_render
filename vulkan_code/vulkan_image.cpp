@@ -6,8 +6,9 @@
 
 #include "stb_image.h"
 #include "vulkan_device_handle.h"
+#include "vulkan_buffer.h"
 
-VkImageView createImageView(const VkDevice device,
+VkImageView createImageView(const VKDevice &handle,
                             const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags) {
@@ -23,7 +24,7 @@ VkImageView createImageView(const VkDevice device,
     viewInfo.subresourceRange.layerCount     = 1;
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     VkImageView imageView;
-    if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (vkCreateImageView(handle.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image view!");
     }
     return imageView;
@@ -80,12 +81,12 @@ void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat for
 }
 
 
-void createTextureImage(VKDevice &handle) {
+void createTextureImage(VKDevice &handle, std::string picture_path) {
     VkImage textureImage;
     VkDeviceMemory textureImageMemory;
 
     int texWidth, texHeight, texChannels;
-    stbi_uc *pixels        = stbi_load("textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     if (!pixels) {
         throw std::runtime_error("failed to load texture image!");
@@ -104,18 +105,18 @@ void createTextureImage(VKDevice &handle) {
     createImage(handle, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 textureImage, textureImageMemory);
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
+    copyBufferToImage(handle, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
                       static_cast<uint32_t>(texHeight));
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkDestroyBuffer(handle.get_device(), stagingBuffer, nullptr);
     vkFreeMemory(handle.get_device(), stagingBufferMemory, nullptr);
 }
 
-void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void copyBufferToImage(VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(handle);
 
     VkBufferImageCopy region{};
     region.bufferOffset                    = 0;
@@ -136,12 +137,13 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
                            &region
                           );
 
-    endSingleTimeCommands(commandBuffer);
+    endSingleTimeCommands(handle, commandBuffer);
 }
 
 
-void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+void transitionImageLayout(VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
+                           VkImageLayout newLayout) {
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(handle);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -193,7 +195,7 @@ void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayo
                          1, &barrier
                         );
 
-    endSingleTimeCommands(commandBuffer);
+    endSingleTimeCommands(handle, commandBuffer);
 }
 
 void endSingleTimeCommands(VKDevice &handle, VkCommandBuffer commandBuffer) {

@@ -5,6 +5,7 @@
 #include "vulkan_buffer.h"
 
 #include "vulkan_device_handle.h"
+#include "vulkan_image.h"
 
 uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -40,44 +41,9 @@ void createBuffer(VKDevice &handle, VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 
-VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool commandPool) {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = commandPool;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
-}
-
-void endSingleTimeCommands(VkDevice device, VkCommandPool commandPool, VkCommandBuffer commandBuffer,
-                           VkQueue graphicsQueue) {
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer;
-
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
-}
-
-
-void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueue, VkBuffer srcBuffer,
+void copyBuffer(VKDevice &handle, VkBuffer srcBuffer,
                 VkBuffer dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands(device, commandPool);
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(handle);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
@@ -85,11 +51,10 @@ void copyBuffer(VkDevice device, VkCommandPool commandPool, VkQueue graphicsQueu
     copyRegion.size      = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    endSingleTimeCommands(device, commandPool, commandBuffer, graphicsQueue);
+    endSingleTimeCommands(handle, commandBuffer);
 }
 
 void createVertexBuffer(VKDevice &handle,
-                        VkCommandPool commandPool, VkQueue graphicsQueue,
                         void *buffer_data, uint32_t size, VkBuffer &verticesBuffer,
                         VkDeviceMemory &vertexBufferMemory) {
     // VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
@@ -113,14 +78,13 @@ void createVertexBuffer(VKDevice &handle,
     createBuffer(handle, bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesBuffer, vertexBufferMemory);
-    copyBuffer(handle.get_device(), commandPool, graphicsQueue, stagingBuffer, verticesBuffer, bufferSize);
+    copyBuffer(handle, stagingBuffer, verticesBuffer, bufferSize);
     vkDestroyBuffer(handle.get_device(), stagingBuffer, nullptr);
     vkFreeMemory(handle.get_device(), stagingBufferMemory, nullptr);
 }
 
 // 这个函数和上一个函数是一样的
 void createIndexBuffer(VKDevice &handle,
-                       VkCommandPool commandPool, VkQueue graphicsQueue,
                        void *buffer_data, uint32_t size, VkBuffer &verticesBuffer,
                        VkDeviceMemory &vertexBufferMemory) {
     VkDeviceSize bufferSize = size;
@@ -138,7 +102,7 @@ void createIndexBuffer(VKDevice &handle,
     createBuffer(handle, bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, verticesBuffer, vertexBufferMemory);
-    copyBuffer(handle.get_device(), commandPool, graphicsQueue, stagingBuffer, verticesBuffer, bufferSize);
+    copyBuffer(handle, stagingBuffer, verticesBuffer, bufferSize);
     vkDestroyBuffer(handle.get_device(), stagingBuffer, nullptr);
     vkFreeMemory(handle.get_device(), stagingBufferMemory, nullptr);
 }

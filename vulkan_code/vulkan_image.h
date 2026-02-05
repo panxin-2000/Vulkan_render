@@ -4,15 +4,27 @@
 
 #ifndef HELLO_MAC_VULKAN_IMAGE_H
 #define HELLO_MAC_VULKAN_IMAGE_H
+#include "vulkan_device_handle.h"
 #include "vulkan_global_macro.h"
 
 
-VkImageView createImageView(const VkDevice device,
+VkImageView createImageView(const VKDevice &handle,
                             const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags);
 
-void createImage( VkPhysicalDevice physicalDevice, VkDevice device,uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+
+void copyBufferToImage(VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+void transitionImageLayout(VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
+                           VkImageLayout newLayout);
+
+void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
+                 VkImageTiling tiling, VkImageUsageFlags usage,
                  VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
+
+void endSingleTimeCommands(VKDevice &handle, VkCommandBuffer commandBuffer);
+
+VkCommandBuffer beginSingleTimeCommands(VKDevice &handle);
 #endif //HELLO_MAC_VULKAN_IMAGE_H
