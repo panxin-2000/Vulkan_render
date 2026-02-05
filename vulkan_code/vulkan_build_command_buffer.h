@@ -82,7 +82,7 @@ void begin_rendering(Engine &engine) {
 }
 
 void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout, Descriptor descriptor,
-                          Model_mesh &mesh) {
+                          Model_mesh &mesh, const uint64_t constants_offset) {
     auto cb          = engine.get_current_command_buffer();
     auto temp_extent = engine.get_handle().get_current_extent();
 
@@ -102,7 +102,7 @@ void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout 
                             &descriptor.get_descriptor_set_texture(), 0,
                             nullptr);
     vkCmdPushConstants(cb, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
-                       &engine.get_current_shader_data_buffer().deviceAddress);
+                       &engine.get_current_shader_data_buffer().deviceAddress + constants_offset);
     mesh.draw(cb);
 }
 

@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv");
     render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv");
 
-    add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+    // add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
 
     // Render loop
     while (!glfwWindowShouldClose(handle.window_)) {

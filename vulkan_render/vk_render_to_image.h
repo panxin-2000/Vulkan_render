@@ -122,7 +122,13 @@ public:
                 if (mesh == nullptr) {
                     continue;
                 }
-                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor, *mesh);
+                int i = 0;
+                if (need_render_object->debug_name == "blender Suzanne") {
+                    i = 1;
+                } else {
+                    i = 0;
+                }
+                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor, *mesh, i * sizeof(ShaderData));
             }
             end_rendering(engine);
             engine.put_one_image_to_screen();
