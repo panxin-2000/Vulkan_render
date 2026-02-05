@@ -91,12 +91,18 @@ public:
         return shader_maps_;
     }
 
+    VkCommandPool &get_command_pool() {
+        return commandPool;
+    }
+
 private:
     std::map<std::string, shader_and_share> shader_maps_;
     std::map<std::string, texture_and_share> texture_map_;
-    std::map<logic_render_data *, buffer_and_share> mesh_map_;
     std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
+    std::map<logic_render_data *, buffer_and_share> mesh_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
+
+    VkCommandPool commandPool{VK_NULL_HANDLE};
 
 
     void create_instance();
@@ -118,6 +124,16 @@ private:
     void create_swap_chain_image_view();
 
     void create_depth_image_view();
+
+    void create_command_pool() {
+        // Command pool
+        VkCommandPoolCreateInfo commandPoolCI{
+            .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = get_queue_Family()
+        };
+        VK_CHECK_RESULT(vkCreateCommandPool(get_device(), &commandPoolCI, nullptr, &commandPool));
+    }
 
 public:
     static VKDevice &get();

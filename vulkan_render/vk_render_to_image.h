@@ -92,7 +92,7 @@ public:
         engine.init();
         // 目的是为了简化函数，
         // Texture images
-        auto textureDescriptors = create_textures_to_gpu(&handle, engine.get_command_pool());
+        auto textureDescriptors = create_textures_to_gpu(&handle, handle.get_command_pool());
 
         descriptor.CreateDescriptorSetLayout(textureDescriptors.size());
         descriptor.AllocateDescriptorSets(textureDescriptors.size());
@@ -155,7 +155,7 @@ public:
         for (const auto &[key, value]: pipeline_map) {
             vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
         }
-        vkDestroyCommandPool(handle.get_device(), engine.get_command_pool(), nullptr);
+        vkDestroyCommandPool(handle.get_device(), handle.get_command_pool(), nullptr);
         clean_all_shader_object();
         have_object_need_update = false;
         need_render             = not_start;

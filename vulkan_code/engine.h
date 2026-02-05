@@ -20,8 +20,7 @@ struct ShaderData {
     uint32_t selected8{1};
     uint32_t selected7{1};
     uint32_t selected6{1};
-} ;
-
+};
 
 
 struct ShaderDataBuffer {
@@ -34,7 +33,6 @@ struct ShaderDataBuffer {
 
 class Engine {
     VKDevice &handle_;
-    VkCommandPool commandPool{VK_NULL_HANDLE};
     std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
     std::array<ShaderDataBuffer, maxFramesInFlight> shaderDataBuffers;
     std::array<VkFence, maxFramesInFlight> fences;
@@ -63,7 +61,6 @@ public:
 
 
     void init() {
-        create_command_pool();
         create_command_buffer();
         create_shader_data_buffer();
         create_fences();
@@ -95,9 +92,6 @@ public:
         return get_can_render_to_image_semaphores()[frameIndex];
     }
 
-    VkCommandPool &get_command_pool() {
-        return commandPool;
-    }
 
     std::array<VkCommandBuffer, maxFramesInFlight> &get_command_buffers() {
         return commandBuffers;
@@ -127,22 +121,13 @@ public:
     void create_command_buffer() {
         VkCommandBufferAllocateInfo cbAllocCI{
             .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = commandPool,
+            .commandPool        = handle_.get_command_pool(),
             .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = maxFramesInFlight
         };
         VK_CHECK_RESULT(vkAllocateCommandBuffers(handle_.get_device(), &cbAllocCI, commandBuffers.data()));
     }
 
-    void create_command_pool() {
-        // Command pool
-        VkCommandPoolCreateInfo commandPoolCI{
-            .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-            .queueFamilyIndex = handle_.get_queue_Family()
-        };
-        VK_CHECK_RESULT(vkCreateCommandPool(handle_.get_device(), &commandPoolCI, nullptr, &commandPool));
-    }
 
     void create_shader_data_buffer() {
         // Shader data buffers
