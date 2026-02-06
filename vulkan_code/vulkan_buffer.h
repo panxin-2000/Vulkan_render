@@ -7,8 +7,7 @@
 #include "vulkan_device_handle.h"
 #include "vulkan_global_macro.h"
 
-void createBuffer(VKDevice &handle, VkDeviceSize size, VkBufferUsageFlags usage,
-                  VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                  VkDeviceMemory &bufferMemory);
+
+void copy_vk_buffer(const VKDevice &handle, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 #endif //HELLO_MAC_VULKAN_BUFFER_H

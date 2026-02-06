@@ -91,7 +91,7 @@ public:
         return shader_maps_;
     }
 
-    VkCommandPool &get_command_pool() {
+    const VkCommandPool &get_command_pool() const {
         return commandPool;
     }
 
