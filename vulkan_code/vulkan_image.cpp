@@ -12,7 +12,8 @@
 VkImageView createImageView(const VKDevice &handle,
                             const VkImage image,
                             const VkFormat format,
-                            const VkImageAspectFlags aspectFlags) {
+                            const VkImageAspectFlags aspectFlags,
+                            uint32_t mipLevels) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
@@ -22,7 +23,7 @@ VkImageView createImageView(const VKDevice &handle,
     viewInfo.subresourceRange.baseMipLevel   = 0;
     viewInfo.subresourceRange.levelCount     = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount     = 1;
+    viewInfo.subresourceRange.layerCount     = mipLevels;
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     VkImageView imageView;
     if (vkCreateImageView(handle.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
@@ -44,7 +45,8 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
 }
 
 
-std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
+std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
+                                              VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
     VkImageCreateInfo imageInfo{};
@@ -53,7 +55,7 @@ std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, 
     imageInfo.extent.width  = width;
     imageInfo.extent.height = height;
     imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = 1;
+    imageInfo.mipLevels     = mipLevels;
     imageInfo.arrayLayers   = 1;
     imageInfo.format        = format;
     imageInfo.tiling        = tiling;
@@ -102,11 +104,14 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
 }
 
 
-std::pair<VkImage, VmaAllocation> createTextureImage(VKDevice &handle, const std::string &picture_path) {
+std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VKDevice &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
+    uint32_t mipLevels;
+    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+
     if (!pixels) {
         throw std::runtime_error("failed to load texture image!");
     }
@@ -121,7 +126,7 @@ std::pair<VkImage, VmaAllocation> createTextureImage(VKDevice &handle, const std
 
     auto [textureImage,textureImage_allocation] = createImage(handle,
                                                               texWidth,
-                                                              texHeight,
+                                                              texHeight, mipLevels,
                                                               VK_FORMAT_R8G8B8A8_SRGB,
                                                               VK_IMAGE_TILING_OPTIMAL,
                                                               VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -129,13 +134,20 @@ std::pair<VkImage, VmaAllocation> createTextureImage(VKDevice &handle, const std
 
 
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
     copyBufferToImage(handle, staging_buffer, textureImage, static_cast<uint32_t>(texWidth),
                       static_cast<uint32_t>(texHeight));
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
     vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
-    return {textureImage, textureImage_allocation};
+
+
+    auto texture_view = createImageView(handle, textureImage,
+                                        VK_FORMAT_R8G8B8A8_SRGB,
+                                        VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
+
+
+    return {textureImage, textureImage_allocation, texture_view};
 }
 
 void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
@@ -167,7 +179,7 @@ void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, u
 
 
 inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
-                                  VkImageLayout newLayout) {
+                                  VkImageLayout newLayout, uint32_t mipLevels) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkImageMemoryBarrier barrier{};
@@ -181,7 +193,7 @@ inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkForma
     barrier.subresourceRange.baseMipLevel   = 0;
     barrier.subresourceRange.levelCount     = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.layerCount     = mipLevels;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -275,11 +287,8 @@ VkSampler createTextureSampler(VKDevice &handle) {
 
 
 Texture_parameter create_texture_all(VKDevice &handle, const std::string &picture_path) {
-    auto [textureImage,textureImage_allocation] = createTextureImage(handle, picture_path);
-    auto texture_view                           = createImageView(handle, textureImage,
-                                        VK_FORMAT_R8G8B8A8_SRGB,
-                                        VK_IMAGE_ASPECT_COLOR_BIT);
-    auto textureSampler = createTextureSampler(handle);
+    auto [textureImage,textureImage_allocation,texture_view] = createTextureImage(handle, picture_path);
+    auto textureSampler                                      = createTextureSampler(handle);
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView   = texture_view;

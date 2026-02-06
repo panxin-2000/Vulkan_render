@@ -11,13 +11,13 @@
 VkImageView createImageView(const VKDevice &handle,
                             const VkImage image,
                             const VkFormat format,
-                            const VkImageAspectFlags aspectFlags);
+                            const VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
 
 void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
-                           VkImageLayout newLayout);
+                           VkImageLayout newLayout, uint32_t mipLevels);
 
 std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
                                               VkImageTiling tiling, VkImageUsageFlags usage);
