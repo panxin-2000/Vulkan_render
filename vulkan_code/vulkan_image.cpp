@@ -101,7 +101,7 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
 }
 
 void createTextureImage(VKDevice &handle, const std::string &picture_path) {
-    assert(picture_path.empty());
+    assert(!picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -163,8 +163,8 @@ void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, u
 }
 
 
-void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
-                           VkImageLayout newLayout) {
+inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
+                                  VkImageLayout newLayout) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkImageMemoryBarrier barrier{};

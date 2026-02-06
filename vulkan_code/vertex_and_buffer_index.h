@@ -53,8 +53,8 @@ inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::stri
     return {vertices, sp_indices};
 }
 
-std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VKDevice &handle, VkDeviceSize size,
-                                                     VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
+inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VKDevice &handle, VkDeviceSize size,
+                                                            VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
     VkBuffer vBuffer{VK_NULL_HANDLE};
     VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
     // 到这里应该是结束了一部分内容了吧
@@ -131,8 +131,8 @@ inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VKDevice &
  * @param mem_copy_callback
  * @return
  */
-std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDevice &handle, VkDeviceSize size,
-                                                              std::function<void(void *)> mem_copy_callback) {
+inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDevice &handle, VkDeviceSize size,
+                                                                     std::function<void(void *)> mem_copy_callback) {
     auto [vBuffer,vBufferAllocation] =
             create_vma_buffer(handle, size,
                               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
