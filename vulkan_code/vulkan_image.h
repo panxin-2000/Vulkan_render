@@ -19,7 +19,8 @@ void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, u
 void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout, uint32_t mipLevels);
 
-std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
+std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
+                                              VkFormat format,
                                               VkImageTiling tiling, VkImageUsageFlags usage);
 
 
