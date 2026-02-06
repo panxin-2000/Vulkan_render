@@ -100,7 +100,7 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
     return {vBuffer, vBufferAllocation};
 }
 
-void createTextureImage(VKDevice &handle, const std::string &picture_path) {
+std::pair<VkImage, VmaAllocation> createTextureImage(VKDevice &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -133,6 +133,7 @@ void createTextureImage(VKDevice &handle, const std::string &picture_path) {
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+    return {textureImage, textureImage_allocation};
 }
 
 void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
