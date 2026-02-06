@@ -43,6 +43,7 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
+
 std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
@@ -99,6 +100,7 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
     }
     return {vBuffer, vBufferAllocation};
 }
+
 
 std::pair<VkImage, VmaAllocation> createTextureImage(VKDevice &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
@@ -219,4 +221,75 @@ inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkForma
                         );
 
     end_and_submit_one_command_buffer(handle, commandBuffer);
+}
+
+
+VkSampler createTextureSampler(VKDevice &handle) {
+    VkSampler textureSampler;
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter    = VK_FILTER_LINEAR;
+    samplerInfo.minFilter    = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    // // Sampler // how to vulkan 2026 ,参数会稍微少一点
+    // VkSamplerCreateInfo samplerCI{
+    //     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    //     .magFilter = VK_FILTER_LINEAR,
+    //     .minFilter = VK_FILTER_LINEAR,
+    //     .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    //     .anisotropyEnable = VK_TRUE,
+    //     .maxAnisotropy = 8.0f,
+    //     .maxLod = (float) ktxTexture->numLevels,
+    // };
+    // VK_CHECK_RESULT(vkCreateSampler(handle->get_device(), &samplerCI, nullptr, &textures[i].sampler));
+
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(handle.physical_device_, &supportedFeatures);
+    if (supportedFeatures.samplerAnisotropy) {
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(handle.physical_device_, &properties);
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    } else {
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy    = 1;
+    }
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable           = VK_FALSE;
+    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod     = 0.0f;
+    samplerInfo.maxLod     = 0.0f;
+    if (vkCreateSampler(handle.get_device(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+    return textureSampler;
+}
+
+
+Texture_parameter create_texture_all(VKDevice &handle, const std::string &picture_path) {
+    auto [textureImage,textureImage_allocation] = createTextureImage(handle, picture_path);
+    auto texture_view                           = createImageView(handle, textureImage,
+                                        VK_FORMAT_R8G8B8A8_SRGB,
+                                        VK_IMAGE_ASPECT_COLOR_BIT);
+    auto textureSampler = createTextureSampler(handle);
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = texture_view;
+    imageInfo.sampler     = textureSampler;
+    Texture_parameter texture_parameter{
+        .allocation  = textureImage_allocation,
+        .image       = textureImage,
+        .image_view  = texture_view,
+        .sampler     = textureSampler,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+    return texture_parameter;
 }

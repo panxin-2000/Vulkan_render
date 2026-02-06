@@ -21,6 +21,14 @@ struct Vertex {
     glm::vec2 uv;
 };
 
+struct Texture_parameter {
+    VmaAllocation allocation  = VK_NULL_HANDLE;
+    VkImage image             = VK_NULL_HANDLE;
+    VkImageView image_view    = VK_NULL_HANDLE;
+    VkSampler sampler         = VK_NULL_HANDLE;
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+};
+
 class VKDevice {
 public:
     // ApplicationInfo 的参数
