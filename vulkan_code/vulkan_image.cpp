@@ -100,10 +100,8 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
     return {vBuffer, vBufferAllocation};
 }
 
-void createTextureImage(VKDevice &handle, std::string picture_path) {
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
-
+void createTextureImage(VKDevice &handle, const std::string &picture_path) {
+    assert(picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -119,12 +117,13 @@ void createTextureImage(VKDevice &handle, std::string picture_path) {
     auto [staging_buffer,staging_allocation] = create_image_buffer(handle, imageSize, mem_copy_function);
     stbi_image_free(pixels);
 
-    auto [image,all] = createImage(handle,
-                                   texWidth,
-                                   texHeight,
-                                   VK_FORMAT_R8G8B8A8_SRGB,
-                                   VK_IMAGE_TILING_OPTIMAL,
-                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    auto [textureImage,textureImage_allocation] = createImage(handle,
+                                                              texWidth,
+                                                              texHeight,
+                                                              VK_FORMAT_R8G8B8A8_SRGB,
+                                                              VK_IMAGE_TILING_OPTIMAL,
+                                                              VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                              VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,

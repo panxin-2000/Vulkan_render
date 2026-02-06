@@ -14,9 +14,9 @@ VkImageView createImageView(const VKDevice &handle,
                             const VkImageAspectFlags aspectFlags);
 
 
-void copyBufferToImage(VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-void transitionImageLayout(VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
+void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout);
 
 std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
