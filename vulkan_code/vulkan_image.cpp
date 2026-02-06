@@ -5,6 +5,7 @@
 #include "vulkan_image.h"
 
 #include "stb_image.h"
+#include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 #include "vulkan_buffer.h"
 
@@ -42,10 +43,9 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
-                 VkImageTiling tiling,
-                 VkImageUsageFlags usage,
-                 VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) {
+std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat format,
+                                              VkImageTiling tiling,
+                                              VkImageUsageFlags usage) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
@@ -61,59 +61,80 @@ void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat for
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(handle.get_device(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image!");
-    }
 
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(handle.get_device(), image, &memRequirements);
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO; // 让 VMA 自动选最快的显存
+    // 对于 Image，通常不需要 HOST_ACCESS，因为我们走 Staging 流程
+    // 如果你强制要 CPU 可见，通常只能用 TILING_LINEAR，性能很差
 
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize  = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(handle.physical_device_, memRequirements.memoryTypeBits, properties);
+    VkImage image;
+    VmaAllocation allocation;
+    VmaAllocationInfo resultInfo;
+    vmaCreateImage(handle.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
 
-    if (vkAllocateMemory(handle.get_device(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate image memory!");
-    }
-
-    vkBindImageMemory(handle.get_device(), image, imageMemory, 0);
+    return {image, allocation};
 }
 
+std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, VkDeviceSize size,
+                                                       std::function<void(void *)> mem_copy_callback) {
+    auto [vBuffer,vBufferAllocation] =
+            create_vma_buffer(handle, size,
+                              VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
+    if (check_host_visible_bit(handle, vBufferAllocation) == false) {
+        LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
+        auto [staging_buffer,staging_allocation] = create_staging_buffer(handle, size);
+        if (check_host_visible_bit(handle, staging_allocation) == false) {
+            LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
+        } else {
+            copy_mem_from_cpu_to_gpu(handle, {staging_buffer, staging_allocation}, mem_copy_callback);
+            copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
+        }
+        vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+    } else {
+        copy_mem_from_cpu_to_gpu(handle, {vBuffer, vBufferAllocation}, mem_copy_callback);
+    }
+    return {vBuffer, vBufferAllocation};
+}
 
-// void createTextureImage(VKDevice &handle, std::string picture_path) {
-//     VkImage textureImage;
-//     VkDeviceMemory textureImageMemory;
-//
-//     int texWidth, texHeight, texChannels;
-//     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-//     VkDeviceSize imageSize = texWidth * texHeight * 4;
-//     if (!pixels) {
-//         throw std::runtime_error("failed to load texture image!");
-//     }
-//     VkBuffer stagingBuffer;
-//     VkDeviceMemory stagingBufferMemory;
-//     createBuffer(handle, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-//                  stagingBufferMemory);
-//     void *date;
-//     vkMapMemory(handle.get_device(), stagingBufferMemory, 0, imageSize, 0, &date);
-//     memcpy(date, pixels, static_cast<size_t>(imageSize));
-//     vkUnmapMemory(handle.get_device(), stagingBufferMemory);
-//     stbi_image_free(pixels);
-//
-//     createImage(handle, texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-//                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-//                 textureImage, textureImageMemory);
-//     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
-//                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-//     copyBufferToImage(handle, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
-//                       static_cast<uint32_t>(texHeight));
-//     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-//                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-//     vkDestroyBuffer(handle.get_device(), stagingBuffer, nullptr);
-//     vkFreeMemory(handle.get_device(), stagingBufferMemory, nullptr);
-// }
+void createTextureImage(VKDevice &handle, std::string picture_path) {
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image!");
+    }
+    VkDeviceMemory stagingBufferMemory;
+
+    auto mem_copy_function = [pixels,imageSize](void *dst) {
+        memcpy(dst, pixels, imageSize);
+    };
+
+    auto [staging_buffer,staging_allocation] = create_image_buffer(handle, imageSize, mem_copy_function);
+    stbi_image_free(pixels);
+
+    auto [image,all] = createImage(handle,
+                                   texWidth,
+                                   texHeight,
+                                   VK_FORMAT_R8G8B8A8_SRGB,
+                                   VK_IMAGE_TILING_OPTIMAL,
+                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+
+    transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(handle, staging_buffer, textureImage, static_cast<uint32_t>(texWidth),
+                      static_cast<uint32_t>(texHeight));
+    transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+}
 
 void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
