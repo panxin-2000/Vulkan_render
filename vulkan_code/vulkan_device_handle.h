@@ -150,6 +150,7 @@ public:
         create_swap_chain(VK_NULL_HANDLE);
         create_swap_chain_image_view();
         create_depth_image_view();
+        create_command_pool();
     }
 
     void recreate_swap_chain() {
