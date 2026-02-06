@@ -135,10 +135,11 @@ std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDevice &ha
                                                               std::function<void(void *)> mem_copy_callback) {
     auto [vBuffer,vBufferAllocation] =
             create_vma_buffer(handle, size,
-                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                              VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                              VK_BUFFER_USAGE_TRANSFER_DST_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
+                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
     if (check_host_visible_bit(handle, vBufferAllocation) == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
         auto [staging_buffer,staging_allocation] = create_staging_buffer(handle, size);
