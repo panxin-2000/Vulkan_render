@@ -57,29 +57,44 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
                                    const Indices_type &indices_) {
     VkBuffer vBuffer{VK_NULL_HANDLE};
     VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
-
-    Model_mesh mesh{};
     // 到这里应该是结束了一部分内容了吧
     VkDeviceSize vBufSize{vertices.size};
     VkDeviceSize iBufSize{sizeof(uint16_t) * indices_->size()};
     VkBufferCreateInfo bufferCI{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = vBufSize + iBufSize,
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size  = vBufSize + iBufSize,
         .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
     };
     VmaAllocationCreateInfo bufferAllocCI{
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+        // 之前是有 VMA_ALLOCATION_CREATE_MAPPED_BIT 的标记的
+        // 这个标记 表示已经 map ,但是 调用 vmaUnmapMemory 会 assert 失败
+        // 这个标记 一直伴随着 VkBuffer 和 VmaAllocation ，直到销毁
         .usage = VMA_MEMORY_USAGE_AUTO
     };
+    VmaAllocationInfo allocInfo = {};
     VK_CHECK_RESULT(
                     vmaCreateBuffer(handle.get_allocator(), &bufferCI, &bufferAllocCI, &vBuffer, &vBufferAllocation,
-                        nullptr));
-    void *bufferPtr{nullptr};
-    VK_CHECK_RESULT(vmaMapMemory(handle.get_allocator(), vBufferAllocation, &bufferPtr));
-    memcpy(bufferPtr, vertices.data, vBufSize);
-    memcpy(((char *) bufferPtr) + vBufSize, indices_->data(), iBufSize);
-    vmaUnmapMemory(handle.get_allocator(), vBufferAllocation);
+                        &allocInfo));
+    // 2. 检查 VMA 到底把内存分到了哪里
+    VkMemoryPropertyFlags memFlags;
+    vmaGetMemoryTypeProperties(handle.get_allocator(), allocInfo.memoryType, &memFlags);
+    if (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        void *bufferPtr{nullptr};
+        VK_CHECK_RESULT(vmaMapMemory(handle.get_allocator(), vBufferAllocation, &bufferPtr));
+        // 也可以通过下面两行获取 map 的地址 ，取其中的 pMappedData
+        VmaAllocationInfo allocInfo_for_map;
+        vmaGetAllocationInfo(handle.get_allocator(), vBufferAllocation, &allocInfo_for_map);
+        memcpy(allocInfo_for_map.pMappedData, vertices.data, vBufSize);
+        memcpy(((char *) allocInfo_for_map.pMappedData) + vBufSize, indices_->data(), iBufSize);
+        vmaUnmapMemory(handle.get_allocator(), vBufferAllocation);
+    } else {
+        // 需要手动搬运
+    }
 
+    Model_mesh mesh{};
     mesh.vertices_buffer   = vBuffer;
     mesh.vBufferAllocation = vBufferAllocation;
     mesh.indices_buffer    = vBuffer;
