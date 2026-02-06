@@ -104,6 +104,35 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
 }
 
 
+void transition_image(VKDevice &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
+                      VkImageLayout oldLayout,
+                      VkImageLayout newLayout,
+                      VkAccessFlags srcAccessMask,
+                      VkAccessFlags dstAccessMask,
+                      VkPipelineStageFlags srcStageMask,
+                      VkPipelineStageFlags dstStageMask) {
+    VkImageMemoryBarrier barrier{};
+    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image                           = image;
+    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount     = 1;
+    barrier.subresourceRange.levelCount     = 1;
+    barrier.subresourceRange.baseMipLevel   = baseMipLevel;
+    barrier.oldLayout                       = oldLayout;
+    barrier.newLayout                       = newLayout;
+    barrier.srcAccessMask                   = srcAccessMask;
+    barrier.dstAccessMask                   = dstAccessMask;
+    vkCmdPipelineBarrier(commandBuffer,
+                         srcStageMask, dstStageMask, 0,
+                         0, nullptr,
+                         0, nullptr,
+                         1, &barrier);
+}
+
+
 void generateMipmaps(VKDevice &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
                      uint32_t mipLevels) {
     // Check if image format supports linear blitting
@@ -116,31 +145,17 @@ void generateMipmaps(VKDevice &handle, VkImage image, VkFormat imageFormat, int3
 
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
-    VkImageMemoryBarrier barrier{};
-    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.image                           = image;
-    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
-    barrier.subresourceRange.levelCount     = 1;
-
     int32_t mipWidth  = texWidth;
     int32_t mipHeight = texHeight;
 
     for (uint32_t i = 1; i < mipLevels; i++) {
-        barrier.subresourceRange.baseMipLevel = i - 1;
-        barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout                     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask                 = VK_ACCESS_TRANSFER_READ_BIT;
-
-        vkCmdPipelineBarrier(commandBuffer,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                             0, nullptr,
-                             0, nullptr,
-                             1, &barrier);
+        transition_image(handle, commandBuffer, image, i - 1,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         VK_ACCESS_TRANSFER_WRITE_BIT,
+                         VK_ACCESS_TRANSFER_READ_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         VkImageBlit blit{};
         blit.srcOffsets[0]                 = {0, 0, 0};
@@ -162,32 +177,25 @@ void generateMipmaps(VKDevice &handle, VkImage image, VkFormat imageFormat, int3
                        1, &blit,
                        VK_FILTER_LINEAR);
 
-        barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        vkCmdPipelineBarrier(commandBuffer,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr,
-                             0, nullptr,
-                             1, &barrier);
+        transition_image(handle, commandBuffer, image, i - 1,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                         VK_ACCESS_TRANSFER_READ_BIT,
+                         VK_ACCESS_SHADER_READ_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
         if (mipWidth > 1) mipWidth /= 2;
         if (mipHeight > 1) mipHeight /= 2;
     }
 
-    barrier.subresourceRange.baseMipLevel = mipLevels - 1;
-    barrier.oldLayout                     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    barrier.srcAccessMask                 = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier.dstAccessMask                 = VK_ACCESS_SHADER_READ_BIT;
-
-    vkCmdPipelineBarrier(commandBuffer,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &barrier);
+    transition_image(handle, commandBuffer, image, mipLevels - 1,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                     VK_ACCESS_TRANSFER_WRITE_BIT,
+                     VK_ACCESS_SHADER_READ_BIT,
+                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     end_and_submit_one_command_buffer(handle, commandBuffer);
     commandBuffer = VK_NULL_HANDLE;
