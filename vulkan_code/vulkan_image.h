@@ -24,7 +24,4 @@ void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat for
                  VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
 
-void endSingleTimeCommands(const VKDevice &handle, VkCommandBuffer commandBuffer);
-
-VkCommandBuffer beginSingleTimeCommands(const VKDevice &handle);
 #endif //HELLO_MAC_VULKAN_IMAGE_H

@@ -116,7 +116,7 @@ void createImage(VKDevice &handle, uint32_t width, uint32_t height, VkFormat for
 // }
 
 void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands(handle);
+    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkBufferImageCopy region{};
     region.bufferOffset                    = 0;
@@ -137,13 +137,15 @@ void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, u
                            &region
                           );
 
-    endSingleTimeCommands(handle, commandBuffer);
+    end_and_submit_one_command_buffer(handle, commandBuffer);
+    commandBuffer = VK_NULL_HANDLE;
+    // 清理 commandBuffer ，但是 no safe ,手动容易忘记
 }
 
 
 void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout) {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands(handle);
+    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -195,40 +197,5 @@ void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat forma
                          1, &barrier
                         );
 
-    endSingleTimeCommands(handle, commandBuffer);
-}
-
-void endSingleTimeCommands(const VKDevice &handle, VkCommandBuffer commandBuffer) {
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer;
-
-    vkQueueSubmit(handle.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(handle.get_queue());
-
-    vkFreeCommandBuffers(handle.get_device(), handle.get_command_pool(), 1, &commandBuffer);
-}
-
-
-VkCommandBuffer beginSingleTimeCommands(const VKDevice &handle) {
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = handle.get_command_pool();
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    //  todo : vkAllocateCommandBuffers 必须加锁
-    vkAllocateCommandBuffers(handle.get_device(), &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
+    end_and_submit_one_command_buffer(handle, commandBuffer);
 }

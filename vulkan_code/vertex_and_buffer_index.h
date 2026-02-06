@@ -146,7 +146,7 @@ std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDevice &ha
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
             copy_mem_from_cpu_to_gpu(handle, {staging_buffer, staging_allocation}, mem_copy_callback);
-            copy_vk_buffer(handle, staging_buffer, vBuffer, size);
+            copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
         }
         vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
     } else {
