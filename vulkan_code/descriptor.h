@@ -94,7 +94,7 @@ VkPipelineLayout CreatePipelineLayout(const VKDevice &handle, VkDescriptorSetLay
 void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> textureDescriptors,
                             std::vector<VkDescriptorSet> descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
-    for (uint32_t i = 0; i < textureDescriptors.size(); i++) {
+    for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
         VkWriteDescriptorSet temp{
             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
             .dstSet          = descriptor_set_texture[i],
@@ -260,18 +260,19 @@ static void print_sorted_resources(const std::map<uint32_t, ResourceInfo> &sorte
 std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t size,
                                                     VkDescriptorSetLayout descriptorSetLayout) {
     std::vector<VkDescriptorSet> descriptor_set_texture;
-    uint32_t variableDescCount{size};
+    std::vector<uint32_t> variableDescCount{size, size};
+    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout, descriptorSetLayout};
+
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
     // 上限约束： 你在 pDescriptorCounts 中指定的数值，不能超过你在 VkDescriptorSetLayoutBinding 中定义的 descriptorCount（即最大上限）。
     // 特性开启： 需要在物理设备特性中开启 descriptorIndexing 的相关支持，具体可参考 Vulkan 硬件数据库 检查你的显卡是否支持 runtimeDescriptorArray
     VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescCountAI{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
-        .descriptorSetCount = 1,
-        .pDescriptorCounts  = &variableDescCount
+        .descriptorSetCount = static_cast<uint32_t>(variableDescCount.size()),
+        .pDescriptorCounts  = variableDescCount.data(),
     };
 
-    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
     descriptor_set_texture.resize(layouts.size());
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{

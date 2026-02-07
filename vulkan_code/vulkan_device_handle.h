@@ -152,15 +152,20 @@ private:
     }
 
     void init_Descriptor_Pool() {
-        VkDescriptorPoolSize poolSize{
-            .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = descriptor_count_
-        };
+        // 可以参考 blender 中是如何分配的，blender 中有具体的预分配 类型 与 数值
+        std::array<VkDescriptorPoolSize, 3> poolSizes{};
+        poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = 1000;
+        poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount = 1000;
+        poolSizes[2].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSizes[2].descriptorCount = 1000;
+
         VkDescriptorPoolCreateInfo descPoolCI{
             .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .maxSets       = 1,
-            .poolSizeCount = 1,
-            .pPoolSizes    = &poolSize
+            .maxSets       = 1000,
+            .poolSizeCount = poolSizes.size(),
+            .pPoolSizes    = poolSizes.data()
         };
         VK_CHECK_RESULT(vkCreateDescriptorPool(get_device(), &descPoolCI, nullptr, &descriptorPool));
     }
