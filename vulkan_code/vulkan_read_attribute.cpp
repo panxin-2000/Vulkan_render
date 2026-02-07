@@ -110,7 +110,7 @@ VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const 
 uint32_t get_rational_image_count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
-    uint32_t imageCount = get_max_Frames_In_Flight(); // 这里的值其实不能写死，应该由双缓冲函数三缓冲决定
+    uint32_t imageCount = get_max_frames_in_flight(); // 这里的值其实不能写死，应该由双缓冲函数三缓冲决定
     if (capabilities.maxImageCount > 0 &&
         imageCount > capabilities.maxImageCount) {
         imageCount = capabilities.maxImageCount;

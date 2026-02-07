@@ -81,7 +81,7 @@ void begin_rendering(Engine &engine) {
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout, Descriptor descriptor,
+void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptor_set_texture,
                           Model_mesh &mesh, const uint64_t constants_offset) {
     auto cb          = engine.get_current_command_buffer();
     auto temp_extent = engine.get_handle().get_current_extent();
@@ -99,7 +99,7 @@ void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdSetScissor(cb, 0, 1, &scissor);
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-                            &descriptor.get_descriptor_set_texture(), 0,
+                            &descriptor_set_texture, 0,
                             nullptr);
 
     auto tem_address = engine.get_current_shader_data_buffer().deviceAddress + constants_offset;

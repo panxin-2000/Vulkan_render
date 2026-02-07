@@ -18,7 +18,7 @@
 
 constexpr uint32_t maxFramesInFlight{2};
 
-inline uint32_t get_max_Frames_In_Flight() {
+inline uint32_t get_max_frames_in_flight() {
     return maxFramesInFlight;
 }
 

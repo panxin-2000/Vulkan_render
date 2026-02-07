@@ -33,11 +33,6 @@ static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
 }
 
 
-// std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-//     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
-//     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
-// };
-
 static inline VkDescriptorSetLayout create_descriptor_set_layout(const VKDevice &handle,
                                                                  std::vector<VkDescriptorSetLayoutBinding>
                                                                  setLayoutBindings) {
@@ -49,106 +44,78 @@ static inline VkDescriptorSetLayout create_descriptor_set_layout(const VKDevice 
     return descriptorSetLayout;
 }
 
-class Descriptor {
-    VKDevice &handle;
 
-    VkDescriptorSet descriptor_set_texture{VK_NULL_HANDLE};
-    VkDescriptorSetLayout descriptorSetLayoutTex{VK_NULL_HANDLE};
+static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
+    const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
+    const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .bindingCount  = static_cast<uint32_t>(descVariableFlags.size()),
+        .pBindingFlags = descVariableFlags.data(),
+    };
+    return descBindingFlags;
+}
 
-public:
-    Descriptor(VKDevice &handle) : handle(handle) {
-    }
-
-
-    const VkDescriptorSet &get_descriptor_set_texture() const {
-        return descriptor_set_texture;
-    }
-
-    /**
-     *
-     * @param type             VkDescriptorType    uniform sampler2D 或 uniform 相关
-     * @param stageFlags       VK_SHADER_STAGE_VERTEX_BIT  VK_SHADER_STAGE_FRAGMENT_BIT
-     * @param binding          layout (binding = 1)   layout (binding = 2)  layout (binding = 3)
-     * @param descriptorCount  []中的数量，layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
-     * @return
-     */
-
-
-    // static inline VkDescriptorBindingFlags DescriptorBindingFlags(const VkDescriptorBindingFlagBits flag_bits) {
-    //     const VkDescriptorBindingFlags descVariableFlag{static_cast<VkDescriptorBindingFlags>(flag_bits)};
-    //     return descVariableFlag;
-    // }
-
-    static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
-        const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
-        const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
-            .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-            .bindingCount  = static_cast<uint32_t>(descVariableFlags.size()),
-            .pBindingFlags = descVariableFlags.data(),
-        };
-        return descBindingFlags;
-    }
-
-    /**
-     *
-     * @param size   static_cast<uint32_t>(textures.size())
-     */
-    void CreateDescriptorSetLayout(uint32_t size) {
-        // Descriptor (indexing)
-        const std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-            descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                       size),
-        };
-        const std::vector<VkDescriptorBindingFlags> descVariableFlags{
-            VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT,
-        };
-        // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
-        const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
-        const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                            descriptorSetLayoutTex));
-    }
+VkDescriptorSetLayout Create_texture_binding_lessLayout(const VKDevice &handle, uint32_t size) {
+    // Descriptor (indexing)
+    VkDescriptorSetLayout descriptorSetLayoutTex                      = VK_NULL_HANDLE;
+    const std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+        descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   size),
+    };
+    const std::vector<VkDescriptorBindingFlags> descVariableFlags{
+        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT,
+    };
+    // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
+    const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
+    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
+                        descriptorSetLayoutTex));
+    return descriptorSetLayoutTex;
+}
 
 
-    /**
-     * 池、数量以及布局（Layout）
-     * @param size
-     */
+VkPipelineLayout CreatePipelineLayout(const VKDevice &handle, VkDescriptorSetLayout descriptorSetLayoutTex) {
+    VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
+    VkPushConstantRange pushConstantRange{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(VkDeviceAddress)
+    };
+    VkPipelineLayoutCreateInfo pipelineLayoutCI{
+        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount         = 1,
+        .pSetLayouts            = &descriptorSetLayoutTex,
+        .pushConstantRangeCount = 1,
+        .pPushConstantRanges    = &pushConstantRange
+    };
+    VK_CHECK_RESULT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
+    return pipelineLayout;
+}
 
 
-    void Destroy() const {
-        vkDestroyDescriptorSetLayout(handle.get_device(), descriptorSetLayoutTex, nullptr);
-    }
-
-
-    VkPipelineLayout CreatePipelineLayout() {
-        VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
-        VkPushConstantRange pushConstantRange{
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(VkDeviceAddress)
-        };
-        VkPipelineLayoutCreateInfo pipelineLayoutCI{
-            .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount         = 1,
-            .pSetLayouts            = &descriptorSetLayoutTex,
-            .pushConstantRangeCount = 1,
-            .pPushConstantRanges    = &pushConstantRange
-        };
-        VK_CHECK_RESULT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
-        return pipelineLayout;
-    }
-
-    void update_descriptor_sets(std::vector<VkDescriptorImageInfo> textureDescriptors) const {
-        VkWriteDescriptorSet writeDescSet{
+void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> textureDescriptors,
+                            std::vector<VkDescriptorSet> descriptor_set_texture) {
+    std::vector<VkWriteDescriptorSet> writeDescSet;
+    for (uint32_t i = 0; i < textureDescriptors.size(); i++) {
+        VkWriteDescriptorSet temp{
             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet          = descriptor_set_texture,
+            .dstSet          = descriptor_set_texture[i],
             .dstBinding      = 0,
             .descriptorCount = static_cast<uint32_t>(textureDescriptors.size()),
             .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             .pImageInfo      = textureDescriptors.data()
         };
-        vkUpdateDescriptorSets(handle.get_device(), 1, &writeDescSet, 0, nullptr);
+        writeDescSet.push_back(temp);
     }
-};
+
+    vkUpdateDescriptorSets(handle.get_device(),
+                           writeDescSet.size(),
+                           writeDescSet.data(), 0, nullptr);
+}
+
+
+// std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+//     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 0),
+//     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
+// };
 
 struct ResourceInfo {
     VkDescriptorSetLayoutBinding LayoutBinding;
@@ -182,7 +149,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     for (const auto &res: resources.uniform_buffers) {
         uint32_t binding  = compiler.get_decoration(res.id, spv::DecorationBinding);
         const size_t size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
-        VkDescriptorSetLayoutBinding tem;
+        VkDescriptorSetLayoutBinding tem{};;
         tem.binding              = binding;
         tem.descriptorCount      = 1;
         tem.stageFlags           = get_stageFlags(shaderStage);
@@ -204,7 +171,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     // 2. Collect Storage Buffers
     for (const auto &res: resources.storage_buffers) {
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-        VkDescriptorSetLayoutBinding tem;
+        VkDescriptorSetLayoutBinding tem{};;
         tem.binding              = binding;
         tem.descriptorCount      = 1;
         tem.stageFlags           = get_stageFlags(shaderStage);
@@ -214,7 +181,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     // 3. Collect Sampled Images (Textures)
     for (const auto &res: resources.sampled_images) {
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-        VkDescriptorSetLayoutBinding tem;
+        VkDescriptorSetLayoutBinding tem{};;
         tem.binding         = binding;
         tem.descriptorCount = 1;
         tem.stageFlags      = get_stageFlags(shaderStage);
@@ -239,7 +206,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     for (auto &res: resources.separate_samplers) {
         // layout(binding = 0) uniform sampler mySampler;
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-        VkDescriptorSetLayoutBinding tem;
+        VkDescriptorSetLayoutBinding tem{};;
         tem.binding              = binding;
         tem.descriptorCount      = 1;
         tem.stageFlags           = get_stageFlags(shaderStage);
@@ -251,7 +218,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         auto &type = compiler.get_type(res.type_id);
         if (type.image.sampled == 1) {
             uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
-            VkDescriptorSetLayoutBinding tem;
+            VkDescriptorSetLayoutBinding tem{};;
             tem.binding              = binding;
             tem.descriptorCount      = 1;
             tem.stageFlags           = get_stageFlags(shaderStage);
@@ -290,9 +257,9 @@ static void print_sorted_resources(const std::map<uint32_t, ResourceInfo> &sorte
 }
 
 
-VkDescriptorSet AllocateDescriptorSets(VKDevice &handle, uint32_t size,
-                                       VkDescriptorSetLayout descriptorSetLayout) {
-    VkDescriptorSet descriptor_set_texture;
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t size,
+                                                    VkDescriptorSetLayout descriptorSetLayout) {
+    std::vector<VkDescriptorSet> descriptor_set_texture;
     uint32_t variableDescCount{size};
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
@@ -304,8 +271,8 @@ VkDescriptorSet AllocateDescriptorSets(VKDevice &handle, uint32_t size,
         .pDescriptorCounts  = &variableDescCount
     };
 
-    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout, descriptorSetLayout};
-
+    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout};
+    descriptor_set_texture.resize(layouts.size());
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -314,7 +281,7 @@ VkDescriptorSet AllocateDescriptorSets(VKDevice &handle, uint32_t size,
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, &descriptor_set_texture));
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data()));
     return descriptor_set_texture;
 }
 

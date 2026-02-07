@@ -84,9 +84,6 @@ public:
         }
         handle_     = &handle;
         need_render = running; // 设置为运行中
-        Descriptor_Pool descriptor_pool(&handle, 250);
-        descriptor_pool.init_Descriptor_Pool();
-        Descriptor descriptor(&handle, &descriptor_pool);
 
         Engine engine(handle);
         engine.init();
@@ -94,11 +91,17 @@ public:
         // Texture images
         auto textureDescriptors = create_textures_to_gpu(&handle, handle.get_command_pool());
 
-        descriptor.CreateDescriptorSetLayout(textureDescriptors.size());
-        descriptor.AllocateDescriptorSets(textureDescriptors.size());
-        descriptor.update_descriptor_sets(textureDescriptors);
+
+        // descriptor.
+
+        // auto descriptorSetLayout = create_descriptor_set_layout(handle, setLayoutBindings);
+        auto descriptorSetLayout = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
+        // descriptor.AllocateDescriptorSets(textureDescriptors.size());
+        auto descriptor_set_texture = AllocateDescriptorSets(handle, textureDescriptors.size(), descriptorSetLayout);
+        update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture);
+        // descriptor.update_descriptor_sets(textureDescriptors);
         // 到这里的时候贴图就更新完毕了
-        auto pipelineLayout = descriptor.CreatePipelineLayout();
+        auto pipelineLayout = CreatePipelineLayout(handle, descriptorSetLayout);
         // 有点难整理清楚
 
 
@@ -133,7 +136,7 @@ public:
                 } else {
                     i = 1;
                 }
-                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor, *mesh,
+                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor_set_texture[0], *mesh,
                                      i * sizeof(ShaderData));
             }
             end_rendering(engine);
@@ -148,8 +151,11 @@ public:
         clean_all_mesh_object();
 
         destroy_texture(&handle);
-        descriptor.Destroy();
-        descriptor_pool.destroy();
+        // descriptor.Destroy();
+        vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
+        vkDestroyDescriptorSetLayout(handle.get_device(), descriptorSetLayout, nullptr);
+
+        // descriptor_pool.destroy();
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
         auto pipeline_map = VKDevice::get().get_pipeline_map();
         for (const auto &[key, value]: pipeline_map) {
