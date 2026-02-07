@@ -199,6 +199,9 @@ private
                 find_graphics_shader_module(*handle_, render_data.value()->vertexPath_,
                                             render_data.value()->fragmentPath_,
                                             render_data.value()->geometryPath_);
+                create_descriptor_set_layouts(*handle_, render_data.value()->vertexPath_,
+                                              render_data.value()->fragmentPath_,
+                                              render_data.value()->geometryPath_);
                 create_mesh(*handle_, render_data.value(), VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);

@@ -23,7 +23,7 @@ struct ShaderData {
 };
 
 
-struct ShaderDataBuffer {
+struct uniform_buffer {
     VmaAllocation allocation{VK_NULL_HANDLE};
     VkBuffer buffer{VK_NULL_HANDLE};
     VkDeviceAddress deviceAddress{};
@@ -34,7 +34,7 @@ struct ShaderDataBuffer {
 class Engine {
     VKDevice &handle_;
     std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
-    std::array<ShaderDataBuffer, maxFramesInFlight> shaderDataBuffers;
+    std::array<uniform_buffer, maxFramesInFlight> uniform_buffers;
     std::array<VkFence, maxFramesInFlight> fences;
     std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
     std::vector<VkSemaphore> render_to_image_semaphores_;
@@ -101,11 +101,11 @@ public:
         return get_command_buffers()[frameIndex];
     }
 
-    std::array<ShaderDataBuffer, maxFramesInFlight> &get_shader_data_buffer() {
-        return shaderDataBuffers;
+    std::array<uniform_buffer, maxFramesInFlight> &get_shader_data_buffer() {
+        return uniform_buffers;
     }
 
-    ShaderDataBuffer &get_current_shader_data_buffer() {
+    uniform_buffer &get_current_shader_data_buffer() {
         return get_shader_data_buffer()[frameIndex];
     }
 
@@ -134,8 +134,8 @@ public:
         for (auto i = 0; i < maxFramesInFlight; i++) {
             VkBufferCreateInfo uBufferCI{
                 .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                .size  = sizeof(ShaderData) * 10,
-                .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+                .size  = 32 * 1024, // 32K
+                .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
             };
             VmaAllocationCreateInfo uBufferAllocCI{
                 .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -147,19 +147,19 @@ public:
                             vmaCreateBuffer(handle_.get_allocator(),
                                 &uBufferCI,
                                 &uBufferAllocCI,
-                                &shaderDataBuffers[i].
+                                &uniform_buffers[i].
                                 buffer,
-                                &shaderDataBuffers[i].allocation,
+                                &uniform_buffers[i].allocation,
                                 nullptr));
             VK_CHECK_RESULT(
                             vmaMapMemory(handle_.get_allocator(),
-                                shaderDataBuffers[i].allocation,
-                                &shaderDataBuffers[i].mapped));
+                                uniform_buffers[i].allocation,
+                                &uniform_buffers[i].mapped));
             VkBufferDeviceAddressInfo uBufferBdaInfo{
                 .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-                .buffer = shaderDataBuffers[i].buffer
+                .buffer = uniform_buffers[i].buffer
             };
-            shaderDataBuffers[i].deviceAddress = vkGetBufferDeviceAddress(handle_.get_device(), &uBufferBdaInfo);
+            uniform_buffers[i].deviceAddress = vkGetBufferDeviceAddress(handle_.get_device(), &uBufferBdaInfo);
         }
     }
 
@@ -279,8 +279,8 @@ public:
         for (auto i = 0; i < maxFramesInFlight; i++) {
             vkDestroyFence(handle_.get_device(), fences[i], nullptr);                //  这里还需要
             vkDestroySemaphore(handle_.get_device(), presentSemaphores[i], nullptr); //
-            vmaUnmapMemory(handle_.get_allocator(), shaderDataBuffers[i].allocation);
-            vmaDestroyBuffer(handle_.get_allocator(), shaderDataBuffers[i].buffer, shaderDataBuffers[i].allocation);
+            vmaUnmapMemory(handle_.get_allocator(), uniform_buffers[i].allocation);
+            vmaDestroyBuffer(handle_.get_allocator(), uniform_buffers[i].buffer, uniform_buffers[i].allocation);
         }
         for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
             vkDestroySemaphore(handle_.get_device(), render_to_image_semaphores_[i], nullptr);
