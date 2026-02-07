@@ -78,6 +78,9 @@ public:
 
     bool framebufferResized = false;
 
+    uint32_t descriptor_count_ = 500;                //static_cast<uint32_t>(textures.size())
+    VkDescriptorPool descriptorPool{VK_NULL_HANDLE}; // 最大的问题就是这里有一个pool
+
 
     auto &get_indices_map() {
         return indices_map_;
@@ -101,6 +104,11 @@ public:
 
     const VkCommandPool &get_command_pool() const {
         return commandPool;
+    }
+
+
+    VkDescriptorPool get_descriptor_pool() {
+        return descriptorPool;
     }
 
 private:
@@ -143,6 +151,25 @@ private:
         VK_CHECK_RESULT(vkCreateCommandPool(get_device(), &commandPoolCI, nullptr, &commandPool));
     }
 
+    void init_Descriptor_Pool() {
+        VkDescriptorPoolSize poolSize{
+            .type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = descriptor_count_
+        };
+        VkDescriptorPoolCreateInfo descPoolCI{
+            .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .maxSets       = 1,
+            .poolSizeCount = 1,
+            .pPoolSizes    = &poolSize
+        };
+        VK_CHECK_RESULT(vkCreateDescriptorPool(get_device(), &descPoolCI, nullptr, &descriptorPool));
+    }
+
+
+    void destroy_descriptorPool() {
+        vkDestroyDescriptorPool(get_device(), descriptorPool, nullptr);
+    }
+
 public:
     static VKDevice &get();
 
@@ -159,6 +186,7 @@ public:
         create_swap_chain_image_view();
         create_depth_image_view();
         create_command_pool();
+        init_Descriptor_Pool();
     }
 
     void recreate_swap_chain() {
