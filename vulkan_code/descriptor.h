@@ -304,13 +304,15 @@ VkDescriptorSet AllocateDescriptorSets(VKDevice &handle, uint32_t size,
         .pDescriptorCounts  = &variableDescCount
     };
 
+    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout, descriptorSetLayout};
+
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = &variableDescCountAI,
         .descriptorPool     = handle.get_descriptor_pool(),
-        .descriptorSetCount = 1,                   // // 打算分配的集合数量
-        .pSetLayouts        = &descriptorSetLayout // 指向布局数组的指针,长度必须等于 descriptorSetCount
+        .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
+        .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
     VK_CHECK_RESULT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, &descriptor_set_texture));
     return descriptor_set_texture;
