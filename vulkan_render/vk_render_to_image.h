@@ -72,17 +72,13 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-
     std::vector<logic_render_data *> need_render_objects;
-
-    VKDevice *handle_;
 
 public:
     void render_thread(VKDevice &handle) {
         if (need_render == running) {
             return; // 已经在运行中了，直接返回
         }
-        handle_     = &handle;
         need_render = running; // 设置为运行中
 
         Engine engine(handle);
@@ -103,7 +99,7 @@ public:
         while (need_render == running) {
             {
                 std::unique_lock<std::mutex> lock(mtx);
-                init_need_objects(); // 主要是复制内存的操作
+                init_need_objects(handle); // 主要是复制内存的操作
                 update_need_objects();
             }
             engine.get_one_image_can_render();
@@ -112,14 +108,14 @@ public:
 
             begin_rendering(engine);
             for (auto need_render_object: need_render_objects) {
-                auto shaderStages = find_graphics_shader_module(*handle_, need_render_object->vertexPath_,
+                auto shaderStages = find_graphics_shader_module(handle, need_render_object->vertexPath_,
                                                                 need_render_object->fragmentPath_,
                                                                 need_render_object->geometryPath_);
                 if (shaderStages.empty() == true) {
                     continue;
                 }
                 const auto vertexInputState = vertex_input_position_normal_uv();
-                auto pipeline_t             = find_pipeline(*handle_, need_render_object, pipelineLayout, shaderStages,
+                auto pipeline_t             = find_pipeline(handle, need_render_object, pipelineLayout, shaderStages,
                                                 VKDevice::get().get_pipeline_map());
                 auto mesh = find_mesh(need_render_object, VKDevice::get().get_mesh_map());
                 if (mesh == nullptr) {
@@ -143,7 +139,7 @@ public:
         }
 
         engine.destroy();
-        clean_all_mesh_object();
+        clean_all_mesh_object(handle);
 
         destroy_texture(&handle);
         // descriptor.Destroy();
@@ -157,7 +153,7 @@ public:
             vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
         }
         vkDestroyCommandPool(handle.get_device(), handle.get_command_pool(), nullptr);
-        clean_all_shader_object();
+        clean_all_shader_object(handle);
         have_object_need_update = false;
         need_render             = not_start;
     }
@@ -190,20 +186,22 @@ public:
 
 private
 :
-    void init_need_objects() {
+    void init_need_objects(VKDevice &handle) {
         while (true) {
             // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
             auto render_data = vk_render_queue::instance().get_need_init();
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
                 need_render_objects.push_back(render_data.value());
-                find_graphics_shader_module(*handle_, render_data.value()->vertexPath_,
+                find_graphics_shader_module(handle, render_data.value()->vertexPath_,
                                             render_data.value()->fragmentPath_,
                                             render_data.value()->geometryPath_);
-                organize_graphics_descriptor_set_layouts(render_data.value()->vertexPath_,
-                                                       render_data.value()->fragmentPath_,
-                                                       render_data.value()->geometryPath_);
-                create_mesh(*handle_, render_data.value(), VKDevice::get().get_mesh_map());
+                auto organize = organize_graphics_descriptor_set_layouts(
+                                                                         render_data.value()->vertexPath_,
+                                                                         render_data.value()->fragmentPath_,
+                                                                         render_data.value()->geometryPath_);
+                create_descriptor_set_layouts(handle, organize);
+                create_mesh(handle, render_data.value(), VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
@@ -214,18 +212,18 @@ private
     }
 
 
-    void clean_all_mesh_object() {
+    void clean_all_mesh_object(VKDevice &handle) {
         // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
         for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
-            vmaDestroyBuffer(handle_->get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
+            vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
             // ->不清理会直接爆异常
         }
     }
 
-    void clean_all_shader_object() {
+    void clean_all_shader_object(VKDevice &handle) {
         // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
         for (const auto &[key, value]: VKDevice::get().get_shader_map()) {
-            vkDestroyShaderModule(handle_->get_device(), value.shader, nullptr);
+            vkDestroyShaderModule(handle.get_device(), value.shader, nullptr);
         }
     }
 

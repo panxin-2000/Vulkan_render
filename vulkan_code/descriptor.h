@@ -125,12 +125,19 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t s
 }
 
 
-void create_descriptor_set_layouts(const VKDevice &handle, std::map<uint32_t, ResourceInfo> sorted_bindings) {
-    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-    for (const auto &[fst, snd]: sorted_bindings) {
-        setLayoutBindings.push_back(snd.LayoutBinding);
+auto create_descriptor_set_layouts(const VKDevice &handle,
+                                   const std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings_array) {
+    std::array<VkDescriptorSetLayout, max_set> setLayoutBindings_array;
+    for (uint32_t i = 0; i < max_set; i++) {
+        const auto &sorted_bindings = sorted_bindings_array[i];
+        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+        for (const auto &[fst, snd]: sorted_bindings) {
+            setLayoutBindings.push_back(snd.LayoutBinding);
+        }
+        auto SetLayout             = create_descriptor_set_layout(handle, setLayoutBindings);
+        setLayoutBindings_array[i] = SetLayout;
     }
-    auto SetLayout = create_descriptor_set_layout(handle, setLayoutBindings);
+    return setLayoutBindings_array;
 }
 
 
