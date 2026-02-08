@@ -92,17 +92,12 @@ public:
         auto textureDescriptors = create_textures_to_gpu(&handle, handle.get_command_pool());
 
 
-        // descriptor.
-
-        // auto descriptorSetLayout = create_descriptor_set_layout(handle, setLayoutBindings);
-        auto descriptorSetLayout = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
-        // descriptor.AllocateDescriptorSets(textureDescriptors.size());
+        auto descriptorSetLayout    = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
         auto descriptor_set_texture = AllocateDescriptorSets(handle, textureDescriptors.size(), descriptorSetLayout);
-        update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture);
-        // descriptor.update_descriptor_sets(textureDescriptors);
-        // 到这里的时候贴图就更新完毕了
-        auto pipelineLayout = CreatePipelineLayout(handle, descriptorSetLayout);
-        // 有点难整理清楚
+        update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+        descriptorSetLayouts.push_back(descriptorSetLayout);
+        auto pipelineLayout = create_pipeline_layout(handle, descriptorSetLayouts);
 
 
         while (need_render == running) {
@@ -205,9 +200,9 @@ private
                 find_graphics_shader_module(*handle_, render_data.value()->vertexPath_,
                                             render_data.value()->fragmentPath_,
                                             render_data.value()->geometryPath_);
-                create_descriptor_set_layouts(*handle_, render_data.value()->vertexPath_,
-                                              render_data.value()->fragmentPath_,
-                                              render_data.value()->geometryPath_);
+                organize_graphics_descriptor_set_layouts(render_data.value()->vertexPath_,
+                                                       render_data.value()->fragmentPath_,
+                                                       render_data.value()->geometryPath_);
                 create_mesh(*handle_, render_data.value(), VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
