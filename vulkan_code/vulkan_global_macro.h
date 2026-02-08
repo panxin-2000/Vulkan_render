@@ -23,7 +23,19 @@ inline uint32_t get_max_frames_in_flight() {
 }
 
 // todo : 将res值变成具体的错误字符串
-#define VK_CHECK_RESULT(f)						    \
+#define VK_CHECK_RESULT_NOT_EXIT(f)					\
+{													\
+    VkResult res = (f);								\
+    if (res != VK_SUCCESS)							\
+    {												\
+        std::cout << "Fatal : VkResult is \""       \
+        << res << "\" in " << __FILE__              \
+        << " at line " << __LINE__ << "\n";         \
+    }							            		\
+}
+
+// todo : 将res值变成具体的错误字符串
+#define VK_CHECK_RESULT(f)				            \
 {													\
     VkResult res = (f);								\
     if (res != VK_SUCCESS)							\

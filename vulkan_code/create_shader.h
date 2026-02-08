@@ -53,7 +53,7 @@ inline VkShaderModule create_shader_module(const VKDevice &handle, std::string p
         .pCode    = (uint32_t *) spirv->getBufferPointer()
     };
     VkShaderModule shaderModule{};
-    VK_CHECK_RESULT(vkCreateShaderModule(handle.get_device(), &shaderModuleCI, nullptr, &shaderModule));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateShaderModule(handle.get_device(), &shaderModuleCI, nullptr, &shaderModule));
     return shaderModule;
 }
 

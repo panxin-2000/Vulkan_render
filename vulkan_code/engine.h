@@ -125,7 +125,7 @@ public:
             .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = maxFramesInFlight
         };
-        VK_CHECK_RESULT(vkAllocateCommandBuffers(handle_.get_device(), &cbAllocCI, commandBuffers.data()));
+        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(handle_.get_device(), &cbAllocCI, commandBuffers.data()));
     }
 
 
@@ -143,18 +143,18 @@ public:
                          VMA_ALLOCATION_CREATE_MAPPED_BIT,
                 .usage = VMA_MEMORY_USAGE_AUTO
             };
-            VK_CHECK_RESULT(
-                            vmaCreateBuffer(handle_.get_allocator(),
-                                &uBufferCI,
-                                &uBufferAllocCI,
-                                &uniform_buffers[i].
-                                buffer,
-                                &uniform_buffers[i].allocation,
-                                nullptr));
-            VK_CHECK_RESULT(
-                            vmaMapMemory(handle_.get_allocator(),
-                                uniform_buffers[i].allocation,
-                                &uniform_buffers[i].mapped));
+            VK_CHECK_RESULT_NOT_EXIT(
+                                     vmaCreateBuffer(handle_.get_allocator(),
+                                         &uBufferCI,
+                                         &uBufferAllocCI,
+                                         &uniform_buffers[i].
+                                         buffer,
+                                         &uniform_buffers[i].allocation,
+                                         nullptr));
+            VK_CHECK_RESULT_NOT_EXIT(
+                                     vmaMapMemory(handle_.get_allocator(),
+                                         uniform_buffers[i].allocation,
+                                         &uniform_buffers[i].mapped));
             VkBufferDeviceAddressInfo uBufferBdaInfo{
                 .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = uniform_buffers[i].buffer
@@ -166,14 +166,15 @@ public:
     void create_fences() {
         VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT(vkCreateFence(handle_.get_device(), &fenceCI, nullptr, &fences[i]));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle_.get_device(), &fenceCI, nullptr, &fences[i]));
         }
     }
 
     void create_present_Semaphores() {
         VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &presentSemaphores[i]));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &presentSemaphores[i
+                                     ]));
         }
     }
 
@@ -182,7 +183,7 @@ public:
         render_to_image_semaphores_.resize(handle_.get_swap_image_views().size());
         LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
         for (auto &semaphore: render_to_image_semaphores_) {
-            VK_CHECK_RESULT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &semaphore));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &semaphore));
         }
     }
 
@@ -201,7 +202,7 @@ public:
             .signalSemaphoreCount = 1,
             .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         };
-        VK_CHECK_RESULT(vkQueueSubmit(handle_.get_queue(), 1, &submitInfo, get_current_fences()));
+        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(handle_.get_queue(), 1, &submitInfo, get_current_fences()));
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
         VkPresentInfoKHR presentInfo{
@@ -228,8 +229,8 @@ public:
      */
     void get_one_image_can_render() {
         // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-        VK_CHECK_RESULT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
-        VK_CHECK_RESULT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
         auto result = vkAcquireNextImageKHR(handle_.get_device(),
                                             handle_.get_swap_chain(),
                                             UINT64_MAX,
@@ -240,8 +241,8 @@ public:
         } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_.framebufferResized) {
             handle_.recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
-            VK_CHECK_RESULT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
-            VK_CHECK_RESULT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
+            VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
+            VK_CHECK_RESULT_NOT_EXIT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
             auto result = vkAcquireNextImageKHR(handle_.get_device(),
                                                 handle_.get_swap_chain(),
                                                 UINT64_MAX,
@@ -275,7 +276,7 @@ public:
     }
 
     void destroy() {
-        VK_CHECK_RESULT(vkDeviceWaitIdle(handle_.get_device()));
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(handle_.get_device()));
         for (auto i = 0; i < maxFramesInFlight; i++) {
             vkDestroyFence(handle_.get_device(), fences[i], nullptr);                //  这里还需要
             vkDestroySemaphore(handle_.get_device(), presentSemaphores[i], nullptr); //

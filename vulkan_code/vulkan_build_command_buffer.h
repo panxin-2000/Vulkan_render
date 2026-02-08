@@ -11,12 +11,12 @@
 
 void begin_rendering(Engine &engine) {
     auto cb = engine.get_current_command_buffer();
-    VK_CHECK_RESULT(vkResetCommandBuffer(cb, 0));
+    VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
     VkCommandBufferBeginInfo cbBI{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     };
-    VK_CHECK_RESULT(vkBeginCommandBuffer(cb, &cbBI));
+    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cb, &cbBI));
     std::array<VkImageMemoryBarrier2, 2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -35,7 +35,7 @@ void begin_rendering(Engine &engine) {
                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
@@ -81,7 +81,8 @@ void begin_rendering(Engine &engine) {
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptor_set_texture,
+void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout,
+                          VkDescriptorSet descriptor_set_texture,
                           Model_mesh &mesh, const uint64_t constants_offset) {
     auto cb          = engine.get_current_command_buffer();
     auto temp_extent = engine.get_handle().get_current_extent();
@@ -127,7 +128,7 @@ void end_rendering(Engine &engine) {
         .pImageMemoryBarriers = &barrierPresent
     };
     vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
-    VK_CHECK_RESULT(vkEndCommandBuffer(cb));
+    VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cb));
 }
 
 

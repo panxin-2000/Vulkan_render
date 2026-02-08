@@ -14,8 +14,8 @@ static inline VkDescriptorSetLayout create_descriptor_set_layout(const VKDevice 
     VkDescriptorSetLayout descriptorSetLayout;
 
     const VkDescriptorSetLayoutCreateInfo descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings);
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                        descriptorSetLayout));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
+                                 descriptorSetLayout));
     return descriptorSetLayout;
 }
 
@@ -49,8 +49,8 @@ VkDescriptorSetLayout Create_texture_binding_lessLayout(const VKDevice &handle, 
     // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
     const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
     const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                        descriptorSetLayoutTex));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
+                                 descriptorSetLayoutTex));
     return descriptorSetLayoutTex;
 }
 
@@ -120,7 +120,8 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t s
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data()));
+    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data
+                                 ()));
     return descriptor_set_texture;
 }
 
@@ -162,7 +163,7 @@ inline VkPipelineLayout create_pipeline_layout(const VKDevice &handle,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges    = &pushConstantRange
     };
-    VK_CHECK_RESULT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
     return pipelineLayout;
 }
 

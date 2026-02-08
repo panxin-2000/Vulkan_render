@@ -69,10 +69,10 @@ inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VKDevice &hand
         .usage = VMA_MEMORY_USAGE_AUTO
     };
     VmaAllocationInfo allocInfo = {};
-    VK_CHECK_RESULT(vmaCreateBuffer(handle.get_allocator(),
-                        &BufferCreateInfo, &AllocationCreateInfo,
-                        &vBuffer, &vBufferAllocation,
-                        &allocInfo));
+    VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
+                                 &BufferCreateInfo, &AllocationCreateInfo,
+                                 &vBuffer, &vBufferAllocation,
+                                 &allocInfo));
     return {vBuffer, vBufferAllocation};
 }
 
@@ -100,7 +100,7 @@ inline bool copy_mem_from_cpu_to_gpu(const VKDevice &handle,
                                      const std::function<void(void *)> &mem_copy_callback) {
     if (check_host_visible_bit(handle, buffer_handle.second) == true) {
         void *bufferPtr{nullptr};
-        VK_CHECK_RESULT(vmaMapMemory(handle.get_allocator(), buffer_handle.second, &bufferPtr));
+        VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), buffer_handle.second, &bufferPtr));
         // 也可以通过下面两行获取 map 的地址 ，取其中的 pMappedData
         VmaAllocationInfo allocInfo_for_map;
         vmaGetAllocationInfo(handle.get_allocator(), buffer_handle.second, &allocInfo_for_map);

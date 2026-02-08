@@ -138,7 +138,8 @@ inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelin
     pipelineLayoutCreateInfo.setLayoutCount = 1;
     pipelineLayoutCreateInfo.pSetLayouts    = &descriptorSetLayout;
 
-    VK_CHECK_RESULT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCreateInfo, nullptr, &
+                                 pipelineLayout));
 
 
     VkPipeline compute_pipeline = VK_NULL_HANDLE;
@@ -149,11 +150,11 @@ inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelin
     computePipelineCreateInfo.stage  = shaderStages[0];
 
 
-    VK_CHECK_RESULT(vkCreateComputePipelines(handle.get_device(),
-                        VK_NULL_HANDLE,
-                        1, &computePipelineCreateInfo,
-                        nullptr,
-                        &compute_pipeline));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateComputePipelines(handle.get_device(),
+                                 VK_NULL_HANDLE,
+                                 1, &computePipelineCreateInfo,
+                                 nullptr,
+                                 &compute_pipeline));
     return compute_pipeline;
 }
 
@@ -210,7 +211,8 @@ inline VkPipeline create_graphics_pipeline(VKDevice &handle, std::vector<VkPipel
         .pDynamicState       = &dynamicState,
         .layout              = pipelineLayout
     };
-    VK_CHECK_RESULT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &pipeline));
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &
+                                 pipeline));
     return pipeline;
 }
 
