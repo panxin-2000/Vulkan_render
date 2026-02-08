@@ -4,7 +4,8 @@
 
 #ifndef HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
 #define HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
-
+#include <regex>
+#include <filesystem>
 #include <spirv_cross/spirv_glsl.hpp>
 #define max_set 8
 
@@ -35,7 +36,7 @@ static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
 struct ResourceInfo {
     VkDescriptorSetLayoutBinding LayoutBinding;
     std::string name;
-    std::string type; // e.g., "UBO", "SSBO"
+    std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
     std::string shaderStage;
     size_t need_allocate_size = 0;
 };
@@ -62,15 +63,15 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     // Use a map to automatically sort by Binding ID (the key)
     // 1. Collect Uniform Buffers
     for (const auto &res: resources.uniform_buffers) {
-        uint32_t set      = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-        uint32_t binding  = compiler.get_decoration(res.id, spv::DecorationBinding);
-        const size_t size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
+        uint32_t set                    = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+        uint32_t binding                = compiler.get_decoration(res.id, spv::DecorationBinding);
+        const size_t need_allocate_size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
         VkDescriptorSetLayoutBinding tem{};
         tem.binding                   = binding;
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
         tem.stageFlags                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "Uniform Buffer", shaderStage, size};
+        sorted_bindings[set][binding] = {tem, res.name, "uniform", shaderStage, need_allocate_size};
 
         const auto &type = compiler.get_type(res.base_type_id);
         // 2. 遍历结构体内部的所有成员
@@ -93,7 +94,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
         tem.stageFlags                = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "Storage Buffer", shaderStage, 0}; // SSBO size can be dynamic
+        sorted_bindings[set][binding] = {tem, res.name, "buffer", shaderStage, 0}; // SSBO size can be dynamic
     }
     // 3. Collect Sampled Images (Textures)
     for (const auto &res: resources.sampled_images) {
@@ -119,7 +120,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
             }
         }
-        sorted_bindings[set][binding] = {tem, res.name, "Texture/Sampler", shaderStage, 0};
+        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0};
     }
     for (auto &res: resources.separate_samplers) {
         // layout(binding = 0) uniform sampler mySampler;
@@ -130,20 +131,20 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
         tem.stageFlags                = VK_DESCRIPTOR_TYPE_SAMPLER;
-        sorted_bindings[set][binding] = {tem, res.name, "Sampler", shaderStage, 0};
+        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
     }
     for (auto &res: resources.separate_images) {
         // layout(binding = 1) uniform texture2D myImage;
         auto &type = compiler.get_type(res.type_id);
         if (type.image.sampled == 1) {
-            uint32_t set     = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-            uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
+            const uint32_t set = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            uint32_t binding   = compiler.get_decoration(res.id, spv::DecorationBinding);
             VkDescriptorSetLayoutBinding tem{};;
             tem.binding                   = binding;
             tem.descriptorCount           = 1;
             tem.stageFlags                = get_stageFlags(shaderStage);
             tem.stageFlags                = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            sorted_bindings[set][binding] = {tem, res.name, "Texture", shaderStage, 0};
+            sorted_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
         }
     }
 }
@@ -168,17 +169,42 @@ static void read_spv_file(const std::string &file_name, std::string shaderStage,
 
 static void print_sorted_resources(const std::array<std::map<uint32_t, ResourceInfo>, max_set> &sorted_bindings_array) {
     // 4. Print results (Map iteration is always sorted by key)
-    std::cout << "--- Resources Sorted by Binding ---" << std::endl;
-    for (const auto &sorted_bindings: sorted_bindings_array) {
+    LOG_INFO(g_log(), "--- Resources Sorted by Binding ---");
+    for (int i = 0; i < sorted_bindings_array.size(); i++) {
+        auto sorted_bindings = sorted_bindings_array[i];
+        auto set             = i;
         for (auto const &[binding, info]: sorted_bindings) {
-            std::cout << "stage " << info.shaderStage << " "
-                    << "Binding [" << binding << "]: "
-                    << info.name << " (" << info.type << ")";
-            if (info.need_allocate_size > 0) std::cout << " | Size: " << info.need_allocate_size << " bytes";
-            std::cout << std::endl;
+            // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap
+            LOG_INFO(g_log(), "stage {}  : layout (set = {}, binding = {}) {} {}",
+                     info.shaderStage, set, binding, info.resource_type, info.name);
         }
     }
 }
+
+
+void print_layout_binding_line(std::string filePath) {
+    if (filePath.size() > 4 && filePath.substr(filePath.size() - 4) == ".spv") {
+        filePath.erase(filePath.size() - 4); // 擦除最后4个字符
+    }
+    if (std::filesystem::exists(filePath)) {
+        std::ifstream file(filePath);
+        std::string line;
+        // std::regex bindingRegex(R"(layout\s*\(.*binding\s*=\s*(\d+).*\))");
+        // 匹配整行：必须同时包含 layout 和 binding
+        std::regex bindingRegex(R"(^\s*layout\s*\(.*binding\s*=\s*(\d+).*\).*$)");
+
+        while (std::getline(file, line)) {
+            std::smatch match;
+            if (std::regex_search(line, match, bindingRegex)) {
+                std::string binding_id   = match[1].str(); // 第一个括号的内容
+                std::string type_keyword = match[2].str(); // 第二个括号的内容
+                std::string full_line    = match[0].str();
+                LOG_INFO(g_log(), "{}", full_line);
+            }
+        }
+    }
+}
+
 
 static std::array<std::map<uint32_t, ResourceInfo>, max_set> organize_graphics_descriptor_set_layouts(
     const std::string &vertex_path,
@@ -186,13 +212,22 @@ static std::array<std::map<uint32_t, ResourceInfo>, max_set> organize_graphics_d
     const std::string &geometry_path) {
     std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings;
     if (!vertex_path.empty()) {
+        LOG_INFO(g_log(), "--- vertex shader ---");
+
         read_spv_file(vertex_path, "vertex", sorted_bindings);
+        print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
+        LOG_INFO(g_log(), "--- fragment shader ---");
+
         read_spv_file(fragment_path, "fragment", sorted_bindings);
+        print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
+        LOG_INFO(g_log(), "--- geometry shader ---");
+
         read_spv_file(geometry_path, "geometry", sorted_bindings);
+        print_layout_binding_line(geometry_path);
     }
     print_sorted_resources(sorted_bindings);
     return sorted_bindings;
@@ -203,7 +238,9 @@ static std::array<std::map<uint32_t, ResourceInfo>, max_set> organize_computer_d
     //
     std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings;
     if (!computer_path.empty()) {
+        LOG_INFO(g_log(), "--- computer shader ---");
         read_spv_file(computer_path, "computer", sorted_bindings);
+        print_layout_binding_line(computer_path);
     }
     print_sorted_resources(sorted_bindings);
     return sorted_bindings;
