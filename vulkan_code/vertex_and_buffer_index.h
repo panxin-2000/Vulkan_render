@@ -101,7 +101,7 @@ inline bool copy_mem_from_cpu_to_gpu(const VKDevice &handle,
     if (check_host_visible_bit(handle, buffer_handle.second) == true) {
         void *bufferPtr{nullptr};
         VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), buffer_handle.second, &bufferPtr));
-        if (bufferPtr != nullptr) {
+        if (bufferPtr == nullptr) {
             return false;
         }
         // 也可以通过下面两行获取 map 的地址 ，取其中的 pMappedData
