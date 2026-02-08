@@ -81,7 +81,7 @@ public:
         }
         need_render = running; // 设置为运行中
 
-        Engine engine(handle);
+        Engine engine;
         engine.init();
         // 目的是为了简化函数，
         // Texture images

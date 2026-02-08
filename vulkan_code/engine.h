@@ -32,11 +32,10 @@ struct uniform_buffer {
 
 
 class Engine {
-    VKDevice &handle_;
-    std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers;
+    std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
     std::array<uniform_buffer, maxFramesInFlight> uniform_buffers;
-    std::array<VkFence, maxFramesInFlight> fences;
-    std::array<VkSemaphore, maxFramesInFlight> presentSemaphores;
+    std::array<VkFence, maxFramesInFlight> fences_                 = {};
+    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
     std::vector<VkSemaphore> render_to_image_semaphores_;
 
     /**
@@ -52,14 +51,6 @@ class Engine {
     uint32_t imageIndex{0};
 
 public:
-    Engine(VKDevice &handle) : handle_{handle} {
-    }
-
-    VKDevice &get_handle() {
-        return handle_;
-    }
-
-
     void init() {
         create_command_buffer();
         create_shader_data_buffer();
@@ -69,7 +60,7 @@ public:
     }
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
-        return fences;
+        return fences_;
     }
 
     VkFence &get_current_fences() {
@@ -77,7 +68,7 @@ public:
     }
 
     std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
-        return presentSemaphores;
+        return present_semaphores_;
     }
 
     VkSemaphore &get_current_presentSemaphores() {
@@ -94,7 +85,7 @@ public:
 
 
     std::array<VkCommandBuffer, maxFramesInFlight> &get_command_buffers() {
-        return commandBuffers;
+        return command_buffers_;
     }
 
     VkCommandBuffer &get_current_command_buffer() {
@@ -111,21 +102,23 @@ public:
 
 
     const VkImage &get_current_swap_chain_image() {
-        return handle_.get_swap_chain_images()[imageIndex];
+        return VKDevice::get().get_swap_chain_images()[imageIndex];
     }
 
     const VkImageView &get_current_swap_image_view() {
-        return handle_.get_swap_image_views()[imageIndex];
+        return VKDevice::get().get_swap_image_views()[imageIndex];
     }
 
     void create_command_buffer() {
         VkCommandBufferAllocateInfo cbAllocCI{
             .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = handle_.get_command_pool(),
+            .commandPool        = VKDevice::get().get_command_pool(),
             .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = maxFramesInFlight
         };
-        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(handle_.get_device(), &cbAllocCI, commandBuffers.data()));
+        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(VKDevice::get().get_device(), &cbAllocCI, command_buffers_.data
+                                     (
+                                     )));
     }
 
 
@@ -144,7 +137,7 @@ public:
                 .usage = VMA_MEMORY_USAGE_AUTO
             };
             VK_CHECK_RESULT_NOT_EXIT(
-                                     vmaCreateBuffer(handle_.get_allocator(),
+                                     vmaCreateBuffer(VKDevice::get().get_allocator(),
                                          &uBufferCI,
                                          &uBufferAllocCI,
                                          &uniform_buffers[i].
@@ -152,38 +145,40 @@ public:
                                          &uniform_buffers[i].allocation,
                                          nullptr));
             VK_CHECK_RESULT_NOT_EXIT(
-                                     vmaMapMemory(handle_.get_allocator(),
+                                     vmaMapMemory(VKDevice::get().get_allocator(),
                                          uniform_buffers[i].allocation,
                                          &uniform_buffers[i].mapped));
             VkBufferDeviceAddressInfo uBufferBdaInfo{
                 .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
                 .buffer = uniform_buffers[i].buffer
             };
-            uniform_buffers[i].deviceAddress = vkGetBufferDeviceAddress(handle_.get_device(), &uBufferBdaInfo);
+            uniform_buffers[i].deviceAddress = vkGetBufferDeviceAddress(VKDevice::get().get_device(), &uBufferBdaInfo);
         }
     }
 
     void create_fences() {
         VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle_.get_device(), &fenceCI, nullptr, &fences[i]));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(VKDevice::get().get_device(), &fenceCI, nullptr, &fences_[i]));
         }
     }
 
     void create_present_Semaphores() {
         VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &presentSemaphores[i
-                                     ]));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &
+                                         present_semaphores_[i
+                                         ]));
         }
     }
 
     void create_renderSemaphores() {
         VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-        render_to_image_semaphores_.resize(handle_.get_swap_image_views().size());
+        render_to_image_semaphores_.resize(VKDevice::get().get_swap_image_views().size());
         LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
         for (auto &semaphore: render_to_image_semaphores_) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(handle_.get_device(), &semaphoreCI, nullptr, &semaphore));
+            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &semaphore
+                                     ));
         }
     }
 
@@ -202,7 +197,7 @@ public:
             .signalSemaphoreCount = 1,
             .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         };
-        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(handle_.get_queue(), 1, &submitInfo, get_current_fences()));
+        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VKDevice::get().get_queue(), 1, &submitInfo, get_current_fences()));
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
         VkPresentInfoKHR presentInfo{
@@ -210,13 +205,14 @@ public:
             .waitSemaphoreCount = 1,
             .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
             .swapchainCount     = 1,
-            .pSwapchains        = &handle_.get_swap_chain(),
+            .pSwapchains        = &VKDevice::get().get_swap_chain(),
             .pImageIndices      = &imageIndex
         };
-        auto result = vkQueuePresentKHR(handle_.get_queue(), &presentInfo);
+        auto result = vkQueuePresentKHR(VKDevice::get().get_queue(), &presentInfo);
         if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_.framebufferResized) {
-            handle_.recreate_swap_chain();
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
+                   framebufferResized) {
+            VKDevice::get().recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             std::cout << "failed to acquire swap chain image!" << std::endl;
@@ -229,22 +225,25 @@ public:
      */
     void get_one_image_can_render() {
         // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
-        auto result = vkAcquireNextImageKHR(handle_.get_device(),
-                                            handle_.get_swap_chain(),
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
+                                     UINT64_MAX));
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
+        auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
+                                            VKDevice::get().get_swap_chain(),
                                             UINT64_MAX,
                                             get_current_presentSemaphores(),
                                             VK_NULL_HANDLE,
                                             &imageIndex);
         if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || handle_.framebufferResized) {
-            handle_.recreate_swap_chain();
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
+                   framebufferResized) {
+            VKDevice::get().recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
-            VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle_.get_device(), 1, &get_current_fences(), true, UINT64_MAX));
-            VK_CHECK_RESULT_NOT_EXIT(vkResetFences(handle_.get_device(), 1, &get_current_fences()));
-            auto result = vkAcquireNextImageKHR(handle_.get_device(),
-                                                handle_.get_swap_chain(),
+            VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
+                                         UINT64_MAX));
+            VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
+            auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
+                                                VKDevice::get().get_swap_chain(),
                                                 UINT64_MAX,
                                                 get_current_presentSemaphores(),
                                                 VK_NULL_HANDLE,
@@ -262,11 +261,11 @@ public:
 
     void destroy_and_recreate_fence_and_semaphore() {
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            vkDestroyFence(handle_.get_device(), fences[i], nullptr);                //  这里还需要
-            vkDestroySemaphore(handle_.get_device(), presentSemaphores[i], nullptr); //
+            vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
+            vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
         }
         for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-            vkDestroySemaphore(handle_.get_device(), render_to_image_semaphores_[i], nullptr);
+            vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
         }
         create_fences();
         create_present_Semaphores();
@@ -276,15 +275,15 @@ public:
     }
 
     void destroy() {
-        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(handle_.get_device()));
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
         for (auto i = 0; i < maxFramesInFlight; i++) {
-            vkDestroyFence(handle_.get_device(), fences[i], nullptr);                //  这里还需要
-            vkDestroySemaphore(handle_.get_device(), presentSemaphores[i], nullptr); //
-            vmaUnmapMemory(handle_.get_allocator(), uniform_buffers[i].allocation);
-            vmaDestroyBuffer(handle_.get_allocator(), uniform_buffers[i].buffer, uniform_buffers[i].allocation);
+            vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
+            vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
+            vmaUnmapMemory(VKDevice::get().get_allocator(), uniform_buffers[i].allocation);
+            vmaDestroyBuffer(VKDevice::get().get_allocator(), uniform_buffers[i].buffer, uniform_buffers[i].allocation);
         }
         for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-            vkDestroySemaphore(handle_.get_device(), render_to_image_semaphores_[i], nullptr);
+            vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
         }
     }
 };

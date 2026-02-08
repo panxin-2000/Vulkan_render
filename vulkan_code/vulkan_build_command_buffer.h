@@ -39,7 +39,7 @@ void begin_rendering(Engine &engine) {
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = engine.get_handle().get_depth_image(),
+            .image         = VKDevice::get().get_depth_image(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1,
                 .layerCount = 1
@@ -59,10 +59,10 @@ void begin_rendering(Engine &engine) {
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    auto temp_extent = engine.get_handle().get_current_extent();
+    auto temp_extent = VKDevice::get().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = engine.get_handle().get_depth_image_view(),
+        .imageView   = VKDevice::get().get_depth_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -85,7 +85,7 @@ void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout 
                           VkDescriptorSet descriptor_set_texture,
                           Model_mesh &mesh, const uint64_t constants_offset) {
     auto cb          = engine.get_current_command_buffer();
-    auto temp_extent = engine.get_handle().get_current_extent();
+    auto temp_extent = VKDevice::get().get_current_extent();
 
     VkViewport vp{
         .width    = static_cast<float>(temp_extent.width),

@@ -344,7 +344,7 @@ void VKDevice::create_swap_chain_image_view() {
                 .layerCount = 1
             }
         };
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
+        VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
     }
 }
 
@@ -395,8 +395,7 @@ void VKDevice::create_depth_image_view() {
     VmaAllocationCreateInfo allocCI{
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
     };
-    VK_CHECK_RESULT_NOT_EXIT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation,
-                                 nullptr));
+    VK_CHECK_RESULT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation,nullptr));
     VkImageViewCreateInfo depthViewCI{
         .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
         .image    = depth_image_,
@@ -408,7 +407,7 @@ void VKDevice::create_depth_image_view() {
             .layerCount = 1
         }
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
+    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
 }
 
 void VKDevice::destroy() {
