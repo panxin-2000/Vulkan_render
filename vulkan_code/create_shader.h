@@ -4,93 +4,93 @@
 
 #ifndef HOWTOVULKAN_CREATE_SHADER_H
 #define HOWTOVULKAN_CREATE_SHADER_H
+#include <iostream>
 #include <vector>
 #include <volk.h>
 #include <fstream>
 
-#include "/usr/local/lib/slang/include/slang.h"
-#include "/usr/local/lib/slang/include/slang-com-ptr.h"
 #include "logic_render_data.h"
 #include "vulkan_device_handle.h"
 
-Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
+// #include "/usr/local/lib/slang/include/slang.h"
+// #include "/usr/local/lib/slang/include/slang-com-ptr.h"
+// Slang::ComPtr<slang::IGlobalSession> slangGlobalSession;
 
+// inline VkShaderModule create_shader_module(const VKDevice &handle, std::string path) {
+//     std::vector<VkPipelineShaderStageCreateInfo> stages;
+//
+//     // Initialize Slang shader compiler
+//     slang::createGlobalSession(slangGlobalSession.writeRef());
+//     std::vector<slang::TargetDesc> slangTargets{
+//         {
+//             .format{SLANG_SPIRV},
+//             .profile{slangGlobalSession->findProfile("spirv_1_4")}
+//         }
+//     };
+//     std::vector<slang::CompilerOptionEntry> slangOptions{
+//         {
+//             slang::CompilerOptionName::EmitSpirvDirectly,
+//             {slang::CompilerOptionValueKind::Int, 1}
+//         }
+//     };
+//     slang::SessionDesc slangSessionDesc{
+//         .targets{slangTargets.data()}, .targetCount{SlangInt(slangTargets.size())},
+//         .defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR, .compilerOptionEntries{slangOptions.data()},
+//         .compilerOptionEntryCount{uint32_t(slangOptions.size())}
+//     };
+//     // Load shader
+//     Slang::ComPtr<slang::ISession> slangSession;
+//     slangGlobalSession->createSession(slangSessionDesc, slangSession.writeRef());
+//     Slang::ComPtr<slang::IModule> slangModule{
+//         slangSession->loadModuleFromSource("triangle", path.c_str(), nullptr, nullptr)
+//     };
+//     Slang::ComPtr<ISlangBlob> spirv;
+//     slangModule->getTargetCode(0, spirv.writeRef());
+//
+//     VkShaderModuleCreateInfo shaderModuleCI{
+//         .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+//         .codeSize = spirv->getBufferSize(),
+//         .pCode    = (uint32_t *) spirv->getBufferPointer()
+//     };
+//     VkShaderModule shaderModule = VK_NULL_HANDLE;
+//     VK_CHECK_RESULT_NOT_EXIT(vkCreateShaderModule(handle.get_device(), &shaderModuleCI, nullptr, &shaderModule));
+//     return shaderModule;
+// }
 
-inline VkShaderModule create_shader_module(const VKDevice &handle, std::string path) {
-    std::vector<VkPipelineShaderStageCreateInfo> stages;
+// std::vector<VkPipelineShaderStageCreateInfo> createShaderStages(VkShaderModule shaderModule) {
+//     std::vector<VkPipelineShaderStageCreateInfo> shaderStages{
+//         {
+//             .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+//             .stage  = VK_SHADER_STAGE_VERTEX_BIT,
+//             .module = shaderModule,
+//             .pName  = "main"
+//         },
+//         {
+//             .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+//             .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
+//             .module = shaderModule,
+//             .pName  = "main"
+//         }
+//     };
+//
+//     return shaderStages;
+// }
 
-    // Initialize Slang shader compiler
-    slang::createGlobalSession(slangGlobalSession.writeRef());
-    std::vector<slang::TargetDesc> slangTargets{
-        {
-            .format{SLANG_SPIRV},
-            .profile{slangGlobalSession->findProfile("spirv_1_4")}
-        }
-    };
-    std::vector<slang::CompilerOptionEntry> slangOptions{
-        {
-            slang::CompilerOptionName::EmitSpirvDirectly,
-            {slang::CompilerOptionValueKind::Int, 1}
-        }
-    };
-    slang::SessionDesc slangSessionDesc{
-        .targets{slangTargets.data()}, .targetCount{SlangInt(slangTargets.size())},
-        .defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR, .compilerOptionEntries{slangOptions.data()},
-        .compilerOptionEntryCount{uint32_t(slangOptions.size())}
-    };
-    // Load shader
-    Slang::ComPtr<slang::ISession> slangSession;
-    slangGlobalSession->createSession(slangSessionDesc, slangSession.writeRef());
-    Slang::ComPtr<slang::IModule> slangModule{
-        slangSession->loadModuleFromSource("triangle", path.c_str(), nullptr, nullptr)
-    };
-    Slang::ComPtr<ISlangBlob> spirv;
-    slangModule->getTargetCode(0, spirv.writeRef());
-
-    VkShaderModuleCreateInfo shaderModuleCI{
-        .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-        .codeSize = spirv->getBufferSize(),
-        .pCode    = (uint32_t *) spirv->getBufferPointer()
-    };
-    VkShaderModule shaderModule{};
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateShaderModule(handle.get_device(), &shaderModuleCI, nullptr, &shaderModule));
-    return shaderModule;
-}
-
-std::vector<VkPipelineShaderStageCreateInfo> createShaderStages(VkShaderModule shaderModule) {
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages{
-        {
-            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage  = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = shaderModule,
-            .pName  = "main"
-        },
-        {
-            .sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .stage  = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = shaderModule,
-            .pName  = "main"
-        }
-    };
-
-    return shaderStages;
-}
-
-VkShaderModule createShaderModule(const VKDevice &handle, const std::vector<char> &code) {
-    VkShaderModuleCreateInfo createInfo{};
-    createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode    = reinterpret_cast<const uint32_t *>(code.data());
-
-    VkShaderModule shaderModule;
-    if (vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module!");
-    }
-    VKDevice::get().get_shader_map();
-
-
-    return shaderModule;
-}
+// VkShaderModule createShaderModule(const VKDevice &handle, const std::vector<char> &code) {
+//     VkShaderModuleCreateInfo createInfo{};
+//     createInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+//     createInfo.codeSize = code.size();
+//     createInfo.pCode    = reinterpret_cast<const uint32_t *>(code.data());
+//
+//     VkShaderModule shaderModule;
+//     if (vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+//         throw std::runtime_error("failed to create shader module!");
+//     }
+//     VKDevice::get().get_shader_map();
+//
+//
+//     return shaderModule;
+// }
 
 // 之后再优化函数
 // std::optional<VkShaderModule> create_shader_module(const VKDevice &handle, const std::vector<char> &code) {
