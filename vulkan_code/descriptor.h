@@ -8,18 +8,6 @@
 #include "descriptor_set_layout.h"
 
 
-static inline VkDescriptorSetLayout create_descriptor_set_layout(const VKDevice &handle,
-                                                                 std::vector<VkDescriptorSetLayoutBinding>
-                                                                 setLayoutBindings) {
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    const VkDescriptorSetLayoutCreateInfo descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings);
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                                 descriptorSetLayout));
-    return descriptorSetLayout;
-}
-
-
 static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
     const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
     const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
@@ -29,6 +17,29 @@ static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBin
     };
     return descBindingFlags;
 }
+
+/**
+ * 两个参数的 vector 的 size 需要一致
+ * @param handle
+ * @param setLayoutBindings
+ * @param descriptor_binding_flags  哪怕 全部填零也是需要一致的
+ * @return
+ */
+static VkDescriptorSetLayout
+create_descriptor_set_layout(const VKDevice &handle,
+                             const std::vector<VkDescriptorSetLayoutBinding> &setLayoutBindings,
+                             const std::vector<VkDescriptorBindingFlags> &descriptor_binding_flags) {
+    VkDescriptorSetLayout descriptorSetLayout;
+
+    // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
+    const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descriptor_binding_flags);
+
+    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
+                                 descriptorSetLayout));
+    return descriptorSetLayout;
+}
+
 
 /**
  * 创建描述符的布局
@@ -132,10 +143,12 @@ auto create_descriptor_set_layouts(const VKDevice &handle,
     for (uint32_t i = 0; i < max_set; i++) {
         const auto &sorted_bindings = sorted_bindings_array[i];
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+        std::vector<VkDescriptorBindingFlags> descriptor_binding_flags;
         for (const auto &[fst, snd]: sorted_bindings) {
             setLayoutBindings.push_back(snd.LayoutBinding);
+            descriptor_binding_flags.push_back(snd.flag);
         }
-        auto SetLayout             = create_descriptor_set_layout(handle, setLayoutBindings);
+        auto SetLayout             = create_descriptor_set_layout(handle, setLayoutBindings, descriptor_binding_flags);
         setLayoutBindings_array[i] = SetLayout;
     }
     return setLayoutBindings_array;

@@ -38,7 +38,8 @@ struct ResourceInfo {
     std::string name;
     std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
     std::string shaderStage;
-    size_t need_allocate_size = 0;
+    size_t need_allocate_size     = 0;
+    VkDescriptorBindingFlags flag = 0;
 };
 
 
@@ -101,11 +102,12 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         uint32_t set     = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
         VkDescriptorSetLayoutBinding tem{};;
-        tem.binding         = binding;
-        tem.descriptorCount = 1;
-        tem.stageFlags      = get_stageFlags(shaderStage);
-        tem.stageFlags      = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        const auto &type    = compiler.get_type(res.type_id);
+        tem.binding                   = binding;
+        tem.descriptorCount           = 1;
+        tem.stageFlags                = get_stageFlags(shaderStage);
+        tem.stageFlags                = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        const auto &type              = compiler.get_type(res.type_id);
+        VkDescriptorBindingFlags flag = 0;
         if (type.array.empty()) {
             // layout (binding = 1) uniform sampler2D sampler_position;
             tem.descriptorCount = 1;
@@ -114,13 +116,14 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             uint32_t array_size = type.array[0];
             if (array_size == 0) {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
-                tem.descriptorCount = 100; // 暂时定义100，之后想办法添加一个宏吧
+                tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
+                flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
             }
         }
-        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0};
+        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
     }
     for (auto &res: resources.separate_samplers) {
         // layout(binding = 0) uniform sampler mySampler;
