@@ -101,10 +101,13 @@ inline bool copy_mem_from_cpu_to_gpu(const VKDevice &handle,
     if (check_host_visible_bit(handle, buffer_handle.second) == true) {
         void *bufferPtr{nullptr};
         VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), buffer_handle.second, &bufferPtr));
+        if (bufferPtr != nullptr) {
+            return false;
+        }
         // 也可以通过下面两行获取 map 的地址 ，取其中的 pMappedData
         VmaAllocationInfo allocInfo_for_map;
         vmaGetAllocationInfo(handle.get_allocator(), buffer_handle.second, &allocInfo_for_map);
-        if (mem_copy_callback != nullptr) {
+        if (mem_copy_callback != nullptr && allocInfo_for_map.pMappedData != nullptr) {
             mem_copy_callback(allocInfo_for_map.pMappedData);
         }
         if (check_need_flush_bit(handle, buffer_handle.second) == false) {
@@ -140,9 +143,19 @@ inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDev
                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
+    if (vBuffer == VK_NULL_HANDLE || vBufferAllocation == VK_NULL_HANDLE)
+        return {vBuffer, vBufferAllocation};
+    // 没有创建成功，直接退出
+
     if (check_host_visible_bit(handle, vBufferAllocation) == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
         auto [staging_buffer,staging_allocation] = create_staging_buffer(handle, size);
+        if (staging_buffer == VK_NULL_HANDLE || staging_allocation == VK_NULL_HANDLE) {
+            // 创建 staging_buffer 失败
+            vmaDestroyBuffer(handle.get_allocator(), vBuffer, vBufferAllocation);
+            return {staging_buffer, staging_allocation};
+        }
+
         if (check_host_visible_bit(handle, staging_allocation) == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
@@ -151,6 +164,7 @@ inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDev
         }
         vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
     } else {
+        // 创建成功，但是 map 不成功的很少见
         copy_mem_from_cpu_to_gpu(handle, {vBuffer, vBufferAllocation}, mem_copy_callback);
     }
     return {vBuffer, vBufferAllocation};
