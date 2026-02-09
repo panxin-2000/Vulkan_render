@@ -10,8 +10,15 @@
 #define max_set 8
 
 static inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
-    const std::vector<VkDescriptorSetLayoutBinding> &bindings, const void *pNext = nullptr) {
+    const std::vector<VkDescriptorSetLayoutBinding> &bindings, const void *pNext = nullptr,
+    const std::vector<VkDescriptorBindingFlags> &descriptor_binding_flags        = {}) {
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
+
+    for (const auto &descriptor_binding_flag: descriptor_binding_flags) {
+        if (descriptor_binding_flag & VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT) {
+            descriptorSetLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+        }
+    }
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCreateInfo.pBindings    = bindings.data();
     descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());

@@ -34,7 +34,9 @@ create_descriptor_set_layout(const VKDevice &handle,
     // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
     const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descriptor_binding_flags);
 
-    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
+    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings,
+                                                                (void *) &descBindingFlags,
+                                                                descriptor_binding_flags);
     VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
                                  descriptorSetLayout));
     return descriptorSetLayout;
