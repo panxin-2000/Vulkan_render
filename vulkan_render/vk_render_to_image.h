@@ -87,17 +87,8 @@ public:
         // Texture images
         create_textures_to_gpu(handle, handle.get_command_pool());
 
-
-        // auto descriptorSetLayout = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
-        //
-        // std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-        // descriptorSetLayouts.push_back(descriptorSetLayout);
-        // auto pipelineLayout = create_pipeline_layout(handle, descriptorSetLayouts);
-
-
         auto organized_sets_and_bindings =
-                organize_graphics_descriptor_set_and_binding_layouts(
-                                                                     "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                organize_graphics_descriptor_set_and_binding_layouts("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
                                                                      "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                                      "");
         auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
@@ -106,8 +97,7 @@ public:
 
 
         // 还差这两个函数 , 从 这里创建 sets_flags ，  binding_less_size 不能在这里定义，需要找一个全局的办法获取
-        auto descriptor_set_texture = allocate_descriptor_sets(handle, handle.get_bindless_textures().size(),
-                                                               descriptor_sets[0]);
+        auto descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets[0], sets_flags[0]);
         update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
 
 

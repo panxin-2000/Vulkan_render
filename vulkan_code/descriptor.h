@@ -99,11 +99,12 @@ inline auto variable_descriptor(const uint32_t binding_less_size, std::vector<ui
  * @param handle
  * @param binding_less_size       这个参数不太对，但是我也还没有想好究竟应该如何传入
  * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
+ * @param BindingFlags
  * @return
  */
-inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, const uint32_t binding_less_size,
-
-                                                             const VkDescriptorSetLayout &descriptor_set_layout) {
+inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
+                                                             const VkDescriptorSetLayout &descriptor_set_layout,
+                                                             const VkDescriptorBindingFlags BindingFlags) {
     std::vector<VkDescriptorSet> descriptor_set_texture;
     std::vector<VkDescriptorSetLayout> layouts;
     layouts.resize(get_max_frames_in_flight(), descriptor_set_layout);
@@ -118,9 +119,12 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, c
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
-    texDescSetAlloc.pNext = nullptr; {
-        auto variableDescCountAI = variable_descriptor(binding_less_size, variableDescCount);
-        texDescSetAlloc.pNext    = &variableDescCountAI;
+    if (BindingFlags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+        const uint32_t binding_less_size = handle.get_bindless_textures().size();
+        auto variableDescCountAI         = variable_descriptor(binding_less_size, variableDescCount);
+        texDescSetAlloc.pNext            = &variableDescCountAI;
+    } else {
+        texDescSetAlloc.pNext = nullptr;
     }
 
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data
