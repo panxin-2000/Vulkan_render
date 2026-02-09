@@ -222,6 +222,7 @@ void VKDevice::create_device() {
         .descriptorBindingVariableDescriptorCount     = true,
         .runtimeDescriptorArray                       = true,
         .scalarBlockLayout                            = true,
+        .timelineSemaphore                            = true,
         .bufferDeviceAddress                          = true,
     };
     VkPhysicalDeviceVulkan13Features enabledVk13Features{
