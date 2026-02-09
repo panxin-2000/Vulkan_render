@@ -50,7 +50,7 @@
  * @param textureDescriptors
  * @param descriptor_set_texture
  */
-inline void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> textureDescriptors,
+inline void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                                    const std::vector<VkDescriptorSet> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {

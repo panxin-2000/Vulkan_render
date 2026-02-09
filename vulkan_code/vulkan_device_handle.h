@@ -111,12 +111,17 @@ public:
         return descriptorPool;
     }
 
+    auto &get_bindless_textures() {
+        return bindless_textures_;
+    }
+
 private:
     std::map<std::string, shader_and_share> shader_maps_;
     std::map<std::string, texture_and_share> texture_map_;
     std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
     std::map<logic_render_data *, buffer_and_share> mesh_map_;
     std::map<Indices_type, buffer_and_share> indices_map_;
+    std::vector<VkDescriptorImageInfo> bindless_textures_;
 
     VkCommandPool commandPool{VK_NULL_HANDLE};
 

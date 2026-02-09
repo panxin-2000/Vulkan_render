@@ -9,7 +9,7 @@
 #include "vulkan_device_handle.h"
 
 
-std::vector<VkDescriptorImageInfo> create_textures_to_gpu(VKDevice *handle, VkCommandPool commandPool);
+void create_textures_to_gpu(VKDevice &handle, VkCommandPool commandPool);
 
 void destroy_texture(VKDevice *handle);
 

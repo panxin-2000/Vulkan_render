@@ -85,7 +85,7 @@ public:
         engine.init();
         // 目的是为了简化函数，
         // Texture images
-        auto textureDescriptors = create_textures_to_gpu(&handle, handle.get_command_pool());
+        create_textures_to_gpu(handle, handle.get_command_pool());
 
 
         // auto descriptorSetLayout = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
@@ -106,8 +106,9 @@ public:
 
 
         // 还差这两个函数 , 从 这里创建 sets_flags ，  binding_less_size 不能在这里定义，需要找一个全局的办法获取
-        auto descriptor_set_texture = allocate_descriptor_sets(handle, textureDescriptors.size(), descriptor_sets[0]);
-        update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
+        auto descriptor_set_texture = allocate_descriptor_sets(handle, handle.get_bindless_textures().size(),
+                                                               descriptor_sets[0]);
+        update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
 
 
         while (need_render == running) {
