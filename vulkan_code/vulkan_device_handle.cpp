@@ -214,14 +214,15 @@ void VKDevice::create_device() {
 
 
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
-        .sType                                     = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-        .descriptorIndexing                        = true,
-        .shaderSampledImageArrayNonUniformIndexing = true,
-        .descriptorBindingPartiallyBound           = true,
-        .descriptorBindingVariableDescriptorCount  = true,
-        .runtimeDescriptorArray                    = true,
-        .scalarBlockLayout                         = true,
-        .bufferDeviceAddress                       = true,
+        .sType                                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .descriptorIndexing                           = true,
+        .shaderSampledImageArrayNonUniformIndexing    = true,
+        .descriptorBindingSampledImageUpdateAfterBind = true,
+        .descriptorBindingPartiallyBound              = true,
+        .descriptorBindingVariableDescriptorCount     = true,
+        .runtimeDescriptorArray                       = true,
+        .scalarBlockLayout                            = true,
+        .bufferDeviceAddress                          = true,
     };
     VkPhysicalDeviceVulkan13Features enabledVk13Features{
         .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &enabledVk12Features,

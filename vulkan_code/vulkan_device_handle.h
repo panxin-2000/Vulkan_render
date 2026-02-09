@@ -163,9 +163,10 @@ private:
 
         VkDescriptorPoolCreateInfo descPoolCI{
             .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .flags         = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
             .maxSets       = 1000,
             .poolSizeCount = poolSizes.size(),
-            .pPoolSizes    = poolSizes.data()
+            .pPoolSizes    = poolSizes.data(),
         };
         VK_CHECK_RESULT(vkCreateDescriptorPool(get_device(), &descPoolCI, nullptr, &descriptorPool));
     }

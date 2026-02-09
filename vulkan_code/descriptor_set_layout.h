@@ -117,7 +117,8 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             if (array_size == 0) {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
                 tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
-                flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+                flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
