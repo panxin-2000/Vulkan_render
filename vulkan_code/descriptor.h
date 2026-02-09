@@ -5,67 +5,45 @@
 #ifndef HOWTOVULKAN_DESCRIPTOR_H
 #define HOWTOVULKAN_DESCRIPTOR_H
 #include "vulkan_device_handle.h"
-#include "descriptor_set_layout.h"
+#include "descriptor_organized_sets_and_bindings.h"
 
 
-static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
-    const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
-    const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
-        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-        .bindingCount  = static_cast<uint32_t>(descVariableFlags.size()),
-        .pBindingFlags = descVariableFlags.data(),
-    };
-    return descBindingFlags;
-}
-
-/**
- * 两个参数的 vector 的 size 需要一致
- * @param handle
- * @param setLayoutBindings
- * @param descriptor_binding_flags  哪怕 全部填零也是需要一致的
- * @return
- */
-static VkDescriptorSetLayout
-create_descriptor_set_layout(const VKDevice &handle,
-                             const std::vector<VkDescriptorSetLayoutBinding> &setLayoutBindings,
-                             const std::vector<VkDescriptorBindingFlags> &descriptor_binding_flags) {
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
-    const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descriptor_binding_flags);
-
-    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings,
-                                                                (void *) &descBindingFlags,
-                                                                descriptor_binding_flags);
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                                 descriptorSetLayout));
-    return descriptorSetLayout;
-}
+// static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
+//     const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
+//     const VkDescriptorSetLayoutBindingFlagsCreateInfo descBindingFlags{
+//         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+//         .bindingCount  = static_cast<uint32_t>(descVariableFlags.size()),
+//         .pBindingFlags = descVariableFlags.data(),
+//     };
+//     return descBindingFlags;
+// }
 
 
-/**
- * 创建描述符的布局
- * @param handle
- * @param size
- * @return
- */
-VkDescriptorSetLayout Create_texture_binding_lessLayout(const VKDevice &handle, uint32_t size) {
-    // Descriptor (indexing)
-    VkDescriptorSetLayout descriptorSetLayoutTex                      = VK_NULL_HANDLE;
-    const std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-        descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   size),
-    };
-    const std::vector<VkDescriptorBindingFlags> descVariableFlags{
-        VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT,
-    };
-    // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
-    const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
-    const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
-                                 descriptorSetLayoutTex));
-    return descriptorSetLayoutTex;
-}
+
+
+// /**
+//  * 创建描述符的布局
+//  * @param handle
+//  * @param size
+//  * @return
+//  */
+// VkDescriptorSetLayout Create_texture_binding_lessLayout(const VKDevice &handle, uint32_t size) {
+//     // Descriptor (indexing)
+//     VkDescriptorSetLayout descriptorSetLayoutTex                      = VK_NULL_HANDLE;
+//     const std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+//         descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+//                                    size),
+//     };
+//     const std::vector<VkDescriptorBindingFlags> descVariableFlags{
+//         VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT,
+//     };
+//     // descVariableFlags 要么没有，要么需要和 setLayoutBindings 一致
+//     const auto descBindingFlags = DescriptorSetLayoutBindingFlagsCreateInfo(descVariableFlags);
+//     const auto descriptorLayout = descriptorSetLayoutCreateInfo(setLayoutBindings, (void *) &descBindingFlags);
+//     VK_CHECK_RESULT_NOT_EXIT(vkCreateDescriptorSetLayout(handle.get_device(), &descriptorLayout, nullptr, &
+//                                  descriptorSetLayoutTex));
+//     return descriptorSetLayoutTex;
+// }
 
 
 /**
@@ -102,20 +80,21 @@ void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImag
 
 
 /**
- * 申请描述符
+ * 申请描述符，原本输入的是 单个 descriptor_bindings
+ * 需要变更为双缓冲或者多缓冲的结果
  * @param handle
- * @param binding_less_size
- * @param descriptorSetLayout
+ * @param binding_less_size       这个参数不太对
+ * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
  * @return
  */
-std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t binding_less_size,
-                                                    VkDescriptorSetLayout descriptorSetLayout) {
+inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, const uint32_t binding_less_size,
+                                                             const VkDescriptorSetLayout descriptor_set_layout) {
     std::vector<VkDescriptorSet> descriptor_set_texture;
     std::vector<uint32_t> variableDescCount; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
     //  variableDescCount 中的值如果是零的话，不能访问图片，如果是1 的话，实际上是退化为普通的
     variableDescCount.resize(get_max_frames_in_flight(), binding_less_size);
     std::vector<VkDescriptorSetLayout> layouts;
-    layouts.resize(get_max_frames_in_flight(), descriptorSetLayout);
+    layouts.resize(get_max_frames_in_flight(), descriptor_set_layout);
 
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
@@ -142,53 +121,6 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t b
 }
 
 
-auto create_descriptor_set_layouts(const VKDevice &handle,
-                                   const std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings_array) {
-    std::vector<VkDescriptorSetLayout> setLayoutBindings_array;
-    for (uint32_t i = 0; i < max_set; i++) {
-        const auto &sorted_bindings = sorted_bindings_array[i];
-        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-        std::vector<VkDescriptorBindingFlags> descriptor_binding_flags;
-        for (const auto &[fst, snd]: sorted_bindings) {
-            setLayoutBindings.push_back(snd.LayoutBinding);
-            descriptor_binding_flags.push_back(snd.flag);
-        }
-        if (descriptor_binding_flags.empty() == true && setLayoutBindings.empty() == true) {
-            continue;
-        }
-        auto SetLayout = create_descriptor_set_layout(handle, setLayoutBindings, descriptor_binding_flags);
-        setLayoutBindings_array.push_back(SetLayout);
-    }
-    return setLayoutBindings_array;
-}
-
-
-/**
- * 创建管线描述符布局, set = 0 还是 set = 1 需要在这里设置，解析需要更靠前
- * organize_graphics_descriptor_set_layouts  是 organize_graphics_descriptor_set_layouts 作为参数
- * 经由 create_descriptor_set_layouts 得出的结果
- * @param handle
- * @param descriptor_set_layout  layout(set = 0, binding = 0) layout(set = 1, binding = 0)
- * @return
- */
-inline VkPipelineLayout create_pipeline_layout(const VKDevice &handle,
-                                               std::vector<VkDescriptorSetLayout> descriptor_set_layout) {
-    VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
-    VkPushConstantRange pushConstantRange{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(VkDeviceAddress)
-    };
-    VkPipelineLayoutCreateInfo pipelineLayoutCI{
-        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount         = static_cast<uint32_t>(descriptor_set_layout.size()),
-        .pSetLayouts            = descriptor_set_layout.data(),
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges    = &pushConstantRange
-    };
-    // VkPipelineLayout 的本质是 “接口协议”（Interface Protocol）。
-    // 它定义了 Shader 如何访问资源（比如有哪些 Set，每个 Set 有哪些 Binding）。
-    VK_CHECK_RESULT_NOT_EXIT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
-    return pipelineLayout;
-}
 
 
 #endif //HOWTOVULKAN_DESCRIPTOR_H

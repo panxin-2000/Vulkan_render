@@ -11,7 +11,6 @@
 #include "create_pipeline.h"
 #include "create_shader.h"
 #include "descriptor.h"
-#include "descriptor_pool.h"
 #include "engine.h"
 #include "transfer_texture_to_gpu.h"
 #include "vertex_and_buffer_index.h"
@@ -26,8 +25,9 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "logic_render_data.h"
+#include "pipeline_layout.h"
 #include "vulkan_render_manage.h"
-
+#include "sets_and_bindings_layout.h"
 
 glm::vec3 camPos{0.0f, 0.0f, -6.0f};
 glm::vec3 objectRotations[3]{};
@@ -95,16 +95,17 @@ public:
         // auto pipelineLayout = create_pipeline_layout(handle, descriptorSetLayouts);
 
 
-        auto organize = organize_graphics_descriptor_set_layouts(
-                                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
-                                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
-                                                                 "");
-        auto Bindings_vector = create_descriptor_set_layouts(handle, organize);
-        auto pipelineLayout  = create_pipeline_layout(handle, Bindings_vector);
+        auto organized_sets_and_bindings =
+                organize_graphics_descriptor_set_and_binding_layouts(
+                                                                     "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                                                                     "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
+                                                                     "");
+        auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
+        auto pipelineLayout  = create_pipeline_layout(handle, descriptor_sets);
 
 
         // 还差这两个函数
-        auto descriptor_set_texture = AllocateDescriptorSets(handle, textureDescriptors.size(), Bindings_vector[0]);
+        auto descriptor_set_texture = allocate_descriptor_sets(handle, textureDescriptors.size(), descriptor_sets[0]);
         update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
 
 
@@ -158,11 +159,12 @@ public:
         clean_all_mesh_object(handle);
 
         destroy_texture(&handle);
-        // descriptor.Destroy();
+        // descriptor.Destroy(); //
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        // vkDestroyDescriptorSetLayout(handle.get_device(), descriptorSetLayout, nullptr);
-
-        // descriptor_pool.destroy();
+        for (auto Bindings: descriptor_sets) {
+            vkDestroyDescriptorSetLayout(handle.get_device(), Bindings, nullptr);
+            // 不能在这里手动删除，需要管理起来之后再删除
+        }
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
         auto pipeline_map = VKDevice::get().get_pipeline_map();
         for (const auto &[key, value]: pipeline_map) {
@@ -212,12 +214,13 @@ private
                 find_graphics_shader_module(handle, render_data.value()->vertexPath_,
                                             render_data.value()->fragmentPath_,
                                             render_data.value()->geometryPath_);
-                auto organize = organize_graphics_descriptor_set_layouts(
-                                                                         render_data.value()->vertexPath_,
-                                                                         render_data.value()->fragmentPath_,
-                                                                         render_data.value()->geometryPath_);
-                auto Bindings_vector = create_descriptor_set_layouts(handle, organize);
-                auto pipeline_layout = create_pipeline_layout(handle, Bindings_vector);
+                auto organized_sets_and_bindings =
+                        organize_graphics_descriptor_set_and_binding_layouts(
+                                                                             render_data.value()->vertexPath_,
+                                                                             render_data.value()->fragmentPath_,
+                                                                             render_data.value()->geometryPath_);
+                auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
+                auto pipeline_layout = create_pipeline_layout(handle, descriptor_sets);
 
                 create_mesh(handle, render_data.value(), VKDevice::get().get_mesh_map());
 

@@ -4,10 +4,12 @@
 
 #ifndef HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
 #define HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
+
+#include "vulkan_device_handle.h"
 #include <regex>
 #include <filesystem>
 #include <spirv_cross/spirv_glsl.hpp>
-#define max_set 8
+#define max_sets 8
 
 static inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
     const std::vector<VkDescriptorSetLayoutBinding> &bindings, const void *pNext = nullptr,
@@ -40,7 +42,7 @@ static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
 }
 
 
-struct ResourceInfo {
+struct binding_resource {
     VkDescriptorSetLayoutBinding LayoutBinding;
     std::string name;
     std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
@@ -64,7 +66,7 @@ inline VkShaderStageFlags get_stageFlags(const std::string &shaderStage) {
 }
 
 static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, std::string shaderStage,
-                                         std::array<std::map<uint32_t, ResourceInfo>, max_set> &sorted_bindings) {
+                                         std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings) {
     const spirv_cross::CompilerGLSL compiler(spirv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
@@ -125,7 +127,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
                 tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                                      VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
@@ -162,7 +164,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
 
 
 static void read_spv_file(const std::string &file_name, std::string shaderStage,
-                          std::array<std::map<uint32_t, ResourceInfo>, max_set> &sorted_bindings) {
+                          std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings) {
     if (file_name.empty() == true) {
         return;
     }
@@ -178,7 +180,8 @@ static void read_spv_file(const std::string &file_name, std::string shaderStage,
 }
 
 
-static void print_sorted_resources(const std::array<std::map<uint32_t, ResourceInfo>, max_set> &sorted_bindings_array) {
+static void print_sorted_resources(
+    const std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings_array) {
     // 4. Print results (Map iteration is always sorted by key)
     LOG_INFO(g_log(), "--- Resources Sorted by Binding ---");
     for (int i = 0; i < sorted_bindings_array.size(); i++) {
@@ -217,37 +220,37 @@ void print_layout_binding_line(std::string filePath) {
 }
 
 
-static std::array<std::map<uint32_t, ResourceInfo>, max_set> organize_graphics_descriptor_set_layouts(
+static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_graphics_descriptor_set_and_binding_layouts(
     const std::string &vertex_path,
     const std::string &fragment_path,
     const std::string &geometry_path) {
-    std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings;
+    std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_sets_and_bindings;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
 
-        read_spv_file(vertex_path, "vertex", sorted_bindings);
+        read_spv_file(vertex_path, "vertex", sorted_sets_and_bindings);
         print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
         LOG_INFO(g_log(), "--- fragment shader ---");
 
-        read_spv_file(fragment_path, "fragment", sorted_bindings);
+        read_spv_file(fragment_path, "fragment", sorted_sets_and_bindings);
         print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
         LOG_INFO(g_log(), "--- geometry shader ---");
 
-        read_spv_file(geometry_path, "geometry", sorted_bindings);
+        read_spv_file(geometry_path, "geometry", sorted_sets_and_bindings);
         print_layout_binding_line(geometry_path);
     }
-    print_sorted_resources(sorted_bindings);
-    return sorted_bindings;
+    print_sorted_resources(sorted_sets_and_bindings);
+    return sorted_sets_and_bindings;
 }
 
-static std::array<std::map<uint32_t, ResourceInfo>, max_set> organize_computer_descriptor_set_layouts(
+static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_computer_descriptor_set_layouts(
     const std::string &computer_path) {
     //
-    std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings;
+    std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_bindings;
     if (!computer_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
         read_spv_file(computer_path, "computer", sorted_bindings);
