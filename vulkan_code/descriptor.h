@@ -19,8 +19,6 @@
 // }
 
 
-
-
 // /**
 //  * 创建描述符的布局
 //  * @param handle
@@ -52,8 +50,8 @@
  * @param textureDescriptors
  * @param descriptor_set_texture
  */
-void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> textureDescriptors,
-                            std::vector<VkDescriptorSet> descriptor_set_texture) {
+inline void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> textureDescriptors,
+                                   const std::vector<VkDescriptorSet> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
         VkWriteDescriptorSet temp{
@@ -78,24 +76,10 @@ void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImag
 //     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 // };
 
-
-/**
- * 申请描述符，原本输入的是 单个 descriptor_bindings
- * 需要变更为双缓冲或者多缓冲的结果
- * @param handle
- * @param binding_less_size       这个参数不太对
- * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
- * @return
- */
-inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, const uint32_t binding_less_size,
-                                                             const VkDescriptorSetLayout descriptor_set_layout) {
-    std::vector<VkDescriptorSet> descriptor_set_texture;
-    std::vector<uint32_t> variableDescCount; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
+inline auto variable_descriptor(const uint32_t binding_less_size, std::vector<uint32_t> &variableDescCount) {
+    ; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
     //  variableDescCount 中的值如果是零的话，不能访问图片，如果是1 的话，实际上是退化为普通的
     variableDescCount.resize(get_max_frames_in_flight(), binding_less_size);
-    std::vector<VkDescriptorSetLayout> layouts;
-    layouts.resize(get_max_frames_in_flight(), descriptor_set_layout);
-
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
     // 上限约束： 你在 pDescriptorCounts 中指定的数值，不能超过你在 VkDescriptorSetLayoutBinding 中定义的 descriptorCount（即最大上限）。
@@ -105,22 +89,44 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, c
         .descriptorSetCount = static_cast<uint32_t>(variableDescCount.size()),
         .pDescriptorCounts  = variableDescCount.data(),
     };
+    return variableDescCountAI;
+}
 
+
+/**
+ * 申请描述符，原本输入的是 单个 descriptor_bindings
+ * 需要变更为双缓冲或者多缓冲的结果
+ * @param handle
+ * @param binding_less_size       这个参数不太对，但是我也还没有想好究竟应该如何传入
+ * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
+ * @return
+ */
+inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle, const uint32_t binding_less_size,
+
+                                                             const VkDescriptorSetLayout &descriptor_set_layout) {
+    std::vector<VkDescriptorSet> descriptor_set_texture;
+    std::vector<VkDescriptorSetLayout> layouts;
+    layouts.resize(get_max_frames_in_flight(), descriptor_set_layout);
+
+    std::vector<uint32_t> variableDescCount;
     descriptor_set_texture.resize(get_max_frames_in_flight());
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .pNext              = &variableDescCountAI,
+        .pNext              = nullptr,
         .descriptorPool     = handle.get_descriptor_pool(),
         .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
+    texDescSetAlloc.pNext = nullptr; {
+        auto variableDescCountAI = variable_descriptor(binding_less_size, variableDescCount);
+        texDescSetAlloc.pNext    = &variableDescCountAI;
+    }
+
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data
                                  ()));
     return descriptor_set_texture;
 }
-
-
 
 
 #endif //HOWTOVULKAN_DESCRIPTOR_H

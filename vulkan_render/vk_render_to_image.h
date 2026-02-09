@@ -101,10 +101,11 @@ public:
                                                                      "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                                      "");
         auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
+        auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
         auto pipelineLayout  = create_pipeline_layout(handle, descriptor_sets);
 
 
-        // 还差这两个函数
+        // 还差这两个函数 , 从 这里创建 sets_flags ，  binding_less_size 不能在这里定义，需要找一个全局的办法获取
         auto descriptor_set_texture = allocate_descriptor_sets(handle, textureDescriptors.size(), descriptor_sets[0]);
         update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
 
@@ -219,8 +220,8 @@ private
                                                                              render_data.value()->vertexPath_,
                                                                              render_data.value()->fragmentPath_,
                                                                              render_data.value()->geometryPath_);
-                auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
-                auto pipeline_layout = create_pipeline_layout(handle, descriptor_sets);
+                const auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
+                auto pipeline_layout       = create_pipeline_layout(handle, descriptor_sets);
 
                 create_mesh(handle, render_data.value(), VKDevice::get().get_mesh_map());
 

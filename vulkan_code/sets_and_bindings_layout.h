@@ -74,4 +74,25 @@ inline auto create_descriptor_sets_layout(const VKDevice &handle,
 }
 
 
+inline auto create_descriptor_sets_flags(const VKDevice &handle,
+                                         const std::array<std::map<uint32_t, binding_resource>, max_sets> &
+                                         organized_sets_and_bindings) {
+    std::vector<VkDescriptorBindingFlags> sets_flags;
+    for (uint32_t i = 0; i < max_sets; i++) {
+        const auto &organized_bindings = organized_sets_and_bindings[i];
+        std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
+        VkDescriptorBindingFlags set_x_layout_binding_flags = 0;
+        for (const auto &[fst, snd]: organized_bindings) {
+            layout_bindings_flags.push_back(snd.flag);
+            set_x_layout_binding_flags = set_x_layout_binding_flags | snd.flag;
+        }
+        if (layout_bindings_flags.empty() == true) {
+            continue;
+        }
+        sets_flags.push_back(set_x_layout_binding_flags);
+    }
+    return sets_flags;
+}
+
+
 #endif //HELLO_MAC_SETS_AND_BINDINGS_LAYOUT_H

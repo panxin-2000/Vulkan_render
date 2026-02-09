@@ -146,6 +146,7 @@ inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDev
     if (vBuffer == VK_NULL_HANDLE || vBufferAllocation == VK_NULL_HANDLE)
         return {vBuffer, vBufferAllocation};
     // 没有创建成功，直接退出
+    // 创建成功，之后，记录，还是？
 
     if (check_host_visible_bit(handle, vBufferAllocation) == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
