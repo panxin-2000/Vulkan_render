@@ -117,6 +117,9 @@ public:
                 const auto vertexInputState = vertex_input_position_normal_uv();
                 auto pipeline_t             = find_pipeline(handle, need_render_object, pipelineLayout, shaderStages,
                                                 VKDevice::get().get_pipeline_map());
+                if (pipeline_t == VK_NULL_HANDLE) {
+                    continue;
+                }
                 auto mesh = find_mesh(need_render_object, VKDevice::get().get_mesh_map());
                 if (mesh == nullptr) {
                     continue;
