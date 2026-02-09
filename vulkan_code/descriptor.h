@@ -102,15 +102,18 @@ void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImag
 /**
  * 申请描述符
  * @param handle
- * @param size
+ * @param binding_less_size
  * @param descriptorSetLayout
  * @return
  */
-std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t size,
+std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t binding_less_size,
                                                     VkDescriptorSetLayout descriptorSetLayout) {
     std::vector<VkDescriptorSet> descriptor_set_texture;
-    std::vector<uint32_t> variableDescCount{size, size};
-    std::vector<VkDescriptorSetLayout> layouts{descriptorSetLayout, descriptorSetLayout};
+    std::vector<uint32_t> variableDescCount; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
+    //  variableDescCount 中的值如果是零的话，不能访问图片，如果是1 的话，实际上是退化为普通的
+    variableDescCount.resize(get_max_frames_in_flight(), binding_less_size);
+    std::vector<VkDescriptorSetLayout> layouts;
+    layouts.resize(get_max_frames_in_flight(), descriptorSetLayout);
 
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
@@ -122,7 +125,7 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t s
         .pDescriptorCounts  = variableDescCount.data(),
     };
 
-    descriptor_set_texture.resize(layouts.size());
+    descriptor_set_texture.resize(get_max_frames_in_flight());
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -139,7 +142,7 @@ std::vector<VkDescriptorSet> AllocateDescriptorSets(VKDevice &handle, uint32_t s
 
 auto create_descriptor_set_layouts(const VKDevice &handle,
                                    const std::array<std::map<uint32_t, ResourceInfo>, max_set> sorted_bindings_array) {
-    std::array<VkDescriptorSetLayout, max_set> setLayoutBindings_array;
+    std::vector<VkDescriptorSetLayout> setLayoutBindings_array;
     for (uint32_t i = 0; i < max_set; i++) {
         const auto &sorted_bindings = sorted_bindings_array[i];
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
@@ -148,8 +151,11 @@ auto create_descriptor_set_layouts(const VKDevice &handle,
             setLayoutBindings.push_back(snd.LayoutBinding);
             descriptor_binding_flags.push_back(snd.flag);
         }
-        auto SetLayout             = create_descriptor_set_layout(handle, setLayoutBindings, descriptor_binding_flags);
-        setLayoutBindings_array[i] = SetLayout;
+        if (descriptor_binding_flags.empty() == true && setLayoutBindings.empty() == true) {
+            continue;
+        }
+        auto SetLayout = create_descriptor_set_layout(handle, setLayoutBindings, descriptor_binding_flags);
+        setLayoutBindings_array.push_back(SetLayout);
     }
     return setLayoutBindings_array;
 }
@@ -176,6 +182,8 @@ inline VkPipelineLayout create_pipeline_layout(const VKDevice &handle,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges    = &pushConstantRange
     };
+    // VkPipelineLayout 的本质是 “接口协议”（Interface Protocol）。
+    // 它定义了 Shader 如何访问资源（比如有哪些 Set，每个 Set 有哪些 Binding）。
     VK_CHECK_RESULT_NOT_EXIT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCI, nullptr, &pipelineLayout));
     return pipelineLayout;
 }

@@ -88,12 +88,24 @@ public:
         auto textureDescriptors = create_textures_to_gpu(&handle, handle.get_command_pool());
 
 
-        auto descriptorSetLayout    = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
-        auto descriptor_set_texture = AllocateDescriptorSets(handle, textureDescriptors.size(), descriptorSetLayout);
+        // auto descriptorSetLayout = Create_texture_binding_lessLayout(handle, textureDescriptors.size());
+        //
+        // std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+        // descriptorSetLayouts.push_back(descriptorSetLayout);
+        // auto pipelineLayout = create_pipeline_layout(handle, descriptorSetLayouts);
+
+
+        auto organize = organize_graphics_descriptor_set_layouts(
+                                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                                                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
+                                                                 "");
+        auto Bindings_vector = create_descriptor_set_layouts(handle, organize);
+        auto pipelineLayout  = create_pipeline_layout(handle, Bindings_vector);
+
+
+        // 还差这两个函数
+        auto descriptor_set_texture = AllocateDescriptorSets(handle, textureDescriptors.size(), Bindings_vector[0]);
         update_descriptor_sets(handle, textureDescriptors, descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
-        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
-        descriptorSetLayouts.push_back(descriptorSetLayout);
-        auto pipelineLayout = create_pipeline_layout(handle, descriptorSetLayouts);
 
 
         while (need_render == running) {
@@ -105,8 +117,9 @@ public:
             engine.get_one_image_can_render();
             update_shader_data(engine); // 这里是一个需要同步的点
 
-
+            // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
             begin_rendering(engine);
+            // 应该先划分不同的 pass 阶段，
             for (auto need_render_object: need_render_objects) {
                 auto shaderStages = find_graphics_shader_module(handle, need_render_object->vertexPath_,
                                                                 need_render_object->fragmentPath_,
@@ -147,7 +160,7 @@ public:
         destroy_texture(&handle);
         // descriptor.Destroy();
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        vkDestroyDescriptorSetLayout(handle.get_device(), descriptorSetLayout, nullptr);
+        // vkDestroyDescriptorSetLayout(handle.get_device(), descriptorSetLayout, nullptr);
 
         // descriptor_pool.destroy();
         vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
@@ -203,7 +216,9 @@ private
                                                                          render_data.value()->vertexPath_,
                                                                          render_data.value()->fragmentPath_,
                                                                          render_data.value()->geometryPath_);
-                create_descriptor_set_layouts(handle, organize);
+                auto Bindings_vector = create_descriptor_set_layouts(handle, organize);
+                auto pipeline_layout = create_pipeline_layout(handle, Bindings_vector);
+
                 create_mesh(handle, render_data.value(), VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);

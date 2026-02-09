@@ -86,15 +86,17 @@ struct Model_mesh {
     };
 
     void draw(const VkCommandBuffer &cb) {
+        if (vertices_buffer == VK_NULL_HANDLE)
+            return;
         vkCmdBindVertexBuffers(cb, 0, 1, &vertices_buffer, &vertices_offset);
-        if (indices_buffer != VK_NULL_HANDLE) {
+        if (indices_buffer != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
             vkCmdBindIndexBuffer(cb, indices_buffer, indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,
                              indexed_command.firstIndex,
                              indexed_command.vertexOffset,
                              indexed_command.firstInstance);
-        } else {
+        } else if (vertex_command.vertexCount != 0) {
             vkCmdDraw(cb, vertex_command.vertexCount,
                       vertex_command.instanceCount,
                       vertex_command.firstVertex,
