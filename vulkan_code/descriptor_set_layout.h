@@ -71,7 +71,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.binding                   = binding;
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.stageFlags                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        tem.descriptorType            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         sorted_bindings[set][binding] = {tem, res.name, "uniform", shaderStage, need_allocate_size};
 
         const auto &type = compiler.get_type(res.base_type_id);
@@ -94,7 +94,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.binding                   = binding;
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.stageFlags                = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        tem.descriptorType            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         sorted_bindings[set][binding] = {tem, res.name, "buffer", shaderStage, 0}; // SSBO size can be dynamic
     }
     // 3. Collect Sampled Images (Textures)
@@ -105,7 +105,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.binding                   = binding;
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.stageFlags                = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        tem.descriptorType            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         const auto &type              = compiler.get_type(res.type_id);
         VkDescriptorBindingFlags flag = 0;
         if (type.array.empty()) {
@@ -133,7 +133,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.binding                   = binding;
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.stageFlags                = VK_DESCRIPTOR_TYPE_SAMPLER;
+        tem.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLER;
         sorted_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
     }
     for (auto &res: resources.separate_images) {
@@ -146,7 +146,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             tem.binding                   = binding;
             tem.descriptorCount           = 1;
             tem.stageFlags                = get_stageFlags(shaderStage);
-            tem.stageFlags                = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            tem.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             sorted_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
         }
     }
