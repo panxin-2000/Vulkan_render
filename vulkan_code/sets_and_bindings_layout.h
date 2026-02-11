@@ -52,27 +52,66 @@ create_descriptor_bindings_layout(const VKDevice &handle,
  * @param organized_sets_and_bindings
  * @return
  */
-inline auto create_descriptor_sets_layout(const VKDevice &handle,
+inline auto create_descriptor_sets_layout(VKDevice &handle,
+                                          const std::string &shader_key,
                                           const std::array<std::map<uint32_t, binding_resource>, max_sets> &
                                           organized_sets_and_bindings) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    for (uint32_t i = 0; i < max_sets; i++) {
-        const auto &organized_bindings = organized_sets_and_bindings[i];
-        std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-        std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
-        for (const auto &[fst, snd]: organized_bindings) {
-            layout_bindings.push_back(snd.LayoutBinding);
-            layout_bindings_flags.push_back(snd.flag);
+    if (!shader_key.empty()) {
+        auto &map = handle.get_descriptor_sets_layout_map();
+        auto it   = map.find(shader_key);
+        if (it != map.end()) {
+            it->second.second++;
+            return it->second.first;
+        } else {
+            for (uint32_t i = 0; i < max_sets; i++) {
+                const auto &organized_bindings = organized_sets_and_bindings[i];
+                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+                std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
+                for (const auto &[fst, snd]: organized_bindings) {
+                    layout_bindings.push_back(snd.LayoutBinding);
+                    layout_bindings_flags.push_back(snd.flag);
+                }
+                if (layout_bindings_flags.empty() == true && layout_bindings.empty() == true) {
+                    continue;
+                }
+                auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings, layout_bindings_flags);
+                descriptor_sets_layout.push_back(set_x_layout);
+            }
+            if (!descriptor_sets_layout.empty()) {
+                map.insert({shader_key, {descriptor_sets_layout, 1}});
+            }
+            return descriptor_sets_layout;
         }
-        if (layout_bindings_flags.empty() == true && layout_bindings.empty() == true) {
-            continue;
-        }
-        auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings, layout_bindings_flags);
-        descriptor_sets_layout.push_back(set_x_layout);
     }
     return descriptor_sets_layout;
 }
 
+inline auto find_descriptor_sets_layout(VKDevice &handle,
+                                          const std::string &shader_key) {
+    std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
+    if (!shader_key.empty()) {
+        auto &map = handle.get_descriptor_sets_layout_map();
+        auto it   = map.find(shader_key);
+        if (it != map.end()) {
+            it->second.second++;
+            return it->second.first;
+        } else {
+        }
+    }
+    return descriptor_sets_layout;
+}
+
+
+inline void clean_all_descriptor_sets_layout(VKDevice &handle) {
+    auto &map = handle.get_descriptor_sets_layout_map();
+    for (const auto &[key, value]: map) {
+        for (auto Bindings: value.first) {
+            vkDestroyDescriptorSetLayout(handle.get_device(), Bindings, nullptr);
+        }
+    }
+    map.clear();
+}
 
 inline auto create_descriptor_sets_flags(const VKDevice &handle,
                                          const std::array<std::map<uint32_t, binding_resource>, max_sets> &

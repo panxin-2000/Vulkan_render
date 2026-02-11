@@ -237,4 +237,13 @@ inline Model_mesh *find_mesh(logic_render_data *data,
         }
     }
 }
+
+inline void clean_all_mesh_object(VKDevice &handle) {
+    // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
+    for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
+        vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
+        // ->不清理会直接爆异常
+    }
+    VKDevice::get().get_mesh_map().clear();
+}
 #endif //HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H

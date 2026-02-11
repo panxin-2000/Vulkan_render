@@ -102,6 +102,14 @@ public:
         return shader_maps_;
     }
 
+    auto &get_pipeline_layout_map() {
+        return pipeline_layout_map_;
+    }
+
+    auto &get_descriptor_sets_layout_map() {
+        return descriptor_sets_layout_map_;
+    }
+
     const VkCommandPool &get_command_pool() const {
         return commandPool;
     }
@@ -118,12 +126,15 @@ public:
 private:
     std::map<std::string, shader_and_share> shader_maps_;
     std::map<std::string, texture_and_share> texture_map_;
+    std::map<std::string, std::pair<std::vector<VkDescriptorSetLayout>, uint32_t> > descriptor_sets_layout_map_;
+    std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > pipeline_layout_map_;
     std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
     std::map<logic_render_data *, buffer_and_share> mesh_map_;
+
     std::map<Indices_type, buffer_and_share> indices_map_;
     std::vector<VkDescriptorImageInfo> bindless_textures_;
 
-    VkCommandPool commandPool{VK_NULL_HANDLE};
+    VkCommandPool commandPool = VK_NULL_HANDLE;
 
 
     void create_instance();

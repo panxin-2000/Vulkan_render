@@ -414,6 +414,7 @@ void VKDevice::create_depth_image_view() {
 
 void VKDevice::destroy() {
     destroy_descriptorPool();
+    vkDestroyCommandPool(get_device(), get_command_pool(), nullptr);
 
     vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
     vkDestroyImageView(device_, depth_image_view_, nullptr);

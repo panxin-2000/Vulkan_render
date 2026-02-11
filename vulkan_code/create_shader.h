@@ -218,5 +218,12 @@ inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(
     return shaderStages;
 }
 
+inline void clean_all_shader_object(VKDevice &handle) {
+    // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
+    for (const auto &[key, value]: VKDevice::get().get_shader_map()) {
+        vkDestroyShaderModule(handle.get_device(), value.shader, nullptr);
+    }
+    VKDevice::get().get_shader_map().clear();
+}
 
 #endif //HOWTOVULKAN_CREATE_SHADER_H

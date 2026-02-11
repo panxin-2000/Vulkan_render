@@ -32,7 +32,7 @@
 glm::vec3 camPos{0.0f, 0.0f, -6.0f};
 glm::vec3 objectRotations[3]{};
 
-
+std::vector<VkDescriptorSet> g_hjk;
 const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
@@ -87,19 +87,6 @@ public:
         // Texture images
         create_textures_to_gpu(handle, handle.get_command_pool());
 
-        auto organized_sets_and_bindings =
-                organize_graphics_descriptor_set_and_binding_layouts("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
-                                                                     "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
-                                                                     "");
-        auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
-        auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
-        auto pipelineLayout  = create_pipeline_layout(handle, descriptor_sets);
-
-
-        // 还差这两个函数 , 从 这里创建 sets_flags ，  binding_less_size 不能在这里定义，需要找一个全局的办法获取
-        auto descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets[0], sets_flags[0]);
-        update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture); // 更新应该被拆出来， 放到需要的位置再上传
-
 
         while (need_render == running) {
             {
@@ -113,31 +100,36 @@ public:
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
             begin_rendering(engine);
             // 应该先划分不同的 pass 阶段，
-            for (auto need_render_object: need_render_objects) {
-                auto shaderStages = find_graphics_shader_module(handle, need_render_object->vertexPath_,
-                                                                need_render_object->fragmentPath_,
-                                                                need_render_object->geometryPath_);
+            for (auto render_data: need_render_objects) {
+                auto shaderStages = find_graphics_shader_module(handle, render_data->vertexPath_,
+                                                                render_data->fragmentPath_,
+                                                                render_data->geometryPath_);
                 if (shaderStages.empty() == true) {
                     continue;
                 }
+                auto shader_key = get_shader_key(render_data->vertexPath_,
+                                                 render_data->fragmentPath_,
+                                                 render_data->geometryPath_);
+
+                auto pipelineLayout         = find_pipeline_layout(handle, shader_key);
                 const auto vertexInputState = vertex_input_position_normal_uv();
-                auto pipeline_t             = find_pipeline(handle, need_render_object, pipelineLayout, shaderStages,
+                auto pipeline_t             = find_pipeline(handle, render_data, pipelineLayout, shaderStages,
                                                 VKDevice::get().get_pipeline_map());
                 if (pipeline_t == VK_NULL_HANDLE) {
                     continue;
                 }
-                auto mesh = find_mesh(need_render_object, VKDevice::get().get_mesh_map());
+                auto mesh = find_mesh(render_data, VKDevice::get().get_mesh_map());
                 if (mesh == nullptr) {
                     continue;
                 }
                 int i = 0;
-                if (need_render_object->debug_name == "blender Suzanne") {
+                if (render_data->debug_name == "blender Suzanne") {
                     i = 0;
+                    build_command_buffer(engine, pipeline_t, pipelineLayout, g_hjk[0], *mesh,
+                                         i * sizeof(ShaderData));
                 } else {
                     i = 1;
                 }
-                build_command_buffer(engine, pipeline_t, pipelineLayout, descriptor_set_texture[0], *mesh,
-                                     i * sizeof(ShaderData));
             }
             end_rendering(engine);
             engine.put_one_image_to_screen();
@@ -147,23 +139,37 @@ public:
             clean_need_objects();
         }
 
-        engine.destroy();
+
+        // descriptor.Destroy(); //
+
+        // 需要管理的资源以及删除的顺序
+        // buffer_views_            // 这四个建议放置到 descriptor set 之后
+        // buffers_                 // 这四个建议放置到 descriptor set 之后
+        // image_views_             // 这四个建议放置到 descriptor set 之后
+        // images_                  // 这四个建议放置到 descriptor set 之后
+        // shader_modules_
+        // pipelines_
+        // pipeline_layouts_
+        // descriptor_sets_layout    // 这个也需要去清理， blender 中很有意思，在全局的最后才销毁
+        // 一个原因是它关联了三个 内容，另一个原因是整体来说，它的布局很少改变，不会指数增长
+        // descriptor_pools_   // 最后这个，有点 不同 VkDescriptorSetLayout
+        // 先删除（或重置）VkDescriptorSet，后删除 VkDescriptorSetLayout
+        // 必须遵循“由实例到定义”的倒序销毁原则
+
+        // pipeline 建议提前清理
+        clean_all_pipeline(handle);
+        clean_all_pipeline_layout(handle);
+        clean_all_shader_object(handle);
+        // VkDescriptorSet
+        clean_all_descriptor_sets_layout(handle);
+
         clean_all_mesh_object(handle);
 
         destroy_texture(&handle);
-        // descriptor.Destroy(); //
-        vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        for (auto Bindings: descriptor_sets) {
-            vkDestroyDescriptorSetLayout(handle.get_device(), Bindings, nullptr);
-            // 不能在这里手动删除，需要管理起来之后再删除
-        }
-        vkDestroyPipelineLayout(handle.get_device(), pipelineLayout, nullptr);
-        auto pipeline_map = VKDevice::get().get_pipeline_map();
-        for (const auto &[key, value]: pipeline_map) {
-            vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
-        }
-        vkDestroyCommandPool(handle.get_device(), handle.get_command_pool(), nullptr);
-        clean_all_shader_object(handle);
+
+        engine.destroy();
+
+
         have_object_need_update = false;
         need_render             = not_start;
     }
@@ -199,22 +205,36 @@ private
     void init_need_objects(VKDevice &handle) {
         while (true) {
             // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
-            auto render_data = vk_render_queue::instance().get_need_init();
-            if (render_data.has_value()) {
-                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
-                need_render_objects.push_back(render_data.value());
-                find_graphics_shader_module(handle, render_data.value()->vertexPath_,
-                                            render_data.value()->fragmentPath_,
-                                            render_data.value()->geometryPath_);
+            auto option_temp = vk_render_queue::instance().get_need_init();
+            if (option_temp.has_value()) {
+                auto render_data = option_temp.value();
+                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
+                need_render_objects.push_back(render_data);
+                find_graphics_shader_module(handle, render_data->vertexPath_,
+                                            render_data->fragmentPath_,
+                                            render_data->geometryPath_);
                 auto organized_sets_and_bindings =
-                        organize_graphics_descriptor_set_and_binding_layouts(
-                                                                             render_data.value()->vertexPath_,
-                                                                             render_data.value()->fragmentPath_,
-                                                                             render_data.value()->geometryPath_);
-                const auto descriptor_sets = create_descriptor_sets_layout(handle, organized_sets_and_bindings);
-                auto pipeline_layout       = create_pipeline_layout(handle, descriptor_sets);
+                        organize_graphics_descriptor_set_and_binding_layouts(render_data->vertexPath_,
+                                                                             render_data->fragmentPath_,
+                                                                             render_data->geometryPath_);
+                auto shader_key = get_shader_key(render_data->vertexPath_,
+                                                 render_data->fragmentPath_,
+                                                 render_data->geometryPath_);
 
-                create_mesh(handle, render_data.value(), VKDevice::get().get_mesh_map());
+                const auto descriptor_sets_layout =
+                        create_descriptor_sets_layout(handle, shader_key, organized_sets_and_bindings);
+                auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
+                auto pipeline_layout = create_pipeline_layout(handle, shader_key, descriptor_sets_layout);
+
+
+                if (render_data->debug_name == "blender Suzanne") {
+                    auto descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0],
+                                                                           sets_flags[0]);
+                    g_hjk = descriptor_set_texture;
+                    update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
+                    // 更新应该被拆出来， 放到需要的位置再上传
+                }
+                create_mesh(handle, render_data, VKDevice::get().get_mesh_map());
 
                 // create_element_buffer(render_data.value()->indices_, &indices_map_);
                 // create_texture(render_data.value()->textures, &texture_map_);
@@ -224,21 +244,6 @@ private
         }
     }
 
-
-    void clean_all_mesh_object(VKDevice &handle) {
-        // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-        for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
-            vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
-            // ->不清理会直接爆异常
-        }
-    }
-
-    void clean_all_shader_object(VKDevice &handle) {
-        // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-        for (const auto &[key, value]: VKDevice::get().get_shader_map()) {
-            vkDestroyShaderModule(handle.get_device(), value.shader, nullptr);
-        }
-    }
 
     void update_need_objects() {
         while (true) {

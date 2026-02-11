@@ -247,4 +247,13 @@ inline VkPipeline find_pipeline(VKDevice &handle, logic_render_data *data, VkPip
         }
     }
 }
+
+
+inline void clean_all_pipeline(VKDevice &handle) {
+    auto pipeline_map = VKDevice::get().get_pipeline_map();
+    for (const auto &[key, value]: pipeline_map) {
+        vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
+    }
+    pipeline_map.clear();
+}
 #endif //HOWTOVULKAN_CREATE_PIPELINE_H

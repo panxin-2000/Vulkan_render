@@ -102,6 +102,8 @@ void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout 
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                             &descriptor_set_texture, 0,
                             nullptr);
+    // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
+    // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
     auto tem_address = engine.get_current_shader_data_buffer().deviceAddress + constants_offset;
     vkCmdPushConstants(cb, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),

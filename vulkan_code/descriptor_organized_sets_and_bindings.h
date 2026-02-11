@@ -127,7 +127,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
                 tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-                                      VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
@@ -197,9 +197,13 @@ static void print_sorted_resources(
 
 
 void print_layout_binding_line(std::string filePath) {
-    if (filePath.size() > 4 && filePath.substr(filePath.size() - 4) == ".spv") {
-        filePath.erase(filePath.size() - 4); // 擦除最后4个字符
+    std::string target = ".spv";
+    size_t pos         = filePath.find(target);
+    if (filePath.size() > 4 && pos != std::string::npos) {
+        filePath.erase(pos, target.length());
     }
+
+
     if (std::filesystem::exists(filePath)) {
         std::ifstream file(filePath);
         std::string line;
@@ -219,6 +223,32 @@ void print_layout_binding_line(std::string filePath) {
     }
 }
 
+
+std::string get_shader_key(const std::string &vertex_path,
+                           const std::string &fragment_path,
+                           const std::string &geometry_path) {
+    std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
+    std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
+    std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
+
+    std::string target = ".spv"; {
+        size_t pos = temp_vertex_path.find(target);
+        if (temp_vertex_path.size() > 4 && pos != std::string::npos) {
+            temp_vertex_path.erase(pos, target.length());
+        }
+    } {
+        size_t pos = temp_fragment_path.find(target);
+        if (temp_fragment_path.size() > 4 && pos != std::string::npos) {
+            temp_fragment_path.erase(pos, target.length());
+        }
+    } {
+        size_t pos = temp_geometry_path.find(target);
+        if (temp_geometry_path.size() > 4 && pos != std::string::npos) {
+            temp_geometry_path.erase(pos, target.length());
+        }
+    }
+    return temp_vertex_path + temp_fragment_path + geometry_path;
+}
 
 static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_graphics_descriptor_set_and_binding_layouts(
     const std::string &vertex_path,

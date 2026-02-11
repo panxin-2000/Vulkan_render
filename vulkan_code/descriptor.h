@@ -127,10 +127,11 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
         texDescSetAlloc.pNext = nullptr;
     }
 
-    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc, descriptor_set_texture.data
-                                 ()));
+    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc,
+                                 descriptor_set_texture.data()));
     return descriptor_set_texture;
 }
+
 
 
 #endif //HOWTOVULKAN_DESCRIPTOR_H

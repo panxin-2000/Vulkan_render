@@ -8,8 +8,6 @@
 
 #include "vulkan_device_handle.h"
 
-#include "descriptor_pool.h"
-
 
 struct ShaderData {
     glm::mat4 projection;
@@ -116,9 +114,8 @@ public:
             .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = maxFramesInFlight
         };
-        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(VKDevice::get().get_device(), &cbAllocCI, command_buffers_.data
-                                     (
-                                     )));
+        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(VKDevice::get().get_device(), &cbAllocCI,
+                                     command_buffers_.data()));
     }
 
 
