@@ -128,7 +128,7 @@ private:
     std::map<std::string, texture_and_share> texture_map_;
     std::map<std::string, std::pair<std::vector<VkDescriptorSetLayout>, uint32_t> > descriptor_sets_layout_map_;
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > pipeline_layout_map_;
-    std::map<logic_render_data *, pipeline_and_share> pipeline_map_;
+    std::map<std::string, pipeline_and_share> pipeline_map_;
     std::map<logic_render_data *, buffer_and_share> mesh_map_;
 
     std::map<Indices_type, buffer_and_share> indices_map_;
@@ -244,6 +244,26 @@ public:
     [[nodiscard]] VkExtent2D get_current_extent() const {
         const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
         return extent;
+    }
+
+    [[nodiscard]] VkViewport get_viewport() const {
+        auto temp_extent = get_current_extent();
+
+        VkViewport viewport{
+            .width    = static_cast<float>(temp_extent.width),
+            .height   = static_cast<float>(temp_extent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+        return viewport;
+    }
+
+    [[nodiscard]] VkRect2D get_scissor() const {
+        const auto temp_extent = get_current_extent();
+        VkRect2D scissor{
+            .extent = temp_extent,
+        };
+        return scissor;
     }
 
     [[nodiscard]] const VkFormat &get_image_format() const {

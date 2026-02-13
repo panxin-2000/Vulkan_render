@@ -189,7 +189,7 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
 
     Model_mesh mesh{};
     mesh.vertices_buffer   = vBuffer;
-    mesh.vBufferAllocation = vBufferAllocation;
+    mesh.vertices_allocation = vBufferAllocation;
     mesh.indices_buffer    = vBuffer;
     // mesh.indices_offset = vBufSize;
     mesh.indexed_command.indexCount    = indices_->size(); // 是可以这么替换的
@@ -241,7 +241,7 @@ inline Model_mesh *find_mesh(logic_render_data *data,
 inline void clean_all_mesh_object(VKDevice &handle) {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
     for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
-        vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vBufferAllocation);
+        vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vertices_allocation);
         // ->不清理会直接爆异常
     }
     VKDevice::get().get_mesh_map().clear();

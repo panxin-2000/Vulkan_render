@@ -196,7 +196,7 @@ static void print_sorted_resources(
 }
 
 
-void print_layout_binding_line(std::string filePath) {
+inline void print_layout_binding_line(std::string filePath) {
     std::string target = ".spv";
     size_t pos         = filePath.find(target);
     if (filePath.size() > 4 && pos != std::string::npos) {
@@ -224,9 +224,9 @@ void print_layout_binding_line(std::string filePath) {
 }
 
 
-std::string get_shader_key(const std::string &vertex_path,
-                           const std::string &fragment_path,
-                           const std::string &geometry_path) {
+inline std::string get_shader_key(const std::string &vertex_path,
+                                  const std::string &fragment_path,
+                                  const std::string &geometry_path) {
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
     std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
