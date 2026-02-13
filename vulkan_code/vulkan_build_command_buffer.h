@@ -9,7 +9,7 @@
 #include "vertex_and_buffer_index.h"
 
 
-void begin_rendering(Engine &engine) {
+inline void begin_rendering(Engine &engine) {
     auto cb = engine.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
     VkCommandBufferBeginInfo cbBI{
@@ -35,7 +35,7 @@ void begin_rendering(Engine &engine) {
                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
@@ -81,37 +81,29 @@ void begin_rendering(Engine &engine) {
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-void build_command_buffer(Engine &engine, VkPipeline pipeline, VkPipelineLayout pipelineLayout,
-                          VkDescriptorSet descriptor_set_texture,
-                          Model_mesh &mesh, const uint64_t constants_offset) {
-    auto cb          = engine.get_current_command_buffer();
-    auto temp_extent = VKDevice::get().get_current_extent();
+inline void build_command_buffer(Engine &engine, draw_need_vk &vk_draw) {
+    const auto cb = engine.get_current_command_buffer();
 
-    VkViewport vp{
-        .width    = static_cast<float>(temp_extent.width),
-        .height   = static_cast<float>(temp_extent.height),
-        .minDepth = 0.0f,
-        .maxDepth = 1.0f
-    };
-    vkCmdSetViewport(cb, 0, 1, &vp);
-    VkRect2D scissor{
-        .extent = temp_extent,
-    };
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdSetScissor(cb, 0, 1, &scissor);
-    vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-                            &descriptor_set_texture, 0,
+    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
+    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
+
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
+    vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            vk_draw.pipeline_layout,
+                            0,
+                            vk_draw.vk_descriptor_set.size(),
+                            vk_draw.vk_descriptor_set.data(), 0,
                             nullptr);
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    auto tem_address = engine.get_current_shader_data_buffer().deviceAddress + constants_offset;
-    vkCmdPushConstants(cb, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
-                       &tem_address);
-    mesh.draw(cb);
+    vkCmdPushConstants(cb, vk_draw.pipeline_layout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
+                       &vk_draw.push_constants_address);
+    vk_draw.mesh.draw(cb);
 }
 
-void end_rendering(Engine &engine) {
+inline void end_rendering(Engine &engine) {
     auto cb = engine.get_current_command_buffer();
     vkCmdEndRendering(cb);
     VkImageMemoryBarrier2 barrierPresent{

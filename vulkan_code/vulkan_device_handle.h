@@ -11,6 +11,8 @@
 #include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+
+#include "engine.h"
 #include "global_singleton.h"
 #include "logic_render_data.h"
 
@@ -55,6 +57,8 @@ public:
     VkQueue present_queue_            = VK_NULL_HANDLE;
     VkQueue transfer_queue_           = VK_NULL_HANDLE;
     VkQueue compute_queue_            = VK_NULL_HANDLE;
+
+    Engine engine_;
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;

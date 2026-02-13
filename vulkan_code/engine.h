@@ -4,10 +4,14 @@
 
 #ifndef HELLO_MAC_ENGINE_H
 #define HELLO_MAC_ENGINE_H
-
-
-#include "vulkan_device_handle.h"
-
+#include "vulkan_utility.h"
+#include <string>
+#include <vector>
+#include <vk_mem_alloc.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 struct ShaderData {
     glm::mat4 projection;
@@ -55,6 +59,7 @@ public:
         create_fences();
         create_present_Semaphores();
         create_renderSemaphores();
+
     }
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
@@ -99,191 +104,35 @@ public:
     }
 
 
-    const VkImage &get_current_swap_chain_image() {
-        return VKDevice::get().get_swap_chain_images()[imageIndex];
-    }
+    const VkImage &get_current_swap_chain_image();
 
-    const VkImageView &get_current_swap_image_view() {
-        return VKDevice::get().get_swap_image_views()[imageIndex];
-    }
+    const VkImageView &get_current_swap_image_view();
 
-    void create_command_buffer() {
-        VkCommandBufferAllocateInfo cbAllocCI{
-            .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = VKDevice::get().get_command_pool(),
-            .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = maxFramesInFlight
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(VKDevice::get().get_device(), &cbAllocCI,
-                                     command_buffers_.data()));
-    }
+    void create_command_buffer();
 
 
-    void create_shader_data_buffer() {
-        // Shader data buffers
-        for (auto i = 0; i < maxFramesInFlight; i++) {
-            VkBufferCreateInfo uBufferCI{
-                .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                .size  = 32 * 1024, // 32K
-                .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-            };
-            VmaAllocationCreateInfo uBufferAllocCI{
-                .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                         VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                         VMA_ALLOCATION_CREATE_MAPPED_BIT,
-                .usage = VMA_MEMORY_USAGE_AUTO
-            };
-            VK_CHECK_RESULT_NOT_EXIT(
-                                     vmaCreateBuffer(VKDevice::get().get_allocator(),
-                                         &uBufferCI,
-                                         &uBufferAllocCI,
-                                         &uniform_buffers[i].
-                                         buffer,
-                                         &uniform_buffers[i].allocation,
-                                         nullptr));
-            VK_CHECK_RESULT_NOT_EXIT(
-                                     vmaMapMemory(VKDevice::get().get_allocator(),
-                                         uniform_buffers[i].allocation,
-                                         &uniform_buffers[i].mapped));
-            VkBufferDeviceAddressInfo uBufferBdaInfo{
-                .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-                .buffer = uniform_buffers[i].buffer
-            };
-            uniform_buffers[i].deviceAddress = vkGetBufferDeviceAddress(VKDevice::get().get_device(), &uBufferBdaInfo);
-        }
-    }
+    void create_shader_data_buffer();
 
-    void create_fences() {
-        VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
-        for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(VKDevice::get().get_device(), &fenceCI, nullptr, &fences_[i]));
-        }
-    }
+    void create_fences();
 
-    void create_present_Semaphores() {
-        VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-        for (auto i = 0; i < maxFramesInFlight; i++) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &
-                                         present_semaphores_[i
-                                         ]));
-        }
-    }
+    void create_present_Semaphores();
 
-    void create_renderSemaphores() {
-        VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-        render_to_image_semaphores_.resize(VKDevice::get().get_swap_image_views().size());
-        LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
-        for (auto &semaphore: render_to_image_semaphores_) {
-            VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &semaphore
-                                     ));
-        }
-    }
+    void create_renderSemaphores();
 
-    void put_one_image_to_screen() {
-        // Submit to graphics queue
-        VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
-        auto cb = get_current_command_buffer();
-        VkSubmitInfo submitInfo{
-            .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .waitSemaphoreCount   = 1,
-            .pWaitSemaphores      = &get_current_presentSemaphores(),
-            .pWaitDstStageMask    = &waitStages,
-            .commandBufferCount   = 1,
-            .pCommandBuffers      = &cb,
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VKDevice::get().get_queue(), 1, &submitInfo, get_current_fences()));
-
-        frameIndex = (frameIndex + 1) % maxFramesInFlight;
-        VkPresentInfoKHR presentInfo{
-            .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-            .swapchainCount     = 1,
-            .pSwapchains        = &VKDevice::get().get_swap_chain(),
-            .pImageIndices      = &imageIndex
-        };
-        auto result = vkQueuePresentKHR(VKDevice::get().get_queue(), &presentInfo);
-        if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
-                   framebufferResized) {
-            VKDevice::get().recreate_swap_chain();
-            destroy_and_recreate_fence_and_semaphore();
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            std::cout << "failed to acquire swap chain image!" << std::endl;
-        }
-    }
+    void put_one_image_to_screen();
 
     /**
      *
      * @param imageIndex 必须用 imageIndex 去找图像资源
      */
-    void get_one_image_can_render() {
-        // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
-                                     UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
-        auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
-                                            VKDevice::get().get_swap_chain(),
-                                            UINT64_MAX,
-                                            get_current_presentSemaphores(),
-                                            VK_NULL_HANDLE,
-                                            &imageIndex);
-        if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
-                   framebufferResized) {
-            VKDevice::get().recreate_swap_chain();
-            destroy_and_recreate_fence_and_semaphore();
-            VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
-                                         UINT64_MAX));
-            VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
-            auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
-                                                VKDevice::get().get_swap_chain(),
-                                                UINT64_MAX,
-                                                get_current_presentSemaphores(),
-                                                VK_NULL_HANDLE,
-                                                &imageIndex);
-            if (result == VK_SUCCESS) {
-            } else {
-                std::cout << "failed to acquire swap chain image after recreate!" << std::endl;
-                exit(0);
-            }
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            std::cout << "failed to acquire swap chain image!" << std::endl;
-        }
-    }
+    void get_one_image_can_render();
 
 
-    void destroy_and_recreate_fence_and_semaphore() {
-        for (auto i = 0; i < maxFramesInFlight; i++) {
-            vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
-            vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
-        }
-        for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-            vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
-        }
-        create_fences();
-        create_present_Semaphores();
-        create_renderSemaphores();
-        imageIndex = 0;
-        frameIndex = 0;
-    }
+    void destroy_and_recreate_fence_and_semaphore();
 
-    void destroy() {
-        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
-        for (auto i = 0; i < maxFramesInFlight; i++) {
-            vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
-            vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
-            vmaUnmapMemory(VKDevice::get().get_allocator(), uniform_buffers[i].allocation);
-            vmaDestroyBuffer(VKDevice::get().get_allocator(), uniform_buffers[i].buffer, uniform_buffers[i].allocation);
-        }
-        for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-            vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
-        }
-    }
+    void destroy();
 };
 
+void update_shader_data(Engine &engine);
 
 #endif //HELLO_MAC_ENGINE_H

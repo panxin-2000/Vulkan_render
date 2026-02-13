@@ -217,11 +217,12 @@ inline VkPipeline create_graphics_pipeline(VKDevice &handle, std::vector<VkPipel
 }
 
 
-inline VkPipeline create_pipeline_to_map(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
-                                         std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                         std::map<logic_render_data *, pipeline_and_share> &map) {
-    if (data != nullptr) {
-        auto it = map.find(data);
+inline VkPipeline create_pipeline(VKDevice &handle, const std::string &shader_key,
+                                  VkPipelineLayout pipelineLayout,
+                                  std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                  std::map<std::string, pipeline_and_share> &map) {
+    if (!shader_key.empty()) {
+        auto it = map.find(shader_key);
         if (it != map.end()) {
             it->second.shared_number++;
             return it->second.pipeline;
@@ -229,23 +230,26 @@ inline VkPipeline create_pipeline_to_map(VKDevice &handle, logic_render_data *da
             const auto vertexInputState = vertex_input_position_normal_uv();
             auto pipeline               = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
                                                      vertexInputState.get_to_bind());
-            map.insert({data, {pipeline, 1}});
+            map.insert({shader_key, {pipeline, 1}});
             return pipeline;
         }
     }
+    return VK_NULL_HANDLE;
 }
 
-inline VkPipeline find_pipeline(VKDevice &handle, logic_render_data *data, VkPipelineLayout pipelineLayout,
+inline VkPipeline find_pipeline(VKDevice &handle, const std::string &shader_key,
+                                VkPipelineLayout pipelineLayout,
                                 std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                std::map<logic_render_data *, pipeline_and_share> &map) {
-    if (data != nullptr) {
-        auto it = map.find(data);
+                                std::map<std::string, pipeline_and_share> &map) {
+    if (!shader_key.empty()) {
+        auto it = map.find(shader_key);
         if (it != map.end()) {
             return it->second.pipeline;
         } else {
-            return create_pipeline_to_map(handle, data, pipelineLayout, shaderStages, map);
+            return create_pipeline(handle, shader_key, pipelineLayout, shaderStages, map);
         }
     }
+    return VK_NULL_HANDLE;
 }
 
 

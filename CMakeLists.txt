@@ -133,6 +133,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/vulkan_device_handle.cpp"
             "vulkan_code/transfer_texture_to_gpu.cpp"
             "vulkan_render/backend.cpp"
+            "vulkan_code/engine.cpp"
     )
     include_directories(vulkan_code)
 

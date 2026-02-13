@@ -188,9 +188,9 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
 
 
     Model_mesh mesh{};
-    mesh.vertices_buffer   = vBuffer;
+    mesh.vertices_buffer     = vBuffer;
     mesh.vertices_allocation = vBufferAllocation;
-    mesh.indices_buffer    = vBuffer;
+    mesh.indices_buffer      = vBuffer;
     // mesh.indices_offset = vBufSize;
     mesh.indexed_command.indexCount    = indices_->size(); // 是可以这么替换的
     mesh.indexed_command.firstIndex    = vBufSize / 2;     // 索引缓冲区的起始偏移（以索引为单位）确实是可以通过计算偏移的
@@ -203,26 +203,30 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
 }
 
 
-inline void create_mesh(const VKDevice &handle, logic_render_data *data,
-                        std::map<logic_render_data *, buffer_and_share> &map) {
+inline Model_mesh create_mesh(const VKDevice &handle, logic_render_data *data,
+                              std::map<logic_render_data *, buffer_and_share> &map) {
     if (data != nullptr) {
         auto it = map.find(data);
         if (it != map.end()) {
             it->second.shared_number++;
+            return it->second.mesh;
         } else {
             if (data->mesh_path_.empty() == false) {
                 auto [vertices, indices] = load_model(data->mesh_path_);
                 const auto mesh          = create_mesh_data(handle, vertices, indices);
                 map.insert({data, {mesh, 1}});
+                return mesh;
             } else {
                 for (const auto &temp: data->vertex_and_attributes_) {
                     // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
                     auto mesh = create_mesh_data(handle, temp, data->indices_);
                     map.insert({data, {mesh, 1}});
+                    return mesh;
                 }
             }
         }
     }
+    return {};
 }
 
 

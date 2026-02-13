@@ -20,49 +20,12 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 
-#include "logic_render_data.h"
+
 #include "pipeline_layout.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
 
-glm::vec3 camPos{0.0f, 0.0f, -6.0f};
-glm::vec3 objectRotations[3]{};
-
-std::vector<VkDescriptorSet> g_hjk;
-const uint32_t WIDTH  = 1280; // 也是需要更改的
-const uint32_t HEIGHT = 720;
-
-void update_shader_data(Engine &engine) {
-    // 我想更改某些内容的话，需要从这里下手
-    std::vector<ShaderData> ShaderDatas;
-    ShaderData shaderData;
-
-
-    shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
-    shaderData.view       = glm::translate(glm::mat4(1.0f), camPos);
-    for (auto i = 0; i < 3; i++) {
-        auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
-        shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
-                                   glm::quat(objectRotations[i]));
-    }
-    ShaderDatas.push_back(shaderData);
-
-    shaderData.projection = glm::mat4(1.0f);
-    shaderData.view       = glm::mat4(1.0f);
-    for (auto i = 0; i < 3; i++) {
-        auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
-        shaderData.model[i] = glm::mat4(1.0f);
-    }
-    ShaderDatas.push_back(shaderData);
-    memcpy(engine.get_current_shader_data_buffer().mapped, ShaderDatas.data(),
-           ShaderDatas.size() * sizeof(ShaderData));
-}
-
-#include <map>
 
 class vk_render_GPU {
     mutable std::mutex mtx;
@@ -72,7 +35,7 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-    std::vector<logic_render_data *> need_render_objects;
+    std::vector<draw_need_vk *> need_render_objects;
 
 public:
     void render_thread(VKDevice &handle) {
@@ -81,11 +44,8 @@ public:
         }
         need_render = running; // 设置为运行中
 
-        Engine engine;
-        engine.init();
         // 目的是为了简化函数，
         // Texture images
-        create_textures_to_gpu(handle, handle.get_command_pool());
 
 
         while (need_render == running) {
@@ -94,45 +54,16 @@ public:
                 init_need_objects(handle); // 主要是复制内存的操作
                 update_need_objects();
             }
-            engine.get_one_image_can_render();
-            update_shader_data(engine); // 这里是一个需要同步的点
+            handle.engine_.get_one_image_can_render();
 
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            begin_rendering(engine);
+            begin_rendering(handle.engine_); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
             // 应该先划分不同的 pass 阶段，
             for (auto render_data: need_render_objects) {
-                auto shaderStages = find_graphics_shader_module(handle, render_data->vertexPath_,
-                                                                render_data->fragmentPath_,
-                                                                render_data->geometryPath_);
-                if (shaderStages.empty() == true) {
-                    continue;
-                }
-                auto shader_key = get_shader_key(render_data->vertexPath_,
-                                                 render_data->fragmentPath_,
-                                                 render_data->geometryPath_);
-
-                auto pipelineLayout         = find_pipeline_layout(handle, shader_key);
-                const auto vertexInputState = vertex_input_position_normal_uv();
-                auto pipeline_t             = find_pipeline(handle, render_data, pipelineLayout, shaderStages,
-                                                VKDevice::get().get_pipeline_map());
-                if (pipeline_t == VK_NULL_HANDLE) {
-                    continue;
-                }
-                auto mesh = find_mesh(render_data, VKDevice::get().get_mesh_map());
-                if (mesh == nullptr) {
-                    continue;
-                }
-                int i = 0;
-                if (render_data->debug_name == "blender Suzanne") {
-                    i = 0;
-                    build_command_buffer(engine, pipeline_t, pipelineLayout, g_hjk[0], *mesh,
-                                         i * sizeof(ShaderData));
-                } else {
-                    i = 1;
-                }
+                build_command_buffer(handle.engine_, *render_data);
             }
-            end_rendering(engine);
-            engine.put_one_image_to_screen();
+            end_rendering(handle.engine_);
+            handle.engine_.put_one_image_to_screen();
 
             // render_object_function();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -167,8 +98,6 @@ public:
 
         destroy_texture(&handle);
 
-        engine.destroy();
-
 
         have_object_need_update = false;
         need_render             = not_start;
@@ -186,7 +115,7 @@ public:
         if (need_render == running) {
             need_render = need_stop;
             while (need_render != not_start) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
         }
     }
@@ -210,34 +139,6 @@ private
                 auto render_data = option_temp.value();
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
                 need_render_objects.push_back(render_data);
-                find_graphics_shader_module(handle, render_data->vertexPath_,
-                                            render_data->fragmentPath_,
-                                            render_data->geometryPath_);
-                auto organized_sets_and_bindings =
-                        organize_graphics_descriptor_set_and_binding_layouts(render_data->vertexPath_,
-                                                                             render_data->fragmentPath_,
-                                                                             render_data->geometryPath_);
-                auto shader_key = get_shader_key(render_data->vertexPath_,
-                                                 render_data->fragmentPath_,
-                                                 render_data->geometryPath_);
-
-                const auto descriptor_sets_layout =
-                        create_descriptor_sets_layout(handle, shader_key, organized_sets_and_bindings);
-                auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
-                auto pipeline_layout = create_pipeline_layout(handle, shader_key, descriptor_sets_layout);
-
-
-                if (render_data->debug_name == "blender Suzanne") {
-                    auto descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0],
-                                                                           sets_flags[0]);
-                    g_hjk = descriptor_set_texture;
-                    update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
-                    // 更新应该被拆出来， 放到需要的位置再上传
-                }
-                create_mesh(handle, render_data, VKDevice::get().get_mesh_map());
-
-                // create_element_buffer(render_data.value()->indices_, &indices_map_);
-                // create_texture(render_data.value()->textures, &texture_map_);
             } else {
                 break;
             }
