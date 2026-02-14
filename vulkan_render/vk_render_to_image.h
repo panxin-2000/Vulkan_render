@@ -71,22 +71,24 @@ public:
         }
 
 
-        // descriptor.Destroy(); //
-
         // 需要管理的资源以及删除的顺序
-        // buffer_views_            // 这四个建议放置到 descriptor set 之后
-        // buffers_                 // 这四个建议放置到 descriptor set 之后
-        // image_views_             // 这四个建议放置到 descriptor set 之后
-        // images_                  // 这四个建议放置到 descriptor set 之后
-        // shader_modules_
-        // pipelines_
-        // pipeline_layouts_
-        // descriptor_sets_layout    // 这个也需要去清理， blender 中很有意思，在全局的最后才销毁
+        // blender 中 descriptor_sets_layout 很有意思，在全局的最后才销毁 （中间申请的似乎从不销毁）
         // 一个原因是它关联了三个 内容，另一个原因是整体来说，它的布局很少改变，不会指数增长
-        // descriptor_pools_   // 最后这个，有点 不同 VkDescriptorSetLayout
+
+
         // 先删除（或重置）VkDescriptorSet，后删除 VkDescriptorSetLayout
         // 必须遵循“由实例到定义”的倒序销毁原则
 
+        // 整体的顺序
+        // descriptor_pools_
+        // pipelines_
+        // pipeline_layouts_
+        // descriptor_sets_layout
+        // shader_modules_
+        // buffer_views_
+        // buffers_
+        // image_views_
+        // images_
 
         VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
 
