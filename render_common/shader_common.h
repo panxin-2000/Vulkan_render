@@ -249,44 +249,21 @@ struct VKIndexBufferBinding {
 
 
 struct VKVertexBufferBindings {
+#define size 16
     uint32_t buffer_count;
-    VkBuffer buffer[16];
-    VkDeviceSize offset[16];
+    VkBuffer buffer[size];
+    VkDeviceSize offset[size];
 
     bool operator==(const VKVertexBufferBindings &other) const {
-        return buffer_count == other.buffer_count &&
-               buffer[0] == other.buffer[0] &&
-               buffer[1] == other.buffer[1] &&
-               buffer[2] == other.buffer[2] &&
-               buffer[3] == other.buffer[3] &&
-               buffer[4] == other.buffer[4] &&
-               buffer[5] == other.buffer[5] &&
-               buffer[6] == other.buffer[6] &&
-               buffer[7] == other.buffer[7] &&
-               buffer[8] == other.buffer[8] &&
-               buffer[9] == other.buffer[9] &&
-               buffer[10] == other.buffer[10] &&
-               buffer[11] == other.buffer[11] &&
-               buffer[12] == other.buffer[12] &&
-               buffer[13] == other.buffer[13] &&
-               buffer[14] == other.buffer[14] &&
-               buffer[15] == other.buffer[15] &&
-               offset[0] == other.offset[0] &&
-               offset[1] == other.offset[1] &&
-               offset[2] == other.offset[2] &&
-               offset[3] == other.offset[3] &&
-               offset[4] == other.offset[4] &&
-               offset[5] == other.offset[5] &&
-               offset[6] == other.offset[6] &&
-               offset[7] == other.offset[7] &&
-               offset[8] == other.offset[8] &&
-               offset[9] == other.offset[9] &&
-               offset[10] == other.offset[10] &&
-               offset[11] == other.offset[11] &&
-               offset[12] == other.offset[12] &&
-               offset[13] == other.offset[13] &&
-               offset[14] == other.offset[14] &&
-               offset[15] == other.offset[15];
+        if (buffer_count != other.buffer_count)
+            return false;
+        for (uint32_t i = 0; i < size; ++i) {
+            if ((buffer[i] != other.buffer[i]) ||
+                (offset[i] != other.offset[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     bool operator!=(const VKVertexBufferBindings &other) const {
