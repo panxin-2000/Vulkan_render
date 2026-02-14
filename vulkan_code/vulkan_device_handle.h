@@ -43,9 +43,6 @@ public:
 
     std::vector<const char *> instanceExtensions;
 
-    VKDevice() = default;
-
-    ~VKDevice();
 
     // 需要给外部看到的变量
     GLFWwindow *window_               = nullptr;
@@ -335,6 +332,20 @@ public:
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_);
         return surface_caps_;
     }
+
+private:
+    VKDevice() = default;
+
+    ~VKDevice();
+
+public:
+    VKDevice(const VKDevice &) = delete;
+
+    VKDevice &operator=(const VKDevice &) = delete;
+
+    VKDevice(VKDevice &&) = delete;
+
+    VKDevice &operator=(VKDevice &&) = delete;
 };
 
 

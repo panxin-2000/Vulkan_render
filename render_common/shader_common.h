@@ -249,15 +249,15 @@ struct VKIndexBufferBinding {
 
 
 struct VKVertexBufferBindings {
-#define size 16
+#define buffer_size 16
     uint32_t buffer_count;
-    VkBuffer buffer[size];
-    VkDeviceSize offset[size];
+    VkBuffer buffer[buffer_size];
+    VkDeviceSize offset[buffer_size];
 
     bool operator==(const VKVertexBufferBindings &other) const {
         if (buffer_count != other.buffer_count)
             return false;
-        for (uint32_t i = 0; i < size; ++i) {
+        for (uint32_t i = 0; i < buffer_size; ++i) {
             if ((buffer[i] != other.buffer[i]) ||
                 (offset[i] != other.offset[i])) {
                 return false;
@@ -265,7 +265,7 @@ struct VKVertexBufferBindings {
         }
         return true;
     }
-
+#undef buffer_size
     bool operator!=(const VKVertexBufferBindings &other) const {
         return !(*this == other);
     }
