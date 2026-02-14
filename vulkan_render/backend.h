@@ -25,8 +25,9 @@ void render_thread_stop();
 void render_thread_stop_and_wait();
 
 
-inline bool add_object_to_render(VKDevice &handle, logic_render_data *render_object) {
+inline bool add_object_to_render(logic_render_data *render_object) {
     //
+    auto &handle = VKDevice::get();
     if (render_object != nullptr) {
         auto shaderStages = find_graphics_shader_module(handle, render_object->vertexPath_,
                                                         render_object->fragmentPath_,

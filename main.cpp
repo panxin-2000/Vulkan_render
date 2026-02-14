@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
     register_glfw(handle.window_);
 
-    // auto block_entity = UI_block("功能块", -0.5, -0.5, 0.5, 0.5);
+    auto block_entity = UI_block("功能块", -0.5, -0.5, 0.5, 0.5);
     // add_button(block_entity, "按钮1", 420, 420, 480, 480);
     // add_button(block_entity, "按钮2", 35, 20, 145, 130);
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv");
     render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv");
 
-    add_object_to_render(handle, render); // 因为这里没有区分。全部都在场景的根节点之下
+    add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
 
     // Render loop
     while (!glfwWindowShouldClose(handle.window_)) {

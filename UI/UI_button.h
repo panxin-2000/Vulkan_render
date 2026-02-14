@@ -145,7 +145,7 @@ entt::entity UI_button(const std::string &name,
         render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
         // render->set_texture("resoureces/picture.png", "ourTexture1");
 
-        // add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+        add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
     }
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
