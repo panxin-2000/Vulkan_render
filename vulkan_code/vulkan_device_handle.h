@@ -200,12 +200,14 @@ private:
     }
 
 
-    void destroy_descriptorPool() {
-        vkDestroyDescriptorPool(get_device(), descriptorPool, nullptr);
-    }
+
 
 public:
     static VKDevice &get();
+
+    void destroy_descriptorPool() const {
+        vkDestroyDescriptorPool(get_device(), descriptorPool, nullptr);
+    }
 
     /**
      * 顺序不能更改

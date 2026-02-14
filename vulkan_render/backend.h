@@ -55,12 +55,10 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         std::vector<VkDescriptorSet> descriptor_set_texture;
         if (render_object->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
-            auto temp = allocate_descriptor_sets(handle, descriptor_sets_layout[0],
+            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0],
                                                  sets_flags[0]);
-            // g_hjk = descriptor_set_texture;
-            update_descriptor_sets(handle, handle.get_bindless_textures(), temp);
+            update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
             // 更新应该被拆出来， 放到需要的位置再上传
-            descriptor_set_texture.push_back(temp[0]);
         }
         update_shader_data(handle.engine_); // 这里是一个需要同步的点
 

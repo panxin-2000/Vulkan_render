@@ -76,10 +76,12 @@ inline void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescrip
 //     descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT, 1),
 // };
 
-inline auto variable_descriptor(const uint32_t binding_less_size, std::vector<uint32_t> &variableDescCount) {
+inline auto variable_descriptor(const uint32_t binding_less_size,
+                                std::vector<uint32_t> &variableDescCount,
+                                uint32_t resize_number) {
     ; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
     //  variableDescCount 中的值如果是零的话，不能访问图片，如果是1 的话，实际上是退化为普通的
-    variableDescCount.resize(get_max_frames_in_flight(), binding_less_size);
+    variableDescCount.resize(resize_number, binding_less_size);
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
     // 上限约束： 你在 pDescriptorCounts 中指定的数值，不能超过你在 VkDescriptorSetLayoutBinding 中定义的 descriptorCount（即最大上限）。
@@ -105,12 +107,13 @@ inline auto variable_descriptor(const uint32_t binding_less_size, std::vector<ui
 inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
                                                              const VkDescriptorSetLayout &descriptor_set_layout,
                                                              const VkDescriptorBindingFlags BindingFlags) {
+    uint32_t resize_number = 1;
     std::vector<VkDescriptorSet> descriptor_set_texture;
     std::vector<VkDescriptorSetLayout> layouts;
-    layouts.resize(get_max_frames_in_flight(), descriptor_set_layout);
+    layouts.resize(resize_number, descriptor_set_layout);
 
     std::vector<uint32_t> variableDescCount;
-    descriptor_set_texture.resize(get_max_frames_in_flight());
+    descriptor_set_texture.resize(resize_number);
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -121,7 +124,7 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
     };
     if (BindingFlags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
         const uint32_t binding_less_size = handle.get_bindless_textures().size();
-        auto variableDescCountAI         = variable_descriptor(binding_less_size, variableDescCount);
+        auto variableDescCountAI         = variable_descriptor(binding_less_size, variableDescCount, resize_number);
         texDescSetAlloc.pNext            = &variableDescCountAI;
     } else {
         texDescSetAlloc.pNext = nullptr;
@@ -131,7 +134,6 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
                                  descriptor_set_texture.data()));
     return descriptor_set_texture;
 }
-
 
 
 #endif //HOWTOVULKAN_DESCRIPTOR_H
