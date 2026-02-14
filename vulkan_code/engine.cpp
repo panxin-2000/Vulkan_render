@@ -52,11 +52,6 @@ void VK_handle::create_shader_data_buffer() {
                                      buffer,
                                      &uniform_buffers_[i].allocation,
                                      nullptr));
-        VkBufferDeviceAddressInfo uBufferBdaInfo{
-            .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-            .buffer = uniform_buffers_[i].buffer
-        };
-        uniform_buffers_[i].deviceAddress = vkGetBufferDeviceAddress(get_device(), &uBufferBdaInfo);
     }
 }
 
@@ -198,7 +193,6 @@ const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
 
-
 ShaderData get_shader_data() {
     ShaderData shaderData;
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
@@ -223,4 +217,15 @@ ShaderData get_shader_data() {
         return info.pMappedData;
     }
     return nullptr;
+}
+
+
+[[nodiscard]] VkDeviceAddress uniform_buffer::get_gpu_device_address() const {
+    const auto &handle = VK_handle::get();
+    VkBufferDeviceAddressInfo uBufferBdaInfo{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer
+    };
+    auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &uBufferBdaInfo);
+    return deviceAddress;
 }

@@ -149,7 +149,7 @@ public:
 
     void destroy_and_recreate_fence_and_semaphore();
 
-    void engine_destroy();
+    void engine_destroy() ;
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
@@ -441,25 +441,6 @@ public:
     VK_handle &operator=(VK_handle &&) = delete;
 };
 
-template<typename... Args>
-VkDeviceAddress update_shader_data(Args... args) {
-    // auto tuple             = std::make_tuple(args...);
-    // constexpr size_t count = sizeof...(Args);
 
-    uint32_t memory_size = 0;
-    ([&] {
-        memory_size += sizeof(args);
-    }(), ...);
-    // 从内存中分配
-    uint64_t memory_offset = 0;
-
-    auto start_address = reinterpret_cast<char *>(VK_handle::get().get_current_shader_data_buffer().
-        get_point_mapped_address());
-    ([&] {
-        std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args), start_address + memory_offset);
-        memory_offset += sizeof(args);
-    }(), ...);
-    return VK_handle::get().get_current_shader_data_buffer().deviceAddress;
-}
 
 #endif //HELLO_MAC_GLFW_VULKAN_H
