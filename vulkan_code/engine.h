@@ -34,6 +34,5 @@ struct uniform_buffer {
 };
 
 
-void update_shader_data();
 
 #endif //HELLO_MAC_ENGINE_H

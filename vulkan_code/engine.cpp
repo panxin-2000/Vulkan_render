@@ -197,12 +197,10 @@ glm::vec3 objectRotations[3]{};
 const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
-void update_shader_data() {
-    // 我想更改某些内容的话，需要从这里下手
-    std::vector<ShaderData> ShaderDatas;
+
+
+ShaderData get_shader_data() {
     ShaderData shaderData;
-
-
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
     shaderData.view       = glm::translate(glm::mat4(1.0f), camPos);
     for (auto i = 0; i < 3; i++) {
@@ -210,20 +208,7 @@ void update_shader_data() {
         shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
                                    glm::quat(objectRotations[i]));
     }
-    ShaderDatas.push_back(shaderData);
-
-    shaderData.projection = glm::mat4(1.0f);
-    shaderData.view       = glm::mat4(1.0f);
-    for (auto i = 0; i < 3; i++) {
-        auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
-        shaderData.model[i] = glm::mat4(1.0f);
-    }
-    ShaderDatas.push_back(shaderData);
-    if (VK_handle::get().get_current_shader_data_buffer().get_point_mapped_address() != nullptr) {
-        memcpy(VK_handle::get().get_current_shader_data_buffer().get_point_mapped_address(),
-               ShaderDatas.data(),
-               ShaderDatas.size() * sizeof(ShaderData));
-    }
+    return shaderData;
 }
 
 

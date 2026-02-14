@@ -158,8 +158,8 @@ public:
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
     std::vector<VkImage> swap_chain_images_;
 
-    VkImage depth_image_;
-    VkImageView depth_image_view_;
+    VkImage depth_image_{};
+    VkImageView depth_image_view_{};
 
     VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
     uint32_t queue_family_{0};                // 不清楚是否能够删除
@@ -169,7 +169,7 @@ public:
         uint32_t graphics;
         uint32_t compute;
         uint32_t transfer;
-    } queueFamilyIndices; // 不用给到外部，
+    } queueFamilyIndices{}; // 不用给到外部，
 
     bool framebufferResized = false;
 
@@ -370,7 +370,7 @@ public:
     }
 
 
-    VmaAllocation depthImageAllocation; // ????? 这是一个什么东西？
+    VmaAllocation depthImageAllocation{}; // ????? 这是一个什么东西？
 
     [[nodiscard]] uint32_t get_queue_Family() const {
         return queue_family_;
@@ -441,5 +441,25 @@ public:
     VK_handle &operator=(VK_handle &&) = delete;
 };
 
+template<typename... Args>
+VkDeviceAddress update_shader_data(Args... args) {
+    // auto tuple             = std::make_tuple(args...);
+    // constexpr size_t count = sizeof...(Args);
+
+    uint32_t memory_size = 0;
+    ([&] {
+        memory_size += sizeof(args);
+    }(), ...);
+    // 从内存中分配
+    uint64_t memory_offset = 0;
+
+    auto start_address = reinterpret_cast<char *>(VK_handle::get().get_current_shader_data_buffer().
+        get_point_mapped_address());
+    ([&] {
+        std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args), start_address + memory_offset);
+        memory_offset += sizeof(args);
+    }(), ...);
+    return VK_handle::get().get_current_shader_data_buffer().deviceAddress;
+}
 
 #endif //HELLO_MAC_GLFW_VULKAN_H

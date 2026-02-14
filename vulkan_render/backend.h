@@ -17,12 +17,17 @@
 #include "vulkan_device_handle.h"
 #include "vulkan_render_manage.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 void render_thread_start(VK_handle &handle);
 
 void render_thread_stop();
 
 void render_thread_stop_and_wait();
+
+ShaderData get_shader_data();
 
 
 inline bool add_object_to_render(logic_render_data *render_object) {
@@ -55,14 +60,14 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         std::vector<VkDescriptorSet> descriptor_set_texture;
         if (render_object->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
-            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0],
-                                                              sets_flags[0]);
+            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0], sets_flags[0]);
             update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
             // 更新应该被拆出来， 放到需要的位置再上传
         }
-        update_shader_data(); // 这里是一个需要同步的点
+        // update_shader_data(); // 这里是一个需要同步的点
+        auto shaderData = get_shader_data();
 
-        auto push_constants = handle.get_current_shader_data_buffer().deviceAddress;
+        auto push_constants = update_shader_data(shaderData); // 这里是一个需要同步的点
 
         auto mesh                       = create_mesh(handle, render_object, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;
