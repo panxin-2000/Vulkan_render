@@ -87,7 +87,12 @@ public:
         // 先删除（或重置）VkDescriptorSet，后删除 VkDescriptorSetLayout
         // 必须遵循“由实例到定义”的倒序销毁原则
 
+
         VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
+
+        handle.destroy_descriptorPool();
+
+
         vkDestroyCommandPool(handle.get_device(), handle.get_command_pool(), nullptr);
 
         // pipeline 建议提前清理
