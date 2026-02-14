@@ -9,7 +9,7 @@
 #include "vertex_and_buffer_index.h"
 
 
-inline void begin_rendering(Engine &engine) {
+inline void begin_rendering(VKDevice &engine) {
     auto cb = engine.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
     VkCommandBufferBeginInfo cbBI{
@@ -81,7 +81,7 @@ inline void begin_rendering(Engine &engine) {
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void build_command_buffer(Engine &engine, draw_need_vk &vk_draw) {
+inline void build_command_buffer(VKDevice &engine, draw_need_vk &vk_draw) {
     const auto cb = engine.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
@@ -103,7 +103,7 @@ inline void build_command_buffer(Engine &engine, draw_need_vk &vk_draw) {
     vk_draw.mesh.draw(cb);
 }
 
-inline void end_rendering(Engine &engine) {
+inline void end_rendering(VKDevice &engine) {
     auto cb = engine.get_current_command_buffer();
     vkCmdEndRendering(cb);
     VkImageMemoryBarrier2 barrierPresent{

@@ -10,7 +10,6 @@
 
 #include "create_pipeline.h"
 #include "create_shader.h"
-#include "descriptor.h"
 #include "engine.h"
 #include "transfer_texture_to_gpu.h"
 #include "vertex_and_buffer_index.h"
@@ -44,26 +43,22 @@ public:
         }
         need_render = running; // 设置为运行中
 
-        // 目的是为了简化函数，
-        // Texture images
-
-
         while (need_render == running) {
             {
                 std::unique_lock<std::mutex> lock(mtx);
                 init_need_objects(handle); // 主要是复制内存的操作
                 update_need_objects();
             }
-            handle.engine_.get_one_image_can_render();
+            handle.get_one_image_can_render();
 
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            begin_rendering(handle.engine_); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+            begin_rendering(handle); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
             // 应该先划分不同的 pass 阶段，
             for (auto render_data: need_render_objects) {
-                build_command_buffer(handle.engine_, *render_data);
+                build_command_buffer(handle, *render_data);
             }
-            end_rendering(handle.engine_);
-            handle.engine_.put_one_image_to_screen();
+            end_rendering(handle);
+            handle.put_one_image_to_screen();
 
             // render_object_function();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));

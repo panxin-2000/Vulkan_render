@@ -11,26 +11,26 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-const VkImage &Engine::get_current_swap_chain_image() {
-    return VKDevice::get().get_swap_chain_images()[imageIndex];
+const VkImage &VKDevice::get_current_swap_chain_image() {
+    return get_swap_chain_images()[imageIndex];
 }
 
-const VkImageView &Engine::get_current_swap_image_view() {
-    return VKDevice::get().get_swap_image_views()[imageIndex];
+const VkImageView &VKDevice::get_current_swap_image_view() {
+    return get_swap_image_views()[imageIndex];
 }
 
-void Engine::create_command_buffer() {
+void VKDevice::create_command_buffer() {
     VkCommandBufferAllocateInfo cbAllocCI{
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool        = VKDevice::get().get_command_pool(),
+        .commandPool        = get_command_pool(),
         .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = maxFramesInFlight
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(VKDevice::get().get_device(), &cbAllocCI,
+    VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(get_device(), &cbAllocCI,
                                  command_buffers_.data()));
 }
 
-void Engine::create_shader_data_buffer() {
+void VKDevice::create_shader_data_buffer() {
     // Shader data buffers
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VkBufferCreateInfo uBufferCI{
@@ -45,55 +45,51 @@ void Engine::create_shader_data_buffer() {
             .usage = VMA_MEMORY_USAGE_AUTO
         };
         VK_CHECK_RESULT_NOT_EXIT(
-                                 vmaCreateBuffer(VKDevice::get().get_allocator(),
+                                 vmaCreateBuffer(get_allocator(),
                                      &uBufferCI,
                                      &uBufferAllocCI,
-                                     &uniform_buffers[i].
+                                     &uniform_buffers_[i].
                                      buffer,
-                                     &uniform_buffers[i].allocation,
+                                     &uniform_buffers_[i].allocation,
                                      nullptr));
-        VK_CHECK_RESULT_NOT_EXIT(
-                                 vmaMapMemory(VKDevice::get().get_allocator(),
-                                     uniform_buffers[i].allocation,
-                                     &uniform_buffers[i].mapped));
         VkBufferDeviceAddressInfo uBufferBdaInfo{
             .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-            .buffer = uniform_buffers[i].buffer
+            .buffer = uniform_buffers_[i].buffer
         };
-        uniform_buffers[i].deviceAddress = vkGetBufferDeviceAddress(VKDevice::get().get_device(), &uBufferBdaInfo);
+        uniform_buffers_[i].deviceAddress = vkGetBufferDeviceAddress(get_device(), &uBufferBdaInfo);
     }
 }
 
 
-void Engine::create_fences() {
+void VKDevice::create_fences() {
     VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(VKDevice::get().get_device(), &fenceCI, nullptr, &fences_[i]));
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(get_device(), &fenceCI, nullptr, &fences_[i]));
     }
 }
 
 
-void Engine::create_present_Semaphores() {
+void VKDevice::create_present_Semaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &
                                      present_semaphores_[i
                                      ]));
     }
 }
 
 
-void Engine::create_renderSemaphores() {
+void VKDevice::create_renderSemaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    render_to_image_semaphores_.resize(VKDevice::get().get_swap_image_views().size());
+    render_to_image_semaphores_.resize(get_swap_image_views().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
     for (auto &semaphore: render_to_image_semaphores_) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(VKDevice::get().get_device(), &semaphoreCI, nullptr, &semaphore
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &semaphore
                                  ));
     }
 }
 
-void Engine::put_one_image_to_screen() {
+void VKDevice::put_one_image_to_screen() {
     // Submit to graphics queue
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
@@ -108,7 +104,7 @@ void Engine::put_one_image_to_screen() {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VKDevice::get().get_queue(), 1, &submitInfo, get_current_fences()));
+    VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(get_queue(), 1, &submitInfo, get_current_fences()));
 
     frameIndex = (frameIndex + 1) % maxFramesInFlight;
     VkPresentInfoKHR presentInfo{
@@ -116,14 +112,14 @@ void Engine::put_one_image_to_screen() {
         .waitSemaphoreCount = 1,
         .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         .swapchainCount     = 1,
-        .pSwapchains        = &VKDevice::get().get_swap_chain(),
+        .pSwapchains        = &get_swap_chain(),
         .pImageIndices      = &imageIndex
     };
-    auto result = vkQueuePresentKHR(VKDevice::get().get_queue(), &presentInfo);
+    auto result = vkQueuePresentKHR(get_queue(), &presentInfo);
     if (result == VK_SUCCESS) {
-    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
+    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                framebufferResized) {
-        VKDevice::get().recreate_swap_chain();
+        recreate_swap_chain();
         destroy_and_recreate_fence_and_semaphore();
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         std::cout << "failed to acquire swap chain image!" << std::endl;
@@ -131,27 +127,27 @@ void Engine::put_one_image_to_screen() {
 }
 
 
-void Engine::get_one_image_can_render() {
+void VKDevice::get_one_image_can_render() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
+    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(), 1, &get_current_fences(), true,
                                  UINT64_MAX));
-    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
-    auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
-                                        VKDevice::get().get_swap_chain(),
+    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(get_device(), 1, &get_current_fences()));
+    auto result = vkAcquireNextImageKHR(get_device(),
+                                        get_swap_chain(),
                                         UINT64_MAX,
                                         get_current_presentSemaphores(),
                                         VK_NULL_HANDLE,
                                         &imageIndex);
     if (result == VK_SUCCESS) {
-    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || VKDevice::get().
+    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                framebufferResized) {
-        VKDevice::get().recreate_swap_chain();
+        recreate_swap_chain();
         destroy_and_recreate_fence_and_semaphore();
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VKDevice::get().get_device(), 1, &get_current_fences(), true,
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(), 1, &get_current_fences(), true,
                                      UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VKDevice::get().get_device(), 1, &get_current_fences()));
-        auto result = vkAcquireNextImageKHR(VKDevice::get().get_device(),
-                                            VKDevice::get().get_swap_chain(),
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(get_device(), 1, &get_current_fences()));
+        auto result = vkAcquireNextImageKHR(get_device(),
+                                            get_swap_chain(),
                                             UINT64_MAX,
                                             get_current_presentSemaphores(),
                                             VK_NULL_HANDLE,
@@ -167,13 +163,13 @@ void Engine::get_one_image_can_render() {
 }
 
 
-void Engine::destroy_and_recreate_fence_and_semaphore() {
+void VKDevice::destroy_and_recreate_fence_and_semaphore() {
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
-        vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
+        vkDestroyFence(get_device(), fences_[i], nullptr);                 //  这里还需要
+        vkDestroySemaphore(get_device(), present_semaphores_[i], nullptr); //
     }
     for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-        vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
+        vkDestroySemaphore(get_device(), render_to_image_semaphores_[i], nullptr);
     }
     create_fences();
     create_present_Semaphores();
@@ -182,16 +178,15 @@ void Engine::destroy_and_recreate_fence_and_semaphore() {
     frameIndex = 0;
 }
 
-void Engine::destroy() {
-    VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
+void VKDevice::engine_destroy() {
+    VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(get_device()));
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(VKDevice::get().get_device(), fences_[i], nullptr);                 //  这里还需要
-        vkDestroySemaphore(VKDevice::get().get_device(), present_semaphores_[i], nullptr); //
-        vmaUnmapMemory(VKDevice::get().get_allocator(), uniform_buffers[i].allocation);
-        vmaDestroyBuffer(VKDevice::get().get_allocator(), uniform_buffers[i].buffer, uniform_buffers[i].allocation);
+        vkDestroyFence(get_device(), fences_[i], nullptr);                 //  这里还需要
+        vkDestroySemaphore(get_device(), present_semaphores_[i], nullptr); //
+        vmaDestroyBuffer(get_allocator(), uniform_buffers_[i].buffer, uniform_buffers_[i].allocation);
     }
     for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-        vkDestroySemaphore(VKDevice::get().get_device(), render_to_image_semaphores_[i], nullptr);
+        vkDestroySemaphore(get_device(), render_to_image_semaphores_[i], nullptr);
     }
 }
 
@@ -202,7 +197,7 @@ glm::vec3 objectRotations[3]{};
 const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
-void update_shader_data(Engine &engine) {
+void update_shader_data() {
     // 我想更改某些内容的话，需要从这里下手
     std::vector<ShaderData> ShaderDatas;
     ShaderData shaderData;
@@ -224,6 +219,23 @@ void update_shader_data(Engine &engine) {
         shaderData.model[i] = glm::mat4(1.0f);
     }
     ShaderDatas.push_back(shaderData);
-    memcpy(engine.get_current_shader_data_buffer().mapped, ShaderDatas.data(),
-           ShaderDatas.size() * sizeof(ShaderData));
+    if (VKDevice::get().get_current_shader_data_buffer().get_point_mapped_address() != nullptr) {
+        memcpy(VKDevice::get().get_current_shader_data_buffer().get_point_mapped_address(),
+               ShaderDatas.data(),
+               ShaderDatas.size() * sizeof(ShaderData));
+    }
+}
+
+
+[[nodiscard]] void *uniform_buffer::get_point_mapped_address() const {
+    const auto &handle = VKDevice::get();
+    VmaAllocationInfo info;
+    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    VkMemoryPropertyFlags props;
+    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    if (isVisible) {
+        return info.pMappedData;
+    }
+    return nullptr;
 }

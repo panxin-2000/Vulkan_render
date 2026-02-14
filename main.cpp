@@ -23,7 +23,7 @@ void deal_glfw_event();
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VKDevice::get();
-    handle.engine_.init();
+    handle.engine_init();
 
 
     render_thread_start(handle);
@@ -65,6 +65,6 @@ int main(int argc, char *argv[]) {
     }
 
     render_thread_stop_and_wait();
-    handle.engine_.destroy();
+    handle.engine_destroy();
     handle.destroy();
 }
