@@ -16,7 +16,7 @@
  * @param descriptor_sets_layout  layout(set = 0, binding = 0) layout(set = 1, binding = 0)
  * @return
  */
-inline VkPipelineLayout create_pipeline_layout(VKDevice &handle, const std::string shader_key,
+inline VkPipelineLayout create_pipeline_layout(VK_handle &handle, const std::string shader_key,
                                                std::vector<VkDescriptorSetLayout> descriptor_sets_layout) {
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > &map = handle.get_pipeline_layout_map();
     if (!shader_key.empty()) {
@@ -49,7 +49,7 @@ inline VkPipelineLayout create_pipeline_layout(VKDevice &handle, const std::stri
 }
 
 
-inline VkPipelineLayout find_pipeline_layout(VKDevice &handle, const std::string shader_key) {
+inline VkPipelineLayout find_pipeline_layout(VK_handle &handle, const std::string shader_key) {
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > &map = handle.get_pipeline_layout_map();
     if (!shader_key.empty()) {
         auto it = map.find(shader_key);
@@ -61,7 +61,7 @@ inline VkPipelineLayout find_pipeline_layout(VKDevice &handle, const std::string
     }
 }
 
-inline void clean_all_pipeline_layout(VKDevice &handle) {
+inline void clean_all_pipeline_layout(VK_handle &handle) {
     auto &map = handle.get_pipeline_layout_map();
     for (const auto &[key, value]: map) {
         vkDestroyPipelineLayout(handle.get_device(), value.first, nullptr);

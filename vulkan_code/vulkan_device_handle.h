@@ -31,7 +31,7 @@ struct Texture_parameter {
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 };
 
-class VKDevice {
+class VK_handle {
 public:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
@@ -294,7 +294,7 @@ private:
     }
 
 public:
-    static VKDevice &get();
+    static VK_handle &get();
 
     void destroy_descriptorPool() const {
         vkDestroyDescriptorPool(get_device(), descriptorPool, nullptr);
@@ -427,18 +427,18 @@ public:
     }
 
 private:
-    VKDevice() = default;
+    VK_handle() = default;
 
-    ~VKDevice();
+    ~VK_handle();
 
 public:
-    VKDevice(const VKDevice &) = delete;
+    VK_handle(const VK_handle &) = delete;
 
-    VKDevice &operator=(const VKDevice &) = delete;
+    VK_handle &operator=(const VK_handle &) = delete;
 
-    VKDevice(VKDevice &&) = delete;
+    VK_handle(VK_handle &&) = delete;
 
-    VKDevice &operator=(VKDevice &&) = delete;
+    VK_handle &operator=(VK_handle &&) = delete;
 };
 
 

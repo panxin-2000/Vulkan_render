@@ -125,7 +125,7 @@ inline auto vertex_input_position() {
 }
 
 
-inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                          VkDescriptorSetLayout &descriptorSetLayout) {
     if (shaderStages.empty() == true) {
         return VK_NULL_HANDLE;
@@ -158,7 +158,7 @@ inline VkPipeline CreateComputePipelines(VKDevice &handle, std::vector<VkPipelin
     return compute_pipeline;
 }
 
-inline VkPipeline create_graphics_pipeline(VKDevice &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+inline VkPipeline create_graphics_pipeline(VK_handle &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                            VkPipelineLayout pipelineLayout,
                                            VkPipelineVertexInputStateCreateInfo *vertexInputState) {
     // Pipeline
@@ -217,7 +217,7 @@ inline VkPipeline create_graphics_pipeline(VKDevice &handle, std::vector<VkPipel
 }
 
 
-inline VkPipeline create_pipeline(VKDevice &handle, const std::string &shader_key,
+inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_key,
                                   VkPipelineLayout pipelineLayout,
                                   std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                   std::map<std::string, pipeline_and_share> &map) {
@@ -237,7 +237,7 @@ inline VkPipeline create_pipeline(VKDevice &handle, const std::string &shader_ke
     return VK_NULL_HANDLE;
 }
 
-inline VkPipeline find_pipeline(VKDevice &handle, const std::string &shader_key,
+inline VkPipeline find_pipeline(VK_handle &handle, const std::string &shader_key,
                                 VkPipelineLayout pipelineLayout,
                                 std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                 std::map<std::string, pipeline_and_share> &map) {
@@ -253,8 +253,8 @@ inline VkPipeline find_pipeline(VKDevice &handle, const std::string &shader_key,
 }
 
 
-inline void clean_all_pipeline(VKDevice &handle) {
-    auto pipeline_map = VKDevice::get().get_pipeline_map();
+inline void clean_all_pipeline(VK_handle &handle) {
+    auto pipeline_map = VK_handle::get().get_pipeline_map();
     for (const auto &[key, value]: pipeline_map) {
         vkDestroyPipeline(handle.get_device(), value.pipeline, nullptr);
     }

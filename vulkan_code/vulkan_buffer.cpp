@@ -8,7 +8,7 @@
 #include "vulkan_image.h"
 
 
-void copy_vk_buffer_and_execution(const VKDevice &handle, VkBuffer srcBuffer,
+void copy_vk_buffer_and_execution(const VK_handle &handle, VkBuffer srcBuffer,
                                   VkBuffer dstBuffer, VkDeviceSize size) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
@@ -22,7 +22,7 @@ void copy_vk_buffer_and_execution(const VKDevice &handle, VkBuffer srcBuffer,
 }
 
 
-void end_and_submit_one_command_buffer(const VKDevice &handle, VkCommandBuffer commandBuffer) {
+void end_and_submit_one_command_buffer(const VK_handle &handle, VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -37,7 +37,7 @@ void end_and_submit_one_command_buffer(const VKDevice &handle, VkCommandBuffer c
 }
 
 
-VkCommandBuffer begin_one_command_buffer(const VKDevice &handle) {
+VkCommandBuffer begin_one_command_buffer(const VK_handle &handle) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

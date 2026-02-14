@@ -14,13 +14,13 @@
 #include "vulkan_image.h"
 #include "global_singleton.h"
 
-static VKDevice *instance = nullptr;
+static VK_handle *instance = nullptr;
 
 
-VKDevice &VKDevice::get() {
+VK_handle &VK_handle::get() {
     static std::once_flag flag;
     std::call_once(flag, []() {
-        instance = new VKDevice();
+        instance = new VK_handle();
         assert(instance != nullptr);
         instance->init_device_handle();
     });
@@ -28,12 +28,12 @@ VKDevice &VKDevice::get() {
 }
 
 
-VKDevice::~VKDevice() {
+VK_handle::~VK_handle() {
     volkFinalize();
 }
 
 
-void VKDevice::create_instance() {
+void VK_handle::create_instance() {
     if (volkInitialize() != VK_SUCCESS) {
         return;
     }
@@ -80,11 +80,11 @@ void VKDevice::create_instance() {
 }
 
 static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
-    auto app                = reinterpret_cast<VKDevice *>(glfwGetWindowUserPointer(window));
+    auto app                = reinterpret_cast<VK_handle *>(glfwGetWindowUserPointer(window));
     app->framebufferResized = true;
 }
 
-void VKDevice::create_surface() {
+void VK_handle::create_surface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
@@ -99,7 +99,7 @@ void VKDevice::create_surface() {
     }
 }
 
-bool VKDevice::choose_one_physical_device() {
+bool VK_handle::choose_one_physical_device() {
     auto physical_devices = get_all_physical_devices(instance_);
     for (auto physical_device: physical_devices) {
         auto family_properties = get_queue_family_properties(physical_device);
@@ -122,7 +122,7 @@ bool VKDevice::choose_one_physical_device() {
 }
 
 
-uint32_t VKDevice::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
+uint32_t VK_handle::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
     auto queueFamilyProperties = get_queue_family_properties(physical_device_);
 
     // Dedicated queue for compute
@@ -159,7 +159,7 @@ uint32_t VKDevice::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
 }
 
 
-void VKDevice::create_device() {
+void VK_handle::create_device() {
     // Logical device
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
@@ -264,7 +264,7 @@ void VKDevice::create_device() {
     return;
 }
 
-void VKDevice::create_VMA() {
+void VK_handle::create_VMA() {
     // VMA
     VmaVulkanFunctions vkFunctions{
         .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
@@ -281,7 +281,7 @@ void VKDevice::create_VMA() {
 }
 
 
-void VKDevice::create_swap_chain(VkSwapchainKHR old_swap_chain) {
+void VK_handle::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // Swap chain
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
@@ -327,7 +327,7 @@ void VKDevice::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // }
 }
 
-void VKDevice::create_swap_chain_image_view() {
+void VK_handle::create_swap_chain_image_view() {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
@@ -353,7 +353,7 @@ void VKDevice::create_swap_chain_image_view() {
 /**
  * 虽然不用，暂时先留着
  */
-void VKDevice::create_depth_resources() {
+void VK_handle::create_depth_resources() {
     // VkFormat depthFormat = findDepthFormat(physical_device_);
     // auto swapChainExtent = get_current_extent();
     // createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
@@ -364,7 +364,7 @@ void VKDevice::create_depth_resources() {
 }
 
 
-void VKDevice::create_depth_image_view() {
+void VK_handle::create_depth_image_view() {
     // Depth attachment
     std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
     for (VkFormat &format: depthFormatList) {
@@ -412,7 +412,7 @@ void VKDevice::create_depth_image_view() {
     VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
 }
 
-void VKDevice::destroy() {
+void VK_handle::destroy() {
 
     vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
     vkDestroyImageView(device_, depth_image_view_, nullptr);

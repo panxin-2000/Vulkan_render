@@ -29,7 +29,7 @@ static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBin
  * @return 输出的是 descriptor
  */
 static VkDescriptorSetLayout
-create_descriptor_bindings_layout(const VKDevice &handle,
+create_descriptor_bindings_layout(const VK_handle &handle,
                                   const std::vector<VkDescriptorSetLayoutBinding> &layout_bindings,
                                   const std::vector<VkDescriptorBindingFlags> &layout_bindings_flags) {
     VkDescriptorSetLayout descriptor_bindings_layout;
@@ -52,7 +52,7 @@ create_descriptor_bindings_layout(const VKDevice &handle,
  * @param organized_sets_and_bindings
  * @return
  */
-inline auto create_descriptor_sets_layout(VKDevice &handle,
+inline auto create_descriptor_sets_layout(VK_handle &handle,
                                           const std::string &shader_key,
                                           const std::array<std::map<uint32_t, binding_resource>, max_sets> &
                                           organized_sets_and_bindings) {
@@ -87,7 +87,7 @@ inline auto create_descriptor_sets_layout(VKDevice &handle,
     return descriptor_sets_layout;
 }
 
-inline auto find_descriptor_sets_layout(VKDevice &handle,
+inline auto find_descriptor_sets_layout(VK_handle &handle,
                                           const std::string &shader_key) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     if (!shader_key.empty()) {
@@ -103,7 +103,7 @@ inline auto find_descriptor_sets_layout(VKDevice &handle,
 }
 
 
-inline void clean_all_descriptor_sets_layout(VKDevice &handle) {
+inline void clean_all_descriptor_sets_layout(VK_handle &handle) {
     auto &map = handle.get_descriptor_sets_layout_map();
     for (const auto &[key, value]: map) {
         for (auto Bindings: value.first) {
@@ -113,7 +113,7 @@ inline void clean_all_descriptor_sets_layout(VKDevice &handle) {
     map.clear();
 }
 
-inline auto create_descriptor_sets_flags(const VKDevice &handle,
+inline auto create_descriptor_sets_flags(const VK_handle &handle,
                                          const std::array<std::map<uint32_t, binding_resource>, max_sets> &
                                          organized_sets_and_bindings) {
     std::vector<VkDescriptorBindingFlags> sets_flags;

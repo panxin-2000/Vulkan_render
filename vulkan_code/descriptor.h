@@ -50,7 +50,7 @@
  * @param textureDescriptors
  * @param descriptor_set_texture
  */
-inline void update_descriptor_sets(const VKDevice &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
+inline void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                                    const std::vector<VkDescriptorSet> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
@@ -104,7 +104,7 @@ inline auto variable_descriptor(const uint32_t binding_less_size,
  * @param BindingFlags
  * @return
  */
-inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VKDevice &handle,
+inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
                                                              const VkDescriptorSetLayout &descriptor_set_layout,
                                                              const VkDescriptorBindingFlags BindingFlags) {
     uint32_t resize_number = 1;

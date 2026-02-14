@@ -53,7 +53,7 @@ inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::stri
     return {vertices, sp_indices};
 }
 
-inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VKDevice &handle, VkDeviceSize size,
+inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VK_handle &handle, VkDeviceSize size,
                                                             VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
     VkBuffer vBuffer{VK_NULL_HANDLE};
     VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
@@ -77,7 +77,7 @@ inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VKDevice &hand
 }
 
 
-inline bool check_host_visible_bit(const VKDevice &handle, const VmaAllocation vBufferAllocation) {
+inline bool check_host_visible_bit(const VK_handle &handle, const VmaAllocation vBufferAllocation) {
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), vBufferAllocation, &info);
     VkMemoryPropertyFlags props;
@@ -86,7 +86,7 @@ inline bool check_host_visible_bit(const VKDevice &handle, const VmaAllocation v
     return isVisible;
 }
 
-inline bool check_need_flush_bit(const VKDevice &handle, const VmaAllocation vBufferAllocation) {
+inline bool check_need_flush_bit(const VK_handle &handle, const VmaAllocation vBufferAllocation) {
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), vBufferAllocation, &info);
     VkMemoryPropertyFlags props;
@@ -95,7 +95,7 @@ inline bool check_need_flush_bit(const VKDevice &handle, const VmaAllocation vBu
     return need_flush;
 }
 
-inline bool copy_mem_from_cpu_to_gpu(const VKDevice &handle,
+inline bool copy_mem_from_cpu_to_gpu(const VK_handle &handle,
                                      const std::pair<VkBuffer, VmaAllocation> &buffer_handle,
                                      const std::function<void(void *)> &mem_copy_callback) {
     if (check_host_visible_bit(handle, buffer_handle.second) == true) {
@@ -122,7 +122,7 @@ inline bool copy_mem_from_cpu_to_gpu(const VKDevice &handle,
 
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据
-inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VKDevice &handle, VkDeviceSize size) {
+inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
     return create_vma_buffer(handle, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 }
@@ -134,7 +134,7 @@ inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VKDevice &
  * @param mem_copy_callback
  * @return
  */
-inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDevice &handle, VkDeviceSize size,
+inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
                                                                      std::function<void(void *)> mem_copy_callback) {
     auto [vBuffer,vBufferAllocation] =
             create_vma_buffer(handle, size,
@@ -172,7 +172,7 @@ inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VKDev
 }
 
 
-inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attributes &vertices,
+inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_attributes &vertices,
                                    const Indices_type &indices_) {
     VkDeviceSize vBufSize{vertices.size};
     VkDeviceSize iBufSize{sizeof(uint16_t) * indices_->size()};
@@ -203,7 +203,7 @@ inline Model_mesh create_mesh_data(const VKDevice &handle, const vertex_and_attr
 }
 
 
-inline Model_mesh create_mesh(const VKDevice &handle, logic_render_data *data,
+inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data *data,
                               std::map<logic_render_data *, buffer_and_share> &map) {
     if (data != nullptr) {
         auto it = map.find(data);
@@ -242,12 +242,12 @@ inline Model_mesh *find_mesh(logic_render_data *data,
     }
 }
 
-inline void clean_all_mesh_object(VKDevice &handle) {
+inline void clean_all_mesh_object(VK_handle &handle) {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-    for (const auto &[key, value]: VKDevice::get().get_mesh_map()) {
+    for (const auto &[key, value]: VK_handle::get().get_mesh_map()) {
         vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vertices_allocation);
         // ->不清理会直接爆异常
     }
-    VKDevice::get().get_mesh_map().clear();
+    VK_handle::get().get_mesh_map().clear();
 }
 #endif //HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H

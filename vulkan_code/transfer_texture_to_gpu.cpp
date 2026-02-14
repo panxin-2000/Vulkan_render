@@ -14,7 +14,7 @@
 
 std::array<Texture_parameter, 3> textures{};
 
-void create_textures_to_gpu(VKDevice &handle, VkCommandPool commandPool) {
+void create_textures_to_gpu(VK_handle &handle, VkCommandPool commandPool) {
     for (auto i = 0; i < textures.size(); i++) {
         ktxTexture *ktxTexture{nullptr};
         std::string filename = "assets/suzanne" + std::to_string(i) + ".ktx";
@@ -156,7 +156,7 @@ void create_textures_to_gpu(VKDevice &handle, VkCommandPool commandPool) {
 }
 
 
-void destroy_texture(VKDevice *handle) {
+void destroy_texture(VK_handle *handle) {
     for (auto i = 0; i < textures.size(); i++) {
         vkDestroyImageView(handle->get_device(), textures[i].image_view, nullptr);
         vkDestroySampler(handle->get_device(), textures[i].sampler, nullptr);

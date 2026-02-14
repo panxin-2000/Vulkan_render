@@ -18,7 +18,7 @@
 #include "vulkan_render_manage.h"
 
 
-void render_thread_start(VKDevice &handle);
+void render_thread_start(VK_handle &handle);
 
 void render_thread_stop();
 
@@ -27,7 +27,7 @@ void render_thread_stop_and_wait();
 
 inline bool add_object_to_render(logic_render_data *render_object) {
     //
-    auto &handle = VKDevice::get();
+    auto &handle = VK_handle::get();
     if (render_object != nullptr) {
         auto shaderStages = find_graphics_shader_module(handle, render_object->vertexPath_,
                                                         render_object->fragmentPath_,
@@ -48,7 +48,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         const auto vertexInputState = vertex_input_position_normal_uv();
         auto pipeline_t             = find_pipeline(handle, shader_key, pipeline_layout, shaderStages,
-                                        VKDevice::get().get_pipeline_map());
+                                        VK_handle::get().get_pipeline_map());
         if (pipeline_t == VK_NULL_HANDLE) {
             // continue;
         }
@@ -64,12 +64,12 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         auto push_constants = handle.get_current_shader_data_buffer().deviceAddress;
 
-        auto mesh                       = create_mesh(handle, render_object, VKDevice::get().get_mesh_map());
+        auto mesh                       = create_mesh(handle, render_object, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;
         vk_data->mesh                   = mesh;
         vk_data->pipeline_layout        = pipeline_layout;
-        vk_data->scissor                = VKDevice::get().get_scissor();
-        vk_data->viewport               = VKDevice::get().get_viewport();
+        vk_data->scissor                = VK_handle::get().get_scissor();
+        vk_data->viewport               = VK_handle::get().get_viewport();
         vk_data->vk_pipeline            = pipeline_t;
         vk_data->debug_name             = render_object->debug_name;
         vk_data->vk_descriptor_set      = descriptor_set_texture;

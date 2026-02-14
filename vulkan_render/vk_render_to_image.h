@@ -37,7 +37,7 @@ class vk_render_GPU {
     std::vector<draw_need_vk *> need_render_objects;
 
 public:
-    void render_thread(VKDevice &handle) {
+    void render_thread(VK_handle &handle) {
         if (need_render == running) {
             return; // 已经在运行中了，直接返回
         }
@@ -85,7 +85,7 @@ public:
         // image_views_
         // images_
 
-        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VKDevice::get().get_device()));
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_handle::get().get_device()));
 
         handle.destroy_descriptorPool();
 
@@ -136,7 +136,7 @@ public:
 
 private
 :
-    void init_need_objects(VKDevice &handle) {
+    void init_need_objects(VK_handle &handle) {
         while (true) {
             // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
             auto option_temp = vk_render_queue::instance().get_need_init();

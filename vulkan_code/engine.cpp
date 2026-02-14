@@ -11,15 +11,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-const VkImage &VKDevice::get_current_swap_chain_image() {
+const VkImage &VK_handle::get_current_swap_chain_image() {
     return get_swap_chain_images()[imageIndex];
 }
 
-const VkImageView &VKDevice::get_current_swap_image_view() {
+const VkImageView &VK_handle::get_current_swap_image_view() {
     return get_swap_image_views()[imageIndex];
 }
 
-void VKDevice::create_command_buffer() {
+void VK_handle::create_command_buffer() {
     VkCommandBufferAllocateInfo cbAllocCI{
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool        = get_command_pool(),
@@ -30,7 +30,7 @@ void VKDevice::create_command_buffer() {
                                  command_buffers_.data()));
 }
 
-void VKDevice::create_shader_data_buffer() {
+void VK_handle::create_shader_data_buffer() {
     // Shader data buffers
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VkBufferCreateInfo uBufferCI{
@@ -61,7 +61,7 @@ void VKDevice::create_shader_data_buffer() {
 }
 
 
-void VKDevice::create_fences() {
+void VK_handle::create_fences() {
     VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(get_device(), &fenceCI, nullptr, &fences_[i]));
@@ -69,7 +69,7 @@ void VKDevice::create_fences() {
 }
 
 
-void VKDevice::create_present_Semaphores() {
+void VK_handle::create_present_Semaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &
@@ -79,7 +79,7 @@ void VKDevice::create_present_Semaphores() {
 }
 
 
-void VKDevice::create_renderSemaphores() {
+void VK_handle::create_renderSemaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     render_to_image_semaphores_.resize(get_swap_image_views().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
@@ -89,7 +89,7 @@ void VKDevice::create_renderSemaphores() {
     }
 }
 
-void VKDevice::put_one_image_to_screen() {
+void VK_handle::put_one_image_to_screen() {
     // Submit to graphics queue
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
@@ -127,7 +127,7 @@ void VKDevice::put_one_image_to_screen() {
 }
 
 
-void VKDevice::get_one_image_can_render() {
+void VK_handle::get_one_image_can_render() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
     VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(), 1, &get_current_fences(), true,
                                  UINT64_MAX));
@@ -163,7 +163,7 @@ void VKDevice::get_one_image_can_render() {
 }
 
 
-void VKDevice::destroy_and_recreate_fence_and_semaphore() {
+void VK_handle::destroy_and_recreate_fence_and_semaphore() {
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkDestroyFence(get_device(), fences_[i], nullptr);                 //  这里还需要
         vkDestroySemaphore(get_device(), present_semaphores_[i], nullptr); //
@@ -178,7 +178,7 @@ void VKDevice::destroy_and_recreate_fence_and_semaphore() {
     frameIndex = 0;
 }
 
-void VKDevice::engine_destroy() {
+void VK_handle::engine_destroy() {
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(get_device()));
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkDestroyFence(get_device(), fences_[i], nullptr);                 //  这里还需要
@@ -219,8 +219,8 @@ void update_shader_data() {
         shaderData.model[i] = glm::mat4(1.0f);
     }
     ShaderDatas.push_back(shaderData);
-    if (VKDevice::get().get_current_shader_data_buffer().get_point_mapped_address() != nullptr) {
-        memcpy(VKDevice::get().get_current_shader_data_buffer().get_point_mapped_address(),
+    if (VK_handle::get().get_current_shader_data_buffer().get_point_mapped_address() != nullptr) {
+        memcpy(VK_handle::get().get_current_shader_data_buffer().get_point_mapped_address(),
                ShaderDatas.data(),
                ShaderDatas.size() * sizeof(ShaderData));
     }
@@ -228,7 +228,7 @@ void update_shader_data() {
 
 
 [[nodiscard]] void *uniform_buffer::get_point_mapped_address() const {
-    const auto &handle = VKDevice::get();
+    const auto &handle = VK_handle::get();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
     VkMemoryPropertyFlags props;

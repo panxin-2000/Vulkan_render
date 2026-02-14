@@ -9,8 +9,8 @@
 #include "vulkan_device_handle.h"
 
 
-void create_textures_to_gpu(VKDevice &handle, VkCommandPool commandPool);
+void create_textures_to_gpu(VK_handle &handle, VkCommandPool commandPool);
 
-void destroy_texture(VKDevice *handle);
+void destroy_texture(VK_handle *handle);
 
 #endif //HOWTOVULKAN_TRANSFER_TEXTURE_TO_GPU_H

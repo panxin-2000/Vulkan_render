@@ -124,7 +124,7 @@ static std::vector<char> readFile(const std::string &filename) {
 }
 
 
-inline VkShaderModule create_one_shader_module(const VKDevice &handle, const std::string &path,
+inline VkShaderModule create_one_shader_module(const VK_handle &handle, const std::string &path,
                                                std::map<std::string, shader_and_share> &map) {
     if (!path.empty()) {
         const auto shader_code = readFile(path);
@@ -151,7 +151,7 @@ inline VkShaderModule create_one_shader_module(const VKDevice &handle, const std
     return VK_NULL_HANDLE;
 }
 
-inline VkShaderModule find_one_shader_module(const VKDevice &handle, const std::string &path,
+inline VkShaderModule find_one_shader_module(const VK_handle &handle, const std::string &path,
                                              std::map<std::string, shader_and_share> &map) {
     auto it = map.find(path);
     if (it != map.end()) {
@@ -161,11 +161,11 @@ inline VkShaderModule find_one_shader_module(const VKDevice &handle, const std::
 }
 
 
-inline std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VKDevice &handle,
+inline std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_handle &handle,
     const std::string &compute_path) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     VkShaderModule computeShaderModule = find_one_shader_module(handle, compute_path,
-                                                                VKDevice::get().get_shader_map());
+                                                                VK_handle::get().get_shader_map());
     if (computeShaderModule != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
         ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -178,18 +178,18 @@ inline std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_modu
 }
 
 
-inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VKDevice &handle,
+inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_handle &handle,
     const std::string &vertex_path,
     const std::string &fragment_path,
     const std::string &geometry_path) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
     VkShaderModule vertShaderModule = find_one_shader_module(handle, vertex_path,
-                                                             VKDevice::get().get_shader_map());
+                                                             VK_handle::get().get_shader_map());
     VkShaderModule fragShaderModule = find_one_shader_module(handle, fragment_path,
-                                                             VKDevice::get().get_shader_map());
+                                                             VK_handle::get().get_shader_map());
     VkShaderModule geometry_shader_module = find_one_shader_module(handle, geometry_path,
-                                                                   VKDevice::get().get_shader_map());
+                                                                   VK_handle::get().get_shader_map());
 
     if (vertShaderModule != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
@@ -218,12 +218,12 @@ inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(
     return shaderStages;
 }
 
-inline void clean_all_shader_object(VKDevice &handle) {
+inline void clean_all_shader_object(VK_handle &handle) {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-    for (const auto &[key, value]: VKDevice::get().get_shader_map()) {
+    for (const auto &[key, value]: VK_handle::get().get_shader_map()) {
         vkDestroyShaderModule(handle.get_device(), value.shader, nullptr);
     }
-    VKDevice::get().get_shader_map().clear();
+    VK_handle::get().get_shader_map().clear();
 }
 
 #endif //HOWTOVULKAN_CREATE_SHADER_H

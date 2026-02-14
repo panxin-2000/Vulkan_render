@@ -9,7 +9,7 @@
 #include "vulkan_device_handle.h"
 #include "vulkan_buffer.h"
 
-VkImageView createImageView(const VKDevice &handle,
+VkImageView createImageView(const VK_handle &handle,
                             const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags,
@@ -30,7 +30,7 @@ VkImageView createImageView(const VKDevice &handle,
         throw std::runtime_error("failed to create image view!");
     }
     return imageView;
-}VkImageView create_sky_cube_ImageView(const VKDevice &handle,
+}VkImageView create_sky_cube_ImageView(const VK_handle &handle,
                             const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags,
@@ -64,7 +64,7 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
     }
     throw std::runtime_error("failed to find suitable memory type!");
 }
-std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VKDevice &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
+std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_handle &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
                                               VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
@@ -96,7 +96,7 @@ std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VKDevice &handle, uint32
     return {image, allocation};
 }
 
-std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
+std::pair<VkImage, VmaAllocation> createImage(VK_handle &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
                                               VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
@@ -129,7 +129,7 @@ std::pair<VkImage, VmaAllocation> createImage(VKDevice &handle, uint32_t width, 
     return {image, allocation};
 }
 
-std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, VkDeviceSize size,
+std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VK_handle &handle, VkDeviceSize size,
                                                        std::function<void(void *)> mem_copy_callback) {
     auto [vBuffer,vBufferAllocation] =
             create_vma_buffer(handle, size,
@@ -155,7 +155,7 @@ std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VKDevice &handle, V
 }
 
 
-void transition_image(VKDevice &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
+void transition_image(VK_handle &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
                       VkImageLayout oldLayout,
                       VkImageLayout newLayout,
                       VkAccessFlags srcAccessMask,
@@ -184,7 +184,7 @@ void transition_image(VKDevice &handle, VkCommandBuffer commandBuffer, VkImage i
 }
 
 
-void generateMipmaps(VKDevice &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
+void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
                      uint32_t mipLevels) {
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
@@ -253,7 +253,7 @@ void generateMipmaps(VKDevice &handle, VkImage image, VkFormat imageFormat, int3
 }
 
 
-std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VKDevice &handle, const std::string &picture_path) {
+std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VK_handle &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -302,7 +302,7 @@ std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VKDevice &han
     return {textureImage, textureImage_allocation, texture_view};
 }
 
-void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
+void copyBufferToImage(const VK_handle &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkBufferImageCopy region{};
@@ -330,7 +330,7 @@ void copyBufferToImage(const VKDevice &handle, VkBuffer buffer, VkImage image, u
 }
 
 
-inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
+inline void transitionImageLayout(const VK_handle &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
                                   VkImageLayout newLayout, uint32_t mipLevels) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
@@ -388,7 +388,7 @@ inline void transitionImageLayout(const VKDevice &handle, VkImage image, VkForma
 }
 
 
-VkSampler createTextureSampler(VKDevice &handle) {
+VkSampler createTextureSampler(VK_handle &handle) {
     VkSampler textureSampler;
 
     VkSamplerCreateInfo samplerInfo{};
@@ -439,7 +439,7 @@ VkSampler createTextureSampler(VKDevice &handle) {
 }
 
 
-Texture_parameter create_texture_all(VKDevice &handle, const std::string &picture_path) {
+Texture_parameter create_texture_all(VK_handle &handle, const std::string &picture_path) {
     auto [textureImage,textureImage_allocation,texture_view] = createTextureImage(handle, picture_path);
     auto textureSampler                                      = createTextureSampler(handle);
     VkDescriptorImageInfo imageInfo{};
