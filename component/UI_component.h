@@ -4,10 +4,10 @@
 
 #ifndef HELLO_MAC_UI_POSITION_AND_OFFSET_H
 #define HELLO_MAC_UI_POSITION_AND_OFFSET_H
-#include <Scene_Component.h>
+#include <scene_component.h>
 #include "name_component.h"
 
-class UI_positon_and_zoom {
+class rect_transform {
     Point_2 zoom   = {1, 1};
     Point_2 offset = {0, 0};
 
@@ -62,7 +62,7 @@ public:
     }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = g_entt().try_get<UI_positon_and_zoom>(entity)) {
+        if (auto *scene_node = g_entt().try_get<rect_transform>(entity)) {
             if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
             }
@@ -85,7 +85,7 @@ public:
     }
 
     bool update_2D_position_matrix() const {
-        const auto &storage = g_entt().storage<UI_positon_and_zoom>();
+        const auto &storage = g_entt().storage<rect_transform>();
         const auto entity   = entt::to_entity(storage, *this);
         if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
         }
@@ -110,7 +110,7 @@ public:
         std::call_once(flag, []() {
                            g_entt().emplace<Scene_Component>(instance);
                            g_entt().emplace<Name_component>(instance, "scene_root");
-                           if (auto *scene_node = g_entt().try_get<UI_positon_and_zoom>(instance)) {
+                           if (auto *scene_node = g_entt().try_get<rect_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {
                                                                 static_cast<float>(get_win_WIDTH()),
@@ -139,7 +139,7 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
     std::vector<entt::entity> return_value;
     const auto scene_root_node = get_UI_scene_root();
     return_value.push_back(scene_root_node);
-    UI_positon_and_zoom::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
+    rect_transform::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
     return return_value;
 }
 #endif //HELLO_MAC_UI_POSITION_AND_OFFSET_H

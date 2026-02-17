@@ -9,7 +9,7 @@
 #include "input_component.h"
 #include "name_component.h"
 #include "observer_manage.h"
-#include "Scene_Component.h"
+#include "scene_component.h"
 #include "UI_button.h"
 
 entt::entity UI_block(const std::string &name,

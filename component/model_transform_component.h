@@ -6,12 +6,12 @@
 #define HELLO_MAC_RENDER_COMPONENT_H
 
 
-#include <Scene_Component.h>
+#include <scene_component.h>
 #include "name_component.h"
 #include "model_matrix.h"
 
 
-class UI_positon_and_zoom {
+class model_transform {
     Point_3 zoom   = {1, 1, 1};
     Point_3 offset = {0, 0, 0};
     Quaternion rotate;
@@ -28,6 +28,17 @@ public:
 
     void set_bounding_box(const Point_3 min, const Point_3 max) {
         bounding_box_ = AABB_centroid<Point_3>(min, max);
+    }
+
+
+    static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
+        if (auto *scene_node = g_entt().try_get<model_transform>(entity)) {
+            // 下面这个3d部分是需要去写的，但是只能通过射线来进行检测了
+            // if (intersect(scene_node->bounding_box_, current_position)) {
+            // return true;
+            // }
+        }
+        return false;
     }
 };
 

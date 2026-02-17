@@ -6,11 +6,6 @@
 #define HELLO_MAC_MODEL_MATRIX_H
 #include <cmath>
 
-struct translation {
-    float x = 0.0f;
-    float y = 0.0f;
-    float z = 0.0f;
-};
 
 struct Quaternion {
     float x = 0.0f;
@@ -26,7 +21,7 @@ struct scale {
 };
 
 
-inline float *model_matrix_4x4(float *result, const translation t, const Quaternion rotate, const scale s) {
+inline float *model_matrix_4x4(float *result, const Point_3 t, const Quaternion rotate, const scale s) {
     // 输入: 四元数 q (x, y, z, w)
     // 输出: 3x3 矩阵 (列主序数组 m[9])
 
@@ -78,7 +73,7 @@ inline float *model_matrix_4x4(float *result, const translation t, const Quatern
  * @param q
  * @return
  */
-inline float *view_matrix_4x4(float *result, const translation t, const Quaternion q) {
+inline float *view_matrix_4x4(float *result, const Point_3 t, const Quaternion q) {
     // 输入: 四元数 q (x, y, z, w)
     // 输出: 3x3 矩阵 (列主序数组 m[9])
 
@@ -126,7 +121,7 @@ inline float *view_matrix_4x4(float *result, const translation t, const Quaterni
 }
 
 // 四元数归一化
-void quat_normalize(Quaternion *q) {
+inline void quat_normalize(Quaternion *q) {
     float mag    = sqrtf(q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w);
     float invMag = 1.0f / mag;
     q->x         *= invMag;
@@ -135,7 +130,7 @@ void quat_normalize(Quaternion *q) {
     q->w         *= invMag;
 }
 
-Quaternion quat_mul(Quaternion a, Quaternion b) {
+inline Quaternion quat_mul(Quaternion a, Quaternion b) {
     Quaternion r;
     r.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
     r.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
@@ -144,7 +139,7 @@ Quaternion quat_mul(Quaternion a, Quaternion b) {
     return r;
 }
 
-Quaternion quat_from_axis_angle_x(float angle) {
+inline Quaternion quat_from_axis_angle_x(float angle) {
     Quaternion q;
     float halfAngle = angle * 0.5f;
     float s         = sinf(halfAngle);
@@ -155,7 +150,7 @@ Quaternion quat_from_axis_angle_x(float angle) {
     return q;
 }
 
-Quaternion quat_from_axis_angle_y(float angle) {
+inline Quaternion quat_from_axis_angle_y(float angle) {
     Quaternion q;
     float halfAngle = angle * 0.5f;
     float s         = sinf(halfAngle);
@@ -168,33 +163,33 @@ Quaternion quat_from_axis_angle_y(float angle) {
 
 // 需要确定要放置在哪里
 
-Quaternion g_cameraRotation = {0.0f, 0.0f, 0.0f, 1.0f};
+// Quaternion g_cameraRotation = {0.0f, 0.0f, 0.0f, 1.0f};
 
-void onMouseMove(float deltaX, float deltaY) {
-    float sensitivity = 0.002f;
-
-    // 1. 创建增量旋转
-    // 左右滑动 (Yaw) 绕相机的上轴 (Y)
-    Quaternion qYaw = quat_from_axis_angle_y(-deltaX * sensitivity);
-
-    // 上下滑动 (Pitch) 绕相机的右轴 (X)
-    Quaternion qPitch = quat_from_axis_angle_x(-deltaY * sensitivity);
-
-    // 2. 核心：将增量应用到当前旋转 (Local Space Multiplication)
-    // 顺序：当前旋转 * 偏航 * 俯仰
-    g_cameraRotation = quat_mul(g_cameraRotation, qYaw);
-    g_cameraRotation = quat_mul(g_cameraRotation, qPitch);
-
-    // 3. 归一化防止累积误差（浮点数精度漂移）
-    quat_normalize(&g_cameraRotation);
-}
+// void onMouseMove(float deltaX, float deltaY) {
+//     float sensitivity = 0.002f;
+//
+//     // 1. 创建增量旋转
+//     // 左右滑动 (Yaw) 绕相机的上轴 (Y)
+//     Quaternion qYaw = quat_from_axis_angle_y(-deltaX * sensitivity);
+//
+//     // 上下滑动 (Pitch) 绕相机的右轴 (X)
+//     Quaternion qPitch = quat_from_axis_angle_x(-deltaY * sensitivity);
+//
+//     // 2. 核心：将增量应用到当前旋转 (Local Space Multiplication)
+//     // 顺序：当前旋转 * 偏航 * 俯仰
+//     g_cameraRotation = quat_mul(g_cameraRotation, qYaw);
+//     g_cameraRotation = quat_mul(g_cameraRotation, qPitch);
+//
+//     // 3. 归一化防止累积误差（浮点数精度漂移）
+//     quat_normalize(&g_cameraRotation);
+// }
 
 
 struct model_matrices_4x4 {
     float p[16];
 };
 
-inline model_matrices_4x4 &model_matrix_4x4_reference(float *result, const translation t, const Quaternion q,
+inline model_matrices_4x4 &model_matrix_4x4_reference(float *result, const Point_3 t, const Quaternion q,
                                                       const scale s) {
     model_matrices_4x4 &return_value = *reinterpret_cast<model_matrices_4x4 *>(model_matrix_4x4(result, t, q, s));
     return return_value;
