@@ -70,6 +70,124 @@ inline float *model_matrix_4x4(float *result, const translation t, const rotatio
     return result;
 }
 
+/**
+ * 相机的x轴 指向屏幕的右边，y轴指向屏幕上方，那么z的正方向是 屏幕向 人的眼睛
+ * @param result
+ * @param t
+ * @param q
+ * @return
+ */
+inline float *view_matrix_4x4(float *result, const translation t, const rotation q) {
+    // 输入: 四元数 q (x, y, z, w)
+    // 输出: 3x3 矩阵 (列主序数组 m[9])
+
+    float x2 = q.x + q.x; // 2x
+    float y2 = q.y + q.y; // 2y
+    float z2 = q.z + q.z; // 2z
+
+    float xx = q.x * x2;
+    float xy = q.x * y2;
+    float xz = q.x * z2;
+    float yy = q.y * y2;
+    float yz = q.y * z2;
+    float zz = q.z * z2;
+    float wx = q.w * x2;
+    float wy = q.w * y2;
+    float wz = q.w * z2;
+
+    // 第一列 (X-basis)
+    result[0] = (1.0f - (yy + zz));
+    result[4] = (xy + wz);
+    result[8] = (xz - wy);
+    result[3] = 0;
+
+    // 第二列 (Y-basis)
+    result[1] = (xy - wz);
+    result[5] = (1.0f - (xx + zz));
+    result[9] = (yz + wx);
+    result[7] = 0;
+
+
+    // 第三列 (Z-basis)
+    result[2]  = (xz + wy);
+    result[6]  = (yz - wx);
+    result[10] = (1.0f - (xx + yy));
+    result[11] = 0;
+
+    // 上面其实直接给出了逆矩阵，
+
+    // 相机的位置一般是放在正半轴，看向原点，
+    result[12] = -(result[0] * t.x + result[4] * t.y + result[8] * t.z);
+    result[13] = (result[1] * t.x + result[5] * t.y + result[9] * t.z);
+    result[14] = -(result[2] * t.x + result[6] * t.y + result[10] * t.z);
+    result[15] = 1;
+    return result;
+}
+
+// 四元数归一化
+void quat_normalize(rotation *q) {
+    float mag    = sqrtf(q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w);
+    float invMag = 1.0f / mag;
+    q->x         *= invMag;
+    q->y         *= invMag;
+    q->z         *= invMag;
+    q->w         *= invMag;
+}
+
+rotation quat_mul(rotation a, rotation b) {
+    rotation r;
+    r.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
+    r.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
+    r.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
+    r.z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w;
+    return r;
+}
+
+rotation quat_from_axis_angle_x(float angle) {
+    rotation q;
+    float halfAngle = angle * 0.5f;
+    float s         = sinf(halfAngle);
+    q.w             = cosf(halfAngle);
+    q.x             = s;
+    q.y             = 0;
+    q.z             = 0;
+    return q;
+}
+
+rotation quat_from_axis_angle_y(float angle) {
+    rotation q;
+    float halfAngle = angle * 0.5f;
+    float s         = sinf(halfAngle);
+    q.w             = cosf(halfAngle);
+    q.x             = 0;
+    q.y             = s;
+    q.z             = 0;
+    return q;
+}
+
+// 需要确定要放置在哪里
+
+rotation g_cameraRotation = {0.0f, 0.0f, 0.0f, 1.0f};
+
+void onMouseMove(float deltaX, float deltaY) {
+    float sensitivity = 0.002f;
+
+    // 1. 创建增量旋转
+    // 左右滑动 (Yaw) 绕相机的上轴 (Y)
+    rotation qYaw = quat_from_axis_angle_y(-deltaX * sensitivity);
+
+    // 上下滑动 (Pitch) 绕相机的右轴 (X)
+    rotation qPitch = quat_from_axis_angle_x(-deltaY * sensitivity);
+
+    // 2. 核心：将增量应用到当前旋转 (Local Space Multiplication)
+    // 顺序：当前旋转 * 偏航 * 俯仰
+    g_cameraRotation = quat_mul(g_cameraRotation, qYaw);
+    g_cameraRotation = quat_mul(g_cameraRotation, qPitch);
+
+    // 3. 归一化防止累积误差（浮点数精度漂移）
+    quat_normalize(&g_cameraRotation);
+}
+
 
 struct model_matrices_4x4 {
     float p[16];

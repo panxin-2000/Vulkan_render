@@ -188,21 +188,21 @@ void VK_handle::engine_destroy() {
 }
 
 
-glm::vec3 camPos{0.0f, 0.0f, -6.0f};
 glm::vec3 objectRotations[3]{};
 
 const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
+translation camPos{1.0f, 2.0f, 6.0f};
 
 ShaderData get_shader_data() {
     ShaderData shaderData;
+    rotation r;
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
-    shaderData.view       = glm::translate(glm::mat4(1.0f), camPos);
+    view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
     for (auto i = 0; i < 3; i++) {
         translation instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};
         auto point = reinterpret_cast<float *>(&shaderData.model[i]);
-        rotation r;
         scale s;
         model_matrix_4x4(point, instancePos, r, s);
     }
