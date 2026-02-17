@@ -11,6 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include "model_matrix.h"
+
 const VkImage &VK_handle::get_current_swap_chain_image() {
     return get_swap_chain_images()[imageIndex];
 }
@@ -198,9 +200,11 @@ ShaderData get_shader_data() {
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
     shaderData.view       = glm::translate(glm::mat4(1.0f), camPos);
     for (auto i = 0; i < 3; i++) {
-        auto instancePos    = glm::vec3((float) (i - 1) * 3.0f, 0.0f, 0.0f);
-        shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(
-                                   glm::quat(objectRotations[i]));
+        translation instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};
+        auto point = reinterpret_cast<float *>(&shaderData.model[i]);
+        rotation r;
+        scale s;
+        model_matrix_4x4(point, instancePos, r, s);
     }
     return shaderData;
 }

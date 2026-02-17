@@ -62,6 +62,7 @@ public:
     std::string vertexPath_;
     std::string geometryPath_;
     std::string fragmentPath_;
+    draw_need_vk *proxy;
 
     logic_render_data() = default;
 

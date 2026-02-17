@@ -44,11 +44,11 @@ inline bool add_object_to_render(logic_render_data *render_object) {
                                          render_object->fragmentPath_,
                                          render_object->geometryPath_);
 
-
         const auto descriptor_sets_layout =
                 create_descriptor_sets_layout(handle, shader_key, organized_sets_and_bindings);
         auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
         auto pipeline_layout = create_pipeline_layout(handle, shader_key, descriptor_sets_layout);
+
 
         const auto vertexInputState = vertex_input_position_normal_uv();
         auto pipeline_t             = find_pipeline(handle, shader_key, pipeline_layout, shaderStages,
@@ -66,10 +66,10 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         // update_shader_data(); // 这里是一个需要同步的点
         auto shaderData = get_shader_data();
 
-        auto push_constants = update_push_constants_data(shaderData); // 这里是一个需要同步的点
-
+        auto push_constants             = update_push_constants_data(shaderData); // 这里是一个需要同步的点
         auto mesh                       = create_mesh(handle, render_object, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;
+        render_object->proxy            = vk_data;
         vk_data->mesh                   = mesh;
         vk_data->pipeline_layout        = pipeline_layout;
         vk_data->scissor                = VK_handle::get().get_scissor();
