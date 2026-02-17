@@ -197,7 +197,7 @@ translation camPos{1.0f, 2.0f, 6.0f};
 
 ShaderData get_shader_data() {
     ShaderData shaderData;
-    rotation r;
+    Quaternion r;
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
     view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
     for (auto i = 0; i < 3; i++) {

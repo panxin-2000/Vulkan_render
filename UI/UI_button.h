@@ -8,10 +8,11 @@
 
 #include "input_component.h"
 #include "base_event.h"
-#include "entity_name_component.h"
+#include "name_component.h"
 #include "global_singleton.h"
 #include "observer_manage.h"
 #include "logic_render_data.h"
+#include "UI_component.h"
 
 entt::entity UI_button(const std::string &name,
                        float min_x,
@@ -59,13 +60,13 @@ static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_sta
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
-                scene_node->set_zoom(entity_, event);
+            if (auto *UI = g_entt().try_get<UI_positon_and_zoom>(entity_)) {
+                UI->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
-            if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
-                scene_node->set_position_offset(entity_, event);
+            if (auto *UI = g_entt().try_get<UI_positon_and_zoom>(entity_)) {
+                UI->set_position_offset(entity_, event);
                 // 包围盒的位置还需要同步更新
                 return OPERATOR_RUNNING_MODAL;
             }
@@ -94,7 +95,8 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
     g_entt().emplace<Scene_Component>(entity_);
-    if (auto *scene_node = g_entt().try_get<Scene_Component>(entity_)) {
+    g_entt().emplace<UI_positon_and_zoom>(entity_);
+    if (auto *scene_node = g_entt().try_get<UI_positon_and_zoom>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
     g_entt().emplace<Drag_event>(entity_);
@@ -141,15 +143,17 @@ entt::entity UI_button(const std::string &name,
             render->set_indices(indices);
         }
         /***************设置着色器与贴图**********************/
-        render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv");
-        render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
+        render->
+                set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv");
+        render->
+                set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
         // render->set_texture("resoureces/picture.png", "ourTexture1");
 
         add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
     }
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
-        auto &position = g_entt().get<Scene_Component>(entity_);
+        auto &position = g_entt().get<UI_positon_and_zoom>(entity_);
         position.update_2D_position_matrix();
         scene_root_add_child(entity_);
     }

@@ -1,10 +1,11 @@
 #include <GLFW/glfw3.h>
 #include "../event/base_event.h"
-#include "entity_name_component.h"
+#include "name_component.h"
 #include "global_singleton.h"
 #include "input_component.h"
 #include "../event/input_device_manage.h"
-#include "scene_component.h"
+#include "Scene_Component.h"
+#include "UI_component.h"
 
 
 void glfwFocusCallback(GLFWwindow *window, int focused);
@@ -51,14 +52,14 @@ void on_key_press(const base_event_with_stamp &event) {
 
     std::vector<entt::entity> all_node_need_check;
 
-    static entt::entity last_work         = get_scene_root();
+    static entt::entity last_work         = get_UI_scene_root();
     const mouse_position current_position = event.current_position;
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
     // std::cout << "last work name: " << name.name << std::endl;
-    if (Scene_Component::check_entity_intersect_point(last_work, current_position))
+    if (UI_positon_and_zoom::check_entity_intersect_point(last_work, current_position))
         if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(last_work, event);
@@ -66,7 +67,7 @@ void on_key_press(const base_event_with_stamp &event) {
                     last_work = last_work;
                     return;
                 } else if (OPERATOR_FINISHED & status) {
-                    last_work = get_scene_root();
+                    last_work = get_UI_scene_root();
                     return;
                 }
             }

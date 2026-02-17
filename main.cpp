@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
             auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         } {
-            auto view = g_entt().view<Position_update_tag>(); //得到哪些需要销毁
+            auto view = g_entt().view<Position_update_tag>(); // 位置发生了更新，需要讲更新传递出去
             // g_entt().destroy(view.begin(), view.end());       // todo : 添加新的函数
         }
 

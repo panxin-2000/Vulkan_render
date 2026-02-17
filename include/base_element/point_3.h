@@ -65,6 +65,31 @@ public:
         return temp;
     }
 
+    static Point_3 min_two_point(const Point_3 &L, const Point_3 &R) {
+        return {((R.x < L.x) ? R.x : L.x), ((R.y < L.y) ? R.y : L.y), ((R.z < L.z) ? R.z : L.z)};
+    }
+
+    static Point_3 max_two_point(Point_3 &L, const Point_3 &R) {
+        return {((R.x > L.x) ? R.x : L.x), ((R.y > L.y) ? R.y : L.y), ((R.z > L.z) ? R.z : L.z)};
+    }
+
+
+    Point_3 operator/(const float number) const {
+        Point_3 temp{0, 0, 0};
+        temp.x = this->x / number;
+        temp.y = this->y / number;
+        temp.z = this->z / number;
+        return temp;
+    }
+
+    Point_3 operator*(const float number) const {
+        Point_3 temp{0, 0, 0};
+        temp.x = this->x * number;
+        temp.y = this->y * number;
+        temp.z = this->z * number;
+        return temp;
+    }
+
 
     float single_area(const Point_3 &R);
 };

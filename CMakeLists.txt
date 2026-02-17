@@ -183,6 +183,10 @@ file(GLOB_RECURSE RENDER
 
         "render_common/stb_image.cpp"
 )
+file(GLOB_RECURSE component
+
+        "component/scene_component.cpp"
+)
 
 
 include_directories(render_common)
@@ -265,7 +269,7 @@ FetchContent_MakeAvailable(entt)
 
 enable_testing()
 
-add_executable(hello_test ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
+add_executable(hello_test ${component} ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
         test/hello_test.cpp
         test/add_char_calculata.cpp
         test/test_add_char_calculata.cpp
@@ -335,7 +339,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
 
 add_executable(learn_render main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
-        ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
+        ${component} ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)

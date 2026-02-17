@@ -1,8 +1,0 @@
-//
-// Created by 潘鑫 on 2025/12/23.
-//
-
-#ifndef HELLO_MAC_RENDER_COMPONENT_H
-#define HELLO_MAC_RENDER_COMPONENT_H
-
-#endif //HELLO_MAC_RENDER_COMPONENT_H

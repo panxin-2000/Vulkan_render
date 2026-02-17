@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_MODEL_MATRIX_H
 #define HELLO_MAC_MODEL_MATRIX_H
+#include <cmath>
 
 struct translation {
     float x = 0.0f;
@@ -11,7 +12,7 @@ struct translation {
     float z = 0.0f;
 };
 
-struct rotation {
+struct Quaternion {
     float x = 0.0f;
     float y = 0.0f;
     float z = 0.0f;
@@ -25,23 +26,23 @@ struct scale {
 };
 
 
-inline float *model_matrix_4x4(float *result, const translation t, const rotation q, const scale s) {
+inline float *model_matrix_4x4(float *result, const translation t, const Quaternion rotate, const scale s) {
     // 输入: 四元数 q (x, y, z, w)
     // 输出: 3x3 矩阵 (列主序数组 m[9])
 
-    float x2 = q.x + q.x; // 2x
-    float y2 = q.y + q.y; // 2y
-    float z2 = q.z + q.z; // 2z
+    float x2 = rotate.x + rotate.x; // 2x
+    float y2 = rotate.y + rotate.y; // 2y
+    float z2 = rotate.z + rotate.z; // 2z
 
-    float xx = q.x * x2;
-    float xy = q.x * y2;
-    float xz = q.x * z2;
-    float yy = q.y * y2;
-    float yz = q.y * z2;
-    float zz = q.z * z2;
-    float wx = q.w * x2;
-    float wy = q.w * y2;
-    float wz = q.w * z2;
+    float xx = rotate.x * x2;
+    float xy = rotate.x * y2;
+    float xz = rotate.x * z2;
+    float yy = rotate.y * y2;
+    float yz = rotate.y * z2;
+    float zz = rotate.z * z2;
+    float wx = rotate.w * x2;
+    float wy = rotate.w * y2;
+    float wz = rotate.w * z2;
 
     // 第一列 (X-basis)
     result[0] = (1.0f - (yy + zz)) * s.x;
@@ -77,7 +78,7 @@ inline float *model_matrix_4x4(float *result, const translation t, const rotatio
  * @param q
  * @return
  */
-inline float *view_matrix_4x4(float *result, const translation t, const rotation q) {
+inline float *view_matrix_4x4(float *result, const translation t, const Quaternion q) {
     // 输入: 四元数 q (x, y, z, w)
     // 输出: 3x3 矩阵 (列主序数组 m[9])
 
@@ -125,7 +126,7 @@ inline float *view_matrix_4x4(float *result, const translation t, const rotation
 }
 
 // 四元数归一化
-void quat_normalize(rotation *q) {
+void quat_normalize(Quaternion *q) {
     float mag    = sqrtf(q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w);
     float invMag = 1.0f / mag;
     q->x         *= invMag;
@@ -134,8 +135,8 @@ void quat_normalize(rotation *q) {
     q->w         *= invMag;
 }
 
-rotation quat_mul(rotation a, rotation b) {
-    rotation r;
+Quaternion quat_mul(Quaternion a, Quaternion b) {
+    Quaternion r;
     r.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z;
     r.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y;
     r.y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x;
@@ -143,8 +144,8 @@ rotation quat_mul(rotation a, rotation b) {
     return r;
 }
 
-rotation quat_from_axis_angle_x(float angle) {
-    rotation q;
+Quaternion quat_from_axis_angle_x(float angle) {
+    Quaternion q;
     float halfAngle = angle * 0.5f;
     float s         = sinf(halfAngle);
     q.w             = cosf(halfAngle);
@@ -154,8 +155,8 @@ rotation quat_from_axis_angle_x(float angle) {
     return q;
 }
 
-rotation quat_from_axis_angle_y(float angle) {
-    rotation q;
+Quaternion quat_from_axis_angle_y(float angle) {
+    Quaternion q;
     float halfAngle = angle * 0.5f;
     float s         = sinf(halfAngle);
     q.w             = cosf(halfAngle);
@@ -167,17 +168,17 @@ rotation quat_from_axis_angle_y(float angle) {
 
 // 需要确定要放置在哪里
 
-rotation g_cameraRotation = {0.0f, 0.0f, 0.0f, 1.0f};
+Quaternion g_cameraRotation = {0.0f, 0.0f, 0.0f, 1.0f};
 
 void onMouseMove(float deltaX, float deltaY) {
     float sensitivity = 0.002f;
 
     // 1. 创建增量旋转
     // 左右滑动 (Yaw) 绕相机的上轴 (Y)
-    rotation qYaw = quat_from_axis_angle_y(-deltaX * sensitivity);
+    Quaternion qYaw = quat_from_axis_angle_y(-deltaX * sensitivity);
 
     // 上下滑动 (Pitch) 绕相机的右轴 (X)
-    rotation qPitch = quat_from_axis_angle_x(-deltaY * sensitivity);
+    Quaternion qPitch = quat_from_axis_angle_x(-deltaY * sensitivity);
 
     // 2. 核心：将增量应用到当前旋转 (Local Space Multiplication)
     // 顺序：当前旋转 * 偏航 * 俯仰
@@ -193,7 +194,7 @@ struct model_matrices_4x4 {
     float p[16];
 };
 
-inline model_matrices_4x4 &model_matrix_4x4_reference(float *result, const translation t, const rotation q,
+inline model_matrices_4x4 &model_matrix_4x4_reference(float *result, const translation t, const Quaternion q,
                                                       const scale s) {
     model_matrices_4x4 &return_value = *reinterpret_cast<model_matrices_4x4 *>(model_matrix_4x4(result, t, q, s));
     return return_value;

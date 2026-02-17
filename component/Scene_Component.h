@@ -1,0 +1,96 @@
+//
+// Created by 潘鑫 on 2025/12/25.
+//
+
+#ifndef HELLO_MAC_SCENE_COMPONENT_H
+#define HELLO_MAC_SCENE_COMPONENT_H
+#include <iostream>
+#include <vector>
+#include <entt/entt.hpp>
+#include "base_event.h"
+#include "base_element/point_3.h"
+#include "base_element/intersect/objects_intersect_with_point.h"
+#include "global_singleton.h"
+#include "logic_render_data.h"
+#include "backend.h"
+
+
+class Scene_Component {
+private:
+public:
+    entt::entity parent = entt::null;
+    std::vector<entt::entity> children;
+
+public:
+    ~Scene_Component() {
+        bool clear_parent_relation(entt::entity children_entity);
+        clear_parent_relation(parent);
+
+        for (auto it = children.rbegin(); it != children.rend(); ++it)
+            if (g_entt().valid(*it)) {
+                g_entt().emplace_or_replace<Destroy_tag>(*it);
+            }
+        // auto children_temp = children;
+        // auto parent_temp = parent;
+        // for (auto it = children.rbegin(); it != children.rend(); ++it) {
+        //     bool clear_parent_relation(const entt::entity children_entity);
+        //     clear_parent_relation(*it);
+        // }
+        // for (auto it = children_temp.rbegin(); it != children_temp.rend(); ++it) {
+        //     bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
+        //     add_relation(parent_temp, *it);
+        // }
+    }
+
+
+    void add_parent_relation(entt::entity entity) {
+        parent = entity;
+    }
+
+    entt::entity get_parent() const {
+        return parent;
+    }
+
+    void remove_parent_ralation() {
+        parent = entt::null;
+    }
+
+    void remove_children_relation(entt::entity entity) {
+        children.erase(std::remove(children.begin(), children.end(), entity), children.end());
+    }
+
+    void add_child_relation(entt::entity entity) {
+        children.push_back(entity);
+    }
+
+
+    bool update_position() const {
+        const auto &storage = g_entt().storage<Scene_Component>();
+
+
+        const auto entity = entt::to_entity(storage, *this);
+        if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
+        }
+        return true;
+    }
+};
+
+
+/**
+ * 将一个节点添加到根节点
+ * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加
+ */
+void scene_root_add_child(entt::entity entity);
+
+void scene_add_child(const entt::entity parent_entity, const entt::entity children_entity);
+
+bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
+
+entt::entity get_parent(const entt::entity entity);
+
+bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity);
+
+bool clear_parent_relation(const entt::entity children_entity);
+
+
+#endif //HELLO_MAC_SCENE_COMPONENT_H
