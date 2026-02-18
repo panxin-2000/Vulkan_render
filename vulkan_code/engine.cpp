@@ -7,9 +7,6 @@
 
 #include "vulkan_device_handle.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 #include "model_matrix.h"
 
@@ -69,9 +66,8 @@ void VK_handle::create_fences() {
 void VK_handle::create_present_Semaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &
-                                     present_semaphores_[i
-                                     ]));
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI,
+                                     nullptr, &present_semaphores_[i]));
     }
 }
 
@@ -81,8 +77,7 @@ void VK_handle::create_renderSemaphores() {
     render_to_image_semaphores_.resize(get_swap_image_views().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
     for (auto &semaphore: render_to_image_semaphores_) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &semaphore
-                                 ));
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &semaphore));
     }
 }
 
@@ -188,17 +183,17 @@ void VK_handle::engine_destroy() {
 }
 
 
-glm::vec3 objectRotations[3]{};
-
 const uint32_t WIDTH  = 1280; // 也是需要更改的
 const uint32_t HEIGHT = 720;
 
 Point_3 camPos{1.0f, 2.0f, 6.0f};
 
+
 ShaderData get_shader_data() {
     ShaderData shaderData;
     Quaternion r;
-    shaderData.projection = glm::perspective(glm::radians(45.0f), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
+    perspective_matrix_4x4(reinterpret_cast<float *>(&shaderData.projection),
+                           45.0f / 180.0f * std::acos(-1.0), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
     view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
     for (auto i = 0; i < 3; i++) {
         Point_3 instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};

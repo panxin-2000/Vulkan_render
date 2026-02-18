@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_MODEL_MATRIX_H
 #define HELLO_MAC_MODEL_MATRIX_H
 #include <cmath>
+#include "base_element/point_3.h"
 
 
 struct Quaternion {
@@ -185,14 +186,58 @@ inline Quaternion quat_from_axis_angle_y(float angle) {
 // }
 
 
-struct model_matrices_4x4 {
+struct matrix_4x4 {
     float p[16];
 };
 
-inline model_matrices_4x4 &model_matrix_4x4_reference(float *result, const Point_3 t, const Quaternion q,
-                                                      const scale s) {
-    model_matrices_4x4 &return_value = *reinterpret_cast<model_matrices_4x4 *>(model_matrix_4x4(result, t, q, s));
+inline matrix_4x4 &model_matrix_4x4_reference(float *result, const Point_3 t, const Quaternion q,
+                                              const scale s) {
+    matrix_4x4 &return_value = *reinterpret_cast<matrix_4x4 *>(model_matrix_4x4(result, t, q, s));
     return return_value;
 }
+
+
+// 简单来说我画的立方体其实是左手坐标系（xy没问题，但是z是有问题的），而不是右手坐标系才有这么多问题？ 确实还是自己做起来收获比较多。
+inline matrix_4x4 perspective_matrix_4x4(float *result, float fovy, float aspect, float zNear, float zFar) {
+    // 简单的一点都做法就是填值就好了
+    float u    = tan(fovy / 2.0f) * zNear;
+    float d    = -u;
+    float r    = aspect * u;
+    float l    = -r;
+    result[0]  = zNear / r; // 1.0f / (aspect * (tan(fovy / 2.0f));      // 问题是 zNear 为什么被强制设置为1了
+    result[1]  = 0;
+    result[2]  = 0;
+    result[3]  = 0;
+    result[4]  = 0;
+    result[5]  = zNear / u; // 为什么算法会不一样  = 1.0f / (tan(fovy / 2.0f))  // 原因是什么？
+    result[6]  = 0;
+    result[7]  = 0;
+    result[8]  = 0;
+    result[9]  = 0;
+    result[10] = -(zFar + zNear) / (zFar - zNear);
+    result[12] = 0;
+    result[13] = 0;
+    result[14] = -2 * zFar * zNear / (zFar - zNear);
+    result[11] = -1;
+    result[15] = 0;
+
+
+    return *reinterpret_cast<matrix_4x4 *>(result);
+}
+
+inline matrix_4x4 orthographic_matrix_4x4(float *result, float fovy, float aspect, float zNear, float zFar) {
+    // 简单的一点都做法就是填值就好了
+    float u    = tan(fovy / 2.0f) * zNear;
+    float d    = -u;
+    float r    = aspect * u;
+    float l    = -r;
+    result[0]  = 1 / r; // 问题是 zNear 为什么被强制设置为1了
+    result[5]  = 1 / u;
+    result[10] = -2.0f / (zFar - zNear);
+    result[14] = -1 * (zFar + zNear) / (zFar - zNear);
+
+    return *reinterpret_cast<matrix_4x4 *>(result);
+}
+
 
 #endif //HELLO_MAC_MODEL_MATRIX_H
