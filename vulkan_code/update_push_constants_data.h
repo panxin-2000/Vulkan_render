@@ -11,7 +11,7 @@
 uniform_buffer &get_uniform_buffer();
 
 template<typename... Args>
-VkDeviceAddress update_push_constants_data(Args... args) {
+std::pair<VkBuffer, uint64_t> update_push_constants_data(Args... args) {
     auto &buffer         = get_uniform_buffer();
     uint32_t memory_size = 0;
     ([&] {
@@ -28,9 +28,10 @@ VkDeviceAddress update_push_constants_data(Args... args) {
                         static_cast<char *>(start_address) + memory_offset);
             memory_offset += sizeof(args);
         }(), ...);
-        return buffer.get_gpu_device_address() + offset_of_start_address;
+        return {buffer.buffer, offset_of_start_address};
+        // buffer.get_gpu_device_address() + offset_of_start_address;
     } else {
-        return 0;
+        return {VK_NULL_HANDLE, 0};
     }
 }
 

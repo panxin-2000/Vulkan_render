@@ -239,5 +239,14 @@ inline matrix_4x4 orthographic_matrix_4x4(float *result, float fovy, float aspec
     return *reinterpret_cast<matrix_4x4 *>(result);
 }
 
+inline matrix_4x4 identity_matrix_4x4(matrix_4x4 *result_m) {
+    auto result =reinterpret_cast<float *>(result_m);
+    result[0]  = 1;    result[4]  = 0;       result[8]  = 0;    result[12] = 0;
+    result[1]  = 0;    result[5]  = 1;       result[9]  = 0;    result[13] = 0;
+    result[2]  = 0;    result[6]  = 0;       result[10] = 1;    result[14] = 0;
+    result[3]  = 0;    result[7]  = 0;       result[11] = 0;    result[15] = 1;
+    return *reinterpret_cast<matrix_4x4 *>(result);
+}
+
 
 #endif //HELLO_MAC_MODEL_MATRIX_H

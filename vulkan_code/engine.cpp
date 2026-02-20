@@ -221,10 +221,20 @@ ShaderData get_shader_data() {
 
 [[nodiscard]] VkDeviceAddress uniform_buffer::get_gpu_device_address() const {
     const auto &handle = VK_handle::get();
-    VkBufferDeviceAddressInfo uBufferBdaInfo{
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer
     };
-    auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &uBufferBdaInfo);
+    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
+    return deviceAddress;
+}
+
+[[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer buffer) {
+    const auto &handle = VK_handle::get();
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer
+    };
+    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
     return deviceAddress;
 }

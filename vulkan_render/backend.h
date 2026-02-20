@@ -53,40 +53,51 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         if (render_object->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
             auto sets_flags        = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
-            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, sets_flags);
+            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, &sets_flags);
             update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
             // 更新应该被拆出来， 放到需要的位置再上传
+        } else {
+            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, nullptr);
         }
+        struct Shader_Data_po {
+            matrix_4x4 projection;
+            matrix_4x4 view;
+            matrix_4x4 model;
+        };
+        Shader_Data_po temp;
 
-
-        // auto &buffer = get_uniform_buffer();
-        // VkDescriptorBufferInfo bufferInfo{};
-        // bufferInfo.buffer = buffer.buffer;
-        // bufferInfo.offset = 0;
-        // bufferInfo.range  = sizeof(UniformBufferObject);
-        //
-        //
-        // std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-        // descriptorWrites[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        // descriptorWrites[0].dstSet           = descriptorSets[i];
-        // descriptorWrites[0].dstBinding       = 0;
-        // descriptorWrites[0].dstArrayElement  = 0;
-        // descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        // descriptorWrites[0].descriptorCount  = 1;
-        // descriptorWrites[0].pBufferInfo      = &bufferInfo;
-        // descriptorWrites[0].pImageInfo       = nullptr;
-        // descriptorWrites[0].pTexelBufferView = nullptr;
-        // vkUpdateDescriptorSets(handle.device_,
-        //                        static_cast<uint32_t>(descriptorWrites.size()),
-        //                        descriptorWrites.data(),
-        //                        0,
-        //                        nullptr);
-
+        identity_matrix_4x4(&temp.projection);
+        identity_matrix_4x4(&temp.view);
+        identity_matrix_4x4(&temp.model);
 
         // update_shader_data(); // 这里是一个需要同步的点
-        auto shaderData = get_shader_data();
+        // auto shaderData = get_shader_data();
 
-        auto push_constants             = update_push_constants_data(shaderData); // 这里是一个需要同步的点
+        auto [vk_buffer,offset] = update_push_constants_data(temp); // 这里是一个需要同步的点
+
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = vk_buffer;
+        bufferInfo.offset = offset;
+        bufferInfo.range  = sizeof(Shader_Data_po);
+
+
+        std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+        descriptorWrites[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet           = descriptor_set_texture[0];
+        descriptorWrites[0].dstBinding       = 0;
+        descriptorWrites[0].dstArrayElement  = 0;
+        descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount  = 1;
+        descriptorWrites[0].pBufferInfo      = &bufferInfo;
+        descriptorWrites[0].pImageInfo       = nullptr;
+        descriptorWrites[0].pTexelBufferView = nullptr;
+        vkUpdateDescriptorSets(handle.device_,
+                               static_cast<uint32_t>(descriptorWrites.size()),
+                               descriptorWrites.data(),
+                               0,
+                               nullptr);
+
+
         auto mesh                       = create_mesh(handle, render_object, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;
         render_object->proxy            = vk_data;
@@ -97,7 +108,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         vk_data->vk_pipeline            = pipeline_t;
         vk_data->debug_name             = render_object->debug_name;
         vk_data->vk_descriptor_set      = descriptor_set_texture;
-        vk_data->push_constants_address = push_constants;
+        vk_data->push_constants_address = 0;
         vk_render_queue::instance().render_object_need_init(vk_data);
         return true;
     }
