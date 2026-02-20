@@ -70,6 +70,22 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     const spirv_cross::CompilerGLSL compiler(spirv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
+    // location 的解析
+    // for (auto &resource: resources.stage_inputs) {
+    //     // 1. Get the Name (e.g., "inPos")
+    //     const std::string &name = resource.name;
+    //
+    //     // 2. Get the Location (The '0', '1', '2' in your GLSL)
+    //     uint32_t location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+    //
+    //     // 3. Get the Type (e.g., vec3, vec2)
+    //     auto &type = compiler.get_type(resource.type_id);
+    //
+    //     printf("Input: %s | Location: %u | VecSize: %u\n",
+    //            name.c_str(), location, type.vecsize);
+    // }
+
+
     // Use a map to automatically sort by Binding ID (the key)
     // 1. Collect Uniform Buffers
     for (const auto &res: resources.uniform_buffers) {
@@ -224,12 +240,13 @@ inline void print_layout_binding_line(std::string filePath) {
 }
 
 
-inline std::string get_shader_key(const std::string &vertex_path,
-                                  const std::string &fragment_path,
-                                  const std::string &geometry_path) {
-    std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
-    std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
-    std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
+inline std::string get_shader_key(Shader_paths &paths) {
+    const std::string &vertex_path   = paths.vertex_path_;
+    const std::string &fragment_path = paths.fragment_path_;
+    const std::string &geometry_path = paths.geometry_path_;
+    std::string temp_vertex_path     = std::filesystem::path(vertex_path).filename().string();
+    std::string temp_fragment_path   = std::filesystem::path(fragment_path).filename().string();
+    std::string temp_geometry_path   = std::filesystem::path(geometry_path).filename().string();
 
     std::string target = ".spv"; {
         size_t pos = temp_vertex_path.find(target);
@@ -251,9 +268,11 @@ inline std::string get_shader_key(const std::string &vertex_path,
 }
 
 static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_graphics_descriptor_set_and_binding_layouts(
-    const std::string &vertex_path,
-    const std::string &fragment_path,
-    const std::string &geometry_path) {
+    Shader_paths &paths) {
+    const std::string &vertex_path   = paths.vertex_path_;
+    const std::string &fragment_path = paths.fragment_path_;
+    const std::string &geometry_path = paths.geometry_path_;
+
     std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_sets_and_bindings;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");

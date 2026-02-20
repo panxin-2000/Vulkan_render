@@ -33,25 +33,18 @@ inline bool add_object_to_render(logic_render_data *render_object) {
     //
     auto &handle = VK_handle::get();
     if (render_object != nullptr) {
-        auto shaderStages = find_graphics_shader_module(handle, render_object->vertexPath_,
-                                                        render_object->fragmentPath_,
-                                                        render_object->geometryPath_);
+        auto pipeline_shader_stage_create_infos =
+                find_graphics_shader_module(handle, render_object->shader_paths_);
         auto organized_sets_and_bindings =
-                organize_graphics_descriptor_set_and_binding_layouts(render_object->vertexPath_,
-                                                                     render_object->fragmentPath_,
-                                                                     render_object->geometryPath_);
-        auto shader_key = get_shader_key(render_object->vertexPath_,
-                                         render_object->fragmentPath_,
-                                         render_object->geometryPath_);
+                organize_graphics_descriptor_set_and_binding_layouts(render_object->shader_paths_);
+        auto shader_key = get_shader_key(render_object->shader_paths_);
 
         const auto descriptor_sets_layout =
                 create_descriptor_sets_layout(handle, shader_key, organized_sets_and_bindings);
-        auto sets_flags      = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
         auto pipeline_layout = create_pipeline_layout(handle, shader_key, descriptor_sets_layout);
 
-
         const auto vertexInputState = vertex_input_position_normal_uv();
-        auto pipeline_t             = find_pipeline(handle, shader_key, pipeline_layout, shaderStages,
+        auto pipeline_t = find_pipeline(handle, shader_key, pipeline_layout, pipeline_shader_stage_create_infos,
                                         VK_handle::get().get_pipeline_map());
         if (pipeline_t == VK_NULL_HANDLE) {
             // continue;
@@ -59,10 +52,37 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         std::vector<VkDescriptorSet> descriptor_set_texture;
         if (render_object->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
-            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout[0], sets_flags[0]);
+            auto sets_flags        = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
+            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, sets_flags);
             update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
             // 更新应该被拆出来， 放到需要的位置再上传
         }
+
+
+        // auto &buffer = get_uniform_buffer();
+        // VkDescriptorBufferInfo bufferInfo{};
+        // bufferInfo.buffer = buffer.buffer;
+        // bufferInfo.offset = 0;
+        // bufferInfo.range  = sizeof(UniformBufferObject);
+        //
+        //
+        // std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
+        // descriptorWrites[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        // descriptorWrites[0].dstSet           = descriptorSets[i];
+        // descriptorWrites[0].dstBinding       = 0;
+        // descriptorWrites[0].dstArrayElement  = 0;
+        // descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        // descriptorWrites[0].descriptorCount  = 1;
+        // descriptorWrites[0].pBufferInfo      = &bufferInfo;
+        // descriptorWrites[0].pImageInfo       = nullptr;
+        // descriptorWrites[0].pTexelBufferView = nullptr;
+        // vkUpdateDescriptorSets(handle.device_,
+        //                        static_cast<uint32_t>(descriptorWrites.size()),
+        //                        descriptorWrites.data(),
+        //                        0,
+        //                        nullptr);
+
+
         // update_shader_data(); // 这里是一个需要同步的点
         auto shaderData = get_shader_data();
 

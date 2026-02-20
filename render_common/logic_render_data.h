@@ -41,6 +41,14 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
+struct Shader_paths {
+    std::string vertex_path_;
+    std::string geometry_path_;
+    std::string fragment_path_;
+    std::string computer_path_;
+};
+
+
 class logic_render_data : public NonCopyable {
 #define add_mutex std::lock_guard<std::mutex> lock(mtx);
 
@@ -54,14 +62,12 @@ public:
     Indices_type indices_;
     GPUPrimType prim_type_ = GPU_PRIM_TRIS;
     status_change status_  = no_change;
-
+    Shader_paths shader_paths_;
     // material 相关的内容
     std::vector<Texture_logic> textures;
     std::string texture_path_;
     std::string texture_name_;
-    std::string vertexPath_;
-    std::string geometryPath_;
-    std::string fragmentPath_;
+
     draw_need_vk *proxy;
 
     logic_render_data() = default;
@@ -106,17 +112,17 @@ public:
 
     void set_vertex_shader(const std::string &path) {
         add_mutex;
-        vertexPath_ = path;
+        shader_paths_.vertex_path_ = path;
     }
 
     void set_fragment_shader(const std::string &path) {
         add_mutex;
-        fragmentPath_ = path;
+        shader_paths_.fragment_path_ = path;
     }
 
     void set_geometry_shader(const std::string &path) {
         add_mutex;
-        geometryPath_ = path;
+        shader_paths_.geometry_path_ = path;
     }
 #undef add_mutex
 };

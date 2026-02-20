@@ -179,9 +179,11 @@ inline std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_modu
 
 
 inline std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_handle &handle,
-    const std::string &vertex_path,
-    const std::string &fragment_path,
-    const std::string &geometry_path) {
+    Shader_paths &paths) {
+    const std::string &vertex_path   = paths.vertex_path_;
+    const std::string &fragment_path = paths.fragment_path_;
+    const std::string &geometry_path = paths.geometry_path_;
+
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
     VkShaderModule vertShaderModule = find_one_shader_module(handle, vertex_path,

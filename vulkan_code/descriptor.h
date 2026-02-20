@@ -77,19 +77,30 @@ inline void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescri
 // };
 
 inline auto variable_descriptor(const uint32_t binding_less_size,
-                                std::vector<uint32_t> &variableDescCount,
-                                uint32_t resize_number) {
+                                const std::vector<VkDescriptorBindingFlags> &binding_flags,
+                                std::vector<uint32_t> &variableDescCounts) {
     ; // 也应该从一个 vector 传递过来， 然后再根据双缓冲进行翻倍
     //  variableDescCount 中的值如果是零的话，不能访问图片，如果是1 的话，实际上是退化为普通的
-    variableDescCount.resize(resize_number, binding_less_size);
+    // for (auto &variableDescCount: variableDescCounts) {
+    //     variableDescCount = binding_less_size;
+    // }
+    variableDescCounts.resize(binding_flags.size());
+
+    for (int i = 0; i < binding_flags.size(); i++) {
+        if (binding_flags[i] & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+            variableDescCounts[i] = binding_less_size;
+        } else {
+            variableDescCounts[i] = 0;
+        }
+    }
     // Vulkan 协议强制规定：只有索引号（Binding Number）最大的那一个绑定可以是可变的
     // 位置限制： 只有描述符集布局中 Binding 编号最大 的那个绑定才能设置为可变长度。
     // 上限约束： 你在 pDescriptorCounts 中指定的数值，不能超过你在 VkDescriptorSetLayoutBinding 中定义的 descriptorCount（即最大上限）。
     // 特性开启： 需要在物理设备特性中开启 descriptorIndexing 的相关支持，具体可参考 Vulkan 硬件数据库 检查你的显卡是否支持 runtimeDescriptorArray
     VkDescriptorSetVariableDescriptorCountAllocateInfo variableDescCountAI{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
-        .descriptorSetCount = static_cast<uint32_t>(variableDescCount.size()),
-        .pDescriptorCounts  = variableDescCount.data(),
+        .descriptorSetCount = static_cast<uint32_t>(variableDescCounts.size()),
+        .pDescriptorCounts  = variableDescCounts.data(),
     };
     return variableDescCountAI;
 }
@@ -99,18 +110,17 @@ inline auto variable_descriptor(const uint32_t binding_less_size,
  * 申请描述符，原本输入的是 单个 descriptor_bindings
  * 需要变更为双缓冲或者多缓冲的结果
  * @param handle
+ * @param descriptor_set_layouts
  * @param binding_less_size       这个参数不太对，但是我也还没有想好究竟应该如何传入
  * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
  * @param BindingFlags
  * @return
  */
-inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
-                                                             const VkDescriptorSetLayout &descriptor_set_layout,
-                                                             const VkDescriptorBindingFlags BindingFlags) {
-    uint32_t resize_number = 1;
+inline auto allocate_descriptor_sets(VK_handle &handle,
+                                     const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                                     const std::vector<VkDescriptorBindingFlags> &BindingFlags) {
+    const uint32_t resize_number = descriptor_set_layouts.size();
     std::vector<VkDescriptorSet> descriptor_set_texture;
-    std::vector<VkDescriptorSetLayout> layouts;
-    layouts.resize(resize_number, descriptor_set_layout);
 
     std::vector<uint32_t> variableDescCount;
     descriptor_set_texture.resize(resize_number);
@@ -119,12 +129,12 @@ inline std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = nullptr,
         .descriptorPool     = handle.get_descriptor_pool(),
-        .descriptorSetCount = static_cast<uint32_t>(layouts.size()), // // 打算分配的集合数量
-        .pSetLayouts        = layouts.data(),                        // 指向布局数组的指针,长度必须等于 descriptorSetCount
+        .descriptorSetCount = static_cast<uint32_t>(descriptor_set_layouts.size()), // // 打算分配的集合数量
+        .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
-    if (BindingFlags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+    if (!BindingFlags.empty()) {
         const uint32_t binding_less_size = handle.get_bindless_textures().size();
-        auto variableDescCountAI         = variable_descriptor(binding_less_size, variableDescCount, resize_number);
+        auto variableDescCountAI         = variable_descriptor(binding_less_size, BindingFlags, variableDescCount);
         texDescSetAlloc.pNext            = &variableDescCountAI;
     } else {
         texDescSetAlloc.pNext = nullptr;

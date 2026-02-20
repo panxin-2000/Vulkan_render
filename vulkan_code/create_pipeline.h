@@ -158,7 +158,8 @@ inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipeli
     return compute_pipeline;
 }
 
-inline VkPipeline create_graphics_pipeline(VK_handle &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+inline VkPipeline create_graphics_pipeline(VK_handle &handle,
+                                           std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                            VkPipelineLayout pipelineLayout,
                                            VkPipelineVertexInputStateCreateInfo *vertexInputState) {
     // Pipeline
@@ -229,7 +230,7 @@ inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_k
         } else {
             const auto vertexInputState = vertex_input_position_normal_uv();
             auto pipeline               = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
-                                                     vertexInputState.get_to_bind());
+                                                                   vertexInputState.get_to_bind());
             map.insert({shader_key, {pipeline, 1}});
             return pipeline;
         }
