@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
     register_glfw(handle.window_);
 
-    auto block_entity = UI_block("功能块", -0.5, -0.5, 0.5, 0.5);
+    auto block_entity = UI_block("功能块", 0, 0, 200, 200);
     // add_button(block_entity, "按钮1", 420, 420, 480, 480);
     // add_button(block_entity, "按钮2", 35, 20, 145, 130);
 

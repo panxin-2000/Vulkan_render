@@ -81,20 +81,50 @@ void VK_handle::create_renderSemaphores() {
     }
 }
 
+void VK_handle::create_timeline_Semaphores() {
+    VkSemaphoreTypeCreateInfo vk_semaphore_type_create_info = {
+        VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr, VK_SEMAPHORE_TYPE_TIMELINE, 0
+    };
+    VkSemaphoreCreateInfo vk_semaphore_create_info = {
+        VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &vk_semaphore_type_create_info, 0
+    };
+    vkCreateSemaphore(get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
+}
+
 void VK_handle::put_one_image_to_screen() {
     // Submit to graphics queue
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
-    auto cb = get_current_command_buffer();
+    auto cb                   = get_current_command_buffer();
+    static uint64_t time_line = 0;
+
+    // uint32_t wait_semaphore_len = submit_task->wait_semaphore == VK_NULL_HANDLE ? 0 : 1;
+    uint32_t signal_semaphore_len    = 2;
+    VkSemaphore signal_semaphores[2] = {
+        vk_timeline_semaphore_,
+        get_can_render_to_image_semaphores()[imageIndex]
+    };
+    uint64_t signal_semaphore_values[2] = {++time_line, 0};
+
+    VkTimelineSemaphoreSubmitInfo vk_timeline_semaphore_submit_info = {
+        VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+        nullptr,
+        0,
+        nullptr,
+        signal_semaphore_len,
+        signal_semaphore_values
+    };
+
     VkSubmitInfo submitInfo{
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext                = &vk_timeline_semaphore_submit_info,
         .waitSemaphoreCount   = 1,
         .pWaitSemaphores      = &get_current_presentSemaphores(),
         .pWaitDstStageMask    = &waitStages,
         .commandBufferCount   = 1,
         .pCommandBuffers      = &cb,
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
+        .signalSemaphoreCount = 2,
+        .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
     };
     VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(get_queue(), 1, &submitInfo, get_current_fences()));
 
@@ -180,6 +210,9 @@ void VK_handle::engine_destroy() {
     for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
         vkDestroySemaphore(get_device(), render_to_image_semaphores_[i], nullptr);
     }
+
+    vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);
+    vk_timeline_semaphore_ = VK_NULL_HANDLE; // 这里设置为 VK_NULL_HANDLE 了，但是上面几个并没有
 }
 
 

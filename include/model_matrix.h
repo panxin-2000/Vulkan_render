@@ -249,4 +249,15 @@ inline matrix_4x4 identity_matrix_4x4(matrix_4x4 *result_m) {
 }
 
 
+inline matrix_4x4 UI_matrix_4x4(matrix_4x4 *result_m,float zoom_x,float zoom_y) {
+    auto result =reinterpret_cast<float *>(result_m);
+    result[0]  = 2.0f/zoom_x;    result[4]  = 0;       result[8]  = 0;    result[12] = -1;
+    result[1]  = 0;    result[5]  =2.0f/zoom_y;       result[9]  = 0;    result[13] = -1;
+    result[2]  = 0;    result[6]  = 0;       result[10] = 1;    result[14] = 0;
+    result[3]  = 0;    result[7]  = 0;       result[11] = 0;    result[15] = 1;
+    return *reinterpret_cast<matrix_4x4 *>(result);
+}
+
+
+
 #endif //HELLO_MAC_MODEL_MATRIX_H

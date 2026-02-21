@@ -68,7 +68,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         identity_matrix_4x4(&temp.projection);
         identity_matrix_4x4(&temp.view);
-        identity_matrix_4x4(&temp.model);
+        UI_matrix_4x4(&temp.model,1280,720);
 
         // update_shader_data(); // 这里是一个需要同步的点
         // auto shaderData = get_shader_data();

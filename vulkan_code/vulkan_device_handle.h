@@ -61,6 +61,9 @@ public:
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
     std::vector<VkSemaphore> render_to_image_semaphores_;
+
+    VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
+
     /**
      * frameIndex 正在渲染的一帧图像
      * imageIndex swap chain 创建的 image 的索引
@@ -79,6 +82,7 @@ public:
         create_fences();
         create_present_Semaphores();
         create_renderSemaphores();
+        create_timeline_Semaphores();
     }
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
@@ -138,6 +142,8 @@ public:
 
     void create_renderSemaphores();
 
+    void create_timeline_Semaphores();
+
     void put_one_image_to_screen();
 
     /**
@@ -149,7 +155,7 @@ public:
 
     void destroy_and_recreate_fence_and_semaphore();
 
-    void engine_destroy() ;
+    void engine_destroy();
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
@@ -440,7 +446,6 @@ public:
 
     VK_handle &operator=(VK_handle &&) = delete;
 };
-
 
 
 #endif //HELLO_MAC_GLFW_VULKAN_H
