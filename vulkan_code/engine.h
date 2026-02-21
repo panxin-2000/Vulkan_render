@@ -36,11 +36,13 @@ struct uniform_buffer {
     VmaAllocation allocation{VK_NULL_HANDLE};
     VkBuffer buffer{VK_NULL_HANDLE};
 
-    std::list<address_and_length> memory_pool;
 
     [[nodiscard]] void *get_point_mapped_address() const;
 
     [[nodiscard]] VkDeviceAddress get_gpu_device_address() const;
+
+    // 上面的可以作为一个单独的结构体，下面的内容只是和分配有关的内容
+    std::list<address_and_length> memory_pool;
 
     uint64_t alloc_size(const uint64_t size) {
         uint64_t return_address = -1;

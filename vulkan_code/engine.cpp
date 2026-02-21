@@ -29,30 +29,6 @@ void VK_handle::create_command_buffer() {
                                  command_buffers_.data()));
 }
 
-void VK_handle::create_shader_data_buffer() {
-    // Shader data buffers
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        VkBufferCreateInfo uBufferCI{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size  = 32 * 1024, // 32K
-            .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-        };
-        VmaAllocationCreateInfo uBufferAllocCI{
-            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                     VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                     VMA_ALLOCATION_CREATE_MAPPED_BIT,
-            .usage = VMA_MEMORY_USAGE_AUTO
-        };
-        VK_CHECK_RESULT_NOT_EXIT(
-                                 vmaCreateBuffer(get_allocator(),
-                                     &uBufferCI,
-                                     &uBufferAllocCI,
-                                     &uniform_buffers_[i].
-                                     buffer,
-                                     &uniform_buffers_[i].allocation,
-                                     nullptr));
-    }
-}
 
 
 void VK_handle::create_fences() {
@@ -203,12 +179,14 @@ void VK_handle::destroy_and_recreate_fence_and_semaphore() {
 void VK_handle::engine_destroy() {
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(get_device()));
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(get_device(), fences_[i], nullptr);                 //  这里还需要
+        vkDestroyFence(get_device(), fences_[i], nullptr); //  这里还需要
+        fences_[i] = VK_NULL_HANDLE;
         vkDestroySemaphore(get_device(), present_semaphores_[i], nullptr); //
-        vmaDestroyBuffer(get_allocator(), uniform_buffers_[i].buffer, uniform_buffers_[i].allocation);
+        present_semaphores_[i] = VK_NULL_HANDLE;
     }
     for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
         vkDestroySemaphore(get_device(), render_to_image_semaphores_[i], nullptr);
+        render_to_image_semaphores_[i] = VK_NULL_HANDLE;
     }
 
     vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);

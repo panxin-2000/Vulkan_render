@@ -57,7 +57,6 @@ public:
 
     // Engine engine_;
     std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
-    std::array<uniform_buffer, maxFramesInFlight> uniform_buffers_  = {};
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
     std::vector<VkSemaphore> render_to_image_semaphores_;
@@ -78,7 +77,6 @@ public:
 public:
     void engine_init() {
         create_command_buffer();
-        create_shader_data_buffer();
         create_fences();
         create_present_Semaphores();
         create_renderSemaphores();
@@ -101,6 +99,13 @@ public:
         return get_presentSemaphores()[frameIndex];
     }
 
+    [[nodiscard]] uint64_t get_finished_timeline() const {
+        uint64_t current_timeline;
+        VkResult result = vkGetSemaphoreCounterValue(get_device(), vk_timeline_semaphore_, &current_timeline);
+        assert(result != VK_SUCCESS && "vulkan get timeline semaphore value error");
+        return current_timeline;
+    }
+
     std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
         return render_to_image_semaphores_;
     }
@@ -118,13 +123,13 @@ public:
         return get_command_buffers()[frameIndex];
     }
 
-    std::array<uniform_buffer, maxFramesInFlight> &get_shader_data_buffer() {
-        return uniform_buffers_;
-    }
+    // std::array<uniform_buffer, maxFramesInFlight> &get_shader_data_buffer() {
+    //     return uniform_buffers_;
+    // }
 
-    uniform_buffer &get_current_shader_data_buffer() {
-        return get_shader_data_buffer()[frameIndex];
-    }
+    // uniform_buffer &get_current_shader_data_buffer() {
+    //     return get_shader_data_buffer()[frameIndex];
+    // }
 
 
     const VkImage &get_current_swap_chain_image();
@@ -134,7 +139,7 @@ public:
     void create_command_buffer();
 
 
-    void create_shader_data_buffer();
+    // void create_shader_data_buffer();
 
     void create_fences();
 
