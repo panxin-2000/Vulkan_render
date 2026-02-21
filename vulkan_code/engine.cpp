@@ -216,7 +216,7 @@ ShaderData get_shader_data() {
 }
 
 
-[[nodiscard]] void *uniform_buffer::get_point_mapped_address() const {
+[[nodiscard]] void *VK_buffer::get_point_mapped_address() const {
     const auto &handle = VK_handle::get();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
@@ -230,11 +230,11 @@ ShaderData get_shader_data() {
 }
 
 
-[[nodiscard]] VkDeviceAddress uniform_buffer::get_gpu_device_address() const {
+[[nodiscard]] VkDeviceAddress VK_buffer::get_gpu_device_address() const {
     const auto &handle = VK_handle::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-        .buffer = buffer
+        .buffer = buffer_handle
     };
     const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
     return deviceAddress;

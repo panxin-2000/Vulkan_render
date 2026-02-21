@@ -79,8 +79,8 @@ struct texture_and_share {
 struct Model_mesh {
     // 不做
     VkBuffer vertices_buffer          = VK_NULL_HANDLE;
-    VmaAllocation vertices_allocation = VK_NULL_HANDLE;
-    VkDeviceSize vertices_offset      = 0; // 以字节为单位的偏移
+    VmaAllocation vertices_allocation = VK_NULL_HANDLE; // 没有更新为新的 VK_buffer
+    VkDeviceSize vertices_offset      = 0;              // 以字节为单位的偏移
     VkBuffer indices_buffer           = VK_NULL_HANDLE;
     VmaAllocation indices_allocation  = VK_NULL_HANDLE;
     VkDeviceSize indices_offset       = 0; // 以字节为单位的偏移
@@ -90,6 +90,8 @@ struct Model_mesh {
         VkDrawIndexedIndirectCommand indexed_command = {};
         VkDrawIndirectCommand vertex_command;
     };
+
+    // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
     void draw(const VkCommandBuffer &cb) {
         if (vertices_buffer == VK_NULL_HANDLE)

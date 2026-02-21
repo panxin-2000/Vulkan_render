@@ -8,7 +8,7 @@
 
 #include "vulkan_device_handle.h"
 
-uniform_buffer &get_uniform_buffer();
+VK_buffer &get_uniform_buffer();
 
 template<typename... Args>
 std::pair<VkBuffer, uint64_t> update_push_constants_data(Args... args) {
@@ -28,7 +28,7 @@ std::pair<VkBuffer, uint64_t> update_push_constants_data(Args... args) {
                         static_cast<char *>(start_address) + memory_offset);
             memory_offset += sizeof(args);
         }(), ...);
-        return {buffer.buffer, offset_of_start_address};
+        return {buffer.buffer_handle, offset_of_start_address};
         // buffer.get_gpu_device_address() + offset_of_start_address;
     } else {
         return {VK_NULL_HANDLE, 0};

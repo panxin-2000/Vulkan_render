@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
     auto &buffer = get_uniform_buffer();
-    vmaDestroyBuffer(handle.get_allocator(), buffer.buffer, buffer.allocation);
+    vmaDestroyBuffer(handle.get_allocator(), buffer.buffer_handle, buffer.allocation);
 
     handle.engine_destroy();
     handle.destroy();

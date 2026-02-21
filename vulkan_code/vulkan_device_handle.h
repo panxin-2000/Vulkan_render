@@ -102,7 +102,7 @@ public:
     [[nodiscard]] uint64_t get_finished_timeline() const {
         uint64_t current_timeline;
         VkResult result = vkGetSemaphoreCounterValue(get_device(), vk_timeline_semaphore_, &current_timeline);
-        assert(result != VK_SUCCESS && "vulkan get timeline semaphore value error");
+        assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
         return current_timeline;
     }
 

@@ -32,9 +32,9 @@ struct address_and_length {
     bool if_used     = false;
 };
 
-struct uniform_buffer {
+struct VK_buffer {
     VmaAllocation allocation{VK_NULL_HANDLE};
-    VkBuffer buffer{VK_NULL_HANDLE};
+    VkBuffer buffer_handle{VK_NULL_HANDLE};
 
 
     [[nodiscard]] void *get_point_mapped_address() const;
