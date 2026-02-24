@@ -15,12 +15,19 @@
 
 #include "global_singleton.h"
 
+
+#include <DirectXMath.h>
+#include <iostream>
+
 void register_glfw(GLFWwindow *window);
 
 void deal_glfw_event();
 
 
 int main(int argc, char *argv[]) {
+
+    DirectX::XMVECTOR v = DirectX::XMVectorSet(1.0f, 2.0f, 3.0f, 4.0f);
+    std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VK_handle::get();
     handle.engine_init();
