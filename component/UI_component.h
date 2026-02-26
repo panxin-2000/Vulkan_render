@@ -96,6 +96,28 @@ public:
 
 // 回调函数
 
+inline void update_UI_position() {
+    const auto view = g_entt().view<Position_update_tag, Rect_transform>(); // 位置发生了更新，需要讲更新传递出去
+    for (const auto it: view) {
+        // get_model_matrix();
+        // auto pos    = view.get<Rect_transform>(it);
+        // auto offset = pos.get_offset();
+
+        if (const auto render_data = g_entt().try_get<logic_render_data *>(it)) {
+            // std::vector<VkDescriptorSet> descriptor_sets;
+            std::string update_name = "name have change";
+            update_object_to_render((*render_data)->proxy,
+                                    [update_name](draw_need_vk *render_object) {
+                                        if (!update_name.empty()) {
+                                            render_object->debug_name = std::move(update_name);
+                                        } else {
+                                            LOG_INFO(g_log(), "descriptor_sets empty");
+                                        }
+                                    });
+        }
+    }
+}
+
 
 class UI_scene_root {
 public:
@@ -107,7 +129,7 @@ public:
         std::call_once(flag, []() {
                            g_entt().emplace<Scene_Component>(instance);
                            g_entt().emplace<Name_component>(instance, "scene_root");
-                           if (auto *scene_node = g_entt().try_get<rect_transform>(instance)) {
+                           if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {
                                                                 static_cast<float>(get_win_WIDTH()),
@@ -137,7 +159,7 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
     std::vector<entt::entity> return_value;
     const auto scene_root_node = get_UI_scene_root();
     return_value.push_back(scene_root_node);
-    rect_transform::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
+    Rect_transform::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
     return return_value;
 }
 #endif //HELLO_MAC_UI_POSITION_AND_OFFSET_H

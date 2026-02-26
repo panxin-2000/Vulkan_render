@@ -146,7 +146,7 @@ void base_event_dealing(const base_event_with_stamp &event) {
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
     // std::cout << "last work name: " << name.name << std::endl;
-    if (rect_transform::check_entity_intersect_point(last_work, current_position) ||
+    if (Rect_transform::check_entity_intersect_point(last_work, current_position) ||
         model_transform::check_entity_intersect_point(last_work, current_position))
         if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
             if (input->on_Event != nullptr) {
