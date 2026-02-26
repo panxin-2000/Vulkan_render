@@ -62,29 +62,33 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(quill)
 
 
-
 FetchContent_Declare(
         directxmath
-        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
-        GIT_TAG        apr2025
+        GIT_REPOSITORY    https://github.com/microsoft/DirectXMath.git
+        GIT_TAG           apr2025
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 FetchContent_MakeAvailable(directxmath)
 
 
-set(SAL_STUB_DIR "${CMAKE_BINARY_DIR}/include")
+set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
 file(MAKE_DIRECTORY ${SAL_STUB_DIR})
 
+set(SAL_FILE_PATH "${SAL_STUB_DIR}/sal.h")
 
-set(REMOTE_URL "https://raw.githubusercontent.com/dotnet/runtime/main/src/coreclr/pal/inc/rt/sal.h")
-file(DOWNLOAD ${REMOTE_URL} "${SAL_STUB_DIR}/sal.h"
-        SHOW_PROGRESS
-        STATUS download_status
-)
-list(GET download_status 0 status_code)
-if(NOT status_code EQUAL 0)
-    message(FATAL_ERROR "下载 sal.h 失败: ${download_status}")
-endif()
+if (EXISTS "${SAL_FILE_PATH}")
+    message(STATUS "have found file : ${SAL_FILE_PATH}")
+else ()
+    set(REMOTE_URL "https://raw.githubusercontent.com/dotnet/runtime/main/src/coreclr/pal/inc/rt/sal.h")
+    file(DOWNLOAD ${REMOTE_URL} "${SAL_FILE_PATH}"
+            SHOW_PROGRESS
+            STATUS download_status
+    )
+    list(GET download_status 0 status_code)
+    if (NOT status_code EQUAL 0)
+        message(FATAL_ERROR "下载 sal.h 失败: ${download_status}")
+    endif ()
+endif ()
 
 include_directories(${SAL_STUB_DIR})
 
