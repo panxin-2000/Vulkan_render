@@ -43,9 +43,6 @@ static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
 }
 
 
-
-
-
 inline VkShaderStageFlags get_stageFlags(const std::string &shaderStage) {
     if (shaderStage == "vertex") {
         return VK_SHADER_STAGE_VERTEX_BIT;
@@ -59,25 +56,100 @@ inline VkShaderStageFlags get_stageFlags(const std::string &shaderStage) {
     return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
 
+
+#include <vulkan/vulkan.h>
+#include <spirv_cross/spirv_cross.hpp>
+
+inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cross::SPIRType &type) {
+    using namespace spirv_cross;
+
+    // Handle Floating Point (float, double)
+    if (type.basetype == SPIRType::Float) {
+        if (type.width == 32) {
+            // 32-bit float
+            switch (type.vecsize) {
+                case 1: return {VK_FORMAT_R32_SFLOAT, 4 * 1};
+                case 2: return {VK_FORMAT_R32G32_SFLOAT, 4 * 2};
+                case 3: return {VK_FORMAT_R32G32B32_SFLOAT, 4 * 3};
+                case 4: return {VK_FORMAT_R32G32B32A32_SFLOAT, 4 * 4};
+            }
+        } else if (type.width == 64) {
+            // 64-bit double
+            switch (type.vecsize) {
+                case 1: return {VK_FORMAT_R64_SFLOAT, 8 * 1};
+                case 2: return {VK_FORMAT_R64G64_SFLOAT, 8 * 2};
+                case 3: return {VK_FORMAT_R64G64B64_SFLOAT, 8 * 3};
+                case 4: return {VK_FORMAT_R64G64B64A64_SFLOAT, 8 * 4};
+            }
+        }
+    }
+    // Handle Unsigned Integer (uint)
+    else if (type.basetype == SPIRType::UInt) {
+        if (type.width == 32) {
+            switch (type.vecsize) {
+                case 1: return {VK_FORMAT_R32_UINT, 4 * 1};
+                case 2: return {VK_FORMAT_R32G32_UINT, 4 * 2};
+                case 3: return {VK_FORMAT_R32G32B32_UINT, 4 * 3};
+                case 4: return {VK_FORMAT_R32G32B32A32_UINT, 4 * 4};
+            }
+        } else if (type.width == 8) {
+            // Often used for packed colors
+            switch (type.vecsize) {
+                case 4: return {VK_FORMAT_R8G8B8A8_UINT, 1 * 4};
+            }
+        }
+    }
+    // Handle Signed Integer (int)
+    else if (type.basetype == SPIRType::Int) {
+        if (type.width == 32) {
+            switch (type.vecsize) {
+                case 1: return {VK_FORMAT_R32_SINT, 4 * 1};
+                case 2: return {VK_FORMAT_R32G32_SINT, 4 * 2};
+                case 3: return {VK_FORMAT_R32G32B32_SINT, 4 * 3};
+                case 4: return {VK_FORMAT_R32G32B32A32_SINT, 4 * 4};
+            }
+        }
+    }
+
+    return {VK_FORMAT_UNDEFINED, 0};
+}
+
+
 static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, std::string shaderStage,
-                                         std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings) {
+                                         std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings,
+                                         std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
+                                         std::vector<VkVertexInputBindingDescription> &vertexBindings) {
     const spirv_cross::CompilerGLSL compiler(spirv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
     // location 的解析
-    // for (auto &resource: resources.stage_inputs) {
-    //     // 1. Get the Name (e.g., "inPos")
-    //     const std::string &name = resource.name;
-    //
-    //     // 2. Get the Location (The '0', '1', '2' in your GLSL)
-    //     uint32_t location = compiler.get_decoration(resource.id, spv::DecorationLocation);
-    //
-    //     // 3. Get the Type (e.g., vec3, vec2)
-    //     auto &type = compiler.get_type(resource.type_id);
-    //
-    //     printf("Input: %s | Location: %u | VecSize: %u\n",
-    //            name.c_str(), location, type.vecsize);
-    // }
+
+    std::array<uint32_t, 16> total_offset = {0};
+    for (auto &resource: resources.stage_inputs) {
+        // 1. Get the Name (e.g., "inPos")
+        const std::string &name = resource.name;
+
+        // 2. Get the Location (The '0', '1', '2' in your GLSL)
+        uint32_t location = compiler.get_decoration(resource.id, spv::DecorationLocation);
+        uint32_t binding  = compiler.get_decoration(resource.id, spv::DecorationBinding);
+
+        // 3. Get the Type (e.g., vec3, vec2)
+        auto &type            = compiler.get_type(resource.type_id);
+        auto [format, offset] = map_spirv_type_to_vk_format(type);
+        vertexAttributes.push_back((VkVertexInputAttributeDescription){
+                                       location, binding, format, total_offset[binding]
+                                   });
+        total_offset[binding] = total_offset[binding] + offset;
+    }
+    for (uint32_t i = 0; i < total_offset.size(); i++) {
+        if (total_offset[i] != 0) {
+            vertexBindings.push_back({
+                                         .binding   = i,
+                                         .stride    = total_offset[i],
+                                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+                                     });
+        }
+    }
 
 
     // Use a map to automatically sort by Binding ID (the key)
@@ -137,7 +209,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
                 tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                                      VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
@@ -174,7 +246,9 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
 
 
 static void read_spv_file(const std::string &file_name, std::string shaderStage,
-                          std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings) {
+                          std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings,
+                          std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
+                          std::vector<VkVertexInputBindingDescription> &vertexBindings) {
     if (file_name.empty() == true) {
         return;
     }
@@ -186,7 +260,7 @@ static void read_spv_file(const std::string &file_name, std::string shaderStage,
     file.read(reinterpret_cast<char *>(spv_binary.data()), size);
 
 
-    collect_and_sorted_resources(spv_binary, shaderStage, sorted_bindings);
+    collect_and_sorted_resources(spv_binary, shaderStage, sorted_bindings, vertexAttributes, vertexBindings);
 }
 
 
@@ -268,24 +342,28 @@ static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_graph
     const std::string &geometry_path = paths.geometry_path_;
 
     std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_sets_and_bindings;
+    std::vector<VkVertexInputBindingDescription> vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
 
-        read_spv_file(vertex_path, "vertex", sorted_sets_and_bindings);
+        read_spv_file(vertex_path, "vertex", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
         print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
         LOG_INFO(g_log(), "--- fragment shader ---");
 
-        read_spv_file(fragment_path, "fragment", sorted_sets_and_bindings);
+        read_spv_file(fragment_path, "fragment", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
         print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
         LOG_INFO(g_log(), "--- geometry shader ---");
 
-        read_spv_file(geometry_path, "geometry", sorted_sets_and_bindings);
+        read_spv_file(geometry_path, "geometry", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
         print_layout_binding_line(geometry_path);
     }
+    paths.data->vertexAttributes = vertexAttributes;
+    paths.data->vertexBindings   = vertexBindings;
     print_sorted_resources(sorted_sets_and_bindings);
     return sorted_sets_and_bindings;
 }
@@ -294,9 +372,12 @@ static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_compu
     const std::string &computer_path) {
     //
     std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_bindings;
+    std::vector<VkVertexInputBindingDescription> vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+
     if (!computer_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
-        read_spv_file(computer_path, "computer", sorted_bindings);
+        read_spv_file(computer_path, "computer", sorted_bindings, vertexAttributes, vertexBindings);
         print_layout_binding_line(computer_path);
     }
     print_sorted_resources(sorted_bindings);

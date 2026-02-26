@@ -70,6 +70,8 @@ struct vk_shader_data {
     VkPipelineLayout pipeline_layout;
     PipelineVertexInputState vertexInputState;
     VkPipeline pipeline_t;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+    std::vector<VkVertexInputBindingDescription> vertexBindings;
 };
 
 struct Shader_paths {

@@ -36,14 +36,13 @@ inline VkPipelineVertexInputStateCreateInfo create_vertex_input_state() {
 }
 
 
-
 inline auto vertex_input_position_normal_uv() {
     std::vector<VkVertexInputBindingDescription> vertexBindings{
         {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
     };
     auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
     std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
+        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, pos)},
         {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
         {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
     };
@@ -60,6 +59,23 @@ inline auto vertex_input_position_normal_uv() {
 
     PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
     return return_struct;
+}
+
+/**
+ * 目前在 binding = 0 的情况下还没有出错过，其他的尽量用 SSBO 来保存与更改
+ * @param vertexBindings
+ * @param vertexAttributes
+ */
+inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                                     std::vector<VkVertexInputAttributeDescription> &vertexAttributes) {
+    const VkPipelineVertexInputStateCreateInfo vertexInputState{
+        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBindings.size()),
+        .pVertexBindingDescriptions      = vertexBindings.data(),
+        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
+        .pVertexAttributeDescriptions    = vertexAttributes.data(),
+    };
+    return vertexInputState;
 }
 
 inline auto vertex_input_position_uv() {
@@ -153,7 +169,8 @@ inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipeli
 inline VkPipeline create_graphics_pipeline(VK_handle &handle,
                                            std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                            VkPipelineLayout pipelineLayout,
-                                           VkPipelineVertexInputStateCreateInfo *vertexInputState) {
+                                           std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
 
@@ -163,38 +180,49 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle,
     };
     std::vector<VkDynamicState> dynamicStates{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamicState{
-        .sType          = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, .dynamicStateCount = 2,
-        .pDynamicStates = dynamicStates.data()
+        .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .dynamicStateCount = 2,
+        .pDynamicStates    = dynamicStates.data()
     };
     VkPipelineViewportStateCreateInfo viewportState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO, .viewportCount = 1, .scissorCount = 1
+        .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = 1,
+        .scissorCount  = 1
     };
     VkPipelineRasterizationStateCreateInfo rasterizationState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO, .lineWidth = 1.0f
+        .sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .lineWidth = 1.0f
     };
     VkPipelineMultisampleStateCreateInfo multisampleState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO, .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
+        .sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
     };
     VkPipelineDepthStencilStateCreateInfo depthStencilState{
-        .sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO, .depthTestEnable = VK_TRUE,
-        .depthWriteEnable = VK_TRUE, .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
+        .sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable  = VK_TRUE,
+        .depthWriteEnable = VK_TRUE,
+        .depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL
     };
     VkPipelineColorBlendAttachmentState blendAttachment{.colorWriteMask = 0xF};
     VkPipelineColorBlendStateCreateInfo colorBlendState{
-        .sType        = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO, .attachmentCount = 1,
-        .pAttachments = &blendAttachment
+        .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments    = &blendAttachment
     };
     VkFormat pColorAttachmentFormats = handle.get_image_format();
     VkPipelineRenderingCreateInfo renderingCI{
-        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO, .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &pColorAttachmentFormats, .depthAttachmentFormat = handle.get_depth_format()
+        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .colorAttachmentCount    = 1,
+        .pColorAttachmentFormats = &pColorAttachmentFormats,
+        .depthAttachmentFormat   = handle.get_depth_format()
     };
+    auto vertexInputState = VertexInputStateFunction(vertexBindings, vertexAttributes);
     VkGraphicsPipelineCreateInfo pipelineCI{
         .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext               = &renderingCI,
-        .stageCount          = to_u32(shaderStages.size()),
+        .stageCount          = to_u32(shaderStages.size()), //这个是由shader决定的
         .pStages             = shaderStages.data(),
-        .pVertexInputState   = vertexInputState,
+        .pVertexInputState   = &vertexInputState,
         .pInputAssemblyState = &inputAssemblyState,
         .pViewportState      = &viewportState,
         .pRasterizationState = &rasterizationState,
@@ -202,7 +230,7 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle,
         .pDepthStencilState  = &depthStencilState,
         .pColorBlendState    = &colorBlendState,
         .pDynamicState       = &dynamicState,
-        .layout              = pipelineLayout
+        .layout              = pipelineLayout //这个是由shader决定的
     };
     VK_CHECK_RESULT_NOT_EXIT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &
                                  pipeline));
@@ -213,6 +241,8 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle,
 inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_key,
                                   VkPipelineLayout pipelineLayout,
                                   std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                  std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                                  std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
                                   std::map<std::string, pipeline_and_share> &map) {
     if (!shader_key.empty()) {
         auto it = map.find(shader_key);
@@ -222,7 +252,7 @@ inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_k
         } else {
             const auto vertexInputState = vertex_input_position_normal_uv();
             auto pipeline               = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
-                                                                   vertexInputState.get_to_bind());
+                                                     vertexBindings, vertexAttributes);
             map.insert({shader_key, {pipeline, 1}});
             return pipeline;
         }
@@ -233,13 +263,16 @@ inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_k
 inline VkPipeline find_pipeline(VK_handle &handle, const std::string &shader_key,
                                 VkPipelineLayout pipelineLayout,
                                 std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                                std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
                                 std::map<std::string, pipeline_and_share> &map) {
     if (!shader_key.empty()) {
         auto it = map.find(shader_key);
         if (it != map.end()) {
             return it->second.pipeline;
         } else {
-            return create_pipeline(handle, shader_key, pipelineLayout, shaderStages, map);
+            return create_pipeline(handle, shader_key, pipelineLayout, shaderStages, vertexBindings, vertexAttributes,
+                                   map);
         }
     }
     return VK_NULL_HANDLE;
