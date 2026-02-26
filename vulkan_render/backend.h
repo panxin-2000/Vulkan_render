@@ -37,9 +37,8 @@ inline bool Shader_paths::init() {
     data->shader_key                         = get_shader_key(*this);
     data->descriptor_sets_layout             =
             create_descriptor_sets_layout(handle, data->shader_key, data->organized_sets_and_bindings);
-    data->pipeline_layout  = create_pipeline_layout(handle, data->shader_key, data->descriptor_sets_layout);
-    data->vertexInputState = vertex_input_position_normal_uv();
-    data->pipeline_t       = find_pipeline(handle, data->shader_key,
+    data->pipeline_layout = create_pipeline_layout(handle, data->shader_key, data->descriptor_sets_layout);
+    data->pipeline_t      = find_pipeline(handle, data->shader_key,
                                      data->pipeline_layout,
                                      data->pipeline_shader_stage_create_infos,
                                      data->vertexBindings,

@@ -16,50 +16,6 @@ uint32_t to_u32(T val) {
     return static_cast<uint32_t>(val);
 }
 
-inline VkPipelineVertexInputStateCreateInfo create_vertex_input_state() {
-    VkVertexInputBindingDescription vertexBinding{
-        .binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-    };
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
-        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
-        {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
-    };
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = 1,
-        .pVertexBindingDescriptions      = &vertexBinding,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions    = vertexAttributes.data(),
-    };
-    return vertexInputState;
-}
-
-
-inline auto vertex_input_position_normal_uv() {
-    std::vector<VkVertexInputBindingDescription> vertexBindings{
-        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
-    };
-    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, pos)},
-        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(Vertex, normal)},
-        {.location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
-    };
-    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
-        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
-        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
-    };
-    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
-
-
-    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
-    return return_struct;
-}
 
 /**
  * 目前在 binding = 0 的情况下还没有出错过，其他的尽量用 SSBO 来保存与更改
@@ -76,60 +32,6 @@ inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription
         .pVertexAttributeDescriptions    = vertexAttributes.data(),
     };
     return vertexInputState;
-}
-
-inline auto vertex_input_position_uv() {
-    struct Vertex {
-        glm::vec3 pos;
-        glm::vec2 uv;
-    };
-    std::vector<VkVertexInputBindingDescription> vertexBindings{
-        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
-    };
-    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
-        {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(Vertex, uv)},
-    };
-    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
-        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
-        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
-    };
-    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
-
-
-    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
-    return return_struct;
-}
-
-inline auto vertex_input_position() {
-    struct Vertex {
-        glm::vec3 pos;
-    };
-    std::vector<VkVertexInputBindingDescription> vertexBindings{
-        {.binding = 0, .stride = sizeof(Vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX},
-    };
-    auto vertexBinding_copy = std::make_shared<decltype (vertexBindings)>(vertexBindings);
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT},
-    };
-    auto vertexAttributes_copy = std::make_shared<decltype (vertexAttributes)>(vertexAttributes);
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBinding_copy->size()),
-        .pVertexBindingDescriptions      = vertexBinding_copy->data(), // 这里是引用
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes_copy->size()),
-        .pVertexAttributeDescriptions    = vertexAttributes_copy->data(), // 这里也是引用
-    };
-    auto vertexInputState_copy = std::make_shared<decltype (vertexInputState)>(vertexInputState);
-
-
-    PipelineVertexInputState return_struct{vertexBinding_copy, vertexAttributes_copy, vertexInputState_copy};
-    return return_struct;
 }
 
 
@@ -250,8 +152,7 @@ inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_k
             it->second.shared_number++;
             return it->second.pipeline;
         } else {
-            const auto vertexInputState = vertex_input_position_normal_uv();
-            auto pipeline               = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
+            auto pipeline = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
                                                      vertexBindings, vertexAttributes);
             map.insert({shader_key, {pipeline, 1}});
             return pipeline;

@@ -42,15 +42,7 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-struct PipelineVertexInputState {
-    std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
-    std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
-    std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
 
-    VkPipelineVertexInputStateCreateInfo *get_to_bind() const {
-        return vertexInputState_copy.get();
-    }
-};
 
 
 struct binding_resource {
@@ -68,7 +60,6 @@ struct vk_shader_data {
     std::string shader_key;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     VkPipelineLayout pipeline_layout;
-    PipelineVertexInputState vertexInputState;
     VkPipeline pipeline_t;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
