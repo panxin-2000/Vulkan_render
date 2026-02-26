@@ -66,13 +66,16 @@ void scene_root_add_child(entt::entity entity);
 
 void scene_add_child(const entt::entity parent_entity, const entt::entity children_entity);
 
-bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
 
 entt::entity get_parent(const entt::entity entity);
 
-bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity);
 
 bool clear_parent_relation(const entt::entity children_entity);
 
+// 最主要使用的函数应该是下面两个，添加联系与删除联系
+
+bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
+
+bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity);
 
 #endif //HELLO_MAC_SCENE_COMPONENT_H

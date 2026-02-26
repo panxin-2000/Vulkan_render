@@ -45,6 +45,7 @@ entt::entity get_parent(const entt::entity entity) {
     return entt::null;
 }
 
+// 只是清理了两个 entity 之间的关系
 bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity) {
     if (g_entt().all_of<Scene_Component>(parent_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
@@ -67,7 +68,8 @@ bool clear_parent_relation(const entt::entity children_entity) {
 Scene_Component::~ Scene_Component() {
     const auto &storage = g_entt().storage<Scene_Component>();
     const auto entity   = entt::to_entity(storage, *this);
-    clear_parent_relation(entity);
+    clear_relation(parent, entity);
+
 
     for (auto it = children.rbegin(); it != children.rend(); ++it)
         if (g_entt().valid(*it)) {
