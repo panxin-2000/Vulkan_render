@@ -321,6 +321,7 @@ add_executable(hello_test ${component} ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LAB
         test/test_mutex.cpp
         test/test_intersect.cpp
         test/test_signed_area.cpp
+        test/test_conveyor_belt.cpp
         test/test_cut_rod.cpp)
 
 
