@@ -49,15 +49,15 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         if (pipeline_t == VK_NULL_HANDLE) {
             // continue;
         }
-        std::vector<VkDescriptorSet> descriptor_set_texture;
+        std::vector<VkDescriptorSet> descriptor_sets;
         if (render_object->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
-            auto sets_flags        = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
-            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, &sets_flags);
-            update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_set_texture);
+            auto sets_flags = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
+            descriptor_sets = allocate_descriptor_sets(handle, descriptor_sets_layout, &sets_flags);
+            update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_sets);
             // 更新应该被拆出来， 放到需要的位置再上传
         } else {
-            descriptor_set_texture = allocate_descriptor_sets(handle, descriptor_sets_layout, nullptr);
+            descriptor_sets = allocate_descriptor_sets(handle, descriptor_sets_layout, nullptr);
         }
         struct Shader_Data_po {
             matrix_4x4 projection;
@@ -68,7 +68,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         identity_matrix_4x4(&temp.projection);
         identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720);
+        UI_matrix_4x4(&temp.model, 1280, 720, 200, 200);
 
         // update_shader_data(); // 这里是一个需要同步的点
         // auto shaderData = get_shader_data();
@@ -83,7 +83,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
         descriptorWrites[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet           = descriptor_set_texture[0];
+        descriptorWrites[0].dstSet           = descriptor_sets[0];
         descriptorWrites[0].dstBinding       = 0;
         descriptorWrites[0].dstArrayElement  = 0;
         descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -107,7 +107,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         vk_data->viewport               = VK_handle::get().get_viewport();
         vk_data->vk_pipeline            = pipeline_t;
         vk_data->debug_name             = render_object->debug_name;
-        vk_data->vk_descriptor_set      = descriptor_set_texture;
+        vk_data->vk_descriptor_set      = descriptor_sets;
         vk_data->push_constants_address = 0;
         vk_render_queue::instance().render_object_need_init(vk_data);
         return true;
@@ -128,5 +128,6 @@ inline bool clean_object_to_render(const logic_render_data *render_object) {
     }
     return false;
 }
+
 
 #endif //HELLO_MAC_BACKEND_H
