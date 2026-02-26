@@ -115,9 +115,9 @@ inline bool add_object_to_render(logic_render_data *render_object) {
     return false;
 }
 
-inline bool update_object_to_render(logic_render_data *render_object) {
-    auto vk_data = new draw_need_vk;
-    vk_render_queue::instance().render_object_need_init(vk_data);
+inline bool update_object_to_render(draw_need_vk *render_object,
+                                    const std::function<void(draw_need_vk *render_object)> &callback) {
+    vk_render_queue::instance().render_update(render_object, callback);
     return true;
 }
 

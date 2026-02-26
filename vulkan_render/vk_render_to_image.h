@@ -153,14 +153,7 @@ private
 
 
     void update_need_objects() {
-        while (true) {
-            auto render_data = vk_render_queue::instance().get_need_update();
-            if (render_data.has_value()) {
-                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
-            } else {
-                break;
-            }
-        }
+        vk_render_queue::instance().execute_update_lambda();
         // 内存内容的更新
         // 先查找放置在哪里来
         // 之后再更新数据

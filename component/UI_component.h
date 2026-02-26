@@ -7,7 +7,7 @@
 #include <scene_component.h>
 #include "name_component.h"
 
-class rect_transform {
+class Rect_transform {
     Point_2 zoom   = {1, 1};
     Point_2 offset = {0, 0};
 
@@ -62,7 +62,7 @@ public:
     }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = g_entt().try_get<rect_transform>(entity)) {
+        if (auto *scene_node = g_entt().try_get<Rect_transform>(entity)) {
             if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
             }
@@ -85,7 +85,7 @@ public:
     }
 
     bool update_2D_position_matrix() const {
-        const auto &storage = g_entt().storage<rect_transform>();
+        const auto &storage = g_entt().storage<Rect_transform>();
         const auto entity   = entt::to_entity(storage, *this);
         if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
         }

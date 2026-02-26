@@ -6,6 +6,7 @@
 #define HELLO_MAC_VULKAN_RENDER_MANAGE_H
 #include <mutex>
 #include <thread>
+#include <utility>
 #include "global_singleton.h"
 #include "logic_render_data.h"
 
@@ -19,6 +20,7 @@ private:
     std::queue<draw_need_vk *> need_init;
     std::queue<draw_need_vk *> need_update;
     std::queue<draw_need_vk *> need_clean;
+    std::queue<std::pair<draw_need_vk *, std::function<void(draw_need_vk *render_object)> > > update_function;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
 public:
@@ -56,6 +58,15 @@ public:
         return std::nullopt;
     }
 
+    void execute_update_lambda() {
+        std::unique_lock<std::mutex> lock(mtx);
+        if (!update_function.empty()) {
+            auto [vk_data, callback] = update_function.front();
+            update_function.pop();
+            callback(vk_data);
+        }
+    }
+
     std::optional<draw_need_vk *> get_need_update() {
         std::unique_lock<std::mutex> lock(mtx);
         if (!need_update.empty()) {
@@ -87,6 +98,16 @@ public:
         std::unique_lock<std::mutex> lock(mtx);
         need_update.push(render_object);
         LOG_INFO(g_log(), "update {} to vk_render_queue ", render_object->debug_name);
+    }
+
+    // void render_update_descriptor_sets(draw_need_vk *render_object, std::vector<VkDescriptorSet> descriptor_sets) {
+    // std::unique_lock<std::mutex> lock(mtx);
+    // render_object->vk_descriptor_set = std::move(descriptor_sets);
+    // }
+
+    void render_update(draw_need_vk *render_object, const std::function<void(draw_need_vk *render_object)> &callback) {
+        std::unique_lock<std::mutex> lock(mtx);
+        update_function.emplace(render_object, callback);
     }
 
     void render_object_need_clean(draw_need_vk *render_object) {

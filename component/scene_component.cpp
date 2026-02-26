@@ -86,3 +86,16 @@ Scene_Component::~ Scene_Component() {
     //     add_relation(parent_temp, *it);
     // }
 }
+
+
+void clean_render_entity() {
+    auto view = g_entt().view<Destroy_tag>(); //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
+    // for (auto it = view.begin(); it != view.end(); ++it)
+    // foreach 中 做的优化有点多，先从上一行的 it 来看，它是一个迭代器，会检索需要的类型
+    // ++it 不只是++指针，内部还有复杂判读，判断是否包含需要的全部类型，不包括就继续查找，直到到达 end()
+    // group 是另一个类似于view的内容，但是呢？会进行内存的搬移，将需要的 entity 移动到 存储的开头部位
+    for (const auto it: view) {
+        if (const auto render_data = g_entt().try_get<logic_render_data *>(it))
+            clean_object_to_render(*render_data);
+    }
+}

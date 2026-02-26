@@ -247,7 +247,10 @@ enum wmOperatorStatus {
 ENABLE_BITWISE_OPERATORS(wmOperatorStatus)
 
 
-// 通用事件基类
+/**
+ * 通用事件基类
+ * mouse_position 返回的否是 0~width 和 0~height
+ */
 class base_event_with_stamp {
 public:
     std::chrono::milliseconds timestamp{0}; // 事件时间戳（高精度）

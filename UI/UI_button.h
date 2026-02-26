@@ -60,12 +60,12 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *UI = g_entt().try_get<rect_transform>(entity_)) {
+            if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
                 UI->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
-            if (auto *UI = g_entt().try_get<rect_transform>(entity_)) {
+            if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
                 UI->set_position_offset(entity_, event);
                 // 包围盒的位置还需要同步更新
                 return OPERATOR_RUNNING_MODAL;
@@ -95,8 +95,8 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
     g_entt().emplace<Scene_Component>(entity_);
-    g_entt().emplace<rect_transform>(entity_);
-    if (auto *scene_node = g_entt().try_get<rect_transform>(entity_)) {
+    g_entt().emplace<Rect_transform>(entity_);
+    if (auto *scene_node = g_entt().try_get<Rect_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
     g_entt().emplace<Drag_event>(entity_);
@@ -153,7 +153,7 @@ entt::entity UI_button(const std::string &name,
     }
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
-        auto &position = g_entt().get<rect_transform>(entity_);
+        auto &position = g_entt().get<Rect_transform>(entity_);
         position.update_2D_position_matrix();
         scene_root_add_child(entity_);
     }

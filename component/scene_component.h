@@ -78,4 +78,5 @@ bool add_relation(const entt::entity parent_entity, const entt::entity children_
 
 bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity);
 
+void clean_render_entity();
 #endif //HELLO_MAC_SCENE_COMPONENT_H

@@ -58,17 +58,11 @@ int main(int argc, char *argv[]) {
         }
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
-        {
-            auto view = g_entt().view<Destroy_tag>(); //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
-            for (const auto it: view) {
-                if (const auto render_data = g_entt().try_get<logic_render_data *>(it))
-                    clean_object_to_render(*render_data);
-            }
+        clean_render_entity(); {
+            auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
-        } {
-            auto view = g_entt().view<Position_update_tag>(); // 位置发生了更新，需要讲更新传递出去
-            // g_entt().destroy(view.begin(), view.end());       // todo : 添加新的函数
         }
+        update_UI_position();
 
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
