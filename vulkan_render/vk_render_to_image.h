@@ -63,7 +63,7 @@ public:
             // render_object_function();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             clean_need_objects();
-            LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
+            // LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
         }
 
 

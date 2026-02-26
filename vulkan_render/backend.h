@@ -29,35 +29,44 @@ void render_thread_stop_and_wait();
 ShaderData get_shader_data();
 
 
-inline bool add_object_to_render(logic_render_data *render_object) {
-    //
+inline bool Shader_paths::init() {
+    if (data == nullptr) data = std::make_shared<vk_shader_data>();
+    auto &handle                             = VK_handle::get();
+    data->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
+    data->organized_sets_and_bindings        = organize_graphics_descriptor_set_and_binding_layouts(*this);
+    data->shader_key                         = get_shader_key(*this);
+    data->descriptor_sets_layout             =
+            create_descriptor_sets_layout(handle, data->shader_key, data->organized_sets_and_bindings);
+    data->pipeline_layout  = create_pipeline_layout(handle, data->shader_key, data->descriptor_sets_layout);
+    data->vertexInputState = vertex_input_position_normal_uv();
+    data->pipeline_t       = find_pipeline(handle, data->shader_key,
+                                           data->pipeline_layout,
+                                           data->pipeline_shader_stage_create_infos,
+                                           VK_handle::get().get_pipeline_map());
+
+    return true;
+}
+
+
+inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
-    if (render_object != nullptr) {
-        auto pipeline_shader_stage_create_infos =
-                find_graphics_shader_module(handle, render_object->shader_paths_);
-        auto organized_sets_and_bindings =
-                organize_graphics_descriptor_set_and_binding_layouts(render_object->shader_paths_);
-        auto shader_key = get_shader_key(render_object->shader_paths_);
+    if (logic_data != nullptr) {
+        logic_data->shader_paths_.init();
 
-        const auto descriptor_sets_layout =
-                create_descriptor_sets_layout(handle, shader_key, organized_sets_and_bindings);
-        auto pipeline_layout = create_pipeline_layout(handle, shader_key, descriptor_sets_layout);
 
-        const auto vertexInputState = vertex_input_position_normal_uv();
-        auto pipeline_t = find_pipeline(handle, shader_key, pipeline_layout, pipeline_shader_stage_create_infos,
-                                        VK_handle::get().get_pipeline_map());
-        if (pipeline_t == VK_NULL_HANDLE) {
-            // continue;
-        }
+        // 这里就全部都是 渲染 某个物体时会 变更的数据了
         std::vector<VkDescriptorSet> descriptor_sets;
-        if (render_object->debug_name == "blender Suzanne") {
+        if (logic_data->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
-            auto sets_flags = create_descriptor_sets_flags(handle, organized_sets_and_bindings);
-            descriptor_sets = allocate_descriptor_sets(handle, descriptor_sets_layout, &sets_flags);
+            auto sets_flags = create_descriptor_sets_flags(handle,
+                                                           logic_data->shader_paths_.data->organized_sets_and_bindings);
+            descriptor_sets = allocate_descriptor_sets(handle, logic_data->shader_paths_.data->descriptor_sets_layout,
+                                                       &sets_flags);
             update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_sets);
             // 更新应该被拆出来， 放到需要的位置再上传
         } else {
-            descriptor_sets = allocate_descriptor_sets(handle, descriptor_sets_layout, nullptr);
+            descriptor_sets = allocate_descriptor_sets(handle, logic_data->shader_paths_.data->descriptor_sets_layout,
+                                                       nullptr);
         }
         struct Shader_Data_po {
             matrix_4x4 projection;
@@ -68,7 +77,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         identity_matrix_4x4(&temp.projection);
         identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720, 200, 200);
+        UI_matrix_4x4(&temp.model, 1280, 720);
 
         // update_shader_data(); // 这里是一个需要同步的点
         // auto shaderData = get_shader_data();
@@ -81,32 +90,33 @@ inline bool add_object_to_render(logic_render_data *render_object) {
         bufferInfo.range  = sizeof(Shader_Data_po);
 
 
-        std::array<VkWriteDescriptorSet, 1> descriptorWrites{};
-        descriptorWrites[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet           = descriptor_sets[0];
-        descriptorWrites[0].dstBinding       = 0;
-        descriptorWrites[0].dstArrayElement  = 0;
-        descriptorWrites[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount  = 1;
-        descriptorWrites[0].pBufferInfo      = &bufferInfo;
-        descriptorWrites[0].pImageInfo       = nullptr;
-        descriptorWrites[0].pTexelBufferView = nullptr;
+        // 以 binding 为一个最小数量
+        std::array<VkWriteDescriptorSet, 1> descriptor_write_bindings{};
+        descriptor_write_bindings[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_write_bindings[0].dstSet           = descriptor_sets[0];
+        descriptor_write_bindings[0].dstBinding       = 0;
+        descriptor_write_bindings[0].dstArrayElement  = 0;
+        descriptor_write_bindings[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_write_bindings[0].descriptorCount  = 1;
+        descriptor_write_bindings[0].pBufferInfo      = &bufferInfo;
+        descriptor_write_bindings[0].pImageInfo       = nullptr;
+        descriptor_write_bindings[0].pTexelBufferView = nullptr;
         vkUpdateDescriptorSets(handle.device_,
-                               static_cast<uint32_t>(descriptorWrites.size()),
-                               descriptorWrites.data(),
+                               static_cast<uint32_t>(descriptor_write_bindings.size()),
+                               descriptor_write_bindings.data(),
                                0,
                                nullptr);
 
 
-        auto mesh                       = create_mesh(handle, render_object, VK_handle::get().get_mesh_map());
+        auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;
-        render_object->proxy            = vk_data;
+        logic_data->proxy               = vk_data;
         vk_data->mesh                   = mesh;
-        vk_data->pipeline_layout        = pipeline_layout;
+        vk_data->pipeline_layout        = logic_data->shader_paths_.data->pipeline_layout;
         vk_data->scissor                = VK_handle::get().get_scissor();
         vk_data->viewport               = VK_handle::get().get_viewport();
-        vk_data->vk_pipeline            = pipeline_t;
-        vk_data->debug_name             = render_object->debug_name;
+        vk_data->vk_pipeline            = logic_data->shader_paths_.data->pipeline_t;
+        vk_data->debug_name             = logic_data->debug_name;
         vk_data->vk_descriptor_set      = descriptor_sets;
         vk_data->push_constants_address = 0;
         vk_render_queue::instance().render_object_need_init(vk_data);

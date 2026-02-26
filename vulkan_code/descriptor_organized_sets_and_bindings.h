@@ -8,6 +8,7 @@
 #include "vulkan_device_handle.h"
 #include <regex>
 #include <filesystem>
+#include <fstream>
 #include <spirv_cross/spirv_glsl.hpp>
 #define max_sets 8
 
@@ -42,14 +43,7 @@ static inline VkDescriptorSetLayoutBinding descriptorSetLayoutBinding(
 }
 
 
-struct binding_resource {
-    VkDescriptorSetLayoutBinding LayoutBinding;
-    std::string name;
-    std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
-    std::string shaderStage;
-    size_t need_allocate_size     = 0;
-    VkDescriptorBindingFlags flag = 0;
-};
+
 
 
 inline VkShaderStageFlags get_stageFlags(const std::string &shaderStage) {

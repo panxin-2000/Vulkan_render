@@ -35,15 +35,7 @@ inline VkPipelineVertexInputStateCreateInfo create_vertex_input_state() {
     return vertexInputState;
 }
 
-struct PipelineVertexInputState {
-    std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
-    std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
-    std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
 
-    VkPipelineVertexInputStateCreateInfo *get_to_bind() const {
-        return vertexInputState_copy.get();
-    }
-};
 
 inline auto vertex_input_position_normal_uv() {
     std::vector<VkVertexInputBindingDescription> vertexBindings{

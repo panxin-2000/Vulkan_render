@@ -10,6 +10,7 @@
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
 #include <type_traits>
+
 #include "Texture_logic.h"
 #include "utility.h"
 
@@ -41,12 +42,48 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
+struct PipelineVertexInputState {
+    std::shared_ptr<std::vector<VkVertexInputBindingDescription> > vertexBinding_copy;
+    std::shared_ptr<std::vector<VkVertexInputAttributeDescription> > vertexAttributes_copy;
+    std::shared_ptr<VkPipelineVertexInputStateCreateInfo> vertexInputState_copy;
+
+    VkPipelineVertexInputStateCreateInfo *get_to_bind() const {
+        return vertexInputState_copy.get();
+    }
+};
+
+
+struct binding_resource {
+    VkDescriptorSetLayoutBinding LayoutBinding;
+    std::string name;
+    std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
+    std::string shaderStage;
+    size_t need_allocate_size     = 0;
+    VkDescriptorBindingFlags flag = 0;
+};
+
+struct vk_shader_data {
+    std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
+    std::array<std::map<uint32_t, binding_resource>, 8> organized_sets_and_bindings;
+    std::string shader_key;
+    std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
+    VkPipelineLayout pipeline_layout;
+    PipelineVertexInputState vertexInputState;
+    VkPipeline pipeline_t;
+};
+
 struct Shader_paths {
     std::string vertex_path_;
     std::string geometry_path_;
     std::string fragment_path_;
     std::string computer_path_;
+    std::shared_ptr<vk_shader_data> data = nullptr;
+
+    bool init();
 };
+
+
+#include "descriptor_organized_sets_and_bindings.h"
 
 
 class logic_render_data : public NonCopyable {
