@@ -25,7 +25,7 @@ entt::entity UI_button(const std::string &name,
 
 // 键盘是另一种操作，按下时就去执行响应的动作，有时会增加弹窗来进行确认
 
-static wmOperatorStatus on_Event(entt::entity entity_, const base_event_with_stamp &event) {
+static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_with_stamp &event) {
     auto temp_type = event.event_type;
     switch (temp_type) {
         case EVT_KEY_X:

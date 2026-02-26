@@ -171,6 +171,13 @@ private
             auto render_data = vk_render_queue::instance().get_need_clean();
             if (render_data.has_value()) {
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
+                auto it = std::find(need_render_objects.begin(),
+                                    need_render_objects.end(),
+                                    render_data.value());
+                if (it != need_render_objects.end()) {
+                    need_render_objects.erase(it);
+                }
+                // 其实到这里还没有结束，还需要清理资源
             } else {
                 break;
             }

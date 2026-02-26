@@ -25,7 +25,6 @@ void deal_glfw_event();
 
 
 int main(int argc, char *argv[]) {
-
     DirectX::XMVECTOR v = DirectX::XMVectorSet(1.0f, 2.0f, 3.0f, 4.0f);
     std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
@@ -60,7 +59,11 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
         {
-            auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁
+            auto view = g_entt().view<Destroy_tag>(); //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
+            for (const auto it: view) {
+                if (const auto render_data = g_entt().try_get<logic_render_data *>(it))
+                    clean_object_to_render(*render_data);
+            }
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         } {
             auto view = g_entt().view<Position_update_tag>(); // 位置发生了更新，需要讲更新传递出去

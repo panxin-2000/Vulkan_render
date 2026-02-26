@@ -68,7 +68,7 @@ inline bool add_object_to_render(logic_render_data *render_object) {
 
         identity_matrix_4x4(&temp.projection);
         identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model,1280,720);
+        UI_matrix_4x4(&temp.model, 1280, 720);
 
         // update_shader_data(); // 这里是一个需要同步的点
         // auto shaderData = get_shader_data();
@@ -121,10 +121,12 @@ inline bool update_object_to_render(logic_render_data *render_object) {
     return true;
 }
 
-inline bool clean_object_to_render(logic_render_data *render_object) {
-    auto vk_data = new draw_need_vk;
-    vk_render_queue::instance().render_object_need_init(vk_data);
-    return true;
+inline bool clean_object_to_render(const logic_render_data *render_object) {
+    if (render_object != nullptr && render_object->proxy != nullptr) {
+        vk_render_queue::instance().render_object_need_clean(render_object->proxy);
+        return true;
+    }
+    return false;
 }
 
 #endif //HELLO_MAC_BACKEND_H

@@ -95,10 +95,7 @@ public:
 
 
 // 回调函数
-static inline void cleanup_logic_render_data(entt::registry &reg, const entt::entity ent) {
-    if (const auto render_data = reg.try_get<logic_render_data *>(ent))
-        clean_object_to_render(*render_data);
-}
+
 
 class UI_scene_root {
 public:
@@ -117,8 +114,9 @@ public:
                                                                 static_cast<float>(get_win_HEIGHT())
                                                             });
                            }
-                           // 在系统初始化时
-                           g_entt().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
+                           // 在系统初始化时，给logic_render_data * 的类型都添加这个销毁前执行的函数
+                           // g_entt().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
+                           // 也可以在只移除 logic_render_data * 时 触发，但是不同类型触发的顺序可能是随机的。
                        }
                       );
 
