@@ -40,8 +40,8 @@ int main(int argc, char *argv[]) {
     register_glfw(handle.window_);
 
     auto block_entity = UI_block("功能块", 0, 0, 200, 200);
-    // add_button(block_entity, "按钮1", 420, 420, 480, 480);
-    // add_button(block_entity, "按钮2", 35, 20, 145, 130);
+    add_button(block_entity, "按钮1", 420, 420, 480, 480);
+    add_button(block_entity, "按钮2", 35, 20, 145, 130);
 
     auto render        = new logic_render_data;
     render->debug_name = "blender Suzanne";

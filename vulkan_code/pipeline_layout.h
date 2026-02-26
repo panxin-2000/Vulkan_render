@@ -23,6 +23,7 @@ inline VkPipelineLayout create_pipeline_layout(VK_handle &handle, const std::str
         auto it = map.find(shader_key);
         if (it != map.end()) {
             it->second.second++;
+            return it->second.first;
         } else {
             VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
             VkPushConstantRange pushConstantRange{
