@@ -35,15 +35,10 @@ inline bool Shader_paths::init() {
     data->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
     data->organized_sets_and_bindings        = organize_graphics_descriptor_set_and_binding_layouts(*this);
     data->shader_key                         = get_shader_key(*this);
-    data->descriptor_sets_layout             =
+    // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
+    data->descriptor_sets_layout =
             create_descriptor_sets_layout(handle, data->shader_key, data->organized_sets_and_bindings);
     data->pipeline_layout = create_pipeline_layout(handle, data->shader_key, data->descriptor_sets_layout);
-    data->pipeline_t      = find_pipeline(handle, data->shader_key,
-                                     data->pipeline_layout,
-                                     data->pipeline_shader_stage_create_infos,
-                                     data->vertexBindings,
-                                     data->vertexAttributes,
-                                     VK_handle::get().get_pipeline_map());
 
     return true;
 }
@@ -53,6 +48,8 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
     if (logic_data != nullptr) {
         logic_data->shader_paths_.init();
+        auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.data,
+                                        VK_handle::get().get_pipeline_map());
 
 
         // 这里就全部都是 渲染 某个物体时会 变更的数据了
@@ -116,7 +113,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         vk_data->pipeline_layout        = logic_data->shader_paths_.data->pipeline_layout;
         vk_data->scissor                = VK_handle::get().get_scissor();
         vk_data->viewport               = VK_handle::get().get_viewport();
-        vk_data->vk_pipeline            = logic_data->shader_paths_.data->pipeline_t;
+        vk_data->vk_pipeline            = pipeline_t;
         vk_data->debug_name             = logic_data->debug_name;
         vk_data->vk_descriptor_set      = descriptor_sets;
         vk_data->push_constants_address = 0;

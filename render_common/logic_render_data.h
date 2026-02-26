@@ -55,12 +55,11 @@ struct binding_resource {
 };
 
 struct vk_shader_data {
+    std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
     std::array<std::map<uint32_t, binding_resource>, 8> organized_sets_and_bindings;
-    std::string shader_key;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     VkPipelineLayout pipeline_layout;
-    VkPipeline pipeline_t;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
 };

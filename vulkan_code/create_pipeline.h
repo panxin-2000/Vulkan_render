@@ -68,13 +68,13 @@ inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipeli
     return compute_pipeline;
 }
 
-inline VkPipeline create_graphics_pipeline(VK_handle &handle,
-                                           std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                           VkPipelineLayout pipelineLayout,
-                                           std::vector<VkVertexInputBindingDescription> &vertexBindings,
-                                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes) {
+inline VkPipeline create_graphics_pipeline(VK_handle &handle, vk_shader_data &data) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
+    std::vector<VkPipelineShaderStageCreateInfo> &shaderStages       = data.pipeline_shader_stage_create_infos;
+    VkPipelineLayout &pipelineLayout                                 = data.pipeline_layout;
+    std::vector<VkVertexInputBindingDescription> &vertexBindings     = data.vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> &vertexAttributes = data.vertexAttributes;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
         .sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -140,40 +140,30 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle,
 }
 
 
-inline VkPipeline create_pipeline(VK_handle &handle, const std::string &shader_key,
-                                  VkPipelineLayout pipelineLayout,
-                                  std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                  std::vector<VkVertexInputBindingDescription> &vertexBindings,
-                                  std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
+inline VkPipeline create_pipeline(VK_handle &handle, vk_shader_data &data,
                                   std::map<std::string, pipeline_and_share> &map) {
-    if (!shader_key.empty()) {
-        auto it = map.find(shader_key);
+    if (!data.shader_key.empty()) {
+        auto it = map.find(data.shader_key);
         if (it != map.end()) {
             it->second.shared_number++;
             return it->second.pipeline;
         } else {
-            auto pipeline = create_graphics_pipeline(handle, shaderStages, pipelineLayout,
-                                                     vertexBindings, vertexAttributes);
-            map.insert({shader_key, {pipeline, 1}});
+            auto pipeline = create_graphics_pipeline(handle, data);
+            map.insert({data.shader_key, {pipeline, 1}});
             return pipeline;
         }
     }
     return VK_NULL_HANDLE;
 }
 
-inline VkPipeline find_pipeline(VK_handle &handle, const std::string &shader_key,
-                                VkPipelineLayout pipelineLayout,
-                                std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                std::vector<VkVertexInputBindingDescription> &vertexBindings,
-                                std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
+inline VkPipeline find_pipeline(VK_handle &handle, vk_shader_data &data,
                                 std::map<std::string, pipeline_and_share> &map) {
-    if (!shader_key.empty()) {
-        auto it = map.find(shader_key);
+    if (!data.shader_key.empty()) {
+        auto it = map.find(data.shader_key);
         if (it != map.end()) {
             return it->second.pipeline;
         } else {
-            return create_pipeline(handle, shader_key, pipelineLayout, shaderStages, vertexBindings, vertexAttributes,
-                                   map);
+            return create_pipeline(handle, data, map);
         }
     }
     return VK_NULL_HANDLE;
