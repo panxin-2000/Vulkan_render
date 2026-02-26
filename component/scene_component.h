@@ -22,25 +22,7 @@ public:
     std::vector<entt::entity> children;
 
 public:
-    ~Scene_Component() {
-        bool clear_parent_relation(entt::entity children_entity);
-        clear_parent_relation(parent);
-
-        for (auto it = children.rbegin(); it != children.rend(); ++it)
-            if (g_entt().valid(*it)) {
-                g_entt().emplace_or_replace<Destroy_tag>(*it);
-            }
-        // auto children_temp = children;
-        // auto parent_temp = parent;
-        // for (auto it = children.rbegin(); it != children.rend(); ++it) {
-        //     bool clear_parent_relation(const entt::entity children_entity);
-        //     clear_parent_relation(*it);
-        // }
-        // for (auto it = children_temp.rbegin(); it != children_temp.rend(); ++it) {
-        //     bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
-        //     add_relation(parent_temp, *it);
-        // }
-    }
+    ~Scene_Component();
 
 
     void add_parent_relation(entt::entity entity) {
