@@ -57,7 +57,7 @@ using sets_map     = std::map<uint32_t, bindings_map>;
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
-    bindings_map global_bindings_set;
+    sets_map global_bindings_set;
     sets_map organized_sets_bindings;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;

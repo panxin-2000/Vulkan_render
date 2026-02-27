@@ -119,18 +119,20 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
 
     std::vector<VkDescriptorSet> global_descriptor_set;
     std::vector<VkDescriptorSet> object_descriptor_sets;
-    if (logic_data->debug_name == "blender Suzanne") {
+
+    auto &global_bindings_set = logic_data->shader_paths_.shader_data_handle->global_bindings_set;
+    if (!global_bindings_set.empty()) {
         create_textures_to_gpu(handle, handle.get_command_pool());
         auto sets_flags = create_descriptor_sets_flags(handle,
                                                        logic_data->shader_paths_.shader_data_handle->
-                                                       organized_sets_bindings);
+                                                       global_bindings_set);
         global_descriptor_set = allocate_descriptor_sets(handle,
                                                          logic_data->shader_paths_.shader_data_handle->
                                                          descriptor_sets_layout,
                                                          &sets_flags);
         update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
         // 更新应该被拆出来， 放到需要的位置再上传
-    } else {
+    } {
         object_descriptor_sets = allocate_descriptor_sets(handle,
                                                           logic_data->shader_paths_.shader_data_handle->
                                                           descriptor_sets_layout,
