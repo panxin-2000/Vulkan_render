@@ -110,6 +110,39 @@ inline void update_bindings_to_descriptor_sets(logic_render_data *logic_data,
                            nullptr);
 }
 
+
+inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
+    // 这里就全部都是 渲染 某个物体时会 变更的数据了
+    // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
+    std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
+    auto &handle = VK_handle::get();
+
+    std::vector<VkDescriptorSet> global_descriptor_set;
+    std::vector<VkDescriptorSet> object_descriptor_sets;
+    if (logic_data->debug_name == "blender Suzanne") {
+        create_textures_to_gpu(handle, handle.get_command_pool());
+        auto sets_flags = create_descriptor_sets_flags(handle,
+                                                       logic_data->shader_paths_.shader_data_handle->
+                                                       organized_sets_bindings);
+        global_descriptor_set = allocate_descriptor_sets(handle,
+                                                         logic_data->shader_paths_.shader_data_handle->
+                                                         descriptor_sets_layout,
+                                                         &sets_flags);
+        update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
+        // 更新应该被拆出来， 放到需要的位置再上传
+    } else {
+        object_descriptor_sets = allocate_descriptor_sets(handle,
+                                                          logic_data->shader_paths_.shader_data_handle->
+                                                          descriptor_sets_layout,
+                                                          nullptr);
+    }
+    descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
+
+    descriptor_sets.insert(descriptor_sets.end(), global_descriptor_set.begin(), global_descriptor_set.end());
+    descriptor_sets.insert(descriptor_sets.end(), object_descriptor_sets.begin(), object_descriptor_sets.end());
+    return descriptor_sets;
+}
+
 inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
     if (logic_data != nullptr) {
@@ -117,34 +150,6 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.shader_data_handle,
                                         VK_handle::get().get_pipeline_map());
 
-
-        // 这里就全部都是 渲染 某个物体时会 变更的数据了
-        // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-        std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
-
-        std::vector<VkDescriptorSet> global_descriptor_set;
-        std::vector<VkDescriptorSet> object_descriptor_sets;
-        if (logic_data->debug_name == "blender Suzanne") {
-            create_textures_to_gpu(handle, handle.get_command_pool());
-            auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           logic_data->shader_paths_.shader_data_handle->
-                                                           organized_sets_bindings);
-            global_descriptor_set = allocate_descriptor_sets(handle,
-                                                             logic_data->shader_paths_.shader_data_handle->
-                                                             descriptor_sets_layout,
-                                                             &sets_flags);
-            update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
-            // 更新应该被拆出来， 放到需要的位置再上传
-        } else {
-            object_descriptor_sets = allocate_descriptor_sets(handle,
-                                                              logic_data->shader_paths_.shader_data_handle->
-                                                              descriptor_sets_layout,
-                                                              nullptr);
-        }
-        descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
-
-        descriptor_sets.insert(descriptor_sets.end(), global_descriptor_set.begin(), global_descriptor_set.end());
-        descriptor_sets.insert(descriptor_sets.end(), object_descriptor_sets.begin(), object_descriptor_sets.end());
 
         // 基本逻辑是对的，需要写一个单独的函数
 
@@ -160,6 +165,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         UI_matrix_4x4(&temp.model, 1280, 720);
 
         add_uniform_buffer_data(logic_data, "UBO", temp);
+        auto descriptor_sets = allocate_descriptor_sets(logic_data);
         update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
 
 
