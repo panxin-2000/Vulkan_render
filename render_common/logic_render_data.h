@@ -47,8 +47,8 @@ struct binding_resource {
     std::string binding_name;
     std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
     std::string shaderStage;
-    size_t uniform_buffer_size        = 0;
-    VkDescriptorBindingFlags flag     = 0;
+    size_t uniform_buffer_size    = 0;
+    VkDescriptorBindingFlags flag = 0;
 };
 
 struct vk_shader_data {
@@ -72,15 +72,16 @@ struct Shader_paths {
 };
 
 
-struct UpdateDescriptorSet {
+struct Update_descriptor_binding {
     std::string binding_name;
     std::string resource_type;
-    uint32_t dstSet;
-    VkWriteDescriptorSet descriptor_write_bindings;
-    std::optional<VkDescriptorBufferInfo> bufferInfo;
-    std::optional<VkDescriptorImageInfo> imageInfo;
+    uint32_t dstSet                               = 0;
+    VkWriteDescriptorSet descriptor_write_binding = {};
+
+    std::pair<bool, VkDescriptorBufferInfo> bufferInfo;
+    std::pair<bool, VkDescriptorImageInfo> imageInfo;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
-    std::optional<VkBufferView> TexelBufferView;
+    std::pair<bool, VkBufferView> TexelBufferView;
 };
 
 #include "descriptor_organized_sets_and_bindings.h"
@@ -95,7 +96,7 @@ private:
 public:
     std::string mesh_path_;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
-    std::vector<UpdateDescriptorSet> update_descriptor_sets;
+    std::vector<Update_descriptor_binding> update_descriptor_sets;
     std::string debug_name;
     Indices_type indices_;
     GPUPrimType prim_type_ = GPU_PRIM_TRIS;

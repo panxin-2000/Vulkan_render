@@ -50,24 +50,21 @@ bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &b
     for (const auto &map: logic_data->shader_paths_.data->organized_sets_and_bindings) {
         for (const auto &[fst, snd]: map) {
             if (snd.binding_name == binding_name && snd.resource_type == "uniform buffer") {
-                auto [vk_buffer,offset] = update_push_constants_data(binding_data); // 这里是一个需要同步的点
-                UpdateDescriptorSet temp;
-                temp.binding_name                    = binding_name;
-                temp.resource_type                   = snd.resource_type;
-                temp.dstSet                          = dstSet;
-                temp.descriptor_write_bindings.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
+                Update_descriptor_binding temp      = {};
+                temp.binding_name                   = binding_name;
+                temp.resource_type                  = snd.resource_type;
+                temp.dstSet                         = dstSet;
+                temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
-                temp.descriptor_write_bindings.dstBinding      = 0;
-                temp.descriptor_write_bindings.dstArrayElement = 0;
-                temp.descriptor_write_bindings.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                temp.descriptor_write_bindings.descriptorCount = 1;
-                // temp.descriptor_write_bindings.pBufferInfo      = &bufferInfo;
-                temp.descriptor_write_bindings.pImageInfo       = nullptr;
-                temp.descriptor_write_bindings.pTexelBufferView = nullptr;
-
-                temp.bufferInfo->buffer = vk_buffer;
-                temp.bufferInfo->offset = offset;
-                temp.bufferInfo->range  = sizeof(binding_data);
+                temp.descriptor_write_binding.dstBinding       = 0;
+                temp.descriptor_write_binding.dstArrayElement  = 0;
+                temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                temp.descriptor_write_binding.descriptorCount  = 1;
+                temp.descriptor_write_binding.pBufferInfo      = nullptr;
+                temp.descriptor_write_binding.pImageInfo       = nullptr;
+                temp.descriptor_write_binding.pTexelBufferView = nullptr;
+                temp.bufferInfo                                = {true, {vk_buffer, offset, sizeof(binding_data)}};
                 logic_data->update_descriptor_sets.emplace_back(temp);
                 return true;
             }
@@ -75,6 +72,32 @@ bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &b
         dstSet++;
     }
     return false;
+}
+
+
+inline void update_bindings_to_descriptor_sets(logic_render_data *logic_data,
+                                               const std::vector<VkDescriptorSet> &descriptor_sets) {
+    // 以 binding 为一个最小数量
+    auto &handle = VK_handle::get();
+    std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
+    descriptor_write_bindings.resize(logic_data->update_descriptor_sets.size());
+    for (size_t i = 0; i < logic_data->update_descriptor_sets.size(); i++) {
+        auto &binding_update                = logic_data->update_descriptor_sets[i];
+        descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
+        descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
+        if (binding_update.bufferInfo.first) {
+            descriptor_write_bindings[i].pBufferInfo = &binding_update.bufferInfo.second;
+        } else if (binding_update.imageInfo.first) {
+            descriptor_write_bindings[i].pImageInfo = &binding_update.imageInfo.second;;
+        } else if (binding_update.TexelBufferView.first) {
+            descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
+        }
+    }
+    vkUpdateDescriptorSets(handle.device_,
+                           static_cast<uint32_t>(descriptor_write_bindings.size()),
+                           descriptor_write_bindings.data(),
+                           0,
+                           nullptr);
 }
 
 inline bool add_object_to_render(logic_render_data *logic_data) {
@@ -86,6 +109,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
 
 
         // 这里就全部都是 渲染 某个物体时会 变更的数据了
+        // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
         std::vector<VkDescriptorSet> descriptor_sets;
         if (logic_data->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
@@ -99,6 +123,8 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
             descriptor_sets = allocate_descriptor_sets(handle, logic_data->shader_paths_.data->descriptor_sets_layout,
                                                        nullptr);
         }
+
+
         struct Shader_Data_po {
             matrix_4x4 projection;
             matrix_4x4 view;
@@ -110,34 +136,8 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         identity_matrix_4x4(&temp.view);
         UI_matrix_4x4(&temp.model, 1280, 720);
 
-        // update_shader_data(); // 这里是一个需要同步的点
-        // auto shaderData = get_shader_data();
-
         add_uniform_buffer_data(logic_data, "UBO", temp);
-        auto [vk_buffer,offset] = update_push_constants_data(temp); // 这里是一个需要同步的点
-
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = vk_buffer;
-        bufferInfo.offset = offset;
-        bufferInfo.range  = sizeof(Shader_Data_po);
-
-
-        // 以 binding 为一个最小数量
-        std::array<VkWriteDescriptorSet, 1> descriptor_write_bindings{};
-        descriptor_write_bindings[0].sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write_bindings[0].dstSet           = descriptor_sets[0];
-        descriptor_write_bindings[0].dstBinding       = 0;
-        descriptor_write_bindings[0].dstArrayElement  = 0;
-        descriptor_write_bindings[0].descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_write_bindings[0].descriptorCount  = 1;
-        descriptor_write_bindings[0].pBufferInfo      = &bufferInfo;
-        descriptor_write_bindings[0].pImageInfo       = nullptr;
-        descriptor_write_bindings[0].pTexelBufferView = nullptr;
-        vkUpdateDescriptorSets(handle.device_,
-                               static_cast<uint32_t>(descriptor_write_bindings.size()),
-                               descriptor_write_bindings.data(),
-                               0,
-                               nullptr);
+        update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
 
 
         auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
