@@ -112,7 +112,8 @@ inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cro
 }
 
 
-static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, std::string shaderStage,
+static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, const std::string &shaderStage,
+                                         std::map<uint32_t, binding_resource> &global_bindings_set_0,
                                          std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings,
                                          std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
                                          std::vector<VkVertexInputBindingDescription> &vertexBindings) {
@@ -152,16 +153,19 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
     // Use a map to automatically sort by Binding ID (the key)
     // 1. Collect Uniform Buffers
     for (const auto &res: resources.uniform_buffers) {
-        uint32_t set                    = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
-        uint32_t binding                = compiler.get_decoration(res.id, spv::DecorationBinding);
-        const size_t need_allocate_size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
-        VkDescriptorSetLayoutBinding tem{};
-        tem.binding                   = binding;
-        tem.descriptorCount           = 1;
-        tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.descriptorType            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
-
+        uint32_t set                     = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+        uint32_t binding                 = compiler.get_decoration(res.id, spv::DecorationBinding);
+        const size_t need_allocate_size  = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
+        VkDescriptorSetLayoutBinding tem = {};
+        tem.binding                      = binding;
+        tem.descriptorCount              = 1;
+        tem.stageFlags                   = get_stageFlags(shaderStage);
+        tem.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        if (res.name.find("global") != std::string::npos) {
+            global_bindings_set_0[binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
+        } else {
+            sorted_bindings[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
+        }
         const auto &type = compiler.get_type(res.base_type_id);
         // 2. 遍历结构体内部的所有成员
         uint32_t member_count = type.member_types.size();
@@ -179,11 +183,15 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         uint32_t set     = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
         VkDescriptorSetLayoutBinding tem{};;
-        tem.binding                   = binding;
-        tem.descriptorCount           = 1;
-        tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.descriptorType            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0}; // SSBO size can be dynamic
+        tem.binding         = binding;
+        tem.descriptorCount = 1;
+        tem.stageFlags      = get_stageFlags(shaderStage);
+        tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        if (res.name.find("global") != std::string::npos) {
+            global_bindings_set_0[binding] = {tem, res.name, "storage buffer", shaderStage, 0};
+        } else {
+            sorted_bindings[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0};
+        }
     }
     // 3. Collect Sampled Images (Textures)
     for (const auto &res: resources.sampled_images) {
@@ -212,18 +220,26 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
             }
         }
-        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
+        if (res.name.find("global") != std::string::npos) {
+            global_bindings_set_0[binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
+        } else {
+            sorted_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
+        }
     }
     for (auto &res: resources.separate_samplers) {
         // layout(binding = 0) uniform sampler mySampler;
         uint32_t set     = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
         uint32_t binding = compiler.get_decoration(res.id, spv::DecorationBinding);
         VkDescriptorSetLayoutBinding tem{};;
-        tem.binding                   = binding;
-        tem.descriptorCount           = 1;
-        tem.stageFlags                = get_stageFlags(shaderStage);
-        tem.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLER;
-        sorted_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+        tem.binding         = binding;
+        tem.descriptorCount = 1;
+        tem.stageFlags      = get_stageFlags(shaderStage);
+        tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+        if (res.name.find("global") != std::string::npos) {
+            global_bindings_set_0[binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+        } else {
+            sorted_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+        }
     }
     for (auto &res: resources.separate_images) {
         // layout(binding = 1) uniform texture2D myImage;
@@ -232,17 +248,22 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             const uint32_t set = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
             uint32_t binding   = compiler.get_decoration(res.id, spv::DecorationBinding);
             VkDescriptorSetLayoutBinding tem{};;
-            tem.binding                   = binding;
-            tem.descriptorCount           = 1;
-            tem.stageFlags                = get_stageFlags(shaderStage);
-            tem.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            sorted_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+            tem.binding         = binding;
+            tem.descriptorCount = 1;
+            tem.stageFlags      = get_stageFlags(shaderStage);
+            tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            if (res.name.find("global") != std::string::npos) {
+                global_bindings_set_0[binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+            } else {
+                sorted_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+            }
         }
     }
 }
 
 
-static void read_spv_file(const std::string &file_name, std::string shaderStage,
+static void read_spv_file(const std::string &file_name, const std::string &shaderStage,
+                          std::map<uint32_t, binding_resource> &global_bindings_set_0,
                           std::array<std::map<uint32_t, binding_resource>, max_sets> &sorted_bindings,
                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
                           std::vector<VkVertexInputBindingDescription> &vertexBindings) {
@@ -257,7 +278,8 @@ static void read_spv_file(const std::string &file_name, std::string shaderStage,
     file.read(reinterpret_cast<char *>(spv_binary.data()), size);
 
 
-    collect_and_sorted_resources(spv_binary, shaderStage, sorted_bindings, vertexAttributes, vertexBindings);
+    collect_and_sorted_resources(spv_binary, shaderStage, global_bindings_set_0, sorted_bindings, vertexAttributes,
+                                 vertexBindings);
 }
 
 
@@ -305,13 +327,16 @@ inline void print_layout_binding_line(std::string filePath) {
 }
 
 
-inline std::string get_shader_key(Shader_paths &paths) {
+inline std::string get_shader_key(const Shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    std::string temp_vertex_path     = std::filesystem::path(vertex_path).filename().string();
-    std::string temp_fragment_path   = std::filesystem::path(fragment_path).filename().string();
-    std::string temp_geometry_path   = std::filesystem::path(geometry_path).filename().string();
+    const std::string &computer_path = paths.computer_path_;
+
+    std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
+    std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
+    std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
+    std::string temp_computer_path = std::filesystem::path(computer_path).filename().string();
 
     std::string target = ".spv"; {
         size_t pos = temp_vertex_path.find(target);
@@ -328,57 +353,70 @@ inline std::string get_shader_key(Shader_paths &paths) {
         if (temp_geometry_path.size() > 4 && pos != std::string::npos) {
             temp_geometry_path.erase(pos, target.length());
         }
+    } {
+        size_t pos = temp_computer_path.find(target);
+        if (temp_computer_path.size() > 4 && pos != std::string::npos) {
+            temp_computer_path.erase(pos, target.length());
+        }
     }
-    return temp_vertex_path + temp_fragment_path + geometry_path;
+    return temp_vertex_path + temp_fragment_path + geometry_path + computer_path;
 }
 
-static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_graphics_descriptor_set_and_binding_layouts(
+
+//
+static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_descriptor_set_and_binding_layouts(
     Shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
+    const std::string &computer_path = paths.computer_path_;
 
     std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_sets_and_bindings;
+    std::map<uint32_t, binding_resource> &global_bindings_set_0 = paths.shader_data_handle->global_bindings_set_0;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
-
-        read_spv_file(vertex_path, "vertex", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
+        read_spv_file(vertex_path, "vertex",
+                      global_bindings_set_0,
+                      sorted_sets_and_bindings,
+                      vertexAttributes,
+                      vertexBindings);
         print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
         LOG_INFO(g_log(), "--- fragment shader ---");
-
-        read_spv_file(fragment_path, "fragment", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
+        read_spv_file(fragment_path, "fragment",
+                      global_bindings_set_0,
+                      sorted_sets_and_bindings,
+                      vertexAttributes,
+                      vertexBindings);
         print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
         LOG_INFO(g_log(), "--- geometry shader ---");
-
-        read_spv_file(geometry_path, "geometry", sorted_sets_and_bindings, vertexAttributes, vertexBindings);
+        read_spv_file(geometry_path, "geometry",
+                      global_bindings_set_0,
+                      sorted_sets_and_bindings,
+                      vertexAttributes,
+                      vertexBindings);
         print_layout_binding_line(geometry_path);
     }
-    paths.data->vertexAttributes = vertexAttributes;
-    paths.data->vertexBindings   = vertexBindings;
-    print_sorted_resources(sorted_sets_and_bindings);
-    return sorted_sets_and_bindings;
-}
-
-static std::array<std::map<uint32_t, binding_resource>, max_sets> organize_computer_descriptor_set_layouts(
-    const std::string &computer_path) {
-    //
-    std::array<std::map<uint32_t, binding_resource>, max_sets> sorted_bindings;
-    std::vector<VkVertexInputBindingDescription> vertexBindings;
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
-
     if (!computer_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
-        read_spv_file(computer_path, "computer", sorted_bindings, vertexAttributes, vertexBindings);
+        read_spv_file(computer_path, "computer",
+                      global_bindings_set_0,
+                      sorted_sets_and_bindings,
+                      vertexAttributes,
+                      vertexBindings);
         print_layout_binding_line(computer_path);
     }
-    print_sorted_resources(sorted_bindings);
-    return sorted_bindings;
+    paths.shader_data_handle->vertexAttributes = vertexAttributes;
+    paths.shader_data_handle->vertexBindings   = vertexBindings;
+#ifndef NDEBUG
+    print_sorted_resources(sorted_sets_and_bindings);
+#endif
+    return sorted_sets_and_bindings;
 }
 
 

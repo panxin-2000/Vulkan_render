@@ -66,6 +66,8 @@ inline auto create_descriptor_sets_layout(VK_handle &handle,
         } else {
             for (uint32_t i = 0; i < max_sets; i++) {
                 const auto &organized_bindings = organized_sets_and_bindings[i];
+                if (organized_bindings.empty() == true)
+                    continue;  // 我不确定，
                 std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
                 std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
                 for (const auto &[fst, snd]: organized_bindings) {
@@ -88,7 +90,7 @@ inline auto create_descriptor_sets_layout(VK_handle &handle,
 }
 
 inline auto find_descriptor_sets_layout(VK_handle &handle,
-                                          const std::string &shader_key) {
+                                        const std::string &shader_key) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     if (!shader_key.empty()) {
         auto &map = handle.get_descriptor_sets_layout_map();

@@ -30,15 +30,20 @@ ShaderData get_shader_data();
 
 
 inline bool Shader_paths::init() {
-    if (data == nullptr) data = std::make_shared<vk_shader_data>();
-    auto &handle                             = VK_handle::get();
-    data->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
-    data->organized_sets_and_bindings        = organize_graphics_descriptor_set_and_binding_layouts(*this);
-    data->shader_key                         = get_shader_key(*this);
-    // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
-    data->descriptor_sets_layout =
-            create_descriptor_sets_layout(handle, data->shader_key, data->organized_sets_and_bindings);
-    data->pipeline_layout = create_pipeline_layout(handle, data->shader_key, data->descriptor_sets_layout);
+    if (shader_data_handle == nullptr) {
+        auto &handle = VK_handle::get();
+        shader_data_handle = std::make_shared<vk_shader_data>();
+        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
+        shader_data_handle->organized_sets_and_bindings = organize_descriptor_set_and_binding_layouts(*this);
+        shader_data_handle->shader_key = get_shader_key(*this);
+        // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
+        shader_data_handle->descriptor_sets_layout = create_descriptor_sets_layout(handle,
+                 shader_data_handle->shader_key,
+                 shader_data_handle->organized_sets_and_bindings);
+        shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
+                                                                     shader_data_handle->descriptor_sets_layout);
+    } else {
+    }
 
     return true;
 }
@@ -47,7 +52,7 @@ inline bool Shader_paths::init() {
 template<typename T1>
 bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &binding_name, T1 binding_data) {
     uint32_t dstSet = 0;
-    for (const auto &map: logic_data->shader_paths_.data->organized_sets_and_bindings) {
+    for (const auto &map: logic_data->shader_paths_.shader_data_handle->organized_sets_and_bindings) {
         for (const auto &[fst, snd]: map) {
             if (snd.binding_name == binding_name && snd.resource_type == "uniform buffer") {
                 auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
@@ -104,7 +109,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
     if (logic_data != nullptr) {
         logic_data->shader_paths_.init();
-        auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.data,
+        auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.shader_data_handle,
                                         VK_handle::get().get_pipeline_map());
 
 
@@ -114,13 +119,18 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         if (logic_data->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           logic_data->shader_paths_.data->organized_sets_and_bindings);
-            descriptor_sets = allocate_descriptor_sets(handle, logic_data->shader_paths_.data->descriptor_sets_layout,
+                                                           logic_data->shader_paths_.shader_data_handle->
+                                                           organized_sets_and_bindings);
+            descriptor_sets = allocate_descriptor_sets(handle,
+                                                       logic_data->shader_paths_.shader_data_handle->
+                                                       descriptor_sets_layout,
                                                        &sets_flags);
             update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_sets);
             // 更新应该被拆出来， 放到需要的位置再上传
         } else {
-            descriptor_sets = allocate_descriptor_sets(handle, logic_data->shader_paths_.data->descriptor_sets_layout,
+            descriptor_sets = allocate_descriptor_sets(handle,
+                                                       logic_data->shader_paths_.shader_data_handle->
+                                                       descriptor_sets_layout,
                                                        nullptr);
         }
 
@@ -144,7 +154,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         auto vk_data                    = new draw_need_vk;
         logic_data->proxy               = vk_data;
         vk_data->mesh                   = mesh;
-        vk_data->pipeline_layout        = logic_data->shader_paths_.data->pipeline_layout;
+        vk_data->pipeline_layout        = logic_data->shader_paths_.shader_data_handle->pipeline_layout;
         vk_data->scissor                = VK_handle::get().get_scissor();
         vk_data->viewport               = VK_handle::get().get_viewport();
         vk_data->vk_pipeline            = pipeline_t;

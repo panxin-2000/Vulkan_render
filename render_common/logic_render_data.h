@@ -54,6 +54,7 @@ struct binding_resource {
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
+    std::map<uint32_t, binding_resource> global_bindings_set_0;
     std::array<std::map<uint32_t, binding_resource>, 8> organized_sets_and_bindings;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     VkPipelineLayout pipeline_layout;
@@ -66,7 +67,7 @@ struct Shader_paths {
     std::string geometry_path_;
     std::string fragment_path_;
     std::string computer_path_;
-    std::shared_ptr<vk_shader_data> data = nullptr;
+    std::shared_ptr<vk_shader_data> shader_data_handle = nullptr;
 
     bool init();
 };
