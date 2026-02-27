@@ -51,13 +51,16 @@ struct binding_resource {
     VkDescriptorBindingFlags flag = 0;
 };
 
+using bindings_map = std::map<uint32_t, binding_resource>;
+using sets_map     = std::map<uint32_t, bindings_map>;
+
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
-    std::map<uint32_t, binding_resource> global_bindings_set_0;
-    std::array<std::map<uint32_t, binding_resource>, 8> organized_sets_and_bindings;
+    bindings_map global_bindings_set;
+    sets_map organized_sets_bindings;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    VkPipelineLayout pipeline_layout;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
 };

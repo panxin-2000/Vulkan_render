@@ -31,15 +31,21 @@ ShaderData get_shader_data();
 
 inline bool Shader_paths::init() {
     if (shader_data_handle == nullptr) {
-        auto &handle = VK_handle::get();
-        shader_data_handle = std::make_shared<vk_shader_data>();
+        auto &handle                                           = VK_handle::get();
+        shader_data_handle                                     = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
-        shader_data_handle->organized_sets_and_bindings = organize_descriptor_set_and_binding_layouts(*this);
-        shader_data_handle->shader_key = get_shader_key(*this);
+        shader_data_handle->organized_sets_bindings            = organize_descriptor_set_and_binding_layouts(*this);
+        shader_data_handle->shader_key                         = get_shader_key(*this);
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
-        shader_data_handle->descriptor_sets_layout = create_descriptor_sets_layout(handle,
-                 shader_data_handle->shader_key,
-                 shader_data_handle->organized_sets_and_bindings);
+
+        // descriptor_sets_layout 中包含 global 的 set
+        // 重要是如果有时候，set = 0 在 global 时应该如何处理
+        shader_data_handle->descriptor_sets_layout =
+                create_descriptor_sets_layout(handle,
+                                              shader_data_handle->shader_key,
+                                              shader_data_handle->global_bindings_set,
+                                              shader_data_handle->organized_sets_bindings);
+
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
                                                                      shader_data_handle->descriptor_sets_layout);
     } else {
@@ -51,15 +57,15 @@ inline bool Shader_paths::init() {
 
 template<typename T1>
 bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &binding_name, T1 binding_data) {
-    uint32_t dstSet = 0;
-    for (const auto &map: logic_data->shader_paths_.shader_data_handle->organized_sets_and_bindings) {
-        for (const auto &[fst, snd]: map) {
-            if (snd.binding_name == binding_name && snd.resource_type == "uniform buffer") {
+    for (auto const &[set_value, bindings_map]:
+         logic_data->shader_paths_.shader_data_handle->organized_sets_bindings) {
+        for (const auto &[binding_value, info]: bindings_map) {
+            if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                 auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
                 Update_descriptor_binding temp      = {};
                 temp.binding_name                   = binding_name;
-                temp.resource_type                  = snd.resource_type;
-                temp.dstSet                         = dstSet;
+                temp.resource_type                  = info.resource_type;
+                temp.dstSet                         = set_value;
                 temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
                 temp.descriptor_write_binding.dstBinding       = 0;
@@ -74,7 +80,6 @@ bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &b
                 return true;
             }
         }
-        dstSet++;
     }
     return false;
 }
@@ -115,25 +120,33 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
 
         // 这里就全部都是 渲染 某个物体时会 变更的数据了
         // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-        std::vector<VkDescriptorSet> descriptor_sets;
+        std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
+
+        std::vector<VkDescriptorSet> global_descriptor_set;
+        std::vector<VkDescriptorSet> object_descriptor_sets;
         if (logic_data->debug_name == "blender Suzanne") {
             create_textures_to_gpu(handle, handle.get_command_pool());
             auto sets_flags = create_descriptor_sets_flags(handle,
                                                            logic_data->shader_paths_.shader_data_handle->
-                                                           organized_sets_and_bindings);
-            descriptor_sets = allocate_descriptor_sets(handle,
-                                                       logic_data->shader_paths_.shader_data_handle->
-                                                       descriptor_sets_layout,
-                                                       &sets_flags);
-            update_descriptor_sets(handle, handle.get_bindless_textures(), descriptor_sets);
+                                                           organized_sets_bindings);
+            global_descriptor_set = allocate_descriptor_sets(handle,
+                                                             logic_data->shader_paths_.shader_data_handle->
+                                                             descriptor_sets_layout,
+                                                             &sets_flags);
+            update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
             // 更新应该被拆出来， 放到需要的位置再上传
         } else {
-            descriptor_sets = allocate_descriptor_sets(handle,
-                                                       logic_data->shader_paths_.shader_data_handle->
-                                                       descriptor_sets_layout,
-                                                       nullptr);
+            object_descriptor_sets = allocate_descriptor_sets(handle,
+                                                              logic_data->shader_paths_.shader_data_handle->
+                                                              descriptor_sets_layout,
+                                                              nullptr);
         }
+        descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
 
+        descriptor_sets.insert(descriptor_sets.end(), global_descriptor_set.begin(), global_descriptor_set.end());
+        descriptor_sets.insert(descriptor_sets.end(), object_descriptor_sets.begin(), object_descriptor_sets.end());
+
+        // 基本逻辑是对的，需要写一个单独的函数
 
         struct Shader_Data_po {
             matrix_4x4 projection;

@@ -54,8 +54,8 @@ create_descriptor_bindings_layout(const VK_handle &handle,
  */
 inline auto create_descriptor_sets_layout(VK_handle &handle,
                                           const std::string &shader_key,
-                                          const std::array<std::map<uint32_t, binding_resource>, max_sets> &
-                                          organized_sets_and_bindings) {
+                                          bindings_map global_bindings_set_0,
+                                          const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     if (!shader_key.empty()) {
         auto &map = handle.get_descriptor_sets_layout_map();
@@ -64,10 +64,23 @@ inline auto create_descriptor_sets_layout(VK_handle &handle,
             it->second.second++;
             return it->second.first;
         } else {
-            for (uint32_t i = 0; i < max_sets; i++) {
-                const auto &organized_bindings = organized_sets_and_bindings[i];
+            {
+                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+                std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
+                for (const auto &[fst, snd]: global_bindings_set_0) {
+                    layout_bindings.push_back(snd.LayoutBinding);
+                    layout_bindings_flags.push_back(snd.flag);
+                }
+                if (layout_bindings_flags.empty() == false && layout_bindings.empty() == false) {
+                    auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings,
+                                                                          layout_bindings_flags);
+                    descriptor_sets_layout.push_back(set_x_layout);
+                }
+            }
+            for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {
+                const auto &organized_bindings = bindings_map;
                 if (organized_bindings.empty() == true)
-                    continue;  // 我不确定，
+                    continue; // 我不确定，
                 std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
                 std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
                 for (const auto &[fst, snd]: organized_bindings) {
@@ -116,11 +129,10 @@ inline void clean_all_descriptor_sets_layout(VK_handle &handle) {
 }
 
 inline auto create_descriptor_sets_flags(const VK_handle &handle,
-                                         const std::array<std::map<uint32_t, binding_resource>, max_sets> &
-                                         organized_sets_and_bindings) {
+                                         const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorBindingFlags> sets_flags;
-    for (uint32_t i = 0; i < max_sets; i++) {
-        const auto &organized_bindings = organized_sets_and_bindings[i];
+    for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {
+        const auto &organized_bindings = bindings_map;
         std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
         VkDescriptorBindingFlags set_x_layout_binding_flags = 0;
         for (const auto &[fst, snd]: organized_bindings) {
