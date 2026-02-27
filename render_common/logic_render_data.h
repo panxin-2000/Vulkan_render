@@ -42,16 +42,13 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-
-
-
 struct binding_resource {
-    VkDescriptorSetLayoutBinding LayoutBinding;
-    std::string name;
+    VkDescriptorSetLayoutBinding LayoutBinding{};
+    std::string binding_name;
     std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
     std::string shaderStage;
-    size_t need_allocate_size     = 0;
-    VkDescriptorBindingFlags flag = 0;
+    size_t uniform_buffer_size        = 0;
+    VkDescriptorBindingFlags flag     = 0;
 };
 
 struct vk_shader_data {
@@ -75,6 +72,17 @@ struct Shader_paths {
 };
 
 
+struct UpdateDescriptorSet {
+    std::string binding_name;
+    std::string resource_type;
+    uint32_t dstSet;
+    VkWriteDescriptorSet descriptor_write_bindings;
+    std::optional<VkDescriptorBufferInfo> bufferInfo;
+    std::optional<VkDescriptorImageInfo> imageInfo;
+    // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
+    std::optional<VkBufferView> TexelBufferView;
+};
+
 #include "descriptor_organized_sets_and_bindings.h"
 
 
@@ -87,6 +95,7 @@ private:
 public:
     std::string mesh_path_;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
+    std::vector<UpdateDescriptorSet> update_descriptor_sets;
     std::string debug_name;
     Indices_type indices_;
     GPUPrimType prim_type_ = GPU_PRIM_TRIS;

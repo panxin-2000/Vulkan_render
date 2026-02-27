@@ -44,6 +44,39 @@ inline bool Shader_paths::init() {
 }
 
 
+template<typename T1>
+bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &binding_name, T1 binding_data) {
+    uint32_t dstSet = 0;
+    for (const auto &map: logic_data->shader_paths_.data->organized_sets_and_bindings) {
+        for (const auto &[fst, snd]: map) {
+            if (snd.binding_name == binding_name && snd.resource_type == "uniform buffer") {
+                auto [vk_buffer,offset] = update_push_constants_data(binding_data); // 这里是一个需要同步的点
+                UpdateDescriptorSet temp;
+                temp.binding_name                    = binding_name;
+                temp.resource_type                   = snd.resource_type;
+                temp.dstSet                          = dstSet;
+                temp.descriptor_write_bindings.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
+                temp.descriptor_write_bindings.dstBinding      = 0;
+                temp.descriptor_write_bindings.dstArrayElement = 0;
+                temp.descriptor_write_bindings.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                temp.descriptor_write_bindings.descriptorCount = 1;
+                // temp.descriptor_write_bindings.pBufferInfo      = &bufferInfo;
+                temp.descriptor_write_bindings.pImageInfo       = nullptr;
+                temp.descriptor_write_bindings.pTexelBufferView = nullptr;
+
+                temp.bufferInfo->buffer = vk_buffer;
+                temp.bufferInfo->offset = offset;
+                temp.bufferInfo->range  = sizeof(binding_data);
+                logic_data->update_descriptor_sets.emplace_back(temp);
+                return true;
+            }
+        }
+        dstSet++;
+    }
+    return false;
+}
+
 inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
     if (logic_data != nullptr) {
@@ -80,6 +113,7 @@ inline bool add_object_to_render(logic_render_data *logic_data) {
         // update_shader_data(); // 这里是一个需要同步的点
         // auto shaderData = get_shader_data();
 
+        add_uniform_buffer_data(logic_data, "UBO", temp);
         auto [vk_buffer,offset] = update_push_constants_data(temp); // 这里是一个需要同步的点
 
         VkDescriptorBufferInfo bufferInfo{};

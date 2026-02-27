@@ -57,9 +57,6 @@ inline VkShaderStageFlags get_stageFlags(const std::string &shaderStage) {
 }
 
 
-#include <vulkan/vulkan.h>
-#include <spirv_cross/spirv_cross.hpp>
-
 inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cross::SPIRType &type) {
     using namespace spirv_cross;
 
@@ -163,7 +160,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
         tem.descriptorType            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "uniform", shaderStage, need_allocate_size};
+        sorted_bindings[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
 
         const auto &type = compiler.get_type(res.base_type_id);
         // 2. 遍历结构体内部的所有成员
@@ -186,7 +183,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.descriptorCount           = 1;
         tem.stageFlags                = get_stageFlags(shaderStage);
         tem.descriptorType            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        sorted_bindings[set][binding] = {tem, res.name, "buffer", shaderStage, 0}; // SSBO size can be dynamic
+        sorted_bindings[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0}; // SSBO size can be dynamic
     }
     // 3. Collect Sampled Images (Textures)
     for (const auto &res: resources.sampled_images) {
@@ -209,7 +206,7 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
                 tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
-                                      VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
@@ -274,7 +271,7 @@ static void print_sorted_resources(
         for (auto const &[binding, info]: sorted_bindings) {
             // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap
             LOG_INFO(g_log(), "stage {}  : layout (set = {}, binding = {}) {} {}",
-                     info.shaderStage, set, binding, info.resource_type, info.name);
+                     info.shaderStage, set, binding, info.resource_type, info.binding_name);
         }
     }
 }
