@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_SHADER_COMMON_H
 #define HELLO_MAC_SHADER_COMMON_H
 
+#include <iostream>
 #include <list>
 #include <vk_mem_alloc.h>
 #include <base_element/point_3.h>
@@ -130,6 +131,18 @@ public:
     }
 
     VKR_buffer_ptr() = default;
+
+    ~VKR_buffer_ptr() {
+        ptr = nullptr;
+    }
+
+    long use_count() {
+        return ptr.use_count();
+    }
+
+    void clear() {
+        ptr = nullptr;
+    }
 
     VKR_buffer *operator->() const { return ptr.get(); }
 
@@ -290,7 +303,12 @@ public:
 };
 
 
-struct draw_need_vk {
+class draw_need_vk {
+public:
+    ~draw_need_vk() {
+        std::cout << "draw_need_vk::~draw_need_vk()" << std::endl;
+    }
+
     std::string debug_name;
     VkPipeline vk_pipeline;
     VkPipelineLayout pipeline_layout;
