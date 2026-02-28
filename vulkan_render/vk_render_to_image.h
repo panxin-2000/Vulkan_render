@@ -169,6 +169,7 @@ private
                                     render_data.value());
                 if (it != need_render_objects.end()) {
                     need_render_objects.erase(it);
+                    delete render_data.value();
                 }
                 // 其实到这里还没有结束，还需要清理资源
             } else {

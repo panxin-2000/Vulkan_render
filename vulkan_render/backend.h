@@ -34,7 +34,7 @@ inline bool Shader_paths::init() {
         auto &handle                                           = VK_handle::get();
         shader_data_handle                                     = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
-        shader_data_handle->model_sets_bindings            = organize_descriptor_set_and_binding_layouts(*this);
+        shader_data_handle->model_sets_bindings                = organize_descriptor_set_and_binding_layouts(*this);
         shader_data_handle->shader_key                         = get_shader_key(*this);
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
 
