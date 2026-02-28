@@ -60,6 +60,7 @@ struct vk_shader_data {
     sets_map global_bindings_set;
     sets_map organized_sets_bindings;
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
+    std::vector<VkDescriptorSetLayout> global_descriptor_sets_layout;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;

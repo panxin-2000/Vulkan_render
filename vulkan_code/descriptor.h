@@ -121,6 +121,8 @@ inline auto allocate_descriptor_sets(VK_handle &handle,
                                      const std::vector<VkDescriptorBindingFlags> *binding_flags) {
     const uint32_t resize_number = descriptor_set_layouts.size();
     std::vector<VkDescriptorSet> descriptor_set_texture;
+    if (descriptor_set_layouts.empty())
+        return descriptor_set_texture;
 
     std::vector<uint32_t> variableDescCount;
     descriptor_set_texture.resize(resize_number);

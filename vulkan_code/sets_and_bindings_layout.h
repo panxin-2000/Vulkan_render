@@ -54,7 +54,6 @@ create_descriptor_bindings_layout(const VK_handle &handle,
  */
 inline auto create_descriptor_sets_layout(VK_handle &handle,
                                           const std::string &shader_key,
-                                          sets_map global_bindings_set,
                                           const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     if (!shader_key.empty()) {
@@ -64,22 +63,6 @@ inline auto create_descriptor_sets_layout(VK_handle &handle,
             it->second.second++;
             return it->second.first;
         } else {
-            for (auto const &[set_value, bindings_map]: global_bindings_set) {
-                const auto &organized_bindings = bindings_map;
-                if (organized_bindings.empty() == true)
-                    continue; // 我不确定，
-                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-                std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
-                for (const auto &[fst, snd]: organized_bindings) {
-                    layout_bindings.push_back(snd.LayoutBinding);
-                    layout_bindings_flags.push_back(snd.flag);
-                }
-                if (layout_bindings_flags.empty() == true && layout_bindings.empty() == true) {
-                    continue;
-                }
-                auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings, layout_bindings_flags);
-                descriptor_sets_layout.push_back(set_x_layout);
-            }
             for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {
                 const auto &organized_bindings = bindings_map;
                 if (organized_bindings.empty() == true)

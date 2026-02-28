@@ -40,14 +40,29 @@ inline bool Shader_paths::init() {
 
         // descriptor_sets_layout 中包含 global 的 set
         // 重要是如果有时候，set = 0 在 global 时应该如何处理
+        shader_data_handle->global_descriptor_sets_layout =
+                create_descriptor_sets_layout(handle,
+                                              shader_data_handle->shader_key + "global_bindings_set",
+                                              shader_data_handle->global_bindings_set);
+
         shader_data_handle->descriptor_sets_layout =
                 create_descriptor_sets_layout(handle,
                                               shader_data_handle->shader_key,
-                                              shader_data_handle->global_bindings_set,
                                               shader_data_handle->organized_sets_bindings);
+        std::vector<VkDescriptorSetLayout> temp;
+        temp.reserve(shader_data_handle->descriptor_sets_layout.size() +
+                     shader_data_handle->global_descriptor_sets_layout.size());
+
+        temp.insert(temp.end(),
+                    shader_data_handle->global_descriptor_sets_layout.begin(),
+                    shader_data_handle->global_descriptor_sets_layout.end());
+        temp.insert(temp.end(),
+                    shader_data_handle->descriptor_sets_layout.begin(),
+                    shader_data_handle->descriptor_sets_layout.end());
+
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
-                                                                     shader_data_handle->descriptor_sets_layout);
+                                                                     temp);
     } else {
     }
 
@@ -124,15 +139,16 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
     if (!global_bindings_set.empty()) {
         create_textures_to_gpu(handle, handle.get_command_pool());
         auto sets_flags = create_descriptor_sets_flags(handle,
-                                                       logic_data->shader_paths_.shader_data_handle->
                                                        global_bindings_set);
         global_descriptor_set = allocate_descriptor_sets(handle,
                                                          logic_data->shader_paths_.shader_data_handle->
-                                                         descriptor_sets_layout,
+                                                         global_descriptor_sets_layout,
                                                          &sets_flags);
         update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
         // 更新应该被拆出来， 放到需要的位置再上传
     } {
+        // 下面这段有问题，logic_data->shader_paths_.shader_data_handle->descriptor_sets_layout
+        // 这个参数没有分离出来
         object_descriptor_sets = allocate_descriptor_sets(handle,
                                                           logic_data->shader_paths_.shader_data_handle->
                                                           descriptor_sets_layout,
