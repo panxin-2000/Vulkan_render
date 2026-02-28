@@ -34,7 +34,7 @@ inline bool Shader_paths::init() {
         auto &handle                                           = VK_handle::get();
         shader_data_handle                                     = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
-        shader_data_handle->organized_sets_bindings            = organize_descriptor_set_and_binding_layouts(*this);
+        shader_data_handle->model_sets_bindings            = organize_descriptor_set_and_binding_layouts(*this);
         shader_data_handle->shader_key                         = get_shader_key(*this);
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
 
@@ -45,20 +45,20 @@ inline bool Shader_paths::init() {
                                               shader_data_handle->shader_key + "global_bindings_set",
                                               shader_data_handle->global_bindings_set);
 
-        shader_data_handle->descriptor_sets_layout =
+        shader_data_handle->model_descriptor_sets_layout =
                 create_descriptor_sets_layout(handle,
                                               shader_data_handle->shader_key,
-                                              shader_data_handle->organized_sets_bindings);
+                                              shader_data_handle->model_sets_bindings);
         std::vector<VkDescriptorSetLayout> temp;
-        temp.reserve(shader_data_handle->descriptor_sets_layout.size() +
+        temp.reserve(shader_data_handle->model_descriptor_sets_layout.size() +
                      shader_data_handle->global_descriptor_sets_layout.size());
 
         temp.insert(temp.end(),
                     shader_data_handle->global_descriptor_sets_layout.begin(),
                     shader_data_handle->global_descriptor_sets_layout.end());
         temp.insert(temp.end(),
-                    shader_data_handle->descriptor_sets_layout.begin(),
-                    shader_data_handle->descriptor_sets_layout.end());
+                    shader_data_handle->model_descriptor_sets_layout.begin(),
+                    shader_data_handle->model_descriptor_sets_layout.end());
 
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
@@ -73,7 +73,7 @@ inline bool Shader_paths::init() {
 template<typename T1>
 bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &binding_name, T1 binding_data) {
     for (auto const &[set_value, bindings_map]:
-         logic_data->shader_paths_.shader_data_handle->organized_sets_bindings) {
+         logic_data->shader_paths_.shader_data_handle->model_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                 auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
@@ -151,7 +151,7 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
         // 这个参数没有分离出来
         object_descriptor_sets = allocate_descriptor_sets(handle,
                                                           logic_data->shader_paths_.shader_data_handle->
-                                                          descriptor_sets_layout,
+                                                          model_descriptor_sets_layout,
                                                           nullptr);
     }
     descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
@@ -164,28 +164,11 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
 inline bool add_object_to_render(logic_render_data *logic_data) {
     auto &handle = VK_handle::get();
     if (logic_data != nullptr) {
-        logic_data->shader_paths_.init();
         auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.shader_data_handle,
                                         VK_handle::get().get_pipeline_map());
 
-
-        // 基本逻辑是对的，需要写一个单独的函数
-
-        struct Shader_Data_po {
-            matrix_4x4 projection;
-            matrix_4x4 view;
-            matrix_4x4 model;
-        };
-        Shader_Data_po temp;
-
-        identity_matrix_4x4(&temp.projection);
-        identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720);
-
-        add_uniform_buffer_data(logic_data, "UBO", temp);
         auto descriptor_sets = allocate_descriptor_sets(logic_data);
         update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
-
 
         auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
         auto vk_data                    = new draw_need_vk;

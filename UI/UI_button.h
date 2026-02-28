@@ -149,6 +149,23 @@ entt::entity UI_button(const std::string &name,
                 set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
         // render->set_texture("resoureces/picture.png", "ourTexture1");
 
+
+        // 关于参数的部分是需要从 add_object_to_render 中抽离的
+        render->shader_paths_.init();
+
+        struct Shader_Data_po {
+            matrix_4x4 projection;
+            matrix_4x4 view;
+            matrix_4x4 model;
+        };
+        Shader_Data_po temp;
+
+        identity_matrix_4x4(&temp.projection);
+        identity_matrix_4x4(&temp.view);
+        UI_matrix_4x4(&temp.model, 1280, 720);
+
+        add_uniform_buffer_data(render, "UBO", temp);
+
         add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
     }
 
