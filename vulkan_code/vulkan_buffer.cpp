@@ -8,15 +8,99 @@
 #include "vulkan_image.h"
 
 
-void copy_vk_buffer_and_execution(const VK_handle &handle, VkBuffer srcBuffer,
-                                  VkBuffer dstBuffer, VkDeviceSize size) {
+[[nodiscard]] void *VKR_buffer::mapped_address() const {
+    const auto &handle = VK_handle::get();
+    VmaAllocationInfo info;
+    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    VkMemoryPropertyFlags props;
+    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    if (isVisible) {
+        return info.pMappedData;
+    }
+    return nullptr;
+}
+
+
+[[nodiscard]] VkDeviceAddress VKR_buffer::get_gpu_device_address() const {
+    const auto &handle = VK_handle::get();
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer_handle
+    };
+    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
+    return deviceAddress;
+}
+
+
+[[nodiscard]] bool VKR_buffer::host_visible() const {
+    const auto &handle = VK_handle::get();
+    VmaAllocationInfo info;
+    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    VkMemoryPropertyFlags props;
+    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    return isVisible;
+}
+
+bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
+    const auto &handle = VK_handle::get();
+    if (size == 0) {
+        VmaAllocationInfo allocInfo_for_map;
+        vmaGetAllocationInfo(handle.get_allocator(), allocation, &allocInfo_for_map);
+        size = allocInfo_for_map.size;
+    }
+    if (need_flush() == true) {
+        vmaFlushAllocation(handle.get_allocator(), allocation, offset, size);
+    }
+    return true;
+}
+
+bool VKR_buffer::unmap_memory() const {
+    const auto &handle = VK_handle::get();
+    vmaUnmapMemory(handle.get_allocator(), allocation);
+    return true;
+}
+
+
+void *VKR_buffer::map_memory() const {
+    const auto &handle = VK_handle::get();
+    void *bufferPtr    = nullptr;
+    vmaMapMemory(handle.get_allocator(), allocation, &bufferPtr);
+    return bufferPtr;
+}
+
+bool VKR_buffer::need_flush() const {
+    const auto &handle = VK_handle::get();
+    VmaAllocationInfo info;
+    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    VkMemoryPropertyFlags props;
+    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    const bool need_flush = (props & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    return !need_flush;
+}
+
+
+[[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer buffer) {
+    const auto &handle = VK_handle::get();
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer
+    };
+    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
+    return deviceAddress;
+}
+
+
+void copy_vk_buffer_and_execution(const VK_handle &handle, VKR_buffer srcBuffer,
+                                  VKR_buffer dstBuffer, VkDeviceSize size) {
     VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size      = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkCmdCopyBuffer(commandBuffer, srcBuffer.get_buffer_handle(), dstBuffer.get_buffer_handle(), 1, &copyRegion);
 
     end_and_submit_one_command_buffer(handle, commandBuffer);
 }
@@ -55,4 +139,53 @@ VkCommandBuffer begin_one_command_buffer(const VK_handle &handle) {
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
     return commandBuffer;
+}
+
+
+bool copy_mem_from_cpu_to_gpu(const VKR_buffer &buffer,
+                              const std::function<void(void *)> &mem_copy_callback) {
+    if (buffer.host_visible() == true) {
+        if (buffer.map_memory() == nullptr) {
+            return false;
+        }
+        if (mem_copy_callback != nullptr && buffer.mapped_address() != nullptr) {
+            mem_copy_callback(buffer.mapped_address());
+        }
+        buffer.flush();
+        buffer.unmap_memory();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+VKR_buffer create_vma_buffer(const VK_handle &handle, VkDeviceSize size,
+                             VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
+    VkBuffer vBuffer{VK_NULL_HANDLE};
+    VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
+    // 到这里应该是结束了一部分内容了吧
+    VkDeviceSize vBufSize = size;
+    VkBufferCreateInfo BufferCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .size  = vBufSize,
+        .usage = usage
+    };
+    VmaAllocationCreateInfo AllocationCreateInfo{
+        .flags = flags,
+        .usage = VMA_MEMORY_USAGE_AUTO
+    };
+    VmaAllocationInfo allocInfo = {};
+    VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
+                                 &BufferCreateInfo, &AllocationCreateInfo,
+                                 &vBuffer, &vBufferAllocation,
+                                 &allocInfo));
+    return {vBuffer, vBufferAllocation};
+}
+
+
+// 这里是一个需要更改的点，将 timeline 与销毁结合
+bool VKR_buffer::DestroyBuffer() const {
+    const auto &handle = VK_handle::get();
+    vmaDestroyBuffer(handle.get_allocator(), buffer_handle, allocation);
+    return true;
 }

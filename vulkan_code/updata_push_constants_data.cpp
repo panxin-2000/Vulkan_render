@@ -5,13 +5,15 @@
 #include "update_push_constants_data.h"
 #include "vulkan_device_handle.h"
 
-VK_buffer *buffer = nullptr;
+VKR_buffer_pool *buffer = nullptr;
 
-VK_buffer &get_uniform_buffer() {
+VKR_buffer_pool &get_uniform_buffer() {
     auto &handle = VK_handle::get();
 
     if (buffer == nullptr) {
-        buffer = new VK_buffer();
+        VkBuffer vBuffer{VK_NULL_HANDLE};
+        VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
+
         VkBufferCreateInfo uBufferCI{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .size  = 32 * 1024, // 32K
@@ -27,9 +29,10 @@ VK_buffer &get_uniform_buffer() {
                                  vmaCreateBuffer(handle.get_allocator(),
                                      &uBufferCI,
                                      &uBufferAllocCI,
-                                     &buffer->buffer_handle,
-                                     &buffer->allocation,
+                                     &vBuffer,
+                                     &vBufferAllocation,
                                      nullptr));
+        buffer = new VKR_buffer_pool(vBuffer, vBufferAllocation);
         buffer->memory_pool.push_back({0, 32 * 1024, false});
     }
     return *buffer;

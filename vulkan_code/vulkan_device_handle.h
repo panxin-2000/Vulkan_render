@@ -235,9 +235,9 @@ private:
     std::map<std::string, std::pair<std::vector<VkDescriptorSetLayout>, uint32_t> > descriptor_sets_layout_map_;
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > pipeline_layout_map_;
     std::map<std::string, pipeline_and_share> pipeline_map_;
-    std::map<logic_render_data *, buffer_and_share> mesh_map_;
+    std::map<logic_render_data *, mesh_and_share> mesh_map_;
 
-    std::map<Indices_type, buffer_and_share> indices_map_;
+    std::map<Indices_type, mesh_and_share> indices_map_;
     std::vector<VkDescriptorImageInfo> bindless_textures_;
 
     VkCommandPool commandPool = VK_NULL_HANDLE;

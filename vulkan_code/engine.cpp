@@ -30,7 +30,6 @@ void VK_handle::create_command_buffer() {
 }
 
 
-
 void VK_handle::create_fences() {
     VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
     for (auto i = 0; i < maxFramesInFlight; i++) {
@@ -216,36 +215,3 @@ ShaderData get_shader_data() {
 }
 
 
-[[nodiscard]] void *VK_buffer::get_point_mapped_address() const {
-    const auto &handle = VK_handle::get();
-    VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
-    VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
-    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    if (isVisible) {
-        return info.pMappedData;
-    }
-    return nullptr;
-}
-
-
-[[nodiscard]] VkDeviceAddress VK_buffer::get_gpu_device_address() const {
-    const auto &handle = VK_handle::get();
-    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
-        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-        .buffer = buffer_handle
-    };
-    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
-    return deviceAddress;
-}
-
-[[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer buffer) {
-    const auto &handle = VK_handle::get();
-    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
-        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-        .buffer = buffer
-    };
-    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
-    return deviceAddress;
-}

@@ -53,78 +53,20 @@ inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::stri
     return {vertices, sp_indices};
 }
 
-inline std::pair<VkBuffer, VmaAllocation> create_vma_buffer(const VK_handle &handle, VkDeviceSize size,
-                                                            VkBufferUsageFlags usage, VmaAllocationCreateFlags flags) {
-    VkBuffer vBuffer{VK_NULL_HANDLE};
-    VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
-    // 到这里应该是结束了一部分内容了吧
-    VkDeviceSize vBufSize = size;
-    VkBufferCreateInfo BufferCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .size  = vBufSize,
-        .usage = usage
-    };
-    VmaAllocationCreateInfo AllocationCreateInfo{
-        .flags = flags,
-        .usage = VMA_MEMORY_USAGE_AUTO
-    };
-    VmaAllocationInfo allocInfo = {};
-    VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
-                                 &BufferCreateInfo, &AllocationCreateInfo,
-                                 &vBuffer, &vBufferAllocation,
-                                 &allocInfo));
-    return {vBuffer, vBufferAllocation};
-}
-
-
-inline bool check_host_visible_bit(const VK_handle &handle, const VmaAllocation vBufferAllocation) {
-    VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), vBufferAllocation, &info);
-    VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
-    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    return isVisible;
-}
-
-inline bool check_need_flush_bit(const VK_handle &handle, const VmaAllocation vBufferAllocation) {
-    VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), vBufferAllocation, &info);
-    VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
-    const bool need_flush = props & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    return need_flush;
-}
-
-inline bool copy_mem_from_cpu_to_gpu(const VK_handle &handle,
-                                     const std::pair<VkBuffer, VmaAllocation> &buffer_handle,
-                                     const std::function<void(void *)> &mem_copy_callback) {
-    if (check_host_visible_bit(handle, buffer_handle.second) == true) {
-        void *bufferPtr{nullptr};
-        VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), buffer_handle.second, &bufferPtr));
-        if (bufferPtr == nullptr) {
-            return false;
-        }
-        // 也可以通过下面两行获取 map 的地址 ，取其中的 pMappedData
-        VmaAllocationInfo allocInfo_for_map;
-        vmaGetAllocationInfo(handle.get_allocator(), buffer_handle.second, &allocInfo_for_map);
-        if (mem_copy_callback != nullptr && allocInfo_for_map.pMappedData != nullptr) {
-            mem_copy_callback(allocInfo_for_map.pMappedData);
-        }
-        if (check_need_flush_bit(handle, buffer_handle.second) == false) {
-            vmaFlushAllocation(handle.get_allocator(), buffer_handle.second, 0, allocInfo_for_map.size);
-        }
-        vmaUnmapMemory(handle.get_allocator(), buffer_handle.second);
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据
-inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
+inline VKR_buffer create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
     return create_vma_buffer(handle, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+}
+
+inline VKR_buffer create_vertex_index_buffer(const VK_handle &handle, const VkDeviceSize size) {
+    return create_vma_buffer(handle, size,
+                             VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
 }
 
 /**
@@ -134,41 +76,35 @@ inline std::pair<VkBuffer, VmaAllocation> create_staging_buffer(const VK_handle 
  * @param mem_copy_callback
  * @return
  */
-inline std::pair<VkBuffer, VmaAllocation> create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
-                                                                     std::function<void(void *)> mem_copy_callback) {
-    auto [vBuffer,vBufferAllocation] =
-            create_vma_buffer(handle, size,
-                              VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
-    if (vBuffer == VK_NULL_HANDLE || vBufferAllocation == VK_NULL_HANDLE)
-        return {vBuffer, vBufferAllocation};
+inline VKR_buffer create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
+                                             std::function<void(void *)> mem_copy_callback) {
+    auto vBuffer = create_vertex_index_buffer(handle, size);
+    if (vBuffer.empty())
+        return {VK_NULL_HANDLE,VK_NULL_HANDLE};
     // 没有创建成功，直接退出
     // 创建成功，之后，记录，还是？
 
-    if (check_host_visible_bit(handle, vBufferAllocation) == false) {
+    if (vBuffer.host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
-        auto [staging_buffer,staging_allocation] = create_staging_buffer(handle, size);
-        if (staging_buffer == VK_NULL_HANDLE || staging_allocation == VK_NULL_HANDLE) {
+        auto staging_buffer = create_staging_buffer(handle, size);
+        if (staging_buffer.empty()) {
             // 创建 staging_buffer 失败
-            vmaDestroyBuffer(handle.get_allocator(), vBuffer, vBufferAllocation);
-            return {staging_buffer, staging_allocation};
+            vBuffer.DestroyBuffer();
+            return {VK_NULL_HANDLE,VK_NULL_HANDLE};
         }
 
-        if (check_host_visible_bit(handle, staging_allocation) == false) {
+        if (staging_buffer.host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
-            copy_mem_from_cpu_to_gpu(handle, {staging_buffer, staging_allocation}, mem_copy_callback);
+            copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
         }
-        vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+        staging_buffer.DestroyBuffer();
     } else {
         // 创建成功，但是 map 不成功的很少见
-        copy_mem_from_cpu_to_gpu(handle, {vBuffer, vBufferAllocation}, mem_copy_callback);
+        copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);
     }
-    return {vBuffer, vBufferAllocation};
+    return vBuffer;
 }
 
 
@@ -183,14 +119,13 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
         memcpy(static_cast<char *>(dst) + vBufSize, indices_->data(), iBufSize);
     };
 
-    auto [vBuffer,vBufferAllocation] =
+    const auto vertices_buffer =
             create_vertex_index_buffer(handle, vBufSize + iBufSize, mem_copy_function);
 
 
     Model_mesh mesh{};
-    mesh.vertices_buffer     = vBuffer;
-    mesh.vertices_allocation = vBufferAllocation;
-    mesh.indices_buffer      = vBuffer;
+    mesh.vertices = vertices_buffer;
+    mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
     mesh.indexed_command.indexCount    = indices_->size(); // 是可以这么替换的
     mesh.indexed_command.firstIndex    = vBufSize / 2;     // 索引缓冲区的起始偏移（以索引为单位）确实是可以通过计算偏移的
@@ -204,7 +139,7 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
 
 
 inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data *data,
-                              std::map<logic_render_data *, buffer_and_share> &map) {
+                              std::map<logic_render_data *, mesh_and_share> &map) {
     if (data != nullptr) {
         auto it = map.find(data);
         if (it != map.end()) {
@@ -231,7 +166,7 @@ inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data *data,
 
 
 inline Model_mesh *find_mesh(logic_render_data *data,
-                             std::map<logic_render_data *, buffer_and_share> &map) {
+                             std::map<logic_render_data *, mesh_and_share> &map) {
     if (data != nullptr) {
         auto it = map.find(data);
         if (it != map.end()) {
@@ -245,7 +180,7 @@ inline Model_mesh *find_mesh(logic_render_data *data,
 inline void clean_all_mesh_object(VK_handle &handle) {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
     for (const auto &[key, value]: VK_handle::get().get_mesh_map()) {
-        vmaDestroyBuffer(handle.get_allocator(), value.mesh.vertices_buffer, value.mesh.vertices_allocation);
+        value.mesh.vertices.DestroyBuffer();
         // ->不清理会直接爆异常
     }
     VK_handle::get().get_mesh_map().clear();

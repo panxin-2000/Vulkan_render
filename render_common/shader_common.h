@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_SHADER_COMMON_H
 #define HELLO_MAC_SHADER_COMMON_H
 
+#include <list>
 #include <vk_mem_alloc.h>
 #include <base_element/point_3.h>
 
@@ -71,6 +72,87 @@ struct texture_and_share {
 
 #ifdef WITH_VULKAN_BACKEND
 
+
+class VKR_buffer {
+    VkBuffer buffer_handle   = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+
+public:
+    VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle(buffer_handle),
+                                                                               allocation(allocation) {
+    }
+
+    [[nodiscard]] void *mapped_address() const;
+
+    [[nodiscard]] VkDeviceAddress get_gpu_device_address() const;
+
+    [[nodiscard]] bool host_visible() const;
+
+    [[nodiscard]] bool need_flush() const;
+
+    // timeline 会和这个函数强关联
+    [[nodiscard]] VkBuffer get_buffer_handle() const {
+        return buffer_handle;
+    }
+
+    // timeline 会和这个函数强关联
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr() const {
+        return &buffer_handle;
+    }
+
+    bool unmap_memory() const;
+
+    bool DestroyBuffer() const;
+
+    void *map_memory() const;
+
+    bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
+
+    [[nodiscard]] bool empty() const {
+        if (buffer_handle == VK_NULL_HANDLE || allocation == VK_NULL_HANDLE) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
+
+struct address_and_length {
+    uint64_t address = 0;
+    uint64_t length  = 0;
+    bool if_used     = false;
+};
+
+class VKR_buffer_pool : public VKR_buffer {
+public:
+    VKR_buffer_pool(const VkBuffer buffer_handle, const VmaAllocation allocation) : VKR_buffer(buffer_handle,
+             allocation) {
+    }
+
+
+    std::list<address_and_length> memory_pool;
+
+    uint64_t alloc_size(const uint64_t size) {
+        uint64_t return_address = -1;
+        for (auto it = memory_pool.begin(); it != memory_pool.end(); ++it) {
+            if (it->if_used == false && it->length == size) {
+                it->if_used    = true;
+                return_address = it->address;
+                break;
+            }
+            if (it->if_used == false && it->length > size) {
+                memory_pool.insert(it, address_and_length{it->address, size, true});
+                return_address = it->address;
+                it->address    += size;
+                it->length     -= size;
+                break;
+            }
+        }
+        return return_address;
+    }
+};
+
+
 // Vulkan 的核心目标是“零隐式开销”。
 // 预计算：当你创建 VkPipeline 时，驱动程序会针对你指定的拓扑结构、顶点格式和着色器进行“整体优化编译”
 // 所以拓扑结构不在这里，而在管线中
@@ -78,13 +160,11 @@ struct texture_and_share {
 // 倾向于为不同的拓扑结构预创建不同的 Pipeline
 struct Model_mesh {
     // 不做
-    VkBuffer vertices_buffer          = VK_NULL_HANDLE;
-    VmaAllocation vertices_allocation = VK_NULL_HANDLE; // 没有更新为新的 VK_buffer
-    VkDeviceSize vertices_offset      = 0;              // 以字节为单位的偏移
-    VkBuffer indices_buffer           = VK_NULL_HANDLE;
-    VmaAllocation indices_allocation  = VK_NULL_HANDLE;
-    VkDeviceSize indices_offset       = 0; // 以字节为单位的偏移
-    VkIndexType index_type            = VK_INDEX_TYPE_UINT16;
+    VKR_buffer vertices          = {VK_NULL_HANDLE,VK_NULL_HANDLE};
+    VKR_buffer indices           = {VK_NULL_HANDLE,VK_NULL_HANDLE};
+    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
+    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
+    VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
 
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};
@@ -94,11 +174,11 @@ struct Model_mesh {
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
     void draw(const VkCommandBuffer &cb) {
-        if (vertices_buffer == VK_NULL_HANDLE)
+        if (vertices.get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        vkCmdBindVertexBuffers(cb, 0, 1, &vertices_buffer, &vertices_offset);
-        if (indices_buffer != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb, indices_buffer, indices_offset, index_type);
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices.get_buffer_handle_ptr(), &vertices_offset);
+        if (indices.get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
+            vkCmdBindIndexBuffer(cb, indices.get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,
                              indexed_command.firstIndex,
@@ -115,7 +195,7 @@ struct Model_mesh {
 #endif
 
 
-struct buffer_and_share {
+struct mesh_and_share {
 #ifdef WITH_VULKAN_BACKEND
     Model_mesh mesh;
 #elif  WITH_OPENGL_BACKEND

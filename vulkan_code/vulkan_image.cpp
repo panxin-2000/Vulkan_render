@@ -30,11 +30,13 @@ VkImageView createImageView(const VK_handle &handle,
         throw std::runtime_error("failed to create image view!");
     }
     return imageView;
-}VkImageView create_sky_cube_ImageView(const VK_handle &handle,
-                            const VkImage image,
-                            const VkFormat format,
-                            const VkImageAspectFlags aspectFlags,
-                            uint32_t mipLevels) {
+}
+
+VkImageView create_sky_cube_ImageView(const VK_handle &handle,
+                                      const VkImage image,
+                                      const VkFormat format,
+                                      const VkImageAspectFlags aspectFlags,
+                                      uint32_t mipLevels) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
@@ -64,10 +66,12 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
     }
     throw std::runtime_error("failed to find suitable memory type!");
 }
-std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_handle &handle, uint32_t width, uint32_t height, uint32_t mipLevels,
-                                              VkFormat format,
-                                              VkImageTiling tiling,
-                                              VkImageUsageFlags usage) {
+
+std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_handle &handle, uint32_t width, uint32_t height,
+                                                        uint32_t mipLevels,
+                                                        VkFormat format,
+                                                        VkImageTiling tiling,
+                                                        VkImageUsageFlags usage) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
@@ -129,29 +133,29 @@ std::pair<VkImage, VmaAllocation> createImage(VK_handle &handle, uint32_t width,
     return {image, allocation};
 }
 
-std::pair<VkBuffer, VmaAllocation> create_image_buffer(const VK_handle &handle, VkDeviceSize size,
-                                                       std::function<void(void *)> mem_copy_callback) {
-    auto [vBuffer,vBufferAllocation] =
+VKR_buffer create_image_buffer(const VK_handle &handle, VkDeviceSize size,
+                               std::function<void(void *)> mem_copy_callback) {
+    auto vBuffer =
             create_vma_buffer(handle, size,
                               VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                               VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                               VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
-    if (check_host_visible_bit(handle, vBufferAllocation) == false) {
+    if (vBuffer.host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
-        auto [staging_buffer,staging_allocation] = create_staging_buffer(handle, size);
-        if (check_host_visible_bit(handle, staging_allocation) == false) {
+        auto staging_buffer = create_staging_buffer(handle, size);
+        if (staging_buffer.host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
-            copy_mem_from_cpu_to_gpu(handle, {staging_buffer, staging_allocation}, mem_copy_callback);
+            copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
         }
-        vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+        staging_buffer.DestroyBuffer();
     } else {
-        copy_mem_from_cpu_to_gpu(handle, {vBuffer, vBufferAllocation}, mem_copy_callback);
+        copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);
     }
-    return {vBuffer, vBufferAllocation};
+    return vBuffer;
 }
 
 
@@ -270,7 +274,7 @@ std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VK_handle &ha
         memcpy(dst, pixels, imageSize);
     };
 
-    auto [staging_buffer,staging_allocation] = create_image_buffer(handle, imageSize, mem_copy_function);
+    auto staging_buffer = create_image_buffer(handle, imageSize, mem_copy_function);
     stbi_image_free(pixels);
 
     auto [textureImage,textureImage_allocation] = createImage(handle,
@@ -285,11 +289,11 @@ std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VK_handle &ha
 
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-    copyBufferToImage(handle, staging_buffer, textureImage, static_cast<uint32_t>(texWidth),
+    copyBufferToImage(handle, staging_buffer.get_buffer_handle(), textureImage, static_cast<uint32_t>(texWidth),
                       static_cast<uint32_t>(texHeight));
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
-    vmaDestroyBuffer(handle.get_allocator(), staging_buffer, staging_allocation);
+    staging_buffer.DestroyBuffer();
 
     generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
