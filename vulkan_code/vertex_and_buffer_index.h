@@ -55,16 +55,15 @@ inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::stri
 
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据
-inline VKR_buffer create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
-    return create_vma_buffer(handle, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+inline VKR_buffer_ptr create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
+    return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 }
 
-inline VKR_buffer create_vertex_index_buffer(const VK_handle &handle, const VkDeviceSize size) {
-    return create_vma_buffer(handle, size,
-                             VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, const VkDeviceSize size) {
+    return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                   VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
 }
@@ -76,30 +75,30 @@ inline VKR_buffer create_vertex_index_buffer(const VK_handle &handle, const VkDe
  * @param mem_copy_callback
  * @return
  */
-inline VKR_buffer create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
-                                             std::function<void(void *)> mem_copy_callback) {
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
+                                                 std::function<void(void *)> mem_copy_callback) {
     auto vBuffer = create_vertex_index_buffer(handle, size);
-    if (vBuffer.empty())
-        return {VK_NULL_HANDLE,VK_NULL_HANDLE};
+    if (vBuffer->empty())
+        return {};
     // 没有创建成功，直接退出
     // 创建成功，之后，记录，还是？
 
-    if (vBuffer.host_visible() == false) {
+    if (vBuffer->host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
         auto staging_buffer = create_staging_buffer(handle, size);
-        if (staging_buffer.empty()) {
+        if (staging_buffer->empty()) {
             // 创建 staging_buffer 失败
-            vBuffer.DestroyBuffer();
-            return {VK_NULL_HANDLE,VK_NULL_HANDLE};
+            vBuffer->DestroyBuffer();
+            return {};
         }
 
-        if (staging_buffer.host_visible() == false) {
+        if (staging_buffer->host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
         }
-        staging_buffer.DestroyBuffer();
+        staging_buffer->DestroyBuffer();
     } else {
         // 创建成功，但是 map 不成功的很少见
         copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);
@@ -123,7 +122,7 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
             create_vertex_index_buffer(handle, vBufSize + iBufSize, mem_copy_function);
 
 
-    Model_mesh mesh{};
+    Model_mesh mesh;
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
@@ -149,13 +148,13 @@ inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data *data,
             if (data->mesh_path_.empty() == false) {
                 auto [vertices, indices] = load_model(data->mesh_path_);
                 const auto mesh          = create_mesh_data(handle, vertices, indices);
-                map.insert({data, {mesh, 1}});
+                // map.insert({data, {mesh, 1}});
                 return mesh;
             } else {
                 for (const auto &temp: data->vertex_and_attributes_) {
                     // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
                     auto mesh = create_mesh_data(handle, temp, data->indices_);
-                    map.insert({data, {mesh, 1}});
+                    // map.insert({data, {mesh, 1}});
                     return mesh;
                 }
             }
@@ -180,9 +179,10 @@ inline Model_mesh *find_mesh(logic_render_data *data,
 inline void clean_all_mesh_object(VK_handle &handle) {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
     for (const auto &[key, value]: VK_handle::get().get_mesh_map()) {
-        value.mesh.vertices.DestroyBuffer();
+        value.mesh.vertices->DestroyBuffer();
         // ->不清理会直接爆异常
     }
     VK_handle::get().get_mesh_map().clear();
+    // discard_buffer_map_clean();
 }
 #endif //HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H

@@ -133,25 +133,24 @@ std::pair<VkImage, VmaAllocation> createImage(VK_handle &handle, uint32_t width,
     return {image, allocation};
 }
 
-VKR_buffer create_image_buffer(const VK_handle &handle, VkDeviceSize size,
+VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
                                std::function<void(void *)> mem_copy_callback) {
     auto vBuffer =
-            create_vma_buffer(handle, size,
-                              VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                              VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
-    if (vBuffer.host_visible() == false) {
+    if (vBuffer->host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
         auto staging_buffer = create_staging_buffer(handle, size);
-        if (staging_buffer.host_visible() == false) {
+        if (staging_buffer->host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
         }
-        staging_buffer.DestroyBuffer();
+        staging_buffer->DestroyBuffer();
     } else {
         copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);
     }
@@ -289,11 +288,11 @@ std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VK_handle &ha
 
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-    copyBufferToImage(handle, staging_buffer.get_buffer_handle(), textureImage, static_cast<uint32_t>(texWidth),
+    copyBufferToImage(handle, staging_buffer->get_buffer_handle(), textureImage, static_cast<uint32_t>(texWidth),
                       static_cast<uint32_t>(texHeight));
     transitionImageLayout(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
-    staging_buffer.DestroyBuffer();
+    staging_buffer->DestroyBuffer();
 
     generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 

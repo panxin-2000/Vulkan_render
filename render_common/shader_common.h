@@ -76,11 +76,14 @@ struct texture_and_share {
 class VKR_buffer {
     VkBuffer buffer_handle   = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
+    uint64_t timeline_       = 0;
 
 public:
     VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle(buffer_handle),
                                                                                allocation(allocation) {
     }
+
+    ~VKR_buffer();
 
     [[nodiscard]] void *mapped_address() const;
 
@@ -102,7 +105,7 @@ public:
 
     bool unmap_memory() const;
 
-    bool DestroyBuffer() const;
+    bool DestroyBuffer();
 
     void *map_memory() const;
 
@@ -117,15 +120,33 @@ public:
     }
 };
 
+
+// using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
+
+class VKR_buffer_ptr {
+public:
+    VKR_buffer_ptr(const VkBuffer buffer_handle,
+                   const VmaAllocation allocation) : ptr(std::make_shared<VKR_buffer>(buffer_handle, allocation)) {
+    }
+
+    VKR_buffer_ptr() = default;
+
+    VKR_buffer *operator->() const { return ptr.get(); }
+
+private:
+    std::shared_ptr<VKR_buffer> ptr = nullptr;
+};
+
+
 struct address_and_length {
     uint64_t address = 0;
     uint64_t length  = 0;
     bool if_used     = false;
 };
 
-class VKR_buffer_pool : public VKR_buffer {
+class VKR_buffer_pool : public VKR_buffer_ptr {
 public:
-    VKR_buffer_pool(const VkBuffer buffer_handle, const VmaAllocation allocation) : VKR_buffer(buffer_handle,
+    VKR_buffer_pool(const VkBuffer buffer_handle, const VmaAllocation allocation) : VKR_buffer_ptr(buffer_handle,
              allocation) {
     }
 
@@ -152,16 +173,18 @@ public:
     }
 };
 
+void discard_buffer_map_clean();
 
 // Vulkan 的核心目标是“零隐式开销”。
 // 预计算：当你创建 VkPipeline 时，驱动程序会针对你指定的拓扑结构、顶点格式和着色器进行“整体优化编译”
 // 所以拓扑结构不在这里，而在管线中
 // 某些着色器阶段对拓扑结构有严格的要求
 // 倾向于为不同的拓扑结构预创建不同的 Pipeline
-struct Model_mesh {
+class Model_mesh {
+public:
     // 不做
-    VKR_buffer vertices          = {VK_NULL_HANDLE,VK_NULL_HANDLE};
-    VKR_buffer indices           = {VK_NULL_HANDLE,VK_NULL_HANDLE};
+    VKR_buffer_ptr vertices      = {};
+    VKR_buffer_ptr indices       = {};
     VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
     VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
     VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
@@ -174,11 +197,11 @@ struct Model_mesh {
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
     void draw(const VkCommandBuffer &cb) {
-        if (vertices.get_buffer_handle() == VK_NULL_HANDLE)
+        if (vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices.get_buffer_handle_ptr(), &vertices_offset);
-        if (indices.get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb, indices.get_buffer_handle(), indices_offset, index_type);
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(), &vertices_offset);
+        if (indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
+            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,
                              indexed_command.firstIndex,

@@ -175,6 +175,7 @@ private
                 break;
             }
         }
+        discard_buffer_map_clean();
         // 简单的将内存区域标记为没有内容
         // init_need_objects 再根据需要进行移动或者拼接操作
     }
