@@ -92,9 +92,10 @@ bool VKR_buffer::need_flush() const {
 }
 
 
-void copy_vk_buffer_and_execution(const VK_handle &handle, VKR_buffer_ptr srcBuffer,
+void copy_vk_buffer_and_execution(VKR_buffer_ptr srcBuffer,
                                   VKR_buffer_ptr dstBuffer, VkDeviceSize size) {
-    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
+    const auto &handle = VK_handle::get();
+    VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
@@ -102,11 +103,13 @@ void copy_vk_buffer_and_execution(const VK_handle &handle, VKR_buffer_ptr srcBuf
     copyRegion.size      = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
 
-    end_and_submit_one_command_buffer(handle, commandBuffer);
+    end_and_submit_one_command_buffer(commandBuffer);
 }
 
 
-void end_and_submit_one_command_buffer(const VK_handle &handle, VkCommandBuffer commandBuffer) {
+void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
+    const auto &handle = VK_handle::get();
+
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -121,7 +124,8 @@ void end_and_submit_one_command_buffer(const VK_handle &handle, VkCommandBuffer 
 }
 
 
-VkCommandBuffer begin_one_command_buffer(const VK_handle &handle) {
+VkCommandBuffer begin_one_command_buffer() {
+    const auto &handle = VK_handle::get();
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;

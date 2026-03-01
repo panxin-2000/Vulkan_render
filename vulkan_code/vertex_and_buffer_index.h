@@ -96,7 +96,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDevi
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
-            copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
+            copy_vk_buffer_and_execution(staging_buffer, vBuffer, size);
         }
         staging_buffer->DestroyBuffer();
     } else {

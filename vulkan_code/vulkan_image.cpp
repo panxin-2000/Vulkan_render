@@ -148,7 +148,7 @@ VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
-            copy_vk_buffer_and_execution(handle, staging_buffer, vBuffer, size);
+            copy_vk_buffer_and_execution(staging_buffer, vBuffer, size);
         }
         staging_buffer->DestroyBuffer();
     } else {
@@ -197,7 +197,7 @@ void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
 
-    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
+    VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     int32_t mipWidth  = texWidth;
     int32_t mipHeight = texHeight;
@@ -251,7 +251,7 @@ void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int
                      VK_PIPELINE_STAGE_TRANSFER_BIT,
                      VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
-    end_and_submit_one_command_buffer(handle, commandBuffer);
+    end_and_submit_one_command_buffer(commandBuffer);
     commandBuffer = VK_NULL_HANDLE;
 }
 
@@ -306,7 +306,7 @@ std::tuple<VkImage, VmaAllocation, VkImageView> createTextureImage(VK_handle &ha
 }
 
 void copyBufferToImage(const VK_handle &handle, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
+    VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkBufferImageCopy region{};
     region.bufferOffset                    = 0;
@@ -327,7 +327,7 @@ void copyBufferToImage(const VK_handle &handle, VkBuffer buffer, VkImage image, 
                            &region
                           );
 
-    end_and_submit_one_command_buffer(handle, commandBuffer);
+    end_and_submit_one_command_buffer(commandBuffer);
     commandBuffer = VK_NULL_HANDLE;
     // 清理 commandBuffer ，但是 no safe ,手动容易忘记
 }
@@ -335,7 +335,7 @@ void copyBufferToImage(const VK_handle &handle, VkBuffer buffer, VkImage image, 
 
 inline void transitionImageLayout(const VK_handle &handle, VkImage image, VkFormat format, VkImageLayout oldLayout,
                                   VkImageLayout newLayout, uint32_t mipLevels) {
-    VkCommandBuffer commandBuffer = begin_one_command_buffer(handle);
+    VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -387,7 +387,7 @@ inline void transitionImageLayout(const VK_handle &handle, VkImage image, VkForm
                          1, &barrier
                         );
 
-    end_and_submit_one_command_buffer(handle, commandBuffer);
+    end_and_submit_one_command_buffer(commandBuffer);
 }
 
 
