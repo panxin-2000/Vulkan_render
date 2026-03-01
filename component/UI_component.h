@@ -87,7 +87,7 @@ public:
     bool update_2D_position_matrix() const {
         const auto &storage = g_entt().storage<Rect_transform>();
         const auto entity   = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
+        if (auto render = g_entt().try_get<logic_render_data>(entity)) {
         }
         return true;
     }
@@ -103,11 +103,11 @@ inline void update_UI_position() {
         // auto pos    = view.get<Rect_transform>(it);
         // auto offset = pos.get_offset();
 
-        if (const auto render_data = g_entt().try_get<logic_render_data *>(it)) {
+        if (const auto render_data = g_entt().try_get<logic_render_data>(it)) {
             // std::vector<VkDescriptorSet> descriptor_sets;
             std::string update_name = "name have change";
-            update_object_to_render((*render_data)->proxy,
-                                    [update_name](draw_need_vk *render_object) {
+            update_object_to_render((render_data)->proxy,
+                                    [update_name](std::shared_ptr<draw_need_vk> render_object) {
                                         if (!update_name.empty()) {
                                             render_object->debug_name = std::move(update_name);
                                         } else {
@@ -137,8 +137,8 @@ public:
                                                             });
                            }
                            // 在系统初始化时，给logic_render_data * 的类型都添加这个销毁前执行的函数
-                           // g_entt().on_destroy<logic_render_data *>().connect<&cleanup_logic_render_data>();
-                           // 也可以在只移除 logic_render_data * 时 触发，但是不同类型触发的顺序可能是随机的。
+                           // g_entt().on_destroy<logic_render_data>().connect<&cleanup_logic_render_data>();
+                           // 也可以在只移除 logic_render_data 时 触发，但是不同类型触发的顺序可能是随机的。
                        }
                       );
 

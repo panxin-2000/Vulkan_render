@@ -71,9 +71,9 @@ inline bool Shader_paths::init() {
 
 
 template<typename T1>
-bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &binding_name, T1 binding_data) {
+bool add_uniform_buffer_data(logic_render_data &logic_data, const std::string &binding_name, T1 binding_data) {
     for (auto const &[set_value, bindings_map]:
-         logic_data->shader_paths_.shader_data_handle->model_sets_bindings) {
+         logic_data.shader_paths_.shader_data_handle->model_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                 auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
@@ -91,7 +91,7 @@ bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &b
                 temp.descriptor_write_binding.pImageInfo       = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView = nullptr;
                 temp.bufferInfo                                = {true, {vk_buffer, offset, sizeof(binding_data)}};
-                logic_data->update_descriptor_sets.emplace_back(temp);
+                logic_data.update_descriptor_sets.emplace_back(temp);
                 return true;
             }
         }
@@ -100,14 +100,14 @@ bool add_uniform_buffer_data(logic_render_data *logic_data, const std::string &b
 }
 
 
-inline void update_bindings_to_descriptor_sets(logic_render_data *logic_data,
+inline void update_bindings_to_descriptor_sets(logic_render_data &logic_data,
                                                const std::vector<VkDescriptorSet> &descriptor_sets) {
     // 以 binding 为一个最小数量
     auto &handle = VK_handle::get();
     std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
-    descriptor_write_bindings.resize(logic_data->update_descriptor_sets.size());
-    for (size_t i = 0; i < logic_data->update_descriptor_sets.size(); i++) {
-        auto &binding_update                = logic_data->update_descriptor_sets[i];
+    descriptor_write_bindings.resize(logic_data.update_descriptor_sets.size());
+    for (size_t i = 0; i < logic_data.update_descriptor_sets.size(); i++) {
+        auto &binding_update                = logic_data.update_descriptor_sets[i];
         descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
         descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
         if (binding_update.bufferInfo.first) {
@@ -126,7 +126,7 @@ inline void update_bindings_to_descriptor_sets(logic_render_data *logic_data,
 }
 
 
-inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
+inline auto allocate_descriptor_sets(logic_render_data &logic_data) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
@@ -135,13 +135,13 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
     std::vector<VkDescriptorSet> global_descriptor_set;
     std::vector<VkDescriptorSet> object_descriptor_sets;
 
-    auto &global_bindings_set = logic_data->shader_paths_.shader_data_handle->global_bindings_set;
+    auto &global_bindings_set = logic_data.shader_paths_.shader_data_handle->global_bindings_set;
     if (!global_bindings_set.empty()) {
         create_textures_to_gpu(handle, handle.get_command_pool());
         auto sets_flags = create_descriptor_sets_flags(handle,
                                                        global_bindings_set);
         global_descriptor_set = allocate_descriptor_sets(handle,
-                                                         logic_data->shader_paths_.shader_data_handle->
+                                                         logic_data.shader_paths_.shader_data_handle->
                                                          global_descriptor_sets_layout,
                                                          &sets_flags);
         update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
@@ -150,7 +150,7 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
         // 下面这段有问题，logic_data->shader_paths_.shader_data_handle->descriptor_sets_layout
         // 这个参数没有分离出来
         object_descriptor_sets = allocate_descriptor_sets(handle,
-                                                          logic_data->shader_paths_.shader_data_handle->
+                                                          logic_data.shader_paths_.shader_data_handle->
                                                           model_descriptor_sets_layout,
                                                           nullptr);
     }
@@ -161,41 +161,38 @@ inline auto allocate_descriptor_sets(logic_render_data *logic_data) {
     return descriptor_sets;
 }
 
-inline bool add_object_to_render(logic_render_data *logic_data) {
-    auto &handle = VK_handle::get();
-    if (logic_data != nullptr) {
-        auto pipeline_t = find_pipeline(handle, *logic_data->shader_paths_.shader_data_handle,
-                                        VK_handle::get().get_pipeline_map());
+inline bool add_object_to_render(logic_render_data &logic_data) {
+    auto &handle    = VK_handle::get();
+    auto pipeline_t = find_pipeline(handle, *logic_data.shader_paths_.shader_data_handle,
+                                    VK_handle::get().get_pipeline_map());
 
-        auto descriptor_sets = allocate_descriptor_sets(logic_data);
-        update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
+    auto descriptor_sets = allocate_descriptor_sets(logic_data);
+    update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
 
-        auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
-        auto vk_data                    = new draw_need_vk;
-        logic_data->proxy               = vk_data;
-        vk_data->mesh                   = mesh;
-        vk_data->pipeline_layout        = logic_data->shader_paths_.shader_data_handle->pipeline_layout;
-        vk_data->scissor                = VK_handle::get().get_scissor();
-        vk_data->viewport               = VK_handle::get().get_viewport();
-        vk_data->vk_pipeline            = pipeline_t;
-        vk_data->debug_name             = logic_data->debug_name;
-        vk_data->vk_descriptor_set      = descriptor_sets;
-        vk_data->push_constants_address = 0;
-        vk_render_queue::instance().render_object_need_init(vk_data);
-        return true;
-    }
-    return false;
+    auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
+    auto vk_data                    = std::make_shared<draw_need_vk>();
+    logic_data.proxy                = vk_data;
+    vk_data->mesh                   = mesh;
+    vk_data->pipeline_layout        = logic_data.shader_paths_.shader_data_handle->pipeline_layout;
+    vk_data->scissor                = VK_handle::get().get_scissor();
+    vk_data->viewport               = VK_handle::get().get_viewport();
+    vk_data->vk_pipeline            = pipeline_t;
+    vk_data->debug_name             = logic_data.debug_name;
+    vk_data->vk_descriptor_set      = descriptor_sets;
+    vk_data->push_constants_address = 0;
+    vk_render_queue::instance().render_object_need_init(vk_data);
+    return true;
 }
 
-inline bool update_object_to_render(draw_need_vk *render_object,
-                                    const std::function<void(draw_need_vk *render_object)> &callback) {
+inline bool update_object_to_render(std::shared_ptr<draw_need_vk> render_object,
+                                    const std::function<void(std::shared_ptr<draw_need_vk> render_object)> &callback) {
     vk_render_queue::instance().render_update(render_object, callback);
     return true;
 }
 
-inline bool clean_object_to_render(const logic_render_data *render_object) {
-    if (render_object != nullptr && render_object->proxy != nullptr) {
-        vk_render_queue::instance().render_object_need_clean(render_object->proxy);
+inline bool clean_object_to_render(const logic_render_data &render_object) {
+    if (render_object.proxy != nullptr) {
+        vk_render_queue::instance().render_object_need_clean(render_object.proxy);
         return true;
     }
     return false;

@@ -34,7 +34,7 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-    std::vector<draw_need_vk *> need_render_objects;
+    std::vector<std::shared_ptr<draw_need_vk> > need_render_objects;
 
 public:
     void render_thread(VK_handle &handle) {
@@ -87,6 +87,8 @@ public:
         // images_
 
         VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_handle::get().get_device()));
+        need_render_objects.clear(); //
+        clean_need_objects();
 
         handle.destroy_descriptorPool();
 
@@ -169,7 +171,7 @@ private
                                     render_data.value());
                 if (it != need_render_objects.end()) {
                     need_render_objects.erase(it);
-                    delete render_data.value();
+                    // delete render_data.value();
                 }
                 // 其实到这里还没有结束，还需要清理资源
             } else {

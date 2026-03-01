@@ -32,6 +32,10 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
                 if (g_entt().valid(entity_)) {
+                    // if (const auto render = g_entt().try_get<logic_render_data>(entity_)) {
+                    //     render->proxy = nullptr;
+                    // }
+                    // 加上上面的内容就有问题
                     g_entt().emplace_or_replace<Destroy_tag>(entity_);
                     return OPERATOR_FINISHED;
                 }
@@ -91,7 +95,7 @@ entt::entity UI_button(const std::string &name,
     entt::entity entity_ = g_entt().create();
 
     /***************创建*******************/
-    g_entt().emplace<logic_render_data *>(entity_, new logic_render_data);
+    g_entt().emplace<logic_render_data>(entity_);
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
     g_entt().emplace<Scene_Component>(entity_);
@@ -103,8 +107,8 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Name_component>(entity_, name);
 
 
-    if (g_entt().all_of<logic_render_data *>(entity_)) {
-        auto render = g_entt().get<logic_render_data *>(entity_);
+    if (g_entt().all_of<logic_render_data>(entity_)) {
+        auto &render = g_entt().get<logic_render_data>(entity_);
 
         /***************设置顶点与索引参数**********************/
         {
@@ -138,20 +142,20 @@ entt::entity UI_button(const std::string &name,
             const vertex_and_attributes temp = {
                 vertices, vertices->data(), vertices->size() * sizeof(pos_and_uv), vertex_attribs
             };
-            render->debug_name = name;
-            render->push_vertex_and_attributes(temp); // 没有给一个vector ，稍微有点不方便
-            render->set_indices(indices);
+            render.debug_name = name;
+            render.push_vertex_and_attributes(temp); // 没有给一个vector ，稍微有点不方便
+            render.set_indices(indices);
         }
         /***************设置着色器与贴图**********************/
-        render->
+        render.
                 set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv");
-        render->
+        render.
                 set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
         // render->set_texture("resoureces/picture.png", "ourTexture1");
 
 
         // 关于参数的部分是需要从 add_object_to_render 中抽离的
-        render->shader_paths_.init();
+        render.shader_paths_.init();
 
         struct Shader_Data_po {
             matrix_4x4 projection;

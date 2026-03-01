@@ -95,7 +95,7 @@ void clean_render_entity() {
     // ++it 不只是++指针，内部还有复杂判读，判断是否包含需要的全部类型，不包括就继续查找，直到到达 end()
     // group 是另一个类似于view的内容，但是呢？会进行内存的搬移，将需要的 entity 移动到 存储的开头部位
     for (const auto it: view) {
-        if (const auto render_data = g_entt().try_get<logic_render_data *>(it))
+        if (const auto render_data = g_entt().try_get<logic_render_data>(it))
             clean_object_to_render(*render_data);
     }
 }

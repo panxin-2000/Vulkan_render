@@ -115,7 +115,7 @@ public:
     std::string texture_path_;
     std::string texture_name_;
 
-    draw_need_vk *proxy;
+    std::shared_ptr<draw_need_vk> proxy;
 
     logic_render_data() = default;
 

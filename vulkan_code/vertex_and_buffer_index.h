@@ -137,42 +137,37 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
 }
 
 
-inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data *data,
+inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data &data,
                               std::map<logic_render_data *, mesh_and_share> &map) {
-    if (data != nullptr) {
-        auto it = map.find(data);
-        if (it != map.end()) {
-            it->second.shared_number++;
-            return it->second.mesh;
+    auto it = map.find(&data);
+    if (it != map.end()) {
+        it->second.shared_number++;
+        return it->second.mesh;
+    } else {
+        if (data.mesh_path_.empty() == false) {
+            auto [vertices, indices] = load_model(data.mesh_path_);
+            const auto mesh          = create_mesh_data(handle, vertices, indices);
+            // map.insert({data, {mesh, 1}});
+            return mesh;
         } else {
-            if (data->mesh_path_.empty() == false) {
-                auto [vertices, indices] = load_model(data->mesh_path_);
-                const auto mesh          = create_mesh_data(handle, vertices, indices);
+            for (const auto &temp: data.vertex_and_attributes_) {
+                // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                auto mesh = create_mesh_data(handle, temp, data.indices_);
                 // map.insert({data, {mesh, 1}});
                 return mesh;
-            } else {
-                for (const auto &temp: data->vertex_and_attributes_) {
-                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                    auto mesh = create_mesh_data(handle, temp, data->indices_);
-                    // map.insert({data, {mesh, 1}});
-                    return mesh;
-                }
             }
         }
     }
-    return {};
 }
 
 
-inline Model_mesh *find_mesh(logic_render_data *data,
+inline Model_mesh *find_mesh(logic_render_data data,
                              std::map<logic_render_data *, mesh_and_share> &map) {
-    if (data != nullptr) {
-        auto it = map.find(data);
-        if (it != map.end()) {
-            return &it->second.mesh;
-        } else {
-            return nullptr;
-        }
+    auto it = map.find(&data);
+    if (it != map.end()) {
+        return &it->second.mesh;
+    } else {
+        return nullptr;
     }
 }
 

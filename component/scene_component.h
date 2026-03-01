@@ -51,7 +51,7 @@ public:
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<logic_render_data *>(entity)) {
+        if (auto render = g_entt().try_get<logic_render_data>(entity)) {
         }
         return true;
     }
