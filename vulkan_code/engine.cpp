@@ -10,12 +10,12 @@
 
 #include "model_matrix.h"
 
-const VkImage &VK_handle::get_current_swap_chain_image() {
-    return get_swap_chain_images()[imageIndex];
+const VkImage &VK_handle::get_current_swap_chain_image() const {
+    return get_swap_chain_images()[imageIndex]->get_image_handle();
 }
 
-const VkImageView &VK_handle::get_current_swap_image_view() {
-    return get_swap_image_views()[imageIndex];
+const VkImageView &VK_handle::get_current_swap_image_view() const {
+    return get_swap_chain_images()[imageIndex]->get_image_view();
 }
 
 void VK_handle::create_command_buffer() {
@@ -49,7 +49,7 @@ void VK_handle::create_present_Semaphores() {
 
 void VK_handle::create_renderSemaphores() {
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    render_to_image_semaphores_.resize(get_swap_image_views().size());
+    render_to_image_semaphores_.resize(get_swap_chain_images().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
     for (auto &semaphore: render_to_image_semaphores_) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(get_device(), &semaphoreCI, nullptr, &semaphore));

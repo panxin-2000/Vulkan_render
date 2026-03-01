@@ -327,17 +327,21 @@ void VK_handle::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // }
 }
 
-void VK_handle::create_swap_chain_image_view() {
+void VK_handle::create_swap_chain_image_and_view() {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
-    swap_chain_images_.resize(imageCount);
-    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, swap_chain_images_.data()));
-    swap_chain_image_views_.resize(imageCount);
+
+    std::vector<VkImage> images;
+    std::vector<VkImageView> image_views;
+    images.resize(imageCount);
+    image_views.resize(imageCount);
+
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, images.data()));
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{
             .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image    = swap_chain_images_[i],
+            .image    = images[i],
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .format   = surfaceFormat.format,
             .subresourceRange{
@@ -346,7 +350,10 @@ void VK_handle::create_swap_chain_image_view() {
                 .layerCount = 1
             }
         };
-        VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &swap_chain_image_views_[i]));
+        VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
+    }
+    for (auto i = 0; i < imageCount; i++) {
+        swap_chain_images_.emplace_back(images[i],VK_NULL_HANDLE, image_views[i]);
     }
 }
 
@@ -364,7 +371,7 @@ void VK_handle::create_depth_resources() {
 }
 
 
-void VK_handle::create_depth_image_view() {
+VKR_image_ptr VK_handle::create_depth_image_and_view() {
     // Depth attachment
     std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
     for (VkFormat &format: depthFormatList) {
@@ -394,13 +401,17 @@ void VK_handle::create_depth_image_view() {
         .usage         = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
-    VmaAllocationCreateInfo allocCI{
+    const VmaAllocationCreateInfo allocCI{
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
     };
-    VK_CHECK_RESULT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image_, &depthImageAllocation,nullptr));
-    VkImageViewCreateInfo depthViewCI{
+    VkImage depth_image                = VK_NULL_HANDLE;
+    VmaAllocation depthImageAllocation = VK_NULL_HANDLE;
+    VkImageView depth_image_view       = VK_NULL_HANDLE;
+
+    VK_CHECK_RESULT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image, &depthImageAllocation,nullptr));
+    const VkImageViewCreateInfo depthViewCI{
         .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image    = depth_image_,
+        .image    = depth_image,
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format   = depth_format_,
         .subresourceRange{
@@ -409,21 +420,21 @@ void VK_handle::create_depth_image_view() {
             .layerCount = 1
         }
     };
-    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view_));
+    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view));
+    return {depth_image, depthImageAllocation, depth_image_view};
 }
 
-void VK_handle::destroy() {
-
-    vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
-    vkDestroyImageView(device_, depth_image_view_, nullptr);
-    for (auto i = 0; i < swap_chain_image_views_.size(); i++) {
-        vkDestroyImageView(device_, swap_chain_image_views_[i], nullptr);
+void VK_handle::destroy() { {
+        // 基本上是一个整体
+        depth_image_->destroy_image();
+        for (const auto &image: swap_chain_images_) {
+            image->destroy_image();
+        }
+        vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
     }
 
 
-    vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
-
     VmaTotalStatistics stats;
     vmaCalculateStatistics(allocator_, &stats);
 

@@ -30,13 +30,14 @@ public:
     [[nodiscard]] bool need_flush() const;
 
     // timeline 会和这个函数强关联
-    [[nodiscard]] VkBuffer get_buffer_handle() const {
+    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) {
+        if (timeline > timeline_) timeline_ = timeline;
         return buffer_handle_;
     }
 
     // timeline 会和这个函数强关联
-    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t time_line = 0) {
-        if (time_line > timeline_) timeline_ = time_line;
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0) {
+        if (timeline > timeline_) timeline_ = timeline;
         return &buffer_handle_;
     }
 
@@ -78,6 +79,10 @@ public:
 
     void clear() {
         ptr = nullptr;
+    }
+
+    explicit operator bool() const noexcept {
+        return ptr != nullptr;
     }
 
     VKR_buffer *operator->() const { return ptr.get(); }

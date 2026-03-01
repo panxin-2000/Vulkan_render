@@ -23,10 +23,10 @@ struct Vertex {
     glm::vec2 uv;
 };
 
+#include "vulkan_image.h"
+
 struct Texture_parameter {
-    VmaAllocation allocation  = VK_NULL_HANDLE;
-    VkImage image             = VK_NULL_HANDLE;
-    VkImageView image_view    = VK_NULL_HANDLE;
+    VKR_image_ptr image;
     VkSampler sampler         = VK_NULL_HANDLE;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 };
@@ -132,9 +132,9 @@ public:
     // }
 
 
-    const VkImage &get_current_swap_chain_image();
+    const VkImage &get_current_swap_chain_image() const;
 
-    const VkImageView &get_current_swap_image_view();
+    const VkImageView &get_current_swap_image_view() const;
 
     void create_command_buffer();
 
@@ -173,13 +173,11 @@ public:
 
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
-    std::vector<VkImageView> swap_chain_image_views_;
 
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
-    std::vector<VkImage> swap_chain_images_;
+    std::vector<VKR_image_ptr> swap_chain_images_;
 
-    VkImage depth_image_{};
-    VkImageView depth_image_view_{};
+    VKR_image_ptr depth_image_;
 
     VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
     uint32_t queue_family_{0};                // 不清楚是否能够删除
@@ -268,13 +266,13 @@ private:
 
     void create_depth_resources();
 
-    void create_swap_chain_image_view();
+    void create_swap_chain_image_and_view();
 
-    void create_depth_image_view();
+    VKR_image_ptr create_depth_image_and_view();
 
     void create_command_pool() {
         // Command pool
-        VkCommandPoolCreateInfo commandPoolCI{
+        const VkCommandPoolCreateInfo commandPoolCI{
             .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
             .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             .queueFamilyIndex = get_queue_Family()
@@ -330,8 +328,8 @@ public:
         create_device();
         create_VMA();
         create_swap_chain(VK_NULL_HANDLE);
-        create_swap_chain_image_view();
-        create_depth_image_view();
+        create_swap_chain_image_and_view();
+        depth_image_ = create_depth_image_and_view();
         create_command_pool();
         init_Descriptor_Pool();
     }
@@ -342,15 +340,14 @@ public:
         vkDeviceWaitIdle(device_);
         const auto old_swap_chain = swap_chain_;
         create_swap_chain(old_swap_chain);
-        vmaDestroyImage(allocator_, depth_image_, depthImageAllocation);
-        vkDestroyImageView(device_, depth_image_view_, nullptr);
-        for (auto i = 0; i < swap_chain_image_views_.size(); i++) {
-            vkDestroyImageView(device_, swap_chain_image_views_[i], nullptr);
+        depth_image_->destroy_image();
+        for (const auto &image: swap_chain_images_) {
+            image->destroy_image();
         }
         vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
 
-        create_swap_chain_image_view();
-        create_depth_image_view();
+        create_swap_chain_image_and_view();
+        depth_image_ = create_depth_image_and_view();
     }
 
     void destroy();
@@ -390,8 +387,6 @@ public:
     }
 
 
-    VmaAllocation depthImageAllocation{}; // ????? 这是一个什么东西？
-
     [[nodiscard]] uint32_t get_queue_Family() const {
         return queue_family_;
     }
@@ -416,16 +411,13 @@ public:
         return swap_chain_;
     }
 
-    [[nodiscard]] const std::vector<VkImageView> &get_swap_image_views() const {
-        return swap_chain_image_views_;
+
+    [[nodiscard]] VkImage get_depth_image() const {
+        return depth_image_->get_image_handle();
     }
 
-    VkImage &get_depth_image() {
-        return depth_image_;
-    }
-
-    [[nodiscard]] const VkImageView &get_depth_image_view() const {
-        return depth_image_view_;
+    [[nodiscard]] VkImageView get_depth_image_view() const {
+        return depth_image_->get_image_view();
     }
 
     [[nodiscard]] const VmaAllocator &get_allocator() const {
@@ -436,7 +428,7 @@ public:
         return window_;
     }
 
-    [[nodiscard]] const std::vector<VkImage> &get_swap_chain_images() const {
+    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
         return swap_chain_images_;
     }
 

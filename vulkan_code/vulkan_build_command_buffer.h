@@ -9,8 +9,8 @@
 #include "vertex_and_buffer_index.h"
 
 
-inline void begin_rendering(VK_handle &engine, const uint64_t time_line) {
-    auto cb = engine.get_current_command_buffer();
+inline void begin_rendering(VK_handle &handle, const uint64_t time_line) {
+    auto cb = handle.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
     VkCommandBufferBeginInfo cbBI{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -24,9 +24,9 @@ inline void begin_rendering(VK_handle &engine, const uint64_t time_line) {
             .srcAccessMask = 0,
             .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = engine.get_current_swap_chain_image(),
+            .image         = VK_handle::get().get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
         VkImageMemoryBarrier2{
@@ -37,7 +37,7 @@ inline void begin_rendering(VK_handle &engine, const uint64_t time_line) {
             .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .image         = VK_handle::get().get_depth_image(),
             .subresourceRange{
@@ -51,9 +51,10 @@ inline void begin_rendering(VK_handle &engine, const uint64_t time_line) {
         .pImageMemoryBarriers = outputBarriers.data()
     };
     vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+
     VkRenderingAttachmentInfo colorAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = engine.get_current_swap_image_view(),
+        .imageView   = handle.get_current_swap_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
