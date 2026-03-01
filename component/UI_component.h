@@ -103,18 +103,18 @@ inline void update_UI_position() {
         // auto pos    = view.get<Rect_transform>(it);
         // auto offset = pos.get_offset();
 
-        if (const auto render_data = g_entt().try_get<logic_render_data>(it)) {
-            // std::vector<VkDescriptorSet> descriptor_sets;
-            std::string update_name = "name have change";
-            update_object_to_render((render_data)->proxy,
-                                    [update_name](std::shared_ptr<draw_need_vk> render_object) {
-                                        if (!update_name.empty()) {
-                                            render_object->debug_name = std::move(update_name);
-                                        } else {
-                                            LOG_INFO(g_log(), "descriptor_sets empty");
-                                        }
-                                    });
-        }
+        // if (const auto render_data = g_entt().try_get<logic_render_data>(it)) {
+        //     // std::vector<VkDescriptorSet> descriptor_sets;
+        //     std::string update_name = "name have change";
+        //     update_object_to_render((render_data)->proxy,
+        //                             [update_name](std::shared_ptr<draw_need_vk> render_object) {
+        //                                 if (!update_name.empty()) {
+        //                                     render_object->debug_name = std::move(update_name);
+        //                                 } else {
+        //                                     LOG_INFO(g_log(), "descriptor_sets empty");
+        //                                 }
+        //                             });
+        // }
     }
 }
 

@@ -170,7 +170,8 @@ entt::entity UI_button(const std::string &name,
 
         add_uniform_buffer_data(render, "UBO", temp);
 
-        add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+
+        add_object_to_render(render, entity_); // 因为这里没有区分。全部都在场景的根节点之下
     }
 
     if (g_entt().all_of<Scene_Component>(entity_)) {

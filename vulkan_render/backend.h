@@ -161,7 +161,7 @@ inline auto allocate_descriptor_sets(logic_render_data &logic_data) {
     return descriptor_sets;
 }
 
-inline bool add_object_to_render(logic_render_data &logic_data) {
+inline bool add_object_to_render(logic_render_data &logic_data, entt::entity entity) {
     auto &handle    = VK_handle::get();
     auto pipeline_t = find_pipeline(handle, *logic_data.shader_paths_.shader_data_handle,
                                     VK_handle::get().get_pipeline_map());
@@ -169,9 +169,11 @@ inline bool add_object_to_render(logic_render_data &logic_data) {
     auto descriptor_sets = allocate_descriptor_sets(logic_data);
     update_bindings_to_descriptor_sets(logic_data, descriptor_sets);
 
-    auto mesh                       = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
-    auto vk_data                    = std::make_shared<draw_need_vk>();
-    logic_data.proxy                = vk_data;
+    auto mesh = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
+
+    g_entt().emplace<std::shared_ptr<draw_need_vk> >(entity, std::make_shared<draw_need_vk>());
+    auto &vk_data = g_entt().get<std::shared_ptr<draw_need_vk> >(entity);
+
     vk_data->mesh                   = mesh;
     vk_data->pipeline_layout        = logic_data.shader_paths_.shader_data_handle->pipeline_layout;
     vk_data->scissor                = VK_handle::get().get_scissor();
@@ -190,9 +192,9 @@ inline bool update_object_to_render(std::shared_ptr<draw_need_vk> render_object,
     return true;
 }
 
-inline bool clean_object_to_render(const logic_render_data &render_object) {
-    if (render_object.proxy != nullptr) {
-        vk_render_queue::instance().render_object_need_clean(render_object.proxy);
+inline bool clean_object_to_render(const entt::entity entity) {
+    if (auto render = g_entt().try_get<std::shared_ptr<draw_need_vk> >(entity)) {
+        vk_render_queue::instance().render_object_need_clean(*render);
         return true;
     }
     return false;
