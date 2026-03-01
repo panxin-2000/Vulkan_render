@@ -11,7 +11,7 @@
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
     const auto &handle = VK_handle::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
     vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
     const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -26,7 +26,7 @@
     const auto &handle = VK_handle::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-        .buffer = buffer_handle
+        .buffer = buffer_handle_
     };
     const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
     return deviceAddress;
@@ -36,7 +36,7 @@
 [[nodiscard]] bool VKR_buffer::host_visible() const {
     const auto &handle = VK_handle::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
     vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
     const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
@@ -47,18 +47,18 @@ bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
     const auto &handle = VK_handle::get();
     if (size == 0) {
         VmaAllocationInfo allocInfo_for_map;
-        vmaGetAllocationInfo(handle.get_allocator(), allocation, &allocInfo_for_map);
+        vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
         size = allocInfo_for_map.size;
     }
     if (need_flush() == true) {
-        vmaFlushAllocation(handle.get_allocator(), allocation, offset, size);
+        vmaFlushAllocation(handle.get_allocator(), allocation_, offset, size);
     }
     return true;
 }
 
 bool VKR_buffer::unmap_memory() const {
     const auto &handle = VK_handle::get();
-    vmaUnmapMemory(handle.get_allocator(), allocation);
+    vmaUnmapMemory(handle.get_allocator(), allocation_);
     return true;
 }
 
@@ -66,14 +66,14 @@ bool VKR_buffer::unmap_memory() const {
 void *VKR_buffer::map_memory() const {
     const auto &handle = VK_handle::get();
     void *bufferPtr    = nullptr;
-    vmaMapMemory(handle.get_allocator(), allocation, &bufferPtr);
+    vmaMapMemory(handle.get_allocator(), allocation_, &bufferPtr);
     return bufferPtr;
 }
 
 bool VKR_buffer::need_flush() const {
     const auto &handle = VK_handle::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation, &info);
+    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
     vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
     const bool need_flush = (props & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -190,19 +190,19 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
 
 bool VKR_buffer::DestroyBuffer() {
-    if (buffer_handle != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
-        discard_buffer_map.insert({{buffer_handle, allocation}, timeline_});
-        buffer_handle = VK_NULL_HANDLE;
-        allocation    = VK_NULL_HANDLE;
+    if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
+        discard_buffer_map.insert({{buffer_handle_, allocation_}, timeline_});
+        buffer_handle_ = VK_NULL_HANDLE;
+        allocation_    = VK_NULL_HANDLE;
     }
     return true;
 }
 
 VKR_buffer::~VKR_buffer() {
-    if (buffer_handle != VK_NULL_HANDLE && allocation != VK_NULL_HANDLE) {
-        discard_buffer_map.insert({{buffer_handle, allocation}, timeline_});
-        buffer_handle = VK_NULL_HANDLE;
-        allocation    = VK_NULL_HANDLE;
+    if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
+        discard_buffer_map.insert({{buffer_handle_, allocation_}, timeline_});
+        buffer_handle_ = VK_NULL_HANDLE;
+        allocation_    = VK_NULL_HANDLE;
     }
 }
 
@@ -211,7 +211,12 @@ void discard_buffer_map_clean() {
     const auto &handle = VK_handle::get();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
-        it = discard_buffer_map.erase(it);
+        LOG_INFO(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
+            it = discard_buffer_map.erase(it);
+        } else {
+            ++it;
+        }
     }
 }

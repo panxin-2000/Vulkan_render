@@ -66,12 +66,11 @@ void VK_handle::create_timeline_Semaphores() {
     vkCreateSemaphore(get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
 }
 
-void VK_handle::put_one_image_to_screen() {
+void VK_handle::submit_render_queue(uint64_t time_line) {
     // Submit to graphics queue
     VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
-    auto cb                   = get_current_command_buffer();
-    static uint64_t time_line = 0;
+    auto cb = get_current_command_buffer();
 
     // uint32_t wait_semaphore_len = submit_task->wait_semaphore == VK_NULL_HANDLE ? 0 : 1;
     uint32_t signal_semaphore_len    = 2;
@@ -79,9 +78,9 @@ void VK_handle::put_one_image_to_screen() {
         vk_timeline_semaphore_,
         get_can_render_to_image_semaphores()[imageIndex]
     };
-    uint64_t signal_semaphore_values[2] = {++time_line, 0};
+    uint64_t signal_semaphore_values[2] = {time_line, 0};
 
-    VkTimelineSemaphoreSubmitInfo vk_timeline_semaphore_submit_info = {
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = {
         VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
         nullptr,
         0,
@@ -92,7 +91,7 @@ void VK_handle::put_one_image_to_screen() {
 
     VkSubmitInfo submitInfo{
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext                = &vk_timeline_semaphore_submit_info,
+        .pNext                = &timeline_semaphore_submit_info,
         .waitSemaphoreCount   = 1,
         .pWaitSemaphores      = &get_current_presentSemaphores(),
         .pWaitDstStageMask    = &waitStages,
@@ -102,7 +101,9 @@ void VK_handle::put_one_image_to_screen() {
         .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
     };
     VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(get_queue(), 1, &submitInfo, get_current_fences()));
+}
 
+void VK_handle::copy_image_to_screen() {
     frameIndex = (frameIndex + 1) % maxFramesInFlight;
     VkPresentInfoKHR presentInfo{
         .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -124,7 +125,7 @@ void VK_handle::put_one_image_to_screen() {
 }
 
 
-void VK_handle::get_one_image_can_render() {
+void VK_handle::get_image_to_render() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
     VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(), 1, &get_current_fences(), true,
                                  UINT64_MAX));
@@ -213,5 +214,3 @@ ShaderData get_shader_data() {
     }
     return shaderData;
 }
-
-

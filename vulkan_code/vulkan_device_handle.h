@@ -149,13 +149,22 @@ public:
 
     void create_timeline_Semaphores();
 
-    void put_one_image_to_screen();
+    void copy_image_to_screen();
+
+    void submit_render_queue(uint64_t time_line);
+
+    static uint64_t get_current_submit_timeline() {
+        static std::atomic<uint64_t> time_line = 1;
+        ++time_line;
+        return time_line - 1; // 第一次拿到的时候就是 1
+    }
+
 
     /**
      *
      * @param imageIndex 必须用 imageIndex 去找图像资源
      */
-    void get_one_image_can_render();
+    void get_image_to_render();
 
 
     void destroy_and_recreate_fence_and_semaphore();

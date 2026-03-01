@@ -49,20 +49,22 @@ public:
                 init_need_objects(handle); // 主要是复制内存的操作
                 update_need_objects();
             }
-            handle.get_one_image_can_render();
-
+            handle.get_image_to_render();
+            const uint64_t time_line = VK_handle::get_current_submit_timeline();
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            begin_rendering(handle); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+            begin_rendering(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
             // 应该先划分不同的 pass 阶段，
-            for (auto render_data: need_render_objects) {
-                build_command_buffer(handle, *render_data);
+            for (const auto &render_data: need_render_objects) {
+                build_command_buffer(handle, *render_data, time_line);
             }
-            end_rendering(handle);
-            handle.put_one_image_to_screen();
+            end_rendering(handle, time_line);
+
+            handle.submit_render_queue(time_line);
+            handle.copy_image_to_screen();
 
             // render_object_function();
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             clean_need_objects();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             // LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
         }
 

@@ -75,13 +75,13 @@ struct texture_and_share {
 
 
 class VKR_buffer {
-    VkBuffer buffer_handle   = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    uint64_t timeline_       = 0;
+    VkBuffer buffer_handle_   = VK_NULL_HANDLE;
+    VmaAllocation allocation_ = VK_NULL_HANDLE;
+    uint64_t timeline_        = 0;
 
 public:
-    VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle(buffer_handle),
-                                                                               allocation(allocation) {
+    VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
+                                                                               allocation_(allocation) {
     }
 
     ~VKR_buffer();
@@ -96,12 +96,13 @@ public:
 
     // timeline 会和这个函数强关联
     [[nodiscard]] VkBuffer get_buffer_handle() const {
-        return buffer_handle;
+        return buffer_handle_;
     }
 
     // timeline 会和这个函数强关联
-    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr() const {
-        return &buffer_handle;
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t time_line = 0) {
+        if (time_line > timeline_) timeline_ = time_line;
+        return &buffer_handle_;
     }
 
     bool unmap_memory() const;
@@ -113,7 +114,7 @@ public:
     bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
 
     [[nodiscard]] bool empty() const {
-        if (buffer_handle == VK_NULL_HANDLE || allocation == VK_NULL_HANDLE) {
+        if (buffer_handle_ == VK_NULL_HANDLE || allocation_ == VK_NULL_HANDLE) {
             return true;
         } else {
             return false;
@@ -209,10 +210,10 @@ public:
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
-    void draw(const VkCommandBuffer &cb) {
+    void draw(const VkCommandBuffer &cb, const uint64_t time_line) {
         if (vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(), &vertices_offset);
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
         if (indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
             vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,

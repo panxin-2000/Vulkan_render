@@ -9,7 +9,7 @@
 #include "vertex_and_buffer_index.h"
 
 
-inline void begin_rendering(VK_handle &engine) {
+inline void begin_rendering(VK_handle &engine, const uint64_t time_line) {
     auto cb = engine.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
     VkCommandBufferBeginInfo cbBI{
@@ -81,7 +81,7 @@ inline void begin_rendering(VK_handle &engine) {
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw) {
+inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw, const uint64_t time_line) {
     const auto cb = engine.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
@@ -100,10 +100,10 @@ inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw) {
     vkCmdPushConstants(cb, vk_draw.pipeline_layout,
                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress),
                        &vk_draw.push_constants_address);
-    vk_draw.mesh.draw(cb);
+    vk_draw.mesh.draw(cb, time_line);
 }
 
-inline void end_rendering(VK_handle &engine) {
+inline void end_rendering(VK_handle &engine, const uint64_t time_line) {
     auto cb = engine.get_current_command_buffer();
     vkCmdEndRendering(cb);
     VkImageMemoryBarrier2 barrierPresent{
