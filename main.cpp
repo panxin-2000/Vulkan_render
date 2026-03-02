@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
             auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
-        // update_UI_position();
+        update_UI_position();
 
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

@@ -103,6 +103,10 @@ inline void update_UI_position() {
         // get_model_matrix();
         auto pos    = view.get<Rect_transform>(it);
         auto offset = pos.get_offset();
+        LOG_INFO(g_log(), "offset x {} y {}", offset.x, offset.y);
+
+        auto &buffer        = get_uniform_buffer();
+        auto mapped_address = buffer->mapped_address();
 
         struct Shader_Data_po {
             matrix_4x4 projection;
@@ -113,22 +117,28 @@ inline void update_UI_position() {
 
         identity_matrix_4x4(&temp.projection);
         identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720);
+        UI_matrix_4x4(&temp.model, 1280, 720, offset.x, offset.y);
 
-        // add_uniform_buffer_data(render, "UBO", temp);
+        // if (offset.x != 0 && offset.y != 0) {
+            // memcpy(mapped_address, &temp, sizeof(Shader_Data_po));
+        // }
+
+        // add_uniform_buffer_data(it, "UBO", temp);
+
+        // const auto descriptor_sets = allocate_descriptor_sets(it);
+        // update_bindings_to_descriptor_sets(it, descriptor_sets);
 
 
-        // if (const auto render_data = g_entt().try_get<logic_render_data>(it)) {
-        //     // std::vector<VkDescriptorSet> descriptor_sets;
-        //     std::string update_name = "name have change";
-        //     update_object_to_render((render_data)->proxy,
-        //                             [update_name](std::shared_ptr<draw_need_vk> render_object) {
-        //                                 if (!update_name.empty()) {
-        //                                     render_object->debug_name = std::move(update_name);
-        //                                 } else {
-        //                                     LOG_INFO(g_log(), "descriptor_sets empty");
-        //                                 }
-        //                             });
+        // auto lambda = [descriptor_sets](const std::shared_ptr<draw_need_vk> &proxy) {
+        // if (!descriptor_sets.empty()) {
+        // proxy->vk_descriptor_set = std::move(descriptor_sets);
+        // } else {
+        // LOG_INFO(g_log(), "descriptor_sets empty");
+        // }
+        // };
+
+        // if (const auto render_data = g_entt().try_get<std::shared_ptr<draw_need_vk> >(it)) {
+        // update_object_to_render(*render_data, lambda);
         // }
     }
 }

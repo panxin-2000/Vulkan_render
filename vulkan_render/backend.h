@@ -9,11 +9,10 @@
 #include "descriptor_organized_sets_and_bindings.h"
 #include "Geometry_data.h"
 #include "name_component.h"
-#include "vertex_and_buffer_index.h"
 #include "vk_render_to_image.h"
 #include "vulkan_device_handle.h"
 #include "vulkan_render_manage.h"
-#include "../render_component/shader_component.h"
+#include "shader_component.h"
 
 void render_thread_start(VK_handle &handle);
 
@@ -33,7 +32,9 @@ inline bool add_object_to_render(const entt::entity entity) {
     } else {
         // 打印一个 entity name 没有 VKR_shader
     }
-    auto descriptor_sets = allocate_descriptor_sets(entity);
+
+    //
+    const auto descriptor_sets = allocate_descriptor_sets(entity);
     update_bindings_to_descriptor_sets(entity, descriptor_sets);
 
     const auto mesh = create_mesh(entity, VK_handle::get().get_mesh_map());
@@ -50,7 +51,7 @@ inline bool add_object_to_render(const entt::entity entity) {
     vk_data->viewport               = VK_handle::get().get_viewport();
     vk_data->vk_pipeline            = pipeline_t;
     vk_data->debug_name             = get_entity_name(entity);
-    vk_data->vk_descriptor_set      = descriptor_sets;
+    vk_data->vk_descriptor_set      = descriptor_sets; // 唯一有可能每帧更新的部分
     vk_data->push_constants_address = 0;
     vk_render_queue::instance().render_object_need_init(vk_data);
     return true;

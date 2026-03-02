@@ -164,7 +164,7 @@ entt::entity UI_button(const std::string &name,
     }
     g_entt().emplace<Drag_event>(entity_);
     g_entt().emplace<Name_component>(entity_, name);
-
+    add_geometry_data(entity_, min_x, min_y, max_x, max_y);
 
     struct Shader_Data_po {
         matrix_4x4 projection;
