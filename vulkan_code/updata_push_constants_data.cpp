@@ -5,9 +5,9 @@
 #include "update_push_constants_data.h"
 #include "vulkan_device_handle.h"
 
-VKR_buffer_pool *buffer = nullptr;
+VKR_buffer_ptr *buffer = nullptr;
 
-VKR_buffer_pool &get_uniform_buffer() {
+VKR_buffer_ptr &get_uniform_buffer() {
     auto &handle = VK_handle::get();
 
     if (buffer == nullptr) {
@@ -32,8 +32,7 @@ VKR_buffer_pool &get_uniform_buffer() {
                                      &vBuffer,
                                      &vBufferAllocation,
                                      nullptr));
-        buffer = new VKR_buffer_pool(vBuffer, vBufferAllocation);
-        buffer->memory_pool.push_back({0, 32 * 1024, false});
+        buffer = new VKR_buffer_ptr(vBuffer, vBufferAllocation);
     }
     return *buffer;
 }

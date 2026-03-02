@@ -5,6 +5,8 @@
 #ifndef HELLO_MAC_VULKAN_BUFFER_H
 #define HELLO_MAC_VULKAN_BUFFER_H
 #include <list>
+#include <map>
+
 #include "vulkan_global_macro.h"
 #include <vk_mem_alloc.h>
 
@@ -14,12 +16,26 @@ class VKR_buffer {
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
 
+    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > offset_and_size_map;
+    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > size_and_offset_map;
+
 public:
     VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
                                                                                allocation_(allocation) {
+        offset_and_size_map.insert({0, {complete_size(), true}});
+        size_and_offset_map.insert({complete_size(), {0, true}});
     }
 
     ~VKR_buffer();
+
+    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_offset_and_size_map() {
+        return offset_and_size_map;
+    };
+
+    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_size_and_offset_map() {
+        return size_and_offset_map;
+    };
+
 
     [[nodiscard]] void *mapped_address() const;
 
@@ -46,6 +62,8 @@ public:
     bool DestroyBuffer();
 
     void *map_memory() const;
+
+    VkDeviceSize complete_size() const;
 
     bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
 
@@ -98,12 +116,24 @@ struct address_and_length {
 };
 
 
-class VKR_buffer_block_ptr {
+class VKR_buffer_block_ptr : public VKR_buffer_ptr {
 public:
-    VKR_buffer_ptr buffer_;
+    VKR_buffer_block_ptr(const VKR_buffer_ptr &buffer,
+                         const VkDeviceSize offset,
+                         const VkDeviceSize size) : VKR_buffer_ptr(buffer) {
+        offset_ = offset;
+        size_   = size;
+    }
+
+    VKR_buffer_block_ptr() = default;
+
     VkDeviceSize offset_ = 0;
     VkDeviceSize size_   = 0;
 };
+
+
+std::optional<VKR_buffer_block_ptr> GPU_pool_alloc(const VKR_buffer_ptr &buffer, uint64_t size);
+
 
 class VKR_buffer_pool : public VKR_buffer_ptr {
 public:
@@ -113,25 +143,6 @@ public:
 
 
     std::list<address_and_length> memory_pool;
-
-    uint64_t alloc_size(const uint64_t size) {
-        uint64_t return_address = -1;
-        for (auto it = memory_pool.begin(); it != memory_pool.end(); ++it) {
-            if (it->if_used == false && it->length == size) {
-                it->if_used    = true;
-                return_address = it->address;
-                break;
-            }
-            if (it->if_used == false && it->length > size) {
-                memory_pool.insert(it, address_and_length{it->address, size, true});
-                return_address = it->address;
-                it->address    += size;
-                it->length     -= size;
-                break;
-            }
-        }
-        return return_address;
-    }
 };
 
 void copy_vk_buffer_and_execution(VKR_buffer_ptr srcBuffer, VKR_buffer_ptr dstBuffer, VkDeviceSize size);

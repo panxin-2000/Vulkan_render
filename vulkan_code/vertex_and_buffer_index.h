@@ -7,13 +7,7 @@
 #include <volk.h>
 #include "vulkan_device_handle.h"
 
-#include "shader_common.h"
 #include "vulkan_buffer.h"
-
-
-
-
-
 
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据

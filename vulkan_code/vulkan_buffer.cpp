@@ -43,6 +43,14 @@
     return isVisible;
 }
 
+VkDeviceSize VKR_buffer::complete_size() const {
+    const auto &handle = VK_handle::get();
+
+    VmaAllocationInfo allocInfo_for_map;
+    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
+    return allocInfo_for_map.size;
+}
+
 bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
     const auto &handle = VK_handle::get();
     if (size == 0) {
@@ -223,4 +231,36 @@ void discard_buffer_map_clean() {
             ++it;
         }
     }
+}
+
+std::optional<VKR_buffer_block_ptr> GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
+    uint64_t return_address   = -1;
+    auto &offset_and_size_map = buffer->get_offset_and_size_map();
+    auto &size_and_offset_map = buffer->get_size_and_offset_map();
+    auto it_size              = size_and_offset_map.lower_bound(size);
+    if (it_size != size_and_offset_map.end()) {
+        // it->first 是最接近且满足条件的 size
+        // it->second 是对应的偏移量
+        std::cout << "找到最合适的块，大小为: " << it_size->first;
+        auto temp_size   = it_size->first;
+        auto temp_offset = it_size->second;
+        if (temp_size != size) {
+            auto it_offset = offset_and_size_map.find(temp_offset.first);
+            if (it_size != size_and_offset_map.end()) {
+                //                                空闲大小              空闲起始地址
+                size_and_offset_map.insert({temp_size - size, {temp_offset.first + size, true}});
+                //                                申请大小              申请起始地址
+                // size_and_offset_map.insert({size, {temp_offset.first, false}});
+                size_and_offset_map.erase(it_size);
+                // offset 不变           申请大小改变        类型改变
+                it_offset->second = {size, false};
+                //                                空闲起始地址                  空闲大小
+                offset_and_size_map.insert({temp_offset.first + size, {temp_size - size, true}});
+            }
+        }
+        return VKR_buffer_block_ptr{buffer, temp_offset.first, size};
+    } else {
+        std::cout << "没有足够大的连续空间";
+    }
+    return {};
 }

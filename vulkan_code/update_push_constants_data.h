@@ -7,7 +7,7 @@
 #include "vulkan_buffer.h"
 
 
-VKR_buffer_pool &get_uniform_buffer();
+VKR_buffer_ptr &get_uniform_buffer();
 
 template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
@@ -17,17 +17,17 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
         memory_size += sizeof(args);
     }(), ...);
     // 从内存中分配
-    const auto offset_address = buffer.alloc_size(memory_size);
+    const auto return_value   = GPU_pool_alloc(buffer, memory_size);
     auto buffer_start_address = buffer->mapped_address();
-    if (offset_address != -1) {
-        buffer_start_address   = static_cast<char *>(buffer_start_address) + offset_address;
+    if (return_value.has_value()) {
+        buffer_start_address   = static_cast<char *>(buffer_start_address) + return_value->offset_;
         uint64_t memory_offset = 0;
         ([&] {
             std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args),
                         static_cast<char *>(buffer_start_address) + memory_offset);
             memory_offset += sizeof(args);
         }(), ...);
-        return {static_cast<VKR_buffer_ptr>(buffer), offset_address, memory_size};
+        return return_value.value();
     } else {
         return {{}, 0, 0};
     }
