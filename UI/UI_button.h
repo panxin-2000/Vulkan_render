@@ -116,7 +116,7 @@ entt::entity UI_button(const std::string &name,
 
     /***************设置顶点与索引参数**********************/
     {
-        std::vector<VertexAttrib> vertex_attribs;
+        // std::vector<VertexAttrib> vertex_attribs;
         // vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
         // vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
         // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));

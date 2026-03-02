@@ -5,12 +5,10 @@
 #ifndef HELLO_MAC_SHADER_COMMON_H
 #define HELLO_MAC_SHADER_COMMON_H
 
-#include <iostream>
-#include <list>
-#include <vk_mem_alloc.h>
-#include <base_element/point_3.h>
+// 定义一个这个文件是什么？ 会被 vulkan_handle.h 引用的头文件
 
-#include "volk.h"
+#include <list>
+#include <volk.h>
 
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {
@@ -74,7 +72,7 @@ struct texture_and_share {
 #ifdef WITH_VULKAN_BACKEND
 
 // 之后下面的内容还是需要转移的
-#include "vulkan_buffer.h"
+// #include "vulkan_buffer.h"
 // Vulkan 的核心目标是“零隐式开销”。
 // 预计算：当你创建 VkPipeline 时，驱动程序会针对你指定的拓扑结构、顶点格式和着色器进行“整体优化编译”
 // 所以拓扑结构不在这里，而在管线中
@@ -95,50 +93,7 @@ struct pipeline_and_share {
 };
 
 
-struct VertexAttrib {
-    uint32_t size;
-    unsigned int type;
-    bool normalized;
-    /**
-     *
-     * @param size 表示有几个数据
-     * @param type 类型，表示其中单个数据的类型
-     * @param normalized 是否需要归一化
-     * @param stride 间隔，重新下一个数据需要间隔多远
-     * @param pointer 访问时是否需要偏移
-     */
-    VertexAttrib(uint32_t size,
-                 unsigned int type,
-                 bool normalized
-    ) : size(size), type(type), normalized(normalized) {
-    }
-};
-
-
-// 一般情况下是这两种选择
-// VK_INDEX_TYPE_UINT16 = 0,
-// VK_INDEX_TYPE_UINT32 = 1,
-
-
-
-
-
-class Texture_TBO {
-public:
-    std::string path_;
-    std::string texture_name_;
-
-    bool set_path(const std::string &path, const std::string &texture_name) {
-        this->path_         = path;
-        this->texture_name_ = texture_name;
-        return true;
-    }
-
-    char const *get_texture_name() const {
-        return texture_name_.c_str();
-    }
-};
-
+// 下面的应该是直接从 blender 中 复制过来的，但是没有做什么处理
 
 struct VKViewportData {
     std::vector<VkViewport> viewports;
@@ -213,7 +168,7 @@ struct VKVertexBufferBindings {
     }
 };
 
-struct VKBoundPipelines {
+struct VKR_bind_pipelines {
     /** Last bound resources for compute pipeline. */
     VKBoundPipeline compute;
 
