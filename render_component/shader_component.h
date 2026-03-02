@@ -89,6 +89,7 @@ public:
 void update_bindings_to_descriptor_sets(const entt::entity entity,
                                         const std::vector<VkDescriptorSet> &descriptor_sets);
 
+#include "update_push_constants_data.h"
 
 template<typename T1>
 bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {

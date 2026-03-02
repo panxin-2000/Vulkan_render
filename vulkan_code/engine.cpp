@@ -194,23 +194,6 @@ void VK_handle::engine_destroy() {
 }
 
 
-const uint32_t WIDTH  = 1280; // 也是需要更改的
-const uint32_t HEIGHT = 720;
-
-Point_3 camPos{1.0f, 2.0f, 6.0f};
 
 
-ShaderData get_shader_data() {
-    ShaderData shaderData;
-    Quaternion r;
-    perspective_matrix_4x4(reinterpret_cast<float *>(&shaderData.projection),
-                           45.0f / 180.0f * std::acos(-1.0), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
-    view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
-    for (auto i = 0; i < 3; i++) {
-        Point_3 instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};
-        auto point = reinterpret_cast<float *>(&shaderData.model[i]);
-        scale s;
-        model_matrix_4x4(point, instancePos, r, s);
-    }
-    return shaderData;
-}
+

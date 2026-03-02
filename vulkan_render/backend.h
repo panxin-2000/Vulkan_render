@@ -21,10 +21,8 @@ void render_thread_stop();
 
 void render_thread_stop_and_wait();
 
-ShaderData get_shader_data();
 
-
-inline bool add_object_to_render(Geometry_data &logic_data, const entt::entity entity) {
+inline bool add_object_to_render(const entt::entity entity) {
     auto &handle                     = VK_handle::get();
     VkPipeline pipeline_t            = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
@@ -32,16 +30,21 @@ inline bool add_object_to_render(Geometry_data &logic_data, const entt::entity e
         pipeline_t = find_pipeline(handle, *shader_temp->shader_data_handle,
                                    VK_handle::get().get_pipeline_map());
         pipeline_layout = shader_temp->shader_data_handle->pipeline_layout;
+    } else {
+        // 打印一个 entity name 没有 VKR_shader
     }
     auto descriptor_sets = allocate_descriptor_sets(entity);
     update_bindings_to_descriptor_sets(entity, descriptor_sets);
 
-    auto mesh = create_mesh(logic_data, VK_handle::get().get_mesh_map());
+    const auto mesh = create_mesh(entity, VK_handle::get().get_mesh_map());
+    if (!mesh.has_value()) {
+        // 打印一个 entity name 读取 mesh 错误
+    }
 
     g_entt().emplace<std::shared_ptr<draw_need_vk> >(entity, std::make_shared<draw_need_vk>());
     const auto &vk_data = g_entt().get<std::shared_ptr<draw_need_vk> >(entity);
 
-    vk_data->mesh                   = mesh;
+    vk_data->mesh                   = mesh.value();
     vk_data->pipeline_layout        = pipeline_layout;
     vk_data->scissor                = VK_handle::get().get_scissor();
     vk_data->viewport               = VK_handle::get().get_viewport();

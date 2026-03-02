@@ -39,13 +39,6 @@ enum status_change : uint16_t {
 ENABLE_BITWISE_OPERATORS(status_change)
 
 
-
-
-
-
-
-
-
 #include "shader_component.h"
 
 class Geometry_data : public NonCopyable {
@@ -75,8 +68,8 @@ public:
     }
 };
 
-Model_mesh create_mesh(Geometry_data &data,
-                       std::map<Geometry_data *, mesh_and_share> &map);
+std::optional<Model_mesh> create_mesh(const entt::entity entity,
+                                      std::map<Geometry_data *, mesh_and_share> &map);
 
 
 #endif //HELLO_MAC_LOGIC_RENDER_DATA_H

@@ -40,29 +40,31 @@ Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices
 }
 
 
-Model_mesh create_mesh(Geometry_data &data,
-                       std::map<Geometry_data *, mesh_and_share> &map) {
+std::optional<Model_mesh> create_mesh(const entt::entity entity,
+                                      std::map<Geometry_data *, mesh_and_share> &map) {
     const auto &handle = VK_handle::get();
-
-    auto it = map.find(&data);
-    if (it != map.end()) {
-        it->second.shared_number++;
-        return it->second.mesh;
-    } else {
-        if (data.mesh_path_.empty() == false) {
-            auto [vertices, indices] = load_model(data.mesh_path_);
-            const auto mesh          = create_mesh_data(handle, vertices, indices);
-            // map.insert({data, {mesh, 1}});
-            return mesh;
+    if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
+        auto it = map.find(data);
+        if (it != map.end()) {
+            it->second.shared_number++;
+            return it->second.mesh;
         } else {
-            for (const auto &temp: data.vertices_vector) {
-                // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                auto mesh = create_mesh_data(handle, temp, data.indices_);
+            if (data->mesh_path_.empty() == false) {
+                auto [vertices, indices] = load_model(data->mesh_path_);
+                const auto mesh          = create_mesh_data(handle, vertices, indices);
                 // map.insert({data, {mesh, 1}});
                 return mesh;
+            } else {
+                for (const auto &temp: data->vertices_vector) {
+                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
+                    auto mesh = create_mesh_data(handle, temp, data->indices_);
+                    // map.insert({data, {mesh, 1}});
+                    return mesh;
+                }
             }
         }
     }
+    return {};
 }
 
 

@@ -14,16 +14,7 @@
 
 #include "model_matrix.h"
 
-struct ShaderData {
-    matrix_4x4 projection;
-    matrix_4x4 view;
-    matrix_4x4 model[3];
-    float lightPos[4]{0.0f, -10.0f, 10.0f, 0.0f};
-    uint32_t selected{1};
-    uint32_t selected8{1};
-    uint32_t selected7{1};
-    uint32_t selected6{1};
-};
+
 
 
 

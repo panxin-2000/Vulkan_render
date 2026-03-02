@@ -4,9 +4,8 @@
 
 #ifndef HELLO_MAC_UPDATE_PUSH_CONSTANTS_DATA_H
 #define HELLO_MAC_UPDATE_PUSH_CONSTANTS_DATA_H
+#include "vulkan_buffer.h"
 
-
-#include "vulkan_device_handle.h"
 
 VKR_buffer_pool &get_uniform_buffer();
 
