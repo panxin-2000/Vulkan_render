@@ -144,10 +144,18 @@ entt::entity UI_button(const std::string &name,
 
         // 参数这里最重要的是下面的两行
         const share_block vertices_buffer = {
-            vertices, vertices->data(), vertices->size() * sizeof(pos_normal_uv), vertices->size()
+            vertices,
+            vertices->data(),
+            vertices->size() * sizeof(pos_normal_uv),
+            vertices->size(),
+            sizeof(pos_normal_uv)
         };
         const share_block indices_buffer = {
-            indices, indices->data(), indices->size() * sizeof(uint16_t), indices->size()
+            indices,
+            indices->data(),
+            indices->size() * sizeof(uint16_t),
+            indices->size(),
+            sizeof(uint16_t)
         };
 
         render.push_vertices(vertices_buffer);

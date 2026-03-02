@@ -42,21 +42,23 @@ inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::v
 }
 
 inline std::pair<share_block, share_block> load_model(const std::string &path) {
-    share_block vertices{};
-    share_block indices{};
-    // std::shared_ptr<std::vector<Vertex> > &vertices; std::shared_ptr<std::vector<uint16_t> > &indices;
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
     load_model_to_vector(path, sp_vertices, sp_indices);
-    vertices.ptr   = sp_vertices;
-    vertices.data  = sp_vertices->data();
-    vertices.size  = sp_vertices->size() * sizeof(Vertex);
-    vertices.count = sp_vertices->size();
-    indices.ptr    = sp_indices;
-    indices.data   = sp_indices->data();
-    indices.size   = sp_indices->size() * sizeof(uint16_t);
-    indices.count  = sp_indices->size();
-
+    share_block vertices{
+        sp_vertices,
+        sp_vertices->data(),
+        sp_vertices->size() * sizeof(Vertex),
+        sp_vertices->size(),
+        sizeof(Vertex)
+    };
+    share_block indices{
+        sp_indices,
+        sp_indices->data(),
+        sp_indices->size() * sizeof(uint16_t),
+        sp_indices->size(),
+        sizeof(uint16_t)
+    };
     return {vertices, indices};
 }
 
@@ -116,8 +118,8 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDevi
 
 inline Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
                                    const share_block &indices_) {
-    VkDeviceSize vBufSize{vertices.size};
-    VkDeviceSize iBufSize{indices_.size};
+    VkDeviceSize vBufSize{vertices.total_size};
+    VkDeviceSize iBufSize{indices_.total_size};
 
     // 具体的复制函数
     auto mem_copy_function = [vertices,vBufSize,indices_,iBufSize](void *dst) {

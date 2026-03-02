@@ -212,8 +212,9 @@ struct VertexAttrib {
 struct share_block {
     void_shared_ptr ptr;
     void *data;
-    unsigned long size;
+    size_t total_size;
     size_t count;
+    size_t single_size;
     // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
 };
 
