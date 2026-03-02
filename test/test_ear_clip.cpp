@@ -15,23 +15,20 @@
 #include "base_event.h"
 #include "base_observer.h"
 
-#include "../render_common/logic_render_data.h"
-#include "windows.h"
-
 
 template<typename T>
 T &init_hf(T &hf) {
     auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
     auto first_half_edge = half_edge_index;
-    half_edge_index = hf.add_edge(half_edge_index, {0, 0});
-    half_edge_index = hf.insert_edge(half_edge_index, {3, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {5, 1});
-    half_edge_index = hf.insert_edge(half_edge_index, {7, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
-    half_edge_index = hf.insert_edge(half_edge_index, {3, 3});
-    half_edge_index = hf.insert_edge(half_edge_index, {2, 5});
-    half_edge_index = hf.insert_edge(half_edge_index, {1, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {-1, 3});
+    half_edge_index      = hf.add_edge(half_edge_index, {0, 0});
+    half_edge_index      = hf.insert_edge(half_edge_index, {3, 2});
+    half_edge_index      = hf.insert_edge(half_edge_index, {5, 1});
+    half_edge_index      = hf.insert_edge(half_edge_index, {7, 2});
+    half_edge_index      = hf.insert_edge(half_edge_index, {5, 3});
+    half_edge_index      = hf.insert_edge(half_edge_index, {3, 3});
+    half_edge_index      = hf.insert_edge(half_edge_index, {2, 5});
+    half_edge_index      = hf.insert_edge(half_edge_index, {1, 2});
+    half_edge_index      = hf.insert_edge(half_edge_index, {-1, 3});
     return hf;
 }
 
@@ -40,8 +37,8 @@ template<typename T>
 T &init_hf_2(T &hf) {
     auto half_edge_index = hf.create_loop({3, 2}, {5, 1});
     auto first_half_edge = half_edge_index;
-    half_edge_index = hf.add_edge(half_edge_index, {7, 2});
-    half_edge_index = hf.insert_edge(half_edge_index, {5, 3});
+    half_edge_index      = hf.add_edge(half_edge_index, {7, 2});
+    half_edge_index      = hf.insert_edge(half_edge_index, {5, 3});
     return hf;
 }
 
@@ -65,7 +62,7 @@ TEST(ear_clip, from_half_edge_create_loop_vertices) {
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     std::vector<Point_2> segments{};
@@ -111,7 +108,7 @@ TEST(ear_clip, ear_clip) {
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<Point_2> *tree_vertices = nullptr;
@@ -169,7 +166,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<Point_2> *tree_vertices = nullptr;
@@ -179,49 +176,9 @@ TEST(ear_clip, ear_clip_half_edge) {
 
     std::vector<Triangle<Point_2> > expect_triangles{};
     init_expect_triangles(expect_triangles);
-    GTEST_SKIP() << "screen display";
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         auto result_segments = hf.get_all_triangles_data(true);
-
-        auto entity = get_entt_instance().create();
-        get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
-        auto &labyrinth = get_entt_instance().get<Labyrinth>(entity);
-
-        auto entity_2 = get_entt_instance().create();
-        get_entt_instance().emplace<Render_thread_data>(entity_2);
-        auto &temp_trapezoid = get_entt_instance().get<Render_thread_data>(entity_2);
-
-
-        /***************设置参数**********************/
-        std::vector<VertexAttrib> vertex_attribs;
-        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
-        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
-
-        std::vector<Point_3> vertices;
-        std::vector<unsigned int> indices;
-        for (auto result_segment: result_segments) {
-            indices.push_back(vertices.size() + 0);
-            indices.push_back(vertices.size() + 1);
-            indices.push_back(vertices.size() + 2);
-            vertices.emplace_back(result_segment.a);
-            vertices.emplace_back(result_segment.b);
-            vertices.emplace_back(result_segment.c);
-        }
-        // 参数这里最重要的是下面的两行
-        temp_trapezoid.set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        temp_trapezoid.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-        temp_trapezoid.set_vertex_shader("render/shader/different_color.vert");
-        temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
-
-        /***************添加到渲染管理器**********************/
-        add_object_to_render(&temp_trapezoid);
-
-        add_render_windows();
-
-        if (get_entt_instance().valid(entity))
-            get_entt_instance().destroy(entity);
-
 
         if (result_segments.size() == expect_triangles.size()) {
             for (int i = 0; i < result_segments.size(); ++i) {
@@ -248,7 +205,7 @@ TEST(half_edge, test_flip_edge) {
     hf = init_hf_2(hf);
     Face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<Point_2> *tree_vertices = nullptr;
@@ -269,8 +226,8 @@ TEST(half_edge, test_face_and_point) {
     half_edge_struct<vertex_xy> hf{};
     auto half_edge_index = hf.create_loop({7, 8}, {12, 8});
     auto first_half_edge = half_edge_index;
-    half_edge_index = hf.add_edge(half_edge_index, {10, 3});
-    int vertex_index = 0;
+    half_edge_index      = hf.add_edge(half_edge_index, {10, 3});
+    int vertex_index     = 0;
     hf.face_add_new_point(1, {10, 6}, vertex_index);
     int a = 90;
 }
@@ -279,7 +236,7 @@ TEST(half_edge, test_face_and_point) {
 void test_point_location(half_edge_struct<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
                          Point_2 find_point) {
     face_index result_face_index = 0;
-    half_edge_index edge_index = 0;
+    half_edge_index edge_index   = 0;
     if (point_in_triangle_type::out_triangle ==
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, find_point)) {
         result_face_index = -1;
@@ -300,7 +257,7 @@ TEST(ear_clip, test_point_location) {
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
-    auto all_edge = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
+    auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
 
     RB_Tree_Node<Point_2> *tree_vertices = nullptr;
@@ -312,7 +269,7 @@ TEST(ear_clip, test_point_location) {
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
         face_index result_face_index = 0;
-        half_edge_index edge_index = 0;
+        half_edge_index edge_index   = 0;
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {1, 1});
         EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {5, 1.1});
@@ -345,50 +302,13 @@ TEST(ear_clip, test_point_location) {
         }
 
         auto bounding_box = hf.calculate_aabb();
-        auto root = trapezoid_graph_Node<int>::init_root(bounding_box);
+        auto root         = trapezoid_graph_Node<int>::init_root(bounding_box);
         for (int i = 0; i < hf.half_edges.size(); ++i, ++i) {
-            root = trapezoid_graph_Node<int>::add_a_segment(root, &hf, i);
+            root        = trapezoid_graph_Node<int>::add_a_segment(root, &hf, i);
             auto result = find_all_leaf_node(root);
             // std::cout << "result" << result->size() << std::endl;
         }
         auto result_2 = find_all_leaf_node(root);
-
-        GTEST_SKIP() << "screen display";
-
-
-        auto entity_2 = get_entt_instance().create();
-        get_entt_instance().emplace<Render_thread_data>(entity_2);
-        auto &temp_trapezoid = get_entt_instance().get<Render_thread_data>(entity_2);
-        /***************设置参数**********************/
-        std::vector<VertexAttrib> vertex_attribs;
-        vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE, sizeof(Point_3), (void *) 0);
-        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
-
-        std::vector<Point_3> vertices;
-        std::vector<unsigned int> indices;
-        for (auto result_segment: *result_2) {
-            indices.push_back(vertices.size() + 0);
-            indices.push_back(vertices.size() + 1);
-            indices.push_back(vertices.size() + 2);
-            indices.push_back(vertices.size() + 2);
-            indices.push_back(vertices.size() + 3);
-            indices.push_back(vertices.size() + 0);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_lower); //0 1 2
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_lower);
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.right_upper); // 2 3 0
-            vertices.emplace_back(result_segment->trapezoid_union_data.trapezoid.left_upper);
-        }
-        // 参数这里最重要的是下面的两行
-        temp_trapezoid.set_VBO_parameter(vertices.size() * sizeof(Point_3), vertices.data(), vertex_attribs);
-        temp_trapezoid.set_EBO_parameter(indices.size() * sizeof(GLuint), indices.data(), indices.size());
-        temp_trapezoid.set_vertex_shader("render/shader/different_color.vert");
-        temp_trapezoid.set_fragment_shader("render/shader/different_color.frag");
-
-        /***************添加到渲染管理器**********************/
-        add_object_to_render(&temp_trapezoid);
-
-        add_render_windows();
-        get_entt_instance().destroy(entity_2);
 
 
         test_point_location(hf, root, {1.1, 1.1});

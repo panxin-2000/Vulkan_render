@@ -328,7 +328,9 @@ add_executable(hello_test ${component} ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LAB
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT)
+target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
+target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
+
 
 add_executable(test_mutex
         #        test_curve.cpp
