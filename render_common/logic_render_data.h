@@ -69,7 +69,7 @@ struct vk_shader_data {
     std::vector<VkVertexInputBindingDescription> vertexBindings;
 };
 
-struct Shader_paths {
+struct VKR_shader {
     std::string vertex_path_;
     std::string geometry_path_;
     std::string fragment_path_;
@@ -104,12 +104,12 @@ private:
 public:
     std::string mesh_path_;
     std::vector<vertex_and_attributes> vertex_and_attributes_;
-    std::vector<Update_descriptor_binding> update_descriptor_sets;
+    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
     std::string debug_name;
     Indices_type indices_;
     GPUPrimType prim_type_ = GPU_PRIM_TRIS;
     status_change status_  = no_change;
-    Shader_paths shader_paths_;
+    VKR_shader shader_paths_;
     // material 相关的内容
     std::vector<Texture_logic> textures;
     std::string texture_path_;

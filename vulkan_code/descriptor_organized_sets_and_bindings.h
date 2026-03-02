@@ -326,7 +326,7 @@ inline void print_layout_binding_line(std::string filePath) {
 }
 
 
-inline std::string get_shader_key(const Shader_paths &paths) {
+inline std::string get_shader_key(const VKR_shader &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
@@ -364,7 +364,7 @@ inline std::string get_shader_key(const Shader_paths &paths) {
 
 //
 static sets_map organize_descriptor_set_and_binding_layouts(
-    Shader_paths &paths) {
+    VKR_shader &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;

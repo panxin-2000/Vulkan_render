@@ -97,11 +97,26 @@ public:
 // 回调函数
 
 inline void update_UI_position() {
-    const auto view = g_entt().view<Position_update_tag, Rect_transform>(); // 位置发生了更新，需要讲更新传递出去
+    const auto view = g_entt().view<Position_update_tag, Rect_transform, std::shared_ptr<draw_need_vk> >();
+    // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
         // get_model_matrix();
-        // auto pos    = view.get<Rect_transform>(it);
-        // auto offset = pos.get_offset();
+        auto pos    = view.get<Rect_transform>(it);
+        auto offset = pos.get_offset();
+
+        struct Shader_Data_po {
+            matrix_4x4 projection;
+            matrix_4x4 view;
+            matrix_4x4 model;
+        };
+        Shader_Data_po temp;
+
+        identity_matrix_4x4(&temp.projection);
+        identity_matrix_4x4(&temp.view);
+        UI_matrix_4x4(&temp.model, 1280, 720);
+
+        // add_uniform_buffer_data(render, "UBO", temp);
+
 
         // if (const auto render_data = g_entt().try_get<logic_render_data>(it)) {
         //     // std::vector<VkDescriptorSet> descriptor_sets;

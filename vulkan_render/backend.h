@@ -31,7 +31,7 @@ void render_thread_stop_and_wait();
 ShaderData get_shader_data();
 
 
-inline bool Shader_paths::init() {
+inline bool VKR_shader::init() {
     if (shader_data_handle == nullptr) {
         auto &handle                                           = VK_handle::get();
         shader_data_handle                                     = std::make_shared<vk_shader_data>();
@@ -93,7 +93,7 @@ bool add_uniform_buffer_data(logic_render_data &logic_data, const std::string &b
                 temp.descriptor_write_binding.pImageInfo       = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView = nullptr;
                 temp.bufferInfo                                = {true, buffer_block};
-                logic_data.update_descriptor_sets.emplace_back(temp);
+                logic_data.update_descriptor_sets.insert({binding_name, temp});
                 return true;
             }
         }
@@ -112,8 +112,8 @@ inline void update_bindings_to_descriptor_sets(logic_render_data &logic_data,
 
     std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
     descriptor_write_bindings.resize(logic_data.update_descriptor_sets.size());
-    for (size_t i = 0; i < logic_data.update_descriptor_sets.size(); i++) {
-        auto &binding_update                = logic_data.update_descriptor_sets[i];
+    size_t i = 0;
+    for (auto &[name,binding_update]: logic_data.update_descriptor_sets) {
         descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
         descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
         if (binding_update.bufferInfo.first) {
@@ -128,6 +128,7 @@ inline void update_bindings_to_descriptor_sets(logic_render_data &logic_data,
         } else if (binding_update.TexelBufferView.first) {
             descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
         }
+        ++i;
     }
     vkUpdateDescriptorSets(handle.device_,
                            static_cast<uint32_t>(descriptor_write_bindings.size()),
