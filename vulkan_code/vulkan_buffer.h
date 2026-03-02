@@ -97,6 +97,14 @@ struct address_and_length {
     bool if_used     = false;
 };
 
+
+class VKR_buffer_block_ptr {
+public:
+    VKR_buffer_ptr buffer_;
+    VkDeviceSize offset_ = 0;
+    VkDeviceSize size_   = 0;
+};
+
 class VKR_buffer_pool : public VKR_buffer_ptr {
 public:
     VKR_buffer_pool(const VkBuffer buffer_handle, const VmaAllocation allocation) : VKR_buffer_ptr(buffer_handle,

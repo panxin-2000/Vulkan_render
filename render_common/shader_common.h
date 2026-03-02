@@ -99,7 +99,8 @@ public:
     void draw(const VkCommandBuffer &cb, const uint64_t time_line) {
         if (vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), 0);
+        VkDeviceSize temp_offset = 0;
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &temp_offset);
         if (indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
             vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), 0, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,

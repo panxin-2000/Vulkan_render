@@ -20,6 +20,8 @@
 
 #include "update_push_constants_data.h"
 
+#include <memory_resource>
+
 void render_thread_start(VK_handle &handle);
 
 void render_thread_stop();
@@ -76,7 +78,7 @@ bool add_uniform_buffer_data(logic_render_data &logic_data, const std::string &b
          logic_data.shader_paths_.shader_data_handle->model_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
-                auto [vk_buffer,offset]             = update_push_constants_data(binding_data); // 这里是一个需要同步的点
+                auto buffer_block                   = copy_data_to_gpu_buffer(binding_data);
                 Update_descriptor_binding temp      = {};
                 temp.binding_name                   = binding_name;
                 temp.resource_type                  = info.resource_type;
@@ -90,7 +92,7 @@ bool add_uniform_buffer_data(logic_render_data &logic_data, const std::string &b
                 temp.descriptor_write_binding.pBufferInfo      = nullptr;
                 temp.descriptor_write_binding.pImageInfo       = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView = nullptr;
-                temp.bufferInfo                                = {true, {vk_buffer, offset, sizeof(binding_data)}};
+                temp.bufferInfo                                = {true, buffer_block};
                 logic_data.update_descriptor_sets.emplace_back(temp);
                 return true;
             }
@@ -104,6 +106,10 @@ inline void update_bindings_to_descriptor_sets(logic_render_data &logic_data,
                                                const std::vector<VkDescriptorSet> &descriptor_sets) {
     // 以 binding 为一个最小数量
     auto &handle = VK_handle::get();
+    char stack_memory_pool[1024];
+    std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
+    std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
+
     std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
     descriptor_write_bindings.resize(logic_data.update_descriptor_sets.size());
     for (size_t i = 0; i < logic_data.update_descriptor_sets.size(); i++) {
@@ -111,7 +117,12 @@ inline void update_bindings_to_descriptor_sets(logic_render_data &logic_data,
         descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
         descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
         if (binding_update.bufferInfo.first) {
-            descriptor_write_bindings[i].pBufferInfo = &binding_update.bufferInfo.second;
+            const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
+                allocate(sizeof(VkDescriptorBufferInfo)));
+            buffer_info->buffer                      = binding_update.bufferInfo.second.buffer_->get_buffer_handle();
+            buffer_info->offset                      = binding_update.bufferInfo.second.offset_;
+            buffer_info->range                       = binding_update.bufferInfo.second.size_;
+            descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
         } else if (binding_update.imageInfo.first) {
             descriptor_write_bindings[i].pImageInfo = &binding_update.imageInfo.second;;
         } else if (binding_update.TexelBufferView.first) {

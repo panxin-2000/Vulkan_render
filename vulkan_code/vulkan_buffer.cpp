@@ -94,7 +94,7 @@ bool VKR_buffer::need_flush() const {
 
 void copy_vk_buffer_and_execution(VKR_buffer_ptr srcBuffer,
                                   VKR_buffer_ptr dstBuffer, VkDeviceSize size) {
-    const auto &handle = VK_handle::get();
+    const auto &handle            = VK_handle::get();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkBufferCopy copyRegion{};
@@ -215,7 +215,7 @@ void discard_buffer_map_clean() {
     const auto &handle = VK_handle::get();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_INFO(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
         if (handle.get_finished_timeline() >= timeline) {
             vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);

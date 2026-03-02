@@ -126,8 +126,9 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
-    mesh.indexed_command.indexCount    = indices_->size(); // 是可以这么替换的
-    mesh.indexed_command.firstIndex    = vBufSize / 2;     // 索引缓冲区的起始偏移（以索引为单位）确实是可以通过计算偏移的
+    mesh.indexed_command.indexCount = indices_->size(); // 是可以这么替换的
+    mesh.indexed_command.firstIndex = vBufSize / 2; // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
+    //确实是可以通过计算偏移的
     mesh.indexed_command.vertexOffset  = 0;
     mesh.indexed_command.instanceCount = 1;
     mesh.indexed_command.firstInstance = 0;

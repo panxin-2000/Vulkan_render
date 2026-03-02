@@ -11,27 +11,26 @@
 VKR_buffer_pool &get_uniform_buffer();
 
 template<typename... Args>
-std::pair<VkBuffer, uint64_t> update_push_constants_data(Args... args) {
+VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
     auto &buffer         = get_uniform_buffer();
     uint32_t memory_size = 0;
     ([&] {
         memory_size += sizeof(args);
     }(), ...);
     // 从内存中分配
-    const auto offset_of_start_address = buffer.alloc_size(memory_size);
-    auto start_address                 = buffer->mapped_address();
-    if (offset_of_start_address != -1) {
-        start_address          = static_cast<char *>(start_address) + offset_of_start_address;
+    const auto offset_address = buffer.alloc_size(memory_size);
+    auto buffer_start_address = buffer->mapped_address();
+    if (offset_address != -1) {
+        buffer_start_address   = static_cast<char *>(buffer_start_address) + offset_address;
         uint64_t memory_offset = 0;
         ([&] {
             std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args),
-                        static_cast<char *>(start_address) + memory_offset);
+                        static_cast<char *>(buffer_start_address) + memory_offset);
             memory_offset += sizeof(args);
         }(), ...);
-        return {buffer->get_buffer_handle(), offset_of_start_address};
-        // buffer.get_gpu_device_address() + offset_of_start_address;
+        return {static_cast<VKR_buffer_ptr>(buffer), offset_address, memory_size};
     } else {
-        return {VK_NULL_HANDLE, 0};
+        return {{}, 0, 0};
     }
 }
 
