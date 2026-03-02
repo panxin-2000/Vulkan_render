@@ -3,6 +3,14 @@
 //
 
 #include "shader_component.h"
+#include <memory_resource>
+
+#include "create_shader.h"
+#include "descriptor.h"
+#include "pipeline_layout.h"
+#include "sets_and_bindings_layout.h"
+#include "transfer_texture_to_gpu.h"
+#include "vulkan_device_handle.h"
 
 
 void update_bindings_to_descriptor_sets(const entt::entity entity,

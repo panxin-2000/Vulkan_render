@@ -19,6 +19,8 @@
 #include <DirectXMath.h>
 #include <iostream>
 
+#include "update_push_constants_data.h"
+
 void register_glfw(GLFWwindow *window);
 
 void deal_glfw_event();

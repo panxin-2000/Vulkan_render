@@ -10,7 +10,6 @@
 #include "global_singleton.h"
 #include "Geometry_data.h"
 
-class Geometry_data;
 
 
 class vk_render_queue {
