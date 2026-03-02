@@ -6,6 +6,7 @@
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #include "descriptor.h"
 #include "engine.h"
+#include "render_proxy.h"
 #include "vertex_and_buffer_index.h"
 
 

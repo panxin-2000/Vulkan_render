@@ -36,7 +36,7 @@ inline bool add_object_to_render(Geometry_data &logic_data, const entt::entity e
     auto descriptor_sets = allocate_descriptor_sets(entity);
     update_bindings_to_descriptor_sets(entity, descriptor_sets);
 
-    auto mesh = create_mesh(handle, logic_data, VK_handle::get().get_mesh_map());
+    auto mesh = create_mesh(logic_data, VK_handle::get().get_mesh_map());
 
     g_entt().emplace<std::shared_ptr<draw_need_vk> >(entity, std::make_shared<draw_need_vk>());
     const auto &vk_data = g_entt().get<std::shared_ptr<draw_need_vk> >(entity);

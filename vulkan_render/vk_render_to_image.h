@@ -104,7 +104,7 @@ public:
         // VkDescriptorSet
         clean_all_descriptor_sets_layout(handle);
 
-        clean_all_mesh_object(handle);
+        clean_all_mesh_object();
 
         destroy_texture(&handle);
 

@@ -17,6 +17,10 @@
 #include "Geometry_data.h"
 
 
+struct mesh_and_share;
+using Indices_type = std::shared_ptr<std::vector<u_int16_t> >;
+
+
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 normal;

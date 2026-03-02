@@ -167,6 +167,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/updata_push_constants_data.cpp"
 
             "render_component/shader_component.cpp"
+            "render_component/mesh_component.cpp"
     )
     include_directories(vulkan_code)
 

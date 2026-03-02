@@ -8,10 +8,7 @@
 #include <map>
 
 #include "APP_utility_mixins.h"
-#include "shader_common.h"
-#include <type_traits>
-
-#include "Texture_logic.h"
+#include "mesh_component.h"
 #include "utility.h"
 
 
@@ -119,8 +116,6 @@ public:
     }
 };
 
-#include "descriptor_organized_sets_and_bindings.h"
-
 
 class Geometry_data : public NonCopyable {
 public:
@@ -148,6 +143,9 @@ public:
         indices_ = indices;
     }
 };
+
+Model_mesh create_mesh(Geometry_data &data,
+                       std::map<Geometry_data *, mesh_and_share> &map);
 
 
 #endif //HELLO_MAC_LOGIC_RENDER_DATA_H
