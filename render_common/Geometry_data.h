@@ -69,16 +69,6 @@ struct vk_shader_data {
     std::vector<VkVertexInputBindingDescription> vertexBindings;
 };
 
-struct VKR_shader {
-    std::string vertex_path_;
-    std::string geometry_path_;
-    std::string fragment_path_;
-    std::string computer_path_;
-    std::shared_ptr<vk_shader_data> shader_data_handle = nullptr;
-
-    bool init();
-};
-
 
 struct Update_descriptor_binding {
     std::string binding_name;
@@ -92,50 +82,61 @@ struct Update_descriptor_binding {
     std::pair<bool, VkBufferView> TexelBufferView;
 };
 
+class VKR_shader {
+public:
+    VKR_shader(const std::string &vertex_path,
+               const std::string &fragment_path,
+               const std::string &geometry_path,
+               const std::string &computer_path) {
+        vertex_path_   = vertex_path;
+        fragment_path_ = fragment_path;
+        geometry_path_ = geometry_path;
+        computer_path_ = computer_path;
+        init();
+    }
+
+    VKR_shader() = delete;
+
+    std::string vertex_path_;
+    std::string geometry_path_;
+    std::string fragment_path_;
+    std::string computer_path_;
+    std::shared_ptr<vk_shader_data> shader_data_handle = nullptr;
+    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
+
+    bool init();
+
+    void set_vertex_shader(const std::string &path) {
+        vertex_path_ = path;
+    }
+
+    void set_fragment_shader(const std::string &path) {
+        fragment_path_ = path;
+    }
+
+    void set_geometry_shader(const std::string &path) {
+        geometry_path_ = path;
+    }
+};
+
 #include "descriptor_organized_sets_and_bindings.h"
 
 
-class logic_render_data : public NonCopyable {
-#define add_mutex std::lock_guard<std::mutex> lock(mtx);
-
-private:
-    mutable std::mutex mtx;
-
+class Geometry_data : public NonCopyable {
 public:
     std::string mesh_path_;
-    std::vector<vertex_and_attributes> vertex_and_attributes_;
-    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
-    std::string debug_name;
-    Indices_type indices_;
-    GPUPrimType prim_type_ = GPU_PRIM_TRIS;
-    status_change status_  = no_change;
-    VKR_shader shader_paths_;
-    // material 相关的内容
-    std::vector<Texture_logic> textures;
-    std::string texture_path_;
-    std::string texture_name_;
+
+    std::vector<share_block> vertices_vector;
+    share_block indices_;
 
 
-    logic_render_data() = default;
+    Geometry_data() = default;
 
-    ~logic_render_data() = default;
-
-    void set_prim_type(const GPUPrimType prim_type) {
-        prim_type_ = prim_type;
-    }
-
-    void push_vertex_and_attributes(vertex_and_attributes temp) {
-        vertex_and_attributes_.push_back(temp);
-    }
+    ~Geometry_data() = default;
 
 
-    void set_status_change(const status_change status) {
-        status_ = status_ | status;
-        // update_object_to_render(this);
-    }
-
-    status_change get_status_change() const {
-        return status_;
+    void push_vertices(const share_block &temp) {
+        vertices_vector.push_back(temp);
     }
 
 
@@ -143,34 +144,9 @@ public:
         return indices_;
     }
 
-    void set_indices(Indices_type indices) {
-        add_mutex;
-        indices_ = std::move(indices);
+    void set_indices(const share_block &indices) {
+        indices_ = indices;
     }
-
-    void set_texture(const std::string &path, const std::string &texture_name) {
-        add_mutex;
-        Texture_logic temp;
-        temp.texture_type_ = texture_2d;
-        temp.set_path(path, texture_name);
-        textures.push_back(temp);
-    }
-
-    void set_vertex_shader(const std::string &path) {
-        add_mutex;
-        shader_paths_.vertex_path_ = path;
-    }
-
-    void set_fragment_shader(const std::string &path) {
-        add_mutex;
-        shader_paths_.fragment_path_ = path;
-    }
-
-    void set_geometry_shader(const std::string &path) {
-        add_mutex;
-        shader_paths_.geometry_path_ = path;
-    }
-#undef add_mutex
 };
 
 

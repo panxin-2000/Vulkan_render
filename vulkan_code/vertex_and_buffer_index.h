@@ -41,16 +41,23 @@ inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::v
     }
 }
 
-inline std::pair<vertex_and_attributes, Indices_type> load_model(const std::string &path) {
-    vertex_and_attributes vertices{};
+inline std::pair<share_block, share_block> load_model(const std::string &path) {
+    share_block vertices{};
+    share_block indices{};
     // std::shared_ptr<std::vector<Vertex> > &vertices; std::shared_ptr<std::vector<uint16_t> > &indices;
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
     load_model_to_vector(path, sp_vertices, sp_indices);
-    vertices.shared_ptr_of_vertices_ = sp_vertices;
-    vertices.data                    = sp_vertices->data();
-    vertices.size                    = sp_vertices->size() * sizeof(Vertex);
-    return {vertices, sp_indices};
+    vertices.ptr   = sp_vertices;
+    vertices.data  = sp_vertices->data();
+    vertices.size  = sp_vertices->size() * sizeof(Vertex);
+    vertices.count = sp_vertices->size();
+    indices.ptr    = sp_indices;
+    indices.data   = sp_indices->data();
+    indices.size   = sp_indices->size() * sizeof(uint16_t);
+    indices.count  = sp_indices->size();
+
+    return {vertices, indices};
 }
 
 
@@ -107,26 +114,27 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDevi
 }
 
 
-inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_attributes &vertices,
-                                   const Indices_type &indices_) {
+inline Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
+                                   const share_block &indices_) {
     VkDeviceSize vBufSize{vertices.size};
-    VkDeviceSize iBufSize{sizeof(uint16_t) * indices_->size()};
+    VkDeviceSize iBufSize{indices_.size};
 
     // 具体的复制函数
     auto mem_copy_function = [vertices,vBufSize,indices_,iBufSize](void *dst) {
         memcpy(dst, vertices.data, vBufSize);
-        memcpy(static_cast<char *>(dst) + vBufSize, indices_->data(), iBufSize);
+        memcpy(static_cast<char *>(dst) + vBufSize, indices_.data, iBufSize);
     };
 
     const auto vertices_buffer =
             create_vertex_index_buffer(handle, vBufSize + iBufSize, mem_copy_function);
 
+    // vertices_buffer 还需要动，firstIndex 在之后也是需要更改的
 
     Model_mesh mesh;
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
-    mesh.indexed_command.indexCount = indices_->size(); // 是可以这么替换的
+    mesh.indexed_command.indexCount = indices_.count; // 是可以这么替换的
     mesh.indexed_command.firstIndex = vBufSize / 2; // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
     //确实是可以通过计算偏移的
     mesh.indexed_command.vertexOffset  = 0;
@@ -138,8 +146,8 @@ inline Model_mesh create_mesh_data(const VK_handle &handle, const vertex_and_att
 }
 
 
-inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data &data,
-                              std::map<logic_render_data *, mesh_and_share> &map) {
+inline Model_mesh create_mesh(const VK_handle &handle, Geometry_data &data,
+                              std::map<Geometry_data *, mesh_and_share> &map) {
     auto it = map.find(&data);
     if (it != map.end()) {
         it->second.shared_number++;
@@ -151,7 +159,7 @@ inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data &data,
             // map.insert({data, {mesh, 1}});
             return mesh;
         } else {
-            for (const auto &temp: data.vertex_and_attributes_) {
+            for (const auto &temp: data.vertices_vector) {
                 // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
                 auto mesh = create_mesh_data(handle, temp, data.indices_);
                 // map.insert({data, {mesh, 1}});
@@ -162,8 +170,8 @@ inline Model_mesh create_mesh(const VK_handle &handle, logic_render_data &data,
 }
 
 
-inline Model_mesh *find_mesh(logic_render_data data,
-                             std::map<logic_render_data *, mesh_and_share> &map) {
+inline Model_mesh *find_mesh(Geometry_data data,
+                             std::map<Geometry_data *, mesh_and_share> &map) {
     auto it = map.find(&data);
     if (it != map.end()) {
         return &it->second.mesh;

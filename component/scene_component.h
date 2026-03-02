@@ -11,7 +11,7 @@
 #include "base_element/point_3.h"
 #include "base_element/intersect/objects_intersect_with_point.h"
 #include "global_singleton.h"
-#include "logic_render_data.h"
+#include "Geometry_data.h"
 #include "backend.h"
 
 
@@ -51,7 +51,7 @@ public:
 
 
         const auto entity = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<logic_render_data>(entity)) {
+        if (auto render = g_entt().try_get<Geometry_data>(entity)) {
         }
         return true;
     }

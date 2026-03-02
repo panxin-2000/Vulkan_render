@@ -8,9 +8,9 @@
 #include <thread>
 #include <utility>
 #include "global_singleton.h"
-#include "logic_render_data.h"
+#include "Geometry_data.h"
 
-class logic_render_data;
+class Geometry_data;
 
 
 class vk_render_queue {

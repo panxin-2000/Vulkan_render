@@ -87,7 +87,7 @@ public:
     bool update_2D_position_matrix() const {
         const auto &storage = g_entt().storage<Rect_transform>();
         const auto entity   = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<logic_render_data>(entity)) {
+        if (auto render = g_entt().try_get<Geometry_data>(entity)) {
         }
         return true;
     }

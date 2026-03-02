@@ -11,7 +11,8 @@
 #include "name_component.h"
 #include "global_singleton.h"
 #include "observer_manage.h"
-#include "logic_render_data.h"
+#include "Geometry_data.h"
+#include "span.hpp"
 #include "UI_component.h"
 
 entt::entity UI_button(const std::string &name,
@@ -95,11 +96,15 @@ entt::entity UI_button(const std::string &name,
     entt::entity entity_ = g_entt().create();
 
     /***************创建*******************/
-    g_entt().emplace<logic_render_data>(entity_);
+    g_entt().emplace<Geometry_data>(entity_);
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
     g_entt().emplace<Scene_Component>(entity_);
     g_entt().emplace<Rect_transform>(entity_);
+    g_entt().emplace<VKR_shader>(entity_,
+                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                 "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                 "", "");
     if (auto *scene_node = g_entt().try_get<Rect_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
@@ -107,72 +112,63 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Name_component>(entity_, name);
 
 
-    if (g_entt().all_of<logic_render_data>(entity_)) {
-        auto &render = g_entt().get<logic_render_data>(entity_);
+    auto &render = g_entt().get<Geometry_data>(entity_);
 
-        /***************设置顶点与索引参数**********************/
-        {
-            std::vector<VertexAttrib> vertex_attribs;
-            vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
-            vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
-            // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+    /***************设置顶点与索引参数**********************/
+    {
+        std::vector<VertexAttrib> vertex_attribs;
+        // vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
+        // vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
+        // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
 
-            struct pos_and_uv {
-                float x, y, z, a, b, c, u, v;
-            };
-
-            auto vertices = std::make_shared<std::vector<pos_and_uv> >();
-            auto indices  = std::make_shared<std::vector<uint16_t> >();
-            // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-            {
-                indices->push_back(vertices->size() + 0);
-                indices->push_back(vertices->size() + 1);
-                indices->push_back(vertices->size() + 2);
-                indices->push_back(vertices->size() + 2);
-                indices->push_back(vertices->size() + 3);
-                indices->push_back(vertices->size() + 0);
-                vertices->emplace_back(pos_and_uv{min_x, min_y, 0, 0, 0, 0, 0, 0}); //0 1 2
-                vertices->emplace_back(pos_and_uv{max_x, min_y, 0, 0, 0, 0, 1, 0});
-                vertices->emplace_back(pos_and_uv{max_x, max_y, 0, 0, 0, 0, 1, 1}); // 2 3 0
-                vertices->emplace_back(pos_and_uv{min_x, max_y, 0, 0, 0, 0, 0, 1});
-            }
-            // 参数这里最重要的是下面的两行
-
-            // 参数这里最重要的是下面的两行
-            const vertex_and_attributes temp = {
-                vertices, vertices->data(), vertices->size() * sizeof(pos_and_uv), vertex_attribs
-            };
-            render.debug_name = name;
-            render.push_vertex_and_attributes(temp); // 没有给一个vector ，稍微有点不方便
-            render.set_indices(indices);
-        }
-        /***************设置着色器与贴图**********************/
-        render.
-                set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv");
-        render.
-                set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv");
-        // render->set_texture("resoureces/picture.png", "ourTexture1");
-
-
-        // 关于参数的部分是需要从 add_object_to_render 中抽离的
-        render.shader_paths_.init();
-
-        struct Shader_Data_po {
-            matrix_4x4 projection;
-            matrix_4x4 view;
-            matrix_4x4 model;
+        struct pos_normal_uv {
+            float x, y, z, a, b, c, u, v;
         };
-        Shader_Data_po temp;
 
-        identity_matrix_4x4(&temp.projection);
-        identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720);
+        const auto vertices = std::make_shared<std::vector<pos_normal_uv> >(); //  32  * 4 = 128
+        const auto indices  = std::make_shared<std::vector<uint16_t> >();      //  2   * 6 = 12
+        // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+        {
+            indices->push_back(vertices->size() + 0);
+            indices->push_back(vertices->size() + 1);
+            indices->push_back(vertices->size() + 2);
+            indices->push_back(vertices->size() + 2);
+            indices->push_back(vertices->size() + 3);
+            indices->push_back(vertices->size() + 0);
+            vertices->emplace_back(pos_normal_uv{min_x, min_y, 0, 0, 0, 0, 0, 0}); //0 1 2
+            vertices->emplace_back(pos_normal_uv{max_x, min_y, 0, 0, 0, 0, 1, 0});
+            vertices->emplace_back(pos_normal_uv{max_x, max_y, 0, 0, 0, 0, 1, 1}); // 2 3 0
+            vertices->emplace_back(pos_normal_uv{min_x, max_y, 0, 0, 0, 0, 0, 1});
+        }
+        // 参数这里最重要的是下面的两行
 
-        add_uniform_buffer_data(render, "UBO", temp);
+        // 参数这里最重要的是下面的两行
+        const share_block vertices_buffer = {
+            vertices, vertices->data(), vertices->size() * sizeof(pos_normal_uv), vertices->size()
+        };
+        const share_block indices_buffer = {
+            indices, indices->data(), indices->size() * sizeof(uint16_t), indices->size()
+        };
 
-
-        add_object_to_render(render, entity_); // 因为这里没有区分。全部都在场景的根节点之下
+        render.push_vertices(vertices_buffer);
+        render.set_indices(indices_buffer);
     }
+
+    struct Shader_Data_po {
+        matrix_4x4 projection;
+        matrix_4x4 view;
+        matrix_4x4 model;
+    };
+    Shader_Data_po temp;
+
+    identity_matrix_4x4(&temp.projection);
+    identity_matrix_4x4(&temp.view);
+    UI_matrix_4x4(&temp.model, 1280, 720);
+
+    add_uniform_buffer_data(entity_, "UBO", temp);
+
+
+    add_object_to_render(render, entity_); // 因为这里没有区分。全部都在场景的根节点之下
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
         auto &position = g_entt().get<Rect_transform>(entity_);

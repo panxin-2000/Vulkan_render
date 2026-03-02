@@ -14,7 +14,7 @@
 
 #include "engine.h"
 #include "global_singleton.h"
-#include "logic_render_data.h"
+#include "Geometry_data.h"
 
 
 struct Vertex {
@@ -242,7 +242,7 @@ private:
     std::map<std::string, std::pair<std::vector<VkDescriptorSetLayout>, uint32_t> > descriptor_sets_layout_map_;
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > pipeline_layout_map_;
     std::map<std::string, pipeline_and_share> pipeline_map_;
-    std::map<logic_render_data *, mesh_and_share> mesh_map_;
+    std::map<Geometry_data *, mesh_and_share> mesh_map_;
 
     std::map<Indices_type, mesh_and_share> indices_map_;
     std::vector<VkDescriptorImageInfo> bindless_textures_;

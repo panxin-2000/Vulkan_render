@@ -64,8 +64,8 @@ FetchContent_MakeAvailable(quill)
 
 FetchContent_Declare(
         directxmath
-        GIT_REPOSITORY    https://github.com/microsoft/DirectXMath.git
-        GIT_TAG           apr2025
+        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
+        GIT_TAG apr2025
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 FetchContent_MakeAvailable(directxmath)
@@ -165,6 +165,8 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_render/backend.cpp"
             "vulkan_code/engine.cpp"
             "vulkan_code/updata_push_constants_data.cpp"
+
+            "component/shader_component.cpp"
     )
     include_directories(vulkan_code)
 

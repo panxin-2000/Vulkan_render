@@ -180,9 +180,9 @@ struct pipeline_and_share {
     uint16_t shared_number = 0;
 };
 
-class logic_render_data;
+class Geometry_data;
 
-using Shared_ptr_of_vertices = std::shared_ptr<void>;
+using void_shared_ptr = std::shared_ptr<void>;
 
 // 一般情况下是这两种选择
 // VK_INDEX_TYPE_UINT16 = 0,
@@ -209,11 +209,12 @@ struct VertexAttrib {
     }
 };
 
-struct vertex_and_attributes {
-    Shared_ptr_of_vertices shared_ptr_of_vertices_;
+struct share_block {
+    void_shared_ptr ptr;
     void *data;
     unsigned long size;
-    std::vector<VertexAttrib> vertex_attribs;
+    size_t count;
+    // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
 };
 
 
