@@ -13,7 +13,7 @@
 #include "vk_render_to_image.h"
 #include "vulkan_device_handle.h"
 #include "vulkan_render_manage.h"
-#include "shader_component.h"
+#include "../render_component/shader_component.h"
 
 void render_thread_start(VK_handle &handle);
 

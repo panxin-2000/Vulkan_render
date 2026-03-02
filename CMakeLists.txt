@@ -166,7 +166,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/engine.cpp"
             "vulkan_code/updata_push_constants_data.cpp"
 
-            "component/shader_component.cpp"
+            "render_component/shader_component.cpp"
     )
     include_directories(vulkan_code)
 
@@ -235,6 +235,7 @@ include_directories(labyrinth)
 include_directories(input_device)
 include_directories(vulkan_render)
 include_directories(component)
+include_directories(render_component)
 include_directories(interactable_object)
 
 
