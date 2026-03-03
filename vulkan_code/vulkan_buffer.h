@@ -18,6 +18,13 @@ struct offset_no_status {
     uint64_t offset_ = 0;
 };
 
+class VKR_buffer;
+using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
+class VKR_buffer_pool;
+using VKR_buffer_pool_ptr = std::shared_ptr<VKR_buffer_pool>;
+class VKR_buffer_block;
+using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
+
 class VKR_buffer : public NonCopyable {
 protected:
     VkBuffer buffer_handle_   = VK_NULL_HANDLE;
@@ -75,17 +82,6 @@ public:
     }
 };
 
-
-using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
-
-
-struct address_and_length {
-    uint64_t address = 0;
-    uint64_t length  = 0;
-    bool if_used     = false;
-};
-
-
 class VKR_buffer_pool : public VKR_buffer {
 public:
     VKR_buffer_pool(const VkBuffer buffer_handle,
@@ -106,9 +102,6 @@ private:
     std::map<VkDeviceSize, size_and_status> offset_and_size_map;
     std::multimap<VkDeviceSize, offset_no_status> size_and_offset_map;
 };
-
-using VKR_buffer_pool_ptr = std::shared_ptr<VKR_buffer_pool>;
-
 
 class VKR_buffer_block {
 public:
@@ -146,7 +139,6 @@ public:
     uint64_t block_timeline_ = 0;
 };
 
-using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
 
 // VKR_buffer_block_ptr 是一个指针 指向了 VKR_buffer_block
 //                                      VKR_buffer_block 中有一个 指针 ，指向了  VKR_buffer
