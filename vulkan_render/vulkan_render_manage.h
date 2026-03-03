@@ -11,7 +11,6 @@
 #include "Geometry_data.h"
 
 
-
 class vk_render_queue {
 private:
     mutable std::mutex mtx;
@@ -19,7 +18,8 @@ private:
     std::queue<std::shared_ptr<draw_need_vk> > need_init;
     std::queue<std::shared_ptr<draw_need_vk> > need_update;
     std::queue<std::shared_ptr<draw_need_vk> > need_clean;
-    std::queue<std::pair<std::shared_ptr<draw_need_vk> , std::function<void(std::shared_ptr<draw_need_vk> render_object)> > > update_function;
+    std::queue<std::pair<std::shared_ptr<draw_need_vk>, std::function<void
+                             (std::shared_ptr<draw_need_vk> render_object)> > > update_function;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
 public:
@@ -59,7 +59,7 @@ public:
 
     void execute_update_lambda() {
         std::unique_lock<std::mutex> lock(mtx);
-        if (!update_function.empty()) {
+        while (!update_function.empty()) {
             auto [vk_data, callback] = update_function.front();
             update_function.pop();
             callback(vk_data);
@@ -104,7 +104,8 @@ public:
     // render_object->vk_descriptor_set = std::move(descriptor_sets);
     // }
 
-    void render_update(std::shared_ptr<draw_need_vk> render_object, const std::function<void(std::shared_ptr<draw_need_vk> render_object)> &callback) {
+    void render_update(std::shared_ptr<draw_need_vk> render_object,
+                       const std::function<void(std::shared_ptr<draw_need_vk> render_object)> &callback) {
         std::unique_lock<std::mutex> lock(mtx);
         update_function.emplace(render_object, callback);
     }
