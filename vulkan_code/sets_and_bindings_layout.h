@@ -6,7 +6,7 @@
 #define HELLO_MAC_SETS_AND_BINDINGS_LAYOUT_H
 
 #include "vulkan_device_handle.h"
-
+#include "descriptor_organized_sets_and_bindings.h"
 
 static inline VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
     const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {

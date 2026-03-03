@@ -165,6 +165,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_render/backend.cpp"
             "vulkan_code/engine.cpp"
             "vulkan_code/create_shader.cpp"
+            "vulkan_code/descriptor.cpp"
             "vulkan_code/updata_push_constants_data.cpp"
 
             "render_component/shader_component.cpp"
