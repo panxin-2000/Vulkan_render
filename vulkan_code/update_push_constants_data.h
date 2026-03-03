@@ -11,14 +11,14 @@ VKR_buffer_ptr &get_uniform_buffer();
 
 template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
-    const auto &buffer   = get_uniform_buffer();
+    const auto &buffer = get_uniform_buffer();
 
     uint32_t memory_size = 0;
     ([&] {
         memory_size += sizeof(args);
     }(), ...);
     // 从内存中分配
-    const auto return_value   = VKR_buffer_block_ptr(buffer, memory_size);
+    const auto return_value = GPU_pool_alloc(buffer, memory_size);
     // auto complete_size        = return_value->complete_size();
     auto buffer_start_address = buffer->mapped_address();
     if (return_value) {

@@ -18,7 +18,7 @@ protected:
     uint64_t timeline_        = 0;
 
     std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > offset_and_size_map;
-    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > size_and_offset_map;
+    std::multimap<VkDeviceSize, std::pair<VkDeviceSize, bool> > size_and_offset_map;
 
 public:
     VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
@@ -33,7 +33,7 @@ public:
         return offset_and_size_map;
     };
 
-    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_size_and_offset_map() {
+    std::multimap<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_size_and_offset_map() {
         return size_and_offset_map;
     };
 
@@ -82,37 +82,7 @@ public:
 };
 
 
-// using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
-
-// 其实只是 std::shared_ptr<VKR_buffer> ptr 的一个封装
-class VKR_buffer_ptr {
-public:
-    VKR_buffer_ptr(const VkBuffer buffer_handle,
-                   const VmaAllocation allocation) : ptr(std::make_shared<VKR_buffer>(buffer_handle, allocation)) {
-    }
-
-    VKR_buffer_ptr() = default;
-
-    ~VKR_buffer_ptr() = default;
-
-    long use_count() {
-        return ptr.use_count();
-    }
-
-    void clear() {
-        ptr = nullptr;
-    }
-
-    explicit operator bool() const noexcept {
-        return ptr != nullptr;
-    }
-
-    VKR_buffer *operator->() const { return ptr.get(); }
-    VKR_buffer *get() const { return ptr.get(); }
-
-protected:
-    std::shared_ptr<VKR_buffer> ptr = nullptr;
-};
+using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
 
 
 struct address_and_length {
@@ -157,50 +127,11 @@ public:
     uint64_t block_timeline_ = 0;
 };
 
-VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr &buffer, uint64_t size);
+using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
 
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, uint64_t size);
 
-class VKR_buffer_block_ptr {
-public:
-    VKR_buffer_block_ptr(const VKR_buffer_ptr &buffer_handle,
-                         const VkDeviceSize size) {
-        ptr = std::make_shared<VKR_buffer_block>(GPU_pool_alloc(buffer_handle, size));
-    }
-
-    VKR_buffer_block_ptr() = default;
-
-    ~VKR_buffer_block_ptr() = default;
-
-    long use_count() {
-        return ptr.use_count();
-    }
-
-    void clear() {
-        ptr = nullptr;
-    }
-
-    explicit operator bool() const noexcept {
-        return ptr != nullptr;
-    }
-
-    VKR_buffer_block *operator->() const { return ptr.get(); }
-
-protected:
-    std::shared_ptr<VKR_buffer_block> ptr = nullptr;
-};
-
-
-class VKR_buffer_pool : public VKR_buffer_ptr {
-public:
-    VKR_buffer_pool(const VkBuffer buffer_handle, const VmaAllocation allocation) : VKR_buffer_ptr(buffer_handle,
-             allocation) {
-    }
-
-
-    std::list<address_and_length> memory_pool;
-};
-
-void copy_vk_buffer_and_execution(const VKR_buffer_ptr& srcBuffer, const VKR_buffer_ptr& dstBuffer, VkDeviceSize size);
+void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size);
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 

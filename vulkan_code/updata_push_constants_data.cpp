@@ -5,7 +5,7 @@
 #include "update_push_constants_data.h"
 #include "vulkan_device_handle.h"
 
-VKR_buffer_ptr *buffer = nullptr;
+VKR_buffer_ptr buffer = nullptr;
 
 VKR_buffer_ptr &get_uniform_buffer() {
     auto &handle = VK_handle::get();
@@ -32,8 +32,8 @@ VKR_buffer_ptr &get_uniform_buffer() {
                                      &vBuffer,
                                      &vBufferAllocation,
                                      nullptr));
-        buffer = new VKR_buffer_ptr(vBuffer, vBufferAllocation);
+        buffer = std::make_shared<VKR_buffer>(vBuffer, vBufferAllocation);
     }
     // auto complete_sghize = (*buffer)->complete_size();
-    return *buffer;
+    return buffer;
 }

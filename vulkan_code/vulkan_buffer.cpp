@@ -187,7 +187,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
                                  &BufferCreateInfo, &AllocationCreateInfo,
                                  &buffer, &allocation,
                                  &allocInfo));
-    return {buffer, allocation};
+    return std::make_shared<VKR_buffer>(buffer, allocation);
 }
 
 
@@ -196,7 +196,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 
 
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
-// std::map<std::shared_ptr<VKR_buffer_block_ptr>, uint64_t> discard_buffer_block_map;
+std::map<std::pair<VKR_buffer_ptr, VkDeviceSize>, uint64_t> discard_buffer_block_map;
 
 bool VKR_buffer::destroy_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
@@ -215,8 +215,35 @@ VKR_buffer::~VKR_buffer() {
     }
 }
 
+struct sdsdgdg {
+    VKR_buffer_ptr ptr;
+    VkDeviceSize offset;
+    VkDeviceSize size_;
+};
+
+
+bool VKR_buffer_block::destroy_buffer() {
+    if (offset_ != 0 && size_ != 0) {
+        const auto buf = this->get();
+        discard_buffer_block_map.insert({
+                                            {std::make_shared<VKR_buffer>(*buf), offset_},
+                                            block_timeline_
+                                        });
+        offset_ = 0;
+        size_   = 0;
+    }
+    return true;
+}
+
 VKR_buffer_block::~VKR_buffer_block() {
     //
+    if (offset_ != 0 && size_ != 0) {
+        const auto buf = this->get();
+        discard_buffer_block_map.insert({
+                                            {std::make_shared<VKR_buffer>(*buf), offset_},
+                                            block_timeline_
+                                        });
+    }
     LOG_DEBUG(g_log(), "VKR_buffer_block ~~");
 };
 
@@ -234,35 +261,88 @@ void discard_buffer_map_clean() {
     }
 }
 
-VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
+
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
-    auto it_size              = size_and_offset_map.lower_bound(size);
-    if (it_size != size_and_offset_map.end()) {
+    if (const auto freed_memory_it = size_and_offset_map.lower_bound(size);
+        freed_memory_it != size_and_offset_map.end()) {
         // it->first 是最接近且满足条件的 size
         // it->second 是对应的偏移量
-        std::cout << "找到最合适的块，大小为: " << it_size->first;
-        auto temp_size   = it_size->first;
-        auto temp_offset = it_size->second;
+        std::cout << "找到最合适的块，大小为: " << freed_memory_it->first;
+        auto temp_size   = freed_memory_it->first;
+        auto temp_offset = freed_memory_it->second;
         if (temp_size != size) {
             auto it_offset = offset_and_size_map.find(temp_offset.first);
-            if (it_size != size_and_offset_map.end()) {
+            if (freed_memory_it != size_and_offset_map.end()) {
                 //                                空闲大小              空闲起始地址
                 size_and_offset_map.insert({temp_size - size, {temp_offset.first + size, true}});
                 //                                申请大小              申请起始地址
-                // size_and_offset_map.insert({size, {temp_offset.first, false}});
-                size_and_offset_map.erase(it_size);
+                size_and_offset_map.erase(freed_memory_it);
                 // offset 不变           申请大小改变        类型改变
                 it_offset->second = {size, false};
                 //                                空闲起始地址                  空闲大小
                 offset_and_size_map.insert({temp_offset.first + size, {temp_size - size, true}});
             }
         }
-        return VKR_buffer_block{buffer, temp_offset.first, size};
+        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.first, size);
     } else {
         std::cout << "没有足够大的连续空间";
     }
     return {};
+}
+
+
+void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
+    auto &offset_const_and_size_map = buffer->get_offset_and_size_map();
+    auto &size_const_and_offset_map = buffer->get_size_and_offset_map();
+    auto it_offset                  = offset_const_and_size_map.find(offset);
+    auto it_offset_before           = offset_const_and_size_map.upper_bound(offset - 1);
+    auto it_offset_after            = offset_const_and_size_map.lower_bound(offset + 1);
+    if (it_offset != offset_const_and_size_map.end()) {
+        std::cout << "找到需要free 的内存块，大小为: " << it_offset->first;
+        // 查找前一个块，检测是否能合并
+        // 检测后一个块，检测是否能合并
+
+        // offset_const_and_size_map         size_const_and_offset_map 只有能分配的
+
+        // 两个都不能合并
+        // 当前 更改标志位                     添加 size 和 offset
+
+        // 只有前一个能合并
+        // 前一个 更改大小                     找到 前一个 size  删除
+        // 当前  删除                         添加合并后的 size 和 offset
+
+        // 之后后一个能合并
+        // 当前 更改大小                       找到 后一个 size  删除
+        // 后一个 删除                         添加合并后的 size 和 offset
+
+        // 两个都能合并
+        // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
+        // 当前  删除                          添加合并后的 size 和 offset
+        // 后一个 删除
+
+
+        const auto block_size = it_offset->first;
+        if (block_size != offset) {
+        }
+    } else {
+        std::cout << "free 失败";
+    }
+}
+
+void discard_buffer_block_map_clean() {
+    const auto &handle = VK_handle::get();
+    for (auto it = discard_buffer_block_map.begin(); it != discard_buffer_block_map.end(); /* 后面不加 ++ */) {
+        const auto &[buffer, timeline] = *it;
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            GPU_pool_free(buffer.first, buffer.second);
+            it = discard_buffer_block_map.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 // bool VKR_buffer_block::destroy_buffer() {
