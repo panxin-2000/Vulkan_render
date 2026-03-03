@@ -4,11 +4,10 @@
 
 #ifndef HELLO_MAC_VULKAN_BUFFER_H
 #define HELLO_MAC_VULKAN_BUFFER_H
-#include <list>
-#include <map>
 
-#include "vulkan_global_macro.h"
+#include <map>
 #include <vk_mem_alloc.h>
+#include "APP_utility_mixins.h"
 
 struct size_and_status {
     uint64_t size_ = 0;
@@ -19,32 +18,18 @@ struct offset_no_status {
     uint64_t offset_ = 0;
 };
 
-class VKR_buffer {
+class VKR_buffer : public NonCopyable {
 protected:
     VkBuffer buffer_handle_   = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
 
-    std::map<VkDeviceSize, size_and_status> offset_and_size_map;
-    std::multimap<VkDeviceSize, offset_no_status> size_and_offset_map;
-
 public:
     VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
                                                                                allocation_(allocation) {
-        offset_and_size_map.insert({0, {complete_size(), true}});
-        size_and_offset_map.insert({complete_size(), {0}});
     }
 
     ~VKR_buffer();
-
-
-    std::map<VkDeviceSize, size_and_status> &get_offset_and_size_map() {
-        return offset_and_size_map;
-    };
-
-    std::multimap<VkDeviceSize, offset_no_status> &get_size_and_offset_map() {
-        return size_and_offset_map;
-    };
 
 
     [[nodiscard]] void *mapped_address() const;
@@ -75,9 +60,9 @@ public:
         return *this;
     }
 
-    void *map_memory() const;
+    [[nodiscard]] void *map_memory() const;
 
-    VkDeviceSize complete_size() const;
+    [[nodiscard]] VkDeviceSize complete_size() const;
 
     bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
 
@@ -101,23 +86,47 @@ struct address_and_length {
 };
 
 
-class VKR_buffer_block : public VKR_buffer_ptr {
+class VKR_buffer_pool : public VKR_buffer {
 public:
-    VKR_buffer_block(const VKR_buffer_ptr &buffer,
+    VKR_buffer_pool(const VkBuffer buffer_handle,
+                    const VmaAllocation allocation) : VKR_buffer(buffer_handle, allocation) {
+        offset_and_size_map.insert({0, {complete_size(), true}});
+        size_and_offset_map.insert({complete_size(), {0}});
+    }
+
+    std::map<VkDeviceSize, size_and_status> &get_offset_and_size_map() {
+        return offset_and_size_map;
+    };
+
+    std::multimap<VkDeviceSize, offset_no_status> &get_size_and_offset_map() {
+        return size_and_offset_map;
+    };
+
+private:
+    std::map<VkDeviceSize, size_and_status> offset_and_size_map;
+    std::multimap<VkDeviceSize, offset_no_status> size_and_offset_map;
+};
+
+using VKR_buffer_pool_ptr = std::shared_ptr<VKR_buffer_pool>;
+
+
+class VKR_buffer_block {
+public:
+    VKR_buffer_block(const VKR_buffer_pool_ptr &buffer,
                      const VkDeviceSize offset,
-                     const VkDeviceSize size) : VKR_buffer_ptr(buffer) {
+                     const VkDeviceSize size) : ptr(buffer) {
         offset_ = offset;
         size_   = size;
     }
 
     [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) {
         if (timeline > block_timeline_) block_timeline_ = timeline;
-        return VKR_buffer_ptr::get()->get_buffer_handle(timeline);
+        return ptr->get_buffer_handle(timeline);
     }
 
     [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0) {
         if (timeline > block_timeline_) block_timeline_ = timeline;
-        return VKR_buffer_ptr::get()->get_buffer_handle_ptr(timeline);
+        return ptr->get_buffer_handle_ptr(timeline);
     }
 
 
@@ -131,6 +140,7 @@ public:
 
     ~VKR_buffer_block();
 
+    VKR_buffer_pool_ptr ptr  = nullptr; // 指向 VKR_buffer 的 指针
     VkDeviceSize offset_     = 0;
     VkDeviceSize size_       = 0;
     uint64_t block_timeline_ = 0;
@@ -138,7 +148,14 @@ public:
 
 using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
 
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, uint64_t size);
+// VKR_buffer_block_ptr 是一个指针 指向了 VKR_buffer_block
+//                                      VKR_buffer_block 中有一个 指针 ，指向了  VKR_buffer
+//    VKR_buffer 中有   VkBuffer        和      VmaAllocation
+//                   VkBuffer是一个句柄        VmaAllocation是一个指针
+
+// VKR_buffer_ptr 另外一个方式，不进行池化，直接 通过指向 指向 VKR_buffer
+
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, uint64_t size);
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size);
 

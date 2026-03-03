@@ -195,7 +195,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 using buffer_offset = VkDeviceSize;
 
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
-std::map<std::pair<VKR_buffer_ptr, buffer_offset>, uint64_t> discard_buffer_block_map;
+std::map<std::pair<VKR_buffer_pool_ptr, buffer_offset>, uint64_t> discard_buffer_block_map;
 
 
 bool VKR_buffer::destroy_buffer() {
@@ -218,9 +218,8 @@ VKR_buffer::~VKR_buffer() {
 
 bool VKR_buffer_block::destroy_buffer() {
     if (offset_ != 0 && size_ != 0) {
-        const auto buf = this->get();
         discard_buffer_block_map.insert({
-                                            {std::make_shared<VKR_buffer>(*buf), offset_},
+                                            {ptr, offset_},
                                             block_timeline_
                                         });
         offset_ = 0;
@@ -232,9 +231,8 @@ bool VKR_buffer_block::destroy_buffer() {
 VKR_buffer_block::~VKR_buffer_block() {
     //
     if (offset_ != 0 && size_ != 0) {
-        const auto buf = this->get();
         discard_buffer_block_map.insert({
-                                            {std::make_shared<VKR_buffer>(*buf), offset_},
+                                            {ptr, offset_},
                                             block_timeline_
                                         });
     }
@@ -242,7 +240,7 @@ VKR_buffer_block::~VKR_buffer_block() {
 };
 
 
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
     if (const auto freed_memory_it = size_and_offset_map.lower_bound(size);
@@ -273,7 +271,7 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t
 }
 
 
-void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
+void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const uint64_t offset) {
     auto &offset_const_and_size_map = buffer->get_offset_and_size_map();
     auto &size_const_and_offset_map = buffer->get_size_and_offset_map();
     auto it_offset                  = offset_const_and_size_map.find(offset);

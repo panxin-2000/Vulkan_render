@@ -7,7 +7,7 @@
 #include "vulkan_buffer.h"
 
 
-VKR_buffer_ptr &get_uniform_buffer();
+VKR_buffer_pool_ptr &get_uniform_buffer();
 
 template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {

@@ -105,8 +105,8 @@ inline void update_UI_position() {
         auto offset = pos.get_offset();
         LOG_INFO(g_log(), "offset x {} y {}", offset.x, offset.y);
 
-        auto &buffer        = get_uniform_buffer();
-        auto mapped_address = buffer->mapped_address();
+        // auto &buffer        = get_uniform_buffer();
+        // auto mapped_address = buffer->mapped_address();
 
         struct Shader_Data_po {
             matrix_4x4 projection;
@@ -120,7 +120,7 @@ inline void update_UI_position() {
         UI_matrix_4x4(&temp.model, 1280, 720, offset.x, offset.y);
 
         // if (offset.x != 0 && offset.y != 0) {
-            // memcpy(mapped_address, &temp, sizeof(Shader_Data_po));
+        // memcpy(mapped_address, &temp, sizeof(Shader_Data_po));
         // }
 
         // add_uniform_buffer_data(it, "UBO", temp);
