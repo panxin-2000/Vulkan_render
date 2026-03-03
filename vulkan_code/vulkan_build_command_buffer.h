@@ -9,15 +9,57 @@
 #include "render_proxy.h"
 #include "vertex_and_buffer_index.h"
 
+struct scoped_debug_label {
+    VkCommandBuffer cmd;
 
-inline void begin_rendering(VK_handle &handle, const uint64_t time_line) {
+    scoped_debug_label(const VkCommandBuffer &cb, const std::string &label) : cmd(cb) {
+        VkDebugUtilsLabelEXT labelInfo{};
+        labelInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        labelInfo.pLabelName = label.c_str();
+        labelInfo.color[0]   = 1.0f; // R (0.0~1.0)
+        labelInfo.color[1]   = 1.0f; // G
+        labelInfo.color[2]   = 0.0f; // B (黄色)
+        labelInfo.color[3]   = 1.0f; // A
+        vkCmdBeginDebugUtilsLabelEXT(cmd, &labelInfo);
+    };
+
+    ~scoped_debug_label() {
+        vkCmdEndDebugUtilsLabelEXT(cmd);
+    };
+};
+
+inline void gpu_log_label_info(const VkCommandBuffer &cb, const std::string &label) {
+    // 添加一个函数 ， 颜色根据不同的类型来确定
+    VkDebugUtilsLabelEXT markerInfo{};
+    markerInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    markerInfo.pLabelName = label.c_str();
+    markerInfo.color[0]   = 1.0f; // R (0.0~1.0)
+    markerInfo.color[1]   = 1.0f; // G
+    markerInfo.color[2]   = 0.0f; // B (黄色)
+    markerInfo.color[3]   = 1.0f; // A
+    vkCmdInsertDebugUtilsLabelEXT(cb, &markerInfo);
+}
+
+inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
     auto cb = handle.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
+
+
     VkCommandBufferBeginInfo cbBI{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cb, &cbBI));
+    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cb, &cbBI)); // 所有 vkCmd 都必须在它 之后
+    if (queryPool != VK_NULL_HANDLE) {
+        vkCmdResetQueryPool(cb, queryPool, 0, 2);
+        vkCmdWriteTimestamp(cb,
+                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
+                            queryPool,
+                            0 // query 索引
+                           );
+    }
+    gpu_log_label_info(cb, "开始记录时间");
+
     std::array<VkImageMemoryBarrier2, 2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -105,9 +147,20 @@ inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw, const
     vk_draw.mesh.draw(cb, time_line);
 }
 
-inline void end_rendering(VK_handle &engine, const uint64_t time_line) {
+inline void end_rendering(VK_handle &engine, VkQueryPool queryPool, const uint64_t time_line) {
     auto cb = engine.get_current_command_buffer();
-    vkCmdEndRendering(cb);
+
+    vkCmdEndRendering(cb); // 这里和之后的 没有限制
+    if (queryPool != VK_NULL_HANDLE) {
+        vkCmdWriteTimestamp(
+                            cb,
+                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
+                            queryPool,
+                            0 // query 索引
+                           );
+    }
+    gpu_log_label_info(cb, "结束记录时间");
+
     VkImageMemoryBarrier2 barrierPresent{
         .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
         .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -124,7 +177,7 @@ inline void end_rendering(VK_handle &engine, const uint64_t time_line) {
         .pImageMemoryBarriers = &barrierPresent
     };
     vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
-    VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cb));
+    VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cb)); // 所有 vkCmd 都必须在它 之前
 }
 
 
