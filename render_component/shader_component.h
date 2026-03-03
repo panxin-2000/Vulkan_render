@@ -94,8 +94,13 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
 template<typename T1>
 bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
     if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        for (auto const &[set_value, bindings_map]:
-             shader_temp->shader_data_handle->model_sets_bindings) {
+        sets_map *sets_map_in_for = nullptr;
+        if (binding_name.find("global") != std::string::npos) {
+            sets_map_in_for = &shader_temp->shader_data_handle->global_bindings_set;
+        } else {
+            sets_map_in_for = &shader_temp->shader_data_handle->model_sets_bindings;
+        }
+        for (auto const &[set_value, bindings_map]: *sets_map_in_for) {
             for (const auto &[binding_value, info]: bindings_map) {
                 if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                     auto buffer_block                   = copy_data_to_gpu_buffer(binding_data);
