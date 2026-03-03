@@ -84,6 +84,7 @@ public:
 
 // using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
 
+// 其实只是 std::shared_ptr<VKR_buffer> ptr 的一个封装
 class VKR_buffer_ptr {
 public:
     VKR_buffer_ptr(const VkBuffer buffer_handle,
@@ -112,6 +113,7 @@ public:
 protected:
     std::shared_ptr<VKR_buffer> ptr = nullptr;
 };
+
 
 struct address_and_length {
     uint64_t address = 0;
@@ -155,7 +157,7 @@ public:
     uint64_t block_timeline_ = 0;
 };
 
-VKR_buffer_block GPU_pool_alloc(VKR_buffer_ptr buffer, uint64_t size);
+VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr &buffer, uint64_t size);
 
 
 class VKR_buffer_block_ptr {
@@ -176,7 +178,6 @@ public:
     void clear() {
         ptr = nullptr;
     }
-
 
     explicit operator bool() const noexcept {
         return ptr != nullptr;
@@ -199,7 +200,7 @@ public:
     std::list<address_and_length> memory_pool;
 };
 
-void copy_vk_buffer_and_execution(VKR_buffer_ptr srcBuffer, VKR_buffer_ptr dstBuffer, VkDeviceSize size);
+void copy_vk_buffer_and_execution(const VKR_buffer_ptr& srcBuffer, const VKR_buffer_ptr& dstBuffer, VkDeviceSize size);
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 

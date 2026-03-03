@@ -5,7 +5,6 @@
 #include "vulkan_buffer.h"
 
 #include "vulkan_device_handle.h"
-#include "vulkan_image.h"
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
@@ -14,8 +13,7 @@
     vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
     vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
-    const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    if (isVisible) {
+    if (props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
         return info.pMappedData;
     }
     return nullptr;
@@ -89,7 +87,7 @@ bool VKR_buffer::need_flush() const {
 }
 
 
-[[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer buffer) {
+[[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer &buffer) {
     const auto &handle = VK_handle::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
@@ -100,18 +98,16 @@ bool VKR_buffer::need_flush() const {
 }
 
 
-void copy_vk_buffer_and_execution(VKR_buffer_ptr srcBuffer,
-                                  VKR_buffer_ptr dstBuffer, VkDeviceSize size) {
-    const auto &handle            = VK_handle::get();
-    VkCommandBuffer commandBuffer = begin_one_command_buffer();
-
+void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
+                                  const VKR_buffer_ptr &dstBuffer, VkDeviceSize size) {
+    const VkCommandBuffer command_buffer = begin_one_command_buffer();
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size      = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
+    vkCmdCopyBuffer(command_buffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
 
-    end_and_submit_one_command_buffer(commandBuffer);
+    end_and_submit_one_command_buffer(command_buffer);
 }
 
 
@@ -238,8 +234,7 @@ void discard_buffer_map_clean() {
     }
 }
 
-VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr buffer, const uint64_t size) {
-    uint64_t return_address   = -1;
+VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
     auto it_size              = size_and_offset_map.lower_bound(size);
@@ -267,6 +262,7 @@ VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr buffer, const uint64_t size
     } else {
         std::cout << "没有足够大的连续空间";
     }
+    return {};
 }
 
 // bool VKR_buffer_block::destroy_buffer() {
