@@ -105,15 +105,15 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
                     temp.dstSet                         = set_value;
                     temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
-                    temp.descriptor_write_binding.dstBinding       = 0;
-                    temp.descriptor_write_binding.dstArrayElement  = 0;
-                    temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    temp.descriptor_write_binding.descriptorCount  = 1;
-                    temp.descriptor_write_binding.pBufferInfo      = nullptr;
-                    temp.descriptor_write_binding.pImageInfo       = nullptr;
-                    temp.descriptor_write_binding.pTexelBufferView = nullptr;
-                    temp.bufferInfo                                = {true, buffer_block};
-                    shader_temp->update_descriptor_sets.insert({binding_name, temp});
+                    temp.descriptor_write_binding.dstBinding          = 0;
+                    temp.descriptor_write_binding.dstArrayElement     = 0;
+                    temp.descriptor_write_binding.descriptorType      = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    temp.descriptor_write_binding.descriptorCount     = 1;
+                    temp.descriptor_write_binding.pBufferInfo         = nullptr;
+                    temp.descriptor_write_binding.pImageInfo          = nullptr;
+                    temp.descriptor_write_binding.pTexelBufferView    = nullptr;
+                    temp.bufferInfo                                   = {true, buffer_block};
+                    shader_temp->update_descriptor_sets[binding_name] = temp;
                     return true;
                 }
             }

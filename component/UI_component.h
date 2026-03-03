@@ -27,17 +27,21 @@ public:
         bounding_box_ = AABB_centroid<Point_2>(min, max);
     }
 
+    AABB_min_max<Point_2> get_bounding_box() {
+        return bounding_box_;
+    }
+
     bool set_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
         zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
         zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
         g_entt().emplace_or_replace<Position_update_tag>(entity);
-        if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
-            for (const entt::entity children_entity: scene_node->children) {
-                if (g_entt().valid(children_entity)) {
-                    g_entt().emplace_or_replace<Position_update_tag>(children_entity);
-                }
-            }
-        }
+        // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
+        //     for (const entt::entity children_entity: scene_node->children) {
+        //         if (g_entt().valid(children_entity)) {
+        //             g_entt().emplace_or_replace<Position_update_tag>(children_entity);
+        //         }
+        //     }
+        // }
         return true;
     }
 
@@ -48,13 +52,13 @@ public:
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
         offset                       = offset + move;
         g_entt().emplace_or_replace<Position_update_tag>(entity);
-        if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
-            for (const entt::entity children_entity: scene_node->children) {
-                if (g_entt().valid(children_entity)) {
-                    g_entt().emplace_or_replace<Position_update_tag>(children_entity);
-                }
-            }
-        }
+        // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
+        //     for (const entt::entity children_entity: scene_node->children) {
+        //         if (g_entt().valid(children_entity)) {
+        //             g_entt().emplace_or_replace<Position_update_tag>(children_entity);
+        //         }
+        //     }
+        // }
         // std::cout << "move x: " << offset.x << " y: " << offset.y << std::endl;
         // offset.x = offset.x + move.x / get_win_WIDTH() * 2;
         // offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
@@ -101,45 +105,29 @@ inline void update_UI_position() {
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
         // get_model_matrix();
+        g_entt().remove<Position_update_tag>(it);
         auto pos    = view.get<Rect_transform>(it);
         auto offset = pos.get_offset();
         LOG_INFO(g_log(), "offset x {} y {}", offset.x, offset.y);
 
-        // auto &buffer        = get_uniform_buffer();
-        // auto mapped_address = buffer->mapped_address();
+        add_geometry_data(it, pos.get_bounding_box().min_point.x,
+                          pos.get_bounding_box().min_point.y,
+                          pos.get_bounding_box().max_point.x,
+                          pos.get_bounding_box().max_point.y);
 
-        struct Shader_Data_po {
-            matrix_4x4 projection;
-            matrix_4x4 view;
-            matrix_4x4 model;
+        const auto mesh = create_mesh(it, VK_handle::get().get_mesh_map());
+
+        auto lambda = [mesh](const std::shared_ptr<draw_need_vk> &proxy) {
+            if (mesh.has_value()) {
+                proxy->mesh = mesh.value();;
+            } else {
+                LOG_INFO(g_log(), "descriptor_sets empty");
+            }
         };
-        Shader_Data_po temp;
 
-        identity_matrix_4x4(&temp.projection);
-        identity_matrix_4x4(&temp.view);
-        UI_matrix_4x4(&temp.model, 1280, 720, offset.x, offset.y);
-
-        // if (offset.x != 0 && offset.y != 0) {
-        // memcpy(mapped_address, &temp, sizeof(Shader_Data_po));
-        // }
-
-        // add_uniform_buffer_data(it, "UBO", temp);
-
-        // const auto descriptor_sets = allocate_descriptor_sets(it);
-        // update_bindings_to_descriptor_sets(it, descriptor_sets);
-
-
-        // auto lambda = [descriptor_sets](const std::shared_ptr<draw_need_vk> &proxy) {
-        // if (!descriptor_sets.empty()) {
-        // proxy->vk_descriptor_set = std::move(descriptor_sets);
-        // } else {
-        // LOG_INFO(g_log(), "descriptor_sets empty");
-        // }
-        // };
-
-        // if (const auto render_data = g_entt().try_get<std::shared_ptr<draw_need_vk> >(it)) {
-        // update_object_to_render(*render_data, lambda);
-        // }
+        if (const auto render_data = g_entt().try_get<std::shared_ptr<draw_need_vk> >(it)) {
+            update_object_to_render(*render_data, lambda);
+        }
     }
 }
 

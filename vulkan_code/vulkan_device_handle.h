@@ -12,7 +12,6 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-#include "engine.h"
 #include "global_singleton.h"
 #include "Geometry_data.h"
 

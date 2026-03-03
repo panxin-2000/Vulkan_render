@@ -157,6 +157,7 @@ private
 
 
     void update_need_objects() {
+
         vk_render_queue::instance().execute_update_lambda();
         // 内存内容的更新
         // 先查找放置在哪里来

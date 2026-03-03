@@ -58,7 +58,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
             if (event.event_code == KM_RELEASE) {
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
-                auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
+                // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
                 return OPERATOR_FINISHED;
             }
             break;
@@ -83,60 +83,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
 }
 
 
-bool add_geometry_data(entt::entity entity_,
-                       float min_x,
-                       float min_y,
-                       float max_x,
-                       float max_y) {
-    g_entt().emplace<Geometry_data>(entity_);
-    auto &geometry = g_entt().get<Geometry_data>(entity_);
 
-    /***************设置顶点与索引参数**********************/
-    // std::vector<VertexAttrib> vertex_attribs;
-    // vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
-    // vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
-    // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
-
-    struct pos_normal_uv {
-        float x, y, z, a, b, c, u, v;
-    };
-
-    const auto vertices = std::make_shared<std::vector<pos_normal_uv> >(); //  32  * 4 = 128
-    const auto indices  = std::make_shared<std::vector<uint16_t> >();      //  2   * 6 = 12
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-    {
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 3);
-        indices->push_back(vertices->size() + 0);
-        vertices->emplace_back(pos_normal_uv{min_x, min_y, 0, 0, 0, 0, 0, 0}); //0 1 2
-        vertices->emplace_back(pos_normal_uv{max_x, min_y, 0, 0, 0, 0, 1, 0});
-        vertices->emplace_back(pos_normal_uv{max_x, max_y, 0, 0, 0, 0, 1, 1}); // 2 3 0
-        vertices->emplace_back(pos_normal_uv{min_x, max_y, 0, 0, 0, 0, 0, 1});
-    }
-    // 参数这里最重要的是下面的两行
-
-    // 参数这里最重要的是下面的两行
-    const share_block vertices_buffer = {
-        vertices,
-        vertices->data(),
-        vertices->size() * sizeof(pos_normal_uv),
-        vertices->size(),
-        sizeof(pos_normal_uv)
-    };
-    const share_block indices_buffer = {
-        indices,
-        indices->data(),
-        indices->size() * sizeof(uint16_t),
-        indices->size(),
-        sizeof(uint16_t)
-    };
-
-    geometry.push_vertices(vertices_buffer);
-    geometry.set_indices(indices_buffer);
-}
 
 entt::entity UI_button(const std::string &name,
                        float min_x,

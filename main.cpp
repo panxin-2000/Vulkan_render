@@ -97,7 +97,6 @@ int main(int argc, char *argv[]) {
         }
         update_UI_position();
 
-
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     g_entt().clear();
