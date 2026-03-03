@@ -10,6 +10,15 @@
 #include "vulkan_global_macro.h"
 #include <vk_mem_alloc.h>
 
+struct size_and_status {
+    uint64_t size_ = 0;
+    bool status_   = false;
+};
+
+struct offset_and_status {
+    uint64_t offset_ = 0;
+    bool status_     = false;
+};
 
 class VKR_buffer {
 protected:
@@ -17,8 +26,8 @@ protected:
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
 
-    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > offset_and_size_map;
-    std::multimap<VkDeviceSize, std::pair<VkDeviceSize, bool> > size_and_offset_map;
+    std::map<VkDeviceSize, size_and_status> offset_and_size_map;
+    std::multimap<VkDeviceSize, offset_and_status> size_and_offset_map;
 
 public:
     VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
@@ -29,11 +38,12 @@ public:
 
     ~VKR_buffer();
 
-    std::map<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_offset_and_size_map() {
+
+    std::map<VkDeviceSize, size_and_status> &get_offset_and_size_map() {
         return offset_and_size_map;
     };
 
-    std::multimap<VkDeviceSize, std::pair<VkDeviceSize, bool> > &get_size_and_offset_map() {
+    std::multimap<VkDeviceSize, offset_and_status> &get_size_and_offset_map() {
         return size_and_offset_map;
     };
 

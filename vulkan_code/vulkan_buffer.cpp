@@ -273,19 +273,19 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t
         auto temp_size   = freed_memory_it->first;
         auto temp_offset = freed_memory_it->second;
         if (temp_size != size) {
-            auto it_offset = offset_and_size_map.find(temp_offset.first);
+            auto it_offset = offset_and_size_map.find(temp_offset.offset_);
             if (freed_memory_it != size_and_offset_map.end()) {
                 //                                空闲大小              空闲起始地址
-                size_and_offset_map.insert({temp_size - size, {temp_offset.first + size, true}});
+                size_and_offset_map.insert({temp_size - size, {temp_offset.offset_ + size, true}});
                 //                                申请大小              申请起始地址
                 size_and_offset_map.erase(freed_memory_it);
                 // offset 不变           申请大小改变        类型改变
                 it_offset->second = {size, false};
                 //                                空闲起始地址                  空闲大小
-                offset_and_size_map.insert({temp_offset.first + size, {temp_size - size, true}});
+                offset_and_size_map.insert({temp_offset.offset_ + size, {temp_size - size, true}});
             }
         }
-        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.first, size);
+        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.offset_, size);
     } else {
         std::cout << "没有足够大的连续空间";
     }
@@ -299,35 +299,90 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
     auto it_offset                  = offset_const_and_size_map.find(offset);
     auto it_offset_before           = offset_const_and_size_map.upper_bound(offset - 1);
     auto it_offset_after            = offset_const_and_size_map.lower_bound(offset + 1);
-    if (it_offset != offset_const_and_size_map.end()) {
-        std::cout << "找到需要free 的内存块，大小为: " << it_offset->first;
-        // 查找前一个块，检测是否能合并
-        // 检测后一个块，检测是否能合并
+    auto before_bool                = false;
+    if (offset == 0) {
+        it_offset_before = offset_const_and_size_map.end();
+        before_bool      = false;
+    } else if (it_offset_before != offset_const_and_size_map.end()) {
+        before_bool = it_offset_before->second.status_;
+    }
+    auto after_bool = false;
+    if (it_offset_after != offset_const_and_size_map.end()) {
+        after_bool = it_offset_after->second.status_;
+    }
 
-        // offset_const_and_size_map         size_const_and_offset_map 只有能分配的
+#define erase_before \
+    {\
+        auto range = size_const_and_offset_map.equal_range(it_offset_before->second.size_); \
+        for (auto it = range.first; it != range.second; ++it) {\
+            if (it->second.offset_ == it_offset_before->first) {\
+                size_const_and_offset_map.erase(it); \
+                break;\
+            }\
+        }\
+    }
 
-        // 两个都不能合并
-        // 当前 更改标志位                     添加 size 和 offset
+#define erase_after \
+    {\
+        auto range = size_const_and_offset_map.equal_range(it_offset_after->second.size_);\
+        for (auto it = range.first; it != range.second; ++it) {\
+            if (it->second.offset_ == it_offset_after->first) {\
+                size_const_and_offset_map.erase(it); \
+                break;\
+            }\
+        }\
+    }
 
-        // 只有前一个能合并
-        // 前一个 更改大小                     找到 前一个 size  删除
-        // 当前  删除                         添加合并后的 size 和 offset
+    std::cout << "找到需要free 的内存块，大小为: " << it_offset->first;
+    // 查找前一个块，检测是否能合并
+    // 检测后一个块，检测是否能合并
 
-        // 之后后一个能合并
-        // 当前 更改大小                       找到 后一个 size  删除
-        // 后一个 删除                         添加合并后的 size 和 offset
+    // offset_const_and_size_map         size_const_and_offset_map 只有能分配的
+    // 两个都不能合并
+    // 当前 更改标志位                     添加 size 和 offset
+    if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == false) {
+        it_offset->second = {it_offset->second.size_, true};
+        size_const_and_offset_map.insert({it_offset->second.size_, {it_offset->first, true}});
+    }
 
-        // 两个都能合并
-        // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
-        // 当前  删除                          添加合并后的 size 和 offset
-        // 后一个 删除
+    // 只有前一个能合并
+    // 前一个 更改大小                     找到 前一个 size  删除
+    // 当前  删除                         添加合并后的 size 和 offset
+    if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == false) {
+        erase_before;
+        const auto combination_size   = it_offset->second.size_ + it_offset_before->second.size_;
+        const auto combination_offset = it_offset_before->first;
+        it_offset_before->second      = {combination_size, true};
+        offset_const_and_size_map.erase(it_offset);
+        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
+    }
 
-
-        const auto block_size = it_offset->first;
-        if (block_size != offset) {
-        }
-    } else {
-        std::cout << "free 失败";
+    // 之后后一个能合并
+    // 当前 更改大小                       找到 后一个 size  删除
+    // 后一个 删除                         添加合并后的 size 和 offset
+    if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == true) {
+        erase_after;
+        const auto combination_size   = it_offset->second.size_ + it_offset_after->second.size_;
+        const auto combination_offset = it_offset->first;
+        it_offset->second             = {combination_size, true};
+        offset_const_and_size_map.erase(it_offset_after);
+        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
+    }
+    // 两个都能合并
+    // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
+    // 当前  删除                          添加合并后的 size 和 offset
+    // 后一个 删除
+    if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == true) {
+        const auto combination_size = it_offset_before->second.size_ +
+                                      it_offset->second.size_ +
+                                      it_offset_after->second.size_;
+        const auto combination_offset = it_offset_before->first;
+        erase_before;
+        erase_after;
+        it_offset_before->second = {combination_size, true};
+        offset_const_and_size_map.erase(it_offset);
+        offset_const_and_size_map.erase(it_offset_after);
+        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
     }
 }
 
