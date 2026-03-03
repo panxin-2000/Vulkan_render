@@ -3,7 +3,6 @@
 //
 
 #include "vulkan_buffer.h"
-
 #include "vulkan_device_handle.h"
 
 
@@ -191,12 +190,13 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 }
 
 
-// 这里是一个需要更改的点，将 timeline 与销毁结合
-//
+// 将 timeline 与销毁结合
 
+using buffer_offset = VkDeviceSize;
 
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
-std::map<std::pair<VKR_buffer_ptr, VkDeviceSize>, uint64_t> discard_buffer_block_map;
+std::map<std::pair<VKR_buffer_ptr, buffer_offset>, uint64_t> discard_buffer_block_map;
+
 
 bool VKR_buffer::destroy_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
@@ -214,12 +214,6 @@ VKR_buffer::~VKR_buffer() {
         allocation_    = VK_NULL_HANDLE;
     }
 }
-
-struct sdsdgdg {
-    VKR_buffer_ptr ptr;
-    VkDeviceSize offset;
-    VkDeviceSize size_;
-};
 
 
 bool VKR_buffer_block::destroy_buffer() {
@@ -247,20 +241,6 @@ VKR_buffer_block::~VKR_buffer_block() {
     LOG_DEBUG(g_log(), "VKR_buffer_block ~~");
 };
 
-void discard_buffer_map_clean() {
-    const auto &handle = VK_handle::get();
-    for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
-        const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
-        if (handle.get_finished_timeline() >= timeline) {
-            vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
-            it = discard_buffer_map.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
 
 VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
@@ -276,7 +256,7 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t
             auto it_offset = offset_and_size_map.find(temp_offset.offset_);
             if (freed_memory_it != size_and_offset_map.end()) {
                 //                                空闲大小              空闲起始地址
-                size_and_offset_map.insert({temp_size - size, {temp_offset.offset_ + size, true}});
+                size_and_offset_map.insert({temp_size - size, {temp_offset.offset_ + size}});
                 //                                申请大小              申请起始地址
                 size_and_offset_map.erase(freed_memory_it);
                 // offset 不变           申请大小改变        类型改变
@@ -333,7 +313,6 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
         }\
     }
 
-    std::cout << "找到需要free 的内存块，大小为: " << it_offset->first;
     // 查找前一个块，检测是否能合并
     // 检测后一个块，检测是否能合并
 
@@ -342,7 +321,7 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
     // 当前 更改标志位                     添加 size 和 offset
     if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == false) {
         it_offset->second = {it_offset->second.size_, true};
-        size_const_and_offset_map.insert({it_offset->second.size_, {it_offset->first, true}});
+        size_const_and_offset_map.insert({it_offset->second.size_, {it_offset->first}});
     }
 
     // 只有前一个能合并
@@ -354,7 +333,7 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
         const auto combination_offset = it_offset_before->first;
         it_offset_before->second      = {combination_size, true};
         offset_const_and_size_map.erase(it_offset);
-        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
+        size_const_and_offset_map.insert({combination_size, {combination_offset}});
     }
 
     // 之后后一个能合并
@@ -366,7 +345,7 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
         const auto combination_offset = it_offset->first;
         it_offset->second             = {combination_size, true};
         offset_const_and_size_map.erase(it_offset_after);
-        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
+        size_const_and_offset_map.insert({combination_size, {combination_offset}});
     }
     // 两个都能合并
     // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
@@ -382,7 +361,7 @@ void GPU_pool_free(const VKR_buffer_ptr &buffer, const uint64_t offset) {
         it_offset_before->second = {combination_size, true};
         offset_const_and_size_map.erase(it_offset);
         offset_const_and_size_map.erase(it_offset_after);
-        size_const_and_offset_map.insert({combination_size, {combination_offset, true}});
+        size_const_and_offset_map.insert({combination_size, {combination_offset}});
     }
 }
 
@@ -400,10 +379,17 @@ void discard_buffer_block_map_clean() {
     }
 }
 
-// bool VKR_buffer_block::destroy_buffer() {
-//     // 有点意思，之前做的防护把我防住了
-//     discard_buffer_block_map.insert({
-//                                         VKR_buffer_block(), block_timeline_
-//                                     });
-//     return true;
-// }
+void discard_buffer_map_clean() {
+    const auto &handle = VK_handle::get();
+    discard_buffer_block_map_clean();
+    for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
+        const auto &[buffer, timeline] = *it;
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
+            it = discard_buffer_map.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
