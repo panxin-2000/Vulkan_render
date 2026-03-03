@@ -217,7 +217,7 @@ VKR_buffer::~VKR_buffer() {
 
 
 bool VKR_buffer_block::destroy_buffer() {
-    if (offset_ != 0 && size_ != 0) {
+    if (size_ != 0) {
         discard_buffer_block_map.insert({
                                             {ptr, offset_},
                                             block_timeline_
@@ -230,11 +230,13 @@ bool VKR_buffer_block::destroy_buffer() {
 
 VKR_buffer_block::~VKR_buffer_block() {
     //
-    if (offset_ != 0 && size_ != 0) {
+    if (size_ != 0) {
         discard_buffer_block_map.insert({
                                             {ptr, offset_},
                                             block_timeline_
                                         });
+        offset_ = 0;
+        size_   = 0;
     }
     LOG_DEBUG(g_log(), "VKR_buffer_block ~~");
 };
