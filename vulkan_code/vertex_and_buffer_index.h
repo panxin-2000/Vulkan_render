@@ -44,7 +44,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDevi
         auto staging_buffer = create_staging_buffer(handle, size);
         if (staging_buffer->empty()) {
             // 创建 staging_buffer 失败
-            vBuffer->DestroyBuffer();
+            vBuffer->destroy_buffer();
             return {};
         }
 
@@ -54,7 +54,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDevi
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(staging_buffer, vBuffer, size);
         }
-        staging_buffer->DestroyBuffer();
+        staging_buffer->destroy_buffer();
     } else {
         // 创建成功，但是 map 不成功的很少见
         copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);

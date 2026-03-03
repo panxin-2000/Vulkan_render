@@ -200,8 +200,9 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 
 
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
+// std::map<std::shared_ptr<VKR_buffer_block_ptr>, uint64_t> discard_buffer_block_map;
 
-bool VKR_buffer::DestroyBuffer() {
+bool VKR_buffer::destroy_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
         discard_buffer_map.insert({{buffer_handle_, allocation_}, timeline_});
         buffer_handle_ = VK_NULL_HANDLE;
@@ -218,6 +219,10 @@ VKR_buffer::~VKR_buffer() {
     }
 }
 
+VKR_buffer_block::~VKR_buffer_block() {
+    //
+    LOG_DEBUG(g_log(), "VKR_buffer_block ~~");
+};
 
 void discard_buffer_map_clean() {
     const auto &handle = VK_handle::get();
@@ -233,7 +238,7 @@ void discard_buffer_map_clean() {
     }
 }
 
-std::optional<VKR_buffer_block_ptr> GPU_pool_alloc(const VKR_buffer_ptr &buffer, const uint64_t size) {
+VKR_buffer_block GPU_pool_alloc(const VKR_buffer_ptr buffer, const uint64_t size) {
     uint64_t return_address   = -1;
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
@@ -258,9 +263,16 @@ std::optional<VKR_buffer_block_ptr> GPU_pool_alloc(const VKR_buffer_ptr &buffer,
                 offset_and_size_map.insert({temp_offset.first + size, {temp_size - size, true}});
             }
         }
-        return VKR_buffer_block_ptr{buffer, temp_offset.first, size};
+        return VKR_buffer_block{buffer, temp_offset.first, size};
     } else {
         std::cout << "没有足够大的连续空间";
     }
-    return {};
 }
+
+// bool VKR_buffer_block::destroy_buffer() {
+//     // 有点意思，之前做的防护把我防住了
+//     discard_buffer_block_map.insert({
+//                                         VKR_buffer_block(), block_timeline_
+//                                     });
+//     return true;
+// }

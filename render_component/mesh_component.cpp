@@ -81,7 +81,7 @@ inline Model_mesh *find_mesh(Geometry_data data,
 void clean_all_mesh_object() {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
     for (const auto &[key, value]: VK_handle::get().get_mesh_map()) {
-        value.mesh.vertices->DestroyBuffer();
+        value.mesh.vertices->destroy_buffer();
         // ->不清理会直接爆异常
     }
     VK_handle::get().get_mesh_map().clear();

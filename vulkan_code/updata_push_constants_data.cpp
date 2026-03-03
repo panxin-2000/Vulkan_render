@@ -34,5 +34,6 @@ VKR_buffer_ptr &get_uniform_buffer() {
                                      nullptr));
         buffer = new VKR_buffer_ptr(vBuffer, vBufferAllocation);
     }
+    // auto complete_sghize = (*buffer)->complete_size();
     return *buffer;
 }

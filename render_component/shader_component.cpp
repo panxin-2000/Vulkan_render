@@ -32,8 +32,8 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
                 const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                     allocate(sizeof(VkDescriptorBufferInfo)));
                 buffer_info->buffer                      = binding_update.bufferInfo.second->get_buffer_handle();
-                buffer_info->offset                      = binding_update.bufferInfo.second.offset_;
-                buffer_info->range                       = binding_update.bufferInfo.second.size_;
+                buffer_info->offset                      = binding_update.bufferInfo.second->offset_;
+                buffer_info->range                       = binding_update.bufferInfo.second->size_;
                 descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
             } else if (binding_update.imageInfo.first) {
                 descriptor_write_bindings[i].pImageInfo = &binding_update.imageInfo.second;;

@@ -151,7 +151,7 @@ VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
             copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
             copy_vk_buffer_and_execution(staging_buffer, vBuffer, size);
         }
-        staging_buffer->DestroyBuffer();
+        staging_buffer->destroy_buffer();
     } else {
         copy_mem_from_cpu_to_gpu(vBuffer, mem_copy_callback);
     }
@@ -292,7 +292,7 @@ VKR_image_ptr createTextureImage(VK_handle &handle, const std::string &picture_p
                       static_cast<uint32_t>(texHeight));
     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
-    staging_buffer->DestroyBuffer();
+    staging_buffer->destroy_buffer();
 
     generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
 
