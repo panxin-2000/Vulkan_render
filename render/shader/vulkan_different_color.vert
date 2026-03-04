@@ -15,14 +15,17 @@ layout (location = 2) in vec2 inUV;
 //layout (location = 3) in vec3 inColor;
 
 
-layout (binding = 0) uniform UBO
+layout (set = 0, binding = 0) uniform view_4x4
 {
-    mat4 projection;
-    mat4 model;
     mat4 view;
+};
+
+layout (set = 1, binding = 0) uniform model_4x4
+{
+    mat4 model;
 };
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
+    gl_Position = view * model * vec4(inPos.xyz, 1.0);
 }

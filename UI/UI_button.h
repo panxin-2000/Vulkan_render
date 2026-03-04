@@ -83,8 +83,6 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
 }
 
 
-
-
 entt::entity UI_button(const std::string &name,
                        float min_x,
                        float min_y,
@@ -113,23 +111,19 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Name_component>(entity_, name);
     add_geometry_data(entity_, min_x, min_y, max_x, max_y);
 
-    struct Shader_Data_po {
-        matrix_4x4 projection;
-        matrix_4x4 view;
-        matrix_4x4 model;
-    };
-    Shader_Data_po temp;
 
-    identity_matrix_4x4(&temp.projection);
-    identity_matrix_4x4(&temp.view);
-    UI_matrix_4x4(&temp.model, 1280, 720);
+    matrix_4x4 model;
+    matrix_4x4 view;
+    identity_matrix_4x4(&view);
+    UI_matrix_4x4(&model, 1280, 720);
 
-    add_uniform_buffer_data(entity_, "UBO", temp);
+    add_uniform_buffer_data(entity_, "view_4x4", view);
+    add_uniform_buffer_data(entity_, "model_4x4", model);
 
 
     add_object_to_render(entity_); // 因为这里没有区分。全部都在场景的根节点之下
 
-    if (g_entt().all_of<Scene_Component>(entity_)) {
+    if (g_entt().all_of<Scene_Component, Rect_transform>(entity_)) {
         auto &position = g_entt().get<Rect_transform>(entity_);
         position.update_2D_position_matrix();
         scene_root_add_child(entity_);
