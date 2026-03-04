@@ -14,11 +14,6 @@
 
 #include "engine.h"
 #include "global_singleton.h"
-#include "Geometry_data.h"
-
-
-struct mesh_and_share;
-using Indices_type = std::shared_ptr<std::vector<u_int16_t> >;
 
 
 struct Vertex {
@@ -156,10 +151,6 @@ public:
     VkDescriptorPool descriptorPool{VK_NULL_HANDLE}; // 最大的问题就是这里有一个pool
 
 
-
-
-
-
     const VkCommandPool &get_command_pool() const {
         return commandPool;
     }
@@ -174,7 +165,6 @@ public:
     }
 
 private:
-
     std::vector<VkDescriptorImageInfo> bindless_textures_;
 
     VkCommandPool commandPool = VK_NULL_HANDLE;

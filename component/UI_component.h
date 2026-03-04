@@ -115,7 +115,7 @@ inline void update_UI_position() {
                           pos.get_bounding_box().max_point.x,
                           pos.get_bounding_box().max_point.y);
 
-        const auto mesh = create_mesh(it, VK_handle::get().get_mesh_map());
+        const auto mesh = create_mesh(it);
 
         auto lambda = [mesh](const std::shared_ptr<draw_need_vk> &proxy) {
             if (mesh.has_value()) {

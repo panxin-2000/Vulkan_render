@@ -6,7 +6,8 @@
 #define HOWTOVULKAN_CREATE_SHADER_H
 
 #include "vulkan_device_handle.h"
-
+#include "shader_common.h"
+#include "shader_component.h"
 
 static std::vector<char> readFile(const std::string &filename);
 

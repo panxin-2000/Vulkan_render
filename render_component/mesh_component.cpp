@@ -4,6 +4,7 @@
 
 #include "mesh_component.h"
 
+#include "Geometry_data.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 
