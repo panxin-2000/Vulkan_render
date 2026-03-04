@@ -41,7 +41,7 @@ inline void gpu_log_label_info(const VkCommandBuffer &cb, const std::string &lab
 }
 
 inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
-    auto cb = handle.get_current_command_buffer();
+    auto cb = handle.engine_.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
 
 
@@ -126,7 +126,7 @@ inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint
 }
 
 inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw, const uint64_t time_line) {
-    const auto cb = engine.get_current_command_buffer();
+    const auto cb = engine.engine_.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
@@ -148,7 +148,7 @@ inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw, const
 }
 
 inline void end_rendering(VK_handle &engine, VkQueryPool queryPool, const uint64_t time_line) {
-    auto cb = engine.get_current_command_buffer();
+    auto cb = engine.engine_.get_current_command_buffer();
 
     vkCmdEndRendering(cb); // 这里和之后的 没有限制
     if (queryPool != VK_NULL_HANDLE) {

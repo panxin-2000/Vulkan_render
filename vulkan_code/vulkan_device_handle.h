@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include "engine.h"
 #include "global_singleton.h"
 #include "Geometry_data.h"
 
@@ -59,10 +60,6 @@ public:
     VkQueue compute_queue_            = VK_NULL_HANDLE;
 
     // Engine engine_;
-    std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
-    std::array<VkFence, maxFramesInFlight> fences_                  = {};
-    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
-    std::vector<VkSemaphore> render_to_image_semaphores_;
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
@@ -74,33 +71,19 @@ public:
      * 屏幕绘制比较快的话，三缓冲没有太大的作用
     * 屏幕绘制比较慢的话，丢弃过时帧，选择最新帧绘制，开始渲染到开始显示的延迟的延迟不一致的问题
      */
-    uint32_t frameIndex{0};
-    uint32_t imageIndex{0};
-    // Engine engine_;
+
+    Engine engine_;
+
 public:
     void engine_init() {
-        create_command_buffer();
-        create_fences();
-        create_present_Semaphores();
-        create_renderSemaphores();
         create_timeline_Semaphores();
     }
 
-    std::array<VkFence, maxFramesInFlight> &get_fences() {
-        return fences_;
+    void engine_destroy() {
+        vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);
+        vk_timeline_semaphore_ = VK_NULL_HANDLE; // 这里设置为 VK_NULL_HANDLE 了，但是上面几个并没有
     }
 
-    VkFence &get_current_fences() {
-        return get_fences()[frameIndex];
-    }
-
-    std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
-        return present_semaphores_;
-    }
-
-    VkSemaphore &get_current_presentSemaphores() {
-        return get_presentSemaphores()[frameIndex];
-    }
 
     [[nodiscard]] uint64_t get_finished_timeline() const {
         uint64_t current_timeline;
@@ -109,22 +92,6 @@ public:
         return current_timeline;
     }
 
-    std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
-        return render_to_image_semaphores_;
-    }
-
-    VkSemaphore &get_current_renderSemaphores() {
-        return get_can_render_to_image_semaphores()[frameIndex];
-    }
-
-
-    std::array<VkCommandBuffer, maxFramesInFlight> &get_command_buffers() {
-        return command_buffers_;
-    }
-
-    VkCommandBuffer &get_current_command_buffer() {
-        return get_command_buffers()[frameIndex];
-    }
 
     // std::array<uniform_buffer, maxFramesInFlight> &get_shader_data_buffer() {
     //     return uniform_buffers_;
@@ -139,20 +106,12 @@ public:
 
     const VkImageView &get_current_swap_image_view() const;
 
-    void create_command_buffer();
-
 
     // void create_shader_data_buffer();
 
-    void create_fences();
-
-    void create_present_Semaphores();
-
-    void create_renderSemaphores();
 
     void create_timeline_Semaphores();
 
-    void copy_image_to_screen();
 
     void submit_render_queue(uint64_t time_line);
 
@@ -170,10 +129,7 @@ public:
     void get_image_to_render();
 
 
-    void destroy_and_recreate_fence_and_semaphore();
-
-    void engine_destroy();
-
+    void copy_image_to_screen();
 
     VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
 
