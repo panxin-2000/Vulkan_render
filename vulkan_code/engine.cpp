@@ -11,7 +11,7 @@ void Engine::get_query_results() {
     if (get_current_query_pool() != VK_NULL_HANDLE) {
         uint64_t timestamps[2]; // 准备接收数组
         VkResult result = vkGetQueryPoolResults(
-                                                handle.device_,
+                                                handle.get_device(),
                                                 get_current_query_pool(),
                                                 0,                  // 从 index 0 开始
                                                 2,                  // 获取 2 个结果
@@ -37,7 +37,7 @@ void Engine::create_query_pool() {
     queryPoolInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP; // 指定为时间戳类型
     queryPoolInfo.queryCount = 2;                       // 比如：一个存起点，一个存终点
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        if (vkCreateQueryPool(handle.device_, &queryPoolInfo, nullptr, &query_pools[i]) != VK_SUCCESS) {
+        if (vkCreateQueryPool(handle.get_device(), &queryPoolInfo, nullptr, &query_pools[i]) != VK_SUCCESS) {
             LOG_INFO(g_log(), "vkCreateQueryPool failed");
         } else {
             // vkResetQueryPool(handle.device_, queryPool, 0, 2);
@@ -49,7 +49,7 @@ void Engine::create_query_pool() {
 void Engine::destroy_query_pool() {
     const auto &handle = VK_handle::get();
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyQueryPool(handle.device_, query_pools[i], nullptr);
+        vkDestroyQueryPool(handle.get_device(), query_pools[i], nullptr);
         command_buffers_[i] = VK_NULL_HANDLE;
     }
 }

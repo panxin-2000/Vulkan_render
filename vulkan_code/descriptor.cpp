@@ -2,6 +2,8 @@
 // Created by 潘鑫 on 2026/3/3.
 //
 #include "descriptor.h"
+
+#include "create_texture.h"
 #include "descriptor_organized_sets_and_bindings.h"
 #include "descriptor_pool.h"
 
@@ -76,7 +78,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
         .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
     if (binding_flags != nullptr && !binding_flags->empty()) {
-        const uint32_t binding_less_size = handle.get_bindless_textures().size();
+        const uint32_t binding_less_size = get_bindless_textures().size();
         auto variableDescCountAI         = variable_descriptor(binding_less_size, *binding_flags, variableDescCount);
         texDescSetAlloc.pNext            = &variableDescCountAI;
     } else {

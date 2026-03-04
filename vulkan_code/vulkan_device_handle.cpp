@@ -357,19 +357,6 @@ void VK_handle::create_swap_chain_image_and_view() {
     }
 }
 
-/**
- * 虽然不用，暂时先留着
- */
-void VK_handle::create_depth_resources() {
-    // VkFormat depthFormat = findDepthFormat(physical_device_);
-    // auto swapChainExtent = get_current_extent();
-    // createImage(physical_device_, device_, swapChainExtent.width, swapChainExtent.height, depthFormat,
-    //             VK_IMAGE_TILING_OPTIMAL,
-    //             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage,
-    //             depthImageMemory);
-    // depthImageView = createImageView(device_, depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-}
-
 
 VKR_image_ptr VK_handle::create_depth_image_and_view() {
     // Depth attachment
@@ -424,26 +411,33 @@ VKR_image_ptr VK_handle::create_depth_image_and_view() {
     return {depth_image, depthImageAllocation, depth_image_view};
 }
 
-void VK_handle::destroy() { {
+void VK_handle::destroy() {
+    if (instance_ == VK_NULL_HANDLE)
+        return; {
         // 基本上是一个整体
         depth_image_->destroy_image();
         for (const auto &image: swap_chain_images_) {
             image->destroy_image();
         }
         vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
+        swap_chain_ = VK_NULL_HANDLE;
     }
 
 
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
+    surface_ = VK_NULL_HANDLE;
     VmaTotalStatistics stats;
     vmaCalculateStatistics(allocator_, &stats);
-
     // 获取全局未销毁的分配总数
     uint32_t activeAllocCount = stats.total.statistics.allocationCount;
 
     vmaDestroyAllocator(allocator_);
+    allocator_ = VK_NULL_HANDLE;
     vkDestroyDevice(device_, nullptr);
+    device_ = VK_NULL_HANDLE;
     vkDestroyInstance(instance_, nullptr);
+    instance_ = VK_NULL_HANDLE;
     glfwDestroyWindow(window_);
+    window_ = nullptr;
     glfwTerminate();
 }

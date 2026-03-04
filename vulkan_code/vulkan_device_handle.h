@@ -31,7 +31,7 @@ struct Texture_parameter {
 };
 
 class VK_handle {
-public:
+private:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
     std::string engine_name_      = "no engine";
@@ -42,21 +42,20 @@ public:
 
     std::vector<const char *> instanceExtensions;
 
-
-    // 需要给外部看到的变量
-    GLFWwindow *window_               = nullptr;
-    VkInstance instance_              = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_             = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
-    VkDevice device_                  = VK_NULL_HANDLE;
-    VkQueue graphics_queue_           = VK_NULL_HANDLE;
-    VkQueue present_queue_            = VK_NULL_HANDLE;
-    VkQueue transfer_queue_           = VK_NULL_HANDLE;
-    VkQueue compute_queue_            = VK_NULL_HANDLE;
-
-    // Engine engine_;
-
+    // 需要给外部看到的变量，添加函数给出
+    GLFWwindow *window_                = nullptr;
+    VkInstance instance_               = VK_NULL_HANDLE;
+    VkSurfaceKHR surface_              = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device_  = VK_NULL_HANDLE;
+    VkDevice device_                   = VK_NULL_HANDLE;
+    VkQueue graphics_queue_            = VK_NULL_HANDLE;
+    VkQueue present_queue_             = VK_NULL_HANDLE;
+    VkQueue transfer_queue_            = VK_NULL_HANDLE;
+    VkQueue compute_queue_             = VK_NULL_HANDLE;
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
+    VkSwapchainKHR swap_chain_         = VK_NULL_HANDLE;
+    VmaAllocator allocator_            = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
+
 
     /**
      * frameIndex 正在渲染的一帧图像
@@ -67,9 +66,10 @@ public:
     * 屏幕绘制比较慢的话，丢弃过时帧，选择最新帧绘制，开始渲染到开始显示的延迟的延迟不一致的问题
      */
 
-    Engine engine_;
 
 public:
+    Engine engine_;
+
     void engine_init() {
         engine_.engine_init();
         create_timeline_Semaphores();
@@ -89,26 +89,12 @@ public:
         return current_timeline;
     }
 
-
-    // std::array<uniform_buffer, maxFramesInFlight> &get_shader_data_buffer() {
-    //     return uniform_buffers_;
-    // }
-
-    // uniform_buffer &get_current_shader_data_buffer() {
-    //     return get_shader_data_buffer()[frameIndex];
-    // }
-
-
     const VkImage &get_current_swap_chain_image() const;
 
     const VkImageView &get_current_swap_image_view() const;
 
 
-    // void create_shader_data_buffer();
-
-
     void create_timeline_Semaphores();
-
 
     void submit_render_queue(uint64_t time_line);
 
@@ -128,15 +114,12 @@ public:
 
     void copy_image_to_screen();
 
-    VkSwapchainKHR swap_chain_ = VK_NULL_HANDLE;
 
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
     std::vector<VKR_image_ptr> swap_chain_images_;
-
     VKR_image_ptr depth_image_;
 
-    VmaAllocator allocator_ = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-    uint32_t queue_family_{0};                // 不清楚是否能够删除
+    uint32_t queue_family_{0}; // 不清楚是否能够删除
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
     struct {
@@ -147,24 +130,14 @@ public:
 
     bool framebufferResized = false;
 
-
-
-    auto &get_bindless_textures() {
-        return bindless_textures_;
-    }
-
 private:
-    std::vector<VkDescriptorImageInfo> bindless_textures_;
-
+    uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
     void create_instance();
 
-    // 显示相关
     void create_surface();
 
     bool choose_one_physical_device();
-
-    uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
     void create_device();
 
@@ -172,23 +145,15 @@ private:
 
     void create_swap_chain(VkSwapchainKHR old_swap_chain);
 
-    void create_depth_resources();
-
     void create_swap_chain_image_and_view();
 
     VKR_image_ptr create_depth_image_and_view();
 
-
-
 public:
     static VK_handle &get();
 
-
-
-    /**
-     * 顺序不能更改
-     */
     void init_device_handle() {
+        // 顺序不能更改
         create_instance();
         create_surface();
         choose_one_physical_device();
@@ -264,6 +229,10 @@ public:
         return device_;
     }
 
+    [[nodiscard]] const VkPhysicalDevice &get_physical_device() const {
+        return physical_device_;
+    }
+
     [[nodiscard]] const VkQueue &get_queue() const {
         return graphics_queue_;
     }
@@ -289,7 +258,7 @@ public:
         return allocator_;
     }
 
-    [[nodiscard]] const GLFWwindow *get_window() const {
+    [[nodiscard]] GLFWwindow *get_window() const {
         return window_;
     }
 

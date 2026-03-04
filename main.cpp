@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
     // auto entity = get_entt_instance().create();
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
-    register_glfw(handle.window_);
+    register_glfw(handle.get_window());
 
     auto block_entity = UI_block("功能块", 0, 0, 200, 200);
     add_button(block_entity, "按钮1", 420, 420, 480, 480);
@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) {
     // add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
 
     // Render loop
-    while (!glfwWindowShouldClose(handle.window_)) {
+    while (!glfwWindowShouldClose(handle.get_window())) {
         glfwWaitEvents();
-        if (GLFW_TRUE == glfwWindowShouldClose(handle.window_)) {
+        if (GLFW_TRUE == glfwWindowShouldClose(handle.get_window())) {
             break;
         }
         glfwPollEvents();  // Event polling

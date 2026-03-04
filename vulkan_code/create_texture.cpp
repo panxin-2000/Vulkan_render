@@ -10,6 +10,13 @@
 
 std::map<std::string, texture_and_share> texture_map_;
 
-auto &get_texture_map() {
+std::vector<VkDescriptorImageInfo> bindless_textures_;
+
+
+std::map<std::string, texture_and_share> &get_texture_map() {
     return texture_map_;
+}
+
+std::vector<VkDescriptorImageInfo> &get_bindless_textures() {
+    return bindless_textures_;
 }

@@ -11,6 +11,8 @@
 #include "vulkan_device_handle.h"
 #include <iostream>
 
+#include "create_texture.h"
+
 
 std::array<Texture_parameter, 3> textures{};
 
@@ -156,7 +158,7 @@ void create_textures_to_gpu(VK_handle &handle, VkCommandPool commandPool) {
             .imageView   = image_view_temp,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         };
-        handle.get_bindless_textures().push_back(temp);
+        get_bindless_textures().push_back(temp);
     }
 }
 

@@ -42,7 +42,7 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
             }
             ++i;
         }
-        vkUpdateDescriptorSets(handle.device_,
+        vkUpdateDescriptorSets(handle.get_device(),
                                static_cast<uint32_t>(descriptor_write_bindings.size()),
                                descriptor_write_bindings.data(),
                                0,

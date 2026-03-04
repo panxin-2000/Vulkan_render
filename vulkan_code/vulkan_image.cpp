@@ -192,7 +192,7 @@ void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int
                      uint32_t mipLevels) {
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(handle.physical_device_, imageFormat, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(handle.get_physical_device(), imageFormat, &formatProperties);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error("texture image format does not support linear blitting!");
@@ -418,11 +418,11 @@ VkSampler createTextureSampler(VK_handle &handle) {
 
 
     VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(handle.physical_device_, &supportedFeatures);
+    vkGetPhysicalDeviceFeatures(handle.get_physical_device(), &supportedFeatures);
     if (supportedFeatures.samplerAnisotropy) {
         samplerInfo.anisotropyEnable = VK_TRUE;
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(handle.physical_device_, &properties);
+        vkGetPhysicalDeviceProperties(handle.get_physical_device(), &properties);
         samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
     } else {
         samplerInfo.anisotropyEnable = VK_FALSE;
