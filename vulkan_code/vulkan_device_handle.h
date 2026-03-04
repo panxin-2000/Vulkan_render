@@ -151,11 +151,6 @@ public:
     VkDescriptorPool descriptorPool{VK_NULL_HANDLE}; // 最大的问题就是这里有一个pool
 
 
-    const VkCommandPool &get_command_pool() const {
-        return commandPool;
-    }
-
-
     VkDescriptorPool get_descriptor_pool() {
         return descriptorPool;
     }
@@ -166,8 +161,6 @@ public:
 
 private:
     std::vector<VkDescriptorImageInfo> bindless_textures_;
-
-    VkCommandPool commandPool = VK_NULL_HANDLE;
 
 
     void create_instance();
@@ -190,15 +183,6 @@ private:
 
     VKR_image_ptr create_depth_image_and_view();
 
-    void create_command_pool() {
-        // Command pool
-        const VkCommandPoolCreateInfo commandPoolCI{
-            .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-            .queueFamilyIndex = get_queue_Family()
-        };
-        VK_CHECK_RESULT(vkCreateCommandPool(get_device(), &commandPoolCI, nullptr, &commandPool));
-    }
 
     void init_Descriptor_Pool() {
         static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 250;
@@ -250,7 +234,6 @@ public:
         create_swap_chain(VK_NULL_HANDLE);
         create_swap_chain_image_and_view();
         depth_image_ = create_depth_image_and_view();
-        create_command_pool();
         init_Descriptor_Pool();
     }
 

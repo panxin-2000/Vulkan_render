@@ -16,8 +16,10 @@
 
 
 struct Engine {
+    VkCommandPool commandPool = VK_NULL_HANDLE;
+
     std::vector<VkSemaphore> render_to_image_semaphores_;
-    std::array<VkCommandPool, maxFramesInFlight> command_pools_     = {};
+    // std::array<VkCommandPool, maxFramesInFlight> command_pools_     = {};
     std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
     std::array<VkQueryPool, maxFramesInFlight> query_pools          = {};
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
@@ -30,6 +32,10 @@ struct Engine {
 public:
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences_;
+    }
+
+    const VkCommandPool &get_command_pool() const {
+        return commandPool;
     }
 
     VkFence &get_current_fences() {
@@ -87,8 +93,12 @@ public:
 
     void destroy_renderSemaphores();
 
+    void create_command_pool();
+
+    void destroy_command_pool();
 
     void engine_init() {
+        create_command_pool();
         create_command_buffer();
         create_fences();
         create_present_Semaphores();

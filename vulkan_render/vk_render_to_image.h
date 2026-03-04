@@ -99,8 +99,6 @@ public:
         handle.destroy_descriptorPool();
 
 
-        vkDestroyCommandPool(handle.get_device(), handle.get_command_pool(), nullptr);
-
         // pipeline 建议提前清理
         clean_all_pipeline(handle);
         clean_all_pipeline_layout(handle);

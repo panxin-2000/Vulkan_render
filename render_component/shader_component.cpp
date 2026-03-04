@@ -62,7 +62,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity)
 
         auto &global_bindings_set = shader_temp->shader_data_handle->global_bindings_set;
         if (!global_bindings_set.empty()) {
-            create_textures_to_gpu(handle, handle.get_command_pool());
+            create_textures_to_gpu(handle, handle.engine_.get_command_pool());
             auto sets_flags = create_descriptor_sets_flags(handle,
                                                            global_bindings_set);
             global_descriptor_set = allocate_descriptor_sets(handle,

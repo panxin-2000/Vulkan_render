@@ -123,7 +123,7 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     vkQueueSubmit(handle.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(handle.get_queue());
 
-    vkFreeCommandBuffers(handle.get_device(), handle.get_command_pool(), 1, &commandBuffer);
+    vkFreeCommandBuffers(handle.get_device(), handle.engine_.get_command_pool(), 1, &commandBuffer);
 }
 
 
@@ -132,7 +132,7 @@ VkCommandBuffer begin_one_command_buffer() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = handle.get_command_pool();
+    allocInfo.commandPool        = handle.engine_.get_command_pool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;

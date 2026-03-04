@@ -60,7 +60,7 @@ void Engine::create_command_buffer() {
 
     VkCommandBufferAllocateInfo cbAllocCI{
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool        = handle.get_command_pool(),
+        .commandPool        = get_command_pool(),
         .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
         .commandBufferCount = maxFramesInFlight
     };
@@ -71,7 +71,7 @@ void Engine::create_command_buffer() {
 void Engine::destroy_command_buffer() {
     const auto &handle = VK_handle::get();
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkFreeCommandBuffers(handle.get_device(), handle.get_command_pool(), 1, &command_buffers_[i]);
+        vkFreeCommandBuffers(handle.get_device(), get_command_pool(), 1, &command_buffers_[i]);
         command_buffers_[i] = VK_NULL_HANDLE;
     }
 }
@@ -148,4 +148,21 @@ void Engine::engine_destroy() {
     destroy_present_Semaphores();
     destroy_renderSemaphores();
     destroy_command_buffer();
+    destroy_command_pool();
+}
+
+void Engine::destroy_command_pool() {
+    const auto &handle = VK_handle::get();
+    vkDestroyCommandPool(handle.get_device(), get_command_pool(), nullptr);
+}
+
+void Engine::create_command_pool() {
+    // Command pool
+    const auto &handle = VK_handle::get();
+    const VkCommandPoolCreateInfo commandPoolCI{
+        .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = handle.get_queue_Family()
+    };
+    VK_CHECK_RESULT(vkCreateCommandPool(handle.get_device(), &commandPoolCI, nullptr, &commandPool));
 }
