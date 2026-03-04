@@ -152,11 +152,10 @@ inline void end_rendering(VK_handle &engine, VkQueryPool queryPool, const uint64
 
     vkCmdEndRendering(cb); // 这里和之后的 没有限制
     if (queryPool != VK_NULL_HANDLE) {
-        vkCmdWriteTimestamp(
-                            cb,
+        vkCmdWriteTimestamp(cb,
                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
                             queryPool,
-                            0 // query 索引
+                            1 // query 索引
                            );
     }
     gpu_log_label_info(cb, "结束记录时间");

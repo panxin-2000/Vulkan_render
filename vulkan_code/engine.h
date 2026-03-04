@@ -23,6 +23,7 @@ struct Engine {
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
 
+
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
 
@@ -60,19 +61,29 @@ public:
         return get_command_buffers()[frameIndex];
     }
 
+    VkQueryPool &get_current_query_pool() {
+        return query_pools[frameIndex];
+    }
+
+    void get_query_results();
+
     void create_command_buffer();
-
-    void create_fences();
-
-    void create_present_Semaphores();
-
-    void create_renderSemaphores();
 
     void destroy_command_buffer();
 
+    void create_query_pool();
+
+    void destroy_query_pool();
+
+    void create_fences();
+
     void destroy_fences();
 
+    void create_present_Semaphores();
+
     void destroy_present_Semaphores();
+
+    void create_renderSemaphores();
 
     void destroy_renderSemaphores();
 

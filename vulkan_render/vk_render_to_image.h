@@ -49,18 +49,22 @@ public:
                 init_need_objects(handle); // 主要是复制内存的操作
                 update_need_objects();
             }
+            const VkQueryPool queryPool = VK_NULL_HANDLE;
+
             handle.get_image_to_render();
             const uint64_t time_line = VK_handle::get_current_submit_timeline();
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            begin_rendering(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+            begin_rendering(handle, queryPool, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
             // 应该先划分不同的 pass 阶段，
+
             for (const auto &render_data: need_render_objects) {
                 build_command_buffer(handle, *render_data, time_line);
             }
-            end_rendering(handle, time_line);
+            end_rendering(handle, queryPool, time_line);
 
             handle.submit_render_queue(time_line);
             handle.copy_image_to_screen();
+
 
             // render_object_function();
             clean_need_objects();
@@ -157,7 +161,6 @@ private
 
 
     void update_need_objects() {
-
         vk_render_queue::instance().execute_update_lambda();
         // 内存内容的更新
         // 先查找放置在哪里来

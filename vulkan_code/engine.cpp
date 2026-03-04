@@ -6,6 +6,55 @@
 #include "vulkan_device_handle.h"
 
 
+void Engine::get_query_results() {
+    const auto &handle = VK_handle::get();
+    if (get_current_query_pool() != VK_NULL_HANDLE) {
+        uint64_t timestamps[2]; // 准备接收数组
+        VkResult result = vkGetQueryPoolResults(
+                                                handle.device_,
+                                                get_current_query_pool(),
+                                                0,                  // 从 index 0 开始
+                                                2,                  // 获取 2 个结果
+                                                sizeof(timestamps), // 总大小 16 字节
+                                                timestamps,         // 目标数组
+                                                sizeof(uint64_t),   // 每个元素的步长
+                                                VK_QUERY_RESULT_64_BIT
+                                               );
+        if (result == VK_SUCCESS) {
+            uint64_t start = timestamps[0];
+            uint64_t end   = timestamps[1];
+            // 计算耗时 (ns) = (end - start) * timestampPeriod
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        } else if (result == VK_NOT_READY) {
+        }
+    }
+}
+
+void Engine::create_query_pool() {
+    const auto &handle = VK_handle::get();
+    VkQueryPoolCreateInfo queryPoolInfo{};
+    queryPoolInfo.sType      = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    queryPoolInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP; // 指定为时间戳类型
+    queryPoolInfo.queryCount = 2;                       // 比如：一个存起点，一个存终点
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        if (vkCreateQueryPool(handle.device_, &queryPoolInfo, nullptr, &query_pools[i]) != VK_SUCCESS) {
+            LOG_INFO(g_log(), "vkCreateQueryPool failed");
+        } else {
+            // vkResetQueryPool(handle.device_, queryPool, 0, 2);
+            // 需要 VK_EXT_host_query_reset 的扩展
+        }
+    }
+}
+
+void Engine::destroy_query_pool() {
+    const auto &handle = VK_handle::get();
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        vkDestroyQueryPool(handle.device_, query_pools[i], nullptr);
+        command_buffers_[i] = VK_NULL_HANDLE;
+    }
+}
+
+
 void Engine::create_command_buffer() {
     const auto &handle = VK_handle::get();
 
