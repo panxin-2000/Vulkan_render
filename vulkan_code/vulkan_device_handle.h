@@ -156,13 +156,8 @@ public:
     VkDescriptorPool descriptorPool{VK_NULL_HANDLE}; // 最大的问题就是这里有一个pool
 
 
-    auto &get_indices_map() {
-        return indices_map_;
-    }
 
-    auto &get_pipeline_map() {
-        return pipeline_map_;
-    }
+
 
 
     const VkCommandPool &get_command_pool() const {
@@ -179,9 +174,7 @@ public:
     }
 
 private:
-    std::map<std::string, pipeline_and_share> pipeline_map_;
 
-    std::map<Indices_type, mesh_and_share> indices_map_;
     std::vector<VkDescriptorImageInfo> bindless_textures_;
 
     VkCommandPool commandPool = VK_NULL_HANDLE;

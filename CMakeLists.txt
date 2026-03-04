@@ -167,6 +167,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/create_shader.cpp"
             "vulkan_code/descriptor.cpp"
             "vulkan_code/create_texture.cpp"
+            "vulkan_code/create_pipeline.cpp"
             "vulkan_code/pipeline_layout.cpp"
             "vulkan_code/sets_and_bindings_layout.cpp"
             "vulkan_code/render_function.cpp"

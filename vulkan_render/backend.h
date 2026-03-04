@@ -26,8 +26,7 @@ inline bool add_object_to_render(const entt::entity entity) {
     VkPipeline pipeline_t            = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        pipeline_t = find_pipeline(handle, *shader_temp->shader_data_handle,
-                                   VK_handle::get().get_pipeline_map());
+        pipeline_t      = find_pipeline(handle, *shader_temp->shader_data_handle);
         pipeline_layout = shader_temp->shader_data_handle->pipeline_layout;
     } else {
         // 打印一个 entity name 没有 VKR_shader
