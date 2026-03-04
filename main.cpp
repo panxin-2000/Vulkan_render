@@ -19,6 +19,7 @@
 #include <DirectXMath.h>
 #include <iostream>
 
+#include "descriptor_pool.h"
 #include "update_push_constants_data.h"
 
 void register_glfw(GLFWwindow *window);
@@ -61,8 +62,8 @@ int main(int argc, char *argv[]) {
     std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VK_handle::get();
-    handle.engine_init();
-
+    handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
+    init_Descriptor_Pool();
 
     render_thread_start(handle);
 

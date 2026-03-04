@@ -21,6 +21,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 
+#include "descriptor_pool.h"
 #include "pipeline_layout.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
@@ -96,7 +97,7 @@ public:
         need_render_objects.clear(); //
         clean_need_objects();
 
-        handle.destroy_descriptorPool();
+        destroy_descriptorPool();
 
 
         // pipeline 建议提前清理

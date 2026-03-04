@@ -3,6 +3,7 @@
 //
 #include "descriptor.h"
 #include "descriptor_organized_sets_and_bindings.h"
+#include "descriptor_pool.h"
 
 
 void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
@@ -70,7 +71,7 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = nullptr,
-        .descriptorPool     = handle.get_descriptor_pool(),
+        .descriptorPool     = get_descriptor_pool(),
         .descriptorSetCount = static_cast<uint32_t>(descriptor_set_layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
