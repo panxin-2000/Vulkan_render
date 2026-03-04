@@ -19,6 +19,14 @@ void Engine::create_command_buffer() {
                                  command_buffers_.data()));
 }
 
+void Engine::destroy_command_buffer() {
+    const auto &handle = VK_handle::get();
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        vkFreeCommandBuffers(handle.get_device(), handle.get_command_pool(), 1, &command_buffers_[i]);
+        command_buffers_[i] = VK_NULL_HANDLE;
+    }
+}
+
 
 void Engine::create_fences() {
     const auto &handle = VK_handle::get();
@@ -28,6 +36,13 @@ void Engine::create_fences() {
     }
 }
 
+void Engine::destroy_fences() {
+    const auto &handle = VK_handle::get();
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        vkDestroyFence(handle.get_device(), fences_[i], nullptr); //  这里还需要
+        fences_[i] = VK_NULL_HANDLE;
+    }
+}
 
 void Engine::create_present_Semaphores() {
     const auto &handle = VK_handle::get();
@@ -35,6 +50,14 @@ void Engine::create_present_Semaphores() {
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(handle.get_device(), &semaphoreCI,
                                      nullptr, &present_semaphores_[i]));
+    }
+}
+
+void Engine::destroy_present_Semaphores() {
+    const auto &handle = VK_handle::get();
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        vkDestroySemaphore(handle.get_device(), present_semaphores_[i], nullptr); //
+        present_semaphores_[i] = VK_NULL_HANDLE;
     }
 }
 
@@ -49,27 +72,19 @@ void Engine::create_renderSemaphores() {
     }
 }
 
-void VK_handle::create_timeline_Semaphores() {
-    VkSemaphoreTypeCreateInfo vk_semaphore_type_create_info = {
-        VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr, VK_SEMAPHORE_TYPE_TIMELINE, 0
-    };
-    VkSemaphoreCreateInfo vk_semaphore_create_info = {
-        VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &vk_semaphore_type_create_info, 0
-    };
-    vkCreateSemaphore(get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
+void Engine::destroy_renderSemaphores() {
+    const auto &handle = VK_handle::get();
+    for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
+        vkDestroySemaphore(handle.get_device(), render_to_image_semaphores_[i], nullptr);
+        render_to_image_semaphores_[i] = VK_NULL_HANDLE;
+    }
 }
 
 
 void Engine::destroy_and_recreate_fence_and_semaphore() {
-    const auto &handle = VK_handle::get();
-
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(handle.get_device(), fences_[i], nullptr);                 //  这里还需要
-        vkDestroySemaphore(handle.get_device(), present_semaphores_[i], nullptr); //
-    }
-    for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-        vkDestroySemaphore(handle.get_device(), render_to_image_semaphores_[i], nullptr);
-    }
+    destroy_fences();
+    destroy_present_Semaphores();
+    destroy_renderSemaphores();
     create_fences();
     create_present_Semaphores();
     create_renderSemaphores();
@@ -80,14 +95,8 @@ void Engine::destroy_and_recreate_fence_and_semaphore() {
 void Engine::engine_destroy() {
     const auto &handle = VK_handle::get();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(handle.get_device()));
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(handle.get_device(), fences_[i], nullptr); //  这里还需要
-        fences_[i] = VK_NULL_HANDLE;
-        vkDestroySemaphore(handle.get_device(), present_semaphores_[i], nullptr); //
-        present_semaphores_[i] = VK_NULL_HANDLE;
-    }
-    for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-        vkDestroySemaphore(handle.get_device(), render_to_image_semaphores_[i], nullptr);
-        render_to_image_semaphores_[i] = VK_NULL_HANDLE;
-    }
+    destroy_fences();
+    destroy_present_Semaphores();
+    destroy_renderSemaphores();
+    destroy_command_buffer();
 }

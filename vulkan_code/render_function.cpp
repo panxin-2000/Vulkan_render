@@ -108,3 +108,14 @@ void VK_handle::get_image_to_render() {
         std::cout << "failed to acquire swap chain image!" << std::endl;
     }
 }
+
+
+void VK_handle::create_timeline_Semaphores() {
+    VkSemaphoreTypeCreateInfo vk_semaphore_type_create_info = {
+        VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO, nullptr, VK_SEMAPHORE_TYPE_TIMELINE, 0
+    };
+    VkSemaphoreCreateInfo vk_semaphore_create_info = {
+        VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &vk_semaphore_type_create_info, 0
+    };
+    vkCreateSemaphore(get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
+}

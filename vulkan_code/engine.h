@@ -68,6 +68,14 @@ public:
 
     void create_renderSemaphores();
 
+    void destroy_command_buffer();
+
+    void destroy_fences();
+
+    void destroy_present_Semaphores();
+
+    void destroy_renderSemaphores();
+
 
     void engine_init() {
         create_command_buffer();

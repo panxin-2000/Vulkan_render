@@ -76,10 +76,12 @@ public:
 
 public:
     void engine_init() {
+        engine_.engine_init();
         create_timeline_Semaphores();
     }
 
     void engine_destroy() {
+        engine_.engine_destroy();
         vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);
         vk_timeline_semaphore_ = VK_NULL_HANDLE; // 这里设置为 VK_NULL_HANDLE 了，但是上面几个并没有
     }
