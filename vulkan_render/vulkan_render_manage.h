@@ -7,8 +7,6 @@
 #include <mutex>
 #include <thread>
 #include <utility>
-#include "global_singleton.h"
-#include "Geometry_data.h"
 
 
 class vk_render_queue {

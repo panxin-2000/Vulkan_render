@@ -242,32 +242,35 @@ VKR_buffer_block::~VKR_buffer_block() {
 };
 
 
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t size) {
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t request_size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
-    if (const auto freed_memory_it = size_and_offset_map.lower_bound(size);
+    if (const auto freed_memory_it = size_and_offset_map.lower_bound(request_size);
         freed_memory_it != size_and_offset_map.end()) {
         // it->first 是最接近且满足条件的 size
         // it->second 是对应的偏移量
-        std::cout << "找到最合适的块，大小为: " << freed_memory_it->first;
+        LOG_DEBUG(g_log(), "find free memory size {} offset {} request_size {} ",
+                  freed_memory_it->first,
+                  freed_memory_it->second.offset_,
+                  request_size);
         auto temp_size   = freed_memory_it->first;
         auto temp_offset = freed_memory_it->second;
-        if (temp_size != size) {
+        if (temp_size != request_size) {
             auto it_offset = offset_and_size_map.find(temp_offset.offset_);
             if (freed_memory_it != size_and_offset_map.end()) {
                 //                                空闲大小              空闲起始地址
-                size_and_offset_map.insert({temp_size - size, {temp_offset.offset_ + size}});
+                size_and_offset_map.insert({temp_size - request_size, {temp_offset.offset_ + request_size}});
                 //                                申请大小              申请起始地址
                 size_and_offset_map.erase(freed_memory_it);
                 // offset 不变           申请大小改变        类型改变
-                it_offset->second = {size, false};
+                it_offset->second = {request_size, false};
                 //                                空闲起始地址                  空闲大小
-                offset_and_size_map.insert({temp_offset.offset_ + size, {temp_size - size, true}});
+                offset_and_size_map.insert({temp_offset.offset_ + request_size, {temp_size - request_size, true}});
             }
         }
-        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.offset_, size);
+        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.offset_, request_size);
     } else {
-        std::cout << "没有足够大的连续空间";
+        LOG_DEBUG(g_log(), "find free memory failed for request_size {} ", request_size);
     }
     return {};
 }

@@ -105,10 +105,7 @@ public:
     }
 
 
-    /**
-     *
-     * @param imageIndex 必须用 imageIndex 去找图像资源
-     */
+
     void get_image_to_render();
 
 

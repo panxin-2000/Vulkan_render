@@ -147,7 +147,7 @@ public:
 
 // VKR_buffer_ptr 另外一个方式，不进行池化，直接 通过指向 指向 VKR_buffer
 
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, uint64_t size);
+VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, uint64_t request_size);
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size);
 
