@@ -68,8 +68,7 @@ public:
     }
 };
 
-std::optional<Model_mesh> create_mesh(const entt::entity entity,
-                                      std::map<Geometry_data *, mesh_and_share> &map);
+std::optional<Model_mesh> create_mesh(const entt::entity entity);
 
 inline bool add_geometry_data(entt::entity entity_,
                               float min_x,

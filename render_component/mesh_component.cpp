@@ -7,6 +7,11 @@
 #include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 
+std::map<Geometry_data *, mesh_and_share> mesh_map_;
+
+auto &get_mesh_map() {
+    return mesh_map_;
+}
 
 Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
                             const share_block &indices_) {
@@ -40,9 +45,9 @@ Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices
 }
 
 
-std::optional<Model_mesh> create_mesh(const entt::entity entity,
-                                      std::map<Geometry_data *, mesh_and_share> &map) {
-    const auto &handle = VK_handle::get();
+std::optional<Model_mesh> create_mesh(const entt::entity entity) {
+    std::map<Geometry_data *, mesh_and_share> &map = get_mesh_map();
+    const auto &handle                             = VK_handle::get();
     if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
         auto it = map.find(data);
         if (it != map.end()) {
@@ -80,11 +85,11 @@ inline Model_mesh *find_mesh(Geometry_data data,
 
 void clean_all_mesh_object() {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-    for (const auto &[key, value]: VK_handle::get().get_mesh_map()) {
+    for (const auto &[key, value]: get_mesh_map()) {
         value.mesh.vertices->destroy_buffer();
         // ->不清理会直接爆异常
     }
-    VK_handle::get().get_mesh_map().clear();
+    get_mesh_map().clear();
     // discard_buffer_map_clean();
 }
 

@@ -37,7 +37,7 @@ inline bool add_object_to_render(const entt::entity entity) {
     const auto descriptor_sets = allocate_descriptor_sets(entity);
     update_bindings_to_descriptor_sets(entity, descriptor_sets);
 
-    const auto mesh = create_mesh(entity, VK_handle::get().get_mesh_map());
+    const auto mesh = create_mesh(entity);
     if (!mesh.has_value()) {
         // 打印一个 entity name 读取 mesh 错误
     }
