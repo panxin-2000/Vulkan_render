@@ -25,7 +25,7 @@ std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(cons
 
 
 std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_handle &handle,
-                                                                         VKR_shader &paths);
+                                                                         VKR_shader_paths &paths);
 
 void clean_all_shader_object(VK_handle &handle);
 

@@ -142,7 +142,7 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle, vk_shader_data &da
 
 VkPipeline create_pipeline(VK_handle &handle, vk_shader_data &data);
 
-VkPipeline find_pipeline(VK_handle &handle, vk_shader_data &data);
+VkPipeline find_pipeline(VK_handle &handle, std::shared_ptr<vk_shader_data> &data);
 
 
 void clean_all_pipeline(VK_handle &handle);

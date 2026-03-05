@@ -328,7 +328,7 @@ inline void print_layout_binding_line(std::string filePath) {
 }
 
 
-inline std::string get_shader_key(const VKR_shader &paths) {
+inline std::string get_shader_key(const VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
@@ -366,14 +366,14 @@ inline std::string get_shader_key(const VKR_shader &paths) {
 
 //
 static sets_map organize_descriptor_set_and_binding_layouts(
-    VKR_shader &paths) {
+    VKR_shader_paths &paths, std::shared_ptr<vk_shader_data> &shader_data) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
     const std::string &computer_path = paths.computer_path_;
 
     sets_map sorted_sets_bindings;
-    sets_map &global_bindings_set = paths.shader_data_handle->global_bindings_set;
+    sets_map &global_bindings_set = shader_data->global_bindings_set;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     if (!vertex_path.empty()) {
@@ -412,8 +412,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       vertexBindings);
         print_layout_binding_line(computer_path);
     }
-    paths.shader_data_handle->vertexAttributes = vertexAttributes;
-    paths.shader_data_handle->vertexBindings   = vertexBindings;
+    shader_data->vertexAttributes = vertexAttributes;
+    shader_data->vertexBindings   = vertexBindings;
 #ifndef NDEBUG
     print_sorted_resources(sorted_sets_bindings);
 #endif

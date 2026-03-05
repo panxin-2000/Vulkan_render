@@ -84,7 +84,7 @@ std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(cons
 
 
 std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_handle &handle,
-                                                                         VKR_shader &paths) {
+                                                                         VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
