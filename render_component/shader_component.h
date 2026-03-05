@@ -75,7 +75,6 @@ public:
     std::string fragment_path_;
     std::string computer_path_;
     std::shared_ptr<vk_shader_data> shader_data_handle = nullptr;
-    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
 
     bool init();
 
@@ -107,6 +106,7 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
         } else {
             sets_map_in_for = &shader_temp->shader_data_handle->model_sets_bindings;
         }
+        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
         for (auto const &[set_value, bindings_map]: *sets_map_in_for) {
             for (const auto &[binding_value, info]: bindings_map) {
                 if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
@@ -117,15 +117,15 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
                     temp.dstSet                         = set_value;
                     temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                     // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
-                    temp.descriptor_write_binding.dstBinding          = binding_value;
-                    temp.descriptor_write_binding.dstArrayElement     = 0;
-                    temp.descriptor_write_binding.descriptorType      = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    temp.descriptor_write_binding.descriptorCount     = 1;
-                    temp.descriptor_write_binding.pBufferInfo         = nullptr;
-                    temp.descriptor_write_binding.pImageInfo          = nullptr;
-                    temp.descriptor_write_binding.pTexelBufferView    = nullptr;
-                    temp.bufferInfo                                   = {true, buffer_block};
-                    shader_temp->update_descriptor_sets[binding_name] = temp;
+                    temp.descriptor_write_binding.dstBinding       = binding_value;
+                    temp.descriptor_write_binding.dstArrayElement  = 0;
+                    temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    temp.descriptor_write_binding.descriptorCount  = 1;
+                    temp.descriptor_write_binding.pBufferInfo      = nullptr;
+                    temp.descriptor_write_binding.pImageInfo       = nullptr;
+                    temp.descriptor_write_binding.pTexelBufferView = nullptr;
+                    temp.bufferInfo                                = {true, buffer_block};
+                    vk_s_d_s.update_descriptor_sets[binding_name]  = temp;
                     return true;
                 }
             }

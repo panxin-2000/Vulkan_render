@@ -23,10 +23,11 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
+        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
         std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
-        descriptor_write_bindings.resize(shader_temp->update_descriptor_sets.size());
+        descriptor_write_bindings.resize(vk_s_d_s.update_descriptor_sets.size());
         size_t i = 0;
-        for (auto &[name,binding_update]: shader_temp->update_descriptor_sets) {
+        for (auto &[name,binding_update]: vk_s_d_s.update_descriptor_sets) {
             descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
             descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
             if (binding_update.bufferInfo.first) {
@@ -99,8 +100,8 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity)
     std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
     auto &handle = VK_handle::get();
     if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        g_entt().emplace_or_replace<vk_shader_descriptor_sets>(entity);
-        auto &vk_s_d_s = g_entt().get<vk_shader_descriptor_sets>(entity);
+        // get_or_emplace 新找到了一个函数，有就返回，没有就创建
+        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
 
         vk_s_d_s.global_descriptor_sets = get_global_descriptor_set(entity);
         std::vector<VkDescriptorSet> object_descriptor_sets;
