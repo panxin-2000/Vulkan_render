@@ -48,6 +48,13 @@ struct Update_descriptor_binding {
     std::pair<bool, VkBufferView> TexelBufferView;
 };
 
+
+struct vk_shader_descriptor_sets {
+    std::vector<VkDescriptorSet> global_descriptor_sets;
+    std::vector<VkDescriptorSet> model_descriptor_sets;
+    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
+};
+
 class VKR_shader {
 public:
     VKR_shader(const std::string &vertex_path,

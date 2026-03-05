@@ -60,6 +60,7 @@ Suzanne_push_constant get_shader_data() {
 int main(int argc, char *argv[]) {
     DirectX::XMVECTOR v = DirectX::XMVectorSet(1.0f, 2.0f, 3.0f, 4.0f);
     std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
+    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VK_handle::get();
     handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁

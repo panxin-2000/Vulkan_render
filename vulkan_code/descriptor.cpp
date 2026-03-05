@@ -60,15 +60,15 @@ auto variable_descriptor(const uint32_t binding_less_size,
 
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
-                              const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
-                              const std::vector<VkDescriptorBindingFlags> *binding_flags) {
+                                                      const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                                                      const std::vector<VkDescriptorBindingFlags> &binding_flags) {
     const uint32_t resize_number = descriptor_set_layouts.size();
-    std::vector<VkDescriptorSet> descriptor_set_texture;
+    std::vector<VkDescriptorSet> descriptor_sets;
     if (descriptor_set_layouts.empty())
-        return descriptor_set_texture;
+        return descriptor_sets;
 
     std::vector<uint32_t> variableDescCount;
-    descriptor_set_texture.resize(resize_number);
+    descriptor_sets.resize(resize_number);
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -77,15 +77,18 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
         .descriptorSetCount = static_cast<uint32_t>(descriptor_set_layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
-    if (binding_flags != nullptr && !binding_flags->empty()) {
-        const uint32_t binding_less_size = get_bindless_textures().size();
-        auto variableDescCountAI         = variable_descriptor(binding_less_size, *binding_flags, variableDescCount);
-        texDescSetAlloc.pNext            = &variableDescCountAI;
-    } else {
-        texDescSetAlloc.pNext = nullptr;
+    texDescSetAlloc.pNext = nullptr;
+    if (!binding_flags.empty()) {
+        for (const auto flag: binding_flags) {
+            if (flag != 0) {
+                const uint32_t binding_less_size = get_bindless_textures().size(); // 这里肯定还是有问题的
+                auto variableDescCountAI = variable_descriptor(binding_less_size, binding_flags, variableDescCount);
+                texDescSetAlloc.pNext = &variableDescCountAI;
+            }
+        }
     }
 
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc,
-                                 descriptor_set_texture.data()));
-    return descriptor_set_texture;
+                                 descriptor_sets.data()));
+    return descriptor_sets;
 }

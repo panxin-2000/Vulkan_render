@@ -38,8 +38,8 @@ auto variable_descriptor(const uint32_t binding_less_size,
  * @return
  */
 std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
-                              const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
-                              const std::vector<VkDescriptorBindingFlags> *binding_flags);
+                                                      const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                                                      const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
 
 
 #endif //HOWTOVULKAN_DESCRIPTOR_H

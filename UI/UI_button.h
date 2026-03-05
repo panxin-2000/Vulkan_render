@@ -104,6 +104,8 @@ entt::entity UI_button(const std::string &name,
                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                  "", "");
+
+
     if (auto *scene_node = g_entt().try_get<Rect_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
@@ -117,15 +119,13 @@ entt::entity UI_button(const std::string &name,
     identity_matrix_4x4(&view);
     UI_matrix_4x4(&model, 1280, 720);
 
-    add_uniform_buffer_data(entity_, "view_4x4", view);
+    add_uniform_buffer_data(entity_, "global_view_4x4", view);
     add_uniform_buffer_data(entity_, "model_4x4", model);
 
 
     add_object_to_render(entity_); // 因为这里没有区分。全部都在场景的根节点之下
 
-    if (g_entt().all_of<Scene_Component, Rect_transform>(entity_)) {
-        auto &position = g_entt().get<Rect_transform>(entity_);
-        position.update_2D_position_matrix();
+    if (g_entt().all_of<Scene_Component>(entity_)) {
         scene_root_add_child(entity_);
     }
     return entity_;

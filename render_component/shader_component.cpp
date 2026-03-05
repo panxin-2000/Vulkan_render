@@ -8,6 +8,7 @@
 #include "create_shader.h"
 #include "descriptor.h"
 #include "pipeline_layout.h"
+#include "scene_component.h"
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
 #include "vulkan_device_handle.h"
@@ -50,6 +51,47 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
     }
 }
 
+std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity) {
+    std::vector<VkDescriptorSet> global_descriptor_set;
+    auto &handle = VK_handle::get();
+
+    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
+        if (!shader_temp->shader_data_handle->global_descriptor_sets_layout.empty()) {
+            auto sets_flags = create_descriptor_sets_flags(handle,
+                                                           shader_temp->shader_data_handle->global_bindings_set);
+            global_descriptor_set = allocate_descriptor_sets(handle,
+                                                             shader_temp->shader_data_handle->
+                                                             global_descriptor_sets_layout,
+                                                             sets_flags);
+        }
+    }
+    //
+    // if (!shader_temp->shader_data_handle->global_descriptor_sets_layout.empty()) {
+    //     auto current_entity = entity;
+    //     while (true) {
+    //         if (const auto parent_entity = get_parent(current_entity); parent_entity != entt::null) {
+    //             if (const auto shader_parent = g_entt().try_get<VKR_shader>(entity)) {
+    //                 if (!shader_parent->shader_data_handle->global_bindings_set.empty()) {
+    //                     auto &global_bindings_set = shader_parent->shader_data_handle->global_bindings_set;
+    //                     break;
+    //                 }
+    //             }
+    //             current_entity = parent_entity;
+    //         } else if (parent_entity == entt::null) {
+    //             break;
+    //         }
+    //     }
+    //     // 那就不应该由这里去创建了，而是应该向 父节点 查找，查找到话就拿到并返回
+    //     // 那么要求是什么呢？父节点 和这个节点有相同的着色器
+    //     // 那么是否可以这样呢？ 只要有几何节点，就可以查找自身，使用自身的着色器，
+    //     // 如果自身没有，就使用父节点的着色器
+    //     // 好处是什么呢？只要能分出几何体，就可以绘制，glfw 的物体的 mesh也是可以被解析的
+    //     // 如果一个 mesh 有特殊的材质，就可以专门指定，但是 model 还是用的父节点的数据
+    // }
+
+    return global_descriptor_set;
+}
+
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
@@ -57,35 +99,27 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity)
     std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
     auto &handle = VK_handle::get();
     if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        std::vector<VkDescriptorSet> global_descriptor_set;
+        std::vector<VkDescriptorSet> global_descriptor_set = get_global_descriptor_set(entity);
         std::vector<VkDescriptorSet> object_descriptor_sets;
 
-        auto &global_bindings_set = shader_temp->shader_data_handle->global_bindings_set;
-        if (!global_bindings_set.empty()) {
-            create_textures_to_gpu(handle, handle.engine_.get_command_pool());
+        if (!shader_temp->shader_data_handle->model_descriptor_sets_layout.empty()) {
+            // 只是一个物体，查找当前物体的参数
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           global_bindings_set);
-            global_descriptor_set = allocate_descriptor_sets(handle,
-                                                             shader_temp->shader_data_handle->
-                                                             global_descriptor_sets_layout,
-                                                             &sets_flags);
-            update_descriptor_sets(handle, handle.get_bindless_textures(), global_descriptor_set);
-            // 更新应该被拆出来， 放到需要的位置再上传
-        } {
-            // 下面这段有问题，logic_data->shader_paths_.shader_data_handle->descriptor_sets_layout
-            // 这个参数没有分离出来
+                                                           shader_temp->shader_data_handle->model_sets_bindings);
+
             object_descriptor_sets = allocate_descriptor_sets(handle,
                                                               shader_temp->shader_data_handle->
                                                               model_descriptor_sets_layout,
-                                                              nullptr);
+                                                              sets_flags);
         }
         descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
-
         descriptor_sets.insert(descriptor_sets.end(), global_descriptor_set.begin(), global_descriptor_set.end());
         descriptor_sets.insert(descriptor_sets.end(), object_descriptor_sets.begin(), object_descriptor_sets.end());
     }
+
     return descriptor_sets;
 }
+
 
 bool VKR_shader::init() {
     if (shader_data_handle == nullptr) {
