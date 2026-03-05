@@ -137,4 +137,6 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
 
 std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity);
 
+std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity);
+
 #endif //HELLO_MAC_SHADER_COMPONENT_H

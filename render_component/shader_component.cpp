@@ -99,7 +99,10 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity)
     std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
     auto &handle = VK_handle::get();
     if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        std::vector<VkDescriptorSet> global_descriptor_set = get_global_descriptor_set(entity);
+        g_entt().emplace_or_replace<vk_shader_descriptor_sets>(entity);
+        auto &vk_s_d_s = g_entt().get<vk_shader_descriptor_sets>(entity);
+
+        vk_s_d_s.global_descriptor_sets = get_global_descriptor_set(entity);
         std::vector<VkDescriptorSet> object_descriptor_sets;
 
         if (!shader_temp->shader_data_handle->model_descriptor_sets_layout.empty()) {
@@ -107,19 +110,29 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity)
             auto sets_flags = create_descriptor_sets_flags(handle,
                                                            shader_temp->shader_data_handle->model_sets_bindings);
 
-            object_descriptor_sets = allocate_descriptor_sets(handle,
-                                                              shader_temp->shader_data_handle->
-                                                              model_descriptor_sets_layout,
-                                                              sets_flags);
+            vk_s_d_s.model_descriptor_sets = allocate_descriptor_sets(handle,
+                                                                      shader_temp->shader_data_handle->
+                                                                      model_descriptor_sets_layout,
+                                                                      sets_flags);
         }
-        descriptor_sets.reserve(global_descriptor_set.size() + object_descriptor_sets.size());
-        descriptor_sets.insert(descriptor_sets.end(), global_descriptor_set.begin(), global_descriptor_set.end());
-        descriptor_sets.insert(descriptor_sets.end(), object_descriptor_sets.begin(), object_descriptor_sets.end());
     }
 
     return descriptor_sets;
 }
 
+std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
+    std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
+    if (auto vk_s_d_s = g_entt().try_get<vk_shader_descriptor_sets>(entity)) {
+        descriptor_sets.reserve(vk_s_d_s->global_descriptor_sets.size() + vk_s_d_s->model_descriptor_sets.size());
+        descriptor_sets.insert(descriptor_sets.end(),
+                               vk_s_d_s->global_descriptor_sets.begin(),
+                               vk_s_d_s->global_descriptor_sets.end());
+        descriptor_sets.insert(descriptor_sets.end(),
+                               vk_s_d_s->model_descriptor_sets.begin(),
+                               vk_s_d_s->model_descriptor_sets.end());
+    }
+    return descriptor_sets;
+}
 
 bool VKR_shader::init() {
     if (shader_data_handle == nullptr) {

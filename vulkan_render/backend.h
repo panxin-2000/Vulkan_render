@@ -34,7 +34,7 @@ inline bool add_object_to_render(const entt::entity entity) {
 
     //
     const auto descriptor_sets = allocate_descriptor_sets(entity);
-    update_bindings_to_descriptor_sets(entity, descriptor_sets);
+    update_bindings_to_descriptor_sets(entity, get_descriptor_sets(entity));
 
     const auto mesh = create_mesh(entity);
     if (!mesh.has_value()) {
@@ -50,7 +50,7 @@ inline bool add_object_to_render(const entt::entity entity) {
     vk_data->viewport               = VK_handle::get().get_viewport();
     vk_data->vk_pipeline            = pipeline_t;
     vk_data->debug_name             = get_entity_name(entity);
-    vk_data->vk_descriptor_set      = descriptor_sets; // 唯一有可能每帧更新的部分
+    vk_data->vk_descriptor_set      = get_descriptor_sets(entity); // 唯一有可能每帧更新的部分
     vk_data->push_constants_address = 0;
     vk_render_queue::instance().render_object_need_init(vk_data);
     return true;
