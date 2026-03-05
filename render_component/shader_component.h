@@ -26,10 +26,10 @@ struct vk_shader_data {
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
 
     // 再想增加一个组的时候，还是需要到这里来增加
-    sets_map global_bindings_set;
-    sets_map model_sets_bindings;
+    sets_map global_sets_bindings;
+    sets_map object_sets_bindings;
     std::vector<VkDescriptorSetLayout> global_descriptor_sets_layout;
-    std::vector<VkDescriptorSetLayout> model_descriptor_sets_layout;
+    std::vector<VkDescriptorSetLayout> object_descriptor_sets_layout;
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
@@ -49,10 +49,11 @@ struct Update_descriptor_binding {
 };
 
 
-struct vk_shader_descriptor_sets {
+struct Parameter_used {
     std::vector<VkDescriptorSet> global_descriptor_sets;
-    std::vector<VkDescriptorSet> model_descriptor_sets;
-    std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
+    std::vector<VkDescriptorSet> object_descriptor_sets;
+    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
+    std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
 };
 
 class VKR_shader_paths {
@@ -94,44 +95,38 @@ public:
 
 std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
 
-void update_bindings_to_descriptor_sets(const entt::entity entity,
-                                        const std::vector<VkDescriptorSet> &descriptor_sets);
+void update_object_bindings_to_descriptor_sets(const entt::entity entity);
+
+void update_global_bindings_to_descriptor_sets(const entt::entity entity);
 
 #include "update_push_constants_data.h"
 
+
 template<typename T1>
-bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
-    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
-        sets_map *sets_map_in_for = nullptr;
-        const auto &shader_data   =
-                g_entt().get_or_emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        if (binding_name.find("global") != std::string::npos) {
-            sets_map_in_for = &shader_data->global_bindings_set;
-        } else {
-            sets_map_in_for = &shader_data->model_sets_bindings;
-        }
-        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
-        for (auto const &[set_value, bindings_map]: *sets_map_in_for) {
-            for (const auto &[binding_value, info]: bindings_map) {
-                if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
-                    auto buffer_block                   = copy_data_to_gpu_buffer(binding_data);
-                    Update_descriptor_binding temp      = {};
-                    temp.binding_name                   = binding_name;
-                    temp.resource_type                  = info.resource_type;
-                    temp.dstSet                         = set_value;
-                    temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
-                    temp.descriptor_write_binding.dstBinding       = binding_value;
-                    temp.descriptor_write_binding.dstArrayElement  = 0;
-                    temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    temp.descriptor_write_binding.descriptorCount  = 1;
-                    temp.descriptor_write_binding.pBufferInfo      = nullptr;
-                    temp.descriptor_write_binding.pImageInfo       = nullptr;
-                    temp.descriptor_write_binding.pTexelBufferView = nullptr;
-                    temp.bufferInfo                                = {true, buffer_block};
-                    vk_s_d_s.update_descriptor_sets[binding_name]  = temp;
-                    return true;
-                }
+bool add_uniform_buffer_data_detail(sets_map &sets_map_in_for,
+                                    std::map<std::string, Update_descriptor_binding> &update_,
+                                    const std::string &binding_name,
+                                    T1 binding_data) {
+    for (auto const &[set_value, bindings_map]: sets_map_in_for) {
+        for (const auto &[binding_value, info]: bindings_map) {
+            if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
+                auto buffer_block                   = copy_data_to_gpu_buffer(binding_data);
+                Update_descriptor_binding temp      = {};
+                temp.binding_name                   = binding_name;
+                temp.resource_type                  = info.resource_type;
+                temp.dstSet                         = set_value;
+                temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
+                temp.descriptor_write_binding.dstBinding       = binding_value;
+                temp.descriptor_write_binding.dstArrayElement  = 0;
+                temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                temp.descriptor_write_binding.descriptorCount  = 1;
+                temp.descriptor_write_binding.pBufferInfo      = nullptr;
+                temp.descriptor_write_binding.pImageInfo       = nullptr;
+                temp.descriptor_write_binding.pTexelBufferView = nullptr;
+                temp.bufferInfo                                = {true, buffer_block};
+                update_[binding_name]                          = temp;
+                return true;
             }
         }
     }
@@ -139,7 +134,31 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
 }
 
 
-void allocate_descriptor_sets(const entt::entity entity);
+template<typename T1>
+bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+        const auto &shader_data =
+                g_entt().get_or_emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
+        auto &parameter = g_entt().get_or_emplace<Parameter_used>(entity);
+        if (binding_name.find("global") != std::string::npos) {
+            add_uniform_buffer_data_detail(shader_data->global_sets_bindings,
+                                           parameter.update_global_descriptor_sets, binding_name,
+                                           binding_data);
+            g_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
+            return true;
+        } else {
+            add_uniform_buffer_data_detail(shader_data->object_sets_bindings,
+                                           parameter.update_object_descriptor_sets, binding_name,
+                                           binding_data);
+            g_entt().emplace_or_replace<uniform_buffer_update>(entity);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
 
 std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity);
 

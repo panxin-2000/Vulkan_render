@@ -373,7 +373,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     const std::string &computer_path = paths.computer_path_;
 
     sets_map sorted_sets_bindings;
-    sets_map &global_bindings_set = shader_data->global_bindings_set;
+    sets_map &global_bindings_set = shader_data->global_sets_bindings;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     if (!vertex_path.empty()) {

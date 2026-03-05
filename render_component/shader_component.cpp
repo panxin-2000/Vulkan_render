@@ -14,8 +14,7 @@
 #include "vulkan_device_handle.h"
 
 
-void update_bindings_to_descriptor_sets(const entt::entity entity,
-                                        const std::vector<VkDescriptorSet> &descriptor_sets) {
+void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
     // 以 binding 为一个最小数量
     if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
         auto &handle = VK_handle::get();
@@ -23,11 +22,62 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
-        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
+        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
+
+        if (vk_s_d_s.update_object_descriptor_sets.empty()) {
+            return;
+        }
+        allocate_descriptor_sets(entity, "object");
+        const std::vector<VkDescriptorSet> &descriptor_sets = get_descriptor_sets(entity);
+
         std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
-        descriptor_write_bindings.resize(vk_s_d_s.update_descriptor_sets.size());
+        descriptor_write_bindings.resize(vk_s_d_s.update_object_descriptor_sets.size());
         size_t i = 0;
-        for (auto &[name,binding_update]: vk_s_d_s.update_descriptor_sets) {
+        for (auto &[name,binding_update]: vk_s_d_s.update_object_descriptor_sets) {
+            descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
+            descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
+            if (binding_update.bufferInfo.first) {
+                const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
+                    allocate(sizeof(VkDescriptorBufferInfo)));
+                buffer_info->buffer                      = binding_update.bufferInfo.second->get_buffer_handle();
+                buffer_info->offset                      = binding_update.bufferInfo.second->offset_;
+                buffer_info->range                       = binding_update.bufferInfo.second->size_;
+                descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
+            } else if (binding_update.imageInfo.first) {
+                descriptor_write_bindings[i].pImageInfo = &binding_update.imageInfo.second;;
+            } else if (binding_update.TexelBufferView.first) {
+                descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
+            }
+            ++i;
+        }
+        vkUpdateDescriptorSets(handle.get_device(),
+                               static_cast<uint32_t>(descriptor_write_bindings.size()),
+                               descriptor_write_bindings.data(),
+                               0,
+                               nullptr);
+    }
+}
+
+void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
+    // 以 binding 为一个最小数量
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+        auto &handle = VK_handle::get();
+        char stack_memory_pool[1024];
+        std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
+        std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
+
+        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
+
+        if (vk_s_d_s.update_global_descriptor_sets.empty()) {
+            return;
+        }
+        allocate_descriptor_sets(entity, "global");
+        const std::vector<VkDescriptorSet> &descriptor_sets = get_descriptor_sets(entity);
+
+        std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
+        descriptor_write_bindings.resize(vk_s_d_s.update_global_descriptor_sets.size());
+        size_t i = 0;
+        for (auto &[name,binding_update]: vk_s_d_s.update_global_descriptor_sets) {
             descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
             descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
             if (binding_update.bufferInfo.first) {
@@ -59,7 +109,7 @@ std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity
     if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           (*shader_temp)->global_bindings_set);
+                                                           (*shader_temp)->global_sets_bindings);
             global_descriptor_set = allocate_descriptor_sets(handle,
                                                              (*shader_temp)->
                                                              global_descriptor_sets_layout,
@@ -94,40 +144,55 @@ std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity
 }
 
 
-void allocate_descriptor_sets(const entt::entity entity) {
+void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_handle::get();
     if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
-        auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
+        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
 
-        vk_s_d_s.global_descriptor_sets = get_global_descriptor_set(entity);
-        std::vector<VkDescriptorSet> object_descriptor_sets;
-
-        if (!(*shader_temp)->model_descriptor_sets_layout.empty()) {
-            // 只是一个物体，查找当前物体的参数
-            auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           (*shader_temp)->model_sets_bindings);
-
-            vk_s_d_s.model_descriptor_sets = allocate_descriptor_sets(handle,
-                                                                      (*shader_temp)->
-                                                                      model_descriptor_sets_layout,
-                                                                      sets_flags);
+        if (one_binding_name.find("global") != std::string::npos) {
+            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
+                auto sets_flags = create_descriptor_sets_flags(handle,
+                                                               (*shader_temp)->global_sets_bindings);
+                vk_s_d_s.global_descriptor_sets = allocate_descriptor_sets(handle,
+                                                                           (*shader_temp)->
+                                                                           global_descriptor_sets_layout,
+                                                                           sets_flags);
+            }
+        } else {
+            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
+                auto sets_flags = create_descriptor_sets_flags(handle,
+                                                               (*shader_temp)->object_sets_bindings);
+                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(handle,
+                                                                           (*shader_temp)->
+                                                                           object_descriptor_sets_layout,
+                                                                           sets_flags);
+            }
         }
     }
 }
 
 std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
     std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
-    if (auto vk_s_d_s = g_entt().try_get<vk_shader_descriptor_sets>(entity)) {
-        descriptor_sets.reserve(vk_s_d_s->global_descriptor_sets.size() + vk_s_d_s->model_descriptor_sets.size());
-        descriptor_sets.insert(descriptor_sets.end(),
-                               vk_s_d_s->global_descriptor_sets.begin(),
-                               vk_s_d_s->global_descriptor_sets.end());
-        descriptor_sets.insert(descriptor_sets.end(),
-                               vk_s_d_s->model_descriptor_sets.begin(),
-                               vk_s_d_s->model_descriptor_sets.end());
+    if (const auto vk_s_d_s = g_entt().try_get<Parameter_used>(entity)) {
+        if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+            if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
+                // auto &global_descriptor_sets = get_global_descriptor_set(entity);
+                // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
+                auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
+                descriptor_sets.reserve(global_descriptor_sets.size() + vk_s_d_s->object_descriptor_sets.size());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       global_descriptor_sets.begin(),
+                                       global_descriptor_sets.end());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       vk_s_d_s->object_descriptor_sets.begin(),
+                                       vk_s_d_s->object_descriptor_sets.end());
+            } else {
+                return vk_s_d_s->object_descriptor_sets;
+            }
+        }
     }
     return descriptor_sets;
 }
@@ -138,7 +203,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
         auto &handle = VK_handle::get();
         shader_data_handle = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
-        shader_data_handle->model_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
+        shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
                  shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
@@ -148,22 +213,22 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
         shader_data_handle->global_descriptor_sets_layout =
                 create_descriptor_sets_layout(handle,
                                               shader_data_handle->shader_key + "global_bindings_set",
-                                              shader_data_handle->global_bindings_set);
+                                              shader_data_handle->global_sets_bindings);
 
-        shader_data_handle->model_descriptor_sets_layout =
+        shader_data_handle->object_descriptor_sets_layout =
                 create_descriptor_sets_layout(handle,
                                               shader_data_handle->shader_key,
-                                              shader_data_handle->model_sets_bindings);
+                                              shader_data_handle->object_sets_bindings);
         std::vector<VkDescriptorSetLayout> temp;
-        temp.reserve(shader_data_handle->model_descriptor_sets_layout.size() +
+        temp.reserve(shader_data_handle->object_descriptor_sets_layout.size() +
                      shader_data_handle->global_descriptor_sets_layout.size());
 
         temp.insert(temp.end(),
                     shader_data_handle->global_descriptor_sets_layout.begin(),
                     shader_data_handle->global_descriptor_sets_layout.end());
         temp.insert(temp.end(),
-                    shader_data_handle->model_descriptor_sets_layout.begin(),
-                    shader_data_handle->model_descriptor_sets_layout.end());
+                    shader_data_handle->object_descriptor_sets_layout.begin(),
+                    shader_data_handle->object_descriptor_sets_layout.end());
 
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,

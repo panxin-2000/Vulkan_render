@@ -104,10 +104,6 @@ entt::entity UI_button(const std::string &name,
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                        "", "");
-    auto shader_paths = g_entt().get<VKR_shader_paths>(entity_);
-    g_entt().emplace<std::shared_ptr<vk_shader_data> >(entity_);
-    auto &shader_data = g_entt().get<std::shared_ptr<vk_shader_data> >(entity_);
-    shader_data       = VKR_shader_init(shader_paths);
 
     if (auto *scene_node = g_entt().try_get<Rect_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
@@ -125,7 +121,7 @@ entt::entity UI_button(const std::string &name,
     add_uniform_buffer_data(entity_, "global_view_4x4", view);
     add_uniform_buffer_data(entity_, "model_4x4", model);
 
-    g_entt().emplace<need_render_tag>(entity_);
+    g_entt().emplace_or_replace<need_render_tag>(entity_);
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
         scene_root_add_child(entity_);

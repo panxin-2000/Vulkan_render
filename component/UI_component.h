@@ -100,13 +100,28 @@ public:
 
 // 回调函数
 
-inline void update_UI_position() { {
+inline void update_UI_position() {
+    // 应该不止更新 position，还有很多的都需要更新
+    {
+        // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
+        // global 相关的内容尽量只能偏移，
+        const auto view = g_entt().view<global_uniform_buffer_update>();
+        for (const auto &it: view) {
+            update_global_bindings_to_descriptor_sets(it);
+            g_entt().remove<global_uniform_buffer_update>(it);
+        }
+    } {
+        const auto view = g_entt().view<uniform_buffer_update>();
+        for (const auto &it: view) {
+            update_object_bindings_to_descriptor_sets(it);
+            g_entt().remove<uniform_buffer_update>(it);
+        }
+    } {
         const auto view = g_entt().view<need_render_tag>(entt::exclude<std::shared_ptr<draw_need_vk> >);
         for (const auto &it: view) {
             add_object_to_render(it); // 因为这里没有区分。全部都在场景的根节点之下
         }
     }
-
     const auto view = g_entt().view<Position_update_tag, Rect_transform, std::shared_ptr<draw_need_vk> >();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {

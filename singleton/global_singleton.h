@@ -45,5 +45,11 @@ struct Position_update_tag {
 struct need_render_tag {
 };
 
+struct uniform_buffer_update {
+};
+
+struct global_uniform_buffer_update {
+};
+
 
 #endif //HELLO_MAC_GLOBAL_SINGLETON_H
