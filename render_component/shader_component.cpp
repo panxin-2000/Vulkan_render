@@ -17,7 +17,7 @@
 void update_bindings_to_descriptor_sets(const entt::entity entity,
                                         const std::vector<VkDescriptorSet> &descriptor_sets) {
     // 以 binding 为一个最小数量
-    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
         auto &handle = VK_handle::get();
         char stack_memory_pool[1024];
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
@@ -56,12 +56,12 @@ std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity
     std::vector<VkDescriptorSet> global_descriptor_set;
     auto &handle = VK_handle::get();
 
-    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        if (!shader_temp->shader_data_handle->global_descriptor_sets_layout.empty()) {
+    if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           shader_temp->shader_data_handle->global_bindings_set);
+                                                           (*shader_temp)->global_bindings_set);
             global_descriptor_set = allocate_descriptor_sets(handle,
-                                                             shader_temp->shader_data_handle->
+                                                             (*shader_temp)->
                                                              global_descriptor_sets_layout,
                                                              sets_flags);
         }
@@ -94,31 +94,28 @@ std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity
 }
 
 
-std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity) {
+void allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-    std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
     auto &handle = VK_handle::get();
-    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
+    if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
 
         vk_s_d_s.global_descriptor_sets = get_global_descriptor_set(entity);
         std::vector<VkDescriptorSet> object_descriptor_sets;
 
-        if (!shader_temp->shader_data_handle->model_descriptor_sets_layout.empty()) {
+        if (!(*shader_temp)->model_descriptor_sets_layout.empty()) {
             // 只是一个物体，查找当前物体的参数
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           shader_temp->shader_data_handle->model_sets_bindings);
+                                                           (*shader_temp)->model_sets_bindings);
 
             vk_s_d_s.model_descriptor_sets = allocate_descriptor_sets(handle,
-                                                                      shader_temp->shader_data_handle->
+                                                                      (*shader_temp)->
                                                                       model_descriptor_sets_layout,
                                                                       sets_flags);
         }
     }
-
-    return descriptor_sets;
 }
 
 std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
@@ -135,13 +132,15 @@ std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
     return descriptor_sets;
 }
 
-bool VKR_shader::init() {
-    if (shader_data_handle == nullptr) {
-        auto &handle                                           = VK_handle::get();
-        shader_data_handle                                     = std::make_shared<vk_shader_data>();
-        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, *this);
-        shader_data_handle->model_sets_bindings                = organize_descriptor_set_and_binding_layouts(*this);
-        shader_data_handle->shader_key                         = get_shader_key(*this);
+std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) {
+    std::shared_ptr<vk_shader_data> shader_data_handle;
+    if (shader_data_handle.get() == nullptr) {
+        auto &handle = VK_handle::get();
+        shader_data_handle = std::make_shared<vk_shader_data>();
+        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
+        shader_data_handle->model_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
+                 shader_data_handle);
+        shader_data_handle->shader_key = get_shader_key(shader_paths);
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
 
         // descriptor_sets_layout 中包含 global 的 set
@@ -172,5 +171,5 @@ bool VKR_shader::init() {
     } else {
     }
 
-    return true;
+    return shader_data_handle;
 }

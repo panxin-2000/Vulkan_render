@@ -100,7 +100,13 @@ public:
 
 // 回调函数
 
-inline void update_UI_position() {
+inline void update_UI_position() { {
+        const auto view = g_entt().view<need_render_tag>(entt::exclude<std::shared_ptr<draw_need_vk> >);
+        for (const auto &it: view) {
+            add_object_to_render(it); // 因为这里没有区分。全部都在场景的根节点之下
+        }
+    }
+
     const auto view = g_entt().view<Position_update_tag, Rect_transform, std::shared_ptr<draw_need_vk> >();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {

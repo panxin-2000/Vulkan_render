@@ -22,18 +22,20 @@ void render_thread_stop_and_wait();
 
 
 inline bool add_object_to_render(const entt::entity entity) {
+    g_entt().remove<need_render_tag>(entity);
+
     auto &handle                     = VK_handle::get();
     VkPipeline pipeline_t            = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
-        pipeline_t      = find_pipeline(handle, *shader_temp->shader_data_handle);
-        pipeline_layout = shader_temp->shader_data_handle->pipeline_layout;
+    if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        pipeline_t      = find_pipeline(handle, *shader_data);
+        pipeline_layout = (*shader_data)->pipeline_layout;
     } else {
         // 打印一个 entity name 没有 VKR_shader
     }
 
     //
-    const auto descriptor_sets = allocate_descriptor_sets(entity);
+    allocate_descriptor_sets(entity);
     update_bindings_to_descriptor_sets(entity, get_descriptor_sets(entity));
 
     const auto mesh = create_mesh(entity);

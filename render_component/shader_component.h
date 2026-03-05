@@ -55,28 +55,25 @@ struct vk_shader_descriptor_sets {
     std::map<std::string, Update_descriptor_binding> update_descriptor_sets;
 };
 
-class VKR_shader {
+class VKR_shader_paths {
 public:
-    VKR_shader(const std::string &vertex_path,
-               const std::string &fragment_path,
-               const std::string &geometry_path,
-               const std::string &computer_path) {
+    VKR_shader_paths(const std::string &vertex_path,
+                     const std::string &fragment_path,
+                     const std::string &geometry_path,
+                     const std::string &computer_path) {
         vertex_path_   = vertex_path;
         fragment_path_ = fragment_path;
         geometry_path_ = geometry_path;
         computer_path_ = computer_path;
-        init();
     }
 
-    VKR_shader() = delete;
+    VKR_shader_paths() = delete;
 
     std::string vertex_path_;
     std::string geometry_path_;
     std::string fragment_path_;
     std::string computer_path_;
-    std::shared_ptr<vk_shader_data> shader_data_handle = nullptr;
 
-    bool init();
 
     void set_vertex_shader(const std::string &path) {
         vertex_path_ = path;
@@ -89,8 +86,13 @@ public:
     void set_geometry_shader(const std::string &path) {
         geometry_path_ = path;
     }
+
+    void set_computer_path(const std::string &path) {
+        computer_path_ = path;
+    }
 };
 
+std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
 
 void update_bindings_to_descriptor_sets(const entt::entity entity,
                                         const std::vector<VkDescriptorSet> &descriptor_sets);
@@ -99,12 +101,14 @@ void update_bindings_to_descriptor_sets(const entt::entity entity,
 
 template<typename T1>
 bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
-    if (const auto shader_temp = g_entt().try_get<VKR_shader>(entity)) {
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
         sets_map *sets_map_in_for = nullptr;
+        const auto &shader_data   =
+                g_entt().get_or_emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
         if (binding_name.find("global") != std::string::npos) {
-            sets_map_in_for = &shader_temp->shader_data_handle->global_bindings_set;
+            sets_map_in_for = &shader_data->global_bindings_set;
         } else {
-            sets_map_in_for = &shader_temp->shader_data_handle->model_sets_bindings;
+            sets_map_in_for = &shader_data->model_sets_bindings;
         }
         auto &vk_s_d_s = g_entt().get_or_emplace<vk_shader_descriptor_sets>(entity);
         for (auto const &[set_value, bindings_map]: *sets_map_in_for) {
@@ -135,7 +139,7 @@ bool add_uniform_buffer_data(const entt::entity entity, const std::string &bindi
 }
 
 
-std::vector<VkDescriptorSet> allocate_descriptor_sets(const entt::entity entity);
+void allocate_descriptor_sets(const entt::entity entity);
 
 std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity);
 

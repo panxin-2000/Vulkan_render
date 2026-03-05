@@ -42,5 +42,8 @@ struct Destroy_tag {
 struct Position_update_tag {
 };
 
+struct need_render_tag {
+};
+
 
 #endif //HELLO_MAC_GLOBAL_SINGLETON_H
