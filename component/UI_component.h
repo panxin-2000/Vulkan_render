@@ -163,16 +163,14 @@ public:
         std::call_once(flag, []() {
                            g_entt().emplace<Scene_Component>(instance);
                            g_entt().emplace<Name_component>(instance, "scene_root");
-                           // g_entt().emplace<VKR_shader>(instance,
-                           //                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                           //                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-                           //                              "", "");
-                           // matrix_4x4 view;
-                           // UI_matrix_4x4(&view, 1280, 720);
-                           // add_uniform_buffer_data(instance, "global_view_4x4", view);
-                           //
-                           // const auto descriptor_sets = allocate_descriptor_sets(instance);
-                           // update_bindings_to_descriptor_sets(instance, descriptor_sets);
+                           g_entt().emplace<VKR_shader_paths>(instance,
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                                              "", "");
+                           matrix_4x4 view;
+                           UI_matrix_4x4(&view, 1280, 720);
+                           add_uniform_buffer_data(instance, "global_view_4x4", view);
+
                            if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {

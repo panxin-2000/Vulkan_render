@@ -114,11 +114,8 @@ entt::entity UI_button(const std::string &name,
 
 
     matrix_4x4 model;
-    matrix_4x4 view;
-    identity_matrix_4x4(&view);
-    UI_matrix_4x4(&model, 1280, 720);
+    identity_matrix_4x4(&model);
 
-    add_uniform_buffer_data(entity_, "global_view_4x4", view);
     add_uniform_buffer_data(entity_, "model_4x4", model);
 
     g_entt().emplace_or_replace<need_render_tag>(entity_);

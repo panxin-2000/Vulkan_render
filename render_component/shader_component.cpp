@@ -104,41 +104,28 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
 
 std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity) {
     std::vector<VkDescriptorSet> global_descriptor_set;
-    auto &handle = VK_handle::get();
 
     if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-            auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           (*shader_temp)->global_sets_bindings);
-            global_descriptor_set = allocate_descriptor_sets(handle,
-                                                             (*shader_temp)->
-                                                             global_descriptor_sets_layout,
-                                                             sets_flags);
+            auto current_entity = entity;
+            while (current_entity != entt::null) {
+                if (const auto para = g_entt().try_get<Parameter_used>(current_entity)) {
+                    if (!para->global_descriptor_sets.empty()) {
+                        global_descriptor_set = para->global_descriptor_sets;
+                        break;
+                    }
+                }
+                const auto parent_entity = get_parent(current_entity);
+                current_entity           = parent_entity;
+            }
+            // 那就不应该由这里去创建了，而是应该向 父节点 查找，查找到话就拿到并返回
+            // 那么要求是什么呢？父节点 和这个节点有相同的着色器
+            // 那么是否可以这样呢？ 只要有几何节点，就可以查找自身，使用自身的着色器，
+            // 如果自身没有，就使用父节点的着色器
+            // 好处是什么呢？只要能分出几何体，就可以绘制，glfw 的物体的 mesh也是可以被解析的
+            // 如果一个 mesh 有特殊的材质，就可以专门指定，但是 model 还是用的父节点的数据
         }
     }
-    //
-    // if (!shader_temp->shader_data_handle->global_descriptor_sets_layout.empty()) {
-    //     auto current_entity = entity;
-    //     while (true) {
-    //         if (const auto parent_entity = get_parent(current_entity); parent_entity != entt::null) {
-    //             if (const auto shader_parent = g_entt().try_get<VKR_shader>(entity)) {
-    //                 if (!shader_parent->shader_data_handle->global_bindings_set.empty()) {
-    //                     auto &global_bindings_set = shader_parent->shader_data_handle->global_bindings_set;
-    //                     break;
-    //                 }
-    //             }
-    //             current_entity = parent_entity;
-    //         } else if (parent_entity == entt::null) {
-    //             break;
-    //         }
-    //     }
-    //     // 那就不应该由这里去创建了，而是应该向 父节点 查找，查找到话就拿到并返回
-    //     // 那么要求是什么呢？父节点 和这个节点有相同的着色器
-    //     // 那么是否可以这样呢？ 只要有几何节点，就可以查找自身，使用自身的着色器，
-    //     // 如果自身没有，就使用父节点的着色器
-    //     // 好处是什么呢？只要能分出几何体，就可以绘制，glfw 的物体的 mesh也是可以被解析的
-    //     // 如果一个 mesh 有特殊的材质，就可以专门指定，但是 model 还是用的父节点的数据
-    // }
 
     return global_descriptor_set;
 }
@@ -179,9 +166,9 @@ std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
     if (const auto vk_s_d_s = g_entt().try_get<Parameter_used>(entity)) {
         if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                // auto &global_descriptor_sets = get_global_descriptor_set(entity);
+                auto global_descriptor_sets = get_global_descriptor_set(entity);
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
-                auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
+                // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
                 descriptor_sets.reserve(global_descriptor_sets.size() + vk_s_d_s->object_descriptor_sets.size());
                 descriptor_sets.insert(descriptor_sets.end(),
                                        global_descriptor_sets.begin(),
