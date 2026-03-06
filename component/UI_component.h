@@ -119,7 +119,7 @@ inline void update_UI_position() {
     } {
         const auto view = g_entt().view<need_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
         for (const auto &it: view) {
-            add_object_to_render(it); // 因为这里没有区分。全部都在场景的根节点之下
+            create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
         }
     }
     const auto view = g_entt().view<Position_update_tag, Rect_transform, std::shared_ptr<VKR_object_proxy> >();
@@ -146,9 +146,7 @@ inline void update_UI_position() {
             }
         };
 
-        if (const auto render_data = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(it)) {
-            update_object_to_render(*render_data, lambda);
-        }
+        update_VKR_object_proxy(it, lambda);
     }
 }
 

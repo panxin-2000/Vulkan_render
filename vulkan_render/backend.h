@@ -7,7 +7,6 @@
 
 #include "create_pipeline.h"
 #include "descriptor_organized_sets_and_bindings.h"
-#include "Geometry_data.h"
 #include "name_component.h"
 #include "vk_render_to_image.h"
 #include "vulkan_device_handle.h"
@@ -21,7 +20,7 @@ void render_thread_stop();
 void render_thread_stop_and_wait();
 
 
-inline bool add_object_to_render(const entt::entity entity) {
+inline bool create_VKR_object_proxy(const entt::entity entity) {
     g_entt().remove<need_render_tag>(entity);
 
     auto &handle                     = VK_handle::get();
@@ -33,7 +32,6 @@ inline bool add_object_to_render(const entt::entity entity) {
     } else {
         // 打印一个 entity name 没有 VKR_shader
     }
-
     const auto mesh = create_mesh(entity);
     if (!mesh.has_value()) {
         // 打印一个 entity name 读取 mesh 错误
@@ -54,13 +52,17 @@ inline bool add_object_to_render(const entt::entity entity) {
     return true;
 }
 
-inline bool update_object_to_render(const std::shared_ptr<VKR_object_proxy> &render_object,
-                                    const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &callback) {
-    vk_render_queue::instance().render_update(render_object, callback);
-    return true;
+using proxy_update_lambda = const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &;
+
+inline bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda callback) {
+    if (auto proxy = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
+        vk_render_queue::instance().render_update(*proxy, callback);
+        return true;
+    }
+    return false;
 }
 
-inline bool clean_object_to_render(const entt::entity entity) {
+inline bool clean_VKR_object_proxy(const entt::entity entity) {
     if (auto render = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
         vk_render_queue::instance().render_object_need_clean(*render);
         return true;

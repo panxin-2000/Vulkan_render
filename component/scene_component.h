@@ -11,7 +11,6 @@
 #include "base_element/point_3.h"
 #include "base_element/intersect/objects_intersect_with_point.h"
 #include "global_singleton.h"
-#include "Geometry_data.h"
 #include "backend.h"
 
 

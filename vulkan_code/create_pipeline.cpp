@@ -2,6 +2,8 @@
 // Created by 潘鑫 on 2026/3/4.
 //
 #include "create_pipeline.h"
+
+#include "shader_common.h"
 std::map<std::string, pipeline_and_share> pipeline_map_;
 
 auto &get_pipeline_map() {

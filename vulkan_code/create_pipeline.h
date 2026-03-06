@@ -7,7 +7,7 @@
 #include <vector>
 #include <volk.h>
 
-#include "Geometry_data.h"
+#include "shader_component.h"
 #include "vulkan_device_handle.h"
 
 template<typename T>

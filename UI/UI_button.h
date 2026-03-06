@@ -11,7 +11,6 @@
 #include "name_component.h"
 #include "global_singleton.h"
 #include "observer_manage.h"
-#include "Geometry_data.h"
 #include "span.hpp"
 #include "UI_component.h"
 
