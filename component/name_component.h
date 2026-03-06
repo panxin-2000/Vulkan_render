@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_ENTITY_NAME_COMPONENT_H
 #define HELLO_MAC_ENTITY_NAME_COMPONENT_H
 #include <string>
+#include "global_singleton.h"
 
 struct Name_component {
     std::string name;
