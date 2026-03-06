@@ -7,7 +7,7 @@
 #include "vulkan_device_handle.h"
 
 
-void init_Descriptor_Pool();
+void init_current_descriptor_pool();
 
 VkDescriptorPool get_descriptor_pool();
 

@@ -8,7 +8,7 @@
 #include "descriptor_pool.h"
 
 
-std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
+std::map<VkDescriptorPool, uint64_t> discard_descriptor_set_map;
 std::mutex discard_descriptor_set_map_mutex;
 
 void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
@@ -99,7 +99,7 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
                                  descriptor_sets.data()));
 
     for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
-        return_value[i] = std::make_shared<DescriptorSet_detail>(descriptor_sets[i]);
+        return_value[i] = std::make_shared<DescriptorSet_detail>(get_descriptor_pool(), descriptor_sets[i]);
     }
 
     return return_value;
@@ -108,21 +108,21 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
 
 DescriptorSet_detail::~DescriptorSet_detail() {
     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-    discard_descriptor_set_map.insert({descriptor_set_, timeline_});
-    descriptor_set_ = VK_NULL_HANDLE;
-    timeline_       = 0;
+    discard_descriptor_set_map[descriptor_pool_] = timeline_;
+    descriptor_set_                              = VK_NULL_HANDLE;
+    timeline_                                    = 0;
 }
 
 
 void discard_descriptor_set_map_clean() {
     const auto &handle = VK_handle::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
-        const auto &[descriptor_set, timeline] = *it;
-        LOG_DEBUG(g_log(), "descriptor_set finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
+        const auto &[descriptor_pool, timeline] = *it;
+        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
                   timeline);
         if (handle.get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-            vkFreeDescriptorSets(handle.get_device(), get_descriptor_pool(), 1, &descriptor_set);
+            vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
             it = discard_descriptor_set_map.erase(it);
         } else {
             ++it;

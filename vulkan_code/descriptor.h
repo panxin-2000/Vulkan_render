@@ -10,11 +10,13 @@
 
 class DescriptorSet_detail : public NonCopyable {
 public:
-    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
-    uint64_t timeline_              = 0;
+    VkDescriptorPool descriptor_pool_ = VK_NULL_HANDLE;
+    VkDescriptorSet descriptor_set_   = VK_NULL_HANDLE;
+    uint64_t timeline_                = 0;
 
-    DescriptorSet_detail(const VkDescriptorSet descriptor_set) {
-        descriptor_set_ = descriptor_set;
+    DescriptorSet_detail(const VkDescriptorPool descriptor_pool, const VkDescriptorSet descriptor_set) {
+        descriptor_set_  = descriptor_set;
+        descriptor_pool_ = descriptor_pool;
     }
 
     //  根据timeline 选择合适的时间释放

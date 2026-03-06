@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VK_handle::get();
     handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
-    init_Descriptor_Pool();
+    // init_current_descriptor_pool();
 
     render_thread_start(handle);
 
@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
         }
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
+
         clean_render_entity(); {
             auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序

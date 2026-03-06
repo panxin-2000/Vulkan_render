@@ -3,8 +3,8 @@
 //
 
 #include "descriptor_pool.h"
-uint32_t descriptor_count_ = 500;                //static_cast<uint32_t>(textures.size())
-VkDescriptorPool descriptorPool{VK_NULL_HANDLE}; // 最大的问题就是这里有一个pool
+uint32_t descriptor_count_      = 500;            //static_cast<uint32_t>(textures.size())
+VkDescriptorPool descriptorPool = VK_NULL_HANDLE; // 最大的问题就是这里有一个pool
 
 
 VkDescriptorPool get_descriptor_pool() {
@@ -12,7 +12,7 @@ VkDescriptorPool get_descriptor_pool() {
 }
 
 
-void init_Descriptor_Pool() {
+void init_current_descriptor_pool() {
     const auto &handle = VK_handle::get();
 
     static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 250;

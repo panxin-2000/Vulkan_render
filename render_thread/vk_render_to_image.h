@@ -186,7 +186,7 @@ private
         // 想在这里的清理的话，需要参考上面的顺序  // 整体的顺序
 
 
-        discard_descriptor_set_map_clean(); // descriptor_pools_
+        // discard_descriptor_set_map_clean(); // descriptor_pools_
         //                                     pipelines_
         //                                     pipeline_layouts_
         //                                     descriptor_sets_layout
