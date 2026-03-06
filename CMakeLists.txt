@@ -162,7 +162,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/vulkan_buffer.cpp"
             "vulkan_code/vulkan_device_handle.cpp"
             "vulkan_code/transfer_texture_to_gpu.cpp"
-            "vulkan_render/backend.cpp"
+            "render_thread/backend.cpp"
             "vulkan_code/engine.cpp"
             "vulkan_code/create_shader.cpp"
             "vulkan_code/descriptor.cpp"
@@ -243,7 +243,7 @@ include_directories(event)
 include_directories(singleton)
 include_directories(labyrinth)
 include_directories(input_device)
-include_directories(vulkan_render)
+include_directories(render_thread)
 include_directories(component)
 include_directories(render_component)
 include_directories(interactable_object)

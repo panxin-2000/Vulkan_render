@@ -5,8 +5,8 @@
 #include <GLFW/glfw3.h>
 
 #include <thread>
-#include "vulkan_render/backend.h"
-#include "vulkan_render/vulkan_render_manage.h"
+#include "render_thread/backend.h"
+#include "render_thread/vulkan_render_manage.h"
 #include "vulkan_device_handle.h"
 #include "event/base_event.h"
 #include "labyrinth.h"
