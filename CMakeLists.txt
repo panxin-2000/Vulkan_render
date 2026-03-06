@@ -312,7 +312,7 @@ FetchContent_MakeAvailable(entt)
 
 enable_testing()
 
-add_executable(hello_test ${component} ${RENDER} ${WINDOW} ${INPUT_DEVICE} ${LABYRINTH}
+add_executable(hello_test ${LABYRINTH}
         test/hello_test.cpp
         test/add_char_calculata.cpp
         test/test_add_char_calculata.cpp
