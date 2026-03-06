@@ -176,6 +176,7 @@ if (WITH_VULKAN_BACKEND)
 
             "render_component/shader_component.cpp"
             "render_component/mesh_component.cpp"
+            "render_component/VKR_proxy_component.cpp"
     )
     include_directories(vulkan_code)
 
@@ -222,7 +223,7 @@ endif ()
 
 file(GLOB_RECURSE RENDER
 
-        "render_common/stb_image.cpp"
+        "render/render_common/stb_image.cpp"
 )
 file(GLOB_RECURSE component
 
@@ -230,7 +231,7 @@ file(GLOB_RECURSE component
 )
 
 
-include_directories(render_common)
+include_directories(render/render_common)
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
         "windows/windows.cpp"

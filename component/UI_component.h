@@ -6,6 +6,8 @@
 #define HELLO_MAC_UI_POSITION_AND_OFFSET_H
 #include <scene_component.h>
 #include "name_component.h"
+#include "shader_component.h"
+#include "VKR_proxy_component.h"
 
 class Rect_transform {
     Point_2 zoom   = {1, 1};

@@ -8,6 +8,8 @@
 #include <thread>
 #include <utility>
 
+#include "render_proxy.h"
+
 
 class vk_render_queue {
 private:
