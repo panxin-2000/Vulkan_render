@@ -27,6 +27,8 @@ entt::entity UI_button(const std::string &name,
 
 static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_with_stamp &event) {
     auto temp_type = event.event_type;
+    auto &status   = g_entt().get<Input_Component>(entity_);
+
     switch (temp_type) {
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
@@ -50,6 +52,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
             break;
         case MOUSE_LEFT:
             if (event.event_code == KM_PRESS) {
+                status.select_status = select_current;
                 std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
                 // 需要增加模态的处理 返回锁定模态
                 return OPERATOR_RUNNING_MODAL;
@@ -58,6 +61,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
                 // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
+                status.select_status = no_select_current;
                 return OPERATOR_FINISHED;
             }
             break;
@@ -69,10 +73,12 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
             }
             break;
         case MOUSE_MOVE:
-            if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
-                UI->set_position_offset(entity_, event);
-                // 包围盒的位置还需要同步更新
-                return OPERATOR_RUNNING_MODAL;
+            if (status.select_status == select_current) {
+                if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
+                    UI->set_position_offset(entity_, event);
+                    // 包围盒的位置还需要同步更新
+                    return OPERATOR_RUNNING_MODAL;
+                }
             }
             break;
         default:

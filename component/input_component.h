@@ -14,11 +14,17 @@
 #include "base_observer.h"
 #include "observer_manage.h"
 
+enum operator_select_status {
+    no_select_current = 0,
+    select_current    = 1,
+};
 
 class Input_Component {
 public:
+    operator_select_status select_status = no_select_current;
+
     Input_Component(const std::function<wmOperatorStatus (entt::entity, base_event_with_stamp)> &function) : on_Event(
-        function) {
+         function) {
     }
 
     ~Input_Component() {
