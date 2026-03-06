@@ -230,6 +230,7 @@ enum Event_code {
  * Operator type return flags: exec(), invoke() modal(), return values.
  */
 enum wmOperatorStatus {
+    OPERATOR_ZERO          = 0,
     OPERATOR_RUNNING_MODAL = (1 << 0),
     OPERATOR_CANCELLED     = (1 << 1),
     OPERATOR_FINISHED      = (1 << 2),

@@ -137,39 +137,32 @@ void mouse_callback(GLFWwindow *window, const double x_pos, const double y_pos) 
 void base_event_dealing(const base_event_with_stamp &event) {
     const auto view = g_entt().view<Name_component, Scene_Component, Input_Component>();
 
-    std::vector<entt::entity> all_node_need_check;
 
-    static entt::entity last_work         = get_UI_scene_root();
-    const mouse_position current_position = event.current_position;
+    static entt::entity last_work          = get_UI_scene_root();
+    const mouse_position current_position  = event.current_position;
+    static wmOperatorStatus current_status = OPERATOR_ZERO;
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
     auto &name = view.get<Name_component>(last_work);
     // std::cout << "last work name: " << name.name << std::endl;
-    if (Rect_transform::check_entity_intersect_point(last_work, current_position) ||
-        model_transform::check_entity_intersect_point(last_work, current_position))
+    if (current_status == OPERATOR_RUNNING_MODAL)
         if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(last_work, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
-                    last_work = last_work;
+                    last_work      = last_work; // 目的是更新，但是没有什么意义
+                    current_status = OPERATOR_RUNNING_MODAL;
                     return;
                 } else if (OPERATOR_FINISHED & status) {
-                    last_work = get_UI_scene_root();
+                    current_status = OPERATOR_ZERO;
+                    last_work      = get_UI_scene_root();
                     return;
                 }
+                current_status = OPERATOR_ZERO;
             }
         }
 
-    for (auto entity: view) {
-        // 这种方式获取组件在内存中是最高效的
-        all_node_need_check.push_back(entity);
-        // auto &name = view.get<Name_component>(entity);
-        // auto &scene = view.get<Scene_Component>(entity);
-        // std::cout << (uint32_t) entity << " name: " << name.name
-        //         << scene.bounding_box_.centroid_point << scene.bounding_box_.direction_interval
-        //         << (uint32_t) scene.get_parent() << std::endl;
-    }
     // 找到当前区域的一个递归栈
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
@@ -182,11 +175,13 @@ void base_event_dealing(const base_event_with_stamp &event) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(*it, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
-                    last_work = *it;
+                    last_work      = *it;
+                    current_status = OPERATOR_RUNNING_MODAL;
                     break;
                 } else if (OPERATOR_PASS_THROUGH & status) {
                     continue;
                 } else {
+                    current_status = OPERATOR_ZERO;
                     break;
                 }
             }
