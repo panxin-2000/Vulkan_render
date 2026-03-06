@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
         }
         sync_render_data_to_render_thread();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
     g_entt().clear();
 

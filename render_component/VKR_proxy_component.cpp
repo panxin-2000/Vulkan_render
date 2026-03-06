@@ -27,7 +27,7 @@ bool create_VKR_object_proxy(const entt::entity entity) {
 
 
 bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda callback) {
-    if (auto proxy = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
+    if (const auto proxy = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
         vk_render_queue::instance().render_update(*proxy, callback);
         return true;
     }

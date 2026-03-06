@@ -48,22 +48,10 @@ public:
     }
 
     bool set_position_offset(const entt::entity entity, const base_event_with_stamp &base_event) {
-        // x_pos = ((x_pos / get_win_WIDTH()) - 0.5f) * 2, y_pos = ((y_pos / get_win_HEIGHT()) - 0.5f) * -2;
-        // 更改坐标系的范围，x轴是从左到右，范围是-1到1之间，y轴是从下到上，范围是-1到1之间
-        Point_2 move                 = base_event.current_position - base_event.last_position;
+        const Point_2 move           = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
         offset                       = offset + move;
         g_entt().emplace_or_replace<Position_update_tag>(entity);
-        // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
-        //     for (const entt::entity children_entity: scene_node->children) {
-        //         if (g_entt().valid(children_entity)) {
-        //             g_entt().emplace_or_replace<Position_update_tag>(children_entity);
-        //         }
-        //     }
-        // }
-        // std::cout << "move x: " << offset.x << " y: " << offset.y << std::endl;
-        // offset.x = offset.x + move.x / get_win_WIDTH() * 2;
-        // offset.y = offset.y - move.y / get_win_HEIGHT() * 2; // todo: 检查为什么要反y轴，有没有办法只改一个参数
         return true;
     }
 
@@ -124,17 +112,17 @@ inline void sync_render_data_to_render_thread() {
             create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
         }
     }
-    const auto view = g_entt().view<Position_update_tag, Rect_transform, std::shared_ptr<VKR_object_proxy> >();
+    const auto view = g_entt().view<Position_update_tag, Rect_transform>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
         // get_model_matrix();
         g_entt().remove<Position_update_tag>(it);
         auto pos    = view.get<Rect_transform>(it);
         auto offset = pos.get_offset();
-        LOG_INFO(g_log(), "offset x {} y {}", offset.x, offset.y);
-        //
+        LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
+
         matrix_4x4 view;
-        UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
+        UI_offset_4x4(&view, offset.x, offset.y);
         set_render_parameter(it, "model_4x4", view);
         update_object_bindings_to_descriptor_sets(it);
         g_entt().remove<uniform_buffer_update>(it);
@@ -145,7 +133,6 @@ inline void sync_render_data_to_render_thread() {
             proxy->vk_descriptor_set = temp_des;
         };
         update_VKR_object_proxy(it, lambda);
-
 
         // add_geometry_data(it, pos.get_bounding_box().min_point.x,
         //                   pos.get_bounding_box().min_point.y,
@@ -186,7 +173,7 @@ public:
                            set_render_parameter(instance, "global_view_4x4", view);
 
                            matrix_4x4 projection;
-                           identity_matrix_4x4(&projection);
+                           UI_project_4x4(&projection,1280,720);
                            set_render_parameter(instance, "global_projection_4x4", projection);
 
                            if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
