@@ -225,3 +225,30 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 
     return shader_data_handle;
 }
+
+#include "create_pipeline.h"
+
+
+VkPipeline get_pipeline(const entt::entity entity) {
+    auto &handle          = VK_handle::get();
+    VkPipeline pipeline_t = VK_NULL_HANDLE;
+    if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        pipeline_t = find_pipeline(handle, *shader_data);
+        return pipeline_t;
+    } else {
+        // 打印一个 entity name 没有 VKR_shader
+    }
+    return VK_NULL_HANDLE;
+}
+
+VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
+    auto &handle                     = VK_handle::get();
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        pipeline_layout = (*shader_data)->pipeline_layout;
+        return pipeline_layout;
+    } else {
+        // 打印一个 entity name 没有 VKR_shader
+    }
+    return VK_NULL_HANDLE;
+}

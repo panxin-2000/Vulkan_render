@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_RENDER_PROXY_H
 #define HELLO_MAC_RENDER_PROXY_H
-#include "../render_component/mesh_component.h"
+#include "mesh_component.h"
 
 
 class VKR_object_proxy {
@@ -17,7 +17,7 @@ public:
     VkRect2D scissor;
     VkDeviceAddress push_constants_address;
     std::optional<float> line_width;
-    Model_mesh mesh;
+    VKR_mesh mesh;
 };
 
 #endif //HELLO_MAC_RENDER_PROXY_H

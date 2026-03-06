@@ -13,8 +13,8 @@ auto &get_mesh_map() {
     return mesh_map_;
 }
 
-Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
-                            const share_block &indices_) {
+VKR_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
+                          const share_block &indices_) {
     VkDeviceSize vBufSize{vertices.total_size};
     VkDeviceSize iBufSize{indices_.total_size};
 
@@ -29,7 +29,7 @@ Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices
 
     // vertices_buffer 还需要动，firstIndex 在之后也是需要更改的
 
-    Model_mesh mesh;
+    VKR_mesh mesh;
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
@@ -45,7 +45,7 @@ Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices
 }
 
 
-std::optional<Model_mesh> create_mesh(const entt::entity entity) {
+std::optional<VKR_mesh> create_mesh(const entt::entity entity) {
     std::map<Geometry_data *, mesh_and_share> &map = get_mesh_map();
     const auto &handle                             = VK_handle::get();
     if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
@@ -73,8 +73,8 @@ std::optional<Model_mesh> create_mesh(const entt::entity entity) {
 }
 
 
-inline Model_mesh *find_mesh(Geometry_data data,
-                             std::map<Geometry_data *, mesh_and_share> &map) {
+inline VKR_mesh *find_mesh(Geometry_data data,
+                           std::map<Geometry_data *, mesh_and_share> &map) {
     auto it = map.find(&data);
     if (it != map.end()) {
         return &it->second.mesh;
@@ -147,8 +147,6 @@ std::pair<share_block, share_block> load_model(const std::string &path) {
 }
 
 
-
-
 bool add_geometry_data(entt::entity entity_,
                        float min_x,
                        float min_y,
@@ -206,4 +204,13 @@ bool add_geometry_data(entt::entity entity_,
 
     geometry.push_vertices(vertices_buffer);
     geometry.set_indices(indices_buffer);
+}
+
+VKR_mesh get_VKR_mesh(const entt::entity entity) {
+    const auto mesh = create_mesh(entity);
+    if (mesh.has_value()) {
+        // 打印一个 entity name 读取 mesh 错误
+        return mesh.value();
+    }
+    return {};
 }

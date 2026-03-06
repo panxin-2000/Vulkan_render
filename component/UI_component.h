@@ -6,8 +6,8 @@
 #define HELLO_MAC_UI_POSITION_AND_OFFSET_H
 #include <scene_component.h>
 #include "name_component.h"
-#include "shader_component.h"
 #include "VKR_proxy_component.h"
+#include "shader_component.h"
 
 class Rect_transform {
     Point_2 zoom   = {1, 1};
@@ -119,7 +119,7 @@ inline void update_UI_position() {
             g_entt().remove<uniform_buffer_update>(it);
         }
     } {
-        const auto view = g_entt().view<need_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
+        const auto view = g_entt().view<add_to_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
         for (const auto &it: view) {
             create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
         }

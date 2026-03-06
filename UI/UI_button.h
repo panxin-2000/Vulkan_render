@@ -117,7 +117,7 @@ entt::entity UI_button(const std::string &name,
 
     set_render_parameter(entity_, "model_4x4", model);
 
-    g_entt().emplace_or_replace<need_render_tag>(entity_);
+    g_entt().emplace_or_replace<add_to_render_tag>(entity_);
 
     if (g_entt().all_of<Scene_Component>(entity_)) {
         scene_root_add_child(entity_);

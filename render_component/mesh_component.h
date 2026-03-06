@@ -24,7 +24,7 @@ struct share_block {
 
 struct mesh_and_share {
 #ifdef WITH_VULKAN_BACKEND
-    Model_mesh mesh;
+    VKR_mesh mesh;
 #elif  WITH_OPENGL_BACKEND
     unsigned int buffer;
 #endif
@@ -63,9 +63,9 @@ std::pair<share_block, share_block> load_model(const std::string &path);
 void clean_all_mesh_object();
 
 
-std::optional<Model_mesh> create_mesh(const entt::entity entity);
+std::optional<VKR_mesh> create_mesh(const entt::entity entity);
 
-
+VKR_mesh  get_VKR_mesh(const entt::entity entity);
 bool add_geometry_data(entt::entity entity_,
                        float min_x,
                        float min_y,

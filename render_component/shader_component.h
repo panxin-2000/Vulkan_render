@@ -7,6 +7,7 @@
 #include <map>
 #include <global_singleton.h>
 #include "vulkan_buffer.h"
+#include "update_push_constants_data.h"
 
 
 struct binding_resource {
@@ -99,8 +100,6 @@ void update_object_bindings_to_descriptor_sets(const entt::entity entity);
 
 void update_global_bindings_to_descriptor_sets(const entt::entity entity);
 
-#include "update_push_constants_data.h"
-
 
 template<typename T1>
 bool add_uniform_buffer_data_detail(sets_map &sets_map_in_for,
@@ -161,5 +160,9 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
 
 std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity);
+
+VkPipeline get_pipeline(const entt::entity entity);
+
+VkPipelineLayout get_pipeline_layout(const entt::entity entity);
 
 #endif //HELLO_MAC_SHADER_COMPONENT_H

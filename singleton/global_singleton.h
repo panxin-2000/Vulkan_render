@@ -42,7 +42,7 @@ struct Destroy_tag {
 struct Position_update_tag {
 };
 
-struct need_render_tag {
+struct add_to_render_tag {
 };
 
 struct uniform_buffer_update {

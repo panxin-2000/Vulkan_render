@@ -7,7 +7,7 @@
 #include <volk.h>
 #include "vulkan_buffer.h"
 
-class Model_mesh {
+class VKR_mesh {
 public:
     // 不做
     VKR_buffer_ptr vertices = {};
