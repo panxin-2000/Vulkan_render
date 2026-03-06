@@ -171,6 +171,10 @@ public:
                            UI_matrix_4x4(&view, 1280, 720);
                            set_render_parameter(instance, "global_view_4x4", view);
 
+                           matrix_4x4 projection;
+                           identity_matrix_4x4(&projection);
+                           set_render_parameter(instance, "global_projection_4x4", projection);
+
                            if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {

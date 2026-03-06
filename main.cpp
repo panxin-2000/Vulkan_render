@@ -76,14 +76,19 @@ int main(int argc, char *argv[]) {
     add_button(block_entity, "按钮1", 420, 420, 480, 480);
     add_button(block_entity, "按钮2", 35, 20, 145, 130);
 
+    entt::entity entity_ = g_entt().create();
+    g_entt().emplace<Name_component>(entity_, "blender Suzanne");
+    g_entt().emplace<VKR_shader_paths>(entity_,
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                       "", "");
+    add_geometry_data(entity_, "assets/suzanne.obj");
 
-    // auto render = new Geometry_data;
-    // render->debug_name = "blender Suzanne";
-    // render->mesh_path_ = "assets/suzanne.obj";
-    // render->set_vertex_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv");
-    // render->set_fragment_shader("/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv");
-
-    // add_object_to_render(render); // 因为这里没有区分。全部都在场景的根节点之下
+    auto sdfgh = get_shader_data();
+    set_render_parameter(entity_, "global_projection_4x4", sdfgh.projection);
+    set_render_parameter(entity_, "global_view_4x4", sdfgh.view);
+    set_render_parameter(entity_, "model_4x4", sdfgh.model[0]);
+    g_entt().emplace_or_replace<add_to_render_tag>(entity_);
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {

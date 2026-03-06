@@ -147,6 +147,17 @@ std::pair<share_block, share_block> load_model(const std::string &path) {
 }
 
 
+bool add_geometry_data(entt::entity entity_, const std::string &mesh_path) {
+    if (auto *pos = g_entt().try_get<Geometry_data>(entity_)) {
+        g_entt().remove<Geometry_data>(entity_);
+    }
+    g_entt().emplace<Geometry_data>(entity_);
+
+    auto &geometry      = g_entt().get<Geometry_data>(entity_);
+    geometry.mesh_path_ = mesh_path;
+    return true;
+}
+
 bool add_geometry_data(entt::entity entity_,
                        float min_x,
                        float min_y,

@@ -65,7 +65,10 @@ void clean_all_mesh_object();
 
 std::optional<VKR_mesh> create_mesh(const entt::entity entity);
 
-VKR_mesh  get_VKR_mesh(const entt::entity entity);
+VKR_mesh get_VKR_mesh(const entt::entity entity);
+
+bool add_geometry_data(entt::entity entity_, const std::string &mesh_path);
+
 bool add_geometry_data(entt::entity entity_,
                        float min_x,
                        float min_y,
