@@ -132,23 +132,37 @@ inline void sync_render_data_to_render_thread() {
         auto pos    = view.get<Rect_transform>(it);
         auto offset = pos.get_offset();
         LOG_INFO(g_log(), "offset x {} y {}", offset.x, offset.y);
+        //
+        matrix_4x4 view;
+        UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
+        set_render_parameter(it, "model_4x4", view);
+        update_object_bindings_to_descriptor_sets(it);
+        g_entt().remove<uniform_buffer_update>(it);
 
-        add_geometry_data(it, pos.get_bounding_box().min_point.x,
-                          pos.get_bounding_box().min_point.y,
-                          pos.get_bounding_box().max_point.x,
-                          pos.get_bounding_box().max_point.y);
+        auto temp_des = get_descriptor_sets(it);
 
-        const auto mesh = create_mesh(it);
-
-        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            if (mesh.has_value()) {
-                proxy->mesh = mesh.value();;
-            } else {
-                LOG_INFO(g_log(), "descriptor_sets empty");
-            }
+        auto lambda = [temp_des](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            proxy->vk_descriptor_set = temp_des;
         };
-
         update_VKR_object_proxy(it, lambda);
+
+
+        // add_geometry_data(it, pos.get_bounding_box().min_point.x,
+        //                   pos.get_bounding_box().min_point.y,
+        //                   pos.get_bounding_box().max_point.x,
+        //                   pos.get_bounding_box().max_point.y);
+
+        // const auto mesh = create_mesh(it);
+
+        // auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
+        //     if (mesh.has_value()) {
+        //         proxy->mesh = mesh.value();;
+        //     } else {
+        //         LOG_INFO(g_log(), "descriptor_sets empty");
+        //     }
+        // };
+
+        // update_VKR_object_proxy(it, lambda);
     }
 }
 
@@ -168,7 +182,7 @@ public:
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                               "", "");
                            matrix_4x4 view;
-                           UI_matrix_4x4(&view, 1280, 720);
+                           identity_matrix_4x4(&view);
                            set_render_parameter(instance, "global_view_4x4", view);
 
                            matrix_4x4 projection;

@@ -20,7 +20,8 @@ public:
     //  根据timeline 选择合适的时间释放
     ~DescriptorSet_detail();
 
-    VkDescriptorSet get_descriptor_set() const {
+    VkDescriptorSet get_descriptor_set(const uint64_t timeline = 0) {
+        if (timeline > timeline_) timeline_ = timeline;
         return descriptor_set_;
     }
 };

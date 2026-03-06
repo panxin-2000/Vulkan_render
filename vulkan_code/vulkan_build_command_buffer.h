@@ -135,7 +135,7 @@ inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, c
     std::vector<VkDescriptorSet> temp_descriptor_sets;
     temp_descriptor_sets.resize(vk_draw.vk_descriptor_set.size());
     for (size_t i = 0; i < vk_draw.vk_descriptor_set.size(); ++i) {
-        temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set();
+        temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set(time_line);
     }
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             vk_draw.pipeline_layout,
