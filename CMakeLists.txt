@@ -207,7 +207,7 @@ include_directories(external/tinyobj)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 find_package(OpenGL REQUIRED)
 
-find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(Eigen3 REQUIRED NO_MODULE)
 
 find_package(spirv_cross_core REQUIRED)
 find_package(spirv_cross_glsl REQUIRED)
