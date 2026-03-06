@@ -183,7 +183,20 @@ private
                 break;
             }
         }
-        discard_buffer_map_clean();
+        // 想在这里的清理的话，需要参考上面的顺序  // 整体的顺序
+
+
+        discard_descriptor_set_map_clean(); // descriptor_pools_
+        //                                     pipelines_
+        //                                     pipeline_layouts_
+        //                                     descriptor_sets_layout
+        //                                     shader_modules_
+        //                                     buffer_views_
+        discard_buffer_map_clean(); //         buffers_
+        //                                     image_views_
+        //                                     images_
+
+
         // 简单的将内存区域标记为没有内容
         // init_need_objects 再根据需要进行移动或者拼接操作
     }

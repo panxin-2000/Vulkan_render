@@ -6,6 +6,8 @@
 #define HELLO_MAC_SHADER_COMPONENT_H
 #include <map>
 #include <global_singleton.h>
+
+#include "descriptor.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
 
@@ -51,8 +53,8 @@ struct Update_descriptor_binding {
 
 
 struct Parameter_used {
-    std::vector<VkDescriptorSet> global_descriptor_sets;
-    std::vector<VkDescriptorSet> object_descriptor_sets;
+    std::vector<DescriptorSet_ptr> global_descriptor_sets; // descriptor_set 的 共享指针保存点
+    std::vector<DescriptorSet_ptr> object_descriptor_sets; // descriptor_set 的 共享指针保存点
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
 };
@@ -159,7 +161,7 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
 
-std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity);
+std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity);
 
 VkPipeline get_pipeline(const entt::entity entity);
 

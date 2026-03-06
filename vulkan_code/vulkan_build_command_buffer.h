@@ -132,11 +132,16 @@ inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, c
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
+    std::vector<VkDescriptorSet> temp_descriptor_sets;
+    temp_descriptor_sets.resize(vk_draw.vk_descriptor_set.size());
+    for (size_t i = 0; i < vk_draw.vk_descriptor_set.size(); ++i) {
+        temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set();
+    }
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             vk_draw.pipeline_layout,
                             0,
-                            vk_draw.vk_descriptor_set.size(),
-                            vk_draw.vk_descriptor_set.data(), 0,
+                            temp_descriptor_sets.size(),
+                            temp_descriptor_sets.data(), 0,
                             nullptr);
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制

@@ -4,7 +4,28 @@
 
 #ifndef HOWTOVULKAN_DESCRIPTOR_H
 #define HOWTOVULKAN_DESCRIPTOR_H
+#include "APP_utility_mixins.h"
 #include "vulkan_device_handle.h"
+
+
+class DescriptorSet_detail : public NonCopyable {
+public:
+    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+    uint64_t timeline_              = 0;
+
+    DescriptorSet_detail(const VkDescriptorSet descriptor_set) {
+        descriptor_set_ = descriptor_set;
+    }
+
+    //  根据timeline 选择合适的时间释放
+    ~DescriptorSet_detail();
+
+    VkDescriptorSet get_descriptor_set() const {
+        return descriptor_set_;
+    }
+};
+
+using DescriptorSet_ptr = std::shared_ptr<DescriptorSet_detail>;
 
 
 /**
@@ -14,7 +35,7 @@
  * @param descriptor_set_texture
  */
 void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
-                            const std::vector<VkDescriptorSet> &descriptor_set_texture);
+                            const std::vector<DescriptorSet_ptr> &descriptor_set_texture);
 
 
 // std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
@@ -37,9 +58,12 @@ auto variable_descriptor(const uint32_t binding_less_size,
  * @param binding_flags
  * @return
  */
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
-                                                      const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
-                                                      const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
+std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
+                                                        const std::vector<VkDescriptorSetLayout> &
+                                                        descriptor_set_layouts,
+                                                        const std::vector<VkDescriptorBindingFlags> &binding_flags =
+                                                                {});
 
 
+void discard_descriptor_set_map_clean();
 #endif //HOWTOVULKAN_DESCRIPTOR_H

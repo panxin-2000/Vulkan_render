@@ -7,8 +7,10 @@
 #include "vulkan_global_macro.h"
 #include <vk_mem_alloc.h>
 
+#include "APP_utility_mixins.h"
 
-class VKR_image {
+
+class VKR_image : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     VkImageView image_view_   = VK_NULL_HANDLE;

@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_RENDER_PROXY_H
 #define HELLO_MAC_RENDER_PROXY_H
+#include "descriptor.h"
 #include "mesh_component.h"
 
 
@@ -12,7 +13,7 @@ public:
     std::string debug_name;
     VkPipeline vk_pipeline;
     VkPipelineLayout pipeline_layout;
-    std::vector<VkDescriptorSet> vk_descriptor_set;
+    std::vector<DescriptorSet_ptr> vk_descriptor_set; // descriptor_set 的 共享指针保存点
     VkViewport viewport;
     VkRect2D scissor;
     VkDeviceAddress push_constants_address;

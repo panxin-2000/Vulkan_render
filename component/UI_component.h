@@ -102,7 +102,7 @@ public:
 
 // 回调函数
 
-inline void update_UI_position() {
+inline void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
     {
         // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好

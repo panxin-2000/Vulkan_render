@@ -28,14 +28,14 @@ void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
             return;
         }
         allocate_descriptor_sets(entity, "object");
-        const std::vector<VkDescriptorSet> &descriptor_sets = get_descriptor_sets(entity);
+        const std::vector<DescriptorSet_ptr> &descriptor_sets = get_descriptor_sets(entity);
 
         std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
         descriptor_write_bindings.resize(vk_s_d_s.update_object_descriptor_sets.size());
         size_t i = 0;
         for (auto &[name,binding_update]: vk_s_d_s.update_object_descriptor_sets) {
             descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
-            descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
+            descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet]->get_descriptor_set();
             if (binding_update.bufferInfo.first) {
                 const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                     allocate(sizeof(VkDescriptorBufferInfo)));
@@ -72,14 +72,14 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
             return;
         }
         allocate_descriptor_sets(entity, "global");
-        const std::vector<VkDescriptorSet> &descriptor_sets = get_descriptor_sets(entity);
+        const std::vector<DescriptorSet_ptr> &descriptor_sets = get_descriptor_sets(entity);
 
         std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
         descriptor_write_bindings.resize(vk_s_d_s.update_global_descriptor_sets.size());
         size_t i = 0;
         for (auto &[name,binding_update]: vk_s_d_s.update_global_descriptor_sets) {
             descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
-            descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet];
+            descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet]->get_descriptor_set();
             if (binding_update.bufferInfo.first) {
                 const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                     allocate(sizeof(VkDescriptorBufferInfo)));
@@ -102,8 +102,8 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
     }
 }
 
-std::vector<VkDescriptorSet> get_global_descriptor_set(const entt::entity entity) {
-    std::vector<VkDescriptorSet> global_descriptor_set;
+std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity entity) {
+    std::vector<DescriptorSet_ptr> global_descriptor_set;
 
     if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
@@ -161,8 +161,8 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
     }
 }
 
-std::vector<VkDescriptorSet> get_descriptor_sets(const entt::entity entity) {
-    std::vector<VkDescriptorSet> descriptor_sets; // 这里是需要按照顺序的
+std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
+    std::vector<DescriptorSet_ptr> descriptor_sets; // 这里是需要按照顺序的
     if (const auto vk_s_d_s = g_entt().try_get<Parameter_used>(entity)) {
         if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {

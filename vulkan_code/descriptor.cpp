@@ -9,12 +9,12 @@
 
 
 void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
-                            const std::vector<VkDescriptorSet> &descriptor_set_texture) {
+                            const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
         VkWriteDescriptorSet temp{
             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet          = descriptor_set_texture[i],
+            .dstSet          = descriptor_set_texture[i]->get_descriptor_set(),
             .dstBinding      = 0,
             .descriptorCount = static_cast<uint32_t>(textureDescriptors.size()),
             .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -59,16 +59,20 @@ auto variable_descriptor(const uint32_t binding_less_size,
 }
 
 
-std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
-                                                      const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
-                                                      const std::vector<VkDescriptorBindingFlags> &binding_flags) {
+std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
+                                                        const std::vector<VkDescriptorSetLayout> &
+                                                        descriptor_set_layouts,
+                                                        const std::vector<VkDescriptorBindingFlags> &binding_flags) {
     const uint32_t resize_number = descriptor_set_layouts.size();
+    std::vector<DescriptorSet_ptr> return_value;
     std::vector<VkDescriptorSet> descriptor_sets;
     if (descriptor_set_layouts.empty())
-        return descriptor_sets;
+        return return_value;
 
     std::vector<uint32_t> variableDescCount;
     descriptor_sets.resize(resize_number);
+    return_value.resize(resize_number);
+
 
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
@@ -90,5 +94,34 @@ std::vector<VkDescriptorSet> allocate_descriptor_sets(VK_handle &handle,
 
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc,
                                  descriptor_sets.data()));
-    return descriptor_sets;
+
+    for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
+        return_value[i] = std::make_shared<DescriptorSet_detail>(descriptor_sets[i]);
+    }
+
+    return return_value;
+}
+
+std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
+
+
+DescriptorSet_detail::~DescriptorSet_detail() {
+    discard_descriptor_set_map.insert({descriptor_set_, timeline_});
+    descriptor_set_ = VK_NULL_HANDLE;
+    timeline_       = 0;
+}
+
+
+void discard_descriptor_set_map_clean() {
+    const auto &handle = VK_handle::get();
+    for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
+        const auto &[descriptor_set, timeline] = *it;
+        LOG_DEBUG(g_log(), "descriptor_set finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
+                  timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            vkFreeDescriptorSets(handle.get_device(), get_descriptor_pool(), 1, &descriptor_set);
+        } else {
+            ++it;
+        }
+    }
 }
