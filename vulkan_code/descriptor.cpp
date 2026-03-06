@@ -8,6 +8,9 @@
 #include "descriptor_pool.h"
 
 
+std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
+std::mutex discard_descriptor_set_map_mutex;
+
 void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                             const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
@@ -22,7 +25,7 @@ void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorIma
         };
         writeDescSet.push_back(temp);
     }
-
+    std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     vkUpdateDescriptorSets(handle.get_device(),
                            writeDescSet.size(),
                            writeDescSet.data(), 0, nullptr);
@@ -91,7 +94,7 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
             }
         }
     }
-
+    std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc,
                                  descriptor_sets.data()));
 
@@ -102,11 +105,9 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
     return return_value;
 }
 
-std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
-std::mutex discard_descriptor_set_map_mutex;
 
 DescriptorSet_detail::~DescriptorSet_detail() {
-    // std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
+    std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     discard_descriptor_set_map.insert({descriptor_set_, timeline_});
     descriptor_set_ = VK_NULL_HANDLE;
     timeline_       = 0;
@@ -117,11 +118,11 @@ void discard_descriptor_set_map_clean() {
     const auto &handle = VK_handle::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
         const auto &[descriptor_set, timeline] = *it;
-        LOG_INFO(g_log(), "descriptor_set finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
-                 timeline);
+        LOG_DEBUG(g_log(), "descriptor_set finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
+                  timeline);
         if (handle.get_finished_timeline() >= timeline) {
+            std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
             vkFreeDescriptorSets(handle.get_device(), get_descriptor_pool(), 1, &descriptor_set);
-            // std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
             it = discard_descriptor_set_map.erase(it);
         } else {
             ++it;

@@ -146,7 +146,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
                 vk_s_d_s.global_descriptor_sets = allocate_descriptor_sets(handle,
                                                                            (*shader_temp)->
                                                                            global_descriptor_sets_layout,
-                                                                           sets_flags);
+                                                                           {});
             }
         } else {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
@@ -155,7 +155,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
                 vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(handle,
                                                                            (*shader_temp)->
                                                                            object_descriptor_sets_layout,
-                                                                           sets_flags);
+                                                                           {});
             }
         }
     }
