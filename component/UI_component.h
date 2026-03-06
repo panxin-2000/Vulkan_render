@@ -169,7 +169,7 @@ public:
                                                               "", "");
                            matrix_4x4 view;
                            UI_matrix_4x4(&view, 1280, 720);
-                           add_uniform_buffer_data(instance, "global_view_4x4", view);
+                           set_render_parameter(instance, "global_view_4x4", view);
 
                            if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},

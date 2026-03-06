@@ -135,7 +135,7 @@ bool add_uniform_buffer_data_detail(sets_map &sets_map_in_for,
 
 
 template<typename T1>
-bool add_uniform_buffer_data(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
+bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 binding_data) {
     if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
         const auto &shader_data =
                 g_entt().get_or_emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
