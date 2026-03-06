@@ -5,6 +5,8 @@
 #include "vulkan_buffer.h"
 #include "vulkan_device_handle.h"
 
+std::mutex buffer_mutex;
+
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
     const auto &handle = VK_handle::get();
@@ -182,6 +184,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
     };
     VmaAllocationInfo allocInfo = {};
     const auto &handle          = VK_handle::get();
+    std::lock_guard<std::mutex> lock(buffer_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
                                  &BufferCreateInfo, &AllocationCreateInfo,
                                  &buffer, &allocation,
@@ -209,6 +212,7 @@ bool VKR_buffer::destroy_buffer() {
 
 VKR_buffer::~VKR_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
+        std::lock_guard<std::mutex> lock(buffer_mutex);
         discard_buffer_map.insert({{buffer_handle_, allocation_}, timeline_});
         buffer_handle_ = VK_NULL_HANDLE;
         allocation_    = VK_NULL_HANDLE;
@@ -218,6 +222,7 @@ VKR_buffer::~VKR_buffer() {
 
 bool VKR_buffer_block::destroy_buffer() {
     if (size_ != 0) {
+        std::lock_guard<std::mutex> lock(buffer_mutex);
         discard_buffer_block_map.insert({
                                             {ptr, offset_},
                                             block_timeline_
@@ -231,6 +236,7 @@ bool VKR_buffer_block::destroy_buffer() {
 VKR_buffer_block::~VKR_buffer_block() {
     //
     if (size_ != 0) {
+        std::lock_guard<std::mutex> lock(buffer_mutex);
         discard_buffer_block_map.insert({
                                             {ptr, offset_},
                                             block_timeline_
@@ -245,6 +251,7 @@ VKR_buffer_block::~VKR_buffer_block() {
 VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t request_size) {
     auto &offset_and_size_map = buffer->get_offset_and_size_map();
     auto &size_and_offset_map = buffer->get_size_and_offset_map();
+    std::lock_guard<std::mutex> lock(buffer_mutex);
     if (const auto freed_memory_it = size_and_offset_map.lower_bound(request_size);
         freed_memory_it != size_and_offset_map.end()) {
         // it->first 是最接近且满足条件的 size
@@ -279,10 +286,11 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uin
 void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const uint64_t offset) {
     auto &offset_const_and_size_map = buffer->get_offset_and_size_map();
     auto &size_const_and_offset_map = buffer->get_size_and_offset_map();
-    auto it_offset                  = offset_const_and_size_map.find(offset);
-    auto it_offset_before           = offset_const_and_size_map.upper_bound(offset - 1);
-    auto it_offset_after            = offset_const_and_size_map.lower_bound(offset + 1);
-    auto before_bool                = false;
+    std::lock_guard<std::mutex> lock(buffer_mutex);
+    auto it_offset        = offset_const_and_size_map.find(offset);
+    auto it_offset_before = offset_const_and_size_map.upper_bound(offset - 1);
+    auto it_offset_after  = offset_const_and_size_map.lower_bound(offset + 1);
+    auto before_bool      = false;
     if (offset == 0) {
         it_offset_before = offset_const_and_size_map.end();
         before_bool      = false;
@@ -389,6 +397,7 @@ void discard_buffer_map_clean() {
         const auto &[buffer, timeline] = *it;
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
         if (handle.get_finished_timeline() >= timeline) {
+            std::lock_guard<std::mutex> lock(buffer_mutex);
             vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);
         } else {
