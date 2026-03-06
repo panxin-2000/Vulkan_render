@@ -39,8 +39,8 @@ inline bool add_object_to_render(const entt::entity entity) {
         // 打印一个 entity name 读取 mesh 错误
     }
 
-    g_entt().emplace<std::shared_ptr<draw_need_vk> >(entity, std::make_shared<draw_need_vk>());
-    const auto &vk_data = g_entt().get<std::shared_ptr<draw_need_vk> >(entity);
+    g_entt().emplace<std::shared_ptr<VKR_object_proxy> >(entity, std::make_shared<VKR_object_proxy>());
+    const auto &vk_data = g_entt().get<std::shared_ptr<VKR_object_proxy> >(entity);
 
     vk_data->mesh                   = mesh.value();
     vk_data->pipeline_layout        = pipeline_layout;
@@ -54,14 +54,14 @@ inline bool add_object_to_render(const entt::entity entity) {
     return true;
 }
 
-inline bool update_object_to_render(const std::shared_ptr<draw_need_vk> &render_object,
-                                    const std::function<void(std::shared_ptr<draw_need_vk> render_object)> &callback) {
+inline bool update_object_to_render(const std::shared_ptr<VKR_object_proxy> &render_object,
+                                    const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &callback) {
     vk_render_queue::instance().render_update(render_object, callback);
     return true;
 }
 
 inline bool clean_object_to_render(const entt::entity entity) {
-    if (auto render = g_entt().try_get<std::shared_ptr<draw_need_vk> >(entity)) {
+    if (auto render = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
         vk_render_queue::instance().render_object_need_clean(*render);
         return true;
     }

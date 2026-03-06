@@ -35,7 +35,7 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-    std::vector<std::shared_ptr<draw_need_vk> > need_render_objects;
+    std::vector<std::shared_ptr<VKR_object_proxy> > need_render_objects;
 
 public:
     void render_thread(VK_handle &handle) {

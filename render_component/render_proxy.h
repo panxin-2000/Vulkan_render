@@ -7,7 +7,7 @@
 #include "mesh_component.h"
 
 
-class draw_need_vk {
+class VKR_object_proxy {
 public:
     std::string debug_name;
     VkPipeline vk_pipeline;

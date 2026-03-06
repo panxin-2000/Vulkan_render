@@ -125,7 +125,7 @@ inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void build_command_buffer(VK_handle &engine, draw_need_vk &vk_draw, const uint64_t time_line) {
+inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);

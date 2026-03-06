@@ -13,11 +13,11 @@ class vk_render_queue {
 private:
     mutable std::mutex mtx;
     // std::vector<union_render_data> render_objects;
-    std::queue<std::shared_ptr<draw_need_vk> > need_init;
-    std::queue<std::shared_ptr<draw_need_vk> > need_update;
-    std::queue<std::shared_ptr<draw_need_vk> > need_clean;
-    std::queue<std::pair<std::shared_ptr<draw_need_vk>, std::function<void
-                             (std::shared_ptr<draw_need_vk> render_object)> > > update_function;
+    std::queue<std::shared_ptr<VKR_object_proxy> > need_init;
+    std::queue<std::shared_ptr<VKR_object_proxy> > need_update;
+    std::queue<std::shared_ptr<VKR_object_proxy> > need_clean;
+    std::queue<std::pair<std::shared_ptr<VKR_object_proxy>, std::function<void
+                             (std::shared_ptr<VKR_object_proxy> render_object)> > > update_function;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
 
 public:
@@ -45,10 +45,10 @@ public:
         }
     }
 
-    std::optional<std::shared_ptr<draw_need_vk> > get_need_init() {
+    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_init() {
         std::unique_lock<std::mutex> lock(mtx);
         if (!need_init.empty()) {
-            std::shared_ptr<draw_need_vk> val = need_init.front();
+            std::shared_ptr<VKR_object_proxy> val = need_init.front();
             need_init.pop();
             return val;
         }
@@ -64,20 +64,20 @@ public:
         }
     }
 
-    std::optional<std::shared_ptr<draw_need_vk> > get_need_update() {
+    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_update() {
         std::unique_lock<std::mutex> lock(mtx);
         if (!need_update.empty()) {
-            std::shared_ptr<draw_need_vk> val = need_update.front();
+            std::shared_ptr<VKR_object_proxy> val = need_update.front();
             need_update.pop();
             return val;
         }
         return std::nullopt;
     }
 
-    std::optional<std::shared_ptr<draw_need_vk> > get_need_clean() {
+    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_clean() {
         std::unique_lock<std::mutex> lock(mtx);
         if (!need_clean.empty()) {
-            std::shared_ptr<draw_need_vk> val = need_clean.front();
+            std::shared_ptr<VKR_object_proxy> val = need_clean.front();
             need_clean.pop();
             return val;
         }
@@ -85,13 +85,13 @@ public:
     }
 
 
-    void render_object_need_init(std::shared_ptr<draw_need_vk> render_object) {
+    void render_object_need_init(std::shared_ptr<VKR_object_proxy> render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_init.push(render_object);
         LOG_INFO(g_log(), "add {} to vk_render_queue ", render_object->debug_name);
     }
 
-    void render_object_need_update(std::shared_ptr<draw_need_vk> render_object) {
+    void render_object_need_update(std::shared_ptr<VKR_object_proxy> render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_update.push(render_object);
         LOG_INFO(g_log(), "update {} to vk_render_queue ", render_object->debug_name);
@@ -102,13 +102,13 @@ public:
     // render_object->vk_descriptor_set = std::move(descriptor_sets);
     // }
 
-    void render_update(std::shared_ptr<draw_need_vk> render_object,
-                       const std::function<void(std::shared_ptr<draw_need_vk> render_object)> &callback) {
+    void render_update(std::shared_ptr<VKR_object_proxy> render_object,
+                       const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &callback) {
         std::unique_lock<std::mutex> lock(mtx);
         update_function.emplace(render_object, callback);
     }
 
-    void render_object_need_clean(std::shared_ptr<draw_need_vk> render_object) {
+    void render_object_need_clean(std::shared_ptr<VKR_object_proxy> render_object) {
         std::unique_lock<std::mutex> lock(mtx);
         need_clean.push(render_object);
         LOG_INFO(g_log(), "clean {} to vk_render_queue ", render_object->debug_name);
