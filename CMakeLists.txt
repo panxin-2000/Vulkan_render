@@ -160,6 +160,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/vulkan_validation_layer.cpp"
             "vulkan_code/vulkan_image.cpp"
             "vulkan_code/vulkan_buffer.cpp"
+            "vulkan_code/vulkan_buffer_block.cpp"
             "vulkan_code/vulkan_device_handle.cpp"
             "vulkan_code/transfer_texture_to_gpu.cpp"
             "render_thread/backend.cpp"

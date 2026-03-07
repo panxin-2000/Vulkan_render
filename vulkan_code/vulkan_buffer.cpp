@@ -5,7 +5,7 @@
 #include "vulkan_buffer.h"
 #include "vulkan_device_handle.h"
 
-std::mutex buffer_mutex;
+static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
@@ -184,7 +184,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
     };
     VmaAllocationInfo allocInfo = {};
     const auto &handle          = VK_handle::get();
-    std::lock_guard<std::mutex> lock(buffer_mutex);
+    std::lock_guard<std::mutex> lock(buffer_block_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
                                  &BufferCreateInfo, &AllocationCreateInfo,
                                  &buffer, &allocation,
@@ -195,10 +195,8 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
 
 // 将 timeline 与销毁结合
 
-using buffer_offset = VkDeviceSize;
 
 std::map<std::pair<VkBuffer, VmaAllocation>, uint64_t> discard_buffer_map;
-std::map<std::pair<VKR_buffer_pool_ptr, buffer_offset>, uint64_t> discard_buffer_block_map;
 
 
 bool VKR_buffer::destroy_buffer() {
@@ -212,7 +210,7 @@ bool VKR_buffer::destroy_buffer() {
 
 VKR_buffer::~VKR_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
-        std::lock_guard<std::mutex> lock(buffer_mutex);
+        std::lock_guard<std::mutex> lock(buffer_block_mutex);
         discard_buffer_map.insert({{buffer_handle_, allocation_}, timeline_});
         buffer_handle_ = VK_NULL_HANDLE;
         allocation_    = VK_NULL_HANDLE;
@@ -220,179 +218,7 @@ VKR_buffer::~VKR_buffer() {
 }
 
 
-bool VKR_buffer_block::destroy_buffer() {
-    if (size_ != 0) {
-        std::lock_guard<std::mutex> lock(buffer_mutex);
-        discard_buffer_block_map.insert({
-                                            {ptr, offset_},
-                                            block_timeline_
-                                        });
-        offset_ = 0;
-        size_   = 0;
-    }
-    return true;
-}
-
-VKR_buffer_block::~VKR_buffer_block() {
-    //
-    if (size_ != 0) {
-        std::lock_guard<std::mutex> lock(buffer_mutex);
-        discard_buffer_block_map.insert({
-                                            {ptr, offset_},
-                                            block_timeline_
-                                        });
-        offset_ = 0;
-        size_   = 0;
-    }
-    LOG_DEBUG(g_log(), "VKR_buffer_block ~~");
-};
-
-
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t request_size) {
-    auto &offset_and_size_map = buffer->get_offset_and_size_map();
-    auto &size_and_offset_map = buffer->get_size_and_offset_map();
-    std::lock_guard<std::mutex> lock(buffer_mutex);
-    if (const auto freed_memory_it = size_and_offset_map.lower_bound(request_size);
-        freed_memory_it != size_and_offset_map.end()) {
-        // it->first 是最接近且满足条件的 size
-        // it->second 是对应的偏移量
-        LOG_INFO(g_log(), "find free memory size {} offset {} request_size {} ",
-                 freed_memory_it->first,
-                 freed_memory_it->second.offset_,
-                 request_size);
-        auto temp_size   = freed_memory_it->first;
-        auto temp_offset = freed_memory_it->second;
-        if (temp_size != request_size) {
-            auto it_offset = offset_and_size_map.find(temp_offset.offset_);
-            if (freed_memory_it != size_and_offset_map.end()) {
-                //                                空闲大小              空闲起始地址
-                size_and_offset_map.insert({temp_size - request_size, {temp_offset.offset_ + request_size}});
-                //                                申请大小              申请起始地址
-                size_and_offset_map.erase(freed_memory_it);
-                // offset 不变           申请大小改变        类型改变
-                it_offset->second = {request_size, false};
-                //                                空闲起始地址                  空闲大小
-                offset_and_size_map.insert({temp_offset.offset_ + request_size, {temp_size - request_size, true}});
-            }
-        }
-        return std::make_shared<VKR_buffer_block>(buffer, temp_offset.offset_, request_size);
-    } else {
-        LOG_DEBUG(g_log(), "find free memory failed for request_size {} ", request_size);
-    }
-    return {};
-}
-
-
-void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const uint64_t offset) {
-    auto &offset_const_and_size_map = buffer->get_offset_and_size_map();
-    auto &size_const_and_offset_map = buffer->get_size_and_offset_map();
-    std::lock_guard<std::mutex> lock(buffer_mutex);
-    auto it_offset        = offset_const_and_size_map.find(offset);
-    auto it_offset_before = offset_const_and_size_map.upper_bound(offset - 1);
-    auto it_offset_after  = offset_const_and_size_map.lower_bound(offset + 1);
-    auto before_bool      = false;
-    if (offset == 0) {
-        it_offset_before = offset_const_and_size_map.end();
-        before_bool      = false;
-    } else if (it_offset_before != offset_const_and_size_map.end()) {
-        before_bool = it_offset_before->second.status_;
-    }
-    auto after_bool = false;
-    if (it_offset_after != offset_const_and_size_map.end()) {
-        after_bool = it_offset_after->second.status_;
-    }
-
-#define erase_before \
-    {\
-        auto range = size_const_and_offset_map.equal_range(it_offset_before->second.size_); \
-        for (auto it = range.first; it != range.second; ++it) {\
-            if (it->second.offset_ == it_offset_before->first) {\
-                size_const_and_offset_map.erase(it); \
-                break;\
-            }\
-        }\
-    }
-
-#define erase_after \
-    {\
-        auto range = size_const_and_offset_map.equal_range(it_offset_after->second.size_);\
-        for (auto it = range.first; it != range.second; ++it) {\
-            if (it->second.offset_ == it_offset_after->first) {\
-                size_const_and_offset_map.erase(it); \
-                break;\
-            }\
-        }\
-    }
-
-    // 查找前一个块，检测是否能合并
-    // 检测后一个块，检测是否能合并
-
-    // offset_const_and_size_map         size_const_and_offset_map 只有能分配的
-    // 两个都不能合并
-    // 当前 更改标志位                     添加 size 和 offset
-    if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == false) {
-        it_offset->second = {it_offset->second.size_, true};
-        size_const_and_offset_map.insert({it_offset->second.size_, {it_offset->first}});
-    }
-
-    // 只有前一个能合并
-    // 前一个 更改大小                     找到 前一个 size  删除
-    // 当前  删除                         添加合并后的 size 和 offset
-    if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == false) {
-        erase_before;
-        const auto combination_size   = it_offset->second.size_ + it_offset_before->second.size_;
-        const auto combination_offset = it_offset_before->first;
-        it_offset_before->second      = {combination_size, true};
-        offset_const_and_size_map.erase(it_offset);
-        size_const_and_offset_map.insert({combination_size, {combination_offset}});
-    }
-
-    // 之后后一个能合并
-    // 当前 更改大小                       找到 后一个 size  删除
-    // 后一个 删除                         添加合并后的 size 和 offset
-    if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == true) {
-        erase_after;
-        const auto combination_size   = it_offset->second.size_ + it_offset_after->second.size_;
-        const auto combination_offset = it_offset->first;
-        it_offset->second             = {combination_size, true};
-        offset_const_and_size_map.erase(it_offset_after);
-        size_const_and_offset_map.insert({combination_size, {combination_offset}});
-    }
-    // 两个都能合并
-    // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
-    // 当前  删除                          添加合并后的 size 和 offset
-    // 后一个 删除
-    if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == true) {
-        const auto combination_size = it_offset_before->second.size_ +
-                                      it_offset->second.size_ +
-                                      it_offset_after->second.size_;
-        const auto combination_offset = it_offset_before->first;
-        erase_before;
-        erase_after;
-        it_offset_before->second = {combination_size, true};
-        offset_const_and_size_map.erase(it_offset);
-        offset_const_and_size_map.erase(it_offset_after);
-        size_const_and_offset_map.insert({combination_size, {combination_offset}});
-    }
-}
-
-void discard_buffer_block_map_clean() {
-    const auto &handle             = VK_handle::get();
-    const auto current_finish_time = handle.get_finished_timeline();
-    for (auto it = discard_buffer_block_map.begin(); it != discard_buffer_block_map.end(); /* 后面不加 ++ */) {
-        const auto &[buffer, timeline] = *it;
-        if (current_finish_time >= timeline + 400) {
-            LOG_INFO(g_log(), "discard_buffer_block timeline {}  , timeline {} offset {}",
-                     current_finish_time,
-                     timeline,
-                     buffer.second);
-            GPU_pool_free(buffer.first, buffer.second);
-            it = discard_buffer_block_map.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
+void discard_buffer_block_map_clean();
 
 void discard_buffer_map_clean() {
     const auto &handle = VK_handle::get();
@@ -401,7 +227,7 @@ void discard_buffer_map_clean() {
         const auto &[buffer, timeline] = *it;
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
         if (handle.get_finished_timeline() >= timeline) {
-            std::lock_guard<std::mutex> lock(buffer_mutex);
+            std::lock_guard<std::mutex> lock(buffer_block_mutex);
             vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);
         } else {

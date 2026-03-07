@@ -166,5 +166,6 @@ VKR_buffer_ptr create_vma_buffer(VkDeviceSize size, VkBufferUsageFlags usage, Vm
 
 void discard_buffer_map_clean();
 
+using buffer_offset = VkDeviceSize;
 
 #endif //HELLO_MAC_VULKAN_BUFFER_H
