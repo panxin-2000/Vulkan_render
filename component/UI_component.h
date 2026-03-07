@@ -94,11 +94,11 @@ inline void update_object_offset() {
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos    = view.get<Rect_transform>(it);
-        auto offset = pos.get_bounding_box();
+        auto offset = pos.get_offset();
         matrix_4x4 view;
-        UI_matrix_4x4(&view, 1280, 720, offset.min_point.x, offset.min_point.y);
+        UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
         set_render_parameter(it, "model_4x4", view);
-        // LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
+        LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
 
         auto result = set_render_push_constant_parameter(it, "model_4x4", view);
 
@@ -109,6 +109,7 @@ inline void update_object_offset() {
         g_entt().remove<Position_update_tag>(it);
     }
 }
+
 
 inline void update_object_mesh() {
     const auto view = g_entt().view<Position_update_tag, Rect_transform>();
@@ -139,7 +140,22 @@ inline void update_object_mesh() {
 
 inline void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
+
     {
+        // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
+        // global 相关的内容尽量只能偏移，
+        const auto view = g_entt().view<global_uniform_buffer_update>();
+        for (const auto &it: view) {
+            update_global_bindings_to_descriptor_sets(it);
+            g_entt().remove<global_uniform_buffer_update>(it);
+        }
+    } {
+        const auto view = g_entt().view<uniform_buffer_update>();
+        for (const auto &it: view) {
+            update_object_bindings_to_descriptor_sets(it);
+            g_entt().remove<uniform_buffer_update>(it);
+        }
+    } {
         const auto view = g_entt().view<std::shared_ptr<VKR_object_proxy> >();
         // 位置发生了更新，需要讲更新传递出去
         for (const auto it: view) {
