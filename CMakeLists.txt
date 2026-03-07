@@ -384,9 +384,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")
 # 可以更容易地使用相对路径（如 ./shaders/main.spv）来定位资源
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
+set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/render/shader)
+file(GLOB SHADER_FILES
+        "${SHADER_SOURCE_DIR}/*.vert"
+        "${SHADER_SOURCE_DIR}/*.frag"
+        "${SHADER_SOURCE_DIR}/*.geom"
+        "${SHADER_SOURCE_DIR}/*.comp"
+)
 
 add_executable(learn_render main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
-        ${component} ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
+        ${SHADER_FILES} ${component} ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
@@ -402,57 +409,21 @@ target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 target_link_libraries(learn_render PRIVATE DirectXMath)
-
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
-add_custom_command(
-        TARGET learn_render
-        PRE_BUILD
-        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.vert -o
-        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.vert.spv
-)
-add_custom_command(
-        TARGET learn_render
-        PRE_BUILD
-        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag -o
-        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/temp.frag.spv
-)
-add_custom_command(
-        TARGET learn_render
-        PRE_BUILD
-        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.vert -o
-        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.vert.spv
-)
-add_custom_command(
-        TARGET learn_render
-        PRE_BUILD
-        COMMAND glslc ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.frag -o
-        ${CMAKE_CURRENT_SOURCE_DIR}/render/shader/vulkan_different_color.frag.spv
-)
+# 使用自定义命令复制文件
+foreach (SHADER_FILE ${SHADER_FILES})
+    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
+    add_custom_command(
+            TARGET learn_render
+            PRE_BUILD
+            COMMAND glslc ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
+            COMMAND echo "compiler " ${SHADER_SOURCE_DIR}/${SHADER_NAME}
+    )
+endforeach ()
 
+# 创建一个目标来依赖所有着色器
+add_custom_target(shaders_complier ALL DEPENDS ${SHADER_FILE})
 
-# 自动执行命令编译 glsl 的脚本
-#cmake_minimum_required(VERSION 3.19)
-#project(Test)
-#
-#set( ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-#
-#set(SHADER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
-#file(GLOB SHADERS ${SHADER_DIR}/*.vert ${SHADER_DIR}/*.frag ${SHADER_DIR}/*.comp ${SHADER_DIR}/*.geom ${SHADER_DIR}/*.tesc ${SHADER_DIR}/*.tese ${SHADER_DIR}/*.mesh ${SHADER_DIR}/*.task ${SHADER_DIR}/*.rgen ${SHADER_DIR}/*.rchit ${SHADER_DIR}/*.rmiss)
-#
-#file(GLOB SPV_SHADERS ${SHADER_DIR}/*.spv)
-#
-#find_package(Vulkan)
-#
-#foreach(SHADER IN LISTS SHADERS)
-#get_filename_component(FILENAME ${SHADER} NAME)
-#add_custom_command(OUTPUT ${SHADER_DIR}/shaders/${FILENAME}.spv
-#COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${SHADER} -o ${SHADER_DIR}/shaders/${FILENAME}.spv
-#DEPENDS ${SHADER}
-#COMMENT "Compiling ${FILENAME}")
-#endForeach()
-#
-#add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
-#
-#add_executable(Test main.cpp ${SHADERS})
-#add_dependencies(Test shaders)
+# 将自定义目标与可执行目标关联
+add_dependencies(learn_render shaders_complier)
