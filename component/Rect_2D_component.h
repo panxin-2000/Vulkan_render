@@ -96,7 +96,7 @@ inline void update_object_offset() {
         auto pos    = view.get<Rect_2D_transform>(it);
         auto offset = pos.get_offset();
         matrix_4x4 view;
-        UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
+        UI_matrix_4x4(&view, pos.get_zoom(), pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
         LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
 

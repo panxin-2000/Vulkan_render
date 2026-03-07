@@ -75,6 +75,7 @@ inline void sync_render_data_to_render_thread() {
 
 int main(int argc, char *argv[]) {
     DirectX::XMVECTOR v = DirectX::XMVectorSet(1.0f, 2.0f, 3.0f, 4.0f);
+    DirectX::XMMATRIX m = DirectX::XMMatrixIdentity();
     std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
