@@ -122,6 +122,11 @@ public:
         return ptr->get_buffer_handle_ptr(timeline);
     }
 
+    [[nodiscard]] VkDeviceAddress get_gpu_device_address(const uint64_t timeline = 0) {
+        if (timeline > block_timeline_) block_timeline_ = timeline;
+        return ptr->get_gpu_device_address() + offset_;
+    }
+
 
     [[nodiscard]] const VKR_buffer_block &value() const {
         return *this;

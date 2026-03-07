@@ -44,8 +44,8 @@ int main(int argc, char *argv[]) {
     register_glfw(handle.get_window());
 
     UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 200, 200);
-    UI_block("按钮2", 35, 20, 145, 130);
+    UI_block("功能块", 0, 0, 50, 200);
+    UI_block("按钮2", 0, 0, 145, 130);
 
     // object_3d_model("blender Suzanne", "assets/suzanne.obj");
 
@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
             auto view = g_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
             g_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
+
         sync_render_data_to_render_thread();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));

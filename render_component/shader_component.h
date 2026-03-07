@@ -161,6 +161,13 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 }
 
 
+template<typename T1>
+VKR_buffer_block_ptr set_render_push_constant_parameter(const entt::entity entity, const std::string &binding_name,
+                                                        T1 binding_data) {
+    auto buffer_block = copy_data_to_gpu_buffer(binding_data);
+    return buffer_block;
+}
+
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
 
 std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity);

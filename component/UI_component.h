@@ -89,49 +89,57 @@ public:
     }
 };
 
+inline void update_object_offset() {
+    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, Rect_transform>();
+    // 包围盒发生了更新
+    for (const auto it: view) {
+        auto pos    = view.get<Rect_transform>(it);
+        auto offset = pos.get_bounding_box();
+        matrix_4x4 view;
+        UI_matrix_4x4(&view, 1280, 720, offset.min_point.x, offset.min_point.y);
+        set_render_parameter(it, "model_4x4", view);
+        LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
+
+        auto result = set_render_push_constant_parameter(it, "model_4x4", view);
+
+        auto lambda = [view](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            proxy->push_constants_address = view;
+        };
+        update_VKR_object_proxy(it, lambda);
+        g_entt().remove<Position_update_tag>(it);
+    }
+}
+
+inline void update_object_mesh() {
+    const auto view = g_entt().view<Position_update_tag, Rect_transform>();
+    // 包围盒发生了更新
+    for (const auto it: view) {
+        auto pos = view.get<Rect_transform>(it);
+        add_geometry_data(it, pos.get_bounding_box().min_point.x,
+                          pos.get_bounding_box().min_point.y,
+                          pos.get_bounding_box().max_point.x,
+                          pos.get_bounding_box().max_point.y);
+
+        const auto mesh = create_mesh(it);
+
+        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            if (mesh.has_value()) {
+                proxy->mesh = mesh.value();;
+            } else {
+                LOG_INFO(g_log(), "descriptor_sets empty");
+            }
+        };
+
+        update_VKR_object_proxy(it, lambda);
+        g_entt().remove<Position_update_tag>(it);
+    }
+}
 
 // 回调函数
 
 inline void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
     {
-        // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
-        // global 相关的内容尽量只能偏移，
-        init_current_descriptor_pool();
-        const auto view = g_entt().view<global_uniform_buffer_update>();
-        for (const auto &it: view) {
-            update_global_bindings_to_descriptor_sets(it);
-            g_entt().remove<global_uniform_buffer_update>(it);
-        }
-    } {
-        const auto view = g_entt().view<std::shared_ptr<VKR_object_proxy>, Rect_transform>();
-        // 包围盒发生了更新
-        for (const auto it: view) {
-            auto pos    = view.get<Rect_transform>(it);
-            auto offset = pos.get_offset();
-            // matrix_4x4 view;
-            // UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
-            // set_render_parameter(it, "model_4x4", view);
-
-            matrix_4x4 model;
-            UI_matrix_4x4(&model, 1280, 720);
-            set_render_parameter(it, "model_4x4", model); {
-                matrix_4x4 view;
-                identity_matrix_4x4(&view);
-                set_render_parameter(it, "view_4x4", view);
-            }
-
-            matrix_4x4 projection;
-            identity_matrix_4x4(&projection);
-            set_render_parameter(it, "projection_4x4", projection);
-        }
-    } {
-        const auto view = g_entt().view<uniform_buffer_update>();
-        for (const auto &it: view) {
-            update_object_bindings_to_descriptor_sets(it);
-            g_entt().remove<uniform_buffer_update>(it);
-        }
-    } {
         const auto view = g_entt().view<std::shared_ptr<VKR_object_proxy> >();
         // 位置发生了更新，需要讲更新传递出去
         for (const auto it: view) {
@@ -155,32 +163,9 @@ inline void sync_render_data_to_render_thread() {
             // LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
         }
     }
+    update_object_offset();
 }
 
-
-inline void update_object_mesh() {
-    const auto view = g_entt().view<Position_update_tag, Rect_transform>();
-    // 包围盒发生了更新
-    for (const auto it: view) {
-        auto pos = view.get<Rect_transform>(it);
-        add_geometry_data(it, pos.get_bounding_box().min_point.x,
-                          pos.get_bounding_box().min_point.y,
-                          pos.get_bounding_box().max_point.x,
-                          pos.get_bounding_box().max_point.y);
-
-        const auto mesh = create_mesh(it);
-
-        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            if (mesh.has_value()) {
-                proxy->mesh = mesh.value();;
-            } else {
-                LOG_INFO(g_log(), "descriptor_sets empty");
-            }
-        };
-
-        update_VKR_object_proxy(it, lambda);
-    }
-}
 
 class UI_scene_root {
 public:
