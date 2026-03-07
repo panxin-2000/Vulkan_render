@@ -256,10 +256,10 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uin
         freed_memory_it != size_and_offset_map.end()) {
         // it->first 是最接近且满足条件的 size
         // it->second 是对应的偏移量
-        LOG_DEBUG(g_log(), "find free memory size {} offset {} request_size {} ",
-                  freed_memory_it->first,
-                  freed_memory_it->second.offset_,
-                  request_size);
+        LOG_INFO(g_log(), "find free memory size {} offset {} request_size {} ",
+                 freed_memory_it->first,
+                 freed_memory_it->second.offset_,
+                 request_size);
         auto temp_size   = freed_memory_it->first;
         auto temp_offset = freed_memory_it->second;
         if (temp_size != request_size) {
@@ -377,11 +377,15 @@ void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const uint64_t offset) {
 }
 
 void discard_buffer_block_map_clean() {
-    const auto &handle = VK_handle::get();
+    const auto &handle             = VK_handle::get();
+    const auto current_finish_time = handle.get_finished_timeline();
     for (auto it = discard_buffer_block_map.begin(); it != discard_buffer_block_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
-        if (handle.get_finished_timeline() >= timeline) {
+        if (current_finish_time >= timeline + 400) {
+            LOG_INFO(g_log(), "discard_buffer_block timeline {}  , timeline {} offset {}",
+                     current_finish_time,
+                     timeline,
+                     buffer.second);
             GPU_pool_free(buffer.first, buffer.second);
             it = discard_buffer_block_map.erase(it);
         } else {

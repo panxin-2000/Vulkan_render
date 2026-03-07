@@ -98,7 +98,7 @@ inline void update_object_offset() {
         matrix_4x4 view;
         UI_matrix_4x4(&view, 1280, 720, offset.min_point.x, offset.min_point.y);
         set_render_parameter(it, "model_4x4", view);
-        LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
+        // LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
 
         auto result = set_render_push_constant_parameter(it, "model_4x4", view);
 
