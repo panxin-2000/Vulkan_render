@@ -23,7 +23,7 @@ layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer bu
 
 layout (push_constant) uniform PushConstants
 {
-    mat4 model;
+    buffer_references r_buffer;
 };
 
 //layout (set = 0, binding = 0) uniform view_4x4
@@ -43,7 +43,7 @@ layout (push_constant) uniform PushConstants
 
 void main()
 {
-    //    mat4 model = r_buffer.model;
+    mat4 model = r_buffer.model;
 
     gl_Position = model * vec4(inPos.xyz, 1.0);
 }

@@ -102,8 +102,8 @@ inline void update_object_offset() {
 
         auto result = set_render_push_constant_parameter(it, "model_4x4", view);
 
-        auto lambda = [view](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            proxy->push_constants_address = view;
+        auto lambda = [result](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            proxy->push_constants_address = result;
         };
         update_VKR_object_proxy(it, lambda);
         g_entt().remove<Position_update_tag>(it);

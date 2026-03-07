@@ -32,7 +32,7 @@ VkPipelineLayout create_pipeline_layout(VK_handle &handle, const std::string sha
         } else {
             VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
             VkPushConstantRange pushConstantRange{
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(float) * 16
+                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(VkDeviceAddress)
             };
             VkPipelineLayoutCreateInfo pipelineLayoutCI{
                 .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
