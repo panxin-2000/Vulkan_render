@@ -13,12 +13,6 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     const auto &vk_data =
             g_entt().get_or_emplace<std::shared_ptr<VKR_object_proxy> >(entity, std::make_shared<VKR_object_proxy>());
 
-    auto pos    = g_entt().get<Rect_transform>(entity);
-    auto offset = pos.get_bounding_box();
-    matrix_4x4 view;
-    UI_matrix_4x4(&view, 1280, 720, offset.min_point.x, offset.min_point.y);
-
-    auto result = set_render_push_constant_parameter(entity, "model_4x4", view);
 
     vk_data->mesh                   = get_VKR_mesh(entity);
     vk_data->pipeline_layout        = get_pipeline_layout(entity);
@@ -27,7 +21,7 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     vk_data->vk_pipeline            = get_pipeline(entity);
     vk_data->debug_name             = get_entity_name(entity);
     vk_data->vk_descriptor_set      = get_descriptor_sets(entity); // 唯一有可能每帧更新的部分
-    vk_data->push_constants_address = result;
+    vk_data->push_constants_address = nullptr;
     vk_render_queue::instance().render_object_need_init(vk_data);
     g_entt().remove<add_to_render_tag>(entity);
 

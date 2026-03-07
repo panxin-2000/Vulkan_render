@@ -117,13 +117,6 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Name_component>(entity_, name);
     add_geometry_data(entity_, min_x, min_y, max_x, max_y);
 
-    matrix_4x4 view;
-    identity_matrix_4x4(&view);
-    set_render_parameter(entity_, "view_4x4", view);
-
-    matrix_4x4 projection;
-    identity_matrix_4x4(&projection);
-    set_render_parameter(entity_, "projection_4x4", projection);
 
     matrix_4x4 model;
     UI_matrix_4x4(&model, 1280, 720);

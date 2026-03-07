@@ -47,7 +47,8 @@ int main(int argc, char *argv[]) {
     UI_block("功能块", 0, 0, 50, 200);
     UI_block("按钮2", 0, 0, 145, 130);
 
-    // object_3d_model("blender Suzanne", "assets/suzanne.obj");
+
+    object_3d_model("blender Suzanne", "assets/suzanne.obj");
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {

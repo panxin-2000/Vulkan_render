@@ -26,16 +26,16 @@ layout (location = 2) in vec2 inUV;
 //    buffer_references r_buffer;
 //};
 
-layout (set = 0, binding = 0) uniform view_4x4
+layout (set = 0, binding = 0) uniform global_view_4x4
 {
     mat4 view;
 };
-layout (set = 0, binding = 1) uniform projection_4x4
+layout (set = 0, binding = 1) uniform global_projection_4x4
 {
     mat4 projection;
 };
 
-layout (set = 0, binding = 2) uniform model_4x4
+layout (set = 1, binding = 0) uniform model_4x4
 {
     mat4 model;
 };
@@ -44,5 +44,5 @@ layout (set = 0, binding = 2) uniform model_4x4
 
 void main()
 {
-    gl_Position = model * vec4(inPos.xyz, 1.0);
+    gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
 }
