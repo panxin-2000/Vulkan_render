@@ -5,7 +5,7 @@
 #include "VKR_proxy_component.h"
 #include "create_pipeline.h"
 #include "name_component.h"
-#include "UI_component.h"
+#include "Rect_2D_component.h"
 #include "vulkan_render_manage.h"
 
 

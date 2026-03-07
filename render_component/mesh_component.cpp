@@ -4,6 +4,7 @@
 
 #include "mesh_component.h"
 
+#include "Rect_2D_component.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 
@@ -224,4 +225,30 @@ VKR_mesh get_VKR_mesh(const entt::entity entity) {
         return mesh.value();
     }
     return {};
+}
+
+
+void update_object_mesh() {
+    const auto view = g_entt().view<Position_update_tag, Rect_2D_transform>();
+    // 包围盒发生了更新
+    for (const auto it: view) {
+        auto pos = view.get<Rect_2D_transform>(it);
+        add_geometry_data(it, pos.get_bounding_box().min_point.x,
+                          pos.get_bounding_box().min_point.y,
+                          pos.get_bounding_box().max_point.x,
+                          pos.get_bounding_box().max_point.y);
+
+        const auto mesh = create_mesh(it);
+
+        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            if (mesh.has_value()) {
+                proxy->mesh = mesh.value();;
+            } else {
+                LOG_INFO(g_log(), "mesh empty");
+            }
+        };
+
+        update_VKR_object_proxy(it, lambda);
+        g_entt().remove<Position_update_tag>(it);
+    }
 }

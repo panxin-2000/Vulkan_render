@@ -7,7 +7,7 @@
 #include "input_component.h"
 #include "../event/input_device_manage.h"
 #include "scene_component.h"
-#include "UI_component.h"
+#include "Rect_2D_component.h"
 
 
 void glfwFocusCallback(GLFWwindow *window, int focused);

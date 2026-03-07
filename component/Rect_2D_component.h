@@ -11,7 +11,7 @@
 #include "VKR_proxy_component.h"
 #include "shader_component.h"
 
-class Rect_transform {
+class Rect_2D_transform {
     Point_2 zoom   = {1, 1};
     Point_2 offset = {0, 0};
 
@@ -58,7 +58,7 @@ public:
     }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = g_entt().try_get<Rect_transform>(entity)) {
+        if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(entity)) {
             if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
             }
@@ -81,7 +81,7 @@ public:
     }
 
     bool update_2D_position_matrix() const {
-        const auto &storage = g_entt().storage<Rect_transform>();
+        const auto &storage = g_entt().storage<Rect_2D_transform>();
         const auto entity   = entt::to_entity(storage, *this);
         if (auto render = g_entt().try_get<Geometry_data>(entity)) {
         }
@@ -90,10 +90,10 @@ public:
 };
 
 inline void update_object_offset() {
-    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, Rect_transform>();
+    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
-        auto pos    = view.get<Rect_transform>(it);
+        auto pos    = view.get<Rect_2D_transform>(it);
         auto offset = pos.get_offset();
         matrix_4x4 view;
         UI_matrix_4x4(&view, 1280, 720, offset.x, offset.y);
@@ -108,78 +108,6 @@ inline void update_object_offset() {
         update_VKR_object_proxy(it, lambda);
         g_entt().remove<Position_update_tag>(it);
     }
-}
-
-
-inline void update_object_mesh() {
-    const auto view = g_entt().view<Position_update_tag, Rect_transform>();
-    // 包围盒发生了更新
-    for (const auto it: view) {
-        auto pos = view.get<Rect_transform>(it);
-        add_geometry_data(it, pos.get_bounding_box().min_point.x,
-                          pos.get_bounding_box().min_point.y,
-                          pos.get_bounding_box().max_point.x,
-                          pos.get_bounding_box().max_point.y);
-
-        const auto mesh = create_mesh(it);
-
-        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            if (mesh.has_value()) {
-                proxy->mesh = mesh.value();;
-            } else {
-                LOG_INFO(g_log(), "descriptor_sets empty");
-            }
-        };
-
-        update_VKR_object_proxy(it, lambda);
-        g_entt().remove<Position_update_tag>(it);
-    }
-}
-
-// 回调函数
-
-inline void sync_render_data_to_render_thread() {
-    // 应该不止更新 position，还有很多的都需要更新
-
-    {
-        // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
-        // global 相关的内容尽量只能偏移，
-        const auto view = g_entt().view<global_uniform_buffer_update>();
-        for (const auto &it: view) {
-            update_global_bindings_to_descriptor_sets(it);
-            g_entt().remove<global_uniform_buffer_update>(it);
-        }
-    } {
-        const auto view = g_entt().view<uniform_buffer_update>();
-        for (const auto &it: view) {
-            update_object_bindings_to_descriptor_sets(it);
-            g_entt().remove<uniform_buffer_update>(it);
-        }
-    } {
-        const auto view = g_entt().view<std::shared_ptr<VKR_object_proxy> >();
-        // 位置发生了更新，需要讲更新传递出去
-        for (const auto it: view) {
-            auto temp_des = get_descriptor_sets(it);
-
-            auto lambda = [temp_des](const std::shared_ptr<VKR_object_proxy> &proxy) {
-                proxy->vk_descriptor_set = temp_des;
-            };
-            update_VKR_object_proxy(it, lambda);
-        }
-    } {
-        const auto view = g_entt().view<add_to_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
-        for (const auto &it: view) {
-            create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
-        }
-    } {
-        const auto view = g_entt().view<Rect_transform>();
-        for (const auto it: view) {
-            auto pos    = view.get<Rect_transform>(it);
-            auto offset = pos.get_bounding_box();
-            // LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.min_point.x, offset.min_point.y);
-        }
-    }
-    update_object_offset();
 }
 
 
@@ -205,7 +133,7 @@ public:
                            identity_matrix_4x4(&projection);
                            set_render_parameter(instance, "global_projection_4x4", projection);
 
-                           if (auto *scene_node = g_entt().try_get<Rect_transform>(instance)) {
+                           if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {
                                                                 static_cast<float>(get_win_WIDTH()),
@@ -235,7 +163,7 @@ inline std::vector<entt::entity> UI_stack_intersect(const Point_2 &current_posit
     std::vector<entt::entity> return_value;
     const auto scene_root_node = get_UI_scene_root();
     return_value.push_back(scene_root_node);
-    Rect_transform::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
+    Rect_2D_transform::check_entity_children_intersect_point(&return_value, scene_root_node, current_position);
     return return_value;
 }
 #endif //HELLO_MAC_UI_POSITION_AND_OFFSET_H

@@ -9,6 +9,7 @@
 #include <scene_component.h>
 #include "name_component.h"
 #include "model_matrix.h"
+#include "shader_component.h"
 
 
 class model_transform {
@@ -42,5 +43,48 @@ public:
     }
 };
 
+
+class world_scene_root {
+public:
+    // 获取全局唯一的注册表引用
+    static entt::entity &get() {
+        static entt::entity instance = g_entt().create();;
+        static std::once_flag flag;
+
+        std::call_once(flag, []() {
+                           g_entt().emplace<Scene_Component>(instance);
+                           g_entt().emplace<Name_component>(instance, "scene_root");
+                           g_entt().emplace<VKR_shader_paths>(instance,
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                                              "", "");
+                           matrix_4x4 view;
+                           identity_matrix_4x4(&view);
+                           set_render_parameter(instance, "global_view_4x4", view);
+
+                           matrix_4x4 projection;
+                           identity_matrix_4x4(&projection);
+                           set_render_parameter(instance, "global_projection_4x4", projection);
+
+                           if (auto *scene_node = g_entt().try_get<model_transform>(instance)) {
+                           }
+                           // 在系统初始化时，给logic_render_data * 的类型都添加这个销毁前执行的函数
+                           // g_entt().on_destroy<logic_render_data>().connect<&cleanup_logic_render_data>();
+                           // 也可以在只移除 logic_render_data 时 触发，但是不同类型触发的顺序可能是随机的。
+                       }
+                      );
+
+        return instance;
+    }
+
+private
+:
+    world_scene_root() = default; // 禁用构造
+};
+
+
+static entt::entity &get_world_root() {
+    return world_scene_root::get();
+}
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H

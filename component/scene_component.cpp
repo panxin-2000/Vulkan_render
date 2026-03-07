@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/2/17.
 //
 #include "scene_component.h"
-#include "UI_component.h"
+#include "Rect_2D_component.h"
 
 void scene_root_add_child(entt::entity entity) {
     if (g_entt().all_of<Scene_Component>(entity)) {

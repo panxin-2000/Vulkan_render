@@ -12,7 +12,7 @@
 #include "global_singleton.h"
 #include "observer_manage.h"
 #include "span.hpp"
-#include "UI_component.h"
+#include "Rect_2D_component.h"
 
 entt::entity UI_button(const std::string &name,
                        float min_x,
@@ -68,13 +68,13 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
+            if (auto *UI = g_entt().try_get<Rect_2D_transform>(entity_)) {
                 UI->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
             if (status.select_status == select_current) {
-                if (auto *UI = g_entt().try_get<Rect_transform>(entity_)) {
+                if (auto *UI = g_entt().try_get<Rect_2D_transform>(entity_)) {
                     UI->set_position_offset(entity_, event);
                     // 包围盒的位置还需要同步更新
                     return OPERATOR_RUNNING_MODAL;
@@ -104,13 +104,13 @@ entt::entity UI_button(const std::string &name,
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
     g_entt().emplace<Scene_Component>(entity_);
-    g_entt().emplace<Rect_transform>(entity_);
+    g_entt().emplace<Rect_2D_transform>(entity_);
     g_entt().emplace<VKR_shader_paths>(entity_,
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                        "", "");
 
-    if (auto *scene_node = g_entt().try_get<Rect_transform>(entity_)) {
+    if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
     g_entt().emplace<Drag_event>(entity_);
