@@ -31,6 +31,11 @@ public:
         return parent;
     }
 
+    [[nodiscard]] std::vector<entt::entity> &get_children() {
+        return children;
+    }
+
+
     void remove_parent_relation() {
         parent = entt::null;
     }
@@ -45,6 +50,15 @@ public:
     }
 };
 
+inline void add_recursion_function_to_children(const entt::entity entity,
+                                               const std::function<void(entt::entity entity)> &lambda) {
+    if (const auto temp = g_entt().try_get<Scene_Component>(entity)) {
+        for (const entt::entity child: temp->get_children()) {
+            lambda(child);
+            add_recursion_function_to_children(child, lambda);
+        }
+    }
+}
 
 /**
  * 将一个节点添加到根节点

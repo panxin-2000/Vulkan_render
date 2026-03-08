@@ -255,6 +255,7 @@ VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
 }
 
 
+
 void global_uniform_buffer_update_function() {
     // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
     // global 相关的内容尽量只能偏移，
@@ -262,6 +263,11 @@ void global_uniform_buffer_update_function() {
     for (const auto &it: view) {
         update_global_bindings_to_descriptor_sets(it);
         g_entt().emplace_or_replace<descriptor_set_update>(it);
+        auto lambda = [](const entt::entity entity) {
+            if (g_entt().all_of<Scene_Component>(entity))
+                g_entt().emplace_or_replace<descriptor_set_update>(entity);
+        };
+        add_recursion_function_to_children(it, lambda);
         g_entt().remove<global_uniform_buffer_update>(it);
     }
 }
