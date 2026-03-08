@@ -29,8 +29,19 @@ inline Suzanne_push_constant get_shader_data() {
     Point_3 camPos{1.0f, 2.0f, 6.0f};
     Suzanne_push_constant shaderData;
     Quaternion r;
-    perspective_matrix_4x4(reinterpret_cast<float *>(&shaderData.projection),
-                           45.0f / 180.0f * std::acos(-1.0), (float) WIDTH / (float) HEIGHT, 0.1f, 32.0f);
+
+
+    // 1. 生成标准的右手系透视矩阵 (Z 范围 0 到 1)
+    const DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovRH(
+                                                                     DirectX::XMConvertToRadians(45.0f),
+                                                                     (float) WIDTH / (float) HEIGHT,
+                                                                     0.1f,
+                                                                     1000.0f
+                                                                    );
+    DirectX::XMMATRIX flip_y     = DirectX::XMMatrixScaling(1.0f, -1.0f, 1.0f);
+    DirectX::XMMATRIX projection = proj * flip_y;
+
+    memcpy(&shaderData.projection, &projection, sizeof(DirectX::XMMATRIX));
     view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
     for (auto i = 0; i < 3; i++) {
         Point_3 instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};

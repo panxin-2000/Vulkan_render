@@ -186,7 +186,7 @@ inline Quaternion quat_from_axis_angle_y(float angle) {
 // }
 
 
-struct matrix_4x4 {
+struct alignas(16) matrix_4x4 {
     float p[16];
 };
 

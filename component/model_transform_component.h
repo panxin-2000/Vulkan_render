@@ -112,8 +112,18 @@ public:
                            identity_matrix_4x4(&view);
                            set_render_parameter(instance, "global_view_4x4", view);
 
-                           matrix_4x4 projection;
-                           identity_matrix_4x4(&projection);
+                           const uint32_t WIDTH  = 1280; // 也是需要更改的
+                           const uint32_t HEIGHT = 720;
+
+                           // 1. 生成标准的右手系透视矩阵 (Z 范围 0 到 1)
+                           const DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovRH(
+                                DirectX::XMConvertToRadians(45.0f),
+                                (float) WIDTH / (float) HEIGHT,
+                                0.1f,
+                                1000.0f
+                               );
+                           DirectX::XMMATRIX flip_y     = DirectX::XMMatrixScaling(1.0f, -1.0f, 1.0f);
+                           DirectX::XMMATRIX projection = proj * flip_y;
                            set_render_parameter(instance, "global_projection_4x4", projection);
 
                            if (auto *scene_node = g_entt().try_get<model_transform>(instance)) {
