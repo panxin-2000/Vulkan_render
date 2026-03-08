@@ -119,6 +119,11 @@ public:
         }
         return false;
     }
+
+    Eigen::Matrix4f get_view_projection() const {
+        const auto view = view_matrix({offset_.x, offset_.y, offset_.z}, rotate);
+        return view;
+    }
 };
 
 
@@ -132,6 +137,33 @@ inline void update_object_offset() {
         g_entt().remove<Position_update_tag>(it);
     }
 }
+
+
+class camera_component {
+private:
+    float fovy_radians = 45.0f;
+    float aspect;
+    float zNear = 0.1f;
+    float zFar  = 1000.0f;
+
+public:
+    camera_component() {
+        const auto &handle   = VK_handle::get();
+        auto [width, height] = handle.get_current_extent();
+        aspect               = static_cast<float>(width) / static_cast<float>(height);
+    }
+
+    Eigen::Matrix4f get_projection() {
+        const auto &handle    = VK_handle::get();
+        auto [width, height]  = handle.get_current_extent();
+        aspect                = static_cast<float>(width) / static_cast<float>(height);
+        const auto projection = vulkan_projection(to_radians(fovy_radians),
+                                                  aspect,
+                                                  zNear,
+                                                  zFar);
+        return projection;
+    }
+};
 
 
 class world_scene_root {
@@ -148,15 +180,11 @@ public:
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                               "", "");
+                           auto camera           = g_entt().get_or_emplace<camera_component>(instance);
+                           const auto projection = camera.get_projection();
+                           const auto camera_pos = g_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
+                           const auto view       = camera_pos.get_view_projection();
 
-                           const uint32_t WIDTH  = 1280; // 也是需要更改的
-                           const uint32_t HEIGHT = 720;
-
-                           const auto view       = view_matrix({0.0f, 0.0f, 6.0f}, Eigen::Quaternionf::Identity());
-                           const auto projection = vulkan_projection(to_radians(45.0f),
-                                                                     (float) WIDTH / (float) HEIGHT,
-                                                                     0.1f,
-                                                                     1000.0f);
                            set_render_parameter(instance, "global_projection_4x4", projection);
                            set_render_parameter(instance, "global_view_4x4", view);
                        }
@@ -164,8 +192,7 @@ public:
         return instance;
     }
 
-private
-:
+private:
     world_scene_root() = default; // 禁用构造
 };
 
@@ -173,5 +200,6 @@ private
 static entt::entity &get_world_root() {
     return world_scene_root::get();
 }
+
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H
