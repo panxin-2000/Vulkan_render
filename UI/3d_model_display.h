@@ -68,9 +68,11 @@ inline void object_3d_model(const std::string &name, const std::string &mesh_pat
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity_, "model_4x4", modelMatrix);
 
-    auto sdfgh = get_shader_data();
-    set_render_parameter(entity_, "global_projection_4x4", sdfgh.projection);
-    set_render_parameter(entity_, "global_view_4x4", sdfgh.view);
+    g_entt().emplace<Scene_Component>(entity_);
+    if (g_entt().all_of<Scene_Component>(entity_)) {
+        world_root_add_child(entity_);
+    }
+
     g_entt().emplace_or_replace<add_to_render_tag>(entity_);
 }
 

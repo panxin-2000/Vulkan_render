@@ -2,7 +2,19 @@
 // Created by 潘鑫 on 2026/2/17.
 //
 #include "scene_component.h"
+
+#include "model_transform_component.h"
 #include "Rect_2D_component.h"
+
+void world_root_add_child(entt::entity entity) {
+    if (g_entt().all_of<Scene_Component>(entity)) {
+        auto root            = get_world_root();
+        auto &parent_scene   = g_entt().get<Scene_Component>(root);
+        auto &children_scene = g_entt().get<Scene_Component>(entity);
+        parent_scene.add_child_relation(entity);
+        children_scene.add_parent_relation(root);
+    }
+}
 
 void scene_root_add_child(entt::entity entity) {
     if (g_entt().all_of<Scene_Component>(entity)) {

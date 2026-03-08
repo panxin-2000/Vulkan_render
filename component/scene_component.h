@@ -58,6 +58,8 @@ public:
 };
 
 
+void world_root_add_child(entt::entity entity);
+
 /**
  * 将一个节点添加到根节点
  * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加

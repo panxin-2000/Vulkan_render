@@ -143,7 +143,7 @@ public:
 
         std::call_once(flag, []() {
                            g_entt().emplace<Scene_Component>(instance);
-                           g_entt().emplace<Name_component>(instance, "scene_root");
+                           g_entt().emplace<Name_component>(instance, "world_scene_root");
                            g_entt().emplace<VKR_shader_paths>(instance,
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
