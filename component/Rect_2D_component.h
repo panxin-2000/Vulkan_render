@@ -96,7 +96,7 @@ inline void update_2D_UI_object_function() {
         auto pos    = view.get<Rect_2D_transform>(it);
         auto offset = pos.get_offset();
         matrix_4x4 view;
-        UI_matrix_4x4(&view, {1280, 720}, pos.get_offset());
+        UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
         LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
 
@@ -124,7 +124,7 @@ public:
                            set_render_parameter(instance, "global_view_4x4", view);
 
                            matrix_4x4 projection;
-                           identity_matrix_4x4(&projection);
+                           UI_projection_4x4(&projection, 1280, 720);
                            set_render_parameter(instance, "global_projection_4x4", projection);
 
                            if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(instance)) {

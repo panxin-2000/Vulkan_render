@@ -251,13 +251,10 @@ inline matrix_4x4 identity_matrix_4x4(matrix_4x4 *result_m) {
 
 inline matrix_4x4 UI_matrix_4x4(matrix_4x4 *result_m, const Point_2 zoom,const Point_2 offset) {
     auto result       =reinterpret_cast<float *>(result_m);
-    auto tem_offset_x = (offset.x * 2.0f) / zoom.x  - 1.0f;
-    auto tem_offset_y = (offset.y * 2.0f) / zoom.y - 1.0f;
-
-    result[0]   = 2.0f/zoom.x;    result[4] = 0;       result[8]          = 0;    result[12] = tem_offset_x;
-    result[1]   = 0;    result[5]           =2.0f/zoom.y;       result[9] = 0;    result[13] = tem_offset_y;
-    result[2]   = 0;    result[6]           = 0;       result[10]         = 1;    result[14] = 0;
-    result[3]   = 0;    result[7]           = 0;       result[11]         = 0;    result[15] = 1;
+    result[0]   = zoom.x;    result[4] = 0;        result[8]     = 0;    result[12] = offset.x;
+    result[1]   = 0;         result[5] = zoom.y;   result[9]     = 0;    result[13] = offset.y;
+    result[2]   = 0;         result[6] = 0;        result[10]    = 1;    result[14] = 0;
+    result[3]   = 0;         result[7] = 0;        result[11]    = 0;    result[15] = 1;
     return *reinterpret_cast<matrix_4x4 *>(result);
 }
 
@@ -265,10 +262,10 @@ inline matrix_4x4 UI_matrix_4x4(matrix_4x4 *result_m, const Point_2 zoom,const P
 inline matrix_4x4 UI_projection_4x4(matrix_4x4 *result_m, const float zoom_x, const float zoom_y) {
     auto result       =reinterpret_cast<float *>(result_m);
 
-    result[0]   = 2.0f/zoom_x;    result[4] = 0;       result[8]          = 0;    result[12] =  - 1.0f;
-    result[1]   = 0;    result[5]           =2.0f/zoom_y;       result[9] = 0;    result[13] =  - 1.0f;
-    result[2]   = 0;    result[6]           = 0;       result[10]         = 1;    result[14] = 0;
-    result[3]   = 0;    result[7]           = 0;       result[11]         = 0;    result[15] = 1;
+    result[0]   = 2.0f/zoom_x;    result[4] = 0;                result[8]       = 0;    result[12] =  - 1.0f;
+    result[1]   = 0;              result[5] = 2.0f/zoom_y;      result[9]       = 0;    result[13] =  - 1.0f;
+    result[2]   = 0;              result[6] = 0;                result[10]      = 1;    result[14] = 0;
+    result[3]   = 0;              result[7] = 0;                result[11]      = 0;    result[15] = 1;
     return *reinterpret_cast<matrix_4x4 *>(result);
 }
 
