@@ -50,7 +50,9 @@ int main(int argc, char *argv[]) {
     UI_block("按钮2", 0, 0, 145, 130);
 
 
-    object_3d_model("blender Suzanne", "assets/suzanne.obj", {-4.0f, 0.0f, 0.0f});
+    object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    object_3d_model("blender Suzanne", "assets/suzanne.obj", {0.0f, 0.0f, 0.0f});
+    object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {
