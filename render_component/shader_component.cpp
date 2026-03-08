@@ -254,6 +254,28 @@ VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
     return VK_NULL_HANDLE;
 }
 
+
+void global_uniform_buffer_update_function() {
+    // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
+    // global 相关的内容尽量只能偏移，
+    const auto view = g_entt().view<global_uniform_buffer_update>();
+    for (const auto &it: view) {
+        update_global_bindings_to_descriptor_sets(it);
+        g_entt().emplace_or_replace<descriptor_set_update>(it);
+        g_entt().remove<global_uniform_buffer_update>(it);
+    }
+}
+
+void uniform_buffer_update_function() {
+    const auto view = g_entt().view<uniform_buffer_update>();
+    for (const auto &it: view) {
+        update_object_bindings_to_descriptor_sets(it);
+        g_entt().emplace_or_replace<descriptor_set_update>(it);
+        g_entt().remove<uniform_buffer_update>(it);
+    }
+}
+
+
 void descriptor_set_update_function() {
     const auto view = g_entt().view<descriptor_set_update>();
     // 位置发生了更新，需要讲更新传递出去
@@ -264,23 +286,6 @@ void descriptor_set_update_function() {
             proxy->vk_descriptor_set = temp_des;
         };
         update_VKR_object_proxy(it, lambda);
-    }
-}
-
-void uniform_buffer_update_function() {
-    const auto view = g_entt().view<uniform_buffer_update>();
-    for (const auto &it: view) {
-        update_object_bindings_to_descriptor_sets(it);
-        g_entt().remove<uniform_buffer_update>(it);
-    }
-}
-
-void global_uniform_buffer_update_function() {
-    // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
-    // global 相关的内容尽量只能偏移，
-    const auto view = g_entt().view<global_uniform_buffer_update>();
-    for (const auto &it: view) {
-        update_global_bindings_to_descriptor_sets(it);
-        g_entt().remove<global_uniform_buffer_update>(it);
+        g_entt().remove<descriptor_set_update>(it);
     }
 }

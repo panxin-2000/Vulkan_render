@@ -98,8 +98,6 @@ inline void update_2D_UI_object_function() {
         matrix_4x4 view;
         UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
-        LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
-
         g_entt().remove<Position_update_tag>(it);
     }
 }
