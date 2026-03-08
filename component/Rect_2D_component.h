@@ -89,23 +89,17 @@ public:
     }
 };
 
-inline void update_object_offset() {
+inline void update_2D_UI_object_function() {
     const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos    = view.get<Rect_2D_transform>(it);
         auto offset = pos.get_offset();
         matrix_4x4 view;
-        UI_matrix_4x4(&view, pos.get_zoom(), pos.get_offset());
+        UI_matrix_4x4(&view, {1280, 720}, pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
         LOG_INFO(g_log(), "name {}  offset x {} y {}", get_entity_name(it), offset.x, offset.y);
 
-        auto result = set_render_push_constant_parameter(it, "model_4x4", view);
-
-        auto lambda = [result](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            proxy->push_constants_address = result;
-        };
-        update_VKR_object_proxy(it, lambda);
         g_entt().remove<Position_update_tag>(it);
     }
 }
