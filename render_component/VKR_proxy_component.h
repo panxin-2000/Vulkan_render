@@ -18,5 +18,6 @@ bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda call
 
 bool clean_VKR_object_proxy(const entt::entity entity);
 
+void add_new_peoxy_to_render_function();
 
 #endif //HELLO_MAC_VKR_PROXY_COMPONENT_H

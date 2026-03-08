@@ -39,17 +39,6 @@ class logic_render_object;
 struct Destroy_tag {
 };
 
-struct Position_update_tag {
-};
-
-struct add_to_render_tag {
-};
-
-struct uniform_buffer_update {
-};
-
-struct global_uniform_buffer_update {
-};
 
 
 #endif //HELLO_MAC_GLOBAL_SINGLETON_H

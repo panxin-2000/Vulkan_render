@@ -7,18 +7,22 @@
 
 
 #include <scene_component.h>
+
+#include "DirectXMath.h"
 #include "name_component.h"
 #include "model_matrix.h"
+#include "render_proxy.h"
 #include "shader_component.h"
+#include "VKR_proxy_component.h"
 
 
-class model_transform {
-    Point_3 zoom   = {1, 1, 1};
-    Point_3 offset = {0, 0, 0};
-    Quaternion rotate;
+class alignas(16) model_transform {
+public:
+    DirectX::XMFLOAT4 rotate = {0, 0, 0, 1};
+    Point_3 zoom             = {1, 1, 1};
+    Point_3 offset           = {0, 0, 0};
     AABB_centroid<Point_3> bounding_box_; // 每次都直接计算吧。
 
-public:
     [[nodiscard]] Point_3 get_zoom() const {
         return zoom;
     }
@@ -42,6 +46,52 @@ public:
         return false;
     }
 };
+
+
+void sfgh(Point_3 zoom, DirectX::XMFLOAT4 &rotate, Point_3 offset) {
+    DirectX::XMVECTOR scale   = DirectX::XMVectorSet(zoom.x, zoom.y, zoom.z, 0.0f);       // 缩放
+    DirectX::XMVECTOR rotQuat = DirectX::XMLoadFloat4(&rotate);                           // 旋转(四元数)
+    DirectX::XMVECTOR pos     = DirectX::XMVectorSet(offset.x, offset.y, offset.z, 0.0f); // 平移
+
+    // 2. 生成各自的变换矩阵
+    DirectX::XMMATRIX mScale       = DirectX::XMMatrixScalingFromVector(scale);
+    DirectX::XMMATRIX mRotation    = DirectX::XMMatrixRotationQuaternion(rotQuat);
+    DirectX::XMMATRIX mTranslation = DirectX::XMMatrixTranslationFromVector(pos);
+
+    DirectX::XMMATRIX modelMatrix = mScale * mRotation * mTranslation;
+}
+
+
+inline void update_object_offset() {
+    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, model_transform>();
+    // 包围盒发生了更新
+    for (const auto it: view) {
+        auto transform                = view.get<model_transform>(it);
+        const DirectX::XMVECTOR scale =
+                DirectX::XMVectorSet(transform.zoom.x, transform.zoom.y, transform.zoom.z, 0.0f);
+        const DirectX::XMVECTOR rotQuat = DirectX::XMLoadFloat4(&transform.rotate);
+        const DirectX::XMVECTOR pos = DirectX::XMVectorSet(transform.offset.x, transform.offset.y, transform.offset.z,
+                                                           0.0f);
+
+        // 2. 生成各自的变换矩阵
+        const DirectX::XMMATRIX mScale       = DirectX::XMMatrixScalingFromVector(scale);
+        const DirectX::XMMATRIX mRotation    = DirectX::XMMatrixRotationQuaternion(rotQuat);
+        const DirectX::XMMATRIX mTranslation = DirectX::XMMatrixTranslationFromVector(pos);
+
+        const DirectX::XMMATRIX modelMatrix = mScale * mRotation * mTranslation;
+
+
+        set_render_parameter(it, "model_4x4", modelMatrix);
+
+        auto result = set_render_push_constant_parameter(it, "model_4x4", view);
+
+        auto lambda = [result](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            proxy->push_constants_address = result;
+        };
+        update_VKR_object_proxy(it, lambda);
+        g_entt().remove<Position_update_tag>(it);
+    }
+}
 
 
 class world_scene_root {

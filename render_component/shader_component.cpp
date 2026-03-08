@@ -11,6 +11,7 @@
 #include "scene_component.h"
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
+#include "VKR_proxy_component.h"
 #include "vulkan_device_handle.h"
 
 
@@ -251,4 +252,35 @@ VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
         // 打印一个 entity name 没有 VKR_shader
     }
     return VK_NULL_HANDLE;
+}
+
+void descriptor_set_update_function() {
+    const auto view = g_entt().view<descriptor_set_update>();
+    // 位置发生了更新，需要讲更新传递出去
+    for (const auto it: view) {
+        auto temp_des = get_descriptor_sets(it);
+
+        auto lambda = [temp_des](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            proxy->vk_descriptor_set = temp_des;
+        };
+        update_VKR_object_proxy(it, lambda);
+    }
+}
+
+void uniform_buffer_update_function() {
+    const auto view = g_entt().view<uniform_buffer_update>();
+    for (const auto &it: view) {
+        update_object_bindings_to_descriptor_sets(it);
+        g_entt().remove<uniform_buffer_update>(it);
+    }
+}
+
+void global_uniform_buffer_update_function() {
+    // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
+    // global 相关的内容尽量只能偏移，
+    const auto view = g_entt().view<global_uniform_buffer_update>();
+    for (const auto &it: view) {
+        update_global_bindings_to_descriptor_sets(it);
+        g_entt().remove<global_uniform_buffer_update>(it);
+    }
 }

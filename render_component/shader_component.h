@@ -8,6 +8,7 @@
 #include <global_singleton.h>
 
 #include "descriptor.h"
+#include "sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
 
@@ -175,5 +176,11 @@ std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity);
 VkPipeline get_pipeline(const entt::entity entity);
 
 VkPipelineLayout get_pipeline_layout(const entt::entity entity);
+
+void descriptor_set_update_function();
+
+void uniform_buffer_update_function();
+
+void global_uniform_buffer_update_function();
 
 #endif //HELLO_MAC_SHADER_COMPONENT_H

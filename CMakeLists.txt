@@ -176,6 +176,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/updata_push_constants_data.cpp"
 
             "render_component/shader_component.cpp"
+            "render_component/sync_proxy_to_render_thread.cpp"
             "render_component/mesh_component.cpp"
             "render_component/VKR_proxy_component.cpp"
     )

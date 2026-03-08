@@ -44,3 +44,10 @@ bool clean_VKR_object_proxy(const entt::entity entity) {
     }
     return false;
 }
+
+void add_new_peoxy_to_render_function() {
+    const auto view = g_entt().view<add_to_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
+    for (const auto &it: view) {
+        create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
+    }
+}
