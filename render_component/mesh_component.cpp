@@ -223,7 +223,7 @@ VKR_mesh get_VKR_mesh(const entt::entity entity) {
 
 
 void update_object_mesh() {
-    const auto view = g_entt().view<Position_update_tag, Rect_2D_transform>();
+    const auto view = g_entt().view<UI_transform_dirty, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos = view.get<Rect_2D_transform>(it);
@@ -243,6 +243,6 @@ void update_object_mesh() {
         };
 
         update_VKR_object_proxy(it, lambda);
-        g_entt().remove<Position_update_tag>(it);
+        g_entt().remove<UI_transform_dirty>(it);
     }
 }

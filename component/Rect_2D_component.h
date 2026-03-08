@@ -38,7 +38,7 @@ public:
     bool set_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
         zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
         zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
-        g_entt().emplace_or_replace<Position_update_tag>(entity);
+        g_entt().emplace_or_replace<UI_transform_dirty>(entity);
         // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
         //     for (const entt::entity children_entity: scene_node->children) {
         //         if (g_entt().valid(children_entity)) {
@@ -53,7 +53,7 @@ public:
         const Point_2 move           = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
         offset                       = offset + move;
-        g_entt().emplace_or_replace<Position_update_tag>(entity);
+        g_entt().emplace_or_replace<UI_transform_dirty>(entity);
         return true;
     }
 
@@ -90,7 +90,7 @@ public:
 };
 
 inline void update_2D_UI_object_function() {
-    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
+    const auto view = g_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos    = view.get<Rect_2D_transform>(it);
@@ -98,7 +98,7 @@ inline void update_2D_UI_object_function() {
         matrix_4x4 view;
         UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
-        g_entt().remove<Position_update_tag>(it);
+        g_entt().remove<UI_transform_dirty>(it);
     }
 }
 

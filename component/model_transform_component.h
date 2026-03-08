@@ -128,18 +128,18 @@ public:
 
 
 inline void update_object_offset() {
-    const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, model_transform>();
+    const auto view = g_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, model_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto &transform  = view.get<model_transform>(it);
         auto modelMatrix = transform.update_model_matrix();
         set_render_parameter(it, "model_4x4", modelMatrix);
-        g_entt().remove<Position_update_tag>(it);
+        g_entt().remove<UI_transform_dirty>(it);
     }
 }
 
 
-class camera_component {
+class camera_optical_component {
 private:
     float fovy_radians = 45.0f;
     float aspect;
@@ -147,7 +147,7 @@ private:
     float zFar  = 1000.0f;
 
 public:
-    camera_component() {
+    camera_optical_component() {
         const auto &handle   = VK_handle::get();
         auto [width, height] = handle.get_current_extent();
         aspect               = static_cast<float>(width) / static_cast<float>(height);
@@ -166,6 +166,30 @@ public:
 };
 
 
+inline void update_camera_transform() {
+    const auto view = g_entt().view<Camera_transform_dirty, Name_component, model_transform>();
+    for (const auto it: view) {
+        auto &camera_pos = view.get<model_transform>(it);
+        auto &name       = view.get<Name_component>(it);
+        if (name.name.find("world_scene_root") != std::string::npos) {
+            const auto view_matrix = camera_pos.get_view_projection();
+            set_render_parameter(it, "global_view_4x4", view_matrix);
+        }
+    }
+}
+
+inline void update_camera_optical() {
+    const auto view = g_entt().view<Camera_optical_specifications_dirty, camera_optical_component, Name_component>();
+    for (const auto it: view) {
+        auto &name    = view.get<Name_component>(it);
+        auto &optical = view.get<camera_optical_component>(it);
+        if (name.name.find("world_scene_root") != std::string::npos) {
+            const auto view_matrix = optical.get_projection();
+            set_render_parameter(it, "global_projection_4x4", view_matrix);
+        }
+    }
+}
+
 class world_scene_root {
 public:
     // 获取全局唯一的注册表引用
@@ -180,13 +204,15 @@ public:
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                               "", "");
-                           auto camera           = g_entt().get_or_emplace<camera_component>(instance);
+                           auto camera           = g_entt().get_or_emplace<camera_optical_component>(instance);
                            const auto projection = camera.get_projection();
-                           const auto camera_pos = g_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
-                           const auto view       = camera_pos.get_view_projection();
+                           const auto camera_pos = g_entt().get_or_emplace<model_transform>(instance, Point_3{
+                                        0, 0, 6
+                                    });
+                           const auto view_matrix = camera_pos.get_view_projection();
 
                            set_render_parameter(instance, "global_projection_4x4", projection);
-                           set_render_parameter(instance, "global_view_4x4", view);
+                           set_render_parameter(instance, "global_view_4x4", view_matrix);
                        }
                       );
         return instance;

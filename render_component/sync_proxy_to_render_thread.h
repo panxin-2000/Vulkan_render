@@ -5,7 +5,16 @@
 #ifndef HELLO_MAC_SYNC_PROXY_TO_RENDER_THREAD_H
 #define HELLO_MAC_SYNC_PROXY_TO_RENDER_THREAD_H
 
-struct Position_update_tag {
+struct UI_transform_dirty {
+};
+
+struct Object_transform_dirty {
+};
+
+struct Camera_transform_dirty {
+};
+
+struct Camera_optical_specifications_dirty {
 };
 
 struct add_to_render_tag {
