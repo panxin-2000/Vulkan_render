@@ -138,6 +138,12 @@ inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, c
         for (size_t i = 0; i < vk_draw.vk_descriptor_set.size(); ++i) {
             temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set(time_line);
         }
+        for (auto temp_descriptor_set: temp_descriptor_sets) {
+            if (temp_descriptor_set == VK_NULL_HANDLE) {
+                LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ", vk_draw.debug_name);
+                return;
+            }
+        }
         vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
                                 vk_draw.pipeline_layout,
                                 0,
