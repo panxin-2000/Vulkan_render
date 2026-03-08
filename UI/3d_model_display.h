@@ -52,7 +52,7 @@ inline Suzanne_push_constant get_shader_data() {
     return shaderData;
 }
 
-inline void object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset) {
+inline entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset) {
     entt::entity entity_ = g_entt().create();
     g_entt().emplace<Name_component>(entity_, name);
 
@@ -68,12 +68,10 @@ inline void object_3d_model(const std::string &name, const std::string &mesh_pat
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity_, "model_4x4", modelMatrix);
 
-    g_entt().emplace<Scene_Component>(entity_);
-    if (g_entt().all_of<Scene_Component>(entity_)) {
-        world_root_add_child(entity_);
-    }
+    world_root_add_child(entity_);
 
     g_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    return entity_;
 }
 
 

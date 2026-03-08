@@ -6,46 +6,24 @@
 #include "model_transform_component.h"
 #include "Rect_2D_component.h"
 
-void world_root_add_child(entt::entity entity) {
-    if (g_entt().all_of<Scene_Component>(entity)) {
-        auto root            = get_world_root();
-        auto &parent_scene   = g_entt().get<Scene_Component>(root);
-        auto &children_scene = g_entt().get<Scene_Component>(entity);
-        parent_scene.add_child_relation(entity);
-        children_scene.add_parent_relation(root);
-    }
+void world_root_add_child(const entt::entity entity) {
+    const auto root = get_world_root();
+    add_relation(root, entity);
 }
 
-void scene_root_add_child(entt::entity entity) {
-    if (g_entt().all_of<Scene_Component>(entity)) {
-        auto root            = get_UI_scene_root();
-        auto &parent_scene   = g_entt().get<Scene_Component>(root);
-        auto &children_scene = g_entt().get<Scene_Component>(entity);
-        parent_scene.add_child_relation(entity);
-        children_scene.add_parent_relation(root);
-    }
+void scene_root_add_child(const entt::entity entity) {
+    const auto root = get_UI_scene_root();
+    add_relation(root, entity);
 }
 
-void scene_add_child(const entt::entity parent_entity, const entt::entity children_entity) {
-    if (g_entt().all_of<Scene_Component>(parent_entity) &&
-        g_entt().all_of<Scene_Component>(children_entity)) {
-        auto &parent_scene   = g_entt().get<Scene_Component>(parent_entity);
-        auto &children_scene = g_entt().get<Scene_Component>(children_entity);
-
-        parent_scene.add_child_relation(children_entity);
-        children_scene.add_parent_relation(parent_entity);
-    }
-}
 
 bool add_relation(const entt::entity parent_entity, const entt::entity children_entity) {
-    if (g_entt().all_of<Scene_Component>(parent_entity)) {
-        auto &entity_scene = g_entt().get<Scene_Component>(parent_entity);
-        entity_scene.add_child_relation(children_entity);
-    }
-    if (g_entt().all_of<Scene_Component>(children_entity)) {
-        auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
-        entity_scene.add_parent_relation(parent_entity);
-    }
+    assert(g_entt().all_of<Scene_Component>(parent_entity) ||
+           ( std::puts (get_entity_name(parent_entity).c_str()),false));
+    auto &parent_entity_scene = g_entt().get<Scene_Component>(parent_entity);
+    parent_entity_scene.add_child_relation(children_entity);
+    auto &children_entity_scene = g_entt().get_or_emplace<Scene_Component>(children_entity);
+    children_entity_scene.add_parent_relation(parent_entity);
     return true;
 }
 
@@ -65,24 +43,28 @@ bool clear_relation(const entt::entity parent_entity, const entt::entity childre
     }
     if (g_entt().all_of<Scene_Component>(children_entity)) {
         auto &entity_scene = g_entt().get<Scene_Component>(children_entity);
-        entity_scene.remove_parent_ralation();
+        entity_scene.remove_parent_relation();
     }
     return true;
 }
 
 bool clear_parent_relation(const entt::entity children_entity) {
     const auto parent_scene = get_parent(children_entity);
-    clear_relation(parent_scene, children_entity);
+    if (parent_scene != entt::null) {
+        clear_relation(parent_scene, children_entity);
+    }
     return true;
 }
 
 
 Scene_Component::~ Scene_Component() {
+    // 这里我不确定是否有问题
+    // 先执行复制，再在旧的位置调用清理函数
+    // 新的上的关系没有改变
+    // 从旧的位置上全部复制就没有问题，否则就有问题
     const auto &storage = g_entt().storage<Scene_Component>();
     const auto entity   = entt::to_entity(storage, *this);
     clear_relation(parent, entity);
-
-
     for (auto it = children.rbegin(); it != children.rend(); ++it)
         if (g_entt().valid(*it)) {
             g_entt().emplace_or_replace<Destroy_tag>(*it);

@@ -103,7 +103,6 @@ entt::entity UI_button(const std::string &name,
     /***************创建*******************/
     g_entt().emplace<Input_Component>(entity_, on_Event);
 
-    g_entt().emplace<Scene_Component>(entity_);
     g_entt().emplace<Rect_2D_transform>(entity_);
     g_entt().emplace<VKR_shader_paths>(entity_,
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
@@ -124,9 +123,7 @@ entt::entity UI_button(const std::string &name,
 
     g_entt().emplace_or_replace<add_to_render_tag>(entity_);
 
-    if (g_entt().all_of<Scene_Component>(entity_)) {
-        scene_root_add_child(entity_);
-    }
+    scene_root_add_child(entity_);
     return entity_;
 
     // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。

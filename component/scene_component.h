@@ -16,7 +16,6 @@
 
 
 class Scene_Component {
-private:
 public:
     entt::entity parent = entt::null;
     std::vector<entt::entity> children;
@@ -24,47 +23,33 @@ public:
 public:
     ~Scene_Component();
 
-
     void add_parent_relation(entt::entity entity) {
         parent = entity;
     }
 
-    entt::entity get_parent() const {
+    [[nodiscard]] entt::entity get_parent() const {
         return parent;
     }
 
-    void remove_parent_ralation() {
+    void remove_parent_relation() {
         parent = entt::null;
     }
 
-    void remove_children_relation(entt::entity entity) {
+    void remove_children_relation(const entt::entity entity) {
         children.erase(std::remove(children.begin(), children.end(), entity), children.end());
     }
 
-    void add_child_relation(entt::entity entity) {
+    void add_child_relation(const entt::entity entity) {
+        // 这里需要想办法去除一下重复的内容
         children.push_back(entity);
-    }
-
-
-    bool update_position() const {
-        const auto &storage = g_entt().storage<Scene_Component>();
-
-
-        const auto entity = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<Geometry_data>(entity)) {
-        }
-        return true;
     }
 };
 
-
-void world_root_add_child(entt::entity entity);
 
 /**
  * 将一个节点添加到根节点
  * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加
  */
-void scene_root_add_child(entt::entity entity);
 
 void scene_add_child(const entt::entity parent_entity, const entt::entity children_entity);
 
@@ -74,11 +59,15 @@ entt::entity get_parent(const entt::entity entity);
 
 bool clear_parent_relation(const entt::entity children_entity);
 
-// 最主要使用的函数应该是下面两个，添加联系与删除联系
+// 最主要使用的函数应该是下面四个个，添加联系与删除联系
+void scene_root_add_child(entt::entity entity);
+
+void world_root_add_child(entt::entity entity);
 
 bool add_relation(const entt::entity parent_entity, const entt::entity children_entity);
 
 bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity);
+
 
 void clean_render_entity();
 #endif //HELLO_MAC_SCENE_COMPONENT_H
