@@ -8,7 +8,7 @@
 #include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 
-std::map<Geometry_data *, mesh_and_share> mesh_map_;
+std::map<std::string, mesh_and_share> mesh_map_;
 
 auto &get_mesh_map() {
     return mesh_map_;
@@ -47,26 +47,24 @@ VKR_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
 
 
 std::optional<VKR_mesh> create_mesh(const entt::entity entity) {
-    std::map<Geometry_data *, mesh_and_share> &map = get_mesh_map();
-    const auto &handle                             = VK_handle::get();
+    std::map<std::string, mesh_and_share> &map = get_mesh_map();
+    const auto &handle                         = VK_handle::get();
     if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
-        auto it = map.find(data);
-        if (it != map.end()) {
-            it->second.shared_number++;
-            return it->second.mesh;
+        if (data->mesh_path_.empty() == false) {
+            auto it = map.find(data->mesh_path_);
+            if (it != map.end()) {
+                it->second.shared_number++;
+                return it->second.mesh;
+            }
+            auto [vertices, indices] = load_model(data->mesh_path_);
+            auto mesh                = create_mesh_data(handle, vertices, indices);
+            map.insert({data->mesh_path_, {mesh, 1}});
+            return mesh;
         } else {
-            if (data->mesh_path_.empty() == false) {
-                auto [vertices, indices] = load_model(data->mesh_path_);
-                const auto mesh          = create_mesh_data(handle, vertices, indices);
-                // map.insert({data, {mesh, 1}});
+            for (const auto &temp: data->vertices_vector) {
+                // todo : 这里的逻辑还是有问题的
+                auto mesh = create_mesh_data(handle, temp, data->indices_);
                 return mesh;
-            } else {
-                for (const auto &temp: data->vertices_vector) {
-                    // create_vertex_buffer(temp.shared_ptr_of_vertices_, temp.size, temp.data, &vertices_map_);
-                    auto mesh = create_mesh_data(handle, temp, data->indices_);
-                    // map.insert({data, {mesh, 1}});
-                    return mesh;
-                }
             }
         }
     }
@@ -86,12 +84,8 @@ inline VKR_mesh *find_mesh(Geometry_data data,
 
 void clean_all_mesh_object() {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-    for (const auto &[key, value]: get_mesh_map()) {
-        value.mesh.vertices->destroy_buffer();
-        // ->不清理会直接爆异常
-    }
     get_mesh_map().clear();
-    // discard_buffer_map_clean();
+    discard_buffer_map_clean();
 }
 
 #include <tiny_obj_loader.h>
