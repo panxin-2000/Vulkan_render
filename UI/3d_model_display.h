@@ -26,9 +26,20 @@ struct Suzanne_push_constant {
 inline Suzanne_push_constant get_shader_data() {
     const uint32_t WIDTH  = 1280; // 也是需要更改的
     const uint32_t HEIGHT = 720;
-    Point_3 camPos{1.0f, 2.0f, 6.0f};
     Suzanne_push_constant shaderData;
     Quaternion r;
+
+    DirectX::XMVECTOR pos     = DirectX::XMVectorSet(0.0f, 0.0f, 6.0f, 0.0f); // 相机位置
+    DirectX::XMVECTOR rotQuat = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f); // 相机旋转四元数
+
+    // 先求相机的世界矩阵 (S * R * T, 缩放通常为 1)
+    DirectX::XMMATRIX camWorld = DirectX::XMMatrixRotationQuaternion(rotQuat) *
+                                 DirectX::XMMatrixTranslationFromVector(pos);
+
+    // View 矩阵就是相机世界矩阵的 逆矩阵
+    DirectX::XMVECTOR det;
+    DirectX::XMMATRIX viewMatrix_transpose = XMMatrixInverse(&det, camWorld);
+    memcpy(&shaderData.view, &viewMatrix_transpose, sizeof(DirectX::XMMATRIX));
 
 
     // 1. 生成标准的右手系透视矩阵 (Z 范围 0 到 1)
@@ -38,11 +49,10 @@ inline Suzanne_push_constant get_shader_data() {
                                                                      0.1f,
                                                                      1000.0f
                                                                     );
-    DirectX::XMMATRIX flip_y     = DirectX::XMMatrixScaling(1.0f, -1.0f, 1.0f);
-    DirectX::XMMATRIX projection = proj * flip_y;
+    DirectX::XMMATRIX flip_y               = DirectX::XMMatrixScaling(1.0f, -1.0f, 1.0f);
+    DirectX::XMMATRIX projection_transpose = proj * flip_y;
 
-    memcpy(&shaderData.projection, &projection, sizeof(DirectX::XMMATRIX));
-    view_matrix_4x4(reinterpret_cast<float *>(&shaderData.view), camPos, r);
+    memcpy(&shaderData.projection, &projection_transpose, sizeof(DirectX::XMMATRIX));
     for (auto i = 0; i < 3; i++) {
         Point_3 instancePos{(float) (i - 1) * 4.0f, 0.0f, 0.0f};
         auto point = reinterpret_cast<float *>(&shaderData.model[i]);
