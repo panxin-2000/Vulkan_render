@@ -8,33 +8,107 @@
 
 #include <scene_component.h>
 
-#include "DirectXMath.h"
 #include "name_component.h"
-#include "model_matrix.h"
 #include "render_proxy.h"
 #include "shader_component.h"
 #include "VKR_proxy_component.h"
+#include <Eigen/Eigen>
+
+
+/**
+ * 使用位置和四元数构建 View 矩阵
+ * 适配 Vulkan (列优先)
+ */
+inline Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
+    // 1. 将四元数转换为旋转矩阵（Eigen 会自动处理归一化并使用 NEON 加速）
+    // 注意：View 矩阵需要的是相机的逆旋转
+    Eigen::Matrix3f R = q.toRotationMatrix().transpose();
+
+    // 2. 计算平移部分：-(R * pos)
+    Eigen::Vector3f t = -(R * pos);
+
+    // 3. 组合成 4x4 矩阵
+    Eigen::Matrix4f view   = Eigen::Matrix4f::Identity();
+    view.block<3, 3>(0, 0) = R;
+    view.block<3, 1>(0, 3) = t;
+
+    return view;
+}
+
+
+/**
+ * 构建 Vulkan 专用的透视投影矩阵
+ *
+ * 特点：
+ * 1. 列优先存储 (Matches Vulkan/GLSL)
+ * 2. Y 轴翻转 (Matches Vulkan ND-Coordinate System)
+ * 3. Z 轴深度范围映射至 [0, 1] (Standard Vulkan depth)
+ */
+inline Eigen::Matrix4f vulkan_projection(float fovy_radians, float aspect, float zNear, float zFar) {
+    // 强制使用列优先存储（虽然 Eigen 默认是 ColMajor，显式指定更安全）
+    Eigen::Matrix4f projection = Eigen::Matrix4f::Zero();
+
+    float tanHalfFovy = std::tan(fovy_radians / 2.0f);
+
+    // 第一列：控制水平缩放
+    projection(0, 0) = 1.0f / (aspect * tanHalfFovy);
+
+    // 第二列：控制垂直缩放（注意这里的负号，用于翻转 Vulkan 的 Y 轴）
+    projection(1, 1) = -1.0f / (tanHalfFovy);
+
+    // 第三列：控制 Z 轴深度映射及 W 分量
+    // 映射 [zNear, zFar] 到 [0, 1]
+    projection(2, 2) = zFar / (zNear - zFar);
+    projection(3, 2) = -1.0f; // 用于透视除法
+
+    // 第四列：控制 Z 轴平移
+    projection(2, 3) = -(zFar * zNear) / (zFar - zNear);
+
+    return projection;
+}
+
+template<typename T>
+T to_radians(T degrees) {
+    return degrees * (EIGEN_PI / T(180));
+}
 
 
 class alignas(16) model_transform {
 public:
-    DirectX::XMFLOAT4 rotate = {0, 0, 0, 1};
-    Point_3 zoom             = {1, 1, 1};
-    Point_3 offset           = {0, 0, 0};
+    Eigen::Quaternionf rotate = {1, 0, 0, 0};
+    Point_3 zoom              = {1, 1, 1};
+    Point_3 offset_           = {0, 0, 0};
     AABB_centroid<Point_3> bounding_box_; // 每次都直接计算吧。
 
     [[nodiscard]] Point_3 get_zoom() const {
         return zoom;
     }
 
+    explicit model_transform(const Point_3 offset) {
+        offset_ = offset;
+    }
+
     [[nodiscard]] Point_3 get_offset() const {
-        return offset;
+        return offset_;
     }
 
     void set_bounding_box(const Point_3 min, const Point_3 max) {
         bounding_box_ = AABB_centroid<Point_3>(min, max);
     }
 
+    Eigen::Matrix4f update_model_matrix() const {
+        // 定义一个仿射变换（4x4 矩阵）
+        Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
+        // 1. 平移 (Translation)
+        model_4x4.translate(Eigen::Vector3f(offset_.x, offset_.y, offset_.z));
+        // 2. 旋转 (Rotation) - 使用四元数
+        model_4x4.rotate(rotate);
+        // 3. 缩放 (Scaling)
+        model_4x4.scale(Eigen::Vector3f(zoom.x, zoom.y, zoom.z));
+        // 获取最终传给 Vulkan 的 4x4 矩阵
+        Eigen::Matrix4f modelMatrix = model_4x4.matrix();
+        return modelMatrix;
+    }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
         if (auto *scene_node = g_entt().try_get<model_transform>(entity)) {
@@ -48,47 +122,13 @@ public:
 };
 
 
-void sfgh(Point_3 zoom, DirectX::XMFLOAT4 &rotate, Point_3 offset) {
-    DirectX::XMVECTOR scale   = DirectX::XMVectorSet(zoom.x, zoom.y, zoom.z, 0.0f);       // 缩放
-    DirectX::XMVECTOR rotQuat = DirectX::XMLoadFloat4(&rotate);                           // 旋转(四元数)
-    DirectX::XMVECTOR pos     = DirectX::XMVectorSet(offset.x, offset.y, offset.z, 0.0f); // 平移
-
-    // 2. 生成各自的变换矩阵
-    DirectX::XMMATRIX mScale       = DirectX::XMMatrixScalingFromVector(scale);
-    DirectX::XMMATRIX mRotation    = DirectX::XMMatrixRotationQuaternion(rotQuat);
-    DirectX::XMMATRIX mTranslation = DirectX::XMMatrixTranslationFromVector(pos);
-
-    DirectX::XMMATRIX modelMatrix = mScale * mRotation * mTranslation;
-}
-
-
 inline void update_object_offset() {
     const auto view = g_entt().view<Position_update_tag, std::shared_ptr<VKR_object_proxy>, model_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
-        auto transform                = view.get<model_transform>(it);
-        const DirectX::XMVECTOR scale =
-                DirectX::XMVectorSet(transform.zoom.x, transform.zoom.y, transform.zoom.z, 0.0f);
-        const DirectX::XMVECTOR rotQuat = DirectX::XMLoadFloat4(&transform.rotate);
-        const DirectX::XMVECTOR pos = DirectX::XMVectorSet(transform.offset.x, transform.offset.y, transform.offset.z,
-                                                           0.0f);
-
-        // 2. 生成各自的变换矩阵
-        const DirectX::XMMATRIX mScale       = DirectX::XMMatrixScalingFromVector(scale);
-        const DirectX::XMMATRIX mRotation    = DirectX::XMMatrixRotationQuaternion(rotQuat);
-        const DirectX::XMMATRIX mTranslation = DirectX::XMMatrixTranslationFromVector(pos);
-
-        const DirectX::XMMATRIX modelMatrix = mScale * mRotation * mTranslation;
-
-
+        auto &transform  = view.get<model_transform>(it);
+        auto modelMatrix = transform.update_model_matrix();
         set_render_parameter(it, "model_4x4", modelMatrix);
-
-        auto result = set_render_push_constant_parameter(it, "model_4x4", view);
-
-        auto lambda = [result](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            proxy->push_constants_address = result;
-        };
-        update_VKR_object_proxy(it, lambda);
         g_entt().remove<Position_update_tag>(it);
     }
 }
@@ -108,32 +148,19 @@ public:
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                               "", "");
-                           matrix_4x4 view;
-                           identity_matrix_4x4(&view);
-                           set_render_parameter(instance, "global_view_4x4", view);
 
                            const uint32_t WIDTH  = 1280; // 也是需要更改的
                            const uint32_t HEIGHT = 720;
 
-                           // 1. 生成标准的右手系透视矩阵 (Z 范围 0 到 1)
-                           const DirectX::XMMATRIX proj = DirectX::XMMatrixPerspectiveFovRH(
-                                DirectX::XMConvertToRadians(45.0f),
-                                (float) WIDTH / (float) HEIGHT,
-                                0.1f,
-                                1000.0f
-                               );
-                           DirectX::XMMATRIX flip_y     = DirectX::XMMatrixScaling(1.0f, -1.0f, 1.0f);
-                           DirectX::XMMATRIX projection = proj * flip_y;
+                           const auto view       = view_matrix({0.0f, 0.0f, 6.0f}, Eigen::Quaternionf::Identity());
+                           const auto projection = vulkan_projection(to_radians(45.0f),
+                                                                     (float) WIDTH / (float) HEIGHT,
+                                                                     0.1f,
+                                                                     1000.0f);
                            set_render_parameter(instance, "global_projection_4x4", projection);
-
-                           if (auto *scene_node = g_entt().try_get<model_transform>(instance)) {
-                           }
-                           // 在系统初始化时，给logic_render_data * 的类型都添加这个销毁前执行的函数
-                           // g_entt().on_destroy<logic_render_data>().connect<&cleanup_logic_render_data>();
-                           // 也可以在只移除 logic_render_data 时 触发，但是不同类型触发的顺序可能是随机的。
+                           set_render_parameter(instance, "global_view_4x4", view);
                        }
                       );
-
         return instance;
     }
 
