@@ -92,6 +92,10 @@ public:
         return offset_;
     }
 
+    Point_3 add_offset(const Point_3 offset_add) {
+        return offset_ = offset_ + offset_add;
+    }
+
     void set_bounding_box(const Point_3 min, const Point_3 max) {
         bounding_box_ = AABB_centroid<Point_3>(min, max);
     }
@@ -175,6 +179,7 @@ inline void update_camera_transform() {
             const auto view_matrix = camera_pos.get_view_projection();
             set_render_parameter(it, "global_view_4x4", view_matrix);
         }
+        g_entt().remove<Camera_transform_dirty>(it);
     }
 }
 
@@ -187,6 +192,7 @@ inline void update_camera_optical() {
             const auto view_matrix = optical.get_projection();
             set_render_parameter(it, "global_projection_4x4", view_matrix);
         }
+        g_entt().remove<Camera_optical_specifications_dirty>(it);
     }
 }
 

@@ -134,29 +134,85 @@ void mouse_callback(GLFWwindow *window, const double x_pos, const double y_pos) 
 }
 
 
+static wmOperatorStatus world_root_on_Event(const entt::entity entity, const base_event_with_stamp &event) {
+    auto temp_type = event.event_type;
+
+    switch (temp_type) {
+        case EVT_KEY_W:
+            // 删除当前鼠标位置的元素
+            if (event.event_code == KM_PRESS)
+                if (g_entt().valid(entity)) {
+                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                        position->add_offset({0, 0, 1});
+                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    }
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
+        case EVT_KEY_S: {
+            if (event.event_code == KM_PRESS)
+                if (g_entt().valid(entity)) {
+                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                        position->add_offset({0, 0, -1});
+                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    }
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
+            break;
+        }
+        case EVT_KEY_A: {
+            if (event.event_code == KM_PRESS)
+                if (g_entt().valid(entity)) {
+                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                        position->add_offset({0, -1, 0});
+                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    }
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
+            break;
+        }
+        case EVT_KEY_D: {
+            if (event.event_code == KM_PRESS)
+                if (g_entt().valid(entity)) {
+                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                        position->add_offset({0, 1, 0});
+                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    }
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
+            break;
+        }
+        default: {
+        }
+    }
+}
+
 void base_event_dealing(const base_event_with_stamp &event) {
     const auto view = g_entt().view<Name_component, Scene_Component, Input_Component>();
 
 
-    static entt::entity last_work          = get_UI_scene_root();
-    const mouse_position current_position  = event.current_position;
-    static wmOperatorStatus current_status = OPERATOR_ZERO;
+    static entt::entity current_select_entity = get_UI_scene_root();
+    const mouse_position current_position     = event.current_position;
+    static wmOperatorStatus current_status    = OPERATOR_ZERO;
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
-    auto &name = view.get<Name_component>(last_work);
+    auto &name = view.get<Name_component>(current_select_entity);
     // std::cout << "last work name: " << name.name << std::endl;
     if (current_status == OPERATOR_RUNNING_MODAL)
-        if (const auto input = g_entt().try_get<Input_Component>(last_work)) {
+        if (const auto input = g_entt().try_get<Input_Component>(current_select_entity)) {
             if (input->on_Event != nullptr) {
-                auto status = input->on_Event(last_work, event);
+                auto status = input->on_Event(current_select_entity, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
-                    last_work      = last_work; // 目的是更新，但是没有什么意义
-                    current_status = OPERATOR_RUNNING_MODAL;
+                    current_select_entity = current_select_entity; // 目的是更新，但是没有什么意义
+                    current_status        = OPERATOR_RUNNING_MODAL;
                     return;
                 } else if (OPERATOR_FINISHED & status) {
-                    current_status = OPERATOR_ZERO;
-                    last_work      = get_UI_scene_root();
+                    current_status        = OPERATOR_ZERO;
+                    current_select_entity = get_UI_scene_root();
                     return;
                 }
                 current_status = OPERATOR_ZERO;
@@ -175,8 +231,8 @@ void base_event_dealing(const base_event_with_stamp &event) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(*it, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
-                    last_work      = *it;
-                    current_status = OPERATOR_RUNNING_MODAL;
+                    current_select_entity = *it;
+                    current_status        = OPERATOR_RUNNING_MODAL;
                     break;
                 } else if (OPERATOR_PASS_THROUGH & status) {
                     continue;
@@ -186,5 +242,9 @@ void base_event_dealing(const base_event_with_stamp &event) {
                 }
             }
         }
+    }
+    world_root_on_Event(get_world_root(), event);
+    // 需要一个状态来确定需要进入3d来处理
+    if (current_status == OPERATOR_ZERO) {
     }
 }
