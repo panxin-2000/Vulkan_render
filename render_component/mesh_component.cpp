@@ -8,6 +8,10 @@
 #include "vertex_and_buffer_index.h"
 #include "vulkan_device_handle.h"
 
+
+// #define TINYGLTF_IMPLEMENTATION
+#include "tiny_gltf.h"
+
 std::map<std::string, mesh_and_share> mesh_map_;
 
 auto &get_mesh_map() {
@@ -121,9 +125,29 @@ inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::v
 }
 
 std::pair<share_block, share_block> load_model(const std::string &path) {
-    auto sp_vertices = std::make_shared<std::vector<Vertex> >();
-    auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
-    load_model_to_vector(path, sp_vertices, sp_indices);
+    auto sp_vertices               = std::make_shared<std::vector<Vertex> >();
+    auto sp_indices                = std::make_shared<std::vector<uint16_t> >();
+    std::filesystem::path filePath = path;
+    std::string ext                = filePath.extension().string();
+
+    if (ext == ".obj") {
+        load_model_to_vector(path, sp_vertices, sp_indices);
+    } else if (ext == ".gltf") {
+        tinygltf::Model model;
+        tinygltf::TinyGLTF loader;
+        std::string err, warn;
+        // 加载 glTF/glb 文件
+        bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
+        if (!warn.empty()) {
+            LOG_INFO(g_log(), "load gltf file : {} warn {}", path, warn);
+        }
+        if (!err.empty()) {
+            LOG_INFO(g_log(), "load gltf file : {} error {}", path, err);
+        }
+        if (ret == false) {
+            return {};
+        }
+    }
     share_block vertices{
         sp_vertices,
         sp_vertices->data(),

@@ -62,6 +62,25 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(quill)
 
 
+FetchContent_Declare(
+        json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.12.0
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(json)
+
+
+# tinygltf  中有一些选择，需要看自己的需求打开，重要的是一个禁止异常的选项
+FetchContent_Declare(
+        tinygltf
+        GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+        GIT_TAG v2.9.7
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(tinygltf)
+
+
 #已经不使用这个库了
 #FetchContent_Declare(
 #        directxmath
@@ -411,6 +430,7 @@ target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
+target_link_libraries(learn_render PRIVATE tinygltf)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # 使用自定义命令复制文件
