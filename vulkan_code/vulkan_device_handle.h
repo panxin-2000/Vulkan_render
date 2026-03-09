@@ -15,11 +15,20 @@
 #include "engine.h"
 #include "global_singleton.h"
 
+struct pos_struct {
+    float x, y, z;
+};
+struct normal_struct {
+    float a, b, c;
+};
+struct uv_struct {
+    float  u, v;
+};
 
 struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 normal;
-    glm::vec2 uv;
+    pos_struct pos;
+    normal_struct normal;
+    uv_struct uv;
 };
 
 #include "vulkan_image.h"
