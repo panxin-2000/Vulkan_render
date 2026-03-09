@@ -7,6 +7,7 @@
 #include "vulkan_buffer.h"
 #include "global_singleton.h"
 #include "render_mesh.h"
+#include "base_element/point_3.h"
 
 struct share_block {
     std::shared_ptr<void> ptr;
@@ -74,5 +75,10 @@ bool add_geometry_data(entt::entity entity_,
                        float min_y,
                        float max_x,
                        float max_y);
+
+bool add_geometry_data(entt::entity entity_,
+                       Point_3 a,
+                       Point_3 b,
+                       Point_3 c);
 
 #endif //HELLO_MAC_MESH_COMPONENT_H

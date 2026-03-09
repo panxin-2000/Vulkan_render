@@ -356,6 +356,60 @@ bool add_geometry_data(entt::entity entity_,
     geometry.set_indices(indices_buffer);
 }
 
+bool add_geometry_data(entt::entity entity_,
+                       Point_3 a,
+                       Point_3 b,
+                       Point_3 c) {
+    if (auto *pos = g_entt().try_get<Geometry_data>(entity_)) {
+        g_entt().remove<Geometry_data>(entity_);
+    }
+    g_entt().emplace<Geometry_data>(entity_);
+
+    auto &geometry = g_entt().get<Geometry_data>(entity_);
+
+    /***************设置顶点与索引参数**********************/
+    // std::vector<VertexAttrib> vertex_attribs;
+    // vertex_attribs.emplace_back(3,GL_FLOAT,GL_FALSE);
+    // vertex_attribs.emplace_back(2,GL_FLOAT,GL_FALSE);
+    // vertex_attribs.emplace_back(3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) (3 * sizeof(float)));
+
+    struct pos_normal_uv {
+        float x, y, z, a, b, c, u, v;
+    };
+
+    const auto vertices = std::make_shared<std::vector<pos_normal_uv> >(); //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();      //  2   * 6 = 12
+    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+    {
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        indices->push_back(vertices->size() + 2);
+        vertices->emplace_back(pos_normal_uv{a.x, a.y, a.z, 0, 0, 0, 0, 0}); //0 1 2
+        vertices->emplace_back(pos_normal_uv{b.x, b.y, b.z, 0, 0, 0, 1, 0});
+        vertices->emplace_back(pos_normal_uv{c.x, c.y, c.z, 0, 0, 0, 1, 1}); // 2 3 0
+    }
+    // 参数这里最重要的是下面的两行
+
+    // 参数这里最重要的是下面的两行
+    const share_block vertices_buffer = {
+        vertices,
+        vertices->data(),
+        vertices->size() * sizeof(pos_normal_uv),
+        vertices->size(),
+        sizeof(pos_normal_uv)
+    };
+    const share_block indices_buffer = {
+        indices,
+        indices->data(),
+        indices->size() * sizeof(uint16_t),
+        indices->size(),
+        sizeof(uint16_t)
+    };
+
+    geometry.push_vertices(vertices_buffer);
+    geometry.set_indices(indices_buffer);
+}
+
 VKR_mesh get_VKR_mesh(const entt::entity entity) {
     const auto mesh = create_mesh(entity);
     if (mesh.has_value()) {

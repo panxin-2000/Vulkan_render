@@ -40,17 +40,17 @@ int main(int argc, char *argv[]) {
     // auto entity = get_entt_instance().create();
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
     register_glfw(handle.get_window());
-
-    object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf", {3.0f, 3.0f, 0.0f});
+    // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf", {0.0f, 0.0f, 0.0f});
+    auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
+    add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 
     UI_block("按钮1", 0, 0, 60, 60);
     UI_block("功能块", 0, 0, 50, 200);
     UI_block("按钮2", 0, 0, 145, 130);
 
 
-    // object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-    // object_3d_model("blender Suzanne", "assets/suzanne.obj", {0.0f, 0.0f, 0.0f});
-    // object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+    object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
     // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf", {3.0f, 3.0f, 0.0f});
 
     // Render loop
