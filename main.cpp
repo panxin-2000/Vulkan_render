@@ -40,9 +40,11 @@ int main(int argc, char *argv[]) {
     // auto entity = get_entt_instance().create();
     // get_entt_instance().emplace<Labyrinth>(entity, "迷宫", entity);
     register_glfw(handle.get_window());
-    // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf", {0.0f, 0.0f, 0.0f});
-    auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
-    add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
+    object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf",
+                    {0.0f, 0.0f, 0.0f},
+                    {0.7071068286895752, 0.7071068286895752, 0, 0});  // 选择数据暂时是写死的
+    // auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
+    // add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 
     UI_block("按钮1", 0, 0, 60, 60);
     UI_block("功能块", 0, 0, 50, 200);

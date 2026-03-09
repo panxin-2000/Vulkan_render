@@ -52,7 +52,8 @@ inline Suzanne_push_constant get_shader_data() {
     return shaderData;
 }
 
-inline entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset) {
+inline entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
+                                    const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
     entt::entity entity_ = g_entt().create();
     g_entt().emplace<Name_component>(entity_, name);
 
@@ -63,7 +64,7 @@ inline entt::entity object_3d_model(const std::string &name, const std::string &
     add_geometry_data(entity_, mesh_path);
 
     // 更新物体的模型矩阵
-    g_entt().emplace<model_transform>(entity_, offset);
+    g_entt().emplace<model_transform>(entity_, offset, rotate);
     const auto &transform  = g_entt().get<model_transform>(entity_);
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity_, "model_4x4", modelMatrix);

@@ -75,17 +75,22 @@ T to_radians(T degrees) {
 
 class alignas(16) model_transform {
 public:
-    Eigen::Quaternionf rotate = {1, 0, 0, 0};
-    Point_3 zoom              = {1, 1, 1};
-    Point_3 offset_           = {0, 0, 0};
+    Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
+    Point_3 zoom_              = {1, 1, 1};
+    Point_3 offset_            = {0, 0, 0};
     AABB_centroid<Point_3> bounding_box_; // 每次都直接计算吧。
 
     [[nodiscard]] Point_3 get_zoom() const {
-        return zoom;
+        return zoom_;
     }
 
     explicit model_transform(const Point_3 offset) {
         offset_ = offset;
+    }
+
+    explicit model_transform(const Point_3 offset, const Eigen::Quaternionf &rotate) {
+        offset_ = offset;
+        rotate_ = rotate;
     }
 
     [[nodiscard]] Point_3 get_offset() const {
@@ -106,9 +111,9 @@ public:
         // 1. 平移 (Translation)
         model_4x4.translate(Eigen::Vector3f(offset_.x, offset_.y, offset_.z));
         // 2. 旋转 (Rotation) - 使用四元数
-        model_4x4.rotate(rotate);
+        model_4x4.rotate(rotate_);
         // 3. 缩放 (Scaling)
-        model_4x4.scale(Eigen::Vector3f(zoom.x, zoom.y, zoom.z));
+        model_4x4.scale(Eigen::Vector3f(zoom_.x, zoom_.y, zoom_.z));
         // 获取最终传给 Vulkan 的 4x4 矩阵
         Eigen::Matrix4f modelMatrix = model_4x4.matrix();
         return modelMatrix;
@@ -125,7 +130,7 @@ public:
     }
 
     Eigen::Matrix4f get_view_projection() const {
-        const auto view = view_matrix({offset_.x, offset_.y, offset_.z}, rotate);
+        const auto view = view_matrix({offset_.x, offset_.y, offset_.z}, rotate_);
         return view;
     }
 };
