@@ -62,13 +62,14 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(quill)
 
 
-FetchContent_Declare(
-        directxmath
-        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
-        GIT_TAG apr2025
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
-)
-FetchContent_MakeAvailable(directxmath)
+#已经不使用这个库了
+#FetchContent_Declare(
+#        directxmath
+#        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
+#        GIT_TAG apr2025
+#        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+#)
+#FetchContent_MakeAvailable(directxmath)
 
 
 set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
@@ -409,7 +410,7 @@ target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
-target_link_libraries(learn_render PRIVATE DirectXMath)
+#target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # 使用自定义命令复制文件

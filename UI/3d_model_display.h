@@ -33,7 +33,7 @@ inline Suzanne_push_constant get_shader_data() {
 
 
     const auto viewMatrix = view_matrix({0.0f, 0.0f, 6.0f}, Eigen::Quaternionf::Identity());
-    memcpy(&shaderData.view, &viewMatrix, sizeof(DirectX::XMMATRIX));
+    memcpy(&shaderData.view, &viewMatrix, sizeof(viewMatrix));
 
 
     const auto projection = vulkan_projection(to_radians(45.0f),

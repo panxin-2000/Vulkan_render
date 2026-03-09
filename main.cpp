@@ -16,7 +16,6 @@
 #include "global_singleton.h"
 
 
-#include <DirectXMath.h>
 #include <iostream>
 
 #include "descriptor_pool.h"
@@ -30,9 +29,6 @@ void deal_glfw_event();
 
 
 int main(int argc, char *argv[]) {
-    DirectX::XMVECTOR v = DirectX::XMVectorSet(1.0f, 2.0f, 3.0f, 4.0f);
-    DirectX::XMMATRIX m = DirectX::XMMatrixIdentity();
-    std::cout << "DirectXMath Integrated Successfully on Mac!" << std::endl;
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     auto &handle = VK_handle::get();
@@ -53,6 +49,7 @@ int main(int argc, char *argv[]) {
     object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
     object_3d_model("blender Suzanne", "assets/suzanne.obj", {0.0f, 0.0f, 0.0f});
     object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+    // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf", {3.0f, 3.0f, 0.0f});
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {
