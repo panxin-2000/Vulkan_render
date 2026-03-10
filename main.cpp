@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
     handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
     init_current_descriptor_pool();
 
-    create_textures_to_gpu(handle, handle.engine_.get_command_pool());
 
     render_thread_start(handle);
 
@@ -50,8 +49,10 @@ int main(int argc, char *argv[]) {
     UI_block("按钮2", 0, 0, 145, 130); {
         auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
         set_render_picture(entity, "samplerColor", "assets/suzanne0.ktx");
+    } {
+        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+        set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
     }
-    // object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {

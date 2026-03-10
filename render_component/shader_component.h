@@ -10,6 +10,7 @@
 #include "create_texture.h"
 #include "descriptor.h"
 #include "sync_proxy_to_render_thread.h"
+#include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
 
@@ -143,30 +144,28 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
-                VkDescriptorImageInfo image_info;
-                if (!get_bindless_textures().empty()) {
-                    image_info = get_bindless_textures()[0];
+                auto &handle    = VK_handle::get();
+                auto image_info = create_textures_to_gpu(handle, picture_path);
+                if (image_info.has_value()) {
+                    Update_descriptor_binding temp      = {};
+                    temp.binding_name                   = binding_name;
+                    temp.resource_type                  = info.resource_type;
+                    temp.dstSet                         = set_value;
+                    temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
+                    temp.descriptor_write_binding.dstBinding       = binding_value;
+                    temp.descriptor_write_binding.dstArrayElement  = 0;
+                    temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                    temp.descriptor_write_binding.descriptorCount  = 1;
+                    temp.descriptor_write_binding.pBufferInfo      = nullptr;
+                    temp.descriptor_write_binding.pImageInfo       = nullptr;
+                    temp.descriptor_write_binding.pTexelBufferView = nullptr;
+                    temp.imageInfo                                 = {true, image_info.value()};
+                    update_[binding_name]                          = temp;
+                    return true;
                 } else {
                     return false;
                 }
-                // 这里需要想办法把图片加载进入GPU
-
-                Update_descriptor_binding temp      = {};
-                temp.binding_name                   = binding_name;
-                temp.resource_type                  = info.resource_type;
-                temp.dstSet                         = set_value;
-                temp.descriptor_write_binding.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                // temp.descriptor_write_bindings.dstSet           = descriptor_sets[0];
-                temp.descriptor_write_binding.dstBinding       = binding_value;
-                temp.descriptor_write_binding.dstArrayElement  = 0;
-                temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                temp.descriptor_write_binding.descriptorCount  = 1;
-                temp.descriptor_write_binding.pBufferInfo      = nullptr;
-                temp.descriptor_write_binding.pImageInfo       = nullptr;
-                temp.descriptor_write_binding.pTexelBufferView = nullptr;
-                temp.imageInfo                                 = {true, image_info};
-                update_[binding_name]                          = temp;
-                return true;
             }
         }
     }
