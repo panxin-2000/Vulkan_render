@@ -7,7 +7,7 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier: require
 
-layout (set = 1, binding = 1) uniform sampler2D samplerColor;
+layout (set = 0, binding = 4) uniform sampler2D global_samplerColorMap[];
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
@@ -15,6 +15,12 @@ layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
 
 layout (location = 0) out vec4 outFragColor;
+
+
+layout (set = 1, binding = 1) uniform texture_index
+{
+    int index;
+};
 
 
 float hash(int xy) {
@@ -28,7 +34,7 @@ float hash(int xy) {
 void main()
 {
 
-    vec4 inColor = texture(samplerColor, inUV);
+    vec4 inColor = texture(global_samplerColorMap[index], inUV);
 
     vec3 N = normalize(inNormal);
     vec3 L = normalize(inLightVec);

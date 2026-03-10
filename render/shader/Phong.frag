@@ -27,8 +27,13 @@ float hash(int xy) {
 void main()
 {
 
-    vec3 inColor = vec3(0.8, 0.8, 0.8);
-//    outFragColor = vec4(inColor.rgb, 1.0);
+    vec3 baseColor = vec3(0.8, 0.8, 0.8);
+
+
+    //    不对，公式中缺少了太多的内容
+    //    vec3 f_0_04 = vec3(0.04);
+    //    vec3 specularColor = mix(f_0_04, baseColor.rgb, metallic);
+    //    vec3 diffuseColor = baseColor * (1.0 - 0.04) * (1.0 - metallic);
 
     vec3 N = normalize(inNormal);
     vec3 L = normalize(inLightVec);
@@ -37,5 +42,5 @@ void main()
     vec3 ambient = vec3(0.1);
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
     vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
-    outFragColor = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);
+    outFragColor = vec4((ambient + diffuse) * baseColor.rgb + specular, 1.0);
 }
