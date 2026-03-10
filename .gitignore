@@ -2,9 +2,6 @@
 cmake-build-debug/
 .DS_Store
 cmake-build-release/
-/render/shader/temp.frag.spv
-/render/shader/temp.vert.spv
-/render/shader/vulkan_different_color.frag.spv
-/render/shader/vulkan_different_color.vert.spv
-/render/shader/Blinn_Phong.frag.spv
-/render/shader/Phong.vert.spv
+*.spv
+
+

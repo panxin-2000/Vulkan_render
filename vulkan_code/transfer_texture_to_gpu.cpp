@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "create_texture.h"
+#include "vulkan_sample.h"
 
 
 // std::array<Texture_parameter, 3> textures{};
@@ -24,7 +25,6 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_handle &handle, const
         VkImage image_handle_temp     = VK_NULL_HANDLE;
         VmaAllocation allocation_temp = VK_NULL_HANDLE;
         VkImageView image_view_temp   = VK_NULL_HANDLE;
-        VkSampler sampler             = VK_NULL_HANDLE;
 
         ktxTexture *ktxTexture{nullptr};
         ktxTexture_CreateFromNamedFile(filename.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
@@ -144,6 +144,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_handle &handle, const
         vkDestroyFence(handle.get_device(), fenceOneTime, nullptr);
         vmaUnmapMemory(handle.get_allocator(), imgSrcAllocation);
         vmaDestroyBuffer(handle.get_allocator(), imgSrcBuffer, imgSrcAllocation);
+
         // Sampler
         VkSamplerCreateInfo samplerCI{
             .sType            = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
@@ -154,7 +155,8 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_handle &handle, const
             .maxAnisotropy    = 8.0f,
             .maxLod           = (float) ktxTexture->numLevels,
         };
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSampler(handle.get_device(), &samplerCI, nullptr, &sampler));
+        VkSampler sampler = create_vulkan_sample(samplerCI);
+
         ktxTexture_Destroy(ktxTexture);
 
         VkDescriptorImageInfo temp{
