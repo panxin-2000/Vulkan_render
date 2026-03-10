@@ -112,6 +112,15 @@ inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cro
     return {VK_FORMAT_UNDEFINED, 0};
 }
 
+inline VkDescriptorBindingFlags find_stageFlag(sets_map &sorted_sets_bindings, const std::string &binding_name) {
+    for (auto const &[set_value, bindings_map]: sorted_sets_bindings) {
+        for (const auto &[binding_value, info]: bindings_map) {
+            if (info.binding_name == binding_name)
+                return info.flag;
+        }
+    }
+    return 0;
+}
 
 static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, const std::string &shaderStage,
                                          sets_map &global_bindings_set,
@@ -162,11 +171,15 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         VkDescriptorSetLayoutBinding tem = {};
         tem.binding                      = binding;
         tem.descriptorCount              = 1;
-        tem.stageFlags                   = get_stageFlags(shaderStage);
+        tem.stageFlags                   = get_stageFlags(shaderStage); // todo: 有麻烦了，需要带有或逻辑的 stageFlag
         tem.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         if (res.name.find("global") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
         } else {
+            auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+            tem.stageFlags                     = tem.stageFlags | stageFlag;
             sorted_sets_bindings[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
         }
         const auto &type = compiler.get_type(res.base_type_id);
@@ -191,8 +204,12 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         if (res.name.find("global") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0};
         } else {
+            auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+            tem.stageFlags                     = tem.stageFlags | stageFlag;
             sorted_sets_bindings[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0};
         }
     }
@@ -224,8 +241,12 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             }
         }
         if (res.name.find("global") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
         } else {
+            auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+            tem.stageFlags                     = tem.stageFlags | stageFlag;
             sorted_sets_bindings[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
         }
     }
@@ -239,8 +260,12 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
         if (res.name.find("global") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         } else {
+            auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+            tem.stageFlags                     = tem.stageFlags | stageFlag;
             sorted_sets_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         }
     }
@@ -256,8 +281,12 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
             tem.stageFlags      = get_stageFlags(shaderStage);
             tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             if (res.name.find("global") != std::string::npos) {
+                auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+                tem.stageFlags                    = tem.stageFlags | stageFlag;
                 global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
             } else {
+                auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+                tem.stageFlags                     = tem.stageFlags | stageFlag;
                 sorted_sets_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
             }
         }
