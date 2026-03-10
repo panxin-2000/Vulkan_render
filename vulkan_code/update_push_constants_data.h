@@ -18,7 +18,9 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
         memory_size += sizeof(args);
     }(), ...);
     // 从内存中分配
-    const auto return_value = GPU_pool_alloc(buffer, memory_size);
+    // 16字节对齐
+    const size_t aligned_size = (memory_size + 15) & ~static_cast<size_t>(15);
+    const auto return_value   = GPU_pool_alloc(buffer, aligned_size);
     // auto complete_size        = return_value->complete_size();
     auto buffer_start_address = buffer->mapped_address();
     if (return_value) {

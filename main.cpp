@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     register_glfw(handle.get_window());
     object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf",
                     {0.0f, 0.0f, 0.0f},
-                    {0.7071068286895752, 0.7071068286895752, 0, 0});  // 选择数据暂时是写死的
+                    {0.7071068286895752, 0.7071068286895752, 0, 0}); // 选择数据暂时是写死的
     // auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
     // add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 

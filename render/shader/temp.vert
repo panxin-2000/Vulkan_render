@@ -12,53 +12,76 @@
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inUV;
-//layout (location = 3) in vec3 inColor;
 
-struct MatrixPMV {
-    mat4 projection;
+//struct MatrixPMV {
+//    mat4 projection;
+//    mat4 view;
+//    mat4 model[3];
+//    vec4 light_pos;
+//    uint selected;
+//};
+//
+//layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer buffer_references
+//{
+//    mat4 projection;
+//    mat4 view;
+//    mat4 model[3];
+//    vec4 light_pos;
+//    uint selected;
+//};
+//
+//layout (push_constant) uniform PushConstants
+//{
+//    buffer_references r_buffer;
+//};
+
+
+layout (set = 0, binding = 0) uniform global_view_4x4
+{
     mat4 view;
-    mat4 model[3];
-    vec4 light_pos;
-    uint selected;
 };
-
-layout (std430, buffer_reference, buffer_reference_align = 8) readonly buffer buffer_references
+layout (set = 0, binding = 1) uniform global_projection_4x4
 {
     mat4 projection;
-    mat4 view;
-    mat4 model[3];
-    vec4 light_pos;
-    uint selected;
+};
+layout (set = 0, binding = 2) uniform global_world_light_Pos
+{
+    vec3 lightPos;
+};
+layout (set = 0, binding = 3) uniform global_world_view_Pos
+{
+    vec3 viewPos;
 };
 
-layout (push_constant) uniform PushConstants
+layout (set = 1, binding = 0) uniform model_4x4
 {
-    buffer_references r_buffer;
+    mat4 model;
 };
 
 layout (location = 0) out vec3 outNormal;
-layout (location = 1) out vec3 outColor;
-layout (location = 2) out vec2 outUV;
-layout (location = 3) out vec3 out_Factor;
-layout (location = 4) out vec3 out_LightVec;
-layout (location = 5) out vec3 out_ViewVec;
-layout (location = 6) flat out uint out_InstanceIndex;
+layout (location = 1) out vec2 outUV;
+layout (location = 2) out vec3 outLightVec;
+layout (location = 3) out vec3 outViewVec;
 
 void main()
 {
-    mat4 projection_1 = r_buffer.projection;
-    mat4 view_1 = r_buffer.view;
-    mat4 model_1 = r_buffer.model[gl_InstanceIndex];
+    mat4 projection_1 = projection;
+    mat4 view_1 = view;
+    mat4 model_1 = model;
+    gl_Position = projection_1 * view_1 * model_1 * vec4(inPos.xyz, 1.0);
+
 
     outNormal = inNormal;
-    //    outColor = inColor;
     outUV = inUV;
-    out_Factor = (r_buffer.selected == gl_InstanceIndex ? vec3(3.0f, 3.0f, 3.0f) : vec3(1.0f, 1.0f, 1.0f));
-    out_InstanceIndex = gl_InstanceIndex;
+    //    out_InstanceIndex = gl_InstanceIndex;
 
-    gl_Position = projection_1 * view_1 * model_1 * vec4(inPos.xyz, 1.0);
-    vec4 fragPos = view_1 * model_1 * vec4(inPos.xyz, 1.0);
-    out_LightVec = r_buffer.light_pos.xyz - fragPos.xyz;
-    out_ViewVec = -fragPos.xyz;
+    // 世界空间
+    outNormal = mat3(model_1) * inNormal;
+    vec4 pos = model_1 * vec4(inPos.xyz, 1.0);
+    outLightVec = lightPos.xyz - pos.xyz;
+    outViewVec = viewPos.xyz - pos.xyz;
+
+    // 多个光源时 输出世界空间下的顶点位置 outWorldPos，让片元着色器去遍历光源。
+
 }
 // 能编译的过，不确定能不能行，然后就是之前写的参数排布会稍微更好一点

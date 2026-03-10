@@ -58,8 +58,8 @@ inline entt::entity object_3d_model(const std::string &name, const std::string &
     g_entt().emplace<Name_component>(entity_, name);
 
     g_entt().emplace<VKR_shader_paths>(entity_,
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                        "", "");
     add_geometry_data(entity_, mesh_path);
 

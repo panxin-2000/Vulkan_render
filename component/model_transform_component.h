@@ -183,6 +183,11 @@ inline void update_camera_transform() {
         if (name.name.find("world_scene_root") != std::string::npos) {
             const auto view_matrix = camera_pos.get_view_projection();
             set_render_parameter(it, "global_view_4x4", view_matrix);
+            Point_3 world_camera_pos = camera_pos.get_offset();
+            const Point_3 world_light_pos{0, 10, 6};
+
+            set_render_parameter(it, "global_world_view_Pos", world_camera_pos);
+            set_render_parameter(it, "global_world_light_Pos", world_light_pos);
         }
         g_entt().remove<Camera_transform_dirty>(it);
     }
@@ -212,18 +217,22 @@ public:
                            g_entt().emplace<Scene_Component>(instance);
                            g_entt().emplace<Name_component>(instance, "world_scene_root");
                            g_entt().emplace<VKR_shader_paths>(instance,
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.vert.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/temp.frag.spv",
                                                               "", "");
                            auto camera           = g_entt().get_or_emplace<camera_optical_component>(instance);
                            const auto projection = camera.get_projection();
-                           const auto camera_pos = g_entt().get_or_emplace<model_transform>(instance, Point_3{
-                                        0, 0, 6
-                                    });
+                           const Point_3 world_light_pos{0, 10, 6};
+
+                           const auto camera_pos = g_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
                            const auto view_matrix = camera_pos.get_view_projection();
+                           Point_3 world_camera_pos = camera_pos.get_offset();
+
 
                            set_render_parameter(instance, "global_projection_4x4", projection);
                            set_render_parameter(instance, "global_view_4x4", view_matrix);
+                           set_render_parameter(instance, "global_world_view_Pos", world_camera_pos);
+                           set_render_parameter(instance, "global_world_light_Pos", world_light_pos);
                        }
                       );
         return instance;
