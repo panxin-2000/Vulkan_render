@@ -461,15 +461,48 @@ Texture_parameter create_texture_all(VK_handle &handle, const std::string &pictu
 }
 
 
+struct GPU_image_resource {
+    VkImage image_handle_     = VK_NULL_HANDLE;
+    VmaAllocation allocation_ = VK_NULL_HANDLE;
+    VkImageView image_view_   = VK_NULL_HANDLE;
+};
+
+std::map<VkImageView, uint64_t> discard_image_view_map;
+std::map<std::pair<VkImage, VmaAllocation>, uint64_t> discard_image_map;
+
+
 void VKR_image::destroy_image() {
-    const auto &handle = VK_handle::get();
     if (image_view_ != VK_NULL_HANDLE) {
-        vkDestroyImageView(handle.get_device(), image_view_, nullptr);
+        discard_image_view_map.insert({{image_view_}, timeline_});
         image_view_ = VK_NULL_HANDLE;
     }
     if (image_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
-        vmaDestroyImage(handle.get_allocator(), image_handle_, allocation_);
+        discard_image_map.insert({{image_handle_, allocation_}, timeline_});
         image_handle_ = VK_NULL_HANDLE;
         allocation_   = VK_NULL_HANDLE;
+    }
+}
+
+void discard_image_and_view_map_clean() {
+    const auto &handle = VK_handle::get();
+    for (auto it = discard_image_view_map.begin(); it != discard_image_view_map.end(); /* 后面不加 ++ */) {
+        const auto &[image_view, timeline] = *it;
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            vkDestroyImageView(handle.get_device(), image_view, nullptr);
+            it = discard_image_view_map.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    for (auto it = discard_image_map.begin(); it != discard_image_map.end(); /* 后面不加 ++ */) {
+        const auto &[image, timeline] = *it;
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
+        if (handle.get_finished_timeline() >= timeline) {
+            vmaDestroyImage(handle.get_allocator(), image.first, image.second);
+            it = discard_image_map.erase(it);
+        } else {
+            ++it;
+        }
     }
 }

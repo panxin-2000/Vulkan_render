@@ -107,7 +107,7 @@ public:
         // VkDescriptorSet
         clean_all_descriptor_sets_layout(handle);
 
-        clean_all_mesh_object();
+        clean_all_mesh_object(); // 放在这里似乎并不是太好，
 
         destroy_texture(&handle);
 
@@ -192,8 +192,8 @@ private
         //                                     descriptor_sets_layout
         //                                     shader_modules_
         //                                     buffer_views_
-        discard_buffer_map_clean(); //         buffers_
-        //                                     image_views_
+        discard_buffer_map_clean();         //         buffers_
+        discard_image_and_view_map_clean(); //  image_views_
         //                                     images_
 
 

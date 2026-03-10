@@ -13,6 +13,7 @@
 
 #include "vulkan_image.h"
 #include "global_singleton.h"
+#include "vulkan_buffer.h"
 
 static VK_handle *instance = nullptr;
 
@@ -422,6 +423,13 @@ void VK_handle::destroy() {
         vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
         swap_chain_ = VK_NULL_HANDLE;
     }
+
+    discard_buffer_map_clean();
+    discard_image_and_view_map_clean();
+
+    // 销毁 timeline_semaphore 再全部检查一遍再销毁
+    vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);
+    vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
 
     vkDestroySurfaceKHR(instance_, surface_, nullptr);

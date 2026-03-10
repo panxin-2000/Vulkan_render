@@ -57,7 +57,7 @@ public:
     VKR_image_ptr() = default;
 
     ~VKR_image_ptr() {
-        ptr = nullptr;    //
+        ptr = nullptr; //
     }
 
     long use_count() {
@@ -94,4 +94,5 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
                                               VkImageTiling tiling, VkImageUsageFlags usage);
 
 
+void discard_image_and_view_map_clean();
 #endif //HELLO_MAC_VULKAN_IMAGE_H

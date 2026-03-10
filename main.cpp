@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
-    g_entt().clear();
+    g_entt().clear();   // 必须先清理， root entity 会占有一部分资源，需要先清理
 
     render_thread_stop_and_wait();
 
@@ -75,7 +75,6 @@ int main(int argc, char *argv[]) {
     auto &buffer = get_uniform_buffer();
     buffer->destroy_buffer();
 
-    discard_buffer_map_clean();
     handle.engine_destroy();
     handle.destroy();
 }
