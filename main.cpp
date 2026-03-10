@@ -6,7 +6,6 @@
 
 #include <thread>
 #include "render_thread/backend.h"
-#include "render_thread/vulkan_render_manage.h"
 #include "vulkan_device_handle.h"
 #include "event/base_event.h"
 #include "labyrinth.h"
@@ -14,13 +13,9 @@
 #include "UI/UI_button.h"
 
 #include "global_singleton.h"
-
-
 #include <iostream>
-
 #include "descriptor_pool.h"
 #include "sync_proxy_to_render_thread.h"
-#include "transfer_texture_to_gpu.h"
 #include "update_push_constants_data.h"
 #include "UI/3d_model_display.h"
 

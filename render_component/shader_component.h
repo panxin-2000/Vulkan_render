@@ -49,7 +49,7 @@ struct Update_descriptor_binding {
     VkWriteDescriptorSet descriptor_write_binding = {};
 
     std::pair<bool, VKR_buffer_block_ptr> bufferInfo = {};
-    std::pair<bool, VkDescriptorImageInfo> imageInfo;
+    std::pair<bool, Texture_parameter> texture_info;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
     std::pair<bool, VkBufferView> TexelBufferView;
 };
@@ -144,9 +144,9 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
-                auto &handle    = VK_handle::get();
-                auto image_info = create_textures_to_gpu(handle, picture_path);
-                if (image_info.has_value()) {
+                auto &handle = VK_handle::get();
+                auto texture = create_textures_to_gpu(handle, picture_path);
+                if (texture.has_value()) {
                     Update_descriptor_binding temp      = {};
                     temp.binding_name                   = binding_name;
                     temp.resource_type                  = info.resource_type;
@@ -160,7 +160,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
                     temp.descriptor_write_binding.pBufferInfo      = nullptr;
                     temp.descriptor_write_binding.pImageInfo       = nullptr;
                     temp.descriptor_write_binding.pTexelBufferView = nullptr;
-                    temp.imageInfo                                 = {true, image_info.value()};
+                    temp.texture_info                              = {true, texture.value()};
                     update_[binding_name]                          = temp;
                     return true;
                 } else {

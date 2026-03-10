@@ -57,7 +57,7 @@ public:
     VKR_image_ptr() = default;
 
     ~VKR_image_ptr() {
-        ptr = nullptr;
+        ptr = nullptr;    //
     }
 
     long use_count() {

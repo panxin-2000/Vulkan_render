@@ -18,11 +18,13 @@
 struct pos_struct {
     float x, y, z;
 };
+
 struct normal_struct {
     float a, b, c;
 };
+
 struct uv_struct {
-    float  u, v;
+    float u, v;
 };
 
 struct Vertex {
@@ -37,6 +39,15 @@ struct Texture_parameter {
     VKR_image_ptr image;
     VkSampler sampler         = VK_NULL_HANDLE;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    [[nodiscard]] VkDescriptorImageInfo get_Descriptor_Image_Info(const uint64_t timeline = 0) const {
+        const VkDescriptorImageInfo temp{
+            .sampler     = sampler,
+            .imageView   = image->get_image_view(timeline),
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+        };
+        return temp;
+    }
 };
 
 class VK_handle {
@@ -112,7 +123,6 @@ public:
         ++time_line;
         return time_line - 1; // 第一次拿到的时候就是 1
     }
-
 
 
     void get_image_to_render();
