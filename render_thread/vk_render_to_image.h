@@ -36,6 +36,7 @@ class vk_render_GPU {
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
     std::vector<std::shared_ptr<VKR_object_proxy> > need_render_objects;
+    std::vector<std::shared_ptr<VKR_object_proxy> > deferred_pass;
 
 public:
     void render_thread(VK_handle &handle) {
@@ -61,6 +62,10 @@ public:
             for (const auto &render_data: need_render_objects) {
                 build_command_buffer(handle, *render_data, time_line);
             }
+            for (const auto &render_data: deferred_pass) {
+                build_deferred_command_buffer(handle, *render_data, time_line);
+            }
+
             end_rendering(handle, queryPool, time_line);
 
             handle.submit_render_queue(time_line);
@@ -152,6 +157,17 @@ private
                 auto render_data = option_temp.value();
                 LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
                 need_render_objects.push_back(render_data);
+            } else {
+                break;
+            }
+        }
+        while (true) {
+            // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
+            auto option_temp = vk_render_queue::instance().get_deferred_need_init();
+            if (option_temp.has_value()) {
+                auto render_data = option_temp.value();
+                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
+                deferred_pass.push_back(render_data);
             } else {
                 break;
             }

@@ -16,6 +16,7 @@ private:
     mutable std::mutex mtx;
     // std::vector<union_render_data> render_objects;
     std::queue<std::shared_ptr<VKR_object_proxy> > need_init;
+    std::queue<std::shared_ptr<VKR_object_proxy> > deferred_pass;
     std::queue<std::shared_ptr<VKR_object_proxy> > need_update;
     std::queue<std::shared_ptr<VKR_object_proxy> > need_clean;
     std::queue<std::pair<std::shared_ptr<VKR_object_proxy>, std::function<void
@@ -57,6 +58,16 @@ public:
         return std::nullopt;
     }
 
+    std::optional<std::shared_ptr<VKR_object_proxy> > get_deferred_need_init() {
+        std::unique_lock<std::mutex> lock(mtx);
+        if (!deferred_pass.empty()) {
+            std::shared_ptr<VKR_object_proxy> val = deferred_pass.front();
+            deferred_pass.pop();
+            return val;
+        }
+        return std::nullopt;
+    }
+
     void execute_update_lambda() {
         std::unique_lock<std::mutex> lock(mtx);
         while (!update_function.empty()) {
@@ -89,7 +100,11 @@ public:
 
     void render_object_need_init(std::shared_ptr<VKR_object_proxy> render_object) {
         std::unique_lock<std::mutex> lock(mtx);
-        need_init.push(render_object);
+        if (render_object->pass_name.empty())
+            need_init.push(render_object);
+        else if (render_object->pass_name == "deferred_pass") {
+            deferred_pass.push(render_object);
+        }
         LOG_INFO(g_log(), "add {} to vk_render_queue ", render_object->debug_name);
     }
 

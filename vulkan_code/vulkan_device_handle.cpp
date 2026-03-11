@@ -360,6 +360,73 @@ void VK_handle::create_swap_chain_image_and_view() {
 }
 
 
+VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const {
+    VkImageAspectFlags aspectMask = 0;
+    VkImageLayout imageLayout;
+    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (g_buffer_format >= VK_FORMAT_D16_UNORM_S8_UINT)
+            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
+
+    assert(aspectMask > 0);
+
+    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
+
+    assert(g_buffer_format != VK_FORMAT_UNDEFINED);
+    VkImageCreateInfo g_buffer_ImageCI{
+        .sType     = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format    = g_buffer_format,
+        .extent{
+            .width  = extent.width,
+            .height = extent.height,
+            .depth  = 1
+        },
+        .mipLevels     = 1,
+        .arrayLayers   = 1,
+        .samples       = VK_SAMPLE_COUNT_1_BIT,
+        .tiling        = VK_IMAGE_TILING_OPTIMAL,
+        .usage         = VK_IMAGE_USAGE_SAMPLED_BIT,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    g_buffer_ImageCI.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    const VmaAllocationCreateInfo allocCI{
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
+    };
+    VkImage g_buffer_image                 = VK_NULL_HANDLE;
+    VmaAllocation g_buffer_ImageAllocation = VK_NULL_HANDLE;
+    VkImageView g_buffer_image_view        = VK_NULL_HANDLE;
+
+    VK_CHECK_RESULT(vmaCreateImage(allocator_, &g_buffer_ImageCI, &allocCI, &g_buffer_image, &g_buffer_ImageAllocation,
+                        nullptr));
+
+    const VkImageViewCreateInfo depthViewCI{
+        .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image    = g_buffer_image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format   = g_buffer_format,
+        .subresourceRange{
+            .aspectMask     = aspectMask,
+            .baseMipLevel   = 0,
+            .levelCount     = 1,
+            .baseArrayLayer = 0,
+            .layerCount     = 1
+        }
+    };
+    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &g_buffer_image_view));
+
+
+    return {g_buffer_image, g_buffer_ImageAllocation, g_buffer_image_view};
+}
+
 VKR_image_ptr VK_handle::create_depth_image_and_view() {
     // Depth attachment
     std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
@@ -417,7 +484,9 @@ void VK_handle::destroy() {
     if (instance_ == VK_NULL_HANDLE)
         return; {
         // 基本上是一个整体
-        depth_image_->destroy_image();
+        for (const auto &image: depth_images_) {
+            image->destroy_image();
+        }
         for (const auto &image: swap_chain_images_) {
             image->destroy_image();
         }

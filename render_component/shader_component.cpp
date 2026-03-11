@@ -247,6 +247,11 @@ VkPipeline get_pipeline(const entt::entity entity) {
 VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
     auto &handle                     = VK_handle::get();
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+        if (!g_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
+            g_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
+        }
+    }
     if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         pipeline_layout = (*shader_data)->pipeline_layout;
         return pipeline_layout;

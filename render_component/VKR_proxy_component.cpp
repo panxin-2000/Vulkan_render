@@ -13,7 +13,10 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     const auto &vk_data =
             g_entt().get_or_emplace<std::shared_ptr<VKR_object_proxy> >(entity, std::make_shared<VKR_object_proxy>());
 
-
+    auto name = get_entity_name(entity);
+    if (name.find("deferred_pass") != std::string::npos) {
+        vk_data->pass_name = "deferred_pass";
+    }
     vk_data->mesh                   = get_VKR_mesh(entity);
     vk_data->pipeline_layout        = get_pipeline_layout(entity);
     vk_data->scissor                = VK_handle::get().get_scissor();

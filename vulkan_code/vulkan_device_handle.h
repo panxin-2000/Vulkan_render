@@ -107,9 +107,25 @@ public:
         return current_timeline;
     }
 
-    const VkImage &get_current_swap_chain_image() const;
+    [[nodiscard]] const VkImage &get_current_swap_chain_image() const;
 
-    const VkImageView &get_current_swap_image_view() const;
+    [[nodiscard]] const VkImageView &get_current_swap_image_view() const;
+
+    [[nodiscard]] const VkImage &get_current_depth_image() const;
+
+    [[nodiscard]] const VkImageView &get_current_depth_view() const;
+
+    [[nodiscard]] const VkImage &get_current_position_image() const;
+
+    [[nodiscard]] const VkImageView &get_current_position_view() const;
+
+    [[nodiscard]] const VkImage &get_current_normal_image() const;
+
+    [[nodiscard]] const VkImageView &get_current_normal_view() const;
+
+    [[nodiscard]] const VkImage &get_current_baseColor_image() const;
+
+    [[nodiscard]] const VkImageView &get_current_baseColor_view() const;
 
 
     void create_timeline_Semaphores();
@@ -131,7 +147,10 @@ public:
 
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
     std::vector<VKR_image_ptr> swap_chain_images_;
-    VKR_image_ptr depth_image_;
+    std::vector<VKR_image_ptr> G_buffer_Position_images_;
+    std::vector<VKR_image_ptr> g_buffer_Normal_images_;
+    std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
+    std::vector<VKR_image_ptr> depth_images_;
 
     uint32_t queue_family_{0}; // 不清楚是否能够删除
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
@@ -161,6 +180,8 @@ private:
 
     void create_swap_chain_image_and_view();
 
+    VKR_image_ptr create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const;
+
     VKR_image_ptr create_depth_image_and_view();
 
 public:
@@ -175,7 +196,21 @@ public:
         create_VMA();
         create_swap_chain(VK_NULL_HANDLE);
         create_swap_chain_image_and_view();
-        depth_image_ = create_depth_image_and_view();
+        depth_images_.push_back(create_depth_image_and_view());
+        depth_images_.push_back(create_depth_image_and_view());
+
+        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     }
 
     void recreate_swap_chain() {
@@ -184,14 +219,38 @@ public:
         vkDeviceWaitIdle(device_);
         const auto old_swap_chain = swap_chain_;
         create_swap_chain(old_swap_chain);
-        depth_image_->destroy_image();
+        for (const auto &image: depth_images_) {
+            image->destroy_image();
+        }
         for (const auto &image: swap_chain_images_) {
+            image->destroy_image();
+        }
+        for (const auto &image: G_buffer_Position_images_) {
+            image->destroy_image();
+        }
+        for (const auto &image: g_buffer_Normal_images_) {
+            image->destroy_image();
+        }
+        for (const auto &image: G_buffer_BaseColor_images_) {
             image->destroy_image();
         }
         vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
 
         create_swap_chain_image_and_view();
-        depth_image_ = create_depth_image_and_view();
+        depth_images_.push_back(create_depth_image_and_view());
+        depth_images_.push_back(create_depth_image_and_view());
+        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     }
 
     void destroy();
@@ -260,14 +319,6 @@ public:
     }
 
 
-    [[nodiscard]] VkImage get_depth_image() const {
-        return depth_image_->get_image_handle();
-    }
-
-    [[nodiscard]] VkImageView get_depth_image_view() const {
-        return depth_image_->get_image_view();
-    }
-
     [[nodiscard]] const VmaAllocator &get_allocator() const {
         return allocator_;
     }
@@ -278,6 +329,10 @@ public:
 
     [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
         return swap_chain_images_;
+    }
+
+    [[nodiscard]] const std::vector<VKR_image_ptr> &get_depth_images() const {
+        return depth_images_;
     }
 
     [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const {

@@ -10,6 +10,7 @@
 
 class VKR_object_proxy {
 public:
+    std::string pass_name;
     std::string debug_name;
     VkPipeline vk_pipeline;
     VkPipelineLayout pipeline_layout;

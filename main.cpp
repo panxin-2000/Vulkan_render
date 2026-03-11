@@ -24,6 +24,24 @@ void register_glfw(GLFWwindow *window);
 void deal_glfw_event();
 
 
+inline entt::entity add_render_pass(const std::string &name) {
+    entt::entity entity_ = g_entt().create();
+    g_entt().emplace<Name_component>(entity_, name + "deferred_pass");
+
+    g_entt().emplace<VKR_shader_paths>(entity_,
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
+                                       "", "");
+
+    // 更新物体的模型矩阵
+
+    world_root_add_child(entity_);
+
+    g_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    return entity_;
+}
+
+
 int main(int argc, char *argv[]) {
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
@@ -39,15 +57,20 @@ int main(int argc, char *argv[]) {
     //                 {0.0f, 0.0f, 0.0f},
     //                 {0.7071068286895752, 0.7071068286895752, 0, 0}); // 选择数据暂时是写死的
 
-    UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 50, 200);
-    UI_block("按钮2", 0, 0, 145, 130); {
-        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        set_render_picture(entity, "samplerColor", "assets/suzanne0.ktx");
-    } {
-        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
-        set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
-    }
+    // UI_block("按钮1", 0, 0, 60, 60);
+    // UI_block("功能块", 0, 0, 50, 200);
+    // UI_block("按钮2", 0, 0, 145, 130);
+    // 3d 模型
+    // {
+    //     auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    //     set_render_picture(entity, "samplerColor", "assets/suzanne0.ktx");
+    // } {
+    //     auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+    //     set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
+    // }
+
+    add_render_pass("blank");
+
 
     // Render loop
     while (!glfwWindowShouldClose(handle.get_window())) {
@@ -67,7 +90,7 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
-    g_entt().clear();   // 必须先清理， root entity 会占有一部分资源，需要先清理
+    g_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
     render_thread_stop_and_wait();
 

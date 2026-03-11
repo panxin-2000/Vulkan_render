@@ -24,78 +24,10 @@ layout (binding = 4) uniform UBO
 void main()
 {
     // Get G-Buffer values
-    vec3 world_pos = texture(samplerposition, inUV).rgb;
-    vec3 normal = texture(samplerNormal, inUV).rgb;
-    vec4 Base_color = texture(samplerAlbedo, inUV);
-
-    // Debug display
-    if (ubo.displayDebugTarget > 0) {
-        switch (ubo.displayDebugTarget) {
-            case 1:
-                outFragcolor.rgb = world_pos;
-                break;
-            case 2:
-                outFragcolor.rgb = normal;
-                break;
-            case 3:
-                outFragcolor.rgb = Base_color.rgb;
-                break;
-            case 4:
-                outFragcolor.rgb = Base_color.aaa;
-                break;
-        }
-        outFragcolor.a = 1.0;
-        return;
-    }
-
-    // Render-target composition
-
-    #define lightCount 6
-    #define ambient 0.0
-
-    // Ambient part
-    vec3 fragcolor = Base_color.rgb * ambient;
-
-    for (int i = 0; i < lightCount; ++i)
-    {
-        // Vector to light
-        vec3 L = ubo.lights[i].position.xyz - world_pos;
-        // Distance from light to fragment position
-        float dist = length(L);
-
-        // Viewer to fragment
-        vec3 V = ubo.viewPos.xyz - world_pos;
-        V = normalize(V);
-
-        //if(dist < ubo.lights[i].radius)
-        {
-            // Light to fragment
-            L = normalize(L);
-
-            // Attenuation
-            float atten = ubo.lights[i].radius / (pow(dist, 2.0) + 1.0);
-
-            // Diffuse part
-            vec3 N = normalize(normal);
-            float NdotL = max(0.0, dot(N, L));
-            vec3 diff = ubo.lights[i].color * Base_color.rgb * NdotL * atten;
-
-            // Specular part
-            // Specular map values are stored in alpha of albedo mrt
-            // vec3 R = reflect(-L, N);
-            // float NdotR = max(0.0, dot(R, V));
-
-            // --- 修改后的 Blinn-Phong 逻辑 ---
-
-            vec3 H = normalize(L + V); // 计算半程向量
-            vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
+    //    vec3 world_pos = texture(samplerposition, inUV).rgb;
+    //    vec3 normal = texture(samplerNormal, inUV).rgb;
+    //    vec4 Base_color = texture(samplerAlbedo, inUV);
 
 
-            vec3 spec = ubo.lights[i].color * Base_color.a * pow(max(dot(N, H), 0.0), 32.0) * atten;
-
-            fragcolor += diff + spec;
-        }
-    }
-
-    outFragcolor = vec4(fragcolor, 1.0);
+    outFragcolor = vec4(0.7, 0.7, 0.7, 1.0);
 }
