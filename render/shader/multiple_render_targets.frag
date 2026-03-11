@@ -1,6 +1,6 @@
 #version 450
 
-layout (binding = 1) uniform sampler2D samplerColor;
+layout (set = 1, binding = 1) uniform sampler2D samplerColor;
 //layout (binding = 2) uniform sampler2D samplerNormalMap;
 
 layout (location = 0) in vec3 inNormal;
@@ -12,10 +12,20 @@ layout (location = 0) out vec4 outPosition;
 layout (location = 1) out vec4 outNormal;
 layout (location = 2) out vec4 outBaseColor;
 
+float hash(int xy) {
+    uint x = uint(xy);
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = (x >> 16u) ^ x;
+    return float(x) / 4294967295.0;
+}
+
 // Multiple Render Targets
 void main()
 {
     outPosition = vec4(inWorldPos, 1.0);
+    //outBaseColor = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
+
 
     // Calculate normal in tangent space
     vec3 N = normalize(inNormal);
@@ -23,6 +33,7 @@ void main()
     //    vec3 B = cross(N, T);
     //    mat3 TBN = mat3(T, B, N);
     //    vec3 tnorm = TBN * normalize(texture(samplerNormalMap, inUV).xyz * 2.0 - vec3(1.0));
+
     outNormal = vec4(N.xyz, 1.0);
     outBaseColor = texture(samplerColor, inUV);
 }
