@@ -30,7 +30,7 @@ static std::vector<char> readFile(const std::string &filename) {
 }
 
 
-VkShaderModule create_one_shader_module(const VK_backend &handle, const std::string &path,
+VkShaderModule create_one_shader_module(const VK_backend &backend, const std::string &path,
                                         std::map<std::string, shader_and_share> &map) {
     if (!path.empty()) {
         const auto shader_code = readFile(path);
@@ -40,7 +40,7 @@ VkShaderModule create_one_shader_module(const VK_backend &handle, const std::str
         createInfo.pCode    = reinterpret_cast<const uint32_t *>(shader_code.data());
 
         VkShaderModule shaderModule = VK_NULL_HANDLE;
-        auto vk_result              = vkCreateShaderModule(handle.get_device(), &createInfo, nullptr, &shaderModule);
+        auto vk_result              = vkCreateShaderModule(backend.get_device(), &createInfo, nullptr, &shaderModule);
         if (vk_result != VK_SUCCESS) {
             return VK_NULL_HANDLE;
             LOG_ERROR(g_log(), "vkCreateShaderModule error {}!", path);
@@ -57,20 +57,20 @@ VkShaderModule create_one_shader_module(const VK_backend &handle, const std::str
     return VK_NULL_HANDLE;
 }
 
-VkShaderModule find_one_shader_module(const VK_backend &handle, const std::string &path,
+VkShaderModule find_one_shader_module(const VK_backend &backend, const std::string &path,
                                       std::map<std::string, shader_and_share> &map) {
     auto it = map.find(path);
     if (it != map.end()) {
         return it->second.shader;
     }
-    return create_one_shader_module(handle, path, map);
+    return create_one_shader_module(backend, path, map);
 }
 
 
-std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_backend &handle,
+std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_backend &backend,
                                                                             const std::string &compute_path) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    VkShaderModule computeShaderModule = find_one_shader_module(handle, compute_path, get_shader_map());
+    VkShaderModule computeShaderModule = find_one_shader_module(backend, compute_path, get_shader_map());
     if (computeShaderModule != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
         ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -83,7 +83,7 @@ std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(cons
 }
 
 
-std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &handle,
+std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &backend,
                                                                          VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
@@ -91,9 +91,9 @@ std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const V
 
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-    VkShaderModule vertShaderModule       = find_one_shader_module(handle, vertex_path, get_shader_map());
-    VkShaderModule fragShaderModule       = find_one_shader_module(handle, fragment_path, get_shader_map());
-    VkShaderModule geometry_shader_module = find_one_shader_module(handle, geometry_path, get_shader_map());
+    VkShaderModule vertShaderModule       = find_one_shader_module(backend, vertex_path, get_shader_map());
+    VkShaderModule fragShaderModule       = find_one_shader_module(backend, fragment_path, get_shader_map());
+    VkShaderModule geometry_shader_module = find_one_shader_module(backend, geometry_path, get_shader_map());
 
     if (vertShaderModule != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};

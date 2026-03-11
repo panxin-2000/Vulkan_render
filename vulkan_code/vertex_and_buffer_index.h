@@ -11,12 +11,12 @@
 
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据
-inline VKR_buffer_ptr create_staging_buffer(const VK_backend &handle, VkDeviceSize size) {
+inline VKR_buffer_ptr create_staging_buffer(const VK_backend &backend, VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 }
 
-inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, const VkDeviceSize size) {
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, const VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -26,14 +26,14 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, const
 
 /**
  *  总会创建成功，除非内存不够，返回 都为 VK_NULL_HANDLE
- * @param handle
+ * @param backend
  * @param size
  * @param mem_copy_callback
  * @return
  */
-inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, VkDeviceSize size,
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDeviceSize size,
                                                  std::function<void(void *)> mem_copy_callback) {
-    auto vBuffer = create_vertex_index_buffer(handle, size);
+    auto vBuffer = create_vertex_index_buffer(backend, size);
     if (vBuffer->empty())
         return {};
     // 没有创建成功，直接退出
@@ -41,7 +41,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, VkDev
 
     if (vBuffer->host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
-        auto staging_buffer = create_staging_buffer(handle, size);
+        auto staging_buffer = create_staging_buffer(backend, size);
         if (staging_buffer->empty()) {
             // 创建 staging_buffer 失败
             vBuffer->destroy_buffer();

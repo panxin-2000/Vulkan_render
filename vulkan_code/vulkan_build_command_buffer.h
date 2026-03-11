@@ -30,12 +30,12 @@ struct scoped_debug_label {
 
 /**
  * @brief 为 Vulkan 对象设置调试名称
- * @param handle_backend
+ * @param backend
  * @param objectType 对象类型 (如 VK_OBJECT_TYPE_BUFFER)
  * @param handle 对象句柄 (强转为 uint64_t)
  * @param name
  */
-inline void SetDebugName(const VK_backend &handle_backend,
+inline void SetDebugName(const VK_backend &backend,
                          const VkObjectType objectType,
                          const uint64_t handle,
                          const std::string &name) {
@@ -46,7 +46,7 @@ inline void SetDebugName(const VK_backend &handle_backend,
         nameInfo.objectHandle                  = handle;
         nameInfo.pObjectName                   = name.c_str();
 
-        vkSetDebugUtilsObjectNameEXT(handle_backend.get_device(), &nameInfo);
+        vkSetDebugUtilsObjectNameEXT(backend.get_device(), &nameInfo);
     }
 }
 

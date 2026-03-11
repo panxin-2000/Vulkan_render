@@ -157,8 +157,8 @@ private:
 
 public:
     camera_optical_component() {
-        const auto &handle   = VK_backend::get();
-        auto [width, height] = handle.get_current_extent();
+        const auto &backend  = VK_backend::get();
+        auto [width, height] = backend.get_current_extent();
         aspect               = static_cast<float>(width) / static_cast<float>(height);
     }
 

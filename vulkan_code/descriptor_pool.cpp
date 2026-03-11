@@ -13,7 +13,7 @@ VkDescriptorPool get_descriptor_pool() {
 
 
 void init_current_descriptor_pool() {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
 
     static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 250;
 
@@ -43,11 +43,11 @@ void init_current_descriptor_pool() {
         .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
         .pPoolSizes    = pool_sizes.data(),
     };
-    VK_CHECK_RESULT(vkCreateDescriptorPool(handle.get_device(), &descPoolCI, nullptr, &descriptorPool));
+    VK_CHECK_RESULT(vkCreateDescriptorPool(backend.get_device(), &descPoolCI, nullptr, &descriptorPool));
 }
 
 
 void destroy_descriptorPool() {
-    const auto &handle = VK_backend::get();
-    vkDestroyDescriptorPool(handle.get_device(), descriptorPool, nullptr);
+    const auto &backend = VK_backend::get();
+    vkDestroyDescriptorPool(backend.get_device(), descriptorPool, nullptr);
 }

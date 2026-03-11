@@ -45,14 +45,14 @@ inline entt::entity add_render_pass(const std::string &name) {
 int main(int argc, char *argv[]) {
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-    auto &handle = VK_backend::get();
-    handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
+    auto &backend = VK_backend::get();
+    backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
     init_current_descriptor_pool();
 
 
-    render_thread_start(handle);
+    render_thread_start(backend);
 
-    register_glfw(handle.get_window());
+    register_glfw(backend.get_window());
     // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf",
     //                 {0.0f, 0.0f, 0.0f},
     //                 {0.7071068286895752, 0.7071068286895752, 0, 0}); // 选择数据暂时是写死的
@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
 
 
     // Render loop
-    while (!glfwWindowShouldClose(handle.get_window())) {
+    while (!glfwWindowShouldClose(backend.get_window())) {
         glfwWaitEvents();
-        if (GLFW_TRUE == glfwWindowShouldClose(handle.get_window())) {
+        if (GLFW_TRUE == glfwWindowShouldClose(backend.get_window())) {
             break;
         }
         glfwPollEvents();  // Event polling
@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
     auto &buffer = get_uniform_buffer();
     buffer->destroy_buffer();
 
-    handle.engine_destroy();
-    handle.destroy();
+    backend.engine_destroy();
+    backend.destroy();
 }
 
 

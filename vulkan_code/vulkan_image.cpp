@@ -13,7 +13,7 @@ VkImageView createImageView(const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags,
                             uint32_t mipLevels) {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
@@ -26,13 +26,13 @@ VkImageView createImageView(const VkImage image,
     viewInfo.subresourceRange.layerCount     = mipLevels;
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     VkImageView imageView;
-    if (vkCreateImageView(handle.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (vkCreateImageView(backend.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image view!");
     }
     return imageView;
 }
 
-VkImageView create_sky_cube_ImageView(const VK_backend &handle,
+VkImageView create_sky_cube_ImageView(const VK_backend &backend,
                                       const VkImage image,
                                       const VkFormat format,
                                       const VkImageAspectFlags aspectFlags,
@@ -49,7 +49,7 @@ VkImageView create_sky_cube_ImageView(const VK_backend &handle,
     viewInfo.subresourceRange.layerCount     = mipLevels;
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     VkImageView imageView;
-    if (vkCreateImageView(handle.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (vkCreateImageView(backend.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image view!");
     }
     return imageView;
@@ -104,7 +104,7 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
                                               VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
@@ -129,12 +129,12 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
     VkImage image;
     VmaAllocation allocation;
     VmaAllocationInfo resultInfo;
-    vmaCreateImage(handle.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
+    vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
 
     return {image, allocation};
 }
 
-VKR_buffer_ptr create_image_buffer(const VK_backend &handle, VkDeviceSize size,
+VKR_buffer_ptr create_image_buffer(const VK_backend &backend, VkDeviceSize size,
                                    std::function<void(void *)> mem_copy_callback) {
     auto vBuffer =
             create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -144,7 +144,7 @@ VKR_buffer_ptr create_image_buffer(const VK_backend &handle, VkDeviceSize size,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
     if (vBuffer->host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
-        auto staging_buffer = create_staging_buffer(handle, size);
+        auto staging_buffer = create_staging_buffer(backend, size);
         if (staging_buffer->host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
@@ -486,12 +486,12 @@ void VKR_image::destroy_image() {
 }
 
 void discard_image_and_view_map_clean() {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     for (auto it = discard_image_view_map.begin(); it != discard_image_view_map.end(); /* 后面不加 ++ */) {
         const auto &[image_view, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
-        if (handle.get_finished_timeline() >= timeline) {
-            vkDestroyImageView(handle.get_device(), image_view, nullptr);
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", backend.get_finished_timeline(), timeline);
+        if (backend.get_finished_timeline() >= timeline) {
+            vkDestroyImageView(backend.get_device(), image_view, nullptr);
             it = discard_image_view_map.erase(it);
         } else {
             ++it;
@@ -499,9 +499,9 @@ void discard_image_and_view_map_clean() {
     }
     for (auto it = discard_image_map.begin(); it != discard_image_map.end(); /* 后面不加 ++ */) {
         const auto &[image, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
-        if (handle.get_finished_timeline() >= timeline) {
-            vmaDestroyImage(handle.get_allocator(), image.first, image.second);
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", backend.get_finished_timeline(), timeline);
+        if (backend.get_finished_timeline() >= timeline) {
+            vmaDestroyImage(backend.get_allocator(), image.first, image.second);
             it = discard_image_map.erase(it);
         } else {
             ++it;

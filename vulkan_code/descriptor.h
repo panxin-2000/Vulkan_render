@@ -31,11 +31,11 @@ using DescriptorSet_ptr = std::shared_ptr<DescriptorSet_detail>;
 
 /**
  * 更新描述符
- * @param handle
+ * @param backend
  * @param textureDescriptors
  * @param descriptor_set_texture
  */
-void update_descriptor_sets(const VK_backend &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
+void update_descriptor_sets(const VK_backend &backend, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                             const std::vector<DescriptorSet_ptr> &descriptor_set_texture);
 
 

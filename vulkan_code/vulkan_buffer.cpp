@@ -9,11 +9,11 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
+    vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    vmaGetMemoryTypeProperties(backend.get_allocator(), info.memoryType, &props);
     if (props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
         return info.pMappedData;
     }
@@ -22,79 +22,79 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] VkDeviceAddress VKR_buffer::get_gpu_device_address() const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer_handle_
     };
-    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
+    const auto deviceAddress = vkGetBufferDeviceAddress(backend.get_device(), &vk_buffer_device_address_info);
     return deviceAddress;
 }
 
 
 [[nodiscard]] bool VKR_buffer::host_visible() const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
+    vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    vmaGetMemoryTypeProperties(backend.get_allocator(), info.memoryType, &props);
     const bool isVisible = props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     return isVisible;
 }
 
 VkDeviceSize VKR_buffer::complete_size() const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
 
     VmaAllocationInfo allocInfo_for_map;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
+    vmaGetAllocationInfo(backend.get_allocator(), allocation_, &allocInfo_for_map);
     return allocInfo_for_map.size;
 }
 
 bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     if (size == 0) {
         VmaAllocationInfo allocInfo_for_map;
-        vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
+        vmaGetAllocationInfo(backend.get_allocator(), allocation_, &allocInfo_for_map);
         size = allocInfo_for_map.size;
     }
     if (need_flush() == true) {
-        vmaFlushAllocation(handle.get_allocator(), allocation_, offset, size);
+        vmaFlushAllocation(backend.get_allocator(), allocation_, offset, size);
     }
     return true;
 }
 
 bool VKR_buffer::unmap_memory() const {
-    const auto &handle = VK_backend::get();
-    vmaUnmapMemory(handle.get_allocator(), allocation_);
+    const auto &backend = VK_backend::get();
+    vmaUnmapMemory(backend.get_allocator(), allocation_);
     return true;
 }
 
 
 void *VKR_buffer::map_memory() const {
-    const auto &handle = VK_backend::get();
-    void *bufferPtr    = nullptr;
-    vmaMapMemory(handle.get_allocator(), allocation_, &bufferPtr);
+    const auto &backend = VK_backend::get();
+    void *bufferPtr     = nullptr;
+    vmaMapMemory(backend.get_allocator(), allocation_, &bufferPtr);
     return bufferPtr;
 }
 
 bool VKR_buffer::need_flush() const {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VmaAllocationInfo info;
-    vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
+    vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
-    vmaGetMemoryTypeProperties(handle.get_allocator(), info.memoryType, &props);
+    vmaGetMemoryTypeProperties(backend.get_allocator(), info.memoryType, &props);
     const bool need_flush = (props & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     return !need_flush;
 }
 
 
 [[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer &buffer) {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer
     };
-    const auto deviceAddress = vkGetBufferDeviceAddress(handle.get_device(), &vk_buffer_device_address_info);
+    const auto deviceAddress = vkGetBufferDeviceAddress(backend.get_device(), &vk_buffer_device_address_info);
     return deviceAddress;
 }
 
@@ -113,7 +113,7 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
 
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
 
     vkEndCommandBuffer(commandBuffer);
 
@@ -122,24 +122,24 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers    = &commandBuffer;
 
-    vkQueueSubmit(handle.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(handle.get_queue());
+    vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(backend.get_queue());
 
-    vkFreeCommandBuffers(handle.get_device(), handle.engine_.get_command_pool(), 1, &commandBuffer);
+    vkFreeCommandBuffers(backend.get_device(), backend.engine_.get_command_pool(), 1, &commandBuffer);
 }
 
 
 VkCommandBuffer begin_one_command_buffer() {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = handle.engine_.get_command_pool();
+    allocInfo.commandPool        = backend.engine_.get_command_pool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
     //  todo : vkAllocateCommandBuffers 必须加锁
-    vkAllocateCommandBuffers(handle.get_device(), &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -221,14 +221,14 @@ VKR_buffer::~VKR_buffer() {
 void discard_buffer_block_map_clean();
 
 void discard_buffer_map_clean() {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     discard_buffer_block_map_clean();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);
-        if (handle.get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", backend.get_finished_timeline(), timeline);
+        if (backend.get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
-            vmaDestroyBuffer(handle.get_allocator(), buffer.first, buffer.second);
+            vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);
         } else {
             ++it;

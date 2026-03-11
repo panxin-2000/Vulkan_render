@@ -17,13 +17,13 @@ VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreat
 *  输出的结果是 bindings
  * 举例如 binding = 0 和 binding =1 等等的组合
  * 两个参数的 vector 的 size 需要一致
- * @param handle
+ * @param backend
  * @param layout_bindings        输入的是 layout
  * @param layout_bindings_flags  哪怕 全部填零也是需要一致的
  * @return 输出的是 descriptor
  */
 VkDescriptorSetLayout
-create_descriptor_bindings_layout(const VK_backend &handle,
+create_descriptor_bindings_layout(const VK_backend &backend,
                                   const std::vector<VkDescriptorSetLayoutBinding> &layout_bindings,
                                   const std::vector<VkDescriptorBindingFlags> &layout_bindings_flags);
 
@@ -44,7 +44,7 @@ std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_backend &handl
 
 void clean_all_descriptor_sets_layout(VK_backend &handle);
 
-std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &handle,
+std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &backend,
                                                                    const sets_map &organized_sets_and_bindings);
 
 

@@ -18,7 +18,7 @@ auto &get_mesh_map() {
     return mesh_map_;
 }
 
-VKR_mesh create_mesh_data(const VK_backend &handle, const share_block &vertices,
+VKR_mesh create_mesh_data(const VK_backend &backend, const share_block &vertices,
                           const share_block &indices_) {
     VkDeviceSize vBufSize{vertices.total_size};
     VkDeviceSize iBufSize{indices_.total_size};
@@ -30,7 +30,7 @@ VKR_mesh create_mesh_data(const VK_backend &handle, const share_block &vertices,
     };
 
     const auto vertices_buffer =
-            create_vertex_index_buffer(handle, vBufSize + iBufSize, mem_copy_function);
+            create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
 
     // vertices_buffer 还需要动，firstIndex 在之后也是需要更改的
 

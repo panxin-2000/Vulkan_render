@@ -11,7 +11,7 @@
 std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
 std::mutex discard_descriptor_set_map_mutex;
 
-void update_descriptor_sets(const VK_backend &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
+void update_descriptor_sets(const VK_backend &backend, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                             const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
@@ -26,7 +26,7 @@ void update_descriptor_sets(const VK_backend &handle, std::vector<VkDescriptorIm
         writeDescSet.push_back(temp);
     }
     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-    vkUpdateDescriptorSets(handle.get_device(),
+    vkUpdateDescriptorSets(backend.get_device(),
                            writeDescSet.size(),
                            writeDescSet.data(), 0, nullptr);
 }
@@ -115,14 +115,14 @@ DescriptorSet_detail::~DescriptorSet_detail() {
 
 
 void discard_descriptor_set_map_clean() {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
         const auto &[descriptor_set, timeline] = *it;
-        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", handle.get_finished_timeline(),
+        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", backend.get_finished_timeline(),
                   timeline);
-        if (handle.get_finished_timeline() >= timeline) {
+        if (backend.get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-            vkFreeDescriptorSets(handle.get_device(), get_descriptor_pool(), 1, &descriptor_set);
+            vkFreeDescriptorSets(backend.get_device(), get_descriptor_pool(), 1, &descriptor_set);
             // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
             it = discard_descriptor_set_map.erase(it);
         } else {
