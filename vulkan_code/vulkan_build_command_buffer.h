@@ -40,7 +40,7 @@ inline void gpu_log_label_info(const VkCommandBuffer &cb, const std::string &lab
     vkCmdInsertDebugUtilsLabelEXT(cb, &markerInfo);
 }
 
-inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
+inline void reset_current_command_buffer(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
 
@@ -59,6 +59,10 @@ inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint
                            );
     }
     gpu_log_label_info(cb, "开始记录时间");
+}
+
+inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_line) {
+    auto cb = handle.engine_.get_current_command_buffer();
 
     std::array<VkImageMemoryBarrier2, 2> outputBarriers{
         VkImageMemoryBarrier2{
@@ -125,26 +129,8 @@ inline void begin_rendering(VK_handle &handle, VkQueryPool queryPool, const uint
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void begin_G_buffer_rendering(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
+inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
-    VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
-
-
-    VkCommandBufferBeginInfo cbBI{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-    };
-    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cb, &cbBI)); // 所有 vkCmd 都必须在它 之后
-    if (queryPool != VK_NULL_HANDLE) {
-        vkCmdResetQueryPool(cb, queryPool, 0, 2);
-        vkCmdWriteTimestamp(cb,
-                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
-                            queryPool,
-                            0 // query 索引
-                           );
-    }
-    gpu_log_label_info(cb, "开始记录时间");
-
     std::array<VkImageMemoryBarrier2, 4> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -154,61 +140,106 @@ inline void begin_G_buffer_rendering(VK_handle &handle, VkQueryPool queryPool, c
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_position_image(),
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-        },
-        VkImageMemoryBarrier2{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = 0,
-            .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
-            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_normal_image(),
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-        },
-        VkImageMemoryBarrier2{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = 0,
-            .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
-            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_baseColor_image(),
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-        },
-        VkImageMemoryBarrier2{
-            .sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
-            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_depth_image(),
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_position_image(),
             .subresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1,
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        },
+
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_normal_image(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        },
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_baseColor_image(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        },
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,          // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, // 也行VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_depth_image(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                .levelCount = 1,
                 .layerCount = 1
             }
         }
     };
     VkDependencyInfo barrierDependencyInfo{
-        .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 2,
-        .pImageMemoryBarriers = outputBarriers.data()
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = outputBarriers.size(),
+        .pImageMemoryBarriers    = outputBarriers.data()
     };
     vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
 
-    VkRenderingAttachmentInfo colorAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = handle.get_current_swap_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
+    std::array<VkRenderingAttachmentInfo, 3> colorAttachmentInfos{
+        VkRenderingAttachmentInfo{
+            .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView   = handle.get_current_position_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
+        },
+        VkRenderingAttachmentInfo{
+            .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView   = handle.get_current_normal_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
+        },
+        VkRenderingAttachmentInfo{
+            .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView   = handle.get_current_baseColor_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
+        },
     };
     auto temp_extent = VK_handle::get().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
@@ -225,11 +256,105 @@ inline void begin_G_buffer_rendering(VK_handle &handle, VkQueryPool queryPool, c
             .extent = temp_extent,
         },
         .layerCount           = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments    = &colorAttachmentInfo,
+        .colorAttachmentCount = colorAttachmentInfos.size(),
+        .pColorAttachments    = colorAttachmentInfos.data(),
         .pDepthAttachment     = &depthAttachmentInfo
     };
     vkCmdBeginRendering(cb, &renderingInfo);
+}
+
+inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_line) {
+    auto cb = handle.engine_.get_current_command_buffer();
+    std::array<VkImageMemoryBarrier2, 4> outputBarriers{
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, // 等待颜色输出完成
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,          // 确保写入缓存刷新
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,        // 读取时布局
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_position_image(),
+            .subresourceRange    = {
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        },
+
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, // 等待颜色输出完成
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,          // 确保写入缓存刷新
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,        // 读取时布局
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_normal_image(),
+            .subresourceRange    = {
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        },
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, // 等待颜色输出完成
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,          // 确保写入缓存刷新
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,        // 读取时布局
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_baseColor_image(),
+            .subresourceRange    = {
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        },
+
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,  // 确保写入缓存刷新
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,              // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, // 读取时布局
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = VK_handle::get().get_current_depth_image(),
+            .subresourceRange    = {
+                .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        },
+    };
+    VkDependencyInfo barrierDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = outputBarriers.size(),
+        .pImageMemoryBarriers    = outputBarriers.data()
+    };
+    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
 }
 
 
@@ -309,10 +434,13 @@ inline void build_deferred_command_buffer(VK_handle &engine, VKR_object_proxy &v
     vkCmdDraw(cb, 3, 1, 0, 0);
 }
 
-inline void end_rendering(VK_handle &engine, VkQueryPool queryPool, const uint64_t time_line) {
+inline void end_rendering(VK_handle &engine) {
     auto cb = engine.engine_.get_current_command_buffer();
-
     vkCmdEndRendering(cb); // 这里和之后的 没有限制
+}
+
+inline void end_command_buffer(VK_handle &engine, VkQueryPool queryPool, const uint64_t time_line) {
+    auto cb = engine.engine_.get_current_command_buffer();
     if (queryPool != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(cb,
                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录

@@ -159,6 +159,7 @@ VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
 }
 
 
+// todo:: 想起来了，这里写过一次，写的时候还是很头痛的，之后也没有很仔细的验证结果，应该是好了的
 void transition_image(VK_handle &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
                       VkImageLayout oldLayout,
                       VkImageLayout newLayout,
@@ -388,6 +389,7 @@ inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
                          0, nullptr,
                          1, &barrier
                         );
+    // 暂时不动它了，
 
     end_and_submit_one_command_buffer(commandBuffer);
 }

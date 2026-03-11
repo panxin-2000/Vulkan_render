@@ -56,17 +56,24 @@ public:
             handle.get_image_to_render();
             const uint64_t time_line = VK_handle::get_current_submit_timeline();
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            begin_rendering(handle, queryPool, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
-            // 应该先划分不同的 pass 阶段，
+            reset_current_command_buffer(handle, queryPool, time_line);
+            begin_g_buffer_rendering_attachment(handle, time_line);
 
             for (const auto &render_data: need_render_objects) {
                 build_command_buffer(handle, *render_data, time_line);
             }
+            end_rendering(handle);
+            g_buffer_attachment_barrier(handle, time_line);
+
+
+            begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+            // 应该先划分不同的 pass 阶段，
             for (const auto &render_data: deferred_pass) {
                 build_deferred_command_buffer(handle, *render_data, time_line);
             }
 
-            end_rendering(handle, queryPool, time_line);
+            end_rendering(handle);
+            end_command_buffer(handle, queryPool, time_line);
 
             handle.submit_render_queue(time_line);
             handle.copy_image_to_screen();

@@ -347,9 +347,11 @@ void VK_handle::create_swap_chain_image_and_view() {
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
             .format   = surfaceFormat.format,
             .subresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .levelCount = 1,
-                .layerCount = 1
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
             }
         };
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
@@ -361,21 +363,6 @@ void VK_handle::create_swap_chain_image_and_view() {
 
 
 VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const {
-    VkImageAspectFlags aspectMask = 0;
-    VkImageLayout imageLayout;
-    if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-        aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    }
-    if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (g_buffer_format >= VK_FORMAT_D16_UNORM_S8_UINT)
-            aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-        imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    }
-
-    assert(aspectMask > 0);
-
     const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
 
     assert(g_buffer_format != VK_FORMAT_UNDEFINED);
@@ -392,11 +379,9 @@ VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format
         .arrayLayers   = 1,
         .samples       = VK_SAMPLE_COUNT_1_BIT,
         .tiling        = VK_IMAGE_TILING_OPTIMAL,
-        .usage         = VK_IMAGE_USAGE_SAMPLED_BIT,
+        .usage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
-
-    g_buffer_ImageCI.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
 
     const VmaAllocationCreateInfo allocCI{
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
@@ -414,7 +399,7 @@ VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format   = g_buffer_format,
         .subresourceRange{
-            .aspectMask     = aspectMask,
+            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel   = 0,
             .levelCount     = 1,
             .baseArrayLayer = 0,
@@ -471,9 +456,11 @@ VKR_image_ptr VK_handle::create_depth_image_and_view() {
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format   = depth_format_,
         .subresourceRange{
-            .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-            .levelCount = 1,
-            .layerCount = 1
+            .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .baseMipLevel   = 0,
+            .levelCount     = 1,
+            .baseArrayLayer = 0,
+            .layerCount     = 1
         }
     };
     VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view));
