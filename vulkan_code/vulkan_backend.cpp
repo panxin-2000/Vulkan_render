@@ -477,6 +477,15 @@ void VK_backend::destroy() {
         for (const auto &image: swap_chain_images_) {
             image->destroy_image();
         }
+        for (const auto &image: G_buffer_Position_images_) {
+            image->destroy_image();
+        }
+        for (const auto &image: g_buffer_Normal_images_) {
+            image->destroy_image();
+        }
+        for (const auto &image: G_buffer_BaseColor_images_) {
+            image->destroy_image();
+        }
         vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
         swap_chain_ = VK_NULL_HANDLE;
     }
