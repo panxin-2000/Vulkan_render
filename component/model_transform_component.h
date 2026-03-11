@@ -217,8 +217,8 @@ public:
                            g_entt().emplace<Scene_Component>(instance);
                            g_entt().emplace<Name_component>(instance, "world_scene_root");
                            g_entt().emplace<VKR_shader_paths>(instance,
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong.frag.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
+                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                                               "", "");
                            auto camera           = g_entt().get_or_emplace<camera_optical_component>(instance);
                            const auto projection = camera.get_projection();
