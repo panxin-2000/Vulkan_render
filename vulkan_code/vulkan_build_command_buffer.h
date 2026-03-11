@@ -28,6 +28,29 @@ struct scoped_debug_label {
     };
 };
 
+/**
+ * @brief 为 Vulkan 对象设置调试名称
+ * @param handle_backend
+ * @param objectType 对象类型 (如 VK_OBJECT_TYPE_BUFFER)
+ * @param handle 对象句柄 (强转为 uint64_t)
+ * @param name
+ */
+inline void SetDebugName(const VK_handle &handle_backend,
+                         const VkObjectType objectType,
+                         const uint64_t handle,
+                         const std::string &name) {
+    if (vkSetDebugUtilsObjectNameEXT && !name.empty()) {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType                         = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType                    = objectType;
+        nameInfo.objectHandle                  = handle;
+        nameInfo.pObjectName                   = name.c_str();
+
+        vkSetDebugUtilsObjectNameEXT(handle_backend.get_device(), &nameInfo);
+    }
+}
+
+
 inline void gpu_log_label_info(const VkCommandBuffer &cb, const std::string &label) {
     // 添加一个函数 ， 颜色根据不同的类型来确定
     VkDebugUtilsLabelEXT markerInfo{};
