@@ -65,19 +65,12 @@ layout (location = 3) out vec3 outViewVec;
 
 void main()
 {
-    mat4 projection_1 = projection;
-    mat4 view_1 = view;
-    mat4 model_1 = model;
-    gl_Position = projection_1 * view_1 * model_1 * vec4(inPos.xyz, 1.0);
-
-
+    gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
     outNormal = inNormal;
     outUV = inUV;
-    //    out_InstanceIndex = gl_InstanceIndex;
-
     // 世界空间
-    outNormal = mat3(model_1) * inNormal;
-    vec4 pos = model_1 * vec4(inPos.xyz, 1.0);
+    outNormal = mat3(model) * inNormal;
+    vec4 pos = model * vec4(inPos.xyz, 1.0);
     outLightVec = lightPos.xyz - pos.xyz;
     outViewVec = viewPos.xyz - pos.xyz;
 
