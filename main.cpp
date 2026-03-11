@@ -42,6 +42,28 @@ inline entt::entity add_render_pass(const std::string &name) {
 }
 
 
+VkSampler base_sample() {
+    const auto &backend    = VK_backend::get();
+    VkSampler colorSampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo sampler{};
+    sampler.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler.maxAnisotropy = 1.0f;
+    sampler.magFilter     = VK_FILTER_NEAREST;
+    sampler.minFilter     = VK_FILTER_NEAREST;
+    sampler.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler.addressModeU  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler.addressModeV  = sampler.addressModeU;
+    sampler.addressModeW  = sampler.addressModeU;
+    sampler.mipLodBias    = 0.0f;
+    sampler.maxAnisotropy = 1.0f;
+    sampler.minLod        = 0.0f;
+    sampler.maxLod        = 1.0f;
+    sampler.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    VK_CHECK_RESULT(vkCreateSampler(backend.get_device(), &sampler, nullptr, &colorSampler));
+    return colorSampler;
+}
+
+
 int main(int argc, char *argv[]) {
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
@@ -61,15 +83,40 @@ int main(int argc, char *argv[]) {
     // UI_block("功能块", 0, 0, 50, 200);
     // UI_block("按钮2", 0, 0, 145, 130);
     // 3d 模型
-    // {
-    //     auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-    //     set_render_picture(entity, "samplerColor", "assets/suzanne0.ktx");
-    // } {
-    //     auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
-    //     set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
-    // }
+    {
+        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        set_render_picture(entity, "samplerColor", "assets/suzanne0.ktx");
+    } {
+        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+        set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
+    }
 
-    add_render_pass("blank");
+    // {
+    //     const auto entity                  = add_render_pass("blank");
+    //     const auto sampler                 = base_sample();
+    //     Texture_parameter position_texture = {
+    //         .image       = backend.G_buffer_Position_images_.at(0),
+    //         .sampler     = sampler,
+    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+    //     };
+    //     std::optional<Texture_parameter> position = position_texture;
+    //     Texture_parameter normal_texture          = {
+    //         .image       = backend.g_buffer_Normal_images_.at(0),
+    //         .sampler     = sampler,
+    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+    //     };
+    //     std::optional<Texture_parameter> normal = normal_texture;
+    //     Texture_parameter baseColor_texture     = {
+    //         .image       = backend.G_buffer_BaseColor_images_.at(0),
+    //         .sampler     = sampler,
+    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+    //     };
+    //     std::optional<Texture_parameter> baseColor = baseColor_texture;
+    //
+    //     set_render_picture(entity, "samplerPosition", position);
+    //     set_render_picture(entity, "samplerNormal", normal);
+    //     set_render_picture(entity, "samplerBaseColor", baseColor);
+    // }
 
 
     // Render loop
@@ -87,6 +134,7 @@ int main(int argc, char *argv[]) {
         }
 
         sync_render_data_to_render_thread();
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }

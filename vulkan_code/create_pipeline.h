@@ -105,6 +105,7 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL
     };
+    // 这里有问题，但是需要着色器上的一些内容
     VkPipelineColorBlendAttachmentState blendAttachment{.colorWriteMask = 0xF};
     VkPipelineColorBlendStateCreateInfo colorBlendState{
         .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,

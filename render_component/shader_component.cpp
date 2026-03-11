@@ -45,7 +45,7 @@ void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
                 buffer_info->range                       = binding_update.bufferInfo.second->size_;
                 descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
             } else if (binding_update.texture_info.first) {
-                auto image_info = binding_update.texture_info.second.get_Descriptor_Image_Info();
+                auto image_info = binding_update.texture_info.second.get_descriptor_image_info();
                 descriptor_write_bindings[i].pImageInfo = &image_info;
             } else if (binding_update.TexelBufferView.first) {
                 descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
@@ -90,7 +90,7 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
                 buffer_info->range                       = binding_update.bufferInfo.second->size_;
                 descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
             } else if (binding_update.texture_info.first) {
-                auto image_info = binding_update.texture_info.second.get_Descriptor_Image_Info();
+                auto image_info = binding_update.texture_info.second.get_descriptor_image_info();
                 descriptor_write_bindings[i].pImageInfo = &image_info;
             } else if (binding_update.TexelBufferView.first) {
                 descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
