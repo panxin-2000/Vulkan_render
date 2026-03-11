@@ -8,7 +8,7 @@
 #include <volk.h>
 
 #include "shader_component.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 template<typename T>
 uint32_t to_u32(T val) {
@@ -35,7 +35,7 @@ inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription
 }
 
 
-inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+inline VkPipeline CreateComputePipelines(VK_backend &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                          VkDescriptorSetLayout &descriptorSetLayout) {
     if (shaderStages.empty() == true) {
         return VK_NULL_HANDLE;
@@ -68,7 +68,7 @@ inline VkPipeline CreateComputePipelines(VK_handle &handle, std::vector<VkPipeli
     return compute_pipeline;
 }
 
-inline VkPipeline create_graphics_pipeline(VK_handle &handle, vk_shader_data &data) {
+inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
     std::vector<VkPipelineShaderStageCreateInfo> &shaderStages       = data.pipeline_shader_stage_create_infos;
@@ -140,10 +140,10 @@ inline VkPipeline create_graphics_pipeline(VK_handle &handle, vk_shader_data &da
 }
 
 
-VkPipeline create_pipeline(VK_handle &handle, vk_shader_data &data);
+VkPipeline create_pipeline(VK_backend &handle, vk_shader_data &data);
 
-VkPipeline find_pipeline(VK_handle &handle, std::shared_ptr<vk_shader_data> &data);
+VkPipeline find_pipeline(VK_backend &handle, std::shared_ptr<vk_shader_data> &data);
 
 
-void clean_all_pipeline(VK_handle &handle);
+void clean_all_pipeline(VK_backend &handle);
 #endif //HOWTOVULKAN_CREATE_PIPELINE_H

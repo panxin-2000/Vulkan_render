@@ -6,14 +6,14 @@
 
 #include "stb_image.h"
 #include "vertex_and_buffer_index.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include "vulkan_buffer.h"
 
 VkImageView createImageView(const VkImage image,
                             const VkFormat format,
                             const VkImageAspectFlags aspectFlags,
                             uint32_t mipLevels) {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image                           = image;
@@ -32,7 +32,7 @@ VkImageView createImageView(const VkImage image,
     return imageView;
 }
 
-VkImageView create_sky_cube_ImageView(const VK_handle &handle,
+VkImageView create_sky_cube_ImageView(const VK_backend &handle,
                                       const VkImage image,
                                       const VkFormat format,
                                       const VkImageAspectFlags aspectFlags,
@@ -67,7 +67,7 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, Vk
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_handle &handle, uint32_t width, uint32_t height,
+std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_backend &handle, uint32_t width, uint32_t height,
                                                         uint32_t mipLevels,
                                                         VkFormat format,
                                                         VkImageTiling tiling,
@@ -104,7 +104,7 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
                                               VkFormat format,
                                               VkImageTiling tiling,
                                               VkImageUsageFlags usage) {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
@@ -134,7 +134,7 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
     return {image, allocation};
 }
 
-VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
+VKR_buffer_ptr create_image_buffer(const VK_backend &handle, VkDeviceSize size,
                                    std::function<void(void *)> mem_copy_callback) {
     auto vBuffer =
             create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -160,7 +160,7 @@ VKR_buffer_ptr create_image_buffer(const VK_handle &handle, VkDeviceSize size,
 
 
 // todo:: 想起来了，这里写过一次，写的时候还是很头痛的，之后也没有很仔细的验证结果，应该是好了的
-void transition_image(VK_handle &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
+void transition_image(VK_backend &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
                       VkImageLayout oldLayout,
                       VkImageLayout newLayout,
                       VkAccessFlags srcAccessMask,
@@ -189,7 +189,7 @@ void transition_image(VK_handle &handle, VkCommandBuffer commandBuffer, VkImage 
 }
 
 
-void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
+void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
                      uint32_t mipLevels) {
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
@@ -258,7 +258,7 @@ void generateMipmaps(VK_handle &handle, VkImage image, VkFormat imageFormat, int
 }
 
 
-VKR_image_ptr createTextureImage(VK_handle &handle, const std::string &picture_path) {
+VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
@@ -307,7 +307,7 @@ VKR_image_ptr createTextureImage(VK_handle &handle, const std::string &picture_p
 }
 
 void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    const auto &handle            = VK_handle::get();
+    const auto &handle            = VK_backend::get();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkBufferImageCopy region{};
@@ -337,7 +337,7 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
 
 inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                   VkImageLayout newLayout, uint32_t mipLevels) {
-    const auto &handle            = VK_handle::get();
+    const auto &handle            = VK_backend::get();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkImageMemoryBarrier barrier{};
@@ -395,7 +395,7 @@ inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
 }
 
 
-VkSampler createTextureSampler(VK_handle &handle) {
+VkSampler createTextureSampler(VK_backend &handle) {
     VkSampler textureSampler;
 
     VkSamplerCreateInfo samplerInfo{};
@@ -446,7 +446,7 @@ VkSampler createTextureSampler(VK_handle &handle) {
 }
 
 
-Texture_parameter create_texture_all(VK_handle &handle, const std::string &picture_path) {
+Texture_parameter create_texture_all(VK_backend &handle, const std::string &picture_path) {
     auto image_ptr = createTextureImage(handle, picture_path);
 
     auto textureSampler = createTextureSampler(handle);
@@ -486,7 +486,7 @@ void VKR_image::destroy_image() {
 }
 
 void discard_image_and_view_map_clean() {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     for (auto it = discard_image_view_map.begin(); it != discard_image_view_map.end(); /* 后面不加 ++ */) {
         const auto &[image_view, timeline] = *it;
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", handle.get_finished_timeline(), timeline);

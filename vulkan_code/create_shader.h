@@ -5,28 +5,28 @@
 #ifndef HOWTOVULKAN_CREATE_SHADER_H
 #define HOWTOVULKAN_CREATE_SHADER_H
 
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include "shader_common.h"
 #include "shader_component.h"
 
 static std::vector<char> readFile(const std::string &filename);
 
 
-VkShaderModule create_one_shader_module(const VK_handle &handle, const std::string &path,
+VkShaderModule create_one_shader_module(const VK_backend &handle, const std::string &path,
                                         std::map<std::string, shader_and_share> &map);
 
 
-VkShaderModule find_one_shader_module(const VK_handle &handle, const std::string &path,
+VkShaderModule find_one_shader_module(const VK_backend &handle, const std::string &path,
                                       std::map<std::string, shader_and_share> &map);
 
 
-std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_handle &handle,
+std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_backend &handle,
                                                                             const std::string &compute_path);
 
 
-std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_handle &handle,
+std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &handle,
                                                                          VKR_shader_paths &paths);
 
-void clean_all_shader_object(VK_handle &handle);
+void clean_all_shader_object(VK_backend &handle);
 
 #endif //HOWTOVULKAN_CREATE_SHADER_H

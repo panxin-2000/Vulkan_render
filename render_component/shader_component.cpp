@@ -12,13 +12,13 @@
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
 #include "VKR_proxy_component.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 
 void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
     // 以 binding 为一个最小数量
     if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
-        auto &handle = VK_handle::get();
+        auto &handle = VK_backend::get();
         char stack_memory_pool[1024];
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
@@ -63,7 +63,7 @@ void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
 void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
     // 以 binding 为一个最小数量
     if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
-        auto &handle = VK_handle::get();
+        auto &handle = VK_backend::get();
         char stack_memory_pool[1024];
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
@@ -137,7 +137,7 @@ std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity enti
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-    auto &handle = VK_handle::get();
+    auto &handle = VK_backend::get();
     if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
@@ -190,7 +190,7 @@ std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
 std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) {
     std::shared_ptr<vk_shader_data> shader_data_handle;
     if (shader_data_handle.get() == nullptr) {
-        auto &handle = VK_handle::get();
+        auto &handle = VK_backend::get();
         shader_data_handle = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
         shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
@@ -233,7 +233,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 
 
 VkPipeline get_pipeline(const entt::entity entity) {
-    auto &handle          = VK_handle::get();
+    auto &handle          = VK_backend::get();
     VkPipeline pipeline_t = VK_NULL_HANDLE;
     if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         pipeline_t = find_pipeline(handle, *shader_data);
@@ -245,7 +245,7 @@ VkPipeline get_pipeline(const entt::entity entity) {
 }
 
 VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
-    auto &handle                     = VK_handle::get();
+    auto &handle                     = VK_backend::get();
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
         if (!g_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {

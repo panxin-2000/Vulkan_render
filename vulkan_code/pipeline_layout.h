@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_PIPELINE_LAYOUT_H
 #define HELLO_MAC_PIPELINE_LAYOUT_H
 
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 
 /**
@@ -17,13 +17,13 @@
  * @param descriptor_sets_layout  layout(set = 0, binding = 0) layout(set = 1, binding = 0)
  * @return
  */
-VkPipelineLayout create_pipeline_layout(VK_handle &handle, const std::string shader_key,
+VkPipelineLayout create_pipeline_layout(VK_backend &handle, const std::string shader_key,
                                         std::vector<VkDescriptorSetLayout> descriptor_sets_layout);
 
 
-VkPipelineLayout find_pipeline_layout(VK_handle &handle, const std::string shader_key);
+VkPipelineLayout find_pipeline_layout(VK_backend &handle, const std::string shader_key);
 
-void clean_all_pipeline_layout(VK_handle &handle);
+void clean_all_pipeline_layout(VK_backend &handle);
 
 
 #endif //HELLO_MAC_PIPELINE_LAYOUT_H

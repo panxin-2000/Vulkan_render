@@ -3,12 +3,12 @@
 //
 
 #include "update_push_constants_data.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 VKR_buffer_pool_ptr buffer = nullptr;
 
 VKR_buffer_pool_ptr &get_uniform_buffer() {
-    auto &handle = VK_handle::get();
+    auto &handle = VK_backend::get();
 
     if (buffer == nullptr) {
         VkBuffer vBuffer{VK_NULL_HANDLE};

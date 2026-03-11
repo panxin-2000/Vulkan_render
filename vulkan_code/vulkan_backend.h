@@ -50,7 +50,7 @@ struct Texture_parameter {
     }
 };
 
-class VK_handle {
+class VK_backend {
 private:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
@@ -185,7 +185,7 @@ private:
     VKR_image_ptr create_depth_image_and_view();
 
 public:
-    static VK_handle &get();
+    static VK_backend &get();
 
     void init_device_handle() {
         // 顺序不能更改
@@ -342,18 +342,18 @@ public:
     }
 
 private:
-    VK_handle() = default;
+    VK_backend() = default;
 
-    ~VK_handle();
+    ~VK_backend();
 
 public:
-    VK_handle(const VK_handle &) = delete;
+    VK_backend(const VK_backend &) = delete;
 
-    VK_handle &operator=(const VK_handle &) = delete;
+    VK_backend &operator=(const VK_backend &) = delete;
 
-    VK_handle(VK_handle &&) = delete;
+    VK_backend(VK_backend &&) = delete;
 
-    VK_handle &operator=(VK_handle &&) = delete;
+    VK_backend &operator=(VK_backend &&) = delete;
 };
 
 

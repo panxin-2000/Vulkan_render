@@ -35,7 +35,7 @@ struct scoped_debug_label {
  * @param handle 对象句柄 (强转为 uint64_t)
  * @param name
  */
-inline void SetDebugName(const VK_handle &handle_backend,
+inline void SetDebugName(const VK_backend &handle_backend,
                          const VkObjectType objectType,
                          const uint64_t handle,
                          const std::string &name) {
@@ -63,7 +63,7 @@ inline void gpu_log_label_info(const VkCommandBuffer &cb, const std::string &lab
     vkCmdInsertDebugUtilsLabelEXT(cb, &markerInfo);
 }
 
-inline void reset_current_command_buffer(VK_handle &handle, VkQueryPool queryPool, const uint64_t time_line) {
+inline void reset_current_command_buffer(VK_backend &handle, VkQueryPool queryPool, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
 
@@ -84,7 +84,7 @@ inline void reset_current_command_buffer(VK_handle &handle, VkQueryPool queryPoo
     gpu_log_label_info(cb, "开始记录时间");
 }
 
-inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_line) {
+inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
 
     std::array<VkImageMemoryBarrier2, 2> outputBarriers{
@@ -96,7 +96,7 @@ inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_li
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_swap_chain_image(),
+            .image         = VK_backend::get().get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
         VkImageMemoryBarrier2{
@@ -109,7 +109,7 @@ inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_li
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_handle::get().get_current_depth_image(),
+            .image         = VK_backend::get().get_current_depth_image(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1,
                 .layerCount = 1
@@ -130,10 +130,10 @@ inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_li
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    auto temp_extent = VK_handle::get().get_current_extent();
+    auto temp_extent = VK_backend::get().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = VK_handle::get().get_current_depth_view(),
+        .imageView   = VK_backend::get().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -152,7 +152,7 @@ inline void begin_rendering_attachment(VK_handle &handle, const uint64_t time_li
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_t time_line) {
+inline void begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
     std::array<VkImageMemoryBarrier2, 4> outputBarriers{
         VkImageMemoryBarrier2{
@@ -166,7 +166,7 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_position_image(),
+            .image               = VK_backend::get().get_current_position_image(),
             .subresourceRange{
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
@@ -187,7 +187,7 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_normal_image(),
+            .image               = VK_backend::get().get_current_normal_image(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,
@@ -205,7 +205,7 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_baseColor_image(),
+            .image               = VK_backend::get().get_current_baseColor_image(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,
@@ -223,7 +223,7 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_depth_image(),
+            .image               = VK_backend::get().get_current_depth_image(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                 .levelCount = 1,
@@ -264,10 +264,10 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
             .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
         },
     };
-    auto temp_extent = VK_handle::get().get_current_extent();
+    auto temp_extent = VK_backend::get().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = VK_handle::get().get_current_depth_view(),
+        .imageView   = VK_backend::get().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -286,7 +286,7 @@ inline void begin_g_buffer_rendering_attachment(VK_handle &handle, const uint64_
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_line) {
+inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
     std::array<VkImageMemoryBarrier2, 4> outputBarriers{
         VkImageMemoryBarrier2{
@@ -300,7 +300,7 @@ inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_l
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_position_image(),
+            .image               = VK_backend::get().get_current_position_image(),
             .subresourceRange    = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
@@ -321,7 +321,7 @@ inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_l
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_normal_image(),
+            .image               = VK_backend::get().get_current_normal_image(),
             .subresourceRange    = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
@@ -341,7 +341,7 @@ inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_l
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_baseColor_image(),
+            .image               = VK_backend::get().get_current_baseColor_image(),
             .subresourceRange    = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
@@ -362,7 +362,7 @@ inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_l
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = VK_handle::get().get_current_depth_image(),
+            .image               = VK_backend::get().get_current_depth_image(),
             .subresourceRange    = {
                 .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                 .baseMipLevel   = 0,
@@ -381,7 +381,7 @@ inline void g_buffer_attachment_barrier(VK_handle &handle, const uint64_t time_l
 }
 
 
-inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
+inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
@@ -419,7 +419,7 @@ inline void build_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, c
     vk_draw.mesh.draw(cb, time_line);
 }
 
-inline void build_deferred_command_buffer(VK_handle &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
+inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
@@ -457,12 +457,12 @@ inline void build_deferred_command_buffer(VK_handle &engine, VKR_object_proxy &v
     vkCmdDraw(cb, 3, 1, 0, 0);
 }
 
-inline void end_rendering(VK_handle &engine) {
+inline void end_rendering(VK_backend &engine) {
     auto cb = engine.engine_.get_current_command_buffer();
     vkCmdEndRendering(cb); // 这里和之后的 没有限制
 }
 
-inline void end_command_buffer(VK_handle &engine, VkQueryPool queryPool, const uint64_t time_line) {
+inline void end_command_buffer(VK_backend &engine, VkQueryPool queryPool, const uint64_t time_line) {
     auto cb = engine.engine_.get_current_command_buffer();
     if (queryPool != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(cb,

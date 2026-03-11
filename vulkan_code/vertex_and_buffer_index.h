@@ -5,18 +5,18 @@
 #ifndef HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H
 #define HOWTOVULKAN_VERTEX_AND_BUFFER_INDEX_H
 #include <volk.h>
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 #include "vulkan_buffer.h"
 
 
 // 最差结果 总是 CPU 可见, GPU 通过 PCIE 读取数据
-inline VKR_buffer_ptr create_staging_buffer(const VK_handle &handle, VkDeviceSize size) {
+inline VKR_buffer_ptr create_staging_buffer(const VK_backend &handle, VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 }
 
-inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, const VkDeviceSize size) {
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, const VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -31,7 +31,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, const 
  * @param mem_copy_callback
  * @return
  */
-inline VKR_buffer_ptr create_vertex_index_buffer(const VK_handle &handle, VkDeviceSize size,
+inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &handle, VkDeviceSize size,
                                                  std::function<void(void *)> mem_copy_callback) {
     auto vBuffer = create_vertex_index_buffer(handle, size);
     if (vBuffer->empty())

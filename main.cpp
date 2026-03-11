@@ -6,7 +6,7 @@
 
 #include <thread>
 #include "render_thread/backend.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include "event/base_event.h"
 #include "labyrinth.h"
 #include "UI/UI_block.h"
@@ -45,7 +45,7 @@ inline entt::entity add_render_pass(const std::string &name) {
 int main(int argc, char *argv[]) {
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-    auto &handle = VK_handle::get();
+    auto &handle = VK_backend::get();
     handle.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
     init_current_descriptor_pool();
 

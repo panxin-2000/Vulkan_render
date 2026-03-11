@@ -4,7 +4,7 @@
 
 #ifndef HOWTOVULKAN_DESCRIPTOR_POOL_H
 #define HOWTOVULKAN_DESCRIPTOR_POOL_H
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 
 void init_current_descriptor_pool();

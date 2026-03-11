@@ -19,8 +19,8 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     }
     vk_data->mesh                   = get_VKR_mesh(entity);
     vk_data->pipeline_layout        = get_pipeline_layout(entity);
-    vk_data->scissor                = VK_handle::get().get_scissor();
-    vk_data->viewport               = VK_handle::get().get_viewport();
+    vk_data->scissor                = VK_backend::get().get_scissor();
+    vk_data->viewport               = VK_backend::get().get_viewport();
     vk_data->vk_pipeline            = get_pipeline(entity);
     vk_data->debug_name             = get_entity_name(entity);
     vk_data->vk_descriptor_set      = get_descriptor_sets(entity); // 唯一有可能每帧更新的部分

@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
 #define HELLO_MAC_DESCRIPTOR_SET_LAYOUT_H
 
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include <regex>
 #include <filesystem>
 #include <fstream>

@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_SETS_AND_BINDINGS_LAYOUT_H
 #define HELLO_MAC_SETS_AND_BINDINGS_LAYOUT_H
 
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include "descriptor_organized_sets_and_bindings.h"
 
 
@@ -23,7 +23,7 @@ VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreat
  * @return 输出的是 descriptor
  */
 VkDescriptorSetLayout
-create_descriptor_bindings_layout(const VK_handle &handle,
+create_descriptor_bindings_layout(const VK_backend &handle,
                                   const std::vector<VkDescriptorSetLayoutBinding> &layout_bindings,
                                   const std::vector<VkDescriptorBindingFlags> &layout_bindings_flags);
 
@@ -34,17 +34,17 @@ create_descriptor_bindings_layout(const VK_handle &handle,
  * @param organized_sets_and_bindings
  * @return
  */
-std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_handle &handle,
+std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_backend &handle,
                                                                  const std::string &shader_key,
                                                                  const sets_map &organized_sets_and_bindings);
 
-std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_handle &handle,
+std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_backend &handle,
                                                                const std::string &shader_key);
 
 
-void clean_all_descriptor_sets_layout(VK_handle &handle);
+void clean_all_descriptor_sets_layout(VK_backend &handle);
 
-std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_handle &handle,
+std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &handle,
                                                                    const sets_map &organized_sets_and_bindings);
 
 

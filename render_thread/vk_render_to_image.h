@@ -14,7 +14,7 @@
 #include "transfer_texture_to_gpu.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_build_command_buffer.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -39,7 +39,7 @@ class vk_render_GPU {
     std::vector<std::shared_ptr<VKR_object_proxy> > deferred_pass;
 
 public:
-    void render_thread(VK_handle &handle) {
+    void render_thread(VK_backend &handle) {
         if (need_render == running) {
             return; // 已经在运行中了，直接返回
         }
@@ -54,7 +54,7 @@ public:
             const VkQueryPool queryPool = VK_NULL_HANDLE;
 
             handle.get_image_to_render();
-            const uint64_t time_line = VK_handle::get_current_submit_timeline();
+            const uint64_t time_line = VK_backend::get_current_submit_timeline();
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
             reset_current_command_buffer(handle, queryPool, time_line);
             begin_g_buffer_rendering_attachment(handle, time_line);
@@ -105,7 +105,7 @@ public:
         // image_views_
         // images_
 
-        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_handle::get().get_device()));
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::get().get_device()));
         need_render_objects.clear(); //
         clean_need_objects();
 
@@ -156,7 +156,7 @@ public:
 
 private
 :
-    void init_need_objects(VK_handle &handle) {
+    void init_need_objects(VK_backend &handle) {
         while (true) {
             // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
             auto option_temp = vk_render_queue::instance().get_need_init();

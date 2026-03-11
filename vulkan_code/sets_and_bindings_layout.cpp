@@ -32,7 +32,7 @@ VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreat
  * @return 输出的是 descriptor
  */
 VkDescriptorSetLayout
-create_descriptor_bindings_layout(const VK_handle &handle,
+create_descriptor_bindings_layout(const VK_backend &handle,
                                   const std::vector<VkDescriptorSetLayoutBinding> &layout_bindings,
                                   const std::vector<VkDescriptorBindingFlags> &layout_bindings_flags) {
     VkDescriptorSetLayout descriptor_bindings_layout;
@@ -55,7 +55,7 @@ create_descriptor_bindings_layout(const VK_handle &handle,
  * @param organized_sets_and_bindings
  * @return
  */
-std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_handle &handle,
+std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_backend &handle,
                                                                  const std::string &shader_key,
                                                                  const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
@@ -91,7 +91,7 @@ std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_handle &hand
     return descriptor_sets_layout;
 }
 
-std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_handle &handle,
+std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_backend &handle,
                                                                const std::string &shader_key) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
     if (!shader_key.empty()) {
@@ -107,7 +107,7 @@ std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_handle &handle
 }
 
 
-void clean_all_descriptor_sets_layout(VK_handle &handle) {
+void clean_all_descriptor_sets_layout(VK_backend &handle) {
     auto &map = get_descriptor_sets_layout_map();
     for (const auto &[key, value]: map) {
         for (auto Bindings: value.first) {
@@ -117,7 +117,7 @@ void clean_all_descriptor_sets_layout(VK_handle &handle) {
     map.clear();
 }
 
-std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_handle &handle,
+std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &handle,
                                                                    const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorBindingFlags> sets_flags;
     for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {

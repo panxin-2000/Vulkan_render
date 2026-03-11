@@ -6,7 +6,7 @@
 
 #include "Rect_2D_component.h"
 #include "vertex_and_buffer_index.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 
 // #define TINYGLTF_IMPLEMENTATION
@@ -18,7 +18,7 @@ auto &get_mesh_map() {
     return mesh_map_;
 }
 
-VKR_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
+VKR_mesh create_mesh_data(const VK_backend &handle, const share_block &vertices,
                           const share_block &indices_) {
     VkDeviceSize vBufSize{vertices.total_size};
     VkDeviceSize iBufSize{indices_.total_size};
@@ -52,7 +52,7 @@ VKR_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
 
 std::optional<VKR_mesh> create_mesh(const entt::entity entity) {
     std::map<std::string, mesh_and_share> &map = get_mesh_map();
-    const auto &handle                         = VK_handle::get();
+    const auto &handle                         = VK_backend::get();
     if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
         if (data->mesh_path_.empty() == false) {
             auto it = map.find(data->mesh_path_);

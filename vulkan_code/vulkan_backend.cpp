@@ -9,20 +9,20 @@
 
 #include <volk.h>
 #endif
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 #include "vulkan_image.h"
 #include "global_singleton.h"
 #include "vulkan_buffer.h"
 #include "vulkan_sample.h"
 
-static VK_handle *instance = nullptr;
+static VK_backend *instance = nullptr;
 
 
-VK_handle &VK_handle::get() {
+VK_backend &VK_backend::get() {
     static std::once_flag flag;
     std::call_once(flag, []() {
-        instance = new VK_handle();
+        instance = new VK_backend();
         assert(instance != nullptr);
         instance->init_device_handle();
     });
@@ -30,12 +30,12 @@ VK_handle &VK_handle::get() {
 }
 
 
-VK_handle::~VK_handle() {
+VK_backend::~VK_backend() {
     volkFinalize();
 }
 
 
-void VK_handle::create_instance() {
+void VK_backend::create_instance() {
     if (volkInitialize() != VK_SUCCESS) {
         return;
     }
@@ -82,11 +82,11 @@ void VK_handle::create_instance() {
 }
 
 static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
-    auto app                = reinterpret_cast<VK_handle *>(glfwGetWindowUserPointer(window));
+    auto app                = reinterpret_cast<VK_backend *>(glfwGetWindowUserPointer(window));
     app->framebufferResized = true;
 }
 
-void VK_handle::create_surface() {
+void VK_backend::create_surface() {
     glfwInit();
     if (GLFW_TRUE == glfwVulkanSupported()) {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
@@ -101,7 +101,7 @@ void VK_handle::create_surface() {
     }
 }
 
-bool VK_handle::choose_one_physical_device() {
+bool VK_backend::choose_one_physical_device() {
     auto physical_devices = get_all_physical_devices(instance_);
     for (auto physical_device: physical_devices) {
         auto family_properties = get_queue_family_properties(physical_device);
@@ -124,7 +124,7 @@ bool VK_handle::choose_one_physical_device() {
 }
 
 
-uint32_t VK_handle::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
+uint32_t VK_backend::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
     auto queueFamilyProperties = get_queue_family_properties(physical_device_);
 
     // Dedicated queue for compute
@@ -161,7 +161,7 @@ uint32_t VK_handle::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
 }
 
 
-void VK_handle::create_device() {
+void VK_backend::create_device() {
     // Logical device
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
@@ -266,7 +266,7 @@ void VK_handle::create_device() {
     return;
 }
 
-void VK_handle::create_VMA() {
+void VK_backend::create_VMA() {
     // VMA
     VmaVulkanFunctions vkFunctions{
         .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
@@ -283,7 +283,7 @@ void VK_handle::create_VMA() {
 }
 
 
-void VK_handle::create_swap_chain(VkSwapchainKHR old_swap_chain) {
+void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // Swap chain
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
@@ -329,7 +329,7 @@ void VK_handle::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // }
 }
 
-void VK_handle::create_swap_chain_image_and_view() {
+void VK_backend::create_swap_chain_image_and_view() {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
@@ -362,7 +362,7 @@ void VK_handle::create_swap_chain_image_and_view() {
 }
 
 
-VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const {
+VKR_image_ptr VK_backend::create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const {
     const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
 
     assert(g_buffer_format != VK_FORMAT_UNDEFINED);
@@ -412,7 +412,7 @@ VKR_image_ptr VK_handle::create_G_buffer_image_and_view(VkFormat g_buffer_format
     return {g_buffer_image, g_buffer_ImageAllocation, g_buffer_image_view};
 }
 
-VKR_image_ptr VK_handle::create_depth_image_and_view() {
+VKR_image_ptr VK_backend::create_depth_image_and_view() {
     // Depth attachment
     std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
     for (VkFormat &format: depthFormatList) {
@@ -467,7 +467,7 @@ VKR_image_ptr VK_handle::create_depth_image_and_view() {
     return {depth_image, depthImageAllocation, depth_image_view};
 }
 
-void VK_handle::destroy() {
+void VK_backend::destroy() {
     if (instance_ == VK_NULL_HANDLE)
         return; {
         // 基本上是一个整体

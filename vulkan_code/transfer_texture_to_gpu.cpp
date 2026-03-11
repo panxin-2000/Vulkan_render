@@ -8,7 +8,7 @@
 #include <ktx.h>
 #include <ktxvulkan.h>
 #include <vk_mem_alloc.h>
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 #include <iostream>
 
 #include "create_texture.h"
@@ -17,7 +17,7 @@
 
 // std::array<Texture_parameter, 3> textures{};
 
-std::optional<Texture_parameter> create_textures_to_gpu(VK_handle &handle, const std::string &filename) {
+std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, const std::string &filename) {
     std::filesystem::path filePath = filename;
     std::string ext                = filePath.extension().string();
     if (ext == ".ktx") {
@@ -173,7 +173,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_handle &handle, const
 }
 
 
-void destroy_texture(VK_handle *handle) {
+void destroy_texture(VK_backend *handle) {
     // for (const auto &texture: textures) {
     //     vkDestroySampler(handle->get_device(), texture.sampler, nullptr);
     //     if (texture.image)

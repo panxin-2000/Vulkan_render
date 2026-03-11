@@ -3,13 +3,13 @@
 //
 
 #include "vulkan_buffer.h"
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
 static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -22,7 +22,7 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] VkDeviceAddress VKR_buffer::get_gpu_device_address() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer_handle_
@@ -33,7 +33,7 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] bool VKR_buffer::host_visible() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -43,7 +43,7 @@ static std::mutex buffer_block_mutex;
 }
 
 VkDeviceSize VKR_buffer::complete_size() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
 
     VmaAllocationInfo allocInfo_for_map;
     vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
@@ -51,7 +51,7 @@ VkDeviceSize VKR_buffer::complete_size() const {
 }
 
 bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     if (size == 0) {
         VmaAllocationInfo allocInfo_for_map;
         vmaGetAllocationInfo(handle.get_allocator(), allocation_, &allocInfo_for_map);
@@ -64,21 +64,21 @@ bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
 }
 
 bool VKR_buffer::unmap_memory() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     vmaUnmapMemory(handle.get_allocator(), allocation_);
     return true;
 }
 
 
 void *VKR_buffer::map_memory() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     void *bufferPtr    = nullptr;
     vmaMapMemory(handle.get_allocator(), allocation_, &bufferPtr);
     return bufferPtr;
 }
 
 bool VKR_buffer::need_flush() const {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(handle.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -89,7 +89,7 @@ bool VKR_buffer::need_flush() const {
 
 
 [[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer &buffer) {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer
@@ -113,7 +113,7 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
 
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
 
     vkEndCommandBuffer(commandBuffer);
 
@@ -130,7 +130,7 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
 
 
 VkCommandBuffer begin_one_command_buffer() {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -183,7 +183,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
     VmaAllocationInfo allocInfo = {};
-    const auto &handle          = VK_handle::get();
+    const auto &handle          = VK_backend::get();
     std::lock_guard<std::mutex> lock(buffer_block_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
                                  &BufferCreateInfo, &AllocationCreateInfo,
@@ -221,7 +221,7 @@ VKR_buffer::~VKR_buffer() {
 void discard_buffer_block_map_clean();
 
 void discard_buffer_map_clean() {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     discard_buffer_block_map_clean();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;

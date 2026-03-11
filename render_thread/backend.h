@@ -4,9 +4,9 @@
 
 #ifndef HELLO_MAC_BACKEND_H
 #define HELLO_MAC_BACKEND_H
-#include "vulkan_device_handle.h"
+#include "vulkan_backend.h"
 
-void render_thread_start(VK_handle &handle);
+void render_thread_start(VK_backend &handle);
 
 void render_thread_stop();
 

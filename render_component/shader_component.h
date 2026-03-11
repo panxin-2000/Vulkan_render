@@ -144,7 +144,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
-                auto &handle = VK_handle::get();
+                auto &handle = VK_backend::get();
                 auto texture = create_textures_to_gpu(handle, picture_path);
                 if (texture.has_value()) {
                     Update_descriptor_binding temp      = {};

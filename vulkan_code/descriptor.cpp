@@ -11,7 +11,7 @@
 std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
 std::mutex discard_descriptor_set_map_mutex;
 
-void update_descriptor_sets(const VK_handle &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
+void update_descriptor_sets(const VK_backend &handle, std::vector<VkDescriptorImageInfo> &textureDescriptors,
                             const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
     std::vector<VkWriteDescriptorSet> writeDescSet;
     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
@@ -62,7 +62,7 @@ auto variable_descriptor(const uint32_t binding_less_size,
 }
 
 
-std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_handle &handle,
+std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_backend &handle,
                                                         const std::vector<VkDescriptorSetLayout> &
                                                         descriptor_set_layouts,
                                                         const std::vector<VkDescriptorBindingFlags> &binding_flags) {
@@ -115,7 +115,7 @@ DescriptorSet_detail::~DescriptorSet_detail() {
 
 
 void discard_descriptor_set_map_clean() {
-    const auto &handle = VK_handle::get();
+    const auto &handle = VK_backend::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
         const auto &[descriptor_set, timeline] = *it;
         LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", handle.get_finished_timeline(),

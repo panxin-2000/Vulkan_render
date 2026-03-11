@@ -157,13 +157,13 @@ private:
 
 public:
     camera_optical_component() {
-        const auto &handle   = VK_handle::get();
+        const auto &handle   = VK_backend::get();
         auto [width, height] = handle.get_current_extent();
         aspect               = static_cast<float>(width) / static_cast<float>(height);
     }
 
     Eigen::Matrix4f get_projection() {
-        const auto &handle    = VK_handle::get();
+        const auto &handle    = VK_backend::get();
         auto [width, height]  = handle.get_current_extent();
         aspect                = static_cast<float>(width) / static_cast<float>(height);
         const auto projection = vulkan_projection(to_radians(fovy_radians),
