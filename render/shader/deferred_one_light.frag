@@ -6,7 +6,7 @@ layout (set = 1, binding = 3) uniform sampler2D samplerAlbedo;
 
 layout (location = 0) in vec2 inUV;
 
-layout (location = 0) out vec4 outFragcolor;
+layout (location = 0) out vec4 outFragcolor_B8G8R8A8_SRGB;
 
 struct Light {
     vec4 position;
@@ -51,5 +51,5 @@ void main()
     vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
 
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-    outFragcolor = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
+    outFragcolor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
 }

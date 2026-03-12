@@ -8,9 +8,9 @@ layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inWorldPos;
 
 
-layout (location = 0) out vec4 outPosition;
-layout (location = 1) out vec4 outNormal;
-layout (location = 2) out vec4 outBaseColor;
+layout (location = 0) out vec4 outPosition_R16G16B16A16_SFLOAT;
+layout (location = 1) out vec4 outNormal_R16G16B16A16_SFLOAT;
+layout (location = 2) out vec4 outBaseColor_R8G8B8A8_UNORM;
 
 float hash(int xy) {
     uint x = uint(xy);
@@ -23,7 +23,7 @@ float hash(int xy) {
 // Multiple Render Targets
 void main()
 {
-    outPosition = vec4(inWorldPos, 1.0);
+    outPosition_R16G16B16A16_SFLOAT = vec4(inWorldPos, 1.0);
     //outBaseColor = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
 
 
@@ -34,6 +34,6 @@ void main()
     //    mat3 TBN = mat3(T, B, N);
     //    vec3 tnorm = TBN * normalize(texture(samplerNormalMap, inUV).xyz * 2.0 - vec3(1.0));
 
-    outNormal = vec4(N.xyz, 1.0);
-    outBaseColor = texture(samplerColor, inUV);
+    outNormal_R16G16B16A16_SFLOAT = vec4(N.xyz, 1.0);
+    outBaseColor_R8G8B8A8_UNORM = texture(samplerColor, inUV);
 }

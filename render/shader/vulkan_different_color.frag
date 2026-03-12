@@ -3,7 +3,7 @@
 
 
 
-layout (location = 0) out vec4 outFragColor;
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 float rand(int seed) {return fract(sin(float(seed)) * 43758.5453);}
 
 float hash(int xy) {
@@ -16,5 +16,5 @@ float hash(int xy) {
 
 void main()
 {
-    outFragColor = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
 }

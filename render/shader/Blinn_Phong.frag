@@ -14,7 +14,7 @@ layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
 
-layout (location = 0) out vec4 outFragColor;
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
 layout (set = 1, binding = 1) uniform texture_index
@@ -51,5 +51,5 @@ void main()
     vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
 
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-    outFragColor = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);
 }

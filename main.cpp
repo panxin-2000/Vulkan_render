@@ -26,6 +26,7 @@ void deal_glfw_event();
 
 inline entt::entity add_render_pass(const std::string &name) {
     entt::entity entity_ = g_entt().create();
+
     g_entt().emplace<Name_component>(entity_, name + "deferred_pass");
 
     g_entt().emplace<VKR_shader_paths>(entity_,
@@ -90,33 +91,32 @@ int main(int argc, char *argv[]) {
         auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
         set_render_picture(entity, "samplerColor", "assets/suzanne1.ktx");
     }
+    const auto sampler = base_sample(); {
+        const auto entity                  = add_render_pass("blank");
+        Texture_parameter position_texture = {
+            .image       = backend.G_buffer_Position_images_.at(1),
+            .sampler     = sampler,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+        };
+        std::optional<Texture_parameter> position = position_texture;
+        Texture_parameter normal_texture          = {
+            .image       = backend.g_buffer_Normal_images_.at(1),
+            .sampler     = sampler,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+        };
+        std::optional<Texture_parameter> normal = normal_texture;
+        Texture_parameter baseColor_texture     = {
+            .image       = backend.G_buffer_BaseColor_images_.at(1),
+            .sampler     = sampler,
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+        };
+        std::optional<Texture_parameter> baseColor = baseColor_texture;
 
-    // {
-    //     const auto entity                  = add_render_pass("blank");
-    //     const auto sampler                 = base_sample();
-    //     Texture_parameter position_texture = {
-    //         .image       = backend.G_buffer_Position_images_.at(0),
-    //         .sampler     = sampler,
-    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    //     };
-    //     std::optional<Texture_parameter> position = position_texture;
-    //     Texture_parameter normal_texture          = {
-    //         .image       = backend.g_buffer_Normal_images_.at(0),
-    //         .sampler     = sampler,
-    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    //     };
-    //     std::optional<Texture_parameter> normal = normal_texture;
-    //     Texture_parameter baseColor_texture     = {
-    //         .image       = backend.G_buffer_BaseColor_images_.at(0),
-    //         .sampler     = sampler,
-    //         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    //     };
-    //     std::optional<Texture_parameter> baseColor = baseColor_texture;
-    //
-    //     set_render_picture(entity, "samplerPosition", position);
-    //     set_render_picture(entity, "samplerNormal", normal);
-    //     set_render_picture(entity, "samplerBaseColor", baseColor);
-    // }
+        // 下面三个只能选择一个显示，问题应该再下面的函数中，而不是frag shader中
+        set_render_picture(entity, "samplerPosition", position);
+        set_render_picture(entity, "samplerNormal", normal);
+        set_render_picture(entity, "samplerBaseColor", baseColor);
+    }
 
 
     // Render loop
@@ -145,6 +145,7 @@ int main(int argc, char *argv[]) {
     // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
     auto &buffer = get_uniform_buffer();
     buffer->destroy_buffer();
+    vkDestroySampler(backend.get_device(), sampler, nullptr);
 
     backend.engine_destroy();
     backend.destroy();

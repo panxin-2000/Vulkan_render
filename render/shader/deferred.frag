@@ -6,7 +6,7 @@ layout (set = 1, binding = 3) uniform sampler2D samplerBaseColor;
 
 layout (location = 0) in vec2 inUV;
 
-layout (location = 0) out vec4 outFragcolor;
+layout (location = 0) out vec4 outFragcolor_B8G8R8A8_SRGB;
 
 struct Light {
     vec4 position;
@@ -29,5 +29,5 @@ void main()
     vec4 Base_color = texture(samplerBaseColor, inUV);
 
 
-    outFragcolor = vec4(Base_color.xyz, 1.0);
+    outFragcolor_B8G8R8A8_SRGB = vec4(Base_color.xyz, 1.0);
 }

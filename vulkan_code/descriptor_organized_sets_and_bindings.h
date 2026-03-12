@@ -122,14 +122,11 @@ inline VkDescriptorBindingFlags find_stageFlag(sets_map &sorted_sets_bindings, c
     return 0;
 }
 
-static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_binary, const std::string &shaderStage,
-                                         sets_map &global_bindings_set,
-                                         sets_map &sorted_sets_bindings,
-                                         std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
-                                         std::vector<VkVertexInputBindingDescription> &vertexBindings) {
-    const spirv_cross::CompilerGLSL compiler(spirv_binary);
-    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-
+static void collect_and_sorted_vertex_input_resources(const spirv_cross::CompilerGLSL &compiler,
+                                                      spirv_cross::ShaderResources &resources,
+                                                      const std::string &shaderStage,
+                                                      std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
+                                                      std::vector<VkVertexInputBindingDescription> &vertexBindings) {
     // location 的解析
     if (shaderStage == "vertex") {
         std::map<uint32_t, std::pair<uint32_t, VkVertexInputAttributeDescription> > vertexAttributes_t;
@@ -161,7 +158,50 @@ static void collect_and_sorted_resources(const std::vector<uint32_t> &spirv_bina
                                      });
         }
     }
+}
 
+
+inline VkFormat get_format_from_resource_name(const std::string &resource_name) {
+    if (resource_name.find("R16G16B16A16_SFLOAT") != std::string::npos) {
+        return VK_FORMAT_R16G16B16A16_SFLOAT;
+    }
+    if (resource_name.find("R8G8B8A8_UNORM") != std::string::npos) {
+        return VK_FORMAT_R8G8B8A8_UNORM;
+    }
+    if (resource_name.find("B8G8R8A8_SRGB") != std::string::npos) {
+        return VK_FORMAT_B8G8R8A8_SRGB;
+    }
+    assert(false);
+}
+
+
+static void collect_and_sorted_fragment_output_resources(const spirv_cross::CompilerGLSL &compiler,
+                                                         spirv_cross::ShaderResources &resources,
+                                                         const std::string &shaderStage,
+                                                         Fragment_output_map &ColorAttachment) {
+    if (shaderStage == "fragment") {
+        for (auto &resource: resources.stage_outputs) {
+            const std::string &name = resource.name;
+            uint32_t location       = compiler.get_decoration(resource.id, spv::DecorationLocation);
+            // auto &type                         = compiler.get_type(resource.type_id);
+            // auto [format, size]                = map_spirv_type_to_vk_format(type);
+            VkFormat format = get_format_from_resource_name(resource.name);
+
+            const color_attachment_format temp = {
+                .location    = location,
+                .format      = format,
+                .output_name = name,
+            };
+            ColorAttachment[location] = temp;
+        }
+    }
+}
+
+static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
+                                         spirv_cross::ShaderResources &resources,
+                                         const std::string &shaderStage,
+                                         sets_map &global_bindings_set,
+                                         sets_map &sorted_sets_bindings) {
     // Use a map to automatically sort by Binding ID (the key)
     // 1. Collect Uniform Buffers
     for (const auto &res: resources.uniform_buffers) {
@@ -298,7 +338,8 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
                           sets_map &global_bindings_set_0,
                           sets_map &sorted_sets_bindings,
                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
-                          std::vector<VkVertexInputBindingDescription> &vertexBindings) {
+                          std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                          Fragment_output_map &ColorAttachment) {
     if (file_name.empty() == true) {
         return;
     }
@@ -309,9 +350,18 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
     std::vector<uint32_t> spv_binary(size / sizeof(uint32_t));
     file.read(reinterpret_cast<char *>(spv_binary.data()), size);
 
+    const spirv_cross::CompilerGLSL compiler(spv_binary);
+    spirv_cross::ShaderResources resources = compiler.get_shader_resources();
 
-    collect_and_sorted_resources(spv_binary, shaderStage, global_bindings_set_0, sorted_sets_bindings, vertexAttributes,
-                                 vertexBindings);
+
+    collect_and_sorted_vertex_input_resources(compiler, resources, shaderStage,
+                                              vertexAttributes,
+                                              vertexBindings);
+    collect_and_sorted_fragment_output_resources(compiler, resources, shaderStage,
+                                                 ColorAttachment);
+    collect_and_sorted_resources(compiler, resources, shaderStage,
+                                 global_bindings_set_0,
+                                 sorted_sets_bindings);
 }
 
 
@@ -403,15 +453,17 @@ static sets_map organize_descriptor_set_and_binding_layouts(
 
     sets_map sorted_sets_bindings;
     sets_map &global_bindings_set = shader_data->global_sets_bindings;
-    std::vector<VkVertexInputBindingDescription> vertexBindings;
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+    auto &vertexBindings          = shader_data->vertexBindings;
+    auto &vertexAttributes        = shader_data->vertexAttributes;
+    auto &ColorAttachment         = shader_data->fragment_output_map;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
         read_spv_file(vertex_path, "vertex",
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
-                      vertexBindings);
+                      vertexBindings,
+                      ColorAttachment);
         print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
@@ -420,7 +472,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
-                      vertexBindings);
+                      vertexBindings,
+                      ColorAttachment);
         print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
@@ -429,7 +482,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
-                      vertexBindings);
+                      vertexBindings,
+                      ColorAttachment);
         print_layout_binding_line(geometry_path);
     }
     if (!computer_path.empty()) {
@@ -438,11 +492,10 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
-                      vertexBindings);
+                      vertexBindings,
+                      ColorAttachment);
         print_layout_binding_line(computer_path);
     }
-    shader_data->vertexAttributes = vertexAttributes;
-    shader_data->vertexBindings   = vertexBindings;
 #ifndef NDEBUG
     print_sorted_resources(sorted_sets_bindings);
 #endif

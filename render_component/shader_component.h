@@ -27,6 +27,15 @@ struct binding_resource {
 using bindings_map = std::map<uint32_t, binding_resource>;
 using sets_map     = std::map<uint32_t, bindings_map>;
 
+struct color_attachment_format {
+    uint32_t location;
+    // uint32_t size;
+    VkFormat format;
+    std::string output_name;
+};
+
+using Fragment_output_map = std::map<uint32_t, color_attachment_format>;
+
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
@@ -40,6 +49,7 @@ struct vk_shader_data {
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     std::vector<VkVertexInputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
+    Fragment_output_map fragment_output_map;
 };
 
 struct Update_descriptor_binding {

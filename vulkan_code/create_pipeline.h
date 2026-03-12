@@ -75,6 +75,7 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
     VkPipelineLayout &pipelineLayout                                 = data.pipeline_layout;
     std::vector<VkVertexInputBindingDescription> &vertexBindings     = data.vertexBindings;
     std::vector<VkVertexInputAttributeDescription> &vertexAttributes = data.vertexAttributes;
+    auto colorAttachmentFormat                                       = data.fragment_output_map;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
         .sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -106,17 +107,27 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         .depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL
     };
     // 这里有问题，但是需要着色器上的一些内容
-    VkPipelineColorBlendAttachmentState blendAttachment{.colorWriteMask = 0xF};
+    std::vector<VkPipelineColorBlendAttachmentState> BlendAttachments{};
+    BlendAttachments.resize(colorAttachmentFormat.size());
+    for (size_t i = 0; i < colorAttachmentFormat.size(); ++i) {
+        // 这里的参数很多，没有写入值
+        VkPipelineColorBlendAttachmentState blendAttachment{.colorWriteMask = 0xF};
+        BlendAttachments[i] = blendAttachment;
+    }
     VkPipelineColorBlendStateCreateInfo colorBlendState{
         .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .attachmentCount = 1,
-        .pAttachments    = &blendAttachment
+        .attachmentCount = static_cast<uint32_t>(BlendAttachments.size()),
+        .pAttachments    = BlendAttachments.data()
     };
-    VkFormat pColorAttachmentFormats = handle.get_image_format();
+    std::vector<VkFormat> pColorAttachmentFormats{};
+    for (const auto &[fst, snd]: colorAttachmentFormat) {
+        pColorAttachmentFormats.push_back(snd.format);
+    }
+
     VkPipelineRenderingCreateInfo renderingCI{
         .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .colorAttachmentCount    = 1,
-        .pColorAttachmentFormats = &pColorAttachmentFormats,
+        .colorAttachmentCount    = static_cast<uint32_t>(pColorAttachmentFormats.size()),
+        .pColorAttachmentFormats = pColorAttachmentFormats.data(),
         .depthAttachmentFormat   = handle.get_depth_format()
     };
     auto vertexInputState = VertexInputStateFunction(vertexBindings, vertexAttributes);
