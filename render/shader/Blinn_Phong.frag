@@ -7,7 +7,11 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier: require
 
-layout (set = 0, binding = 4) uniform sampler2D global_samplerColorMap[];
+
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+layout (set = 1, binding = 1) uniform sampler2D samplerColor;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
@@ -34,7 +38,7 @@ float hash(int xy) {
 void main()
 {
 
-    vec4 inColor = texture(global_samplerColorMap[index], inUV);
+    vec4 inColor = texture(samplerColor, inUV);
 
     vec3 N = normalize(inNormal);
     vec3 L = normalize(inLightVec);

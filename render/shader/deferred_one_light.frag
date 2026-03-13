@@ -1,5 +1,9 @@
 #version 450
 
+
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
 layout (set = 1, binding = 1) uniform sampler2D samplerposition;
 layout (set = 1, binding = 2) uniform sampler2D samplerNormal;
 layout (set = 1, binding = 3) uniform sampler2D samplerAlbedo;
@@ -14,16 +18,6 @@ struct Light {
     float radius;
 };
 
-
-layout (set = 0, binding = 2) uniform global_world_light_Pos
-{
-    vec3 lightPos;
-};
-
-layout (set = 0, binding = 3) uniform global_world_view_Pos
-{
-    vec3 viewPos;
-};
 
 void main()
 {

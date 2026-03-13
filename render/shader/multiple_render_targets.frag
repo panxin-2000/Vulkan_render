@@ -1,5 +1,9 @@
 #version 450
 
+
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
 layout (set = 1, binding = 1) uniform sampler2D samplerColor;
 //layout (binding = 2) uniform sampler2D samplerNormalMap;
 
