@@ -162,7 +162,7 @@ bool set_render_parameter_detail(sets_map &sets_map_in_for,
                               std::is_same_v<std::decay_t<T1>, const char *>) {
                     auto &handle = VK_backend::get();
                     auto texture = create_textures_to_gpu(handle, binding_data);
-                    if (!texture.has_value()) {
+                    if (texture.has_value()) {
                         Update_descriptor_binding_fixed_temp;
                         temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                         temp.texture_info                            = {true, texture.value()};
