@@ -112,11 +112,12 @@ inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cro
     return {VK_FORMAT_UNDEFINED, 0};
 }
 
-inline VkDescriptorBindingFlags find_stageFlag(sets_map &sorted_sets_bindings, const std::string &binding_name) {
+
+inline VkShaderStageFlags find_stageFlag(sets_map &sorted_sets_bindings, const std::string &binding_name) {
     for (auto const &[set_value, bindings_map]: sorted_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name)
-                return info.flag;
+                return info.LayoutBinding.stageFlags;
         }
     }
     return 0;
