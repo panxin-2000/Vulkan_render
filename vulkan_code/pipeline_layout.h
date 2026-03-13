@@ -18,7 +18,8 @@
  * @return
  */
 VkPipelineLayout create_pipeline_layout(VK_backend &handle, const std::string shader_key,
-                                        std::vector<VkDescriptorSetLayout> descriptor_sets_layout);
+                                        std::vector<VkDescriptorSetLayout> descriptor_sets_layout,
+                                        std::map<std::string, VkPushConstantRange> &push_constant_map);
 
 
 VkPipelineLayout find_pipeline_layout(VK_backend &handle, const std::string shader_key);

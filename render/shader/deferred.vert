@@ -25,6 +25,11 @@ layout (set = 1, binding = 0) uniform model_4x4
     mat4 model;
 };
 
+layout (push_constant) uniform PushConstants {
+    vec2 scale;
+    vec2 translate;
+    vec2 dsdf;
+} pushConstants;
 
 void main()
 {

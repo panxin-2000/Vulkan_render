@@ -27,6 +27,9 @@ struct binding_resource {
 using bindings_map = std::map<uint32_t, binding_resource>;
 using sets_map     = std::map<uint32_t, bindings_map>;
 
+
+using Push_constant_map = std::map<std::string, VkPushConstantRange>;
+
 struct color_attachment_format {
     uint32_t location;
     // uint32_t size;
@@ -43,6 +46,7 @@ struct vk_shader_data {
     // 再想增加一个组的时候，还是需要到这里来增加
     sets_map global_sets_bindings;
     sets_map object_sets_bindings;
+    Push_constant_map push_constant_map;
     std::vector<VkDescriptorSetLayout> global_descriptor_sets_layout;
     std::vector<VkDescriptorSetLayout> object_descriptor_sets_layout;
 

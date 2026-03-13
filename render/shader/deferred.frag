@@ -21,6 +21,13 @@ layout (set = 1, binding = 4) uniform UBO
     int displayDebugTarget;
 } ubo;
 
+
+layout (push_constant) uniform PushConstants {
+    layout (offset = 64) vec2 scale;
+    vec2 translate;
+    vec2 dsdf;
+} pushConstants;
+
 void main()
 {
     // Get G-Buffer values

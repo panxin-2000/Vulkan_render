@@ -224,7 +224,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
-                                                                     temp);
+                                                                     temp, shader_data_handle->push_constant_map);
     } else {
     }
 

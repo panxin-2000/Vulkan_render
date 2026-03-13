@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
         };
         std::optional<Texture_parameter> baseColor = baseColor_texture;
 
+
         // 下面三个只能选择一个显示，问题应该再下面的函数中，而不是frag shader中
         set_render_picture(entity, "samplerPosition", position);
         set_render_picture(entity, "samplerNormal", normal);

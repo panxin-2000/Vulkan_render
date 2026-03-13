@@ -22,7 +22,8 @@ auto &get_pipeline_layout_map() {
  * @return
  */
 VkPipelineLayout create_pipeline_layout(VK_backend &handle, const std::string shader_key,
-                                        std::vector<VkDescriptorSetLayout> descriptor_sets_layout) {
+                                        std::vector<VkDescriptorSetLayout> descriptor_sets_layout,
+                                        std::map<std::string, VkPushConstantRange> &push_constant_map) {
     std::map<std::string, std::pair<VkPipelineLayout, uint32_t> > &map = get_pipeline_layout_map();
     if (!shader_key.empty()) {
         auto it = map.find(shader_key);
@@ -31,15 +32,16 @@ VkPipelineLayout create_pipeline_layout(VK_backend &handle, const std::string sh
             return it->second.first;
         } else {
             VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-            VkPushConstantRange pushConstantRange{
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT, .size = sizeof(VkDeviceAddress)
-            };
+            std::vector<VkPushConstantRange> pushConstantRanges;
+            for (const auto &[key, value]: push_constant_map) {
+                pushConstantRanges.push_back(value);
+            }
             VkPipelineLayoutCreateInfo pipelineLayoutCI{
                 .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
                 .setLayoutCount         = static_cast<uint32_t>(descriptor_sets_layout.size()),
                 .pSetLayouts            = descriptor_sets_layout.data(),
-                .pushConstantRangeCount = 1,
-                .pPushConstantRanges    = &pushConstantRange
+                .pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()),
+                .pPushConstantRanges    = pushConstantRanges.data()
             };
             // VkPipelineLayout 的本质是 “接口协议”（Interface Protocol）。
             // 它定义了 Shader 如何访问资源（比如有哪些 Set，每个 Set 有哪些 Binding）。

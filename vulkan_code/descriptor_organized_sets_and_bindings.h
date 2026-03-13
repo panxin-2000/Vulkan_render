@@ -175,6 +175,39 @@ inline VkFormat get_format_from_resource_name(const std::string &resource_name) 
 }
 
 
+static void collect_and_sorted_push_constant_resources(const spirv_cross::CompilerGLSL &compiler,
+                                                       spirv_cross::ShaderResources &resources,
+                                                       const std::string &shaderStage,
+                                                       Push_constant_map &push_constant_map) {
+    for (const auto &res: resources.push_constant_buffers) {
+        const std::string &name         = res.name;
+        const size_t need_allocate_size = compiler.get_declared_struct_size(compiler.get_type(res.type_id));
+        const auto &type                = compiler.get_type(res.base_type_id);
+        const uint32_t member_count     = type.member_types.size();
+        for (uint32_t i = 0; i < member_count; i++) {
+            // 获取成员名字（如 "projection"）
+            const std::string &member_name = compiler.get_member_name(res.base_type_id, i);
+            // 获取成员在内存中的偏移量（对你手动填充 Buffer 非常有用）
+            uint32_t offset = compiler.type_struct_member_offset(type, i);
+            // 获取成员的大小
+            size_t size                 = compiler.get_declared_struct_member_size(type, i);
+            auto &push_constant_detail  = push_constant_map[member_name];
+            push_constant_detail.offset = offset;
+            push_constant_detail.size   = size;
+            if (shaderStage == "vertex") {
+                push_constant_detail.stageFlags = push_constant_detail.stageFlags | VK_SHADER_STAGE_VERTEX_BIT;
+            }
+            if (shaderStage == "fragment") {
+                push_constant_detail.stageFlags = push_constant_detail.stageFlags | VK_SHADER_STAGE_FRAGMENT_BIT;
+            }
+            if (shaderStage == "computer") {
+                push_constant_detail.stageFlags = push_constant_detail.stageFlags | VK_SHADER_STAGE_COMPUTE_BIT;
+            }
+        }
+    }
+}
+
+
 static void collect_and_sorted_fragment_output_resources(const spirv_cross::CompilerGLSL &compiler,
                                                          spirv_cross::ShaderResources &resources,
                                                          const std::string &shaderStage,
@@ -339,7 +372,8 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
                           sets_map &sorted_sets_bindings,
                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
                           std::vector<VkVertexInputBindingDescription> &vertexBindings,
-                          Fragment_output_map &ColorAttachment) {
+                          Fragment_output_map &ColorAttachment,
+                          Push_constant_map &push_constant_map) {
     if (file_name.empty() == true) {
         return;
     }
@@ -359,6 +393,8 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
                                               vertexBindings);
     collect_and_sorted_fragment_output_resources(compiler, resources, shaderStage,
                                                  ColorAttachment);
+    collect_and_sorted_push_constant_resources(compiler, resources, shaderStage,
+                                               push_constant_map);
     collect_and_sorted_resources(compiler, resources, shaderStage,
                                  global_bindings_set_0,
                                  sorted_sets_bindings);
@@ -456,6 +492,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     auto &vertexBindings          = shader_data->vertexBindings;
     auto &vertexAttributes        = shader_data->vertexAttributes;
     auto &ColorAttachment         = shader_data->fragment_output_map;
+    auto &push_constant_map       = shader_data->push_constant_map;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
         read_spv_file(vertex_path, "vertex",
@@ -463,7 +500,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       sorted_sets_bindings,
                       vertexAttributes,
                       vertexBindings,
-                      ColorAttachment);
+                      ColorAttachment,
+                      push_constant_map);
         print_layout_binding_line(vertex_path);
     }
     if (!fragment_path.empty()) {
@@ -473,7 +511,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       sorted_sets_bindings,
                       vertexAttributes,
                       vertexBindings,
-                      ColorAttachment);
+                      ColorAttachment,
+                      push_constant_map);
         print_layout_binding_line(fragment_path);
     }
     if (!geometry_path.empty()) {
@@ -483,7 +522,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       sorted_sets_bindings,
                       vertexAttributes,
                       vertexBindings,
-                      ColorAttachment);
+                      ColorAttachment,
+                      push_constant_map);
         print_layout_binding_line(geometry_path);
     }
     if (!computer_path.empty()) {
@@ -493,7 +533,8 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       sorted_sets_bindings,
                       vertexAttributes,
                       vertexBindings,
-                      ColorAttachment);
+                      ColorAttachment,
+                      push_constant_map);
         print_layout_binding_line(computer_path);
     }
 #ifndef NDEBUG
