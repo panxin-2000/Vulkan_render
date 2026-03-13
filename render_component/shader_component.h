@@ -63,6 +63,7 @@ struct Update_descriptor_binding {
     VkWriteDescriptorSet descriptor_write_binding = {};
 
     std::pair<bool, VKR_buffer_block_ptr> bufferInfo = {};
+    std::pair<bool, VKR_buffer_ptr> SSBO_bufferInfo  = {};
     std::pair<bool, Texture_parameter> texture_info;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
     std::pair<bool, VkBufferView> TexelBufferView;
@@ -148,10 +149,10 @@ bool set_render_parameter_detail(sets_map &sets_map_in_for,
                 update_descriptor_write[binding_name]        = temp;
                 return true;
             } else if (info.binding_name == binding_name && info.resource_type == "storage buffer") {
-                if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_block_ptr>) {
+                if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_ptr>) {
                     Update_descriptor_binding_fixed_temp;
                     temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                    temp.bufferInfo                              = {true, binding_data};
+                    temp.SSBO_bufferInfo                         = {true, binding_data};
                     update_descriptor_write[binding_name]        = temp;
                     return true;
                 }

@@ -6,6 +6,7 @@
 #define HELLO_MAC_VULKAN_BUFFER_H
 
 #include <map>
+#include <utility>
 #include <vk_mem_alloc.h>
 #include "APP_utility_mixins.h"
 
@@ -70,6 +71,10 @@ public:
     [[nodiscard]] void *map_memory() const;
 
     [[nodiscard]] VkDeviceSize complete_size() const;
+
+    [[nodiscard]] static VkDeviceSize get_offset() {
+        return 0;
+    }
 
     bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
 
