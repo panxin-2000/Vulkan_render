@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
 
 
         // 下面三个只能选择一个显示，问题应该再下面的函数中，而不是frag shader中
-        set_render_picture(entity, "samplerPosition", position);
-        set_render_picture(entity, "samplerNormal", normal);
-        set_render_picture(entity, "samplerBaseColor", baseColor);
+        set_render_parameter(entity, "samplerPosition", position);
+        set_render_parameter(entity, "samplerNormal", normal);
+        set_render_parameter(entity, "samplerBaseColor", baseColor);
     }
 
 
