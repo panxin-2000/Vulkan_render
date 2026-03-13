@@ -14,18 +14,17 @@ struct Light {
     float radius;
 };
 
-layout (set = 1, binding = 4) uniform UBO
-{
-    Light lights[6];
-    vec4 viewPos;
-    int displayDebugTarget;
-} ubo;
 
 
+layout (set = 1, std140, binding = 4) readonly buffer light_buffer {
+    Light lights[];
+};
+
+// 这里其实多了一个要求，具有相同名字的需要有相同的偏移
 layout (push_constant) uniform PushConstants {
-    layout (offset = 64) vec2 scale;
-    vec2 translate;
-    vec2 dsdf;
+    vec2 frag_scale;
+    vec2 frag_translate;
+    vec2 frag_dsdf;
 } pushConstants;
 
 void main()
