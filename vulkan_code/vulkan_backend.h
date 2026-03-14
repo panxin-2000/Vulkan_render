@@ -356,5 +356,6 @@ public:
     VK_backend &operator=(VK_backend &&) = delete;
 };
 
+uint32_t get_maxPushConstantsSize();
 
 #endif //HELLO_MAC_GLFW_VULKAN_H

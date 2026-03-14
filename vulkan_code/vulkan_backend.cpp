@@ -515,3 +515,17 @@ void VK_backend::destroy() {
     window_ = nullptr;
     glfwTerminate();
 }
+
+/**
+ * 苹果很特殊。给了 4096 个字节，amd 最小给 128 个字节，nvidia 最小给 256 个字节
+ * @return
+ */
+uint32_t get_maxPushConstantsSize() {
+    const auto &backend = VK_backend::get();
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(backend.get_physical_device(), &properties);
+
+    // 获取最大字节限制
+    uint32_t maxSize = properties.limits.maxPushConstantsSize;
+    return maxSize;
+}

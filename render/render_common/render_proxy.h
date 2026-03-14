@@ -17,7 +17,7 @@ public:
     std::vector<DescriptorSet_ptr> vk_descriptor_set; // descriptor_set 的 共享指针保存点
     VkViewport viewport;
     VkRect2D scissor;
-    VKR_buffer_block_ptr push_constants_address;
+    std::byte push_constants_pool[128];
     std::optional<float> line_width;
     VKR_mesh mesh;
 };

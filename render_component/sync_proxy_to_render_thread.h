@@ -22,6 +22,8 @@ struct add_to_render_tag {
 
 struct uniform_buffer_update {
 };
+struct push_constant_update {
+};
 
 struct global_uniform_buffer_update {
 };

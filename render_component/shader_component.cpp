@@ -310,3 +310,19 @@ void descriptor_set_update_function() {
         g_entt().remove<descriptor_set_update>(it);
     }
 }
+
+void push_constant_update_function() {
+    const auto view = g_entt().view<push_constant_update>();
+    // 位置发生了更新，需要讲更新传递出去
+    for (const auto it: view) {
+        auto &parameter = g_entt().get_or_emplace<Parameter_used>(it);
+
+        std::byte push_constant_pool[128];
+        memcpy(push_constant_pool, parameter.push_constant_pool, 128);
+        auto lambda = [push_constant_pool](const std::shared_ptr<VKR_object_proxy> &proxy) {
+            memcpy(proxy->push_constants_pool, push_constant_pool, 128);
+        };
+        update_VKR_object_proxy(it, lambda);
+        g_entt().remove<push_constant_update>(it);
+    }
+}

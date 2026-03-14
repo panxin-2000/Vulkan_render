@@ -24,7 +24,6 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     vk_data->vk_pipeline            = get_pipeline(entity);
     vk_data->debug_name             = get_entity_name(entity);
     vk_data->vk_descriptor_set      = get_descriptor_sets(entity); // 唯一有可能每帧更新的部分
-    vk_data->push_constants_address = nullptr;
     vk_render_queue::instance().render_object_need_init(vk_data);
     g_entt().remove<add_to_render_tag>(entity);
 

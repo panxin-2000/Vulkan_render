@@ -410,12 +410,12 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    if (vk_draw.push_constants_address != nullptr) {
-        auto push_constants_address = vk_draw.push_constants_address->get_gpu_device_address(time_line);
-        vkCmdPushConstants(cb, vk_draw.pipeline_layout,
-                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
-                           &push_constants_address);
-    }
+    // if (vk_draw.push_constants_pool != nullptr) {
+    //     auto push_constants_address = vk_draw.push_constants_pool->get_gpu_device_address(time_line);
+    //     vkCmdPushConstants(cb, vk_draw.pipeline_layout,
+    //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
+    //                        &push_constants_address);
+    // }
     vk_draw.mesh.draw(cb, time_line);
 }
 
@@ -448,12 +448,12 @@ inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    if (vk_draw.push_constants_address != nullptr) {
-        auto push_constants_address = vk_draw.push_constants_address->get_gpu_device_address(time_line);
-        vkCmdPushConstants(cb, vk_draw.pipeline_layout,
-                           VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
-                           &push_constants_address);
-    }
+    // if (vk_draw.push_constants_pool != nullptr) {
+    //     auto push_constants_address = vk_draw.push_constants_pool->get_gpu_device_address(time_line);
+    //     vkCmdPushConstants(cb, vk_draw.pipeline_layout,
+    //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
+    //                        &push_constants_address);
+    // }
     vkCmdDraw(cb, 3, 1, 0, 0);
 }
 

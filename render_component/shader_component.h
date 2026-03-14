@@ -75,6 +75,7 @@ struct Parameter_used {
     std::vector<DescriptorSet_ptr> object_descriptor_sets; // descriptor_set 的 共享指针保存点
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
+    std::byte push_constant_pool[128];
 };
 
 class VKR_shader_paths {
@@ -281,6 +282,28 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
     }
     return false;
 }
+
+
+template<typename T1>
+bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+        if (!g_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
+            g_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
+        }
+        const auto &shader_data = g_entt().get<std::shared_ptr<vk_shader_data> >(entity);
+        auto &parameter         = g_entt().get_or_emplace<Parameter_used>(entity);
+        for (auto &[name,value]: shader_data->push_constant_map) {
+            if (name == binding_name && sizeof(T1) <= value.size) {
+                memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
+                g_entt().emplace_or_replace<push_constant_update>(entity);
+            }
+        }
+    }
+    return false;
+}
+
+
+
 
 
 template<typename T1>

@@ -112,6 +112,8 @@ int main(int argc, char *argv[]) {
         };
         std::optional<Texture_parameter> baseColor = baseColor_texture;
 
+        Point_2 temp_value = {2.0, 2.0};
+        set_push_constant_parameter(entity, "frag_scale", temp_value);
 
         // 下面三个只能选择一个显示，问题应该再下面的函数中，而不是frag shader中
         set_render_parameter(entity, "samplerPosition", position);
