@@ -13,6 +13,7 @@
 #include "transfer_texture_to_gpu.h"
 #include "VKR_proxy_component.h"
 #include "vulkan_backend.h"
+#include "vulkan_render_manage.h"
 
 
 void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
@@ -303,10 +304,14 @@ void descriptor_set_update_function() {
     for (const auto it: view) {
         auto temp_des = get_descriptor_sets(it);
 
-        auto lambda = [temp_des](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            proxy->vk_descriptor_set = temp_des;
-        };
-        update_VKR_object_proxy(it, lambda);
+
+        if (const auto render = LGC_entt().try_get<RND_entity>(it)) {
+            auto lambda = [render, temp_des]() {
+                if (const auto proxy = RND_entt().try_get<VKR_object_proxy>(render->entity_))
+                    proxy->vk_descriptor_set = temp_des;
+            };
+            vk_render_queue::instance().render_update_entt(*render, lambda);
+        }
         LGC_entt().remove<descriptor_set_update>(it);
     }
 }
@@ -319,10 +324,15 @@ void push_constant_update_function() {
 
         std::byte push_constant_pool[128];
         memcpy(push_constant_pool, parameter.push_constant_pool, 128);
-        auto lambda = [push_constant_pool](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            memcpy(proxy->push_constants_pool, push_constant_pool, 128);
-        };
-        update_VKR_object_proxy(it, lambda);
+
+        if (const auto render = LGC_entt().try_get<RND_entity>(it)) {
+            auto lambda = [render, push_constant_pool]() {
+                if (const auto proxy = RND_entt().try_get<VKR_object_proxy>(render->entity_))
+                    memcpy(proxy->push_constants_pool, push_constant_pool, 128);
+            };
+            vk_render_queue::instance().render_update_entt(*render, lambda);
+        }
+
         LGC_entt().remove<push_constant_update>(it);
     }
 }

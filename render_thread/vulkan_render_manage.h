@@ -14,19 +14,9 @@
 class vk_render_queue {
 private:
     mutable std::mutex mtx;
-    // std::vector<union_render_data> render_objects;
-    std::queue<std::shared_ptr<VKR_object_proxy> > need_init;
-    std::queue<std::shared_ptr<VKR_object_proxy> > deferred_pass;
-    std::queue<std::shared_ptr<VKR_object_proxy> > need_update;
-    std::queue<std::shared_ptr<VKR_object_proxy> > need_clean;
-    std::queue<std::pair<std::shared_ptr<VKR_object_proxy>, std::function<void
-                             (std::shared_ptr<VKR_object_proxy> render_object)> > > update_function;
-    // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
     std::queue<std::pair<RND_entity, const std::function<void(void)>> > RND_update_function;
 
 public:
-    void init_logic_need_resources();
-
     static vk_render_queue &instance() {
         static vk_render_queue *instance = nullptr;
         static std::once_flag flag;
@@ -36,100 +26,15 @@ public:
         return *instance;
     }
 
-
-    void clean_vk_render() {
-        while (!need_init.empty()) {
-            need_init.pop();
-        }
-        while (!need_update.empty()) {
-            need_update.pop();
-        }
-        while (!need_clean.empty()) {
-            need_clean.pop();
-        }
-    }
-
-    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_init() {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (!need_init.empty()) {
-            std::shared_ptr<VKR_object_proxy> val = need_init.front();
-            need_init.pop();
-            return val;
-        }
-        return std::nullopt;
-    }
-
-    std::optional<std::shared_ptr<VKR_object_proxy> > get_deferred_need_init() {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (!deferred_pass.empty()) {
-            std::shared_ptr<VKR_object_proxy> val = deferred_pass.front();
-            deferred_pass.pop();
-            return val;
-        }
-        return std::nullopt;
-    }
-
     void execute_update_lambda() {
         std::unique_lock<std::mutex> lock(mtx);
-        while (!update_function.empty()) {
-            auto [vk_data, callback] = update_function.front();
-            update_function.pop();
-            callback(vk_data);
-        }
-        while (!update_function.empty()) {
+        while (!RND_update_function.empty()) {
             auto [vk_data, callback] = RND_update_function.front();
-            update_function.pop();
-            const auto proxy = RND_entt().get_or_emplace<VKR_object_proxy>(vk_data.entity_);
+            RND_update_function.pop();
             callback();
+            const auto proxy = RND_entt().get_or_emplace<VKR_object_proxy>(vk_data.entity_);
+            std::cout << "sdfghjk" << std::endl;
         }
-    }
-
-    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_update() {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (!need_update.empty()) {
-            std::shared_ptr<VKR_object_proxy> val = need_update.front();
-            need_update.pop();
-            return val;
-        }
-        return std::nullopt;
-    }
-
-    std::optional<std::shared_ptr<VKR_object_proxy> > get_need_clean() {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (!need_clean.empty()) {
-            std::shared_ptr<VKR_object_proxy> val = need_clean.front();
-            need_clean.pop();
-            return val;
-        }
-        return std::nullopt;
-    }
-
-
-    void render_object_need_init(std::shared_ptr<VKR_object_proxy> render_object) {
-        std::unique_lock<std::mutex> lock(mtx);
-        if (render_object->pass_name.empty())
-            need_init.push(render_object);
-        else if (render_object->pass_name == "deferred_pass") {
-            deferred_pass.push(render_object);
-        }
-        LOG_INFO(g_log(), "add {} to vk_render_queue ", render_object->debug_name);
-    }
-
-    void render_object_need_update(std::shared_ptr<VKR_object_proxy> render_object) {
-        std::unique_lock<std::mutex> lock(mtx);
-        need_update.push(render_object);
-        LOG_INFO(g_log(), "update {} to vk_render_queue ", render_object->debug_name);
-    }
-
-    // void render_update_descriptor_sets(std::shared_ptr<draw_need_vk> render_object, std::vector<VkDescriptorSet> descriptor_sets) {
-    // std::unique_lock<std::mutex> lock(mtx);
-    // render_object->vk_descriptor_set = std::move(descriptor_sets);
-    // }
-
-    void render_update(std::shared_ptr<VKR_object_proxy> render_object,
-                       const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &callback) {
-        std::unique_lock<std::mutex> lock(mtx);
-        update_function.emplace(render_object, callback);
     }
 
     void render_update_entt(const RND_entity entity, const std::function<void(void)> &callback) {
@@ -137,18 +42,11 @@ public:
         RND_update_function.emplace(entity, callback);
     }
 
-    void render_object_need_clean(std::shared_ptr<VKR_object_proxy> render_object) {
-        std::unique_lock<std::mutex> lock(mtx);
-        need_clean.push(render_object);
-        LOG_INFO(g_log(), "clean {} to vk_render_queue ", render_object->debug_name);
-    }
-
 private:
     vk_render_queue() {
     }
 
     ~vk_render_queue() {
-        clean_vk_render();
     }
 
 public:

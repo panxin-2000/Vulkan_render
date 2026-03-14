@@ -35,8 +35,6 @@ class vk_render_GPU {
 #define need_stop 2
     std::atomic<uint32_t> need_render = not_start; // 这里状态有点少了，需要 未开始，运行中，需停止
 
-    std::vector<std::shared_ptr<VKR_object_proxy> > need_render_objects;
-    std::vector<std::shared_ptr<VKR_object_proxy> > deferred_pass;
 
 public:
     void render_thread(VK_backend &handle) {
@@ -48,8 +46,7 @@ public:
         while (need_render == running) {
             {
                 std::unique_lock<std::mutex> lock(mtx);
-                init_need_objects(handle); // 主要是复制内存的操作
-                update_need_objects();
+                vk_render_queue::instance().execute_update_lambda();
             }
             const VkQueryPool queryPool = VK_NULL_HANDLE;
 
@@ -57,19 +54,26 @@ public:
             const uint64_t time_line = VK_backend::get_current_submit_timeline();
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
             reset_current_command_buffer(handle, queryPool, time_line);
-            begin_g_buffer_rendering_attachment(handle, time_line);
-
-            for (const auto &render_data: need_render_objects) {
-                build_command_buffer(handle, *render_data, time_line);
+            begin_g_buffer_rendering_attachment(handle, time_line); {
+                auto view = RND_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag>);
+                for (const auto it: view) {
+                    auto render_data = view.get<VKR_object_proxy>(it);
+                    build_command_buffer(handle, render_data, time_line);
+                }
             }
+
             end_rendering(handle);
             g_buffer_attachment_barrier(handle, time_line);
 
 
             begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
             // 应该先划分不同的 pass 阶段，
-            for (const auto &render_data: deferred_pass) {
-                build_deferred_command_buffer(handle, *render_data, time_line);
+            {
+                auto view = RND_entt().view<VKR_object_proxy, deferred_pass_tag>();
+                for (const auto it: view) {
+                    auto render_data = view.get<VKR_object_proxy>(it);
+                    build_deferred_command_buffer(handle, render_data, time_line);
+                }
             }
 
             end_rendering(handle);
@@ -106,7 +110,9 @@ public:
         // images_
 
         VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::get().get_device()));
-        need_render_objects.clear(); //
+
+        RND_entt().clear();
+
         clean_need_objects();
 
         destroy_descriptorPool();
@@ -154,61 +160,8 @@ public:
         return *instance;
     }
 
-private
-:
-    void init_need_objects(VK_backend &handle) {
-        while (true) {
-            // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
-            auto option_temp = vk_render_queue::instance().get_need_init();
-            if (option_temp.has_value()) {
-                auto render_data = option_temp.value();
-                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
-                need_render_objects.push_back(render_data);
-            } else {
-                break;
-            }
-        }
-        while (true) {
-            // 能编译过，但是漏洞百出 ，先预防一手，去制作一些日志
-            auto option_temp = vk_render_queue::instance().get_deferred_need_init();
-            if (option_temp.has_value()) {
-                auto render_data = option_temp.value();
-                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data->debug_name);
-                deferred_pass.push_back(render_data);
-            } else {
-                break;
-            }
-        }
-    }
-
-
-    void update_need_objects() {
-        vk_render_queue::instance().execute_update_lambda();
-        // 内存内容的更新
-        // 先查找放置在哪里来
-        // 之后再更新数据
-    }
-
+private:
     void clean_need_objects() {
-        while (true) {
-            auto render_data = vk_render_queue::instance().get_need_clean();
-            if (render_data.has_value()) {
-                LOG_INFO(g_log(), "get {} from vk_render_queue", render_data.value()->debug_name);
-                auto it = std::find(need_render_objects.begin(),
-                                    need_render_objects.end(),
-                                    render_data.value());
-                if (it != need_render_objects.end()) {
-                    need_render_objects.erase(it);
-                    // delete render_data.value();
-                }
-                // 其实到这里还没有结束，还需要清理资源
-            } else {
-                break;
-            }
-        }
-        // 想在这里的清理的话，需要参考上面的顺序  // 整体的顺序
-
-
         // discard_descriptor_set_map_clean(); // descriptor_pools_
         //                                     pipelines_
         //                                     pipeline_layouts_

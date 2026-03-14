@@ -11,6 +11,7 @@
 
 // #define TINYGLTF_IMPLEMENTATION
 #include "tiny_gltf.h"
+#include "vulkan_render_manage.h"
 
 std::map<std::string, mesh_and_share> mesh_map_;
 
@@ -432,15 +433,20 @@ void update_object_mesh() {
 
         const auto mesh = create_mesh(it);
 
-        auto lambda = [mesh](const std::shared_ptr<VKR_object_proxy> &proxy) {
-            if (mesh.has_value()) {
-                proxy->mesh = mesh.value();;
-            } else {
-                LOG_INFO(g_log(), "mesh empty");
-            }
-        };
 
-        update_VKR_object_proxy(it, lambda);
+        if (const auto render = LGC_entt().try_get<RND_entity>(it)) {
+            auto lambda = [render, mesh]() {
+                if (const auto proxy = RND_entt().try_get<VKR_object_proxy>(render->entity_))
+
+                if (mesh.has_value()) {
+                    proxy->mesh = mesh.value();;
+                } else {
+                    LOG_INFO(g_log(), "mesh empty");
+                }
+            };
+            vk_render_queue::instance().render_update_entt(*render, lambda);
+        }
+
         LGC_entt().remove<UI_transform_dirty>(it);
     }
 }
