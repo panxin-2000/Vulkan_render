@@ -22,4 +22,10 @@ public:
     VKR_mesh mesh;
 };
 
+
+class RND_entity {
+public:
+    entt::entity entity_;
+};
+
 #endif //HELLO_MAC_RENDER_PROXY_H

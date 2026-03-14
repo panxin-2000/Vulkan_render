@@ -14,9 +14,13 @@ bool create_VKR_object_proxy(const entt::entity entity);
 
 using proxy_update_lambda = const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &;
 
+using entt_proxy_update_lambda = const std::function<void(void)> &;
+
 bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda callback);
 
 bool clean_VKR_object_proxy(const entt::entity entity);
+
+bool entt_update_VKR_object_proxy(const RND_entity entity, entt_proxy_update_lambda callback);
 
 void add_new_peoxy_to_render_function();
 

@@ -22,6 +22,7 @@ private:
     std::queue<std::pair<std::shared_ptr<VKR_object_proxy>, std::function<void
                              (std::shared_ptr<VKR_object_proxy> render_object)> > > update_function;
     // 其实 vector 并不算是很好，用队列的话，更加方便，还能顺便看看怎么做成无锁的队列
+    std::queue<std::pair<RND_entity, const std::function<void(void)>> > RND_update_function;
 
 public:
     void init_logic_need_resources();
@@ -75,6 +76,12 @@ public:
             update_function.pop();
             callback(vk_data);
         }
+        while (!update_function.empty()) {
+            auto [vk_data, callback] = RND_update_function.front();
+            update_function.pop();
+            const auto proxy = RND_entt().get_or_emplace<VKR_object_proxy>(vk_data.entity_);
+            callback();
+        }
     }
 
     std::optional<std::shared_ptr<VKR_object_proxy> > get_need_update() {
@@ -123,6 +130,11 @@ public:
                        const std::function<void(std::shared_ptr<VKR_object_proxy> render_object)> &callback) {
         std::unique_lock<std::mutex> lock(mtx);
         update_function.emplace(render_object, callback);
+    }
+
+    void render_update_entt(const RND_entity entity, const std::function<void(void)> &callback) {
+        std::unique_lock<std::mutex> lock(mtx);
+        RND_update_function.emplace(entity, callback);
     }
 
     void render_object_need_clean(std::shared_ptr<VKR_object_proxy> render_object) {
