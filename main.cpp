@@ -30,9 +30,9 @@ inline entt::entity add_render_pass(const std::string &name) {
     Logic_entt().emplace<Name_component>(entity_, name + "deferred_pass");
 
     Logic_entt().emplace<VKR_shader_paths>(entity_,
-                                         "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-                                         "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
-                                         "", "");
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
+                                           "", "");
 
     // 更新物体的模型矩阵
 
@@ -80,9 +80,9 @@ int main(int argc, char *argv[]) {
     //                 {0.0f, 0.0f, 0.0f},
     //                 {0.7071068286895752, 0.7071068286895752, 0, 0}); // 选择数据暂时是写死的
 
-    // UI_block("按钮1", 0, 0, 60, 60);
-    // UI_block("功能块", 0, 0, 50, 200);
-    // UI_block("按钮2", 0, 0, 145, 130);
+    UI_block("按钮1", 0, 0, 60, 60);
+    UI_block("功能块", 0, 0, 50, 200);
+    UI_block("按钮2", 0, 0, 145, 130);
     // 3d 模型
     {
         auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
@@ -128,7 +128,6 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "light_buffer", temp_ptr);
     }
 
-
     // Render loop
     while (!glfwWindowShouldClose(backend.get_window())) {
         glfwWaitEvents();
@@ -137,15 +136,8 @@ int main(int argc, char *argv[]) {
         }
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
-
-
-        clean_render_entity(); {
-            auto view = Logic_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
-            Logic_entt().destroy(view.begin(), view.end()); // 执行销毁程序
-        }
-
+        clean_render_entity();
         sync_render_data_to_render_thread();
-
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }

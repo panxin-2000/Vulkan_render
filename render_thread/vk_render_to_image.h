@@ -55,7 +55,7 @@ public:
             // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
             reset_current_command_buffer(handle, queryPool, time_line);
             begin_g_buffer_rendering_attachment(handle, time_line); {
-                auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag>);
+                auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag, UI_2D_tag>);
                 for (const auto it: view) {
                     auto render_data = view.get<VKR_object_proxy>(it);
                     build_command_buffer(handle, render_data, time_line);
@@ -73,6 +73,12 @@ public:
                 for (const auto it: view) {
                     auto render_data = view.get<VKR_object_proxy>(it);
                     build_deferred_command_buffer(handle, render_data, time_line);
+                }
+            } {
+                auto view = Render_entt().view<VKR_object_proxy, UI_2D_tag>();
+                for (const auto it: view) {
+                    auto render_data = view.get<VKR_object_proxy>(it);
+                    build_command_buffer(handle, render_data, time_line);
                 }
             }
 

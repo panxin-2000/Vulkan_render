@@ -9,13 +9,14 @@
 #include "vulkan_render_manage.h"
 
 
-bool clean_VKR_object_proxy(const entt::entity entity) {
-    if (auto render = Logic_entt().try_get<Render_entity>(entity)) {
-        auto lambda = [render]() { Render_entt().emplace_or_replace<RND_destroy_tag>(render->entity_); };
-        vk_render_queue::instance().render_update_entt(*render, lambda);
-        return true;
+void add_render_UI_2D_tag(entt::entity entity) {
+    if (Logic_entt().all_of<UI_2D_tag, Render_entity>(entity)) {
+        const auto &vk_data = Logic_entt().get<Render_entity>(entity);
+        auto lambda         = [vk_data]() {
+            Render_entt().emplace_or_replace<UI_2D_tag>(vk_data.entity_);
+        };
+        vk_render_queue::instance().render_update_entt(vk_data, lambda);
     }
-    return false;
 }
 
 void add_new_peoxy_to_render_function() {
@@ -46,6 +47,10 @@ void add_new_peoxy_to_render_function() {
         };
 
         vk_render_queue::instance().render_update_entt(vk_data, lambda);
+
+        add_render_UI_2D_tag(it);
+
+
         Logic_entt().remove<add_to_render_tag>(it);
     }
 }

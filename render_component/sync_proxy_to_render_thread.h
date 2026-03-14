@@ -20,8 +20,12 @@ struct Camera_optical_specifications_dirty {
 struct add_to_render_tag {
 };
 
+struct UI_2D_tag {
+};
+
 struct uniform_buffer_update {
 };
+
 struct push_constant_update {
 };
 
@@ -34,5 +38,6 @@ struct descriptor_set_update {
 //
 void sync_render_data_to_render_thread();
 
+bool clean_VKR_object_proxy(const entt::entity entity);
 
 #endif //HELLO_MAC_SYNC_PROXY_TO_RENDER_THREAD_H

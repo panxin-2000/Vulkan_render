@@ -41,7 +41,7 @@ static inline int get_win_HEIGHT() {
 class logic_render_object;
 
 
-struct Destroy_tag {
+struct Logic_destroy_tag {
 };
 
 

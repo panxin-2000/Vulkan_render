@@ -38,7 +38,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
                     //     render->proxy = nullptr;
                     // }
                     // 加上上面的内容就有问题
-                    Logic_entt().emplace_or_replace<Destroy_tag>(entity_);
+                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity_);
                     return OPERATOR_FINISHED;
                 }
             return OPERATOR_PASS_THROUGH;
@@ -105,9 +105,9 @@ entt::entity UI_button(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity_);
     Logic_entt().emplace<VKR_shader_paths>(entity_,
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-                                       "", "");
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                           "", "");
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity_)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
@@ -122,6 +122,7 @@ entt::entity UI_button(const std::string &name,
     set_render_parameter(entity_, "model_4x4", model);
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    Logic_entt().emplace_or_replace<UI_2D_tag>(entity_);
 
     scene_root_add_child(entity_);
     return entity_;

@@ -67,7 +67,7 @@ Scene_Component::~ Scene_Component() {
     clear_relation(parent, entity);
     for (auto it = children.rbegin(); it != children.rend(); ++it)
         if (Logic_entt().valid(*it)) {
-            Logic_entt().emplace_or_replace<Destroy_tag>(*it);
+            Logic_entt().emplace_or_replace<Logic_destroy_tag>(*it);
         }
     // auto children_temp = children;
     // auto parent_temp = parent;
@@ -83,7 +83,7 @@ Scene_Component::~ Scene_Component() {
 
 
 void clean_render_entity() {
-    auto view = Logic_entt().view<Destroy_tag>(); //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
+    auto view = Logic_entt().view<Logic_destroy_tag>(); //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
     // for (auto it = view.begin(); it != view.end(); ++it)
     // foreach 中 做的优化有点多，先从上一行的 it 来看，它是一个迭代器，会检索需要的类型
     // ++it 不只是++指针，内部还有复杂判读，判断是否包含需要的全部类型，不包括就继续查找，直到到达 end()
@@ -91,4 +91,5 @@ void clean_render_entity() {
     for (const auto entity: view) {
         clean_VKR_object_proxy(entity);
     }
+    Logic_entt().destroy(view.begin(), view.end()); // 执行销毁程序
 }

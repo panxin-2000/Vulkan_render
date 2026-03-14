@@ -33,7 +33,10 @@ struct deferred_pass_tag {
 };
 
 
-struct RND_destroy_tag {
+struct Render_destroy_tag {
 };
+
+
+
 
 #endif //HELLO_MAC_RENDER_PROXY_H
