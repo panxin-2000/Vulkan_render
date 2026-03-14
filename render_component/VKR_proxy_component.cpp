@@ -10,8 +10,8 @@
 
 
 bool clean_VKR_object_proxy(const entt::entity entity) {
-    if (auto render = LGC_entt().try_get<RND_entity>(entity)) {
-        auto lambda = [render]() { RND_entt().emplace_or_replace<RND_destroy_tag>(render->entity_); };
+    if (auto render = Logic_entt().try_get<Render_entity>(entity)) {
+        auto lambda = [render]() { Render_entt().emplace_or_replace<RND_destroy_tag>(render->entity_); };
         vk_render_queue::instance().render_update_entt(*render, lambda);
         return true;
     }
@@ -19,9 +19,9 @@ bool clean_VKR_object_proxy(const entt::entity entity) {
 }
 
 void add_new_peoxy_to_render_function() {
-    const auto view = LGC_entt().view<add_to_render_tag>(entt::exclude<RND_entity>);
+    const auto view = Logic_entt().view<add_to_render_tag>(entt::exclude<Render_entity>);
     for (const auto &it: view) {
-        const auto &vk_data = LGC_entt().emplace<RND_entity>(it, RND_entt().create());
+        const auto &vk_data = Logic_entt().emplace<Render_entity>(it, Render_entt().create());
 
         auto name              = get_entity_name(it);
         auto mesh              = get_VKR_mesh(it);
@@ -32,10 +32,10 @@ void add_new_peoxy_to_render_function() {
         auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
 
         auto lambda = [ vk_data, name ,mesh, pipeline_layout ,scissor,viewport, vk_pipeline, vk_descriptor_set ]() {
-            auto &proxy      = RND_entt().get_or_emplace<VKR_object_proxy>(vk_data.entity_);
+            auto &proxy      = Render_entt().get_or_emplace<VKR_object_proxy>(vk_data.entity_);
             proxy.debug_name = name;
             if (name.find("deferred_pass") != std::string::npos) {
-                RND_entt().get_or_emplace<deferred_pass_tag>(vk_data.entity_);
+                Render_entt().get_or_emplace<deferred_pass_tag>(vk_data.entity_);
             }
             proxy.mesh              = mesh;
             proxy.pipeline_layout   = pipeline_layout;
@@ -46,6 +46,6 @@ void add_new_peoxy_to_render_function() {
         };
 
         vk_render_queue::instance().render_update_entt(vk_data, lambda);
-        LGC_entt().remove<add_to_render_tag>(it);
+        Logic_entt().remove<add_to_render_tag>(it);
     }
 }

@@ -25,20 +25,20 @@ void deal_glfw_event();
 
 
 inline entt::entity add_render_pass(const std::string &name) {
-    entt::entity entity_ = LGC_entt().create();
+    entt::entity entity_ = Logic_entt().create();
 
-    LGC_entt().emplace<Name_component>(entity_, name + "deferred_pass");
+    Logic_entt().emplace<Name_component>(entity_, name + "deferred_pass");
 
-    LGC_entt().emplace<VKR_shader_paths>(entity_,
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-                                       "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
-                                       "", "");
+    Logic_entt().emplace<VKR_shader_paths>(entity_,
+                                         "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+                                         "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
+                                         "", "");
 
     // 更新物体的模型矩阵
 
     world_root_add_child(entity_);
 
-    LGC_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
     return entity_;
 }
 
@@ -138,9 +138,10 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
 
+
         clean_render_entity(); {
-            auto view = LGC_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
-            LGC_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+            auto view = Logic_entt().view<Destroy_tag>();   //得到哪些需要销毁，销毁之后不再显示 // 实体销毁和销毁显示还是需要区分的
+            Logic_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
 
         sync_render_data_to_render_thread();
@@ -148,7 +149,7 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
-    LGC_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
+    Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
     render_thread_stop_and_wait();
 

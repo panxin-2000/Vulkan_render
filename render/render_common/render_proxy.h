@@ -23,7 +23,7 @@ public:
 };
 
 
-class RND_entity {
+class Render_entity {
 public:
     entt::entity entity_;
 };

@@ -50,6 +50,6 @@ void main()
     vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
 
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-    //    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
-    outFragColor_B8G8R8A8_SRGB = vec4(lights[0].color.rgb, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
+    //    outFragColor_B8G8R8A8_SRGB = vec4(lights[0].color.rgb, 1.0);
 }

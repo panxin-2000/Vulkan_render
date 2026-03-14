@@ -120,7 +120,7 @@ public:
     }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = LGC_entt().try_get<model_transform>(entity)) {
+        if (auto *scene_node = Logic_entt().try_get<model_transform>(entity)) {
             // 下面这个3d部分是需要去写的，但是只能通过射线来进行检测了
             // if (intersect(scene_node->bounding_box_, current_position)) {
             // return true;
@@ -137,13 +137,13 @@ public:
 
 
 inline void update_object_offset() {
-    const auto view = LGC_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, model_transform>();
+    const auto view = Logic_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, model_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto &transform  = view.get<model_transform>(it);
         auto modelMatrix = transform.update_model_matrix();
         set_render_parameter(it, "model_4x4", modelMatrix);
-        LGC_entt().remove<UI_transform_dirty>(it);
+        Logic_entt().remove<UI_transform_dirty>(it);
     }
 }
 
@@ -176,7 +176,7 @@ public:
 
 
 inline void update_camera_transform() {
-    const auto view = LGC_entt().view<Camera_transform_dirty, Name_component, model_transform>();
+    const auto view = Logic_entt().view<Camera_transform_dirty, Name_component, model_transform>();
     for (const auto it: view) {
         auto &camera_pos = view.get<model_transform>(it);
         auto &name       = view.get<Name_component>(it);
@@ -189,12 +189,12 @@ inline void update_camera_transform() {
             set_render_parameter(it, "global_world_view_Pos", world_camera_pos);
             set_render_parameter(it, "global_world_light_Pos", world_light_pos);
         }
-        LGC_entt().remove<Camera_transform_dirty>(it);
+        Logic_entt().remove<Camera_transform_dirty>(it);
     }
 }
 
 inline void update_camera_optical() {
-    const auto view = LGC_entt().view<Camera_optical_specifications_dirty, camera_optical_component, Name_component>();
+    const auto view = Logic_entt().view<Camera_optical_specifications_dirty, camera_optical_component, Name_component>();
     for (const auto it: view) {
         auto &name    = view.get<Name_component>(it);
         auto &optical = view.get<camera_optical_component>(it);
@@ -202,7 +202,7 @@ inline void update_camera_optical() {
             const auto view_matrix = optical.get_projection();
             set_render_parameter(it, "global_projection_4x4", view_matrix);
         }
-        LGC_entt().remove<Camera_optical_specifications_dirty>(it);
+        Logic_entt().remove<Camera_optical_specifications_dirty>(it);
     }
 }
 
@@ -210,21 +210,21 @@ class world_scene_root {
 public:
     // 获取全局唯一的注册表引用
     static entt::entity &get() {
-        static entt::entity instance = LGC_entt().create();;
+        static entt::entity instance = Logic_entt().create();;
         static std::once_flag flag;
 
         std::call_once(flag, []() {
-                           LGC_entt().emplace<Scene_Component>(instance);
-                           LGC_entt().emplace<Name_component>(instance, "world_scene_root");
-                           LGC_entt().emplace<VKR_shader_paths>(instance,
+                           Logic_entt().emplace<Scene_Component>(instance);
+                           Logic_entt().emplace<Name_component>(instance, "world_scene_root");
+                           Logic_entt().emplace<VKR_shader_paths>(instance,
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                                               "", "");
-                           auto camera           = LGC_entt().get_or_emplace<camera_optical_component>(instance);
+                           auto camera           = Logic_entt().get_or_emplace<camera_optical_component>(instance);
                            const auto projection = camera.get_projection();
                            const Point_3 world_light_pos{0, 10, 6};
 
-                           const auto camera_pos = LGC_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
+                           const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
                            const auto view_matrix = camera_pos.get_view_projection();
                            Point_3 world_camera_pos = camera_pos.get_offset();
 

@@ -54,24 +54,24 @@ inline Suzanne_push_constant get_shader_data() {
 
 inline entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
                                     const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
-    entt::entity entity_ = LGC_entt().create();
-    LGC_entt().emplace<Name_component>(entity_, name);
+    entt::entity entity_ = Logic_entt().create();
+    Logic_entt().emplace<Name_component>(entity_, name);
 
-    LGC_entt().emplace<VKR_shader_paths>(entity_,
+    Logic_entt().emplace<VKR_shader_paths>(entity_,
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
                                        "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                        "", "");
     add_geometry_data(entity_, mesh_path);
 
     // 更新物体的模型矩阵
-    LGC_entt().emplace<model_transform>(entity_, offset, rotate);
-    const auto &transform  = LGC_entt().get<model_transform>(entity_);
+    Logic_entt().emplace<model_transform>(entity_, offset, rotate);
+    const auto &transform  = Logic_entt().get<model_transform>(entity_);
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity_, "model_4x4", modelMatrix);
 
     world_root_add_child(entity_);
 
-    LGC_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
     return entity_;
 }
 

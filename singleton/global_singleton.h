@@ -21,11 +21,11 @@ static quill::Logger *g_log() {
 class entt_logic_thread;
 class entt_render_thread;
 
-inline static entt::registry &LGC_entt() {
+inline static entt::registry &Logic_entt() {
     return entt_logic_thread::get();
 }
 
-inline static entt::registry &RND_entt() {
+inline static entt::registry &Render_entt() {
     return entt_render_thread::get();
 }
 

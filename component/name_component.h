@@ -12,7 +12,7 @@ struct Name_component {
 };
 
 inline std::string get_entity_name(const entt::entity entity) {
-    if (const auto name = LGC_entt().try_get<Name_component>(entity)) {
+    if (const auto name = Logic_entt().try_get<Name_component>(entity)) {
         return name->name;
     }
     return "";
