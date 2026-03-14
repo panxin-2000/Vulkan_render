@@ -11,7 +11,7 @@
 
 bool create_VKR_object_proxy(const entt::entity entity) {
     const auto &vk_data =
-            g_entt().get_or_emplace<std::shared_ptr<VKR_object_proxy> >(entity, std::make_shared<VKR_object_proxy>());
+            LGC_entt().get_or_emplace<std::shared_ptr<VKR_object_proxy> >(entity, std::make_shared<VKR_object_proxy>());
 
     auto name = get_entity_name(entity);
     if (name.find("deferred_pass") != std::string::npos) {
@@ -25,14 +25,14 @@ bool create_VKR_object_proxy(const entt::entity entity) {
     vk_data->debug_name             = get_entity_name(entity);
     vk_data->vk_descriptor_set      = get_descriptor_sets(entity); // 唯一有可能每帧更新的部分
     vk_render_queue::instance().render_object_need_init(vk_data);
-    g_entt().remove<add_to_render_tag>(entity);
+    LGC_entt().remove<add_to_render_tag>(entity);
 
     return true;
 }
 
 
 bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda callback) {
-    if (const auto proxy = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
+    if (const auto proxy = LGC_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
         vk_render_queue::instance().render_update(*proxy, callback);
         return true;
     }
@@ -40,7 +40,7 @@ bool update_VKR_object_proxy(const entt::entity entity, proxy_update_lambda call
 }
 
 bool clean_VKR_object_proxy(const entt::entity entity) {
-    if (auto render = g_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
+    if (auto render = LGC_entt().try_get<std::shared_ptr<VKR_object_proxy> >(entity)) {
         vk_render_queue::instance().render_object_need_clean(*render);
         return true;
     }
@@ -48,7 +48,7 @@ bool clean_VKR_object_proxy(const entt::entity entity) {
 }
 
 void add_new_peoxy_to_render_function() {
-    const auto view = g_entt().view<add_to_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
+    const auto view = LGC_entt().view<add_to_render_tag>(entt::exclude<std::shared_ptr<VKR_object_proxy> >);
     for (const auto &it: view) {
         create_VKR_object_proxy(it); // 因为这里没有区分。全部都在场景的根节点之下
     }

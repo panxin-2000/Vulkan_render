@@ -38,7 +38,7 @@ public:
     bool set_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
         zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
         zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
-        g_entt().emplace_or_replace<UI_transform_dirty>(entity);
+        LGC_entt().emplace_or_replace<UI_transform_dirty>(entity);
         // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
         //     for (const entt::entity children_entity: scene_node->children) {
         //         if (g_entt().valid(children_entity)) {
@@ -53,12 +53,12 @@ public:
         const Point_2 move           = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
         offset                       = offset + move;
-        g_entt().emplace_or_replace<UI_transform_dirty>(entity);
+        LGC_entt().emplace_or_replace<UI_transform_dirty>(entity);
         return true;
     }
 
     static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(entity)) {
+        if (auto *scene_node = LGC_entt().try_get<Rect_2D_transform>(entity)) {
             if (intersect(scene_node->bounding_box_, current_position)) {
                 return true;
             }
@@ -69,7 +69,7 @@ public:
     static bool check_entity_children_intersect_point(std::vector<entt::entity> *return_value,
                                                       entt::entity entity,
                                                       const Point_2 &current_position) {
-        if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
+        if (auto *scene_node = LGC_entt().try_get<Scene_Component>(entity)) {
             for (const entt::entity children_entity: scene_node->children) {
                 if (check_entity_intersect_point(children_entity, current_position)) {
                     return_value->push_back(children_entity);
@@ -81,16 +81,16 @@ public:
     }
 
     bool update_2D_position_matrix() const {
-        const auto &storage = g_entt().storage<Rect_2D_transform>();
+        const auto &storage = LGC_entt().storage<Rect_2D_transform>();
         const auto entity   = entt::to_entity(storage, *this);
-        if (auto render = g_entt().try_get<Geometry_data>(entity)) {
+        if (auto render = LGC_entt().try_get<Geometry_data>(entity)) {
         }
         return true;
     }
 };
 
 inline void update_2D_UI_object_function() {
-    const auto view = g_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
+    const auto view = LGC_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos    = view.get<Rect_2D_transform>(it);
@@ -98,7 +98,7 @@ inline void update_2D_UI_object_function() {
         matrix_4x4 view;
         UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
         set_render_parameter(it, "model_4x4", view);
-        g_entt().remove<UI_transform_dirty>(it);
+        LGC_entt().remove<UI_transform_dirty>(it);
     }
 }
 
@@ -107,13 +107,13 @@ class UI_scene_root {
 public:
     // 获取全局唯一的注册表引用
     static entt::entity &get() {
-        static entt::entity instance = g_entt().create();;
+        static entt::entity instance = LGC_entt().create();;
         static std::once_flag flag;
 
         std::call_once(flag, []() {
-                           g_entt().emplace<Scene_Component>(instance);
-                           g_entt().emplace<Name_component>(instance, "scene_root");
-                           g_entt().emplace<VKR_shader_paths>(instance,
+                           LGC_entt().emplace<Scene_Component>(instance);
+                           LGC_entt().emplace<Name_component>(instance, "scene_root");
+                           LGC_entt().emplace<VKR_shader_paths>(instance,
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                               "", "");
@@ -125,7 +125,7 @@ public:
                            UI_projection_4x4(&projection, 1280, 720);
                            set_render_parameter(instance, "global_projection_4x4", projection);
 
-                           if (auto *scene_node = g_entt().try_get<Rect_2D_transform>(instance)) {
+                           if (auto *scene_node = LGC_entt().try_get<Rect_2D_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},
                                                             {
                                                                 static_cast<float>(get_win_WIDTH()),

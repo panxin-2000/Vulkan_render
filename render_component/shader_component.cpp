@@ -17,13 +17,13 @@
 
 void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
     // 以 binding 为一个最小数量
-    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+    if (const auto shader_temp = LGC_entt().try_get<VKR_shader_paths>(entity)) {
         auto &handle = VK_backend::get();
         char stack_memory_pool[1024];
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
-        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
+        auto &vk_s_d_s = LGC_entt().get_or_emplace<Parameter_used>(entity);
 
         if (vk_s_d_s.update_object_descriptor_sets.empty()) {
             return;
@@ -71,13 +71,13 @@ void update_object_bindings_to_descriptor_sets(const entt::entity entity) {
 
 void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
     // 以 binding 为一个最小数量
-    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
+    if (const auto shader_temp = LGC_entt().try_get<VKR_shader_paths>(entity)) {
         auto &handle = VK_backend::get();
         char stack_memory_pool[1024];
         std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
         std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
-        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
+        auto &vk_s_d_s = LGC_entt().get_or_emplace<Parameter_used>(entity);
 
         if (vk_s_d_s.update_global_descriptor_sets.empty()) {
             return;
@@ -117,11 +117,11 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
 std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> global_descriptor_set;
 
-    if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto shader_temp = LGC_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
             auto current_entity = entity;
             while (current_entity != entt::null) {
-                if (const auto para = g_entt().try_get<Parameter_used>(current_entity)) {
+                if (const auto para = LGC_entt().try_get<Parameter_used>(current_entity)) {
                     if (!para->global_descriptor_sets.empty()) {
                         global_descriptor_set = para->global_descriptor_sets;
                         break;
@@ -147,9 +147,9 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_backend::get();
-    if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto shader_temp = LGC_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
-        auto &vk_s_d_s = g_entt().get_or_emplace<Parameter_used>(entity);
+        auto &vk_s_d_s = LGC_entt().get_or_emplace<Parameter_used>(entity);
 
         if (one_binding_name.find("global") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
@@ -175,8 +175,8 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
 
 std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> descriptor_sets; // 这里是需要按照顺序的
-    if (const auto vk_s_d_s = g_entt().try_get<Parameter_used>(entity)) {
-        if (const auto shader_temp = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto vk_s_d_s = LGC_entt().try_get<Parameter_used>(entity)) {
+        if (const auto shader_temp = LGC_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto global_descriptor_sets = get_global_descriptor_set(entity);
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
@@ -244,7 +244,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 VkPipeline get_pipeline(const entt::entity entity) {
     auto &handle          = VK_backend::get();
     VkPipeline pipeline_t = VK_NULL_HANDLE;
-    if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (auto shader_data = LGC_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         pipeline_t = find_pipeline(handle, *shader_data);
         return pipeline_t;
     } else {
@@ -256,12 +256,12 @@ VkPipeline get_pipeline(const entt::entity entity) {
 VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
     auto &handle                     = VK_backend::get();
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    if (const auto shader_temp = g_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!g_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            g_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
+    if (const auto shader_temp = LGC_entt().try_get<VKR_shader_paths>(entity)) {
+        if (!LGC_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
+            LGC_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
         }
     }
-    if (auto shader_data = g_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (auto shader_data = LGC_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         pipeline_layout = (*shader_data)->pipeline_layout;
         return pipeline_layout;
     } else {
@@ -274,31 +274,31 @@ VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
 void global_uniform_buffer_update_function() {
     // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好
     // global 相关的内容尽量只能偏移，
-    const auto view = g_entt().view<global_uniform_buffer_update>();
+    const auto view = LGC_entt().view<global_uniform_buffer_update>();
     for (const auto &it: view) {
         update_global_bindings_to_descriptor_sets(it);
-        g_entt().emplace_or_replace<descriptor_set_update>(it);
+        LGC_entt().emplace_or_replace<descriptor_set_update>(it);
         auto lambda = [](const entt::entity entity) {
-            if (g_entt().all_of<Scene_Component>(entity))
-                g_entt().emplace_or_replace<descriptor_set_update>(entity);
+            if (LGC_entt().all_of<Scene_Component>(entity))
+                LGC_entt().emplace_or_replace<descriptor_set_update>(entity);
         };
         add_recursion_function_to_children(it, lambda);
-        g_entt().remove<global_uniform_buffer_update>(it);
+        LGC_entt().remove<global_uniform_buffer_update>(it);
     }
 }
 
 void uniform_buffer_update_function() {
-    const auto view = g_entt().view<uniform_buffer_update>();
+    const auto view = LGC_entt().view<uniform_buffer_update>();
     for (const auto &it: view) {
         update_object_bindings_to_descriptor_sets(it);
-        g_entt().emplace_or_replace<descriptor_set_update>(it);
-        g_entt().remove<uniform_buffer_update>(it);
+        LGC_entt().emplace_or_replace<descriptor_set_update>(it);
+        LGC_entt().remove<uniform_buffer_update>(it);
     }
 }
 
 
 void descriptor_set_update_function() {
-    const auto view = g_entt().view<descriptor_set_update>();
+    const auto view = LGC_entt().view<descriptor_set_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
         auto temp_des = get_descriptor_sets(it);
@@ -307,15 +307,15 @@ void descriptor_set_update_function() {
             proxy->vk_descriptor_set = temp_des;
         };
         update_VKR_object_proxy(it, lambda);
-        g_entt().remove<descriptor_set_update>(it);
+        LGC_entt().remove<descriptor_set_update>(it);
     }
 }
 
 void push_constant_update_function() {
-    const auto view = g_entt().view<push_constant_update>();
+    const auto view = LGC_entt().view<push_constant_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
-        auto &parameter = g_entt().get_or_emplace<Parameter_used>(it);
+        auto &parameter = LGC_entt().get_or_emplace<Parameter_used>(it);
 
         std::byte push_constant_pool[128];
         memcpy(push_constant_pool, parameter.push_constant_pool, 128);
@@ -323,6 +323,6 @@ void push_constant_update_function() {
             memcpy(proxy->push_constants_pool, push_constant_pool, 128);
         };
         update_VKR_object_proxy(it, lambda);
-        g_entt().remove<push_constant_update>(it);
+        LGC_entt().remove<push_constant_update>(it);
     }
 }

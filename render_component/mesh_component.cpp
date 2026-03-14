@@ -53,7 +53,7 @@ VKR_mesh create_mesh_data(const VK_backend &backend, const share_block &vertices
 std::optional<VKR_mesh> create_mesh(const entt::entity entity) {
     std::map<std::string, mesh_and_share> &map = get_mesh_map();
     const auto &handle                         = VK_backend::get();
-    if (const auto data = g_entt().try_get<Geometry_data>(entity)) {
+    if (const auto data = LGC_entt().try_get<Geometry_data>(entity)) {
         if (data->mesh_path_.empty() == false) {
             auto it = map.find(data->mesh_path_);
             if (it != map.end()) {
@@ -287,12 +287,12 @@ VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive)
 
 
 bool add_geometry_data(entt::entity entity_, const std::string &mesh_path) {
-    if (auto *pos = g_entt().try_get<Geometry_data>(entity_)) {
-        g_entt().remove<Geometry_data>(entity_);
+    if (auto *pos = LGC_entt().try_get<Geometry_data>(entity_)) {
+        LGC_entt().remove<Geometry_data>(entity_);
     }
-    g_entt().emplace<Geometry_data>(entity_);
+    LGC_entt().emplace<Geometry_data>(entity_);
 
-    auto &geometry      = g_entt().get<Geometry_data>(entity_);
+    auto &geometry      = LGC_entt().get<Geometry_data>(entity_);
     geometry.mesh_path_ = mesh_path;
     return true;
 }
@@ -302,12 +302,12 @@ bool add_geometry_data(entt::entity entity_,
                        float min_y,
                        float max_x,
                        float max_y) {
-    if (auto *pos = g_entt().try_get<Geometry_data>(entity_)) {
-        g_entt().remove<Geometry_data>(entity_);
+    if (auto *pos = LGC_entt().try_get<Geometry_data>(entity_)) {
+        LGC_entt().remove<Geometry_data>(entity_);
     }
-    g_entt().emplace<Geometry_data>(entity_);
+    LGC_entt().emplace<Geometry_data>(entity_);
 
-    auto &geometry = g_entt().get<Geometry_data>(entity_);
+    auto &geometry = LGC_entt().get<Geometry_data>(entity_);
 
     /***************设置顶点与索引参数**********************/
     // std::vector<VertexAttrib> vertex_attribs;
@@ -360,12 +360,12 @@ bool add_geometry_data(entt::entity entity_,
                        Point_3 a,
                        Point_3 b,
                        Point_3 c) {
-    if (auto *pos = g_entt().try_get<Geometry_data>(entity_)) {
-        g_entt().remove<Geometry_data>(entity_);
+    if (auto *pos = LGC_entt().try_get<Geometry_data>(entity_)) {
+        LGC_entt().remove<Geometry_data>(entity_);
     }
-    g_entt().emplace<Geometry_data>(entity_);
+    LGC_entt().emplace<Geometry_data>(entity_);
 
-    auto &geometry = g_entt().get<Geometry_data>(entity_);
+    auto &geometry = LGC_entt().get<Geometry_data>(entity_);
 
     /***************设置顶点与索引参数**********************/
     // std::vector<VertexAttrib> vertex_attribs;
@@ -421,7 +421,7 @@ VKR_mesh get_VKR_mesh(const entt::entity entity) {
 
 
 void update_object_mesh() {
-    const auto view = g_entt().view<UI_transform_dirty, Rect_2D_transform>();
+    const auto view = LGC_entt().view<UI_transform_dirty, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos = view.get<Rect_2D_transform>(it);
@@ -441,6 +441,6 @@ void update_object_mesh() {
         };
 
         update_VKR_object_proxy(it, lambda);
-        g_entt().remove<UI_transform_dirty>(it);
+        LGC_entt().remove<UI_transform_dirty>(it);
     }
 }

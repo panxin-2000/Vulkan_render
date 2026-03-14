@@ -18,10 +18,15 @@ static quill::Logger *g_log() {
     return quill_log::get();
 }
 
-class entt_user;
+class entt_logic_thread;
+class entt_render_thread;
 
-static entt::registry &g_entt() {
-    return entt_user::get();
+inline static entt::registry &LGC_entt() {
+    return entt_logic_thread::get();
+}
+
+inline static entt::registry &RND_entt() {
+    return entt_render_thread::get();
 }
 
 
@@ -38,7 +43,6 @@ class logic_render_object;
 
 struct Destroy_tag {
 };
-
 
 
 #endif //HELLO_MAC_GLOBAL_SINGLETON_H

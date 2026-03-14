@@ -141,20 +141,20 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case EVT_KEY_W:
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
-                if (g_entt().valid(entity)) {
-                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                if (LGC_entt().valid(entity)) {
+                    if (auto position = LGC_entt().try_get<model_transform>(entity)) {
                         position->add_offset({0, 0, 1});
-                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                        LGC_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
                 }
             return OPERATOR_PASS_THROUGH;
         case EVT_KEY_S: {
             if (event.event_code == KM_PRESS)
-                if (g_entt().valid(entity)) {
-                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                if (LGC_entt().valid(entity)) {
+                    if (auto position = LGC_entt().try_get<model_transform>(entity)) {
                         position->add_offset({0, 0, -1});
-                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                        LGC_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
                 }
@@ -163,10 +163,10 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         }
         case EVT_KEY_A: {
             if (event.event_code == KM_PRESS)
-                if (g_entt().valid(entity)) {
-                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                if (LGC_entt().valid(entity)) {
+                    if (auto position = LGC_entt().try_get<model_transform>(entity)) {
                         position->add_offset({0, -1, 0});
-                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                        LGC_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
                 }
@@ -175,10 +175,10 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         }
         case EVT_KEY_D: {
             if (event.event_code == KM_PRESS)
-                if (g_entt().valid(entity)) {
-                    if (auto position = g_entt().try_get<model_transform>(entity)) {
+                if (LGC_entt().valid(entity)) {
+                    if (auto position = LGC_entt().try_get<model_transform>(entity)) {
                         position->add_offset({0, 1, 0});
-                        g_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                        LGC_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
                 }
@@ -191,7 +191,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
 }
 
 void base_event_dealing(const base_event_with_stamp &event) {
-    const auto view = g_entt().view<Name_component, Scene_Component, Input_Component>();
+    const auto view = LGC_entt().view<Name_component, Scene_Component, Input_Component>();
 
 
     static entt::entity current_select_entity = get_UI_scene_root();
@@ -203,7 +203,7 @@ void base_event_dealing(const base_event_with_stamp &event) {
     auto &name = view.get<Name_component>(current_select_entity);
     // std::cout << "last work name: " << name.name << std::endl;
     if (current_status == OPERATOR_RUNNING_MODAL)
-        if (const auto input = g_entt().try_get<Input_Component>(current_select_entity)) {
+        if (const auto input = LGC_entt().try_get<Input_Component>(current_select_entity)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(current_select_entity, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
@@ -227,7 +227,7 @@ void base_event_dealing(const base_event_with_stamp &event) {
     //     std::cout << "name: " << name.name << std::endl;
     // }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-        if (const auto input = g_entt().try_get<Input_Component>(*it)) {
+        if (const auto input = LGC_entt().try_get<Input_Component>(*it)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(*it, event);
                 if (OPERATOR_RUNNING_MODAL & status) {
