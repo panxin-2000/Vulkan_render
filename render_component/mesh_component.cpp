@@ -434,7 +434,7 @@ void update_object_mesh() {
         const auto mesh = create_mesh(it);
 
 
-        if (const auto render = Logic_entt().try_get<Render_entity>(it)) {
+        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
             auto lambda = [render, mesh]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
 

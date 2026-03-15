@@ -137,7 +137,7 @@ public:
 
 
 inline void update_object_offset() {
-    const auto view = Logic_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, model_transform>();
+    const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, model_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto &transform  = view.get<model_transform>(it);
@@ -194,7 +194,8 @@ inline void update_camera_transform() {
 }
 
 inline void update_camera_optical() {
-    const auto view = Logic_entt().view<Camera_optical_specifications_dirty, camera_optical_component, Name_component>();
+    const auto view = Logic_entt().view<Camera_optical_specifications_dirty, camera_optical_component,
+                                        Name_component>();
     for (const auto it: view) {
         auto &name    = view.get<Name_component>(it);
         auto &optical = view.get<camera_optical_component>(it);
@@ -217,15 +218,17 @@ public:
                            Logic_entt().emplace<Scene_Component>(instance);
                            Logic_entt().emplace<Name_component>(instance, "world_scene_root");
                            Logic_entt().emplace<VKR_shader_paths>(instance,
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
-                                                              "", "");
+                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
+                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
+                                                                  "", "");
                            auto camera           = Logic_entt().get_or_emplace<camera_optical_component>(instance);
                            const auto projection = camera.get_projection();
                            const Point_3 world_light_pos{0, 10, 6};
 
-                           const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{0, 0, 6});
-                           const auto view_matrix = camera_pos.get_view_projection();
+                           const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{
+                               0, 0, 6
+                           });
+                           const auto view_matrix   = camera_pos.get_view_projection();
                            Point_3 world_camera_pos = camera_pos.get_offset();
 
 

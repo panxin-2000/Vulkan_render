@@ -10,8 +10,8 @@
 
 
 void add_render_UI_2D_tag(entt::entity entity) {
-    if (Logic_entt().all_of<UI_2D_tag, Render_entity>(entity)) {
-        const auto &vk_data = Logic_entt().get<Render_entity>(entity);
+    if (Logic_entt().all_of<UI_2D_tag, Proxy_entity>(entity)) {
+        const auto &vk_data = Logic_entt().get<Proxy_entity>(entity);
         auto lambda         = [vk_data]() {
             Render_entt().emplace_or_replace<UI_2D_tag>(vk_data.entity_);
         };
@@ -20,9 +20,9 @@ void add_render_UI_2D_tag(entt::entity entity) {
 }
 
 void add_new_peoxy_to_render_function() {
-    const auto view = Logic_entt().view<add_to_render_tag>(entt::exclude<Render_entity>);
+    const auto view = Logic_entt().view<add_to_render_tag>(entt::exclude<Proxy_entity>);
     for (const auto &it: view) {
-        const auto &vk_data = Logic_entt().emplace<Render_entity>(it, Render_entt().create());
+        const auto &vk_data = Logic_entt().emplace<Proxy_entity>(it, Render_entt().create());
 
         auto name              = get_entity_name(it);
         auto mesh              = get_VKR_mesh(it);

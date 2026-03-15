@@ -23,7 +23,7 @@ public:
 };
 
 
-class Render_entity {
+class Proxy_entity {
 public:
     entt::entity entity_;
 };

@@ -305,7 +305,7 @@ void descriptor_set_update_function() {
         auto temp_des = get_descriptor_sets(it);
 
 
-        if (const auto render = Logic_entt().try_get<Render_entity>(it)) {
+        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
             auto lambda = [render, temp_des]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
                     proxy->vk_descriptor_set = temp_des;
@@ -325,7 +325,7 @@ void push_constant_update_function() {
         std::byte push_constant_pool[128];
         memcpy(push_constant_pool, parameter.push_constant_pool, 128);
 
-        if (const auto render = Logic_entt().try_get<Render_entity>(it)) {
+        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
             auto lambda = [render, push_constant_pool]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
                     memcpy(proxy->push_constants_pool, push_constant_pool, 128);

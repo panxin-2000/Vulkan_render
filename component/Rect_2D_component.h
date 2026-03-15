@@ -90,7 +90,7 @@ public:
 };
 
 inline void update_2D_UI_object_function() {
-    const auto view = Logic_entt().view<UI_transform_dirty, std::shared_ptr<VKR_object_proxy>, Rect_2D_transform>();
+    const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos    = view.get<Rect_2D_transform>(it);
