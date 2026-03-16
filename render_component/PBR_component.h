@@ -20,13 +20,16 @@ public:
     Color baseColorFactor_; // 基础颜色 和 透明度
     //                         非金属时：代表漫反射颜色。
     //                         金属时：代表反射光的颜色（金属几乎没有漫反射）。
-    Color EmissiveFactor_;  // 自发光
-    float metallicFactor_;  // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。
+    Color EmissiveFactor_; // 自发光
+
+    //   渲染方程中的 材料属性输入
+    float metallicFactor_; // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。
     //                         中间值极少使用，仅用于锈迹或灰尘等过渡效果
     // 把 Metallic 调为 1 时，系统会自动提取 Base Color 的颜色作为反射光颜色
     float roughnessFactor_; // 粗糙度
     //                         值越高 (1.0/白色)：表面越粗糙，反射光越分散（亚光感）
     //                         值越低 (0.0/黑色)：表面越光滑，反射越清晰（镜面感）
+
     float alphaCutoff;
     uint8_t doubleSided = false; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
     uint8_t alphaMode;           // 有三个值

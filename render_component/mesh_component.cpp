@@ -438,11 +438,11 @@ void update_object_mesh() {
             auto lambda = [render, mesh]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
 
-                if (mesh.has_value()) {
-                    proxy->mesh = mesh.value();;
-                } else {
-                    LOG_INFO(g_log(), "mesh empty");
-                }
+                    if (mesh.has_value()) {
+                        proxy->mesh = mesh.value();;
+                    } else {
+                        LOG_INFO(g_log(), "mesh empty");
+                    }
             };
             vk_render_queue::instance().render_update_entt(*render, lambda);
         }

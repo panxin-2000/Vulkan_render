@@ -80,6 +80,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinygltf)
 
+if(APPLE)
+    list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
+endif()
+find_package(Boost CONFIG REQUIRED)
+find_package(OpenVDB REQUIRED)
+
 
 #已经不使用这个库了
 #FetchContent_Declare(
@@ -428,6 +434,7 @@ target_link_libraries(learn_render PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnT
 
 target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
+target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
 target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
