@@ -9,6 +9,7 @@
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
+#include "vulkan_sample.h"
 
 VkImageView createImageView(const VkImage image,
                             const VkFormat format,
@@ -468,10 +469,7 @@ VkSampler createTextureSampler(VK_backend &handle) {
     samplerInfo.minLod     = 0.0f;
     samplerInfo.maxLod     = VK_LOD_CLAMP_NONE; // todo : why ? 设置为 1000 ，其实本质的意思是没有层级限制
     // mipLodBias 用于在 shader 计算完成之后再进行一个偏移，使画面稍微锐利或者模糊
-    if (vkCreateSampler(handle.get_device(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler!");
-    }
-    return textureSampler;
+    return textureSampler = create_vulkan_sample(samplerInfo);
 }
 
 
