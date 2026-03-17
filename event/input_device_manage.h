@@ -154,9 +154,9 @@ public:
 
     void handle_scroll(mouse_position pos) {
         dispatcher_->enqueue<base_event_with_stamp>({
-                                                        WHEEL_UP_MOUSE,
-                                                        KM_PRESS,
-                                                        pos,
+                                                        MOUSE_ROTATE,
+                                                        KM_NOTHING,
+                                                        manage_current_position,
                                                         manage_last_position,
                                                         manage_click_position,
                                                         pos,

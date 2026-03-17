@@ -70,6 +70,8 @@ void glfwFocusCallback(GLFWwindow *window, int focused) {
 }
 
 void scroll_callback(GLFWwindow *window, double x_offset, double y_offset) {
+    LOG_INFO(g_log(), "scroll_callback x: {} y: {} ", x_offset, y_offset);
+
     Keyboard_Manage::instance().handle_scroll({static_cast<float>(x_offset), static_cast<float>(y_offset)});
 }
 
@@ -138,12 +140,24 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
     auto temp_type = event.event_type;
 
     switch (temp_type) {
+        case MOUSE_ROTATE: {
+            auto temp = event.scroll;
+            // 绕 Z 轴旋转 45 度
+            Eigen::Quaternionf q_x = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()));
+            Eigen::Quaternionf q_y = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+            LOG_INFO(g_log(), "MOUSE_ROTATE  ");
+
+            if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                position->rotate(q_x * q_y);
+                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+            }
+        }
         case EVT_KEY_W:
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
                     if (auto position = Logic_entt().try_get<model_transform>(entity)) {
-                        position->add_offset({0, 0, 1});
+                        position->add_offset({0, 0, -1});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
@@ -153,7 +167,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
                     if (auto position = Logic_entt().try_get<model_transform>(entity)) {
-                        position->add_offset({0, 0, -1});
+                        position->add_offset({0, 0, 1});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
@@ -165,7 +179,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
                     if (auto position = Logic_entt().try_get<model_transform>(entity)) {
-                        position->add_offset({0, -1, 0});
+                        position->add_offset({-1, 0, 0});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;
@@ -177,7 +191,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
                     if (auto position = Logic_entt().try_get<model_transform>(entity)) {
-                        position->add_offset({0, 1, 0});
+                        position->add_offset({1, 0, 0});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
                     return OPERATOR_FINISHED;

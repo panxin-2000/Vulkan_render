@@ -15,7 +15,7 @@ VkDescriptorPool get_descriptor_pool() {
 void init_current_descriptor_pool() {
     const auto &backend = VK_backend::get();
 
-    static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 250;
+    static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 5000;
 
     static constexpr uint32_t POOL_SIZE_STORAGE_BUFFER         = 1000;
     static constexpr uint32_t POOL_SIZE_STORAGE_IMAGE          = 250;

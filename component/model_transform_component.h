@@ -93,6 +93,7 @@ public:
         rotate_ = rotate;
     }
 
+
     [[nodiscard]] Point_3 get_offset() const {
         return offset_;
     }
@@ -103,6 +104,10 @@ public:
 
     void set_bounding_box(const Point_3 min, const Point_3 max) {
         bounding_box_ = AABB_centroid<Point_3>(min, max);
+    }
+
+    void rotate(const Eigen::Quaternionf &quaternion) {
+        rotate_ = rotate_ * quaternion;
     }
 
     Eigen::Matrix4f update_model_matrix() const {
@@ -226,8 +231,8 @@ public:
                            const Point_3 world_light_pos{0, 10, 6};
 
                            const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{
-                               0, 0, 6
-                           });
+                                        0, 0, 6
+                                    });
                            const auto view_matrix   = camera_pos.get_view_projection();
                            Point_3 world_camera_pos = camera_pos.get_offset();
 
