@@ -14,12 +14,15 @@ public:
     std::string debug_name;
     VkPipeline vk_pipeline;
     VkPipelineLayout pipeline_layout;
-    std::vector<DescriptorSet_ptr> vk_descriptor_set; // descriptor_set 的 共享指针保存点
+    std::vector<DescriptorSet_ptr> vk_descriptor_sets; // descriptor_set 的 共享指针保存点
     VkViewport viewport;
     VkRect2D scissor;
     std::byte push_constants_pool[128];
     std::optional<float> line_width;
-    VKR_mesh mesh;
+    std::vector<VKR_Primitive> mesh;
+    // mesh 是拥有相同的模型矩阵，但是其中的 Primitive 的材质是不同的
+    // 但是还是需要共享 同一个 vk_descriptor_sets ，不同的材质部分通过索引或者其他方式的偏移来完成绘制
+    // 对不同的材质做区分，有的需要先绘制，有的之后绘制
 };
 
 

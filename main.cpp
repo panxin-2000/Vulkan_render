@@ -17,6 +17,7 @@
 #include "descriptor_pool.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
+#include "gltf_model/load_gltf_model.h"
 #include "UI/3d_model_display.h"
 
 void register_glfw(GLFWwindow *window);
@@ -66,8 +67,8 @@ VkSampler base_sample() {
 
 
 int main(int argc, char *argv[]) {
-    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();
     backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
     init_current_descriptor_pool();
@@ -76,13 +77,15 @@ int main(int argc, char *argv[]) {
     render_thread_start(backend);
 
     register_glfw(backend.get_window());
-    // object_3d_model("Damaged Helmet", "assets/DamagedHelmet.gltf",
-    //                 {0.0f, 0.0f, 0.0f},
-    //                 {0.7071068286895752, 0.7071068286895752, 0, 0}); // 选择数据暂时是写死的
 
     UI_block("按钮1", 0, 0, 60, 60);
     UI_block("功能块", 0, 0, 50, 200);
     UI_block("按钮2", 0, 0, 145, 130);
+
+
+    // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
+
+
     // 3d 模型
     {
         auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});

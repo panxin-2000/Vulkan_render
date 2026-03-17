@@ -43,7 +43,7 @@ void add_new_peoxy_to_render_function() {
             proxy.scissor           = scissor;
             proxy.viewport          = viewport;
             proxy.vk_pipeline       = vk_pipeline;
-            proxy.vk_descriptor_set = vk_descriptor_set;
+            proxy.vk_descriptor_sets = vk_descriptor_set;
         };
 
         vk_render_queue::instance().render_update_entt(vk_data, lambda);

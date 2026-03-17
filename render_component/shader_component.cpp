@@ -308,7 +308,7 @@ void descriptor_set_update_function() {
         if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
             auto lambda = [render, temp_des]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
-                    proxy->vk_descriptor_set = temp_des;
+                    proxy->vk_descriptor_sets = temp_des;
             };
             vk_render_queue::instance().render_update_entt(*render, lambda);
         }

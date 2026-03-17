@@ -7,6 +7,7 @@
 #include "vulkan_buffer.h"
 #include "global_singleton.h"
 #include "render_mesh.h"
+#include "shader_common.h"
 #include "base_element/point_3.h"
 
 struct share_block {
@@ -25,7 +26,7 @@ struct share_block {
 
 struct mesh_and_share {
 #ifdef WITH_VULKAN_BACKEND
-    VKR_mesh mesh;
+    VKR_Primitive mesh;
 #elif  WITH_OPENGL_BACKEND
     unsigned int buffer;
 #endif
@@ -34,10 +35,9 @@ struct mesh_and_share {
 
 class Geometry_data : public NonCopyable {
 public:
-    std::string mesh_path_;
-
-    std::vector<share_block> vertices_vector;
+    share_block vertices_;
     share_block indices_;
+    std::string mesh_path_;
 
 
     Geometry_data() = default;
@@ -45,8 +45,8 @@ public:
     ~Geometry_data() = default;
 
 
-    void push_vertices(const share_block &temp) {
-        vertices_vector.push_back(temp);
+    void set_vertices(const share_block &temp) {
+        vertices_ = temp;
     }
 
 
@@ -64,9 +64,15 @@ std::pair<share_block, share_block> load_model(const std::string &path);
 void clean_all_mesh_object();
 
 
-std::optional<VKR_mesh> create_mesh(const entt::entity entity);
+std::vector<VKR_Primitive> create_mesh(const entt::entity entity);
 
-VKR_mesh get_VKR_mesh(const entt::entity entity);
+std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity);
+
+
+void add_geometry_data(const entt::entity entity_,
+                       const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
+                       const std::shared_ptr<std::vector<uint16_t> > &sp_indices);
+
 
 bool add_geometry_data(entt::entity entity_, const std::string &mesh_path);
 

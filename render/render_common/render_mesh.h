@@ -7,7 +7,7 @@
 #include <volk.h>
 #include "vulkan_buffer.h"
 
-class VKR_mesh {
+class VKR_Primitive {
 public:
     // 不做
     VKR_buffer_ptr vertices = {};
@@ -15,6 +15,7 @@ public:
     // VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
     // VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
     VkIndexType index_type = VK_INDEX_TYPE_UINT16;
+    int material_index_    = 0;
 
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};

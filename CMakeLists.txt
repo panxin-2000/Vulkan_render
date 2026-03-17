@@ -80,9 +80,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinygltf)
 
-if(APPLE)
+if (APPLE)
     list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
-endif()
+endif ()
 find_package(Boost CONFIG REQUIRED)
 find_package(OpenVDB REQUIRED)
 
@@ -222,6 +222,7 @@ endif ()
 
 include_directories(utility)
 include_directories(render)
+include_directories(gltf_model)
 include_directories(/opt/homebrew/opt/glfw/include)
 
 link_directories(/opt/homebrew/opt/glfw/lib)
@@ -254,6 +255,12 @@ file(GLOB_RECURSE RENDER
 
         "render/render_common/stb_image.cpp"
 )
+
+file(GLOB_RECURSE gltf_model
+        "gltf_model/load_gltf_model.cpp"
+)
+
+
 file(GLOB_RECURSE component
 
         "component/scene_component.cpp"
@@ -421,7 +428,7 @@ file(GLOB SHADER_FILES
 )
 
 add_executable(learn_render main.cpp external/tinyobj/tiny_obj_loader.cc assets/shader.slang
-        ${SHADER_FILES} ${component} ${RENDER} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
+        ${SHADER_FILES} ${component} ${RENDER} ${gltf_model} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)

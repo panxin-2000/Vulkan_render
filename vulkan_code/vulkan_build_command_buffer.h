@@ -388,11 +388,11 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
-    if (!vk_draw.vk_descriptor_set.empty()) {
+    if (!vk_draw.vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
-        temp_descriptor_sets.resize(vk_draw.vk_descriptor_set.size());
-        for (size_t i = 0; i < vk_draw.vk_descriptor_set.size(); ++i) {
-            temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set(time_line);
+        temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
+        for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
+            temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
@@ -416,7 +416,9 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
     //                        &push_constants_address);
     // }
-    vk_draw.mesh.draw(cb, time_line);
+    for (int i = 0; i < vk_draw.mesh.size(); ++i) {
+        vk_draw.mesh[i].draw(cb, time_line);
+    }
 }
 
 inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
@@ -426,11 +428,11 @@ inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
-    if (!vk_draw.vk_descriptor_set.empty()) {
+    if (!vk_draw.vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
-        temp_descriptor_sets.resize(vk_draw.vk_descriptor_set.size());
-        for (size_t i = 0; i < vk_draw.vk_descriptor_set.size(); ++i) {
-            temp_descriptor_sets[i] = vk_draw.vk_descriptor_set[i]->get_descriptor_set(time_line);
+        temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
+        for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
+            temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {

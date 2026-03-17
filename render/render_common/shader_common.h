@@ -183,4 +183,22 @@ struct VKR_bind_pipelines {
 };
 
 
+struct pos_struct {
+    float x, y, z;
+};
+
+struct normal_struct {
+    float a, b, c;
+};
+
+struct uv_struct {
+    float u, v;
+};
+
+struct Vertex {
+    pos_struct pos;
+    normal_struct normal;
+    uv_struct uv;
+};
+
 #endif //HELLO_MAC_SHADER_COMMON_H
