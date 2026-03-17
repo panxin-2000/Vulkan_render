@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     UI_block("按钮2", 0, 0, 145, 130);
 
 
-    // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
+    load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
 
     // 3d 模型

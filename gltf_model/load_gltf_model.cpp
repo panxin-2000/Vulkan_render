@@ -6,6 +6,7 @@
 
 #include "model_transform_component.h"
 #include "name_component.h"
+#include "PBR_component.h"
 #include "tiny_gltf.h"
 
 
@@ -39,14 +40,14 @@ std::optional<tinygltf::Model> get_gltf_model(const std::string &path) {
 }
 
 Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index) {
-    Point_3 offset;
+    Point_3 offset{0, 0, 0};
     int nodes_num = model.nodes.size();
     if (node_index > nodes_num) {
-        return {};
+        return {0, 0, 0};
     } else {
         auto node = model.nodes[node_index];
         if (node.translation.size() == 0) {
-            return {};
+            return {0, 0, 0};
         } else if (node.translation.size() == 3) {
             offset.x = node.translation[0];
             offset.y = node.translation[1];
@@ -54,7 +55,7 @@ Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index
             return offset;
         }
     }
-    return {};
+    return {0, 0, 0};
 }
 
 Eigen::Quaternionf get_rotate_from_model(const tinygltf::Model &model, const int node_index) {
@@ -283,6 +284,59 @@ entt::entity load_node_data(tinygltf::Model &model,
     return entity_;
 }
 
+Texture_parameter create_texture_all(Picture_parameters &picture_parameters);
+
+Texture_parameter load_image(tinygltf::Image &image) {
+    if (image.width * image.height * image.component * image.bits / 8 == image.image.size()) {
+        if (image.component == 4) {
+            Picture_parameters picture_parameters{
+                image.width,
+                image.height,
+                image.component,
+                image.image.data(),
+            };
+            auto texture = create_texture_all(picture_parameters);
+            return texture;
+            // 确定了可以直接上传 RGBA
+        }
+    }
+
+    if (image.mimeType == "image/jpeg") {
+    } else if (image.mimeType == "image/png") {
+    } else if (image.mimeType == "image/bmp") {
+    } else if (image.mimeType == "image/gif") {
+    }
+    return {};
+}
+
+void load_material(const entt::entity entity, tinygltf::Model &model) {
+    for (const auto &material: model.materials) {
+        PBR_component pbr_component;
+        pbr_component.metallicFactor_  = material.pbrMetallicRoughness.metallicFactor;
+        pbr_component.roughnessFactor_ = material.pbrMetallicRoughness.roughnessFactor;
+        if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
+            pbr_component.baseColorFactor_ = {
+                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
+                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
+                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
+                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]),
+            };
+        } else {
+            pbr_component.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+        }
+        if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
+            const auto texture_index              = material.pbrMetallicRoughness.baseColorTexture.index;
+            const auto image_index                = model.textures[texture_index].source;
+            auto &image                           = model.images[image_index];
+            auto texture                          = load_image(image);
+            std::optional<Texture_parameter> temp = texture;
+            set_render_parameter(entity, "samplerColor", temp);
+        }
+        if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+        }
+    }
+}
+
 
 entt::entity load_gltf_model(const std::string &name, const std::string &path) {
     entt::entity entity_;
@@ -292,6 +346,7 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path) {
         const auto nodes_num = model.nodes.size();
         if (nodes_num > 0) {
             entity_ = load_node_data(model, 0, -1, entt::null);
+            load_material(entity_, model);
         } else {
             // 空的
             entity_ = entt::null;

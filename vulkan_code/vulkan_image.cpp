@@ -4,6 +4,7 @@
 
 #include "vulkan_image.h"
 
+#include "shader_common.h"
 #include "stb_image.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
@@ -137,9 +138,7 @@ std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, u
 VKR_buffer_ptr create_image_buffer(const VK_backend &backend, VkDeviceSize size,
                                    std::function<void(void *)> mem_copy_callback) {
     auto vBuffer =
-            create_vma_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-                                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
     if (vBuffer->host_visible() == false) {
@@ -258,28 +257,39 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
 }
 
 
-VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_path) {
-    assert(!picture_path.empty());
-    int texWidth, texHeight, texChannels;
-    stbi_uc *pixels        = stbi_load(picture_path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
-    uint32_t mipLevels;
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+VKR_image_ptr createTextureImage(VK_backend &handle,
+                                 const Picture_parameters &picture_parameters,
+                                 const bool have_mip = false) {
+    const VkDeviceSize imageSize = picture_parameters.width * picture_parameters.height * picture_parameters.channels;
 
-    if (!pixels) {
-        throw std::runtime_error("failed to load texture image!");
+    uint32_t mipLevels;
+    if (have_mip == false) {
+        mipLevels = 1;
+    } else {
+        // 不想创建时可以设置为 1 ，不能设置为零
+        mipLevels =
+                static_cast<uint32_t>(std::floor(
+                                                 std::log2(std::max(picture_parameters.width,
+                                                                    picture_parameters.height)))) + 1;
+    }
+
+    if (picture_parameters.image_data == nullptr) {
+        return {};
+        // throw std::runtime_error("failed to load texture image!");
     }
     VkDeviceMemory stagingBufferMemory;
 
-    auto mem_copy_function = [pixels,imageSize](void *dst) {
-        memcpy(dst, pixels, imageSize);
+    auto mem_copy_function = [picture_parameters](void *dst) {
+        const VkDeviceSize image_size = picture_parameters.width *
+                                        picture_parameters.height *
+                                        picture_parameters.channels;
+        memcpy(dst, picture_parameters.image_data, image_size);
     };
 
-    auto staging_buffer = create_image_buffer(handle, imageSize, mem_copy_function);
-    stbi_image_free(pixels);
+    const auto staging_buffer = create_image_buffer(handle, imageSize, mem_copy_function);
 
-    auto [textureImage,textureImage_allocation] = createImage(texWidth,
-                                                              texHeight, mipLevels,
+    auto [textureImage,textureImage_allocation] = createImage(picture_parameters.width,
+                                                              picture_parameters.height, mipLevels,
                                                               VK_FORMAT_R8G8B8A8_SRGB,
                                                               VK_IMAGE_TILING_OPTIMAL,
                                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -289,13 +299,17 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
 
     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-    copyBufferToImage(staging_buffer->get_buffer_handle(), textureImage, static_cast<uint32_t>(texWidth),
-                      static_cast<uint32_t>(texHeight));
+    copyBufferToImage(staging_buffer->get_buffer_handle(), textureImage,
+                      static_cast<uint32_t>(picture_parameters.width),
+                      static_cast<uint32_t>(picture_parameters.height));
     transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
     staging_buffer->destroy_buffer();
 
-    generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
+    if (mipLevels > 1)
+        generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, picture_parameters.width,
+                        picture_parameters.height,
+                        mipLevels);
 
 
     auto texture_view = createImageView(textureImage,
@@ -304,6 +318,21 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
 
 
     return {textureImage, textureImage_allocation, texture_view};
+}
+
+
+VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_path) {
+    assert(!picture_path.empty());
+    Picture_parameters picture_parameters{};
+    picture_parameters.image_data = stbi_load(picture_path.c_str(),
+                                              &picture_parameters.width,
+                                              &picture_parameters.height,
+                                              &picture_parameters.channels, STBI_rgb_alpha);
+    auto result = createTextureImage(handle, picture_parameters);
+
+    stbi_image_free(picture_parameters.image_data);
+    picture_parameters.image_data = nullptr;
+    return result;
 }
 
 void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
@@ -445,6 +474,23 @@ VkSampler createTextureSampler(VK_backend &handle) {
     return textureSampler;
 }
 
+
+Texture_parameter create_texture_all(Picture_parameters &picture_parameters) {
+    auto &handle   = VK_backend::get();
+    auto image_ptr = createTextureImage(handle, picture_parameters);
+
+    auto textureSampler = createTextureSampler(handle);
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = image_ptr->get_image_view();
+    imageInfo.sampler     = textureSampler;
+    Texture_parameter texture_parameter{
+        .image       = image_ptr,
+        .sampler     = textureSampler,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+    return texture_parameter;
+}
 
 Texture_parameter create_texture_all(VK_backend &handle, const std::string &picture_path) {
     auto image_ptr = createTextureImage(handle, picture_path);

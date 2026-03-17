@@ -201,4 +201,11 @@ struct Vertex {
     uv_struct uv;
 };
 
+struct Picture_parameters {
+    int width;
+    int height;
+    int channels;
+    unsigned char *image_data;
+};
+
 #endif //HELLO_MAC_SHADER_COMMON_H
