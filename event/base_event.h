@@ -199,6 +199,7 @@ enum wmEventType : int16_t {
 
 
 enum wmEventModifierFlag : uint8_t {
+    KM_NULL  = 0,
     KM_SHIFT = (1 << 0),
     KM_CTRL  = (1 << 1),
     KM_ALT   = (1 << 2),
@@ -206,6 +207,9 @@ enum wmEventModifierFlag : uint8_t {
     KM_OSKEY = (1 << 3),
     KM_HYPER = (1 << 4),
 };
+
+ENABLE_BITWISE_OPERATORS(wmEventModifierFlag)
+
 
 struct Drag_event {
 };

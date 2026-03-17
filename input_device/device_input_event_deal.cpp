@@ -199,6 +199,21 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
             return OPERATOR_PASS_THROUGH;
             break;
         }
+        case EVT_KEY_SPACE_KEY: {
+            if (event.event_code == KM_PRESS)
+                if (Logic_entt().valid(entity)) {
+                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                        if (event.modifier_flag & KM_SHIFT)
+                            position->add_offset({0, -1, 0});
+                        else
+                            position->add_offset({0, 1, 0});
+                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    }
+                    return OPERATOR_FINISHED;
+                }
+            return OPERATOR_PASS_THROUGH;
+            break;
+        }
         default: {
         }
     }

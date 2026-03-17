@@ -12,6 +12,8 @@
 #include "../input_device/key_map_value.h"
 #include <entt/entt.hpp>
 
+#include "base_event.h"
+
 // 组合键状态管理器（仅负责按键状态+组合键匹配）
 class Keyboard_Manage {
 public:
@@ -116,7 +118,7 @@ public:
                                                         manage_last_position,
                                                         manage_click_position,
                                                         manage_scroll,
-                                                        KM_SHIFT
+                                                        manage_modifier_flag
                                                     });
     }
 
@@ -130,7 +132,7 @@ public:
                                                         manage_last_position,
                                                         manage_click_position,
                                                         manage_scroll,
-                                                        KM_SHIFT
+                                                        manage_modifier_flag
                                                     });
     }
 
@@ -146,7 +148,7 @@ public:
                                                             manage_last_position,
                                                             manage_click_position,
                                                             manage_scroll,
-                                                            KM_SHIFT
+                                                            manage_modifier_flag
                                                         });
         }
         manage_last_position = pos;
@@ -160,7 +162,7 @@ public:
                                                         manage_last_position,
                                                         manage_click_position,
                                                         pos,
-                                                        KM_SHIFT
+                                                        manage_modifier_flag
                                                     });
     }
 
@@ -173,7 +175,7 @@ public:
                                                         manage_last_position,
                                                         manage_click_position,
                                                         manage_scroll,
-                                                        KM_SHIFT
+                                                        manage_modifier_flag
                                                     });
     }
 
@@ -192,13 +194,28 @@ public:
                                                         manage_last_position,
                                                         manage_click_position,
                                                         manage_scroll,
-                                                        KM_SHIFT
+                                                        manage_modifier_flag
                                                     });
     }
 
 
     // 处理GLFW按键按下事件（更新Set状态）
     void handleKeyDown(int keyCode) {
+        if (keyCode == EVT_KEY_LEFT_SHIFT || keyCode == EVT_KEY_RIGHT_SHIFT) {
+            manage_modifier_flag = manage_modifier_flag | KM_SHIFT;
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_CONTROL || keyCode == EVT_KEY_RIGHT_CONTROL) {
+            manage_modifier_flag = manage_modifier_flag | KM_CTRL;
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_ALT || keyCode == EVT_KEY_RIGHT_ALT) {
+            manage_modifier_flag = manage_modifier_flag | KM_ALT;
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_SUPER || keyCode == EVT_KEY_RIGHT_SUPER) {
+            manage_modifier_flag = manage_modifier_flag | KM_OSKEY;
+            return;
+        }
+
+
         dispatcher_->enqueue<base_event_with_stamp>({
                                                         static_cast<wmEventType>(keyCode),
                                                         KM_PRESS,
@@ -212,6 +229,19 @@ public:
 
     // 处理GLFW按键松开事件（更新Set状态）
     void handleKeyUp(int keyCode) {
+        if (keyCode == EVT_KEY_LEFT_SHIFT || keyCode == EVT_KEY_RIGHT_SHIFT) {
+            manage_modifier_flag &= (~KM_SHIFT);
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_CONTROL || keyCode == EVT_KEY_RIGHT_CONTROL) {
+            manage_modifier_flag &= (~KM_CTRL);
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_ALT || keyCode == EVT_KEY_RIGHT_ALT) {
+            manage_modifier_flag &= (~KM_ALT);
+            return;
+        } else if (keyCode == EVT_KEY_LEFT_SUPER || keyCode == EVT_KEY_RIGHT_SUPER) {
+            manage_modifier_flag &= (~KM_OSKEY);
+            return;
+        }
         dispatcher_->enqueue<base_event_with_stamp>({
                                                         static_cast<wmEventType>(keyCode),
                                                         KM_RELEASE,
