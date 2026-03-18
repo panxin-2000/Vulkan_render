@@ -8,6 +8,7 @@
 #include "../event/input_device_manage.h"
 #include "scene_component.h"
 #include "Rect_2D_component.h"
+#include "base_element/geometry/ray.h"
 
 
 void glfwFocusCallback(GLFWwindow *window, int focused);
@@ -219,6 +220,62 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
     }
 }
 
+
+Ray<Point_3> get_screen_ray(const base_event_with_stamp &event) {
+    auto world_entity     = get_world_root();
+    auto camera           = Logic_entt().try_get<camera_optical_component>(world_entity);
+    const auto camera_pos = Logic_entt().try_get<model_transform>(world_entity);
+
+    const auto &backend    = VK_backend::get();
+    auto [width, height]   = backend.get_current_extent();
+    const auto projection  = camera->get_projection();
+    const auto view_matrix = camera_pos->get_view_projection();
+
+    // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
+    float x = (2.0f * event.current_position.x) / width - 1.0f;
+    float y = (2.0f * event.current_position.y) / height - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
+
+    // 2. 构造近裁剪面和远裁剪面的点 (在裁剪空间)
+    // Vulkan 的近平面通常是 z=0.0，远平面是 z=1.0
+    Eigen::Vector4f ray_start_clip(x, y, 0.0f, 1.0f);
+    Eigen::Vector4f ray_end_clip(x, y, 1.0f, 1.0f);
+
+    // 3. 计算逆矩阵
+    Eigen::Matrix4f invVP = (projection * view_matrix).inverse();
+
+    // 4. 转换回世界空间
+    Eigen::Vector4f world_start = invVP * ray_start_clip; // 这里给出来的是近平面上的起始点
+    Eigen::Vector4f world_end   = invVP * ray_end_clip;
+
+    // 5. 透视除法 (W 分量归一化)
+    world_start /= world_start.w();
+    world_end   /= world_end.w();
+    auto offset = camera_pos->get_offset(); // 这里给出的相机的位置
+    // 6. 确定射线
+    Eigen::Vector3f ray_origin    = world_start.head<3>();
+    Eigen::Vector3f ray_direction = (world_end.head<3>() - ray_origin).normalized();
+    Ray<Point_3> result           = {
+        {offset},
+        {ray_direction.x(), ray_direction.y(), ray_direction.z()}
+    };
+    return result;
+}
+
+#include "base_element/intersect/objects_intersect_with_Ray.h"
+
+entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
+    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3> >();
+    for (auto &entity: view) {
+        auto box = view.get<AABB_centroid<Point_3> >(entity);
+        if (intersect(box, ray))
+            return entity;
+    }
+
+
+    return entt::null;
+}
+
+
 void base_event_dealing(const base_event_with_stamp &event) {
     const auto view = Logic_entt().view<Name_component, Scene_Component, Input_Component>();
 
@@ -272,7 +329,20 @@ void base_event_dealing(const base_event_with_stamp &event) {
             }
         }
     }
-    world_root_on_Event(get_world_root(), event);
+    auto ray = get_screen_ray(event);
+    LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
+             ray.direction.x, ray.direction.y, ray.direction.z);
+
+    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
+        if (const auto input = Logic_entt().try_get<Input_Component>(insert_entity)) {
+            if (input->on_Event != nullptr) {
+            }
+        }
+    } else {
+        world_root_on_Event(get_world_root(), event);
+    }
+
+
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {
     }

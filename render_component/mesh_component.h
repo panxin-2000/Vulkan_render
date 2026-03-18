@@ -59,7 +59,8 @@ public:
     }
 };
 
-std::pair<share_block, share_block> load_model(const std::string &path);
+std::pair<const std::shared_ptr<std::vector<Vertex> >,
+          const std::shared_ptr<std::vector<uint16_t> >> load_model(const std::string &path);
 
 void clean_all_mesh_object();
 
@@ -77,14 +78,22 @@ void add_geometry_data(const entt::entity entity_,
 bool add_geometry_data(entt::entity entity_, const std::string &mesh_path);
 
 bool add_geometry_data(entt::entity entity_,
-                       float min_x,
-                       float min_y,
-                       float max_x,
-                       float max_y);
+                       Point_3 min,
+                       Point_3 max);
 
 bool add_geometry_data(entt::entity entity_,
                        Point_3 a,
                        Point_3 b,
                        Point_3 c);
+
+inline std::pair<Point_3, Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
+    Point_3 min = Point_3::init_max_limit();
+    Point_3 max = Point_3::init_min_limit();
+    for (auto &vertex: *vertices) {
+        min = Point_3::min_two_point(vertex.pos, min);
+        max = Point_3::max_two_point(vertex.pos, max);
+    }
+    return {min, max};
+}
 
 #endif //HELLO_MAC_MESH_COMPONENT_H

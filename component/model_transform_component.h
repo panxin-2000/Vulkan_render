@@ -78,7 +78,6 @@ public:
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};
     Point_3 offset_            = {0, 0, 0};
-    AABB_centroid<Point_3> bounding_box_; // 每次都直接计算吧。
 
     [[nodiscard]] Point_3 get_zoom() const {
         return zoom_;
@@ -102,9 +101,6 @@ public:
         return offset_ = offset_ + offset_add;
     }
 
-    void set_bounding_box(const Point_3 min, const Point_3 max) {
-        bounding_box_ = AABB_centroid<Point_3>(min, max);
-    }
 
     void rotate(const Eigen::Quaternionf &quaternion) {
         rotate_ = rotate_ * quaternion;

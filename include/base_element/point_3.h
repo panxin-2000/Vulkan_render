@@ -31,6 +31,22 @@ public:
         return temp;
     }
 
+    static Point_3 init_max_limit() {
+        return {
+            std::numeric_limits<float>::infinity(),
+            std::numeric_limits<float>::infinity(),
+            std::numeric_limits<float>::infinity()
+        };
+    }
+
+    static Point_3 init_min_limit() {
+        return {
+            -std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<float>::infinity(),
+            -std::numeric_limits<float>::infinity()
+        };
+    }
+
     Point_3 operator-(const Point_3 &R) const {
         Point_3 temp{0, 0, 0};
         temp.x = this->x - R.x;

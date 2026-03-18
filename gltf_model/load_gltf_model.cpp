@@ -224,7 +224,8 @@ void get_mesh_from_gltf_model(entt::entity entity_, tinygltf::Model &model, cons
         copy_vertices_data(sp_vertices, model, primitive);
         // 这里只是全部放到相应的位置上了，可能需要的偏移其实没有搞定
     }
-
+    auto [min, max] = find_min_max_point(sp_vertices);
+    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity_, AABB_centroid<Point_3>(min, max));
     add_geometry_data(entity_, sp_vertices, sp_indices);
 }
 

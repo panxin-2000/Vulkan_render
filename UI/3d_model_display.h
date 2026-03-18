@@ -52,6 +52,7 @@ inline Suzanne_push_constant get_shader_data() {
     return shaderData;
 }
 
+
 inline entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
                                     const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
     entt::entity entity_ = Logic_entt().create();
@@ -62,10 +63,15 @@ inline entt::entity object_3d_model(const std::string &name, const std::string &
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                            "", "");
     add_geometry_data(entity_, mesh_path);
+    auto [vertices, indices] = load_model(mesh_path);
+    add_geometry_data(entity_, vertices, indices);
+    auto [min, max] = find_min_max_point(vertices);
+    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity_, AABB_centroid<Point_3>(min, max));
 
     // 更新物体的模型矩阵
     Logic_entt().emplace<model_transform>(entity_, offset, rotate);
-    const auto &transform  = Logic_entt().get<model_transform>(entity_);
+    auto &transform = Logic_entt().get<model_transform>(entity_);
+
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity_, "model_4x4", modelMatrix);
 

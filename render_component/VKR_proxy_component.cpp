@@ -38,11 +38,11 @@ void add_new_peoxy_to_render_function() {
             if (name.find("deferred_pass") != std::string::npos) {
                 Render_entt().get_or_emplace<deferred_pass_tag>(vk_data.entity_);
             }
-            proxy.mesh              = mesh;
-            proxy.pipeline_layout   = pipeline_layout;
-            proxy.scissor           = scissor;
-            proxy.viewport          = viewport;
-            proxy.vk_pipeline       = vk_pipeline;
+            proxy.mesh               = mesh;
+            proxy.pipeline_layout    = pipeline_layout;
+            proxy.scissor            = scissor;
+            proxy.viewport           = viewport;
+            proxy.vk_pipeline        = vk_pipeline;
             proxy.vk_descriptor_sets = vk_descriptor_set;
         };
 

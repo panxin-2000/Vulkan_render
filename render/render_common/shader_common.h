@@ -10,6 +10,8 @@
 #include <list>
 #include <volk.h>
 
+#include "base_element/point_3.h"
+
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {
     Background, // 背景
@@ -196,7 +198,7 @@ struct uv_struct {
 };
 
 struct Vertex {
-    pos_struct pos;
+    Point_3 pos;
     normal_struct normal;
     uv_struct uv;
 };

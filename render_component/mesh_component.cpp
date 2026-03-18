@@ -55,11 +55,7 @@ std::vector<VKR_Primitive> create_mesh(const entt::entity entity) {
     const auto &handle = VK_backend::get();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         if (data->mesh_path_.empty() == false) {
-            auto [vertices, indices] = load_model(data->mesh_path_);
-            const auto mesh          = create_mesh_data(handle, vertices, indices);
-            std::vector<VKR_Primitive> result;
-            result.push_back(mesh);
-            return result;
+
         } else {
             // todo : 这里的逻辑还是有问题的
             const auto mesh = create_mesh_data(handle, data->vertices_, data->indices_);
@@ -121,7 +117,8 @@ inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::v
 }
 
 
-std::pair<share_block, share_block> load_model(const std::string &path) {
+std::pair<const std::shared_ptr<std::vector<Vertex> >,
+          const std::shared_ptr<std::vector<uint16_t> >> load_model(const std::string &path) {
     auto sp_vertices               = std::make_shared<std::vector<Vertex> >();
     auto sp_indices                = std::make_shared<std::vector<uint16_t> >();
     std::filesystem::path filePath = path;
@@ -129,24 +126,10 @@ std::pair<share_block, share_block> load_model(const std::string &path) {
 
     if (ext == ".obj") {
         load_model_to_vector(path, sp_vertices, sp_indices);
+        return {sp_vertices, sp_indices};
     } else {
     }
-
-    share_block vertices{
-        sp_vertices,
-        sp_vertices->data(),
-        sp_vertices->size() * sizeof(Vertex),
-        sp_vertices->size(),
-        sizeof(Vertex)
-    };
-    share_block indices{
-        sp_indices,
-        sp_indices->data(),
-        sp_indices->size() * sizeof(uint16_t),
-        sp_indices->size(),
-        sizeof(uint16_t)
-    };
-    return {vertices, indices};
+    return {sp_vertices, sp_indices};
 }
 
 VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive) {
@@ -218,10 +201,8 @@ void add_geometry_data(const entt::entity entity_,
 
 
 bool add_geometry_data(entt::entity entity_,
-                       float min_x,
-                       float min_y,
-                       float max_x,
-                       float max_y) {
+                       Point_3 min,
+                       Point_3 max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
@@ -232,10 +213,10 @@ bool add_geometry_data(entt::entity entity_,
         indices->push_back(vertices->size() + 2);
         indices->push_back(vertices->size() + 3);
         indices->push_back(vertices->size() + 0);
-        vertices->emplace_back(Vertex{min_x, min_y, 0, 0, 0, 0, 0, 0}); //0 1 2
-        vertices->emplace_back(Vertex{max_x, min_y, 0, 0, 0, 0, 1, 0});
-        vertices->emplace_back(Vertex{max_x, max_y, 0, 0, 0, 0, 1, 1}); // 2 3 0
-        vertices->emplace_back(Vertex{min_x, max_y, 0, 0, 0, 0, 0, 1});
+        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, 0, 0}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, 1, 0});
+        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, 1, 1}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, 0, 1});
     }
 
     add_geometry_data(entity_, vertices, indices);
@@ -271,10 +252,14 @@ void update_object_mesh() {
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos = view.get<Rect_2D_transform>(it);
-        add_geometry_data(it, pos.get_bounding_box().min_point.x,
-                          pos.get_bounding_box().min_point.y,
-                          pos.get_bounding_box().max_point.x,
-                          pos.get_bounding_box().max_point.y);
+        add_geometry_data(it, {
+                              pos.get_bounding_box().min_point.x,
+                              pos.get_bounding_box().min_point.y, 0.0f
+                          },
+                          {
+                              pos.get_bounding_box().max_point.x,
+                              pos.get_bounding_box().max_point.y, 0.0f
+                          });
 
         const auto mesh = create_mesh(it);
 
