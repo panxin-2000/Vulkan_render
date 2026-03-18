@@ -31,32 +31,32 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
     if (abs(x_12_middle - x_34_middle) > x_12_half_distance + x_34_half_distance) {
         return false;
     }
-    return true;
+    return true;  // 这里是 比较逻辑 导致了 nan 返回的结果为 true 很巧合的一点 但是某些地方会出错，可能
 }
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
     auto t_min = (L_box.min_point - ray.point) / ray.direction;
     auto t_max = (L_box.max_point - ray.point) / ray.direction;
-    if ((t_min.x >= 0 || t_max.x >= 0) && (t_min.y >= 0 || t_max.y >= 0)) {
+    if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
+        (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_max.y))) {
         // 上面的判断是一个半平面的判断
 
-        auto v_3 = ray.point.x + t_min.y * ray.direction.x;
-        auto v_4 = ray.point.y + t_min.x * ray.direction.y;
-        auto v_5 = ray.point.x + t_max.y * ray.direction.x;
-        auto v_6 = ray.point.y + t_max.x * ray.direction.y;
-        std::swap(t_min.x, t_min.y);
+        // 一个射线在 可能的x轴或y轴上 有四个交点，任何一个在包围盒中就是正确的
+        // const auto a = ray.point + ray.direction * t_min.x;
+        // const auto b = ray.point + ray.direction * t_max.x;
+        // const auto c = ray.point + ray.direction * t_min.y;
+        // const auto d = ray.point + ray.direction * t_max.y;
+        // if (intersect(L_box, a) || intersect(L_box, b) || intersect(L_box, c) || intersect(L_box, d)) {
+        //     return true;
+        // }
+        // return false;
+
+        std::swap(t_min.x, t_min.y); // 为什么要交换？
         std::swap(t_max.x, t_max.y);
-        auto v_1 = ray.point + t_min * ray.direction;
-        auto v_2 = ray.point + t_max * ray.direction;
-        //
-
-
-        const auto ray_y_1 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.min_point.x - ray.point.x);
-        const auto ray_y_2 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.max_point.x - ray.point.x);
-        auto bool_1        = have_intersect_axis(v_1.y, v_2.y, L_box.min_point.y, L_box.max_point.y);
-        const auto ray_x_1 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.min_point.y - ray.point.y);
-        const auto ray_x_2 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.max_point.y - ray.point.y);
-        auto bool_2        = have_intersect_axis(v_1.x, v_2.x, L_box.min_point.x, L_box.max_point.x);
+        const auto v_1    = ray.point + t_min * ray.direction;
+        const auto v_2    = ray.point + t_max * ray.direction;
+        const auto bool_1 = have_intersect_axis(v_1.y, v_2.y, L_box.min_point.y, L_box.max_point.y);
+        const auto bool_2 = have_intersect_axis(v_1.x, v_2.x, L_box.min_point.x, L_box.max_point.x);
         if (bool_1 && bool_2) {
             return true;
         }
@@ -65,6 +65,25 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ra
 }
 
 inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
+    auto t_min = (L_box.min_point - ray.point) / ray.direction;
+    auto t_max = (L_box.max_point - ray.point) / ray.direction;
+    if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
+        (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_min.y)) &&
+        (t_min.z >= 0 || t_max.z >= 0 || std::isnan(t_min.z) || std::isnan(t_max.z))) {
+        auto a = ray.point + ray.direction * t_min.x;
+        auto b = ray.point + ray.direction * t_max.x;
+        auto c = ray.point + ray.direction * t_min.y;
+        auto d = ray.point + ray.direction * t_max.y;
+        auto e = ray.point + ray.direction * t_min.z;
+        auto f = ray.point + ray.direction * t_max.z;
+        // 任何一个在就可以
+        if (intersect(L_box, a) || intersect(L_box, b) || intersect(L_box, c) || intersect(L_box, d) ||
+            intersect(L_box, e) || intersect(L_box, f)) {
+            return true;
+        }
+        return false;
+    }
+    return false;
 }
 
 

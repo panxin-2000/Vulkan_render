@@ -150,4 +150,34 @@ TEST(AABB_bounding_box, have_intersect_axis) {
     EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {1, 1}}), true);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, 1}}), true);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, -1}}), true);
+
+    AABB_min_max<Point_2> box_2{{1, 0}, {4, 0}};
+
+    // 添加了一系列退化的情况
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 0}, {1, 0}}), true);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 0}, {-1, 0}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 1}, {1, 0}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 1}, {-1, 0}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 1}, {0, 1}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{0, 1}, {0, -1}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{2, 1}, {0, 1}}), false);
+    EXPECT_EQ(intersect(box_2, Ray<Point_2> {{2, 1}, {0, -1}}), true);
+
+
+    Point_3 a_3d(1, 1, 0);
+    Point_3 b_3d(4, 3, 0);
+    AABB_min_max<Point_3> box_3d{a, b};
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 0,0}, {1, 2,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 2,0}, {1, 1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 2,0}, {1, 1.001,0}}), false);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 2,0}, {1, -1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 2,0}, {1, -1.001,0}}), false);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{0, 0,0}, {1, 4,0}}), false);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{5, 5,0}, {1, 1,0}}), false);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{5, 2,0}, {-1, -1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{5, 2,0}, {-1, -1.001,0}}), false);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {1, -1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {1, 1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {-1, 1,0}}), true);
+    EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {-1, -1,0}}), true);
 }

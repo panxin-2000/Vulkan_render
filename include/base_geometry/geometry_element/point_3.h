@@ -69,6 +69,13 @@ public:
         return false;
     }
 
+    friend bool operator<=(const Point_3 &L, const Point_3 &R) {
+        if (L.x <= R.x && L.y <= R.y && L.z <= R.z) {
+            return true;
+        }
+        return false;
+    }
+
     friend bool operator==(const Point_3 &L, const Point_3 &R) {
         if (abs(L.y - R.y) < 0.001 && abs(L.x - R.x) < 0.001) {
             return true;
@@ -98,11 +105,27 @@ public:
         return temp;
     }
 
+    Point_3 operator/(const Point_3 number) const {
+        Point_3 temp{0, 0, 0};
+        temp.x = this->x / number.x;
+        temp.y = this->y / number.y;
+        temp.z = this->z / number.z;
+        return temp;
+    }
+
     Point_3 operator*(const float number) const {
         Point_3 temp{0, 0, 0};
         temp.x = this->x * number;
         temp.y = this->y * number;
         temp.z = this->z * number;
+        return temp;
+    }
+
+    Point_3 operator*(const Point_3 number) const {
+        Point_3 temp{0, 0, 0};
+        temp.x = this->x * number.x;
+        temp.y = this->y * number.y;
+        temp.z = this->z * number.z;
         return temp;
     }
 
