@@ -14,88 +14,11 @@
 #include "model_transform_component.h"
 
 
-static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_with_stamp &event) {
-    auto temp_type = event.event_type;
-    auto &status   = Logic_entt().get<Input_Component>(entity_);
-
-    switch (temp_type) {
-        case EVT_KEY_X:
-            // 删除当前鼠标位置的元素
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity_)) {
-                    // if (const auto render = g_entt().try_get<logic_render_data>(entity_)) {
-                    //     render->proxy = nullptr;
-                    // }
-                    // 加上上面的内容就有问题
-                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity_);
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
-            break;
-        case EVT_KEY_ESCAPE:
-            if (event.event_code == KM_PRESS) {
-                std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
-                // 需要增加模态的处理 返回结束模态 先用按下的状态，之后再更改
-                return OPERATOR_CANCELLED;
-            }
-            break;
-        case MOUSE_LEFT:
-            if (event.event_code == KM_PRESS) {
-                status.select_status = select_current;
-                std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
-                // 需要增加模态的处理 返回锁定模态
-                return OPERATOR_RUNNING_MODAL;
-            }
-            if (event.event_code == KM_RELEASE) {
-                std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
-                // 需要增加模态的处理 返回结束模态
-                // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
-                status.select_status = no_select_current;
-                return OPERATOR_FINISHED;
-            }
-            break;
-        case MOUSE_RIGHT:
-            break;
-        case WHEEL_UP_MOUSE:
-            if (auto *transform = Logic_entt().try_get<model_transform>(entity_)) {
-                // UI->set_zoom(entity_, event);
-            }
-            break;
-        case MOUSE_MOVE:
-            if (status.select_status == select_current) {
-                if (auto *transform = Logic_entt().try_get<model_transform>(entity_)) {
-                    auto object_offset = transform->get_offset();
-                    auto world_entity  = get_world_root();
-                    auto ray           = get_screen_ray(event.current_position);
-                    auto ray_2         = get_screen_ray(event.last_position);
-
-                    const auto camera_pos = Logic_entt().try_get<model_transform>(world_entity);
-
-                    auto q            = camera_pos->get_rotate();
-                    Eigen::Vector3f n = q * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
-                    n.normalize();
-                    auto a = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray);
-                    auto b = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray_2);
-
-                    transform->add_offset(a - b);
-                    // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
-                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity_);
-                    return OPERATOR_RUNNING_MODAL;
-                }
-            }
-            break;
-        default:
-            return OPERATOR_PASS_THROUGH;
-    }
-    return OPERATOR_HANDLED;
-}
-
-
 entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
                              const Eigen::Quaternionf &rotate) {
     entt::entity entity_ = Logic_entt().create();
     Logic_entt().emplace<Name_component>(entity_, name);
-    Logic_entt().emplace<Input_Component>(entity_, on_Event);
+    Logic_entt().emplace<Input_Component>(entity_, model_3d_Event);
 
 
     Logic_entt().emplace<VKR_shader_paths>(entity_,

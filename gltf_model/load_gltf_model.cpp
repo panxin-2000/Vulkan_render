@@ -4,6 +4,7 @@
 
 #include "load_gltf_model.h"
 
+#include "input_component.h"
 #include "model_transform_component.h"
 #include "name_component.h"
 #include "PBR_component.h"
@@ -260,6 +261,7 @@ entt::entity load_node_data(tinygltf::Model &model,
     if (node.mesh >= 0) {
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
         get_mesh_from_gltf_model(entity_, model, node.mesh);
+        Logic_entt().emplace<Input_Component>(entity_, model_3d_Event);
     }
     if (node.camera >= 0) {
         LOG_INFO(g_log(), "need deal node  camera ");

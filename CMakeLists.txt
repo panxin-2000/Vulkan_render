@@ -266,13 +266,15 @@ file(GLOB_RECURSE component
         "UI/UI_button.cpp"
         "UI/3d_model_display.cpp"
         "component/scene_component.cpp"
+        "component/camera_optical_component.cpp"
+        "component/model_transform_component.cpp"
 )
 
 
 include_directories(render/render_common)
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
-        "windows/windows.cpp"
+        " windows/windows.cpp"
 )
 if (APPLE)
     add_definitions(-DVK_USE_PLATFORM_MACOS_MVK -DVK_USE_PLATFORM_METAL_EXT -DVK_ENABLE_BETA_EXTENSIONS)

@@ -36,10 +36,19 @@ inline bool intersect(const Plane<T> &plane, const Ray<T> &ray) {
 
 template<typename T>
 inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
-    auto a      = dot(plane.normal, plane.point - ray.point);
-    auto b      = dot(plane.normal, ray.direction);
-    auto t      = a / b;
-    auto result = ray.point + ray.direction * t;
+    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - ray.point); //射线的起点到平面的最近距离
+    auto b                           = dot(plane.normal, ray.direction);
+    auto t                           = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
+    auto result                      = ray.point + ray.direction * t;
+    return result;
+}
+
+template<typename T>
+inline T intersect_result(const Plane<T> &plane, const Straight_line<T> &ray) {
+    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - ray.point); //射线的起点到平面的最近距离
+    auto b                           = dot(plane.normal, ray.direction);
+    auto t                           = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
+    auto result                      = ray.point + ray.direction * t;
     return result;
 }
 
