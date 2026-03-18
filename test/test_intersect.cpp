@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2025/10/1.
 //
 #include "gtest/gtest.h"
-#include "base_element/intersect_function.h"
+#include "base_geometry/intersect_function.h"
 
 
 

@@ -5,11 +5,11 @@
 #include <random>
 #include <gtest/gtest.h>
 
-#include "base_element/geometry/triangle.h"
+#include "base_geometry/geometry_element/triangle.h"
 #include "ear_clip.h"
 #include "labyrinth.h"
 #include "observer_manage.h"
-#include "base_element/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/half_edge_struct.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 #include "base_event.h"

@@ -5,8 +5,8 @@
 
 #include "binary_Tree_Node.h"
 #include "tree_function.h"
-#include "base_element/geometry/triangle.h"
-#include "base_element/half_edge/half_edge_struct.h"
+#include "base_geometry/geometry_element/triangle.h"
+#include "base_geometry/half_edge/half_edge_struct.h"
 #include "index_binary_tree.h"
 #include "index_binary_tree_node.h"
 #include  "segment_end_ponit_and_gradient.h"

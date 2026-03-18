@@ -5,8 +5,8 @@
 #ifndef SEGMENT_END_PONIT_AND_GRADIENT_H
 #define SEGMENT_END_PONIT_AND_GRADIENT_H
 #include "binary_Tree_Node.h"
-#include "base_element/half_edge/half_edge_struct.h"
-#include "base_element/half_edge/half_edge_vertex.h"
+#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/half_edge_vertex.h"
 
 struct ray_2d {
 public:

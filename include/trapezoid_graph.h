@@ -4,7 +4,7 @@
 
 #ifndef TRAPEZOID_H
 #define TRAPEZOID_H
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 // 我希望四边形有什么样的结构呢？
 // 四边形肯定是需要有四个顶点的

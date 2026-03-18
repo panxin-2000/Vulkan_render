@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_INTERSECTION_H
 #define HELLO_MAC_INTERSECTION_H
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 
 template<typename T>

@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_AABB_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_AABB_H
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &L_box, const AABB_min_max<T> &R_box) {

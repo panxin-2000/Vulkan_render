@@ -6,8 +6,8 @@
 #define HALF_EDGE_H
 #include <vector>
 
-#include "base_element/base.h"
-#include "base_element/convex_hull.h"
+#include "base_geometry/base.h"
+#include "base_geometry/convex_hull.h"
 
 
 //
@@ -24,8 +24,8 @@ using half_edge_index = int;
 using vertex_index = int;
 using face_index = int;
 // 索引还是比较啊随意的，问题是如何建立一条边？
-#include "base_element/half_edge/half_edge.h"
-#include "base_element/half_edge/face.h"
+#include "base_geometry/half_edge/half_edge.h"
+#include "base_geometry/half_edge/face.h"
 
 
 // 还可以把half_edge和face也做出模版参数,方便进行扩展

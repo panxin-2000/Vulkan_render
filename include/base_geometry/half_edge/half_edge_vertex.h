@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_HALF_EDGE_VERTEX_H
 #define HELLO_MAC_HALF_EDGE_VERTEX_H
 
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 
 struct vertex_xy : public Point_2 {

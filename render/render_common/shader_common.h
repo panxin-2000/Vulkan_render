@@ -10,7 +10,7 @@
 #include <list>
 #include <volk.h>
 
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 // 渲染层级（控制绘制顺序，如UI > 角色 > 场景）
 enum class RenderLayer {

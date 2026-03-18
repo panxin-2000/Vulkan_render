@@ -8,7 +8,7 @@
 #include "../event/input_device_manage.h"
 #include "scene_component.h"
 #include "Rect_2D_component.h"
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 
 void glfwFocusCallback(GLFWwindow *window, int focused);
@@ -261,7 +261,7 @@ Ray<Point_3> get_screen_ray(const base_event_with_stamp &event) {
     return result;
 }
 
-#include "base_element/intersect_function.h"
+#include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
     const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3> >();

@@ -8,7 +8,7 @@
 #include "global_singleton.h"
 #include "render_mesh.h"
 #include "shader_common.h"
-#include "base_element/base.h"
+#include "base_geometry/base.h"
 
 struct share_block {
     std::shared_ptr<void> ptr;

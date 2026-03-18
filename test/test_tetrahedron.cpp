@@ -2,10 +2,10 @@
 // Created by 潘鑫 on 2025/10/24.
 //
 
-#include "base_element/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/half_edge_struct.h"
 #include <gtest/gtest.h>
 
-#include "base_element/half_edge/half_edge_vertex.h"
+#include "base_geometry/half_edge/half_edge_vertex.h"
 
 TEST(tetrahedron, init_tetrahedron) {
     half_edge_struct<vertex_xyz> hf;

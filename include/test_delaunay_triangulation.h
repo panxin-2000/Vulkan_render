@@ -6,7 +6,7 @@
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
 #include "ear_clip.h"
-#include "base_element/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/half_edge_struct.h"
 #include "triangle_graph.h"
 
 namespace delaunay_triangulation {
