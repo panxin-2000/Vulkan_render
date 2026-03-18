@@ -14,7 +14,7 @@
 class vk_render_queue {
 private:
     mutable std::mutex mtx;
-    std::queue<std::pair<Proxy_entity, const std::function<void(void)>> > RND_update_function;
+    std::queue<const std::function<void(void)>> RND_update_function;
 
 public:
     static vk_render_queue &instance() {
@@ -29,15 +29,15 @@ public:
     void execute_update_lambda() {
         std::unique_lock<std::mutex> lock(mtx);
         while (!RND_update_function.empty()) {
-            auto [vk_data, callback] = RND_update_function.front();
+            auto callback = RND_update_function.front();
             RND_update_function.pop();
             callback();
         }
     }
 
-    void render_update_entt(const Proxy_entity entity, const std::function<void(void)> &callback) {
+    void render_update_entt(const std::function<void(void)> &callback) {
         std::unique_lock<std::mutex> lock(mtx);
-        RND_update_function.emplace(entity, callback);
+        RND_update_function.emplace(callback);
     }
 
 private:

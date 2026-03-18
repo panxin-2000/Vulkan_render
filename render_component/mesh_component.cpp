@@ -55,7 +55,6 @@ std::vector<VKR_Primitive> create_mesh(const entt::entity entity) {
     const auto &handle = VK_backend::get();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         if (data->mesh_path_.empty() == false) {
-
         } else {
             // todo : 这里的逻辑还是有问题的
             const auto mesh = create_mesh_data(handle, data->vertices_, data->indices_);
@@ -265,11 +264,12 @@ void update_object_mesh() {
 
 
         if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
-            auto lambda = [render, mesh]() {
-                if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(render->entity_))
+            const auto entity_temp = render->entity_;
+            auto lambda            = [entity_temp, mesh]() {
+                if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
                     proxy->mesh = mesh;;
             };
-            vk_render_queue::instance().render_update_entt(*render, lambda);
+            vk_render_queue::instance().render_update_entt(lambda);
         }
 
         Logic_entt().remove<UI_transform_dirty>(it);
