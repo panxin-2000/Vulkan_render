@@ -21,7 +21,7 @@ enum operator_select_status {
 
 class Input_Component {
 public:
-    operator_select_status select_status = no_select_current;
+    operator_select_status select_status_ = no_select_current;
 
     Input_Component(const std::function<wmOperatorStatus (entt::entity, base_event_with_stamp)> &function) : on_Event(
          function) {

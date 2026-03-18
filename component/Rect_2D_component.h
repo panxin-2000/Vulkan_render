@@ -14,18 +14,18 @@
 #include "base_geometry/intersect_function.h"
 
 class Rect_2D_transform {
-    Point_2 zoom   = {1, 1};
-    Point_2 offset = {0, 0};
+    Point_2 zoom_   = {1, 1};
+    Point_2 offset_ = {0, 0};
 
     AABB_centroid<Point_2> bounding_box_; // 每次都直接计算吧。
 
 public:
     [[nodiscard]] Point_2 get_zoom() const {
-        return zoom;
+        return zoom_;
     }
 
     [[nodiscard]] Point_2 get_offset() const {
-        return offset;
+        return offset_;
     }
 
 
@@ -38,8 +38,8 @@ public:
     }
 
     bool set_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
-        zoom.x = zoom.x * std::powf(1.5, base_event.scroll.x * 0.01);
-        zoom.y = zoom.y * std::powf(1.5, base_event.scroll.y * 0.01);
+        zoom_.x = zoom_.x * std::powf(1.5, base_event.scroll.x * 0.01);
+        zoom_.y = zoom_.y * std::powf(1.5, base_event.scroll.y * 0.01);
         Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
         // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
         //     for (const entt::entity children_entity: scene_node->children) {
@@ -54,7 +54,7 @@ public:
     bool set_position_offset(const entt::entity entity, const base_event_with_stamp &base_event) {
         const Point_2 move           = base_event.current_position - base_event.last_position;
         bounding_box_.centroid_point = bounding_box_.centroid_point + move;
-        offset                       = offset + move;
+        offset_                       = offset_ + move;
         Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
         return true;
     }
@@ -72,7 +72,7 @@ public:
                                                       entt::entity entity,
                                                       const Point_2 &current_position) {
         if (auto *scene_node = Logic_entt().try_get<Scene_Component>(entity)) {
-            for (const entt::entity children_entity: scene_node->children) {
+            for (const entt::entity children_entity: scene_node->children_) {
                 if (check_entity_intersect_point(children_entity, current_position)) {
                     return_value->push_back(children_entity);
                     check_entity_children_intersect_point(return_value, children_entity, current_position);

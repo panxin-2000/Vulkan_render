@@ -16,36 +16,36 @@
 
 class Scene_Component {
 public:
-    entt::entity parent = entt::null;
-    std::vector<entt::entity> children;
+    entt::entity parent_ = entt::null;
+    std::vector<entt::entity> children_;
 
 public:
     ~Scene_Component();
 
     void add_parent_relation(entt::entity entity) {
-        parent = entity;
+        parent_ = entity;
     }
 
     [[nodiscard]] entt::entity get_parent() const {
-        return parent;
+        return parent_;
     }
 
     [[nodiscard]] std::vector<entt::entity> &get_children() {
-        return children;
+        return children_;
     }
 
 
     void remove_parent_relation() {
-        parent = entt::null;
+        parent_ = entt::null;
     }
 
     void remove_children_relation(const entt::entity entity) {
-        children.erase(std::remove(children.begin(), children.end(), entity), children.end());
+        children_.erase(std::remove(children_.begin(), children_.end(), entity), children_.end());
     }
 
     void add_child_relation(const entt::entity entity) {
         // 这里需要想办法去除一下重复的内容
-        children.push_back(entity);
+        children_.push_back(entity);
     }
 };
 

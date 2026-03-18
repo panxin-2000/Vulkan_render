@@ -51,26 +51,26 @@ T to_radians(T degrees) {
 
 class camera_optical_component {
 private:
-    float fovy_radians = 45.0f;
-    float aspect;
-    float zNear = 0.1f;
-    float zFar  = 1000.0f;
+    float fovy_radians_ = 45.0f;
+    float aspect_;
+    float zNear_ = 0.1f;
+    float zFar_  = 1000.0f;
 
 public:
     camera_optical_component() {
         const auto &backend  = VK_backend::get();
         auto [width, height] = backend.get_current_extent();
-        aspect               = static_cast<float>(width) / static_cast<float>(height);
+        aspect_               = static_cast<float>(width) / static_cast<float>(height);
     }
 
     Eigen::Matrix4f get_projection() {
         const auto &handle    = VK_backend::get();
         auto [width, height]  = handle.get_current_extent();
-        aspect                = static_cast<float>(width) / static_cast<float>(height);
-        const auto projection = vulkan_projection(to_radians(fovy_radians),
-                                                  aspect,
-                                                  zNear,
-                                                  zFar);
+        aspect_                = static_cast<float>(width) / static_cast<float>(height);
+        const auto projection = vulkan_projection(to_radians(fovy_radians_),
+                                                  aspect_,
+                                                  zNear_,
+                                                  zFar_);
         return projection;
     }
 };
@@ -82,7 +82,7 @@ inline void update_camera_optical() {
     for (const auto it: view) {
         auto &name    = view.get<Name_component>(it);
         auto &optical = view.get<camera_optical_component>(it);
-        if (name.name.find("world_scene_root") != std::string::npos) {
+        if (name.name_.find("world_scene_root") != std::string::npos) {
             const auto view_matrix = optical.get_projection();
             set_render_parameter(it, "global_projection_4x4", view_matrix);
         }

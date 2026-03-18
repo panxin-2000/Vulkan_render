@@ -64,8 +64,8 @@ Scene_Component::~ Scene_Component() {
     // 从旧的位置上全部复制就没有问题，否则就有问题
     const auto &storage = Logic_entt().storage<Scene_Component>();
     const auto entity   = entt::to_entity(storage, *this);
-    clear_relation(parent, entity);
-    for (auto it = children.rbegin(); it != children.rend(); ++it)
+    clear_relation(parent_, entity);
+    for (auto it = children_.rbegin(); it != children_.rend(); ++it)
         if (Logic_entt().valid(*it)) {
             Logic_entt().emplace_or_replace<Logic_destroy_tag>(*it);
         }

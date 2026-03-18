@@ -8,12 +8,19 @@
 #include "global_singleton.h"
 
 struct Name_component {
-    std::string name;
+    std::string name_;
+
+public:
+    friend std::ostream &operator<<(std::ostream &output,
+                                    const Name_component &P) {
+        output << P.name_;
+        return output;
+    }
 };
 
 inline std::string get_entity_name(const entt::entity entity) {
     if (const auto name = Logic_entt().try_get<Name_component>(entity)) {
-        return name->name;
+        return name->name_;
     }
     return "";
 }

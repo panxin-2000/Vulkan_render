@@ -17,15 +17,15 @@ entt::entity UI_block(const std::string &name,
                       float min_y,
                       float max_x,
                       float max_y) {
-    auto entity_ = UI_button(name, min_x, min_y, max_x, max_y);
+    auto entity = UI_button(name, min_x, min_y, max_x, max_y);
     std::cout << "UI_block" << std::endl;
     // set_Input_Component_on_Event_function()
-    return entity_;
+    return entity;
 }
 
 /**
  * 在任意一个 UI 上创建一个 button
- * @param entity_
+ * @param entity
  * @param name
  * @param min_x
  * @param min_y
@@ -33,14 +33,14 @@ entt::entity UI_block(const std::string &name,
  * @param max_y
  * @return 返回创建的button 的 entt::entity
  */
-entt::entity add_button(entt::entity entity_, const std::string &name,
+entt::entity add_button(entt::entity entity, const std::string &name,
                         int min_x,
                         int min_y,
                         int max_x,
                         int max_y) {
     auto UI_entity = UI_button(name, min_x, min_y, max_x, max_y);
     clear_parent_relation(UI_entity);
-    add_relation(entity_, UI_entity);
+    add_relation(entity, UI_entity);
     return UI_entity;
 }
 

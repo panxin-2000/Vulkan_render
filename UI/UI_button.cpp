@@ -8,20 +8,16 @@
 #include "name_component.h"
 #include "Rect_2D_component.h"
 
-static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_with_stamp &event) {
+static wmOperatorStatus on_Event(const entt::entity entity, const base_event_with_stamp &event) {
     auto temp_type = event.event_type;
-    auto &status   = Logic_entt().get<Input_Component>(entity_);
+    auto &status   = Logic_entt().get<Input_Component>(entity);
 
     switch (temp_type) {
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity_)) {
-                    // if (const auto render = g_entt().try_get<logic_render_data>(entity_)) {
-                    //     render->proxy = nullptr;
-                    // }
-                    // 加上上面的内容就有问题
-                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity_);
+                if (Logic_entt().valid(entity)) {
+                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
             return OPERATOR_PASS_THROUGH;
@@ -35,7 +31,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
             break;
         case MOUSE_LEFT:
             if (event.event_code == KM_PRESS) {
-                status.select_status = select_current;
+                status.select_status_ = select_current;
                 std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
                 // 需要增加模态的处理 返回锁定模态
                 return OPERATOR_RUNNING_MODAL;
@@ -44,21 +40,21 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
                 // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
-                status.select_status = no_select_current;
+                status.select_status_ = no_select_current;
                 return OPERATOR_FINISHED;
             }
             break;
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity_)) {
-                UI->set_zoom(entity_, event);
+            if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
+                UI->set_zoom(entity, event);
             }
             break;
         case MOUSE_MOVE:
-            if (status.select_status == select_current) {
-                if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity_)) {
-                    UI->set_position_offset(entity_, event);
+            if (status.select_status_ == select_current) {
+                if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
+                    UI->set_position_offset(entity, event);
                     // 包围盒的位置还需要同步更新
                     return OPERATOR_RUNNING_MODAL;
                 }
@@ -81,34 +77,34 @@ entt::entity UI_button(const std::string &name,
 
     LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
 
-    entt::entity entity_ = Logic_entt().create();
+    entt::entity entity = Logic_entt().create();
 
     /***************创建*******************/
-    Logic_entt().emplace<Input_Component>(entity_, on_Event);
+    Logic_entt().emplace<Input_Component>(entity, on_Event);
 
-    Logic_entt().emplace<Rect_2D_transform>(entity_);
-    Logic_entt().emplace<VKR_shader_paths>(entity_,
+    Logic_entt().emplace<Rect_2D_transform>(entity);
+    Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                            "", "");
 
-    if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity_)) {
+    if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
-    Logic_entt().emplace<Drag_event>(entity_);
-    Logic_entt().emplace<Name_component>(entity_, name);
-    add_geometry_data(entity_, {min_x, min_y, 0.0f}, {max_x, max_y, 0.0f});
+    Logic_entt().emplace<Drag_event>(entity);
+    Logic_entt().emplace<Name_component>(entity, name);
+    add_geometry_data(entity, {min_x, min_y, 0.0f}, {max_x, max_y, 0.0f});
 
 
     matrix_4x4 model;
     UI_matrix_4x4(&model, {1, 1}, {0, 0});
-    set_render_parameter(entity_, "model_4x4", model);
+    set_render_parameter(entity, "model_4x4", model);
 
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
-    Logic_entt().emplace_or_replace<UI_2D_tag>(entity_);
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    Logic_entt().emplace_or_replace<UI_2D_tag>(entity);
 
-    scene_root_add_child(entity_);
-    return entity_;
+    scene_root_add_child(entity);
+    return entity;
 
     // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。
     /***************添加到渲染管理器**********************/

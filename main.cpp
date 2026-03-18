@@ -26,21 +26,21 @@ void deal_glfw_event();
 
 
 inline entt::entity add_render_pass(const std::string &name) {
-    entt::entity entity_ = Logic_entt().create();
+    entt::entity entity = Logic_entt().create();
 
-    Logic_entt().emplace<Name_component>(entity_, name + "deferred_pass");
+    Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 
-    Logic_entt().emplace<VKR_shader_paths>(entity_,
+    Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
                                            "", "");
 
     // 更新物体的模型矩阵
 
-    world_root_add_child(entity_);
+    world_root_add_child(entity);
 
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
-    return entity_;
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    return entity;
 }
 
 

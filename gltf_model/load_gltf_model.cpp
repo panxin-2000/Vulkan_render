@@ -197,7 +197,7 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
     }
 }
 
-void get_mesh_from_gltf_model(entt::entity entity_, tinygltf::Model &model, const int mesh_index) {
+void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
 
@@ -226,8 +226,8 @@ void get_mesh_from_gltf_model(entt::entity entity_, tinygltf::Model &model, cons
         // 这里只是全部放到相应的位置上了，可能需要的偏移其实没有搞定
     }
     auto [min, max] = find_min_max_point(sp_vertices);
-    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity_, AABB_centroid<Point_3>(min, max));
-    add_geometry_data(entity_, sp_vertices, sp_indices);
+    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
+    add_geometry_data(entity, sp_vertices, sp_indices);
 }
 
 /**
@@ -242,26 +242,25 @@ entt::entity load_node_data(tinygltf::Model &model,
                             const int current_node_index,
                             const int parent_node_index           = -1,
                             const entt::entity parent_node_entity = entt::null) {
-    const entt::entity entity_ = Logic_entt().create();
+    const entt::entity entity = Logic_entt().create();
     auto node                  = model.nodes[current_node_index];
     Point_3 offset             = get_offset_from_model(model, current_node_index);
     Eigen::Quaternionf rotate  = get_rotate_from_model(model, current_node_index);
-    Logic_entt().emplace<Name_component>(entity_, node.name);
-    // add_geometry_data(entity_, path);
-    Logic_entt().emplace<VKR_shader_paths>(entity_,
+    Logic_entt().emplace<Name_component>(entity, node.name);
+    Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                            "", "");
-    Logic_entt().emplace<model_transform>(entity_, offset, rotate);
-    const auto &transform  = Logic_entt().get<model_transform>(entity_);
+    Logic_entt().emplace<model_transform>(entity, offset, rotate);
+    const auto &transform  = Logic_entt().get<model_transform>(entity);
     const auto modelMatrix = transform.update_model_matrix();
-    set_render_parameter(entity_, "model_4x4", modelMatrix);
-    world_root_add_child(entity_);
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity_);
+    set_render_parameter(entity, "model_4x4", modelMatrix);
+    world_root_add_child(entity);
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     if (node.mesh >= 0) {
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
-        get_mesh_from_gltf_model(entity_, model, node.mesh);
-        Logic_entt().emplace<Input_Component>(entity_, model_3d_Event);
+        get_mesh_from_gltf_model(entity, model, node.mesh);
+        Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     }
     if (node.camera >= 0) {
         LOG_INFO(g_log(), "need deal node  camera ");
@@ -277,14 +276,14 @@ entt::entity load_node_data(tinygltf::Model &model,
     }
 
     if (parent_node_entity == entt::null) {
-        world_root_add_child(entity_);
+        world_root_add_child(entity);
     } else {
-        add_relation(parent_node_entity, entity_);
+        add_relation(parent_node_entity, entity);
     }
     for (int i = 0; i < node.children.size(); ++i) {
-        load_node_data(model, node.children[i], current_node_index, entity_);
+        load_node_data(model, node.children[i], current_node_index, entity);
     }
-    return entity_;
+    return entity;
 }
 
 Texture_parameter create_texture_all(Picture_parameters &picture_parameters);
@@ -342,18 +341,18 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
 
 
 entt::entity load_gltf_model(const std::string &name, const std::string &path) {
-    entt::entity entity_;
+    entt::entity entity;
     auto optional_model = get_gltf_model(path);
     if (optional_model.has_value()) {
         auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
         if (nodes_num > 0) {
-            entity_ = load_node_data(model, 0, -1, entt::null);
-            load_material(entity_, model);
+            entity = load_node_data(model, 0, -1, entt::null);
+            load_material(entity, model);
         } else {
             // 空的
-            entity_ = entt::null;
+            entity = entt::null;
         }
     }
-    return entity_;
+    return entity;
 }

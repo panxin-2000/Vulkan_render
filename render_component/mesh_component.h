@@ -70,18 +70,18 @@ std::vector<VKR_Primitive> create_mesh(const entt::entity entity);
 std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity);
 
 
-void add_geometry_data(const entt::entity entity_,
+void add_geometry_data(const entt::entity entity,
                        const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
                        const std::shared_ptr<std::vector<uint16_t> > &sp_indices);
 
 
-bool add_geometry_data(entt::entity entity_, const std::string &mesh_path);
+bool add_geometry_data(entt::entity entity, const std::string &mesh_path);
 
-bool add_geometry_data(entt::entity entity_,
+bool add_geometry_data(entt::entity entity,
                        Point_3 min,
                        Point_3 max);
 
-bool add_geometry_data(entt::entity entity_,
+bool add_geometry_data(entt::entity entity,
                        Point_3 a,
                        Point_3 b,
                        Point_3 c);

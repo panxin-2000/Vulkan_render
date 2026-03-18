@@ -156,27 +156,27 @@ VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive)
 }
 
 
-bool add_geometry_data(entt::entity entity_, const std::string &mesh_path) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity_)) {
-        Logic_entt().remove<Geometry_data>(entity_);
+bool add_geometry_data(entt::entity entity, const std::string &mesh_path) {
+    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
+        Logic_entt().remove<Geometry_data>(entity);
     }
-    Logic_entt().emplace<Geometry_data>(entity_);
+    Logic_entt().emplace<Geometry_data>(entity);
 
-    auto &geometry      = Logic_entt().get<Geometry_data>(entity_);
+    auto &geometry      = Logic_entt().get<Geometry_data>(entity);
     geometry.mesh_path_ = mesh_path;
     return true;
 }
 
 
-void add_geometry_data(const entt::entity entity_,
+void add_geometry_data(const entt::entity entity,
                        const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
                        const std::shared_ptr<std::vector<uint16_t> > &sp_indices) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity_)) {
-        Logic_entt().remove<Geometry_data>(entity_);
+    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
+        Logic_entt().remove<Geometry_data>(entity);
     }
-    Logic_entt().emplace<Geometry_data>(entity_);
+    Logic_entt().emplace<Geometry_data>(entity);
 
-    auto &geometry = Logic_entt().get<Geometry_data>(entity_);
+    auto &geometry = Logic_entt().get<Geometry_data>(entity);
 
 
     const share_block vertices_buffer = {
@@ -199,7 +199,7 @@ void add_geometry_data(const entt::entity entity_,
 }
 
 
-bool add_geometry_data(entt::entity entity_,
+bool add_geometry_data(entt::entity entity,
                        Point_3 min,
                        Point_3 max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
@@ -218,11 +218,11 @@ bool add_geometry_data(entt::entity entity_,
         vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, 0, 1});
     }
 
-    add_geometry_data(entity_, vertices, indices);
+    add_geometry_data(entity, vertices, indices);
 }
 
 
-bool add_geometry_data(entt::entity entity_,
+bool add_geometry_data(entt::entity entity,
                        Point_3 a,
                        Point_3 b,
                        Point_3 c) {
@@ -237,7 +237,7 @@ bool add_geometry_data(entt::entity entity_,
         vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
         vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
     }
-    add_geometry_data(entity_, vertices, indices);
+    add_geometry_data(entity, vertices, indices);
 }
 
 std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity) {

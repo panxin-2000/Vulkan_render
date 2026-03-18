@@ -81,10 +81,6 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    // if (const auto render = g_entt().try_get<logic_render_data>(entity_)) {
-                    //     render->proxy = nullptr;
-                    // }
-                    // 加上上面的内容就有问题
                     Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
@@ -99,7 +95,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
             break;
         case MOUSE_LEFT:
             if (event.event_code == KM_PRESS) {
-                status.select_status = select_current;
+                status.select_status_ = select_current;
                 std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
                 // 需要增加模态的处理 返回锁定模态
                 return OPERATOR_RUNNING_MODAL;
@@ -108,7 +104,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
                 std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
                 // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
-                status.select_status = no_select_current;
+                status.select_status_ = no_select_current;
                 return OPERATOR_FINISHED;
             }
             break;
@@ -116,11 +112,10 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
             break;
         case WHEEL_UP_MOUSE:
             if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
-                // UI->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
-            if (status.select_status == select_current) {
+            if (status.select_status_ == select_current) {
                 if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
                     auto object_offset = transform->get_offset();
                     auto world_entity  = get_world_root();
@@ -179,7 +174,7 @@ void update_camera_transform() {
     for (const auto it: view) {
         auto &camera_pos = view.get<model_transform>(it);
         auto &name       = view.get<Name_component>(it);
-        if (name.name.find("world_scene_root") != std::string::npos) {
+        if (name.name_.find("world_scene_root") != std::string::npos) {
             const auto view_matrix = camera_pos.get_view_projection();
             set_render_parameter(it, "global_view_4x4", view_matrix);
             Point_3 world_camera_pos = camera_pos.get_offset();
