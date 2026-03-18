@@ -232,8 +232,9 @@ Ray<Point_3> get_screen_ray(const base_event_with_stamp &event) {
     const auto view_matrix = camera_pos->get_view_projection();
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
-    float x = (2.0f * event.current_position.x) / width - 1.0f;
-    float y = (2.0f * event.current_position.y) / height - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
+    // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
+    float x = (4.0f * event.current_position.x) / width - 1.0f;
+    float y = (4.0f * event.current_position.y) / height - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
 
     // 2. 构造近裁剪面和远裁剪面的点 (在裁剪空间)
     // Vulkan 的近平面通常是 z=0.0，远平面是 z=1.0
@@ -264,13 +265,17 @@ Ray<Point_3> get_screen_ray(const base_event_with_stamp &event) {
 #include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
-    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3> >();
+    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, model_transform>();
     for (auto &entity: view) {
-        auto box = view.get<AABB_centroid<Point_3> >(entity);
-        if (intersect(box, ray))
+        auto position      = view.get<model_transform>(entity);
+        auto box           = view.get<AABB_centroid<Point_3> >(entity);
+        box.centroid_point = box.centroid_point + position.get_offset();
+        if (intersect(box, ray)) {
+            auto &name = view.get<Name_component>(entity);
+            LOG_INFO(g_log(), " insert box 3d {} ", name.name);
             return entity;
+        }
     }
-
 
     return entt::null;
 }

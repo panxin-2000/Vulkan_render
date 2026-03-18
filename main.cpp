@@ -88,10 +88,10 @@ int main(int argc, char *argv[]) {
 
     // 3d 模型
     {
-        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
         set_render_parameter(entity, "samplerColor", "assets/suzanne0.ktx");
     } {
-        auto entity = object_3d_model("blender Suzanne", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+        auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
         set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
     }
     const auto sampler = base_sample(); {
