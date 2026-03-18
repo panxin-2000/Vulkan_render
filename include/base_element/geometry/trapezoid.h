@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_TRAPEZOID_H
 #define HELLO_MAC_TRAPEZOID_H
-#include "base_element/point_2.h"
+#include "point_2.h"
 
 
 struct Trapezoid {

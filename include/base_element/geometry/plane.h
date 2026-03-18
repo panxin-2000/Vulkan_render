@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_PLANE_H
 #define HELLO_MAC_PLANE_H
-#include "base_element/point_3.h"
+#include "base_element/base.h"
 
 
 template<typename point_type = Point_3>

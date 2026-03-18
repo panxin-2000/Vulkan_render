@@ -10,7 +10,7 @@
 #include "model_matrix.h"
 #include "name_component.h"
 #include "shader_component.h"
-#include "base_element/point_3.h"
+#include "base_element/base.h"
 #include "model_transform_component.h"
 
 struct Suzanne_push_constant {

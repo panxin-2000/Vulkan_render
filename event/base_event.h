@@ -6,7 +6,7 @@
 #define LEARN_OPENGL_EVENT_BASE_H
 #include <string>
 
-#include "base_element/point_2.h"
+#include "../include/base_element/geometry/point_2.h"
 #include "base_element/geometry/AABB_bounding_box.h"
 #include "utility.h"
 

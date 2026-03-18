@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <ostream>
-#include "../point_2.h"
+#include "point_2.h"
 #include "../../point_in_on_out_triangle.h"
 #include "AABB_bounding_box.h"
 

@@ -5,12 +5,16 @@
 #ifndef HELLO_MAC_BASE_H
 #define HELLO_MAC_BASE_H
 
-#include "base_element/point_2.h"
-#include "base_element/point_3.h"
+
+// 需要想办法，能够按照顺序将全部的头文件都放置在这里
+#include "geometry/point_2.h"
+#include "geometry/point_3.h"
 #include "geometry/ray.h"
 #include "geometry/segment.h"
 #include "geometry/straight_line.h"
 #include "geometry/AABB_bounding_box.h"
+
+
 #include "intersect/objects_intersect_with_point.h"
 #include "intersect/objects_intersect_with_segment.h"
 #include "base_element/intersect_result.h"

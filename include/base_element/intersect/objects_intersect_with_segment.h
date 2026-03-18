@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
 #include "base_element/geometry/segment.h"
-#include "base_element/point_2.h"
+#include "../geometry/point_2.h"
 #include "base_element/geometry/AABB_bounding_box.h"
 #include "base_element/geometry/ray.h"
 #include "base_element/geometry/straight_line.h"
@@ -77,13 +77,7 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 // 其实在上面也是能够判断完成的
 
 
-template<typename T>
-inline bool intersect(const AABB_centroid<T> &L_box, const Ray<T> &segment) {
-    return intersect(AABB_min_max<Point_2>(L_box), segment);
-}
 
-inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &segment) {
-}
 
 
 template<typename T>

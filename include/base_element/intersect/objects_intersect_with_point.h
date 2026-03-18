@@ -8,8 +8,8 @@
 #include "../geometry/triangle.h"
 #include "../geometry/AABB_bounding_box.h"
 #include "../geometry/segment.h"
-#include "base_element/point_2.h"
-#include "base_element/point_3.h"
+#include "../geometry/point_2.h"
+#include "../geometry/point_3.h"
 #include "base_element/geometry/plane.h"
 #include "base_element/geometry/sphere_bounding_volume.h"
 

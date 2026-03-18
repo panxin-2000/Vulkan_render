@@ -8,8 +8,7 @@
 #include <vector>
 #include <entt/entt.hpp>
 #include "base_event.h"
-#include "base_element/point_3.h"
-#include "base_element/intersect/objects_intersect_with_point.h"
+#include "base_element/base.h"
 #include "global_singleton.h"
 #include "backend.h"
 #include "mesh_component.h"
