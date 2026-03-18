@@ -221,7 +221,6 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
 }
 
 
-
 #include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
@@ -286,7 +285,6 @@ void base_event_dealing(const base_event_with_stamp &event) {
 
     if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
         UI_stack.push_back(insert_entity);
-        UI_stack.push_back(get_world_root());
     }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = Logic_entt().try_get<Input_Component>(*it)) {
@@ -305,6 +303,7 @@ void base_event_dealing(const base_event_with_stamp &event) {
             }
         }
     }
+    world_root_on_Event(get_world_root(), event);
 
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {
