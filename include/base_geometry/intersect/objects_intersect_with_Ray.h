@@ -52,10 +52,13 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ra
         }
         return false;
     }
-    return true;
+    return false;
 }
 
 inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
+
+
+
 }
 
 

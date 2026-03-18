@@ -138,10 +138,16 @@ TEST(AABB_bounding_box, have_intersect_axis) {
     AABB_min_max<Point_2> box{a, b};
     Ray<Point_2>{{0, 0}, {1, 2}};
     EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 2}}), true);
-    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 4}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, 1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, 1.001}}), false);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, -1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, -1.001}}), false);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 4}}), false);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{5, 5}, {1, 1}}), false);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{5, 2}, {-1, -1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{5, 2}, {-1, -1.001}}), false);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {1, -1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {1, 1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, 1}}), true);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, -1}}), true);
-    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, -1}}), true);
-
 }
