@@ -74,15 +74,11 @@ T to_radians(T degrees) {
 
 
 class alignas(16) model_transform {
-public:
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};
     Point_3 offset_            = {0, 0, 0};
 
-    [[nodiscard]] Point_3 get_zoom() const {
-        return zoom_;
-    }
-
+public:
     explicit model_transform(const Point_3 offset) {
         offset_ = offset;
     }
@@ -93,6 +89,10 @@ public:
     }
 
 
+    [[nodiscard]] Point_3 get_zoom() const {
+        return zoom_;
+    }
+
     [[nodiscard]] Point_3 get_offset() const {
         return offset_;
     }
@@ -100,7 +100,6 @@ public:
     Point_3 add_offset(const Point_3 offset_add) {
         return offset_ = offset_ + offset_add;
     }
-
 
     void rotate(const Eigen::Quaternionf &quaternion) {
         rotate_ = rotate_ * quaternion;
@@ -120,33 +119,11 @@ public:
         return modelMatrix;
     }
 
-    static bool check_entity_intersect_point(entt::entity entity, const Point_2 &current_position) {
-        if (auto *scene_node = Logic_entt().try_get<model_transform>(entity)) {
-            // 下面这个3d部分是需要去写的，但是只能通过射线来进行检测了
-            // if (intersect(scene_node->bounding_box_, current_position)) {
-            // return true;
-            // }
-        }
-        return false;
-    }
-
     Eigen::Matrix4f get_view_projection() const {
         const auto view = view_matrix({offset_.x, offset_.y, offset_.z}, rotate_);
         return view;
     }
 };
-
-
-inline void update_object_offset() {
-    const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, model_transform>();
-    // 包围盒发生了更新
-    for (const auto it: view) {
-        auto &transform  = view.get<model_transform>(it);
-        auto modelMatrix = transform.update_model_matrix();
-        set_render_parameter(it, "model_4x4", modelMatrix);
-        Logic_entt().remove<UI_transform_dirty>(it);
-    }
-}
 
 
 class camera_optical_component {

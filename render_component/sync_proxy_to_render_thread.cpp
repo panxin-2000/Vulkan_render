@@ -12,7 +12,7 @@
 void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
     update_camera_transform();
-    update_2D_UI_object_function();
+    update_object_transform_function();
     global_uniform_buffer_update_function();
     uniform_buffer_update_function();
     descriptor_set_update_function();

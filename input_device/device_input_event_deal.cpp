@@ -311,12 +311,23 @@ void base_event_dealing(const base_event_with_stamp &event) {
         }
 
     // 找到当前区域的一个递归栈
+
+    auto ray = get_screen_ray(event);
+    LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
+             ray.direction.x, ray.direction.y, ray.direction.z);
+
+
     std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
     //     auto &name = view.get<Name_component>(*it);
     //     std::cout << "name: " << name.name << std::endl;
     // }
+
+    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
+        UI_stack.push_back(insert_entity);
+        UI_stack.push_back(get_world_root());
+    }
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = Logic_entt().try_get<Input_Component>(*it)) {
             if (input->on_Event != nullptr) {
@@ -334,19 +345,6 @@ void base_event_dealing(const base_event_with_stamp &event) {
             }
         }
     }
-    auto ray = get_screen_ray(event);
-    LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
-             ray.direction.x, ray.direction.y, ray.direction.z);
-
-    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
-        if (const auto input = Logic_entt().try_get<Input_Component>(insert_entity)) {
-            if (input->on_Event != nullptr) {
-            }
-        }
-    } else {
-        world_root_on_Event(get_world_root(), event);
-    }
-
 
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {

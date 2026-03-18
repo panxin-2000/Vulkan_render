@@ -7,6 +7,7 @@
 #include <scene_component.h>
 
 #include "descriptor_pool.h"
+#include "model_transform_component.h"
 #include "name_component.h"
 #include "VKR_proxy_component.h"
 #include "shader_component.h"
@@ -90,16 +91,25 @@ public:
     }
 };
 
-inline void update_2D_UI_object_function() {
-    const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
-    // 包围盒发生了更新
-    for (const auto it: view) {
-        auto pos    = view.get<Rect_2D_transform>(it);
-        auto offset = pos.get_offset();
-        matrix_4x4 view;
-        UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
-        set_render_parameter(it, "model_4x4", view);
-        Logic_entt().remove<UI_transform_dirty>(it);
+inline void update_object_transform_function() { {
+        const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
+        // 包围盒发生了更新
+        for (const auto it: view) {
+            auto pos    = view.get<Rect_2D_transform>(it);
+            auto offset = pos.get_offset();
+            matrix_4x4 view;
+            UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
+            set_render_parameter(it, "model_4x4", view);
+            Logic_entt().remove<UI_transform_dirty>(it);
+        }
+    } {
+        const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, model_transform>();
+        for (const auto it: view) {
+            auto &transform  = view.get<model_transform>(it);
+            auto modelMatrix = transform.update_model_matrix();
+            set_render_parameter(it, "model_4x4", modelMatrix);
+            Logic_entt().remove<UI_transform_dirty>(it);
+        }
     }
 }
 
@@ -115,9 +125,9 @@ public:
                            Logic_entt().emplace<Scene_Component>(instance);
                            Logic_entt().emplace<Name_component>(instance, "scene_root");
                            Logic_entt().emplace<VKR_shader_paths>(instance,
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                                              "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-                                                              "", "");
+                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                                                  "", "");
                            matrix_4x4 view;
                            identity_matrix_4x4(&view);
                            set_render_parameter(instance, "global_view_4x4", view);
