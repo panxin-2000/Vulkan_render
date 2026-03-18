@@ -22,6 +22,7 @@
 
 
 #include "descriptor_pool.h"
+#include "name_component.h"
 #include "pipeline_layout.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
@@ -48,6 +49,8 @@ public:
                 std::unique_lock<std::mutex> lock(mtx);
                 vk_render_queue::instance().execute_update_lambda();
             }
+            const auto view = Render_entt().view<Render_destroy_tag>();
+            Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
             const VkQueryPool queryPool = VK_NULL_HANDLE;
 
             handle.get_image_to_render();
