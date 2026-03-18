@@ -2,13 +2,15 @@
 // Created by 潘鑫 on 2026/3/18.
 //
 
+#include "3d_model_display.h"
+
 #include "input_component.h"
 #include "base_event.h"
 #include "name_component.h"
 #include "mesh_component.h"
 #include "shader_component.h"
 #include <Eigen/Eigen>
-
+#include "base_geometry/intersect_function.h"
 #include "model_transform_component.h"
 
 
@@ -62,10 +64,20 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
         case MOUSE_MOVE:
             if (status.select_status == select_current) {
                 if (auto *transform = Logic_entt().try_get<model_transform>(entity_)) {
-                    const Point_2 move   = event.current_position - event.last_position;
-                    const auto &backend  = VK_backend::get();
-                    auto [width, height] = backend.get_current_extent();
-                    transform->add_offset({move.x / width * 2, -move.y / height * 2, 0});
+                    auto object_offset = transform->get_offset();
+                    auto world_entity  = get_world_root();
+                    auto ray           = get_screen_ray(event.current_position);
+                    auto ray_2         = get_screen_ray(event.last_position);
+
+                    const auto camera_pos = Logic_entt().try_get<model_transform>(world_entity);
+
+                    auto q            = camera_pos->get_rotate();
+                    Eigen::Vector3f n = q * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
+                    n.normalize();
+                    auto a = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray);
+                    auto b = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray_2);
+
+                    transform->add_offset(a - b);
                     // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
                     Logic_entt().emplace_or_replace<UI_transform_dirty>(entity_);
                     return OPERATOR_RUNNING_MODAL;
@@ -80,7 +92,7 @@ static wmOperatorStatus on_Event(const entt::entity entity_, const base_event_wi
 
 
 entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
-                             const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
+                             const Eigen::Quaternionf &rotate) {
     entt::entity entity_ = Logic_entt().create();
     Logic_entt().emplace<Name_component>(entity_, name);
     Logic_entt().emplace<Input_Component>(entity_, on_Event);

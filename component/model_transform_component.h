@@ -89,6 +89,10 @@ public:
     }
 
 
+    [[nodiscard]] Eigen::Quaternionf get_rotate() const {
+        return rotate_;
+    }
+
     [[nodiscard]] Point_3 get_zoom() const {
         return zoom_;
     }

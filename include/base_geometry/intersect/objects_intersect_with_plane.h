@@ -7,7 +7,6 @@
 #include "base_geometry/base.h"
 
 
-
 template<typename T>
 inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
     // 一个点在平面一侧，另一个点在平面另一侧
@@ -33,6 +32,15 @@ inline bool intersect(const Plane<T> &plane, const Ray<T> &ray) {
         return true;
     }
     return false;
+}
+
+template<typename T>
+inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
+    auto a      = dot(plane.normal, plane.point - ray.point);
+    auto b      = dot(plane.normal, ray.direction);
+    auto t      = a / b;
+    auto result = ray.point + ray.direction * t;
+    return result;
 }
 
 template<typename T>
