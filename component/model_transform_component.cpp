@@ -58,20 +58,36 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 }
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity_, const base_event_with_stamp &event) {
+wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with_stamp &event) {
     auto temp_type = event.event_type;
-    auto &status   = Logic_entt().get<Input_Component>(entity_);
+    auto &status   = Logic_entt().get<Input_Component>(entity);
 
     switch (temp_type) {
+        case MOUSE_ROTATE: {
+            auto temp = event.scroll;
+            // 绕 Z 轴旋转 45 度
+
+            if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                auto q_current = position->get_rotate();
+                // 鼠标左右移动 -> 绕世界向上轴旋转 (左乘)
+                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY())) * q_current;
+                // 鼠标上下移动 -> 绕物体局部横向轴旋转 (右乘)
+                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+
+                position->set_rotate(q_current);
+                Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
+            }
+            return OPERATOR_RUNNING_MODAL;
+        }
         case EVT_KEY_X:
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity_)) {
+                if (Logic_entt().valid(entity)) {
                     // if (const auto render = g_entt().try_get<logic_render_data>(entity_)) {
                     //     render->proxy = nullptr;
                     // }
                     // 加上上面的内容就有问题
-                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity_);
+                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
             return OPERATOR_PASS_THROUGH;
@@ -101,13 +117,13 @@ wmOperatorStatus model_3d_Event(const entt::entity entity_, const base_event_wit
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *transform = Logic_entt().try_get<model_transform>(entity_)) {
+            if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
                 // UI->set_zoom(entity_, event);
             }
             break;
         case MOUSE_MOVE:
             if (status.select_status == select_current) {
-                if (auto *transform = Logic_entt().try_get<model_transform>(entity_)) {
+                if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
                     auto object_offset = transform->get_offset();
                     auto world_entity  = get_world_root();
                     auto ray           = get_screen_ray(event.current_position);
@@ -123,7 +139,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity_, const base_event_wit
 
                     transform->add_offset(a - b);
                     // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
-                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity_);
+                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
                     return OPERATOR_RUNNING_MODAL;
                 }
             }

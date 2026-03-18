@@ -36,10 +36,6 @@ inline Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quat
 }
 
 
-
-
-
-
 class alignas(16) model_transform {
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};
@@ -74,6 +70,10 @@ public:
 
     void rotate(const Eigen::Quaternionf &quaternion) {
         rotate_ = rotate_ * quaternion;
+    }
+
+    void set_rotate(const Eigen::Quaternionf &quaternion) {
+        rotate_ = quaternion;
     }
 
     Eigen::Matrix4f update_model_matrix() const {
@@ -128,6 +128,6 @@ inline entt::entity &get_world_root() {
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon);
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity_, const base_event_with_stamp &event);
+wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with_stamp &event);
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H
