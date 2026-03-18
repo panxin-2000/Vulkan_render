@@ -5,7 +5,6 @@
 #include "base_geometry/intersect_function.h"
 
 
-
 TEST(intersect, have_intersect) {
     Point_2 point_a{1, 1};
     Point_2 point_b{5, 5};
@@ -123,4 +122,26 @@ TEST(on_segment_bounding_box, on_segment_bounding_box) { {
     EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,0}), true);
     EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{2, 2,2}), false);
     EXPECT_EQ(intersect(Sphere<Point_3>{{0, 0,0}, 3}, Point_3{4, 0,2}), false);
+}
+
+
+TEST(AABB_bounding_box, have_intersect_axis) {
+    EXPECT_EQ(have_intersect_axis( 2,4,5,6 ), false);
+    EXPECT_EQ(have_intersect_axis( 2,5,4,6 ), true);
+    EXPECT_EQ(have_intersect_axis( 2,7,4,6 ), true);
+    EXPECT_EQ(have_intersect_axis( -1,-7,4,6 ), false);
+    EXPECT_EQ(have_intersect_axis( -1,-7,-4,6 ), true);
+    EXPECT_EQ(have_intersect_axis( -1,-7,4,-6 ), true);
+
+    Point_2 a(1, 1);
+    Point_2 b(4, 3);
+    AABB_min_max<Point_2> box{a, b};
+    Ray<Point_2>{{0, 0}, {1, 2}};
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 2}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 4}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{5, 5}, {1, 1}}), false);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{5, 2}, {-1, -1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, -1}}), true);
+    EXPECT_EQ(intersect(box, Ray<Point_2> {{2, 2}, {-1, -1}}), true);
+
 }

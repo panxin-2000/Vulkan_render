@@ -75,33 +75,6 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 
 
 template<typename T>
-inline bool intersect(const AABB_centroid<T> &L_box, const Straight_line<T> &segment) {
-    return intersect(AABB_min_max<Point_2>(L_box), segment);
-}
-
-inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Point_2> &segment) {
-    Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
-    Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
-    Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
-    Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
-    auto bool_1             = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
-                                            box_min_x_min_y);
-    auto bool_2 = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
-                                            box_min_x_max_y);
-    auto bool_3 = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
-                                            box_mam_x_min_y);
-    auto bool_4 = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
-                                            box_max_x_max_y);
-    if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
-        ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
-        // 只有单一的一种必然是不相交的
-        return false;
-    }
-    return true;
-}
-
-
-template<typename T>
 inline bool intersect(const AABB_centroid<T> &L_box, const Segment<T> &segment) {
     return intersect(AABB_min_max<Point_2>(L_box), segment);
 }
@@ -163,54 +136,7 @@ bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     if (-b_half_start < 0 || -b_half_end < 0) {
         return false; // 一个线段穿过球两次，所以不管那个点做起点，都不会小于零
     }
-}
-
-template<typename T>
-bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
-    // 与球相交与判断结果之间是存在一个优化的办法的
-    // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
-    // 优化了一元二次方程
-    auto center_to_ray_start = ray.point - sphere.center;
-    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
-    if (c < 0) {
-        // 此时光线发射点在 球中
-        // 如果光线的渲染要返回false
-        // 体积雾的话又是true
-        return true;
-    }
-    auto direction  = ray.direction;
-    auto b_half     = dot(center_to_ray_start, direction);
-    auto a          = dot(direction, direction);
-    auto delta_half = b_half * b_half - dot(direction, direction) * c;
-    if (delta_half < 0) {
-        return false;
-    }
-    if (-b_half < 0) {
-        // x_1 + x_2 = -b/a
-        // 此时不在球中，要么都是正，要么都负
-        // 都是负时，-b < 0 , 因为 a 一直为正
-        return false;
-    }
-
-    return true;
-}
-
-template<typename T>
-bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
-    auto center_to_ray_start = line.point - sphere.center;
-    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
-    if (c < 0) {
-        // 如果是直线的话，这个分支概率很小，几乎接近零
-        return true;
-    }
-    auto direction  = line.direction;
-    auto b_half     = dot(center_to_ray_start, direction);
-    auto a          = dot(direction, direction);
-    auto delta_half = b_half * b_half - dot(direction, direction) * c;
-    if (delta_half < 0) {
-        return false;
-    }
-    return true;
+    return false; // 最后这一行没有添加具体的测试，看看什么情况下会到达这一行
 }
 
 
@@ -232,23 +158,23 @@ inline bool intersect(const Trapezoid &trapezoid, const Segment<Point_2> &segmen
 }
 
 
-inline bool intersect_without_AABB(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
-    Point_2 ab = L_segment.end_point - L_segment.start_point;
-    Point_2 ac = segment.start_point - L_segment.start_point;
-    Point_2 ad = segment.end_point - L_segment.start_point;
+inline bool intersect_pass_AABB(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
+    const Point_2 ab = L_segment.end_point - L_segment.start_point;
+    const Point_2 ac = segment.start_point - L_segment.start_point;
+    const Point_2 ad = segment.end_point - L_segment.start_point;
 
-    Point_2 cd = segment.end_point - segment.start_point;
-    Point_2 ca = L_segment.start_point - segment.start_point;
-    Point_2 cb = L_segment.end_point - segment.start_point;
+    const Point_2 cd = segment.end_point - segment.start_point;
+    const Point_2 ca = L_segment.start_point - segment.start_point;
+    const Point_2 cb = L_segment.end_point - segment.start_point;
 
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
-    float f1 = ab.single_area(ac);
-    float f2 = ab.single_area(ad);
+    const float f1 = ab.single_area(ac);
+    const float f2 = ab.single_area(ad);
     if (f1 * f2 > 0) {
         return false;
     }
-    float f3 = cd.single_area(ca);
-    float f4 = cd.single_area(cb);
+    const float f3 = cd.single_area(ca);
+    const float f4 = cd.single_area(cb);
     if (f3 * f4 > 0) {
         return false;
     }
@@ -280,7 +206,7 @@ inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> 
     if (!intersect(L_AABB, R_AABB)) {
         return false;
     }
-    return intersect_without_AABB(L_segment, segment);
+    return intersect_pass_AABB(L_segment, segment);
 }
 
 template<typename T>
@@ -290,12 +216,13 @@ bool intersect(const Trapezoid &trapezoid, const Segment<T> &segment) {
         return true;
     if (intersect(Triangle<Point_2>{trapezoid.left_lower, trapezoid.right_lower, trapezoid.right_upper}, segment))
         return true;
+    return false;
 }
 
 template<typename T>
 bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
-    AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
-    AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
+    const AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
+    const AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
     if (!intersect(L_AABB, R_AABB)) {
         return false;
     }
@@ -305,11 +232,11 @@ bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     // if (intersect(triangle, segment.end_point))
     //     return true;
     // 线段是否相互
-    if (intersect_without_AABB({triangle.a, triangle.b}, segment))
+    if (intersect_pass_AABB({triangle.a, triangle.b}, segment))
         return true;
-    if (intersect_without_AABB({triangle.b, triangle.c}, segment))
+    if (intersect_pass_AABB({triangle.b, triangle.c}, segment))
         return true;
-    if (intersect_without_AABB({triangle.c, triangle.a}, segment))
+    if (intersect_pass_AABB({triangle.c, triangle.a}, segment))
         return true;
     return false;
 }
