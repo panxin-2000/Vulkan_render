@@ -10,6 +10,7 @@
 #include "name_component.h"
 #include "VKR_proxy_component.h"
 #include "shader_component.h"
+#include "base_element/intersect_function.h"
 
 class Rect_2D_transform {
     Point_2 zoom   = {1, 1};

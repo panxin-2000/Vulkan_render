@@ -4,13 +4,10 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
-#include "base_element/geometry/segment.h"
-#include "../geometry/point_2.h"
-#include "base_element/geometry/AABB_bounding_box.h"
-#include "base_element/geometry/ray.h"
-#include "base_element/geometry/straight_line.h"
+#include "base_element/base.h"
+
 #include "objects_intersect_with_point.h"
-#include "base_element/intersect/objects_intersect_with_AABB.h"
+#include "objects_intersect_with_AABB.h"
 
 
 /**
@@ -23,20 +20,20 @@
 inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
                                          const Segment<Point_2> &segment,
                                          std::vector<Point_2> *result) {
-    auto offset = segment.end_point - segment.start_point;
-    float k_x = offset.y / offset.x;
-    float k_y = offset.x / offset.y;
+    auto offset             = segment.end_point - segment.start_point;
+    float k_x               = offset.y / offset.x;
+    float k_y               = offset.x / offset.y;
     float interval_to_min_x = L_box.min_point.x - segment.start_point.x;
     float interval_to_max_x = L_box.max_point.x - segment.start_point.x;
     float interval_to_min_y = L_box.min_point.y - segment.start_point.y;
     float interval_to_max_y = L_box.max_point.y - segment.start_point.y;
-    float segment_min_x = std::min(segment.start_point.x, segment.end_point.x);
-    float segment_max_x = std::max(segment.start_point.x, segment.end_point.x);
-    float segment_min_y = std::min(segment.start_point.y, segment.end_point.y);
-    float segment_max_y = std::max(segment.start_point.y, segment.end_point.y);
-    auto number = 0;
-    auto a_y = segment.start_point.y + k_x * interval_to_min_x;
-    auto a_x = segment.start_point.x + interval_to_min_x;
+    float segment_min_x     = std::min(segment.start_point.x, segment.end_point.x);
+    float segment_max_x     = std::max(segment.start_point.x, segment.end_point.x);
+    float segment_min_y     = std::min(segment.start_point.y, segment.end_point.y);
+    float segment_max_y     = std::max(segment.start_point.y, segment.end_point.y);
+    auto number             = 0;
+    auto a_y                = segment.start_point.y + k_x * interval_to_min_x;
+    auto a_x                = segment.start_point.x + interval_to_min_x;
     if (a_y >= L_box.min_point.y && L_box.max_point.y >= a_y &&
         a_x >= segment_min_x &&
         segment_max_x <= a_x
@@ -77,9 +74,6 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 // 其实在上面也是能够判断完成的
 
 
-
-
-
 template<typename T>
 inline bool intersect(const AABB_centroid<T> &L_box, const Straight_line<T> &segment) {
     return intersect(AABB_min_max<Point_2>(L_box), segment);
@@ -90,7 +84,7 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Po
     Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
     Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
     Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
-    auto bool_1 = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
+    auto bool_1             = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
                                             box_min_x_min_y);
     auto bool_2 = Point_2::is_anticlockwise(segment.point, segment.point + segment.direction,
                                             box_min_x_max_y);
@@ -119,10 +113,10 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2>
         Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
         Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
         Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
-        auto bool_1 = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_min_y);
-        auto bool_2 = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_max_y);
-        auto bool_3 = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_mam_x_min_y);
-        auto bool_4 = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_max_x_max_y);
+        auto bool_1             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_min_y);
+        auto bool_2             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_max_y);
+        auto bool_3             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_mam_x_min_y);
+        auto bool_4             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_max_x_max_y);
         if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
             ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
             // 只有单一的一种必然是不相交的
@@ -151,21 +145,21 @@ bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     }
     Ray<T> ray_end(segment.end_point, segment.start_point - segment.end_point);
     auto center_to_segment_end = ray_end.point - sphere.center;
-    auto c_end = (dot(center_to_segment_end, center_to_segment_end) - sphere.radius * sphere.radius);
+    auto c_end                 = (dot(center_to_segment_end, center_to_segment_end) - sphere.radius * sphere.radius);
     if (c_end < 0) {
         return true; // 钟点在球中
     }
     // 起点和终点都不在球中
 
     auto direction_start = ray_start.direction;
-    auto b_half_start = dot(center_to_segment_start, direction_start);
-    auto a = dot(direction_start, direction_start);
-    auto delta_half = b_half_start * b_half_start - dot(direction_start, direction_start) * c_start;
+    auto b_half_start    = dot(center_to_segment_start, direction_start);
+    auto a               = dot(direction_start, direction_start);
+    auto delta_half      = b_half_start * b_half_start - dot(direction_start, direction_start) * c_start;
     if (delta_half < 0) {
         return false; // 这里决定了线段所在直线不会相交
     }
     auto direction_end = ray_end.direction;
-    auto b_half_end = dot(center_to_segment_end, direction_end);
+    auto b_half_end    = dot(center_to_segment_end, direction_end);
     if (-b_half_start < 0 || -b_half_end < 0) {
         return false; // 一个线段穿过球两次，所以不管那个点做起点，都不会小于零
     }
@@ -177,16 +171,16 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
     // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
     // 优化了一元二次方程
     auto center_to_ray_start = ray.point - sphere.center;
-    auto c = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
     if (c < 0) {
         // 此时光线发射点在 球中
         // 如果光线的渲染要返回false
         // 体积雾的话又是true
         return true;
     }
-    auto direction = ray.direction;
-    auto b_half = dot(center_to_ray_start, direction);
-    auto a = dot(direction, direction);
+    auto direction  = ray.direction;
+    auto b_half     = dot(center_to_ray_start, direction);
+    auto a          = dot(direction, direction);
     auto delta_half = b_half * b_half - dot(direction, direction) * c;
     if (delta_half < 0) {
         return false;
@@ -204,14 +198,14 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
 template<typename T>
 bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
     auto center_to_ray_start = line.point - sphere.center;
-    auto c = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
     if (c < 0) {
         // 如果是直线的话，这个分支概率很小，几乎接近零
         return true;
     }
-    auto direction = line.direction;
-    auto b_half = dot(center_to_ray_start, direction);
-    auto a = dot(direction, direction);
+    auto direction  = line.direction;
+    auto b_half     = dot(center_to_ray_start, direction);
+    auto a          = dot(direction, direction);
     auto delta_half = b_half * b_half - dot(direction, direction) * c;
     if (delta_half < 0) {
         return false;

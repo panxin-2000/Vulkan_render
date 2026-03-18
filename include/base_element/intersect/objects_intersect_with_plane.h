@@ -4,18 +4,15 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_PLANE_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_PLANE_H
-#include "base_element/geometry/plane.h"
-#include "base_element/geometry/segment.h"
-#include "base_element/geometry/ray.h"
-#include "base_element/geometry/straight_line.h"
-#include "base_element/geometry/triangle.h"
+#include "base_element/base.h"
+
 
 
 template<typename T>
 inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
     // 一个点在平面一侧，另一个点在平面另一侧
     auto start_distance = plane.distance(segment.start_point);
-    auto end_distance = plane.distance(segment.end_point);
+    auto end_distance   = plane.distance(segment.end_point);
     if (end_distance * start_distance <= 0) {
         return true;
     }
@@ -30,8 +27,8 @@ inline bool intersect(const Plane<T> &plane, const Ray<T> &ray) {
     // 上面还是麻烦了，判断光线起点在哪一侧
     // 平面的标记点，加上光线的方向，得到另一个点
     // 判断这个点是否和光线的起点在同一侧，在的话，就相交，否则不相交
-    auto start_distance = plane.distance(segment.start_point);
-    auto end_distance = plane.distance(plane.point + ray.direction);
+    auto start_distance = plane.distance(ray.start_point);
+    auto end_distance   = plane.distance(plane.point + ray.direction);
     if (end_distance * start_distance <= 0) {
         return true;
     }

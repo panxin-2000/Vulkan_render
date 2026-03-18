@@ -5,6 +5,8 @@
 #include "base_element/half_edge/half_edge_struct.h"
 #include <gtest/gtest.h>
 
+#include "base_element/half_edge/half_edge_vertex.h"
+
 TEST(tetrahedron, init_tetrahedron) {
     half_edge_struct<vertex_xyz> hf;
     auto b_half_edge_index = hf.create_loop({-1, 1, 0}, {0, -1, 0});

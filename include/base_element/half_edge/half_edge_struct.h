@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "base_element/base.h"
-#include "base_element/geometry/triangle.h"
 #include "base_element/convex_hull.h"
 
 
@@ -19,7 +18,6 @@
 #include "../../triangle_graph.h"
 
 
-#include "base_element/half_edge/half_edge_vertex.h"
 
 
 using half_edge_index = int;

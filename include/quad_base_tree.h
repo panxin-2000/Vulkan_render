@@ -5,14 +5,14 @@
 #ifndef HELLO_MAC_QUAD_BASE_TREE_H
 #define HELLO_MAC_QUAD_BASE_TREE_H
 #include "iostream"
-#include "base_element/point_2.h"
+#include "base_element/base.h"
 #include "quadtree_node.h"
 
 
 template<typename AABB_box, typename index_node, size_t grid_size = 10>
 class quad_tree_base {
 public:
-    using node = Quad_Tree_Node<Point_2>;
+    using node    = Quad_Tree_Node<Point_2>;
     using v_index = u_int16_t;
     std::vector<v_index> roots;
     std::vector<node> details;
@@ -64,50 +64,50 @@ private:
     //  1 2
 
     v_index add_left_down_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = node_centroid - direction / 2;
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = node_centroid - direction / 2;
         details.push_back({node_centroid, get_node_direction_interval(node) / 2});
         set_node_left_down(node, new_node);
         set_node_parent(new_node, node);
     }
 
     v_index add_right_up_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = node_centroid + direction / 2;
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = node_centroid + direction / 2;
         details.push_back({node_centroid, get_node_direction_interval(node) / 2});
         set_node_right_up(node, new_node);
         set_node_parent(new_node, node);
     }
 
     v_index add_left_up_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = {node_centroid.x - direction.x / 2, node_centroid.y + direction.y / 2};
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = {node_centroid.x - direction.x / 2, node_centroid.y + direction.y / 2};
         details.push_back({node_centroid, get_node_direction_interval(node) / 2});
         set_node_left_up(node, new_node);
         set_node_parent(new_node, node);
     }
 
     v_index add_right_down_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = {node_centroid.x + direction.x / 2, node_centroid.y - direction.y / 2};
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = {node_centroid.x + direction.x / 2, node_centroid.y - direction.y / 2};
         details.push_back({node_centroid, get_node_direction_interval(node) / 2});
         set_node_right_down(node, new_node);
         set_node_parent(new_node, node);
     }
 
     v_index add_left_down_parent_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = node_centroid - direction;
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = node_centroid - direction;
         details.push_back({node_centroid, get_node_direction_interval(node) * 2});
         set_node_parent(node, new_node);
         set_node_right_up(new_node, node);
@@ -117,10 +117,10 @@ private:
     }
 
     v_index add_right_up_parent_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = node_centroid + direction;
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = node_centroid + direction;
         details.push_back({node_centroid, get_node_direction_interval(node) * 2});
         set_node_parent(node, new_node);
         set_node_left_down(new_node, node);
@@ -130,10 +130,10 @@ private:
     }
 
     v_index add_left_up_parent_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = {node_centroid.x - direction.x, node_centroid.y + direction.y};
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = {node_centroid.x - direction.x, node_centroid.y + direction.y};
         details.push_back({node_centroid, get_node_direction_interval(node) * 2});
         set_node_parent(node, new_node);
         set_node_right_down(new_node, node);
@@ -145,10 +145,10 @@ private:
     //   node
     //         new_node
     v_index add_right_down_parent_node(v_index node) {
-        v_index new_node = details.size();
+        v_index new_node   = details.size();
         auto node_centroid = get_node_centroid_point(node);
-        auto direction = get_node_direction_interval(node);
-        node_centroid = {node_centroid.x + direction.x, node_centroid.y - direction.y};
+        auto direction     = get_node_direction_interval(node);
+        node_centroid      = {node_centroid.x + direction.x, node_centroid.y - direction.y};
         details.push_back({node_centroid, get_node_direction_interval(node) * 2});
         set_node_parent(node, new_node);
         set_node_left_up(new_node, node);
@@ -166,7 +166,7 @@ private:
     //
     v_index add_AABB_to_quad_tree(AABB_box box) {
         auto node_centroid = get_centroid_point(box);
-        auto direction = get_direction_interval(box);
+        auto direction     = get_direction_interval(box);
 
         v_index root_index = get_root_index();
         while (root_index != get_nil_index()) {
@@ -214,7 +214,7 @@ private:
 
 
     std::vector<v_index> *preorder_tree_walk_index() {
-        auto result = new std::vector<v_index>();
+        auto result      = new std::vector<v_index>();
         auto last_result = tree_walk_with_stack(get_root_index(),
                                                 result,
                                                 get_nil_index(),
@@ -243,14 +243,14 @@ private:
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
     bool update_new_delete_node(v_index delete_node_index) {
         get_node_ptr(delete_node_index)->left = delete_v_index;
-        delete_v_index = delete_node_index;
+        delete_v_index                        = delete_node_index;
         return true;
     }
 
     // 这里的本质是一个链表，虽然已经使用过了，但是并不删除，只是标记并没有被使用，新插入时占据原本的位置
     v_index get_one_delete_node() {
         auto new_node_v_index = delete_v_index;
-        delete_v_index = get_node_ptr(new_node_v_index)->left;
+        delete_v_index        = get_node_ptr(new_node_v_index)->left;
         return new_node_v_index;
     }
 

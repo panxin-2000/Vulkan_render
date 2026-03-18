@@ -6,8 +6,8 @@
 #define LEARN_OPENGL_EVENT_BASE_H
 #include <string>
 
-#include "../include/base_element/geometry/point_2.h"
-#include "base_element/geometry/AABB_bounding_box.h"
+#include "base_element/base.h"
+
 #include "utility.h"
 
 // 事件类型枚举（扩展时新增枚举值即可）

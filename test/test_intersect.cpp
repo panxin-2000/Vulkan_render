@@ -2,8 +2,8 @@
 // Created by 潘鑫 on 2025/10/1.
 //
 #include "gtest/gtest.h"
-#include "../include/base_element/geometry/triangle.h"
-#include "base_element/base.h"
+#include "base_element/intersect_function.h"
+
 
 
 TEST(intersect, have_intersect) {

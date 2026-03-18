@@ -4,14 +4,8 @@
 
 #ifndef HELLO_MAC_INTERSECTION_H
 #define HELLO_MAC_INTERSECTION_H
-#include "../geometry/trapezoid.h"
-#include "../geometry/triangle.h"
-#include "../geometry/AABB_bounding_box.h"
-#include "../geometry/segment.h"
-#include "../geometry/point_2.h"
-#include "../geometry/point_3.h"
-#include "base_element/geometry/plane.h"
-#include "base_element/geometry/sphere_bounding_volume.h"
+#include "base_element/base.h"
+
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &box, const T &test_point) {
@@ -69,10 +63,10 @@ inline bool intersect(const Trapezoid &trapezoid, const T &test_point) {
     auto B_point = trapezoid.right_upper;
     auto C_point = trapezoid.left_lower;
     auto D_point = trapezoid.right_lower;
-    auto bool_1 = Point_2::is_anticlockwise(C_point, D_point, test_point);
-    auto bool_2 = Point_2::is_anticlockwise(D_point, B_point, test_point);
-    auto bool_3 = Point_2::is_anticlockwise(B_point, A_point, test_point);
-    auto bool_4 = Point_2::is_anticlockwise(A_point, C_point, test_point);
+    auto bool_1  = Point_2::is_anticlockwise(C_point, D_point, test_point);
+    auto bool_2  = Point_2::is_anticlockwise(D_point, B_point, test_point);
+    auto bool_3  = Point_2::is_anticlockwise(B_point, A_point, test_point);
+    auto bool_4  = Point_2::is_anticlockwise(A_point, C_point, test_point);
     if (((bool_1 | bool_2 | bool_3 | bool_4) != Point_2::anticlockwise::clockwise)) {
         // 只有单一的一种必然是不相交的
         return true;

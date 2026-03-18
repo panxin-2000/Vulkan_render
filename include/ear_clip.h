@@ -5,10 +5,11 @@
 #ifndef EAR_CLIP_H
 #define EAR_CLIP_H
 
+#include "base_element/intersect_function.h"
 
-#include "base_element/geometry/triangle.h"
 #include "RB_tree_node.h"
 #include "base_element/half_edge/half_edge_struct.h"
+#include "base_element/half_edge/half_edge_vertex.h"
 
 bool ear_clip_algorithm_no_efficient(std::vector<Triangle<Point_2> > &result_segments,
                                      std::vector<Point_2> &new_segments,

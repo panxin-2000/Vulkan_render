@@ -5,8 +5,8 @@
 #ifndef HELLO_MAC_HALF_EDGE_VERTEX_H
 #define HELLO_MAC_HALF_EDGE_VERTEX_H
 
-#include "../geometry/point_2.h"
-#include "base_element/point_3.h"
+#include "base_element/base.h"
+
 
 struct vertex_xy : public Point_2 {
     using point_type = Point_2;

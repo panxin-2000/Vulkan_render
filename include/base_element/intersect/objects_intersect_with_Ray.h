@@ -4,8 +4,10 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_RAY_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_RAY_H
-#include "base_element/geometry/AABB_bounding_box.h"
-#include "base_element/geometry/ray.h"
+
+
+#include "base_element/base.h"
+
 
 
 // template<typename T>

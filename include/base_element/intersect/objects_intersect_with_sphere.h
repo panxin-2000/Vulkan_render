@@ -4,10 +4,9 @@
 
 #ifndef HELLO_MAC_OBJECTS_INTERSECT_WITH_SPHERE_H
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_SPHERE_H
-#include "base_element/geometry/segment.h"
-#include "base_element/geometry/sphere_bounding_volume.h"
-#include "base_element/geometry/triangle.h"
-#include "base_element/intersect/objects_intersect_with_segment.h"
+#include "base_element/base.h"
+
+#include "objects_intersect_with_segment.h"
 
 template<typename T>
 bool intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
@@ -33,7 +32,7 @@ bool intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
  */
 template<typename T>
 bool intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
-    auto distance = L_sphere.center - R_sphere.center;
+    auto distance        = L_sphere.center - R_sphere.center;
     auto distanceSquared = dot(distance, distance);
     if (distanceSquared <= L_sphere.radius * L_sphere.radius + R_sphere.radius * R_sphere.radius) {
         return true;
