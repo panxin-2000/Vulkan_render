@@ -35,30 +35,36 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
 }
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
-    const auto ray_y_1 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.min_point.x - ray.point.x);
-    const auto ray_y_2 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.max_point.x - ray.point.x);
-    auto bool_1        = have_intersect_axis(ray_y_1, ray_y_2, L_box.min_point.y, L_box.max_point.y);
-    const auto ray_x_1 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.min_point.y - ray.point.y);
-    const auto ray_x_2 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.max_point.y - ray.point.y);
-    auto bool_2        = have_intersect_axis(ray_x_1, ray_x_2, L_box.min_point.x, L_box.max_point.x);
-    if (bool_1 && bool_2) {
-        auto bool_3 = (ray_x_1 - ray.point.x) * ray.direction.x >= 0;
-        auto bool_4 = (ray_x_2 - ray.point.x) * ray.direction.x >= 0;
-        auto bool_5 = (ray_y_1 - ray.point.y) * ray.direction.y >= 0;
-        auto bool_6 = (ray_y_2 - ray.point.y) * ray.direction.y >= 0;
-        if ((bool_3 || bool_4) && (bool_5 || bool_6)) {
-            // bool_3 或 bool_4 必须有一个为真  bool_5 或 bool_6 必须有一个为真
+    auto t_min = (L_box.min_point - ray.point) / ray.direction;
+    auto t_max = (L_box.max_point - ray.point) / ray.direction;
+    if ((t_min.x >= 0 || t_max.x >= 0) && (t_min.y >= 0 || t_max.y >= 0)) {
+        // 上面的判断是一个半平面的判断
+
+        auto v_3 = ray.point.x + t_min.y * ray.direction.x;
+        auto v_4 = ray.point.y + t_min.x * ray.direction.y;
+        auto v_5 = ray.point.x + t_max.y * ray.direction.x;
+        auto v_6 = ray.point.y + t_max.x * ray.direction.y;
+        std::swap(t_min.x, t_min.y);
+        std::swap(t_max.x, t_max.y);
+        auto v_1 = ray.point + t_min * ray.direction;
+        auto v_2 = ray.point + t_max * ray.direction;
+        //
+
+
+        const auto ray_y_1 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.min_point.x - ray.point.x);
+        const auto ray_y_2 = ray.point.y + ray.direction.y / ray.direction.x * (L_box.max_point.x - ray.point.x);
+        auto bool_1        = have_intersect_axis(v_1.y, v_2.y, L_box.min_point.y, L_box.max_point.y);
+        const auto ray_x_1 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.min_point.y - ray.point.y);
+        const auto ray_x_2 = ray.point.x + ray.direction.x / ray.direction.y * (L_box.max_point.y - ray.point.y);
+        auto bool_2        = have_intersect_axis(v_1.x, v_2.x, L_box.min_point.x, L_box.max_point.x);
+        if (bool_1 && bool_2) {
             return true;
         }
-        return false;
     }
     return false;
 }
 
 inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
-
-
-
 }
 
 

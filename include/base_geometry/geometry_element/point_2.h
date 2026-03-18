@@ -40,17 +40,17 @@ public:
     }
 
     static Point_2 centre_of_a_circle(Point_2 a, Point_2 b, Point_2 c) {
-        auto A_1_1 = -2 * (a.x - b.x);
-        auto A_1_2 = -2 * (a.y - b.y);
-        auto A_2_1 = -2 * (a.x - c.x);
-        auto A_2_2 = -2 * (a.y - c.y);
-        auto A = A_1_1 * A_2_2 - A_1_2 * A_2_1;
+        auto A_1_1     = -2 * (a.x - b.x);
+        auto A_1_2     = -2 * (a.y - b.y);
+        auto A_2_1     = -2 * (a.x - c.x);
+        auto A_2_2     = -2 * (a.y - c.y);
+        auto A         = A_1_1 * A_2_2 - A_1_2 * A_2_1;
         auto inv_A_1_1 = A_2_2 / A;
         auto inv_A_1_2 = -1 * A_1_2 / A;
         auto inv_A_2_1 = -1 * A_2_1 / A;
         auto inv_A_2_2 = A_1_1 / A;
-        auto B_1 = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
-        auto B_2 = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
+        auto B_1       = b.x * b.x + b.y * b.y - a.x * a.x - a.y * a.y;
+        auto B_2       = c.x * c.x + c.y * c.y - a.x * a.x - a.y * a.y;
 
         const Point_2 result{inv_A_1_1 * B_1 + inv_A_1_2 * B_2, inv_A_2_1 * B_1 + inv_A_2_2 * B_2};
         return result;
@@ -111,10 +111,24 @@ public:
         return temp;
     }
 
+    Point_2 operator/(const Point_2 number) const {
+        Point_2 temp{0, 0};
+        temp.x = this->x / number.x;
+        temp.y = this->y / number.y;
+        return temp;
+    }
+
     Point_2 operator*(const float number) const {
         Point_2 temp{0, 0};
         temp.x = this->x * number;
         temp.y = this->y * number;
+        return temp;
+    }
+
+    Point_2 operator*(const Point_2 number) const {
+        Point_2 temp{0, 0};
+        temp.x = this->x * number.x;
+        temp.y = this->y * number.y;
         return temp;
     }
 
@@ -149,13 +163,13 @@ public:
 
     // 下面一行去掉class之后是能够编译过的，添加之后是编译不过的？
     enum anticlockwise {
-        clockwise = 1,
+        clockwise        = 1,
         counterclockwise = 2,
-        collinear = 4,
+        collinear        = 4,
         // 下面的四个是方便组合的
-        clockwise_and_counterclockwise = 3,
-        collinear_and_clockwise = 5,
-        collinear_and_counterclockwise = 6,
+        clockwise_and_counterclockwise  = 3,
+        collinear_and_clockwise         = 5,
+        collinear_and_counterclockwise  = 6,
         collinear_and_clock_and_counter = 7,
     };
 
