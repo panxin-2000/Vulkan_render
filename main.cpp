@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
 
     load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
-
     // 3d 模型
     {
         auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});

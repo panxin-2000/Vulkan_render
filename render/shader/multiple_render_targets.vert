@@ -55,7 +55,7 @@ void main()
 {
 
     gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
-    outNormal = inNormal;
+    outNormal = normalize(mat3(model) * inNormal);
     outUV = inUV;
     // 世界空间
     outWorldPos = vec3(model * vec4(inPos.xyz, 1.0));

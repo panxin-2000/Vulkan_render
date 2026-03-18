@@ -69,10 +69,8 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
 
             if (auto position = Logic_entt().try_get<model_transform>(entity)) {
                 auto q_current = position->get_rotate();
-                // 鼠标左右移动 -> 绕世界向上轴旋转 (左乘)
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY())) * q_current;
-                // 鼠标上下移动 -> 绕物体局部横向轴旋转 (右乘)
-                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX())) * q_current;
 
                 position->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
