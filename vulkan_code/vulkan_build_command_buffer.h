@@ -384,15 +384,15 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
-    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
-    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
 
+    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
+    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
     vkCmdSetDepthWriteEnable(cb, VK_TRUE);
     vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
-    vkCmdSetDepthBoundsTestEnable(cb, VK_TRUE);
+    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
     vkCmdSetStencilTestEnable(cb, VK_TRUE);
     // vkCmdSetDepthBiasEnable
     vkCmdSetStencilOp(

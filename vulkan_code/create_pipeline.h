@@ -95,13 +95,14 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         VK_DYNAMIC_STATE_DEPTH_BOUNDS,             // vkCmdSetDepthBounds        vkCmdSetDepthBounds
 
         // VkPipelineRasterizationStateCreateInfo
-        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, // vkCmdSetDepthBiasEnable    vkCmdSetDepthBias
+        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, // vkCmdSetDepthBiasEnable
+        VK_DYNAMIC_STATE_DEPTH_BIAS,        // vkCmdSetDepthBias
         VK_DYNAMIC_STATE_CULL_MODE,         // vkCmdSetFrontFace
         VK_DYNAMIC_STATE_FRONT_FACE,        // vkCmdSetCullMode
     };
     VkPipelineDynamicStateCreateInfo dynamicState{
         .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = 2,
+        .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
         .pDynamicStates    = dynamicStates.data()
     };
     VkPipelineViewportStateCreateInfo viewportState{
