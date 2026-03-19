@@ -81,7 +81,24 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         .sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
-    std::vector<VkDynamicState> dynamicStates{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    std::vector<VkDynamicState> dynamicStates{
+        VK_DYNAMIC_STATE_VIEWPORT, // vkCmdSetViewport
+        VK_DYNAMIC_STATE_SCISSOR,  // vkCmdSetScissor
+
+        // VkPipelineDepthStencilStateCreateInfo
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,        // vkCmdSetDepthTestEnable
+        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,       // vkCmdSetDepthWriteEnable
+        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP,         // vkCmdSetDepthCompareOp
+        VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, // vkCmdSetDepthBoundsTestEnable
+        VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE,      // vkCmdSetStencilTestEnable
+        VK_DYNAMIC_STATE_STENCIL_OP,               // vkCmdSetStencilOp          vkCmdSetStencilOp
+        VK_DYNAMIC_STATE_DEPTH_BOUNDS,             // vkCmdSetDepthBounds        vkCmdSetDepthBounds
+
+        // VkPipelineRasterizationStateCreateInfo
+        VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, // vkCmdSetDepthBiasEnable    vkCmdSetDepthBias
+        VK_DYNAMIC_STATE_CULL_MODE,         // vkCmdSetFrontFace
+        VK_DYNAMIC_STATE_FRONT_FACE,        // vkCmdSetCullMode
+    };
     VkPipelineDynamicStateCreateInfo dynamicState{
         .sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .dynamicStateCount = 2,
@@ -93,8 +110,9 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         .scissorCount  = 1
     };
     VkPipelineRasterizationStateCreateInfo rasterizationState{
-        .sType     = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .lineWidth = 1.0f
+        .sType           = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .depthBiasEnable = VK_FALSE,
+        .lineWidth       = 1.0f,
     };
     VkPipelineMultisampleStateCreateInfo multisampleState{
         .sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
@@ -134,17 +152,17 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
     VkGraphicsPipelineCreateInfo pipelineCI{
         .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .pNext               = &renderingCI,
-        .stageCount          = to_u32(shaderStages.size()), //这个是由shader决定的
-        .pStages             = shaderStages.data(),
-        .pVertexInputState   = &vertexInputState,
-        .pInputAssemblyState = &inputAssemblyState,
-        .pViewportState      = &viewportState,
-        .pRasterizationState = &rasterizationState,
-        .pMultisampleState   = &multisampleState,
-        .pDepthStencilState  = &depthStencilState,
-        .pColorBlendState    = &colorBlendState,
-        .pDynamicState       = &dynamicState,
-        .layout              = pipelineLayout //这个是由shader决定的
+        .stageCount          = to_u32(shaderStages.size()), //不能动态
+        .pStages             = shaderStages.data(),         // 不能动态
+        .pVertexInputState   = &vertexInputState,           // 不能动态
+        .pInputAssemblyState = &inputAssemblyState,         // 不建议动态
+        .pViewportState      = &viewportState,              // 建议动态
+        .pRasterizationState = &rasterizationState,         // 有三个参数建议
+        .pMultisampleState   = &multisampleState,           // 不建议动态
+        .pDepthStencilState  = &depthStencilState,          // 建议动态
+        .pColorBlendState    = &colorBlendState,            // 暂时不设置
+        .pDynamicState       = &dynamicState,               // 设置动态相关内容
+        .layout              = pipelineLayout               // 不能动态
     };
     VK_CHECK_RESULT_NOT_EXIT(vkCreateGraphicsPipelines(handle.get_device(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &
                                  pipeline));

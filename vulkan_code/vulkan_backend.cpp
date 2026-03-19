@@ -228,9 +228,12 @@ void VK_backend::create_device() {
         .bufferDeviceAddress                          = true,
     };
     VkPhysicalDeviceVulkan13Features enabledVk13Features{
-        .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES, .pNext = &enabledVk12Features,
-        .synchronization2 = true, .dynamicRendering                                       = true
+        .sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .pNext            = &enabledVk12Features,
+        .synchronization2 = true,
+        .dynamicRendering = true,
     };
+
     std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 

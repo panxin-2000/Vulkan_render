@@ -82,6 +82,9 @@ public:
             //         build_deferred_command_buffer(handle, render_data, time_line);
             //     }
             // }
+            // vkCmdSetDepthCompareOp( )
+            // vkCmdSetDepthWriteEnable(commandBuffer, VK_FALSE);
+
             {
                 auto view = Render_entt().view<VKR_object_proxy, skybox_tag>();
                 for (const auto it: view) {

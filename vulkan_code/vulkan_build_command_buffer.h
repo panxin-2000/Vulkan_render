@@ -388,6 +388,42 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
+
+    vkCmdSetDepthTestEnable(cb, VK_TRUE);
+    vkCmdSetDepthWriteEnable(cb, VK_TRUE);
+    vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
+    vkCmdSetDepthBoundsTestEnable(cb, VK_TRUE);
+    vkCmdSetStencilTestEnable(cb, VK_TRUE);
+    // vkCmdSetDepthBiasEnable
+    vkCmdSetStencilOp(
+                      cb,
+                      VK_STENCIL_FACE_FRONT_AND_BACK, // 作用范围
+                      VK_STENCIL_OP_KEEP,             // failOp
+                      VK_STENCIL_OP_REPLACE,          // passOp
+                      VK_STENCIL_OP_KEEP,             // depthFailOp
+                      VK_COMPARE_OP_ALWAYS            // compareOp
+                     );
+    vkCmdSetDepthBounds(cb, 0.5f, 0.8f);
+
+    vkCmdSetDepthBiasEnable(cb, VK_TRUE);
+    // 如果开启了，通常紧接着需要设置具体的偏移数值
+    vkCmdSetDepthBias(cb,
+                      1.25f, // constantFactor (固定偏移)
+                      0.0f,  // clamp (最大偏移限制)
+                      1.75f  // slopeFactor (随坡度增加的偏移)
+                     );
+
+    // VkPipelineDepthStencilStateCreateFlags    flags;
+    // VkBool32                                  depthTestEnable;
+    // VkBool32                                  depthWriteEnable;
+    // VkCompareOp                               depthCompareOp;
+    // VkBool32                                  depthBoundsTestEnable;
+    // VkBool32                                  stencilTestEnable;
+    // VkStencilOpState                          front;
+    // VkStencilOpState                          back;
+    // float                                     minDepthBounds;
+    // float                                     maxDepthBounds;
+
     if (!vk_draw.vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
         temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
