@@ -221,6 +221,72 @@ bool add_geometry_data(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
+bool add_sky_box_data(entt::entity entity) {
+    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
+    indices->push_back(vertices->size() + 0);
+    indices->push_back(vertices->size() + 1);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 3);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 1);
+    indices->push_back(vertices->size() + 4);
+    indices->push_back(vertices->size() + 5);
+    indices->push_back(vertices->size() + 6);
+    indices->push_back(vertices->size() + 7);
+    indices->push_back(vertices->size() + 6);
+    indices->push_back(vertices->size() + 5);
+    indices->push_back(vertices->size() + 8);
+    indices->push_back(vertices->size() + 9);
+    indices->push_back(vertices->size() + 10);
+    indices->push_back(vertices->size() + 11);
+    indices->push_back(vertices->size() + 10);
+    indices->push_back(vertices->size() + 9);
+    indices->push_back(vertices->size() + 12);
+    indices->push_back(vertices->size() + 13);
+    indices->push_back(vertices->size() + 14);
+    indices->push_back(vertices->size() + 15);
+    indices->push_back(vertices->size() + 14);
+    indices->push_back(vertices->size() + 13);
+    indices->push_back(vertices->size() + 16);
+    indices->push_back(vertices->size() + 17);
+    indices->push_back(vertices->size() + 18);
+    indices->push_back(vertices->size() + 19);
+    indices->push_back(vertices->size() + 18);
+    indices->push_back(vertices->size() + 17);
+    indices->push_back(vertices->size() + 20);
+    indices->push_back(vertices->size() + 21);
+    indices->push_back(vertices->size() + 22);
+    indices->push_back(vertices->size() + 23);
+    indices->push_back(vertices->size() + 22);
+    indices->push_back(vertices->size() + 21);
+    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {-1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {-1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {-1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {-1, 0, 0}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
+    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
+    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
+    add_geometry_data(entity, vertices, indices);
+}
+
 
 bool add_geometry_data(entt::entity entity,
                        Point_3 a,

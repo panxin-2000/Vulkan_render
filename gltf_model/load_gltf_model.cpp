@@ -212,7 +212,8 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
             indices_count         = indices_count + current_accessor.count;
         }
         for (const auto &attribute: primitive.attributes) {
-            vertices_count += attribute.second;
+            auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
+            vertices_count        += current_accessor.count;
         }
     }
     sp_vertices->reserve(vertices_count);
@@ -243,9 +244,9 @@ entt::entity load_node_data(tinygltf::Model &model,
                             const int parent_node_index           = -1,
                             const entt::entity parent_node_entity = entt::null) {
     const entt::entity entity = Logic_entt().create();
-    auto node                  = model.nodes[current_node_index];
-    Point_3 offset             = get_offset_from_model(model, current_node_index);
-    Eigen::Quaternionf rotate  = get_rotate_from_model(model, current_node_index);
+    auto node                 = model.nodes[current_node_index];
+    Point_3 offset            = get_offset_from_model(model, current_node_index);
+    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
     Logic_entt().emplace<Name_component>(entity, node.name);
     Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
