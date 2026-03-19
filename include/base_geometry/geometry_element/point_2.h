@@ -150,7 +150,7 @@ public:
      * @param R
      * @return
      */
-    float single_area(const Point_2 &R) const {
+    [[nodiscard]] float single_area(const Point_2 &R) const {
         return this->x * R.y - this->y * R.x;
     }
 

@@ -11,6 +11,7 @@
 template<typename T>
 bool intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
     // 有更优的方案，写起来稍微麻烦一点
+    // 不对，如果球在三角形内部呢？
     if (intersect(L_sphere, Segment<T>{triangle.a, triangle.b})) {
         return true;
     }

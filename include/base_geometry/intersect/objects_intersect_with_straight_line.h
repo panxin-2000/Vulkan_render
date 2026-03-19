@@ -17,14 +17,10 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Po
     Point_2 box_min_x_max_y = {L_box.min_point_.x, L_box.max_point_.y};
     Point_2 box_mam_x_min_y = {L_box.max_point_.x, L_box.min_point_.y};
     Point_2 box_max_x_max_y = {L_box.max_point_.x, L_box.max_point_.y};
-    auto bool_1             = Point_2::is_anticlockwise(line.point, line.point + line.direction,
-                                            box_min_x_min_y);
-    auto bool_2 = Point_2::is_anticlockwise(line.point, line.point + line.direction,
-                                            box_min_x_max_y);
-    auto bool_3 = Point_2::is_anticlockwise(line.point, line.point + line.direction,
-                                            box_mam_x_min_y);
-    auto bool_4 = Point_2::is_anticlockwise(line.point, line.point + line.direction,
-                                            box_max_x_max_y);
+    auto bool_1             = Point_2::is_anticlockwise(line.point, line.point + line.direction, box_min_x_min_y);
+    auto bool_2             = Point_2::is_anticlockwise(line.point, line.point + line.direction, box_min_x_max_y);
+    auto bool_3             = Point_2::is_anticlockwise(line.point, line.point + line.direction, box_mam_x_min_y);
+    auto bool_4             = Point_2::is_anticlockwise(line.point, line.point + line.direction, box_max_x_max_y);
     if (((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::counterclockwise) ||
         ((bool_1 | bool_2 | bool_3 | bool_4) == Point_2::anticlockwise::clockwise)) {
         // 只有单一的一种必然是不相交的
@@ -32,6 +28,7 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Po
     }
     return true;
 }
+
 
 template<typename T>
 bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
@@ -46,6 +43,19 @@ bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
     auto a          = dot(direction, direction);
     auto delta_half = b_half * b_half - dot(direction, direction) * c;
     if (delta_half < 0) {
+        return false;
+    }
+    return true;
+}
+
+template<typename T>
+bool intersect(const Triangle<Point_2> &triangle, const Straight_line<Point_2> &line) {
+    const auto bool_1 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.a);
+    const auto bool_2 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.b);
+    const auto bool_3 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.c);
+    if (((bool_1 | bool_2 | bool_3) == Point_2::anticlockwise::counterclockwise) ||
+        ((bool_1 | bool_2 | bool_3) == Point_2::anticlockwise::clockwise)) {
+        // 只有单一的一种必然是不相交的
         return false;
     }
     return true;

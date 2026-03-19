@@ -31,7 +31,7 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
     if (abs(x_12_middle - x_34_middle) > x_12_half_distance + x_34_half_distance) {
         return false;
     }
-    return true;  // 这里是 比较逻辑 导致了 nan 返回的结果为 true 很巧合的一点 但是某些地方会出错，可能
+    return true; // 这里是 比较逻辑 导致了 nan 返回的结果为 true 很巧合的一点 但是某些地方会出错，可能
 }
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
@@ -115,6 +115,14 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
     }
 
     return true;
+}
+
+
+
+
+template<typename T>
+bool intersect(const Triangle<T> &triangle, const Ray<T> &ray) {
+    return false;
 }
 
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_RAY_H

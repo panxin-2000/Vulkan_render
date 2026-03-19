@@ -130,6 +130,7 @@ public:
         } else {
             centroid_point_     = l_points;
             direction_interval_ = r_points;
+            direction_interval_ = abs(direction_interval_);
         }
     }
 };

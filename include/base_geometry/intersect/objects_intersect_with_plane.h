@@ -8,6 +8,21 @@
 
 
 template<typename T>
+inline bool intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
+    // 确实是很有想法的一个解法
+    if constexpr (std::is_same_v<std::decay_t<T>, Point_2>) {
+        return true;
+    }
+    if constexpr (std::is_same_v<std::decay_t<T>, Point_3>) {
+        // 平面是有法线的，能找到box 投影在法线上最大和最小的两个点，
+        // 判断这两个点与平面的距离，同向为假，
+        // 没有想好怎么写
+        return false;
+    }
+    return false;
+}
+
+template<typename T>
 inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
     // 一个点在平面一侧，另一个点在平面另一侧
     auto start_distance = plane.distance(segment.start_point);
@@ -44,15 +59,6 @@ inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
 }
 
 template<typename T>
-inline T intersect_result(const Plane<T> &plane, const Straight_line<T> &ray) {
-    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - ray.point); //射线的起点到平面的最近距离
-    auto b                           = dot(plane.normal, ray.direction);
-    auto t                           = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
-    auto result                      = ray.point + ray.direction * t;
-    return result;
-}
-
-template<typename T>
 inline bool intersect(const Plane<T> &plane, const Straight_line<T> &straight_line) {
     // 直线怎么判断？ // 直线的方向与法线 不垂直时 永远相交
     if (abs(dot((straight_line.direction), (plane.normal))) < 0.0000001) {
@@ -63,6 +69,15 @@ inline bool intersect(const Plane<T> &plane, const Straight_line<T> &straight_li
         return true;
     }
     return false;
+}
+
+template<typename T>
+inline T intersect_result(const Plane<T> &plane, const Straight_line<T> &line) {
+    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - line.point); //射线的起点到平面的最近距离
+    auto b                           = dot(plane.normal, line.direction);
+    auto t                           = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
+    auto result                      = line.point + line.direction * t;
+    return result;
 }
 
 
@@ -80,9 +95,5 @@ inline bool intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
     return false;
 }
 
-template<typename T>
-inline bool intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
-    // 确实是很有想法的一个解法
-    return false;
-}
+
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_PLANE_H
