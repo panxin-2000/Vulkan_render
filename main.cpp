@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     {
         // 83886080
         // 75497472
-        auto entity                                     = add_sky_box("sky_box");
+        auto entity                                     = add_sky_box("skybox");
         auto texture                                    = create_skybox_texture_all("");
         std::optional<Texture_parameter> sampler_skybox = texture;
         set_render_parameter(entity, "sampler_skybox", sampler_skybox);

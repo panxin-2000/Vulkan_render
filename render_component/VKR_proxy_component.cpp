@@ -40,7 +40,7 @@ void add_new_peoxy_to_render_function() {
             if (name.find("deferred_pass") != std::string::npos) {
                 Render_entt().get_or_emplace<deferred_pass_tag>(entity_temp);
             }
-            if (name.find("sampler_skybox") != std::string::npos) {
+            if (name.find("skybox") != std::string::npos) {
                 Render_entt().get_or_emplace<skybox_tag>(entity_temp);
             }
             proxy.mesh               = mesh;

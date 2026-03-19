@@ -143,13 +143,12 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
     switch (temp_type) {
         case MOUSE_ROTATE: {
             auto temp = event.scroll;
-            // 绕 Z 轴旋转 45 度
-            Eigen::Quaternionf q_x = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()));
-            Eigen::Quaternionf q_y = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-            LOG_INFO(g_log(), "MOUSE_ROTATE  ");
 
             if (auto position = Logic_entt().try_get<model_transform>(entity)) {
-                position->rotate(q_x * q_y);
+                auto q_current = position->get_rotate();
+                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
+                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                position->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
             }
         }
