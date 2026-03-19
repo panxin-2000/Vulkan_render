@@ -5,6 +5,7 @@
 #include "engine.h"
 
 #include "vulkan_backend.h"
+#include "vulkan_buffer.h"
 
 const VkImage &VK_backend::get_current_swap_chain_image() const {
     return get_swap_chain_images()[engine_.imageIndex]->get_image_handle();
@@ -79,8 +80,10 @@ void VK_backend::submit_render_queue(uint64_t time_line) {
         .pCommandBuffers      = &cb,
         .signalSemaphoreCount = 2,
         .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-    };
-    VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(get_queue(), 1, &submitInfo, engine_.get_current_fences()));
+    }; {
+        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
+        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(get_queue(), 1, &submitInfo, engine_.get_current_fences()));
+    }
 }
 
 
@@ -93,15 +96,17 @@ void VK_backend::copy_image_to_screen() {
         .swapchainCount     = 1,
         .pSwapchains        = &get_swap_chain(),
         .pImageIndices      = &engine_.imageIndex
-    };
-    auto result = vkQueuePresentKHR(get_queue(), &presentInfo);
-    if (result == VK_SUCCESS) {
-    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-               framebufferResized) {
-        recreate_swap_chain();
-        engine_.destroy_and_recreate_fence_and_semaphore();
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        std::cout << "failed to acquire swap chain image!" << std::endl;
+    }; {
+        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
+        auto result = vkQueuePresentKHR(get_queue(), &presentInfo);
+        if (result == VK_SUCCESS) {
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
+                   framebufferResized) {
+            recreate_swap_chain();
+            engine_.destroy_and_recreate_fence_and_semaphore();
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            std::cout << "failed to acquire swap chain image!" << std::endl;
+        }
     }
 }
 

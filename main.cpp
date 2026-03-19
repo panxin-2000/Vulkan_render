@@ -84,16 +84,26 @@ int main(int argc, char *argv[]) {
 
 
     // load_gltf_model("sky box", "assets/Box.gltf");
-    load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
+    // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
-    // 3d 模型
+    // 天空盒
     {
-        auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        set_render_parameter(entity, "samplerColor", "assets/suzanne0.ktx");
-    } {
-        auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
-        set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
+        // 83886080
+        // 75497472
+        auto entity                                     = add_sky_box("sky_box");
+        auto texture                                    = create_skybox_texture_all("");
+        std::optional<Texture_parameter> sampler_skybox = texture;
+        set_render_parameter(entity, "sampler_skybox", sampler_skybox);
+        // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
     }
+    // 3d 模型
+    // {
+    //     auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    //     set_render_parameter(entity, "samplerColor", "assets/suzanne0.ktx");
+    // } {
+    //     auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+    //     set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
+    // }
     const auto sampler = base_sample(); {
         const auto entity                  = add_render_pass("blank");
         Texture_parameter position_texture = {

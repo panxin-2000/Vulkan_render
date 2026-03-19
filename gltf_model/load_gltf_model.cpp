@@ -287,7 +287,6 @@ entt::entity load_node_data(tinygltf::Model &model,
     return entity;
 }
 
-Texture_parameter create_texture_all(Picture_parameters &picture_parameters);
 
 Texture_parameter load_image(tinygltf::Image &image) {
     if (image.width * image.height * image.component * image.bits / 8 == image.image.size()) {
@@ -298,7 +297,7 @@ Texture_parameter load_image(tinygltf::Image &image) {
                 image.component,
                 image.image.data(),
             };
-            auto texture = create_texture_all(picture_parameters);
+            auto texture = create_2d_texture(picture_parameters);
             return texture;
             // 确定了可以直接上传 RGBA
         }

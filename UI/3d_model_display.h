@@ -14,6 +14,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 
+entt::entity add_sky_box(const std::string &name);
 
 
 #endif //HELLO_MAC_3D_MODEL_DISPLAY_H

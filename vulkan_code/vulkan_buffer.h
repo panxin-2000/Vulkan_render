@@ -173,4 +173,6 @@ void discard_buffer_map_clean();
 
 using buffer_offset = VkDeviceSize;
 
+std::mutex &get_vkQueueSubmit_mutex();
+
 #endif //HELLO_MAC_VULKAN_BUFFER_H

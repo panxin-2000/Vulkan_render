@@ -111,6 +111,11 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
     end_and_submit_one_command_buffer(command_buffer);
 }
 
+static std::mutex queueMutex;
+
+std::mutex &get_vkQueueSubmit_mutex() {
+    return queueMutex;
+}
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     const auto &backend = VK_backend::get();
@@ -120,9 +125,10 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     VkSubmitInfo submitInfo{};
     submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer;
-
-    vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
+    submitInfo.pCommandBuffers    = &commandBuffer; {
+        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
+        vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
+    }
     vkQueueWaitIdle(backend.get_queue());
 
     vkFreeCommandBuffers(backend.get_device(), backend.engine_.get_command_pool(), 1, &commandBuffer);

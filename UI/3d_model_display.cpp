@@ -43,3 +43,25 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     return entity;
 }
+
+
+entt::entity add_sky_box(const std::string &name) {
+    const entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<Name_component>(entity, name);
+    Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+
+
+    Logic_entt().emplace<VKR_shader_paths>(entity,
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.frag.spv",
+                                           "", "");
+    add_sky_box_data(entity);
+
+    // 更新物体的模型矩阵
+
+    world_root_add_child(entity);
+
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+
+    return entity;
+}

@@ -42,9 +42,9 @@ VkImageView create_sky_cube_ImageView(const VkImage image,
     viewInfo.format                          = format;
     viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     viewInfo.subresourceRange.baseMipLevel   = 0;
-    viewInfo.subresourceRange.levelCount     = 6;
+    viewInfo.subresourceRange.levelCount     = 1;
+    viewInfo.subresourceRange.layerCount     = 6;
     viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount     = mipLevels;
     viewInfo.subresourceRange.aspectMask     = aspectFlags;
     VkImageView imageView;
     if (vkCreateImageView(backend.get_device(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {

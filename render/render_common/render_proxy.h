@@ -35,11 +35,12 @@ public:
 struct deferred_pass_tag {
 };
 
-
-struct Render_destroy_tag {
+struct skybox_tag {
 };
 
 
+struct Render_destroy_tag {
+};
 
 
 #endif //HELLO_MAC_RENDER_PROXY_H

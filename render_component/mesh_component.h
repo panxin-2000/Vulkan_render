@@ -86,6 +86,8 @@ bool add_geometry_data(entt::entity entity,
                        Point_3 b,
                        Point_3 c);
 
+bool add_sky_box_data(entt::entity entity);
+
 inline std::pair<Point_3, Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
     Point_3 min = Point_3::init_max_limit();
     Point_3 max = Point_3::init_min_limit();

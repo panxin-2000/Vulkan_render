@@ -8,6 +8,7 @@
 #include <vk_mem_alloc.h>
 
 #include "APP_utility_mixins.h"
+#include "shader_common.h"
 
 
 class VKR_image : public NonCopyable {
@@ -79,19 +80,36 @@ private:
     std::shared_ptr<VKR_image> ptr = nullptr;
 };
 
-VkImageView createImageView(const VkImage image,
-                            const VkFormat format,
-                            const VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 
-
-void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, int layerCount = 1);
 
 void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout, uint32_t mipLevels);
 
-std::pair<VkImage, VmaAllocation> createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
-                                              VkFormat format,
-                                              VkImageTiling tiling, VkImageUsageFlags usage);
+std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width, uint32_t height, uint32_t mipLevels,
+                                                  VkFormat format,
+                                                  VkImageTiling tiling, VkImageUsageFlags usage);
+
+struct Texture_parameter {
+    VKR_image_ptr image;
+    VkSampler sampler         = VK_NULL_HANDLE;
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    [[nodiscard]] VkDescriptorImageInfo get_descriptor_image_info(const uint64_t timeline = 0) const {
+        const VkDescriptorImageInfo temp{
+            .sampler     = sampler,
+            .imageView   = image->get_image_view(timeline),
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+        };
+        return temp;
+    }
+};
+
+Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters);
+
+VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters);
+
+Texture_parameter create_skybox_texture_all(const std::string &picture_path);
 
 
 void discard_image_and_view_map_clean();

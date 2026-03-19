@@ -19,20 +19,7 @@
 
 #include "vulkan_image.h"
 
-struct Texture_parameter {
-    VKR_image_ptr image;
-    VkSampler sampler         = VK_NULL_HANDLE;
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    [[nodiscard]] VkDescriptorImageInfo get_descriptor_image_info(const uint64_t timeline = 0) const {
-        const VkDescriptorImageInfo temp{
-            .sampler     = sampler,
-            .imageView   = image->get_image_view(timeline),
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
-        };
-        return temp;
-    }
-};
 
 class VK_backend {
 private:

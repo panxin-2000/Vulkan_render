@@ -10,4 +10,10 @@
 VkSampler create_vulkan_sample(VkSamplerCreateInfo &samplerCI);
 
 void destroy_all_vulkan_sample();
+
+VkSampler create_2d_Texture_Sampler();
+
+VkSampler create_skybox_Texture_Sampler();
+
+
 #endif //HELLO_MAC_VULKAN_SAMPLE_H
