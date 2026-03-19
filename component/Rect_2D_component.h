@@ -52,9 +52,9 @@ public:
     }
 
     bool set_position_offset(const entt::entity entity, const base_event_with_stamp &base_event) {
-        const Point_2 move           = base_event.current_position - base_event.last_position;
-        bounding_box_.centroid_point = bounding_box_.centroid_point + move;
-        offset_                       = offset_ + move;
+        const Point_2 move            = base_event.current_position - base_event.last_position;
+        bounding_box_.add_offset(move);
+        offset_ = offset_ + move;
         Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
         return true;
     }

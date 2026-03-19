@@ -25,8 +25,8 @@ bool intersect(const AABB_min_max<T> &L_box, const AABB_min_max<T> &R_box) {
  */
 template<typename T>
 inline bool intersect(const AABB_centroid<T> &L_box, const AABB_centroid<T> &R_box) {
-    if (abs((L_box.centroid_point - R_box.centroid_point)) <=
-        abs((L_box.direction_interval + R_box.direction_interval)))
+    if (abs((L_box.centroid_point_ - R_box.centroid_point_)) <=
+        abs((L_box.direction_interval_ + R_box.direction_interval_)))
         return true;
     return false;
 }

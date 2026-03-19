@@ -35,8 +35,8 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
 }
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
-    auto t_min = (L_box.min_point - ray.point) / ray.direction;
-    auto t_max = (L_box.max_point - ray.point) / ray.direction;
+    auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
+    auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
     if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
         (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_max.y))) {
         // 上面的判断是一个半平面的判断
@@ -55,8 +55,8 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ra
         std::swap(t_max.x, t_max.y);
         const auto v_1    = ray.point + t_min * ray.direction;
         const auto v_2    = ray.point + t_max * ray.direction;
-        const auto bool_1 = have_intersect_axis(v_1.y, v_2.y, L_box.min_point.y, L_box.max_point.y);
-        const auto bool_2 = have_intersect_axis(v_1.x, v_2.x, L_box.min_point.x, L_box.max_point.x);
+        const auto bool_1 = have_intersect_axis(v_1.y, v_2.y, L_box.min_point_.y, L_box.max_point_.y);
+        const auto bool_2 = have_intersect_axis(v_1.x, v_2.x, L_box.min_point_.x, L_box.max_point_.x);
         if (bool_1 && bool_2) {
             return true;
         }
@@ -65,8 +65,8 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ra
 }
 
 inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
-    auto t_min = (L_box.min_point - ray.point) / ray.direction;
-    auto t_max = (L_box.max_point - ray.point) / ray.direction;
+    auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
+    auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
     if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
         (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_min.y)) &&
         (t_min.z >= 0 || t_max.z >= 0 || std::isnan(t_min.z) || std::isnan(t_max.z))) {

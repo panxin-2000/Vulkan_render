@@ -564,16 +564,16 @@ public:
     static trapezoid_ptr init_root(AABB_min_max<Point_2> bounding_box) {
         auto result_ptr = new trapezoid_graph_Node;
         result_ptr->trapezoid_union_data.trapezoid.left_upper = {
-            bounding_box.min_point.x, bounding_box.max_point.y
+            bounding_box.min_point_.x, bounding_box.max_point_.y
         };
         result_ptr->trapezoid_union_data.trapezoid.right_upper = {
-            bounding_box.max_point.x, bounding_box.max_point.y
+            bounding_box.max_point_.x, bounding_box.max_point_.y
         };
         result_ptr->trapezoid_union_data.trapezoid.left_lower = {
-            bounding_box.min_point.x, bounding_box.min_point.y
+            bounding_box.min_point_.x, bounding_box.min_point_.y
         };
         result_ptr->trapezoid_union_data.trapezoid.right_lower = {
-            bounding_box.max_point.x, bounding_box.min_point.y
+            bounding_box.max_point_.x, bounding_box.min_point_.y
         };
         result_ptr->trapezoid_type = graph_enum::leaf_node;
         return result_ptr;

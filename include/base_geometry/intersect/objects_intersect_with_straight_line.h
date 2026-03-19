@@ -13,10 +13,10 @@ inline bool intersect(const AABB_centroid<T> &L_box, const Straight_line<T> &lin
 }
 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Point_2> &line) {
-    Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
-    Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
-    Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
-    Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
+    Point_2 box_min_x_min_y = {L_box.min_point_.x, L_box.min_point_.y};
+    Point_2 box_min_x_max_y = {L_box.min_point_.x, L_box.max_point_.y};
+    Point_2 box_mam_x_min_y = {L_box.max_point_.x, L_box.min_point_.y};
+    Point_2 box_max_x_max_y = {L_box.max_point_.x, L_box.max_point_.y};
     auto bool_1             = Point_2::is_anticlockwise(line.point, line.point + line.direction,
                                             box_min_x_min_y);
     auto bool_2 = Point_2::is_anticlockwise(line.point, line.point + line.direction,

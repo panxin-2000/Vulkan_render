@@ -15,47 +15,47 @@ class AABB_min_max;
 template<typename T>
 class AABB_min_max {
 public:
-    T min_point; // 最小点，并不一定是真实存在的点，可能是由两个点拼出来的一个点
-    T max_point; // 最大点也是一样的
+    T min_point_; // 最小点，并不一定是真实存在的点，可能是由两个点拼出来的一个点
+    T max_point_; // 最大点也是一样的
 
     AABB_min_max(AABB_centroid<T> box) {
-        min_point = box.centroid_point - box.direction_interval;
-        max_point = box.centroid_point + box.direction_interval;
+        min_point_ = box.centroid_point_ - box.direction_interval_;
+        max_point_ = box.centroid_point_ + box.direction_interval_;
     }
 
     AABB_min_max() {
-        min_point = T::init_max_limit();
-        max_point = T::init_min_limit();
+        min_point_ = T::init_max_limit();
+        max_point_ = T::init_min_limit();
     }
 
     AABB_min_max(std::initializer_list<T> points) {
-        min_point = T::init_max_limit();
-        max_point = T::init_min_limit();
+        min_point_ = T::init_max_limit();
+        max_point_ = T::init_min_limit();
         for (auto vertex_point: points) {
-            min_point = T::min_two_point(min_point, vertex_point);
-            max_point = T::max_two_point(max_point, vertex_point);
+            min_point_ = T::min_two_point(min_point_, vertex_point);
+            max_point_ = T::max_two_point(max_point_, vertex_point);
         }
     }
 
     AABB_min_max(std::vector<T> &points) {
-        min_point = T::init_max_limit();
-        max_point = T::init_min_limit();
+        min_point_ = T::init_max_limit();
+        max_point_ = T::init_min_limit();
         for (auto vertex_point: points) {
-            min_point = T::min_two_point(min_point, vertex_point);
-            max_point = T::max_two_point(max_point, vertex_point);
+            min_point_ = T::min_two_point(min_point_, vertex_point);
+            max_point_ = T::max_two_point(max_point_, vertex_point);
         }
     }
 
     AABB_min_max(T a_points, T b_points) {
-        min_point = T::min_two_point(a_points, b_points);
-        max_point = T::max_two_point(a_points, b_points);
+        min_point_ = T::min_two_point(a_points, b_points);
+        max_point_ = T::max_two_point(a_points, b_points);
     }
 
     AABB_min_max(T a_points, T b_points, T c_points) {
-        min_point = T::min_two_point(a_points, b_points);
-        max_point = T::max_two_point(a_points, b_points);
-        min_point = T::min_two_point(min_point, c_points);
-        max_point = T::max_two_point(max_point, c_points);
+        min_point_ = T::min_two_point(a_points, b_points);
+        max_point_ = T::max_two_point(a_points, b_points);
+        min_point_ = T::min_two_point(min_point_, c_points);
+        max_point_ = T::max_two_point(max_point_, c_points);
     }
 
 
@@ -70,22 +70,26 @@ public:
 template<typename T>
 class AABB_centroid {
 public:
-    T centroid_point;     // 重心
-    T direction_interval; // 方向间隔
+    T centroid_point_;     // 重心
+    T direction_interval_; // 方向间隔
 
     AABB_centroid() = default;
 
     auto get_centroid_point(AABB_centroid box) {
-        return centroid_point;
+        return centroid_point_;
     }
 
     auto get_direction_interval(AABB_centroid box) {
-        return direction_interval;
+        return direction_interval_;
+    }
+
+    void add_offset(T offset) {
+        centroid_point_ = centroid_point_ + offset;
     }
 
     AABB_centroid(AABB_min_max<T> box) {
-        centroid_point = (box.min_point + box.max_point) / 2;
-        direction_interval = (box.max_point - box.min_point) / 2;
+        centroid_point_     = (box.min_point_ + box.max_point_) / 2;
+        direction_interval_ = (box.max_point_ - box.min_point_) / 2;
     }
 
 
@@ -96,8 +100,8 @@ public:
             min_point = T::min_two_point(min_point, vertex_point);
             max_point = T::max_two_point(max_point, vertex_point);
         }
-        centroid_point = (min_point + max_point) / 2;
-        direction_interval = (max_point - min_point) / 2;
+        centroid_point_     = (min_point + max_point) / 2;
+        direction_interval_ = (max_point - min_point) / 2;
     }
 
     AABB_centroid(std::vector<T> &points) {
@@ -107,8 +111,8 @@ public:
             min_point = T::min_two_point(min_point, vertex_point);
             max_point = T::max_two_point(max_point, vertex_point);
         }
-        centroid_point = (min_point + max_point) / 2;
-        direction_interval = (max_point - min_point) / 2;
+        centroid_point_     = (min_point + max_point) / 2;
+        direction_interval_ = (max_point - min_point) / 2;
     }
 
     /**
@@ -119,13 +123,13 @@ public:
      */
     AABB_centroid(T l_points, T r_points, bool value_or_need_calculate = true) {
         if (value_or_need_calculate == true) {
-            T min_point = T::min_two_point(l_points, r_points);
-            T max_point = T::max_two_point(l_points, r_points);
-            centroid_point = (min_point + max_point) / 2;
-            direction_interval = (max_point - min_point) / 2;
+            T min_point         = T::min_two_point(l_points, r_points);
+            T max_point         = T::max_two_point(l_points, r_points);
+            centroid_point_     = (min_point + max_point) / 2;
+            direction_interval_ = (max_point - min_point) / 2;
         } else {
-            centroid_point = l_points;
-            direction_interval = r_points;
+            centroid_point_     = l_points;
+            direction_interval_ = r_points;
         }
     }
 };

@@ -9,15 +9,15 @@
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &box, const T &test_point) {
-    if (box.min_point <= test_point && test_point <= box.max_point)
+    if (box.min_point_ <= test_point && test_point <= box.max_point_)
         return true;
     return false;
 }
 
 template<typename T>
 bool intersect(const AABB_centroid<T> &box, const T &test_point) {
-    if (box.centroid_point - box.direction_interval <= test_point &&
-        test_point <= box.centroid_point + box.direction_interval)
+    if (box.centroid_point_ - box.direction_interval_ <= test_point &&
+        test_point <= box.centroid_point_ + box.direction_interval_)
         return true;
     return false;
 }
@@ -93,13 +93,13 @@ inline bool intersect(const Plane<T> &plane, const T &test_point) {
 
 template<typename T>
 inline float distance_of_box_center(const AABB_centroid<T> &box, const T &test_point) {
-    T distance = box.centroid_point - test_point;
+    T distance = box.centroid_point_ - test_point;
     return dot(distance, distance);
 }
 
 template<typename T>
 inline float distance_of_box_center(const AABB_min_max<T> &box, const T &test_point) {
-    T distance = (box.max_point + box.min_point) / 2 - test_point;
+    T distance = (box.max_point_ + box.min_point_) / 2 - test_point;
     return dot(distance, distance);
 }
 

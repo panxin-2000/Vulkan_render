@@ -9,8 +9,8 @@
 template<typename T>
 class OBB {
 public:
-    T centroid; // 重心
-    T direction; // 方向
-    T interval; // 间隔
+    T centroid_;     // 重心
+    T direction_;    // 方向
+    float interval_; // 间隔
 };
 #endif //HELLO_MAC_ORIENTED_BOUNDING_BOXES_H

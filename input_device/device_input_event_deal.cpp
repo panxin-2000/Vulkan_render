@@ -226,9 +226,9 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
     const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, model_transform>();
     for (auto &entity: view) {
-        auto position      = view.get<model_transform>(entity);
-        auto box           = view.get<AABB_centroid<Point_3> >(entity);
-        box.centroid_point = box.centroid_point + position.get_offset();
+        auto position = view.get<model_transform>(entity);
+        auto box      = view.get<AABB_centroid<Point_3> >(entity);
+        box.add_offset(position.get_offset());
         if (intersect(box, ray)) {
             auto &name = view.get<Name_component>(entity);
             LOG_INFO(g_log(), " insert box 3d {} ", name.name_);

@@ -252,12 +252,12 @@ void update_object_mesh() {
     for (const auto it: view) {
         auto pos = view.get<Rect_2D_transform>(it);
         add_geometry_data(it, {
-                              pos.get_bounding_box().min_point.x,
-                              pos.get_bounding_box().min_point.y, 0.0f
+                              pos.get_bounding_box().min_point_.x,
+                              pos.get_bounding_box().min_point_.y, 0.0f
                           },
                           {
-                              pos.get_bounding_box().max_point.x,
-                              pos.get_bounding_box().max_point.y, 0.0f
+                              pos.get_bounding_box().max_point_.x,
+                              pos.get_bounding_box().max_point_.y, 0.0f
                           });
 
         const auto mesh = create_mesh(it);

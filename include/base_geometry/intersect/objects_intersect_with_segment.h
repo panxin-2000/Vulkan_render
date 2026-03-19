@@ -23,10 +23,10 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
     auto offset             = segment.end_point - segment.start_point;
     float k_x               = offset.y / offset.x;
     float k_y               = offset.x / offset.y;
-    float interval_to_min_x = L_box.min_point.x - segment.start_point.x;
-    float interval_to_max_x = L_box.max_point.x - segment.start_point.x;
-    float interval_to_min_y = L_box.min_point.y - segment.start_point.y;
-    float interval_to_max_y = L_box.max_point.y - segment.start_point.y;
+    float interval_to_min_x = L_box.min_point_.x - segment.start_point.x;
+    float interval_to_max_x = L_box.max_point_.x - segment.start_point.x;
+    float interval_to_min_y = L_box.min_point_.y - segment.start_point.y;
+    float interval_to_max_y = L_box.max_point_.y - segment.start_point.y;
     float segment_min_x     = std::min(segment.start_point.x, segment.end_point.x);
     float segment_max_x     = std::max(segment.start_point.x, segment.end_point.x);
     float segment_min_y     = std::min(segment.start_point.y, segment.end_point.y);
@@ -34,35 +34,35 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
     auto number             = 0;
     auto a_y                = segment.start_point.y + k_x * interval_to_min_x;
     auto a_x                = segment.start_point.x + interval_to_min_x;
-    if (a_y >= L_box.min_point.y && L_box.max_point.y >= a_y &&
+    if (a_y >= L_box.min_point_.y && L_box.max_point_.y >= a_y &&
         a_x >= segment_min_x &&
         segment_max_x <= a_x
     ) {
-        result->push_back({L_box.min_point.x, a_y});
+        result->push_back({L_box.min_point_.x, a_y});
         number++;
     }
     auto c_y = segment.start_point.y + k_x * interval_to_max_x;
     auto c_x = segment.start_point.x + interval_to_max_x;
-    if (c_y >= L_box.min_point.y && L_box.max_point.y >= c_y &&
+    if (c_y >= L_box.min_point_.y && L_box.max_point_.y >= c_y &&
         c_x >= segment_min_x &&
         segment_max_x <= c_x) {
-        result->push_back({L_box.max_point.x, c_y});
+        result->push_back({L_box.max_point_.x, c_y});
         number++;
     }
     auto b_x = segment.start_point.x + k_y * interval_to_min_y;
     auto b_y = segment.start_point.y + k_y * interval_to_min_y;
-    if (b_x >= L_box.min_point.x && L_box.max_point.x >= b_x &&
+    if (b_x >= L_box.min_point_.x && L_box.max_point_.x >= b_x &&
         b_y >= segment_min_y &&
         segment_max_y <= b_y) {
-        result->push_back({b_x, L_box.min_point.y});
+        result->push_back({b_x, L_box.min_point_.y});
         number++;
     }
     auto d_x = segment.start_point.x + k_y * interval_to_max_y;
     auto d_y = segment.start_point.y + k_y * interval_to_max_y;
-    if (d_x >= L_box.min_point.x && L_box.max_point.x >= d_x &&
+    if (d_x >= L_box.min_point_.x && L_box.max_point_.x >= d_x &&
         d_y >= segment_min_y &&
         segment_max_y <= d_y) {
-        result->push_back({d_x, L_box.max_point.y});
+        result->push_back({d_x, L_box.max_point_.y});
         number++;
     }
     if (number > 0)
@@ -82,10 +82,10 @@ inline bool intersect(const AABB_centroid<T> &L_box, const Segment<T> &segment) 
 inline bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &segment) {
     // 判断两个包围盒是否存在相交
     if (intersect(L_box, AABB_min_max<Point_2>(segment.start_point, segment.end_point))) {
-        Point_2 box_min_x_min_y = {L_box.min_point.x, L_box.min_point.y};
-        Point_2 box_min_x_max_y = {L_box.min_point.x, L_box.max_point.y};
-        Point_2 box_mam_x_min_y = {L_box.max_point.x, L_box.min_point.y};
-        Point_2 box_max_x_max_y = {L_box.max_point.x, L_box.max_point.y};
+        Point_2 box_min_x_min_y = {L_box.min_point_.x, L_box.min_point_.y};
+        Point_2 box_min_x_max_y = {L_box.min_point_.x, L_box.max_point_.y};
+        Point_2 box_mam_x_min_y = {L_box.max_point_.x, L_box.min_point_.y};
+        Point_2 box_max_x_max_y = {L_box.max_point_.x, L_box.max_point_.y};
         auto bool_1             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_min_y);
         auto bool_2             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_min_x_max_y);
         auto bool_3             = Point_2::is_anticlockwise(segment.start_point, segment.end_point, box_mam_x_min_y);
