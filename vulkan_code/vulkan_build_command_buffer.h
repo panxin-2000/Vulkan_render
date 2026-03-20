@@ -87,7 +87,7 @@ inline void reset_current_command_buffer(VK_backend &handle, VkQueryPool queryPo
 inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
 
-    std::array<VkImageMemoryBarrier2, 2> outputBarriers{
+    std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -99,26 +99,28 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
             .image         = VK_backend::get().get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
-        VkImageMemoryBarrier2{
-            .sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                            VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
-            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = VK_backend::get().get_current_depth_image(),
-            .subresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1,
-                .layerCount = 1
-            }
-        }
+        // VkImageMemoryBarrier2{
+        //     .sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        //     .srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        //                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        //     .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        //     .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+        //                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+        //     .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        //     .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, // 不关心旧布局的内容，丢弃
+        //     .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        //     .image         = VK_backend::get().get_current_depth_image(),
+        //     .subresourceRange{
+        //         .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+        //         .levelCount = 1,
+        //         .layerCount = 1
+        //     }
+        // }
     };
     VkDependencyInfo barrierDependencyInfo{
-        .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 2,
-        .pImageMemoryBarriers = outputBarriers.data()
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
+        .pImageMemoryBarriers    = outputBarriers.data()
     };
     vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
 
@@ -135,7 +137,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = VK_backend::get().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
@@ -270,7 +272,7 @@ inline void begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64
         .imageView   = VK_backend::get().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
     VkRenderingInfo renderingInfo{
@@ -354,11 +356,11 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,  // 确保写入缓存刷新
-            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
-            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
-            .oldLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,              // 渲染时布局
-            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, // 读取时布局
+            .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, // 确保写入缓存刷新
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,        // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                    // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,             // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,             // 读取时布局
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -390,28 +392,20 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
     vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
-    vkCmdSetDepthWriteEnable(cb, VK_TRUE);
     vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
-    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
-    vkCmdSetStencilTestEnable(cb, VK_TRUE);
-    // vkCmdSetDepthBiasEnable
-    vkCmdSetStencilOp(
-                      cb,
-                      VK_STENCIL_FACE_FRONT_AND_BACK, // 作用范围
-                      VK_STENCIL_OP_KEEP,             // failOp
-                      VK_STENCIL_OP_REPLACE,          // passOp
-                      VK_STENCIL_OP_KEEP,             // depthFailOp
-                      VK_COMPARE_OP_ALWAYS            // compareOp
-                     );
-    vkCmdSetDepthBounds(cb, 0.5f, 0.8f);
 
-    vkCmdSetDepthBiasEnable(cb, VK_TRUE);
-    // 如果开启了，通常紧接着需要设置具体的偏移数值
-    vkCmdSetDepthBias(cb,
-                      1.25f, // constantFactor (固定偏移)
-                      0.0f,  // clamp (最大偏移限制)
-                      1.75f  // slopeFactor (随坡度增加的偏移)
-                     );
+    //
+    vkCmdSetDepthWriteEnable(cb, VK_TRUE);
+
+    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
+    vkCmdSetStencilTestEnable(cb, VK_FALSE);
+
+    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
+    vkCmdSetDepthBiasEnable(cb, VK_FALSE);
+
+    vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    vkCmdSetCullMode(cb, VK_CULL_MODE_FRONT_BIT);
+
 
     // VkPipelineDepthStencilStateCreateFlags    flags;
     // VkBool32                                  depthTestEnable;
@@ -460,10 +454,26 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
 inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
-    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
-    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
+
+    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
+    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
+    vkCmdSetDepthTestEnable(cb, VK_FALSE);
+    vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
+
+    //
+    vkCmdSetDepthWriteEnable(cb, VK_FALSE);
+
+    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
+    vkCmdSetStencilTestEnable(cb, VK_FALSE);
+
+    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
+    vkCmdSetDepthBiasEnable(cb, VK_FALSE);
+    vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    vkCmdSetCullMode(cb, VK_CULL_MODE_FRONT_BIT);
+
+
     if (!vk_draw.vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
         temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
