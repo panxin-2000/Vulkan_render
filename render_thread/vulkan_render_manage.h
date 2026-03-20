@@ -14,7 +14,9 @@
 class vk_render_queue {
 private:
     mutable std::mutex mtx;
-    std::queue<const std::function<void(void)>> RND_update_function;
+    std::queue<const std::function<void(void)>> logic_add_function;
+    std::queue<const std::function<void(void)>> render_execute_function;
+    std::atomic<bool> logic_thread_finished = false;
 
 public:
     static vk_render_queue &instance() {
@@ -28,16 +30,34 @@ public:
 
     void execute_update_lambda() {
         std::unique_lock<std::mutex> lock(mtx);
-        while (!RND_update_function.empty()) {
-            auto callback = RND_update_function.front();
-            RND_update_function.pop();
-            callback();
+        if (logic_thread_finished.load() == true) {
+            while (!render_execute_function.empty()) {
+                auto callback = render_execute_function.front();
+                render_execute_function.pop();
+                callback();
+            }
+            logic_thread_finished.store(false);
+        }
+    }
+
+    void logic_add_finished() {
+        // 如果 lambda 正在执行中，那么只有等执行完，那么 render_execute_function 比如为空
+        std::unique_lock<std::mutex> lock(mtx);
+        if (render_execute_function.empty() == true) {
+            std::swap(render_execute_function, logic_add_function);
+            logic_thread_finished.store(true);
+        } else {
+            // 如果 lambda 不在执行中， 那么直接清空
+            while (!render_execute_function.empty())
+                render_execute_function.pop();
+            std::swap(render_execute_function, logic_add_function);
+            logic_thread_finished.store(true);
         }
     }
 
     void render_update_entt(const std::function<void(void)> &callback) {
         std::unique_lock<std::mutex> lock(mtx);
-        RND_update_function.emplace(callback);
+        logic_add_function.emplace(callback);
     }
 
 private:

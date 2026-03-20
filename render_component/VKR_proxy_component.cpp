@@ -58,4 +58,5 @@ void add_new_peoxy_to_render_function() {
 
         Logic_entt().remove<add_to_render_tag>(it);
     }
+    vk_render_queue::instance().logic_add_finished();
 }
