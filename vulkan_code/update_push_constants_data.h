@@ -33,6 +33,7 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
                         static_cast<char *>(buffer_start_address) + memory_offset);
             memory_offset += sizeof(args);
         }(), ...);
+        buffer->flush();
         return return_value;
     } else {
         return {};
