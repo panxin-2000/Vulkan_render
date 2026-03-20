@@ -97,26 +97,26 @@ find_package(OpenVDB REQUIRED)
 #FetchContent_MakeAvailable(directxmath)
 
 
-set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
-file(MAKE_DIRECTORY ${SAL_STUB_DIR})
-
-set(SAL_FILE_PATH "${SAL_STUB_DIR}/sal.h")
-
-if (EXISTS "${SAL_FILE_PATH}")
-    message(STATUS "have found file : ${SAL_FILE_PATH}")
-else ()
-    set(REMOTE_URL "https://raw.githubusercontent.com/dotnet/runtime/main/src/coreclr/pal/inc/rt/sal.h")
-    file(DOWNLOAD ${REMOTE_URL} "${SAL_FILE_PATH}"
-            SHOW_PROGRESS
-            STATUS download_status
-    )
-    list(GET download_status 0 status_code)
-    if (NOT status_code EQUAL 0)
-        message(FATAL_ERROR "下载 sal.h 失败: ${download_status}")
-    endif ()
-endif ()
-
-include_directories(${SAL_STUB_DIR})
+#set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
+#file(MAKE_DIRECTORY ${SAL_STUB_DIR})
+#
+#set(SAL_FILE_PATH "${SAL_STUB_DIR}/sal.h")
+#
+#if (EXISTS "${SAL_FILE_PATH}")
+#    message(STATUS "have found file : ${SAL_FILE_PATH}")
+#else ()
+#    set(REMOTE_URL "https://raw.githubusercontent.com/dotnet/runtime/main/src/coreclr/pal/inc/rt/sal.h")
+#    file(DOWNLOAD ${REMOTE_URL} "${SAL_FILE_PATH}"
+#            SHOW_PROGRESS
+#            STATUS download_status
+#    )
+#    list(GET download_status 0 status_code)
+#    if (NOT status_code EQUAL 0)
+#        message(FATAL_ERROR "下载 sal.h 失败: ${download_status}")
+#    endif ()
+#endif ()
+#
+#include_directories(${SAL_STUB_DIR})
 
 set(WITH_VULKAN_BACKEND ON)
 set(WITH_OPENGL_BACKEND OFF)
