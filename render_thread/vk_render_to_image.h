@@ -55,10 +55,10 @@ public:
             auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag,
                                                                            skybox_tag,
                                                                            UI_2D_tag>);
-            for (const auto it: view) {
-                auto render_data = view.get<VKR_object_proxy>(it);
-                build_command_buffer(handle, render_data, time_line);
-            }
+            // for (const auto it: view) {
+            //     auto render_data = view.get<VKR_object_proxy>(it);
+            //     build_command_buffer(handle, render_data, time_line);
+            // }
         }
 
         end_rendering(handle);
@@ -68,20 +68,22 @@ public:
         begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
         // 应该先划分不同的 pass 阶段，
         //  deferred  不应该将深度值写入的
+        // {
+        //     auto view = Render_entt().view<VKR_object_proxy, deferred_pass_tag>();
+        //     for (const auto it: view) {
+        //         auto render_data = view.get<VKR_object_proxy>(it);
+        //         build_deferred_command_buffer(handle, render_data, time_line);
+        //     }
+        // }
+
         {
-            auto view = Render_entt().view<VKR_object_proxy, deferred_pass_tag>();
-            for (const auto it: view) {
-                auto render_data = view.get<VKR_object_proxy>(it);
-                build_deferred_command_buffer(handle, render_data, time_line);
-            }
-        } {
-            auto view = Render_entt().view<VKR_object_proxy, translate_tag>();
+            auto view = Render_entt().view<VKR_object_proxy>();
             for (const auto it: view) {
                 auto render_data = view.get<VKR_object_proxy>(it);
                 build_command_buffer(handle, render_data, time_line);
             }
         } {
-            auto view = Render_entt().view<VKR_object_proxy, skybox_tag>();
+            auto view = Render_entt().view<VKR_object_proxy, translate_tag>();
             for (const auto it: view) {
                 auto render_data = view.get<VKR_object_proxy>(it);
                 build_command_buffer(handle, render_data, time_line);
