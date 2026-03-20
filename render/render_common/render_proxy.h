@@ -38,6 +38,9 @@ struct deferred_pass_tag {
 struct skybox_tag {
 };
 
+struct translate_tag {
+};
+
 
 struct Render_destroy_tag {
 };
