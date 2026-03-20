@@ -99,23 +99,6 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
             .image         = VK_backend::get().get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
-        // VkImageMemoryBarrier2{
-        //     .sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        //     .srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        //                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        //     .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        //     .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-        //                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        //     .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-        //     .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, // 不关心旧布局的内容，丢弃
-        //     .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        //     .image         = VK_backend::get().get_current_depth_image(),
-        //     .subresourceRange{
-        //         .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-        //         .levelCount = 1,
-        //         .layerCount = 1
-        //     }
-        // }
     };
     VkDependencyInfo barrierDependencyInfo{
         .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -219,7 +202,7 @@ inline void begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64
             .srcStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,          // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, // 也行VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 
@@ -352,31 +335,6 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
                 .layerCount     = 1
             }
         },
-
-        // VkImageMemoryBarrier2{
-        //     .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        //     .srcStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        //     .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, // 确保写入缓存刷新
-        //     .dstStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
-        //                     VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT |
-        //                     VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, // 下一阶段：后处理片元着色器
-        //     .dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-        //                      VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-        //                      VK_ACCESS_2_SHADER_READ_BIT,    // 允许着色器读取
-        //     .oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, // 渲染时布局
-        //     .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, // 读取时布局
-        //
-        //     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        //     .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        //     .image               = VK_backend::get().get_current_depth_image(),
-        //     .subresourceRange    = {
-        //         .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-        //         .baseMipLevel   = 0,
-        //         .levelCount     = 1,
-        //         .baseArrayLayer = 0,
-        //         .layerCount     = 1
-        //     }
-        // },
     };
     VkDependencyInfo barrierDependencyInfo{
         .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -427,6 +385,7 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
         temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
         for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
             temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
+            LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
@@ -483,6 +442,7 @@ inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &
         temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
         for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
             temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
+            LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
