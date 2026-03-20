@@ -329,7 +329,7 @@ void push_constant_update_function() {
 
         if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
             const auto entity_temp = render->entity_;
-            auto lambda = [entity_temp, push_constant_pool]() {
+            auto lambda            = [entity_temp, push_constant_pool]() {
                 if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
                     memcpy(proxy->push_constants_pool, push_constant_pool, 128);
             };

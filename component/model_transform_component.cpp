@@ -182,6 +182,12 @@ void update_camera_transform() {
 
             set_render_parameter(it, "global_world_view_Pos", world_camera_pos);
             set_render_parameter(it, "global_world_light_Pos", world_light_pos);
+
+            auto lambda = [](const entt::entity entity) {
+                if (Logic_entt().all_of<Scene_Component>(entity))
+                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
+            };
+            add_recursion_function_to_children(it, lambda);
         }
         Logic_entt().remove<Camera_transform_dirty>(it);
     }
