@@ -121,7 +121,7 @@ void VK_backend::get_image_to_render() {
                                         UINT64_MAX,
                                         engine_.get_current_presentSemaphores(),
                                         VK_NULL_HANDLE,
-                                        &engine_.imageIndex);
+                                        &engine_.imageIndex); // 其实是在这里执行了 ++ 的工作
     if (result == VK_SUCCESS) {
     } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                framebufferResized) {

@@ -17,6 +17,7 @@
 #include "descriptor_pool.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
+#include "vk_render_to_image.h"
 #include "gltf_model/load_gltf_model.h"
 #include "UI/3d_model_display.h"
 
@@ -74,7 +75,7 @@ int main(int argc, char *argv[]) {
     init_current_descriptor_pool();
 
 
-    render_thread_start(backend);
+    // render_thread_start(backend);
 
     register_glfw(backend.get_window());
 
@@ -151,12 +152,14 @@ int main(int argc, char *argv[]) {
         deal_glfw_event(); // 统一分发执行
         clean_render_entity();
         sync_render_data_to_render_thread();
+        vk_render_GPU::instance().one_cycle(backend);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
     Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
-    render_thread_stop_and_wait();
+    vk_render_GPU::instance().exit_and_clean(backend);
+    // render_thread_stop_and_wait();
 
     // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
     auto &buffer = get_uniform_buffer();

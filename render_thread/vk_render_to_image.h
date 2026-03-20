@@ -38,83 +38,75 @@ class vk_render_GPU {
 
 
 public:
-    void render_thread(VK_backend &handle) {
-        if (need_render == running) {
-            return; // 已经在运行中了，直接返回
+    void one_cycle(VK_backend &handle) { {
+            std::unique_lock<std::mutex> lock(mtx);
+            vk_render_queue::instance().execute_update_lambda();
+        } {
+            const auto view = Render_entt().view<Render_destroy_tag>();
+            Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
-        need_render = running; // 设置为运行中
+        const VkQueryPool queryPool = VK_NULL_HANDLE;
 
-        while (need_render == running) {
-            {
-                std::unique_lock<std::mutex> lock(mtx);
-                vk_render_queue::instance().execute_update_lambda();
-            } {
-                const auto view = Render_entt().view<Render_destroy_tag>();
-                Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+        handle.get_image_to_render();
+        const uint64_t time_line = VK_backend::get_current_submit_timeline();
+        // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
+        reset_current_command_buffer(handle, queryPool, time_line);
+        begin_g_buffer_rendering_attachment(handle, time_line); {
+            auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag,
+                                                                           skybox_tag,
+                                                                           UI_2D_tag>);
+            for (const auto it: view) {
+                auto render_data = view.get<VKR_object_proxy>(it);
+                build_command_buffer(handle, render_data, time_line);
             }
-            const VkQueryPool queryPool = VK_NULL_HANDLE;
-
-            handle.get_image_to_render();
-            const uint64_t time_line = VK_backend::get_current_submit_timeline();
-            // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-            reset_current_command_buffer(handle, queryPool, time_line);
-            begin_g_buffer_rendering_attachment(handle, time_line); {
-                auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag,
-                                                                               skybox_tag,
-                                                                               UI_2D_tag>);
-                for (const auto it: view) {
-                    auto render_data = view.get<VKR_object_proxy>(it);
-                    build_command_buffer(handle, render_data, time_line);
-                }
-            }
-
-            end_rendering(handle);
-            g_buffer_attachment_barrier(handle, time_line);
-
-
-            begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
-            // 应该先划分不同的 pass 阶段，
-            //  deferred  不应该将深度值写入的
-            {
-                auto view = Render_entt().view<VKR_object_proxy, deferred_pass_tag>();
-                for (const auto it: view) {
-                    auto render_data = view.get<VKR_object_proxy>(it);
-                    build_deferred_command_buffer(handle, render_data, time_line);
-                }
-            } {
-                auto view = Render_entt().view<VKR_object_proxy, translate_tag>();
-                for (const auto it: view) {
-                    auto render_data = view.get<VKR_object_proxy>(it);
-                    build_command_buffer(handle, render_data, time_line);
-                }
-            } {
-                auto view = Render_entt().view<VKR_object_proxy, skybox_tag>();
-                for (const auto it: view) {
-                    auto render_data = view.get<VKR_object_proxy>(it);
-                    build_command_buffer(handle, render_data, time_line);
-                }
-            } {
-                auto view = Render_entt().view<VKR_object_proxy, UI_2D_tag>();
-                for (const auto it: view) {
-                    auto render_data = view.get<VKR_object_proxy>(it);
-                    build_command_buffer(handle, render_data, time_line);
-                }
-            }
-
-            end_rendering(handle);
-            end_command_buffer(handle, queryPool, time_line);
-
-            handle.submit_render_queue(time_line);
-            handle.copy_image_to_screen();
-
-
-            // render_object_function();
-            clean_need_objects();
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
-            // LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
         }
 
+        end_rendering(handle);
+        g_buffer_attachment_barrier(handle, time_line);
 
+
+        begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+        // 应该先划分不同的 pass 阶段，
+        //  deferred  不应该将深度值写入的
+        {
+            auto view = Render_entt().view<VKR_object_proxy, deferred_pass_tag>();
+            for (const auto it: view) {
+                auto render_data = view.get<VKR_object_proxy>(it);
+                build_deferred_command_buffer(handle, render_data, time_line);
+            }
+        } {
+            auto view = Render_entt().view<VKR_object_proxy, translate_tag>();
+            for (const auto it: view) {
+                auto render_data = view.get<VKR_object_proxy>(it);
+                build_command_buffer(handle, render_data, time_line);
+            }
+        } {
+            auto view = Render_entt().view<VKR_object_proxy, skybox_tag>();
+            for (const auto it: view) {
+                auto render_data = view.get<VKR_object_proxy>(it);
+                build_command_buffer(handle, render_data, time_line);
+            }
+        } {
+            auto view = Render_entt().view<VKR_object_proxy, UI_2D_tag>();
+            for (const auto it: view) {
+                auto render_data = view.get<VKR_object_proxy>(it);
+                build_command_buffer(handle, render_data, time_line);
+            }
+        }
+
+        end_rendering(handle);
+        end_command_buffer(handle, queryPool, time_line);
+
+        handle.submit_render_queue(time_line);
+        handle.copy_image_to_screen();
+
+
+        // render_object_function();
+        clean_need_objects();
+        //
+    }
+
+    void exit_and_clean(VK_backend &handle) {
         // 需要管理的资源以及删除的顺序
         // blender 中 descriptor_sets_layout 很有意思，在全局的最后才销毁 （中间申请的似乎从不销毁）
         // 一个原因是它关联了三个 内容，另一个原因是整体来说，它的布局很少改变，不会指数增长
@@ -157,6 +149,20 @@ public:
 
         have_object_need_update = false;
         need_render             = not_start;
+    }
+
+    void render_thread(VK_backend &handle) {
+        if (need_render == running) {
+            return; // 已经在运行中了，直接返回
+        }
+        need_render = running; // 设置为运行中
+
+        while (need_render == running) {
+            one_cycle(handle);
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+            LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
+        }
+        exit_and_clean(handle);
     }
 
     // 显式同步：即使使用 detach，也应通过原子变量（如 std::atomic<bool>）或信号量
