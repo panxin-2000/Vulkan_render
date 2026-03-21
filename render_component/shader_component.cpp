@@ -298,22 +298,15 @@ void uniform_buffer_update_function() {
 }
 
 
+
 void descriptor_set_update_function() {
     const auto view = Logic_entt().view<descriptor_set_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
         auto temp_des = get_descriptor_sets(it);
 
+        logic_update_proxy_descriptor_sets(it, temp_des);
 
-        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
-            const auto entity_temp = render->entity_;
-
-            auto lambda = [entity_temp, temp_des]() {
-                if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
-                    proxy->vk_descriptor_sets = temp_des;
-            };
-            vk_render_queue::instance().render_update_entt(lambda);
-        }
         Logic_entt().remove<descriptor_set_update>(it);
     }
 }
@@ -327,14 +320,15 @@ void push_constant_update_function() {
         std::byte push_constant_pool[128];
         memcpy(push_constant_pool, parameter.push_constant_pool, 128);
 
-        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
-            const auto entity_temp = render->entity_;
-            auto lambda            = [entity_temp, push_constant_pool]() {
-                if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
-                    memcpy(proxy->push_constants_pool, push_constant_pool, 128);
-            };
-            vk_render_queue::instance().render_update_entt(lambda);
-        }
+        //
+        // if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
+        //     const auto entity_temp = render->entity_;
+        //     auto lambda            = [entity_temp, push_constant_pool]() {
+        //         if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
+        //             memcpy(proxy->push_constants_pool, push_constant_pool, 128);
+        //     };
+        //     vk_render_queue::instance().render_update_entt(lambda);
+        // }
 
         Logic_entt().remove<push_constant_update>(it);
     }

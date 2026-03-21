@@ -47,10 +47,13 @@ public:
             std::swap(render_execute_function, logic_add_function);
             logic_thread_finished.store(true);
         } else {
-            // 如果 lambda 不在执行中， 那么直接清空
-            while (!render_execute_function.empty())
-                render_execute_function.pop();
-            std::swap(render_execute_function, logic_add_function);
+            // 如果 lambda 不在执行中， 那么将 logic queue 中的内容全部复制到 执行中
+            // 那么执行时就是有可能能执行两帧的更新内容了
+            while (!logic_add_function.empty()) {
+                auto callback = logic_add_function.front();
+                render_execute_function.emplace(callback);
+                logic_add_function.pop();
+            }
             logic_thread_finished.store(true);
         }
     }

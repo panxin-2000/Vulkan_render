@@ -328,15 +328,7 @@ void update_object_mesh() {
 
         const auto mesh = create_mesh(it);
 
-
-        if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
-            const auto entity_temp = render->entity_;
-            auto lambda            = [entity_temp, mesh]() {
-                if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
-                    proxy->mesh = mesh;;
-            };
-            vk_render_queue::instance().render_update_entt(lambda);
-        }
+        logic_update_Mesh(it, mesh);
 
         Logic_entt().remove<UI_transform_dirty>(it);
     }

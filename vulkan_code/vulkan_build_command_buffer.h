@@ -345,14 +345,14 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 }
 
 
-inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
+inline void build_command_buffer(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
     const auto cb = engine.engine_.get_current_command_buffer();
 
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<Proxy_pipeline>(entity).vk_pipeline);
 
-    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
-    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
+    vkCmdSetViewport(cb, 0, 1, &Render_entt().get<Viewport>(entity).viewport);
+    vkCmdSetScissor(cb, 0, 1, &Render_entt().get<Scissor>(entity).scissor);
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
     vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -380,21 +380,23 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     // float                                     minDepthBounds;
     // float                                     maxDepthBounds;
 
-    if (!vk_draw.vk_descriptor_sets.empty()) {
+    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity).vk_descriptor_sets;
+    if (!vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
-        temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
-        for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
-            temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
-            LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
+        temp_descriptor_sets.resize(vk_descriptor_sets.size());
+        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
+            temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
+            // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
-                LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ", vk_draw.debug_name);
+                LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
+                         Render_entt().get<Proxy_debug_name>(entity).debug_name);
                 return;
             }
         }
         vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                vk_draw.pipeline_layout,
+                                Render_entt().get<Proxy_pipeline_layout>(entity).pipeline_layout,
                                 0,
                                 temp_descriptor_sets.size(),
                                 temp_descriptor_sets.data(), 0,
@@ -409,65 +411,17 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
     //                        &push_constants_address);
     // }
-    for (int i = 0; i < vk_draw.mesh.size(); ++i) {
-        vk_draw.mesh[i].draw(cb, time_line);
+    auto mesh = Render_entt().get<Mesh>(entity).mesh;
+    if (!mesh.empty()) {
+        for (int i = 0; i < mesh.size(); ++i) {
+            mesh[i].draw(cb, time_line);
+        }
+    } else {
+        // 为空并且有一个deferred 标记 // todo: 标记判断
+        vkCmdDraw(cb, 3, 1, 0, 0);
     }
 }
 
-inline void build_deferred_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, const uint64_t time_line) {
-    const auto cb = engine.engine_.get_current_command_buffer();
-
-
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_draw.vk_pipeline);
-
-    vkCmdSetViewport(cb, 0, 1, &vk_draw.viewport);
-    vkCmdSetScissor(cb, 0, 1, &vk_draw.scissor);
-    vkCmdSetDepthTestEnable(cb, VK_FALSE);
-    vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-    //
-    vkCmdSetDepthWriteEnable(cb, VK_FALSE);
-
-    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
-    vkCmdSetStencilTestEnable(cb, VK_FALSE);
-
-    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
-    vkCmdSetDepthBiasEnable(cb, VK_FALSE);
-    vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    vkCmdSetCullMode(cb, VK_CULL_MODE_FRONT_BIT);
-
-
-    if (!vk_draw.vk_descriptor_sets.empty()) {
-        std::vector<VkDescriptorSet> temp_descriptor_sets;
-        temp_descriptor_sets.resize(vk_draw.vk_descriptor_sets.size());
-        for (size_t i = 0; i < vk_draw.vk_descriptor_sets.size(); ++i) {
-            temp_descriptor_sets[i] = vk_draw.vk_descriptor_sets[i]->get_descriptor_set(time_line);
-            LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
-        }
-        for (auto temp_descriptor_set: temp_descriptor_sets) {
-            if (temp_descriptor_set == VK_NULL_HANDLE) {
-                LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ", vk_draw.debug_name);
-                return;
-            }
-        }
-        vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                vk_draw.pipeline_layout,
-                                0,
-                                temp_descriptor_sets.size(),
-                                temp_descriptor_sets.data(), 0,
-                                nullptr);
-    }
-    // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
-    // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
-
-    // if (vk_draw.push_constants_pool != nullptr) {
-    //     auto push_constants_address = vk_draw.push_constants_pool->get_gpu_device_address(time_line);
-    //     vkCmdPushConstants(cb, vk_draw.pipeline_layout,
-    //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
-    //                        &push_constants_address);
-    // }
-    vkCmdDraw(cb, 3, 1, 0, 0);
-}
 
 inline void end_rendering(VK_backend &engine) {
     auto cb = engine.engine_.get_current_command_buffer();
