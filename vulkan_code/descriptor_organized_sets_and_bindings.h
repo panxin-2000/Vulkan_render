@@ -234,6 +234,7 @@ static void collect_and_sorted_fragment_output_resources(const spirv_cross::Comp
 static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
                                          spirv_cross::ShaderResources &resources,
                                          const std::string &shaderStage,
+                                         sets_map &bindless_set,
                                          sets_map &global_bindings_set,
                                          sets_map &sorted_sets_bindings) {
     // Use a map to automatically sort by Binding ID (the key)
@@ -306,7 +307,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
             uint32_t array_size = type.array[0];
             if (array_size == 0) {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
-                tem.descriptorCount = 100; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
+                tem.descriptorCount = 1024; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
                        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
@@ -314,7 +315,11 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
             }
         }
-        if (res.name.find("global") != std::string::npos) {
+        if (res.name.find("bindless") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
+        } else if (res.name.find("global") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
@@ -333,7 +338,11 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         tem.descriptorCount = 1;
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
-        if (res.name.find("global") != std::string::npos) {
+        if (res.name.find("bindless") != std::string::npos) {
+            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+        } else if (res.name.find("global") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
@@ -354,7 +363,11 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
             tem.descriptorCount = 1;
             tem.stageFlags      = get_stageFlags(shaderStage);
             tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            if (res.name.find("global") != std::string::npos) {
+            if (res.name.find("bindless") != std::string::npos) {
+                auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+                tem.stageFlags                    = tem.stageFlags | stageFlag;
+                global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+            } else if (res.name.find("global") != std::string::npos) {
                 auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
                 tem.stageFlags                    = tem.stageFlags | stageFlag;
                 global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
@@ -369,6 +382,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
 
 
 static void read_spv_file(const std::string &file_name, const std::string &shaderStage,
+                          sets_map &bindless_set,
                           sets_map &global_bindings_set_0,
                           sets_map &sorted_sets_bindings,
                           std::vector<VkVertexInputAttributeDescription> &vertexAttributes,
@@ -397,6 +411,7 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
     collect_and_sorted_push_constant_resources(compiler, resources, shaderStage,
                                                push_constant_map);
     collect_and_sorted_resources(compiler, resources, shaderStage,
+                                 bindless_set,
                                  global_bindings_set_0,
                                  sorted_sets_bindings);
 }
@@ -489,6 +504,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     const std::string &computer_path = paths.computer_path_;
 
     sets_map sorted_sets_bindings;
+    sets_map &bindless_set        = shader_data->bindless_sets_bindings;
     sets_map &global_bindings_set = shader_data->global_sets_bindings;
     auto &vertexBindings          = shader_data->vertexBindings;
     auto &vertexAttributes        = shader_data->vertexAttributes;
@@ -497,6 +513,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
         read_spv_file(vertex_path, "vertex",
+                      bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
@@ -508,6 +525,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     if (!fragment_path.empty()) {
         LOG_INFO(g_log(), "--- fragment shader ---");
         read_spv_file(fragment_path, "fragment",
+                      bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
@@ -519,6 +537,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     if (!geometry_path.empty()) {
         LOG_INFO(g_log(), "--- geometry shader ---");
         read_spv_file(geometry_path, "geometry",
+                      bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,
@@ -530,6 +549,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     if (!computer_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
         read_spv_file(computer_path, "computer",
+                      bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
                       vertexAttributes,

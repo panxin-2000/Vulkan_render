@@ -83,6 +83,7 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
         if (vk_s_d_s.update_global_descriptor_sets.empty()) {
             return;
         }
+        //         allocate_descriptor_sets(entity, "bindless");  // todo : 需要确定放在哪里？
         allocate_descriptor_sets(entity, "global");
         const std::vector<DescriptorSet_ptr> &descriptor_sets = get_descriptor_sets(entity);
 
@@ -143,6 +144,33 @@ std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity enti
     return global_descriptor_set;
 }
 
+/**
+ * 复制上面的函数，
+ * @param entity
+ * @return
+ */
+std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const entt::entity entity) {
+    std::vector<DescriptorSet_ptr> global_descriptor_set;
+
+    if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        if (!(*shader_temp)->bindless_set_layout.empty()) {
+            auto current_entity = entity;
+            while (current_entity != entt::null) {
+                if (const auto para = Logic_entt().try_get<Parameter_used>(current_entity)) {
+                    if (!para->bindless_descriptor_sets.empty()) {
+                        global_descriptor_set = para->bindless_descriptor_sets;
+                        break;
+                    }
+                }
+                const auto parent_entity = get_parent(current_entity);
+                current_entity           = parent_entity;
+            }
+        }
+    }
+
+    return global_descriptor_set;
+}
+
 
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
@@ -152,7 +180,16 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(entity);
 
-        if (one_binding_name.find("global") != std::string::npos) {
+        if (one_binding_name.find("bindless") != std::string::npos) {
+            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
+                auto sets_flags = create_descriptor_sets_flags(handle,
+                                                               (*shader_temp)->bindless_sets_bindings);
+                vk_s_d_s.bindless_descriptor_sets = allocate_descriptor_sets(handle,
+                                                                             (*shader_temp)->
+                                                                             bindless_set_layout,
+                                                                             {});
+            }
+        } else if (one_binding_name.find("global") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
                 auto sets_flags = create_descriptor_sets_flags(handle,
                                                                (*shader_temp)->global_sets_bindings);
@@ -179,10 +216,16 @@ std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
     if (const auto vk_s_d_s = Logic_entt().try_get<Parameter_used>(entity)) {
         if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                auto global_descriptor_sets = get_global_descriptor_set(entity);
+                auto bindless_descriptor_sets = get_bindless_descriptor_set(entity);
+                auto global_descriptor_sets   = get_global_descriptor_set(entity);
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
                 // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
-                descriptor_sets.reserve(global_descriptor_sets.size() + vk_s_d_s->object_descriptor_sets.size());
+                descriptor_sets.reserve(bindless_descriptor_sets.size() +
+                                        global_descriptor_sets.size() +
+                                        vk_s_d_s->object_descriptor_sets.size());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       bindless_descriptor_sets.begin(),
+                                       bindless_descriptor_sets.end());
                 descriptor_sets.insert(descriptor_sets.end(),
                                        global_descriptor_sets.begin(),
                                        global_descriptor_sets.end());
@@ -210,6 +253,12 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 
         // descriptor_sets_layout 中包含 global 的 set
         // 重要是如果有时候，set = 0 在 global 时应该如何处理
+
+
+        shader_data_handle->bindless_set_layout =
+                create_descriptor_sets_layout(handle,
+                                              shader_data_handle->shader_key + "bindless_set",
+                                              shader_data_handle->bindless_sets_bindings);
         shader_data_handle->global_descriptor_sets_layout =
                 create_descriptor_sets_layout(handle,
                                               shader_data_handle->shader_key + "global_bindings_set",
@@ -221,8 +270,12 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
                                               shader_data_handle->object_sets_bindings);
         std::vector<VkDescriptorSetLayout> temp;
         temp.reserve(shader_data_handle->object_descriptor_sets_layout.size() +
+                     shader_data_handle->bindless_set_layout.size() +
                      shader_data_handle->global_descriptor_sets_layout.size());
 
+        temp.insert(temp.end(),
+                    shader_data_handle->bindless_set_layout.begin(),
+                    shader_data_handle->bindless_set_layout.end());
         temp.insert(temp.end(),
                     shader_data_handle->global_descriptor_sets_layout.begin(),
                     shader_data_handle->global_descriptor_sets_layout.end());
@@ -296,7 +349,6 @@ void uniform_buffer_update_function() {
         Logic_entt().remove<uniform_buffer_update>(it);
     }
 }
-
 
 
 void descriptor_set_update_function() {
