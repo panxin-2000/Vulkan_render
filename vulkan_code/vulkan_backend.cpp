@@ -387,7 +387,7 @@ VKR_image_ptr VK_backend::create_G_buffer_image_and_view(VkFormat g_buffer_forma
     };
 
     const VmaAllocationCreateInfo allocCI{
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_GPU_ONLY
     };
     VkImage g_buffer_image                 = VK_NULL_HANDLE;
     VmaAllocation g_buffer_ImageAllocation = VK_NULL_HANDLE;
