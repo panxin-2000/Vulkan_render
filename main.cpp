@@ -129,19 +129,19 @@ void add_deferred_pass(void) {
         logic_update_add_tag<deferred_pass_tag>(entity);
 
         Texture_parameter position_texture = {
-            .image       = backend.G_buffer_Position_images_.at(1),
+            .image       = backend.G_buffer_Position_images_.at(1), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> position = position_texture;
         Texture_parameter normal_texture          = {
-            .image       = backend.g_buffer_Normal_images_.at(1),
+            .image       = backend.g_buffer_Normal_images_.at(1), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> normal = normal_texture;
         Texture_parameter baseColor_texture     = {
-            .image       = backend.G_buffer_BaseColor_images_.at(1),
+            .image       = backend.G_buffer_BaseColor_images_.at(1), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
