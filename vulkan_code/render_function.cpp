@@ -24,27 +24,27 @@ const VkImageView &VK_backend::get_current_depth_view() const {
 }
 
 const VkImage &VK_backend::get_current_position_image() const {
-    return G_buffer_Position_images_[engine_.imageIndex]->get_image_handle();
+    return G_buffer_Position_images_[0]->get_image_handle();
 }
 
 const VkImageView &VK_backend::get_current_position_view() const {
-    return G_buffer_Position_images_[engine_.imageIndex]->get_image_view();
+    return G_buffer_Position_images_[0]->get_image_view();
 }
 
 const VkImage &VK_backend::get_current_normal_image() const {
-    return g_buffer_Normal_images_[engine_.imageIndex]->get_image_handle();
+    return g_buffer_Normal_images_[0]->get_image_handle();
 }
 
 const VkImageView &VK_backend::get_current_normal_view() const {
-    return g_buffer_Normal_images_[engine_.imageIndex]->get_image_view();
+    return g_buffer_Normal_images_[0]->get_image_view();
 }
 
 const VkImage &VK_backend::get_current_baseColor_image() const {
-    return G_buffer_BaseColor_images_[engine_.imageIndex]->get_image_handle();
+    return G_buffer_BaseColor_images_[0]->get_image_handle();
 }
 
 const VkImageView &VK_backend::get_current_baseColor_view() const {
-    return G_buffer_BaseColor_images_[engine_.imageIndex]->get_image_view();
+    return G_buffer_BaseColor_images_[0]->get_image_view();
 }
 
 void VK_backend::submit_render_queue(uint64_t time_line) {
