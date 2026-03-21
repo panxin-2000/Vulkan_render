@@ -106,15 +106,6 @@ void logic_update_Viewport(const entt::entity logic_entity,
     };
 }
 
-void logic_update_add_skybox_tag(const entt::entity logic_entity) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity ]() {
-            Render_entt().get_or_emplace<skybox_tag>(proxy_entity);
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
-
 
 void add_new_peoxy_to_render_function() {
     const auto view = Logic_entt().view<add_to_render_tag>();

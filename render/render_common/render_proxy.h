@@ -84,6 +84,8 @@ struct skybox_tag {
 struct translate_tag {
 };
 
+struct opacity_tag {
+};
 
 struct Render_destroy_tag {
 };

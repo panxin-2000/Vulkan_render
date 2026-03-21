@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         auto texture                                    = create_skybox_texture_all("");
         std::optional<Texture_parameter> sampler_skybox = texture;
         set_render_parameter(entity, "sampler_skybox", sampler_skybox);
-        logic_update_add_skybox_tag(entity);
+        logic_update_add_tag<skybox_tag>(entity);
 
         // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
     }
@@ -81,9 +81,11 @@ int main(int argc, char *argv[]) {
     {
         auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
         set_render_parameter(entity, "samplerColor", "assets/suzanne0.ktx");
+        logic_update_add_tag<opacity_tag>(entity);
     } {
         auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
         set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
+        logic_update_add_tag<opacity_tag>(entity);
     }
 
     // Render loop
@@ -123,7 +125,9 @@ void test_projection_matrix() {
 void add_deferred_pass(void) {
     auto &backend      = VK_backend::get();
     const auto sampler = base_sample(); {
-        const auto entity                  = add_render_pass("blank");
+        const auto entity = add_render_pass("blank");
+        logic_update_add_tag<deferred_pass_tag>(entity);
+
         Texture_parameter position_texture = {
             .image       = backend.G_buffer_Position_images_.at(1),
             .sampler     = sampler,
