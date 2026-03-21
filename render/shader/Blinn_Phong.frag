@@ -11,7 +11,7 @@
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 
-layout (set = 1, binding = 1) uniform sampler2D samplerColor;
+layout (set = 2, binding = 1) uniform sampler2D samplerColor;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
@@ -21,7 +21,7 @@ layout (location = 3) in vec3 inViewVec;
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-layout (set = 1, binding = 1) uniform texture_index
+layout (set = 2, binding = 1) uniform texture_index
 {
     int index;
 };

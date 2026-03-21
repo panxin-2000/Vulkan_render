@@ -37,7 +37,7 @@ layout (location = 2) in vec2 inUV;
 //    buffer_references r_buffer;
 //};
 
-layout (set = 1, binding = 0) uniform model_4x4
+layout (set = 2, binding = 0) uniform model_4x4
 {
     mat4 model;
 };

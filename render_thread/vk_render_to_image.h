@@ -51,15 +51,14 @@ public:
         const uint64_t time_line = VK_backend::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
-        begin_g_buffer_rendering_attachment(handle, time_line); {
-            // auto view = Render_entt().view<VKR_object_proxy>(entt::exclude<deferred_pass_tag,
-            // skybox_tag,
-            // UI_2D_tag>);
-            // for (const auto it: view) {
-            //     auto render_data = view.get<VKR_object_proxy>(it);
-            //     build_command_buffer(handle, render_data, time_line);
-            // }
-        }
+        auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line);
+        //  g_buffer 中需要渲染的不透明物体
+        // {
+        //     auto view = Render_entt().view<opacity_tag>();
+        //     for (const auto it: view) {
+        //         build_command_buffer(handle, it, time_line);
+        //     }
+        // }
 
         end_rendering(handle);
         g_buffer_attachment_barrier(handle, time_line);
@@ -69,6 +68,7 @@ public:
         // 应该先划分不同的 pass 阶段，
         //  deferred  不应该将深度值写入的
         {
+            // g_buffer_image_indices 这是需要看看怎么传递进入其中
             auto view = Render_entt().view<deferred_pass_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);

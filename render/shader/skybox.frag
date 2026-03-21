@@ -7,7 +7,7 @@ layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
 
-layout (set = 1, binding = 1) uniform samplerCube sampler_skybox;
+layout (set = 2, binding = 1) uniform samplerCube sampler_skybox;
 
 void main()
 {

@@ -18,3 +18,4 @@ layout (set = 0, binding = 3) uniform global_world_view_Pos
 {
     vec3 viewPos;
 };
+layout (set = 1, binding = 0) uniform sampler2D global_samplerColorMap[];

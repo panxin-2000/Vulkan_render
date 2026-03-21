@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
         deal_glfw_event(); // 统一分发执行
         clean_render_entity();
         sync_render_data_to_render_thread();
+
         // vk_render_GPU::instance().one_cycle(backend);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));

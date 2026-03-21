@@ -4,7 +4,7 @@
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 
-layout (set = 1, binding = 1) uniform sampler2D samplerColor;
+layout (set = 2, binding = 1) uniform sampler2D samplerColor;
 //layout (binding = 2) uniform sampler2D samplerNormalMap;
 
 layout (location = 0) in vec3 inNormal;

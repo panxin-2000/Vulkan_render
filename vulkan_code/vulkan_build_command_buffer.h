@@ -137,8 +137,15 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
     vkCmdBeginRendering(cb, &renderingInfo);
 }
 
-inline void begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
+struct G_buffer_image_index {
+    uint32_t position_image_index;
+    uint32_t normal_image_index;
+    uint32_t baseColor_image_index;
+};
+
+inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
     auto cb = handle.engine_.get_current_command_buffer();
+    // 这个时候再去申请吗？
     std::array<VkImageMemoryBarrier2, 4> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -269,6 +276,7 @@ inline void begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64
         .pDepthAttachment     = &depthAttachmentInfo
     };
     vkCmdBeginRendering(cb, &renderingInfo);
+    return {};
 }
 
 inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_line) {
