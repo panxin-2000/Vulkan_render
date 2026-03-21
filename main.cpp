@@ -28,6 +28,7 @@ void deal_glfw_event();
 
 inline entt::entity add_render_pass(const std::string &name) {
     entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
 
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 

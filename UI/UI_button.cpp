@@ -77,7 +77,8 @@ entt::entity UI_button(const std::string &name,
 
     LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
 
-    entt::entity entity = Logic_entt().create();
+    const entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
 
     /***************创建*******************/
     Logic_entt().emplace<Input_Component>(entity, on_Event);
