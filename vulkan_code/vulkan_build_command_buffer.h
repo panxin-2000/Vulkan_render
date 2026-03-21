@@ -366,7 +366,7 @@ inline void build_command_buffer(VK_backend &engine, VKR_object_proxy &vk_draw, 
     vkCmdSetDepthBiasEnable(cb, VK_FALSE);
 
     vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    vkCmdSetCullMode(cb, VK_CULL_MODE_FRONT_BIT);
+    vkCmdSetCullMode(cb, VK_CULL_MODE_NONE);
 
 
     // VkPipelineDepthStencilStateCreateFlags    flags;
