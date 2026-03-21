@@ -18,6 +18,7 @@
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
+#include "vulkan_sample.h"
 #include "gltf_model/load_gltf_model.h"
 #include "UI/3d_model_display.h"
 
@@ -46,28 +47,6 @@ inline entt::entity add_render_pass(const std::string &name) {
 }
 
 
-VkSampler base_sample() {
-    const auto &backend    = VK_backend::get();
-    VkSampler colorSampler = VK_NULL_HANDLE;
-    VkSamplerCreateInfo sampler{};
-    sampler.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler.maxAnisotropy = 1.0f;
-    sampler.magFilter     = VK_FILTER_NEAREST;
-    sampler.minFilter     = VK_FILTER_NEAREST;
-    sampler.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler.addressModeU  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    sampler.addressModeV  = sampler.addressModeU;
-    sampler.addressModeW  = sampler.addressModeU;
-    sampler.mipLodBias    = 0.0f;
-    sampler.maxAnisotropy = 1.0f;
-    sampler.minLod        = 0.0f;
-    sampler.maxLod        = 1.0f;
-    sampler.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    VK_CHECK_RESULT(vkCreateSampler(backend.get_device(), &sampler, nullptr, &colorSampler));
-    return colorSampler;
-}
-
-
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
@@ -90,12 +69,12 @@ int main(int argc, char *argv[]) {
 
     // 天空盒
     {
-        // 83886080
-        // 75497472
         auto entity                                     = add_sky_box("skybox");
         auto texture                                    = create_skybox_texture_all("");
         std::optional<Texture_parameter> sampler_skybox = texture;
         set_render_parameter(entity, "sampler_skybox", sampler_skybox);
+        logic_update_add_skybox_tag(entity);
+
         // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
     }
     // 3d 模型
@@ -106,6 +85,43 @@ int main(int argc, char *argv[]) {
         auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
         set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
     }
+
+    // Render loop
+    while (!glfwWindowShouldClose(backend.get_window())) {
+        glfwWaitEvents();
+        if (GLFW_TRUE == glfwWindowShouldClose(backend.get_window())) {
+            break;
+        }
+        glfwPollEvents();  // Event polling
+        deal_glfw_event(); // 统一分发执行
+        clean_render_entity();
+        sync_render_data_to_render_thread();
+        // vk_render_GPU::instance().one_cycle(backend);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    }
+    Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
+
+    // vk_render_GPU::instance().exit_and_clean(backend);
+    render_thread_stop_and_wait();
+
+    // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
+    auto &buffer = get_uniform_buffer();
+    buffer->destroy_buffer();
+
+    backend.engine_destroy();
+    backend.destroy();
+}
+
+
+void test_projection_matrix() {
+    auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
+    add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
+}
+
+
+void add_deferred_pass(void) {
+    auto &backend      = VK_backend::get();
     const auto sampler = base_sample(); {
         const auto entity                  = add_render_pass("blank");
         Texture_parameter position_texture = {
@@ -142,37 +158,4 @@ int main(int argc, char *argv[]) {
         copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
         set_render_parameter(entity, "light_buffer", temp_ptr);
     }
-
-    // Render loop
-    while (!glfwWindowShouldClose(backend.get_window())) {
-        glfwWaitEvents();
-        if (GLFW_TRUE == glfwWindowShouldClose(backend.get_window())) {
-            break;
-        }
-        glfwPollEvents();  // Event polling
-        deal_glfw_event(); // 统一分发执行
-        clean_render_entity();
-        sync_render_data_to_render_thread();
-        // vk_render_GPU::instance().one_cycle(backend);
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
-    }
-    Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
-
-    // vk_render_GPU::instance().exit_and_clean(backend);
-    render_thread_stop_and_wait();
-
-    // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
-    auto &buffer = get_uniform_buffer();
-    buffer->destroy_buffer();
-    vkDestroySampler(backend.get_device(), sampler, nullptr);
-
-    backend.engine_destroy();
-    backend.destroy();
-}
-
-
-void test_projection_matrix() {
-    auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
-    add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 }

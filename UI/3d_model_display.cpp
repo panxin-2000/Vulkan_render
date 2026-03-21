@@ -49,6 +49,9 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
 
 entt::entity add_sky_box(const std::string &name) {
     const entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+
+
     Logic_entt().emplace<Name_component>(entity, name);
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
 

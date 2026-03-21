@@ -33,6 +33,26 @@ void destroy_all_vulkan_sample() {
     vulkan_sample_vector.clear();
 }
 
+VkSampler base_sample() {
+    const auto &backend    = VK_backend::get();
+    VkSampler colorSampler = VK_NULL_HANDLE;
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.magFilter     = VK_FILTER_NEAREST;
+    samplerInfo.minFilter     = VK_FILTER_NEAREST;
+    samplerInfo.mipmapMode    = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.addressModeU  = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV  = samplerInfo.addressModeU;
+    samplerInfo.addressModeW  = samplerInfo.addressModeU;
+    samplerInfo.mipLodBias    = 0.0f;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.minLod        = 0.0f;
+    samplerInfo.maxLod        = 1.0f;
+    samplerInfo.borderColor   = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    return create_vulkan_sample(samplerInfo);
+}
+
 
 VkSampler create_2d_Texture_Sampler() {
     auto &backend = VK_backend::get();

@@ -15,5 +15,7 @@ VkSampler create_2d_Texture_Sampler();
 
 VkSampler create_skybox_Texture_Sampler();
 
+VkSampler base_sample();
+
 
 #endif //HELLO_MAC_VULKAN_SAMPLE_H

@@ -77,7 +77,12 @@ public:
         // }
 
         {
-            auto view = Render_entt().view<Mesh>(entt::exclude<UI_2D_tag, translate_tag>);
+            auto view = Render_entt().view<Mesh>(entt::exclude<UI_2D_tag, skybox_tag, translate_tag>);
+            for (const auto it: view) {
+                build_command_buffer(handle, it, time_line);
+            }
+        } {
+            auto view = Render_entt().view<Mesh, skybox_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
