@@ -166,6 +166,24 @@ void init_world_scene_root(entt::entity instance) {
     set_render_parameter(instance, "global_view_4x4", view_matrix);
     set_render_parameter(instance, "global_world_view_Pos", world_camera_pos);
     set_render_parameter(instance, "global_world_light_Pos", world_light_pos);
+
+    allocate_descriptor_sets(instance, "bindless"); // todo : 需要确定放在哪里？
+}
+
+
+class bindless_uniform_sampler2D {
+public:
+    std::map<std::string, Update_descriptor_binding> bindings;
+};
+
+
+uint32_t add_bindless_uniform_sampler2D(const std::string &name, Update_descriptor_binding &update) {
+    const auto entity = world_scene_root::get();
+    auto &bindless    = Logic_entt().get_or_emplace<bindless_uniform_sampler2D>(entity);
+
+    bindless.bindings[name] = update;
+    auto index              = 0;
+    return index;
 }
 
 

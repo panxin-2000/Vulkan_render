@@ -9,6 +9,7 @@
 
 #include "create_texture.h"
 #include "descriptor.h"
+#include "model_transform_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"
@@ -250,6 +251,7 @@ inline bool set_render_picture(const entt::entity entity,
     return false;
 }
 
+
 /**
  *
  * @tparam T1
@@ -263,7 +265,7 @@ inline bool set_render_picture(const entt::entity entity,
  * @return
  */
 template<typename T1>
-bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+bool set_render_parameter_detail(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
         if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
             Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
@@ -287,6 +289,31 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
     return false;
 }
 
+template<typename T1>
+bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
+        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
+            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
+        }
+        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
+        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
+        if (binding_name.find("bindless") != std::string::npos) {
+            if constexpr (std::is_same_v<std::decay_t<T1>, std::string> ||
+                          std::is_same_v<std::decay_t<T1>, const char *>) {
+                auto &handle = VK_backend::get();
+                auto texture = create_textures_to_gpu(handle, binding_data);
+
+                // add_bindless_uniform_sampler2D
+                // set_render_parameter_detail(entity, binding_name, binding_data); //binding_data 会变成一个特殊的 int 值
+            } else if constexpr (std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> >) {
+                // 需要看看怎么放，之后呢？
+            } else {
+            }
+            //
+        }
+        set_render_parameter_detail(entity, binding_name, binding_data);
+    }
+}
 
 template<typename T1>
 bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {

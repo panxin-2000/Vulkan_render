@@ -83,7 +83,6 @@ void update_global_bindings_to_descriptor_sets(const entt::entity entity) {
         if (vk_s_d_s.update_global_descriptor_sets.empty()) {
             return;
         }
-        //         allocate_descriptor_sets(entity, "bindless");  // todo : 需要确定放在哪里？
         allocate_descriptor_sets(entity, "global");
         const std::vector<DescriptorSet_ptr> &descriptor_sets = get_descriptor_sets(entity);
 
@@ -198,7 +197,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
                                                                            global_descriptor_sets_layout,
                                                                            {});
             }
-        } else {
+        } else if (one_binding_name.find("object") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
                 auto sets_flags = create_descriptor_sets_flags(handle,
                                                                (*shader_temp)->object_sets_bindings);
