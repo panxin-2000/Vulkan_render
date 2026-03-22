@@ -113,7 +113,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue{.color{1.0f, 0.0f, 0.0f, 1.0f}}
+        .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
     auto temp_extent = VK_backend::get().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
@@ -253,7 +253,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue{.color{0.0f, 1.0f, 0.0f, 1.0f}}
+            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
         },
     };
     auto temp_extent = VK_backend::get().get_current_extent();
