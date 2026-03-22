@@ -124,7 +124,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
 
 void update_object_bindings_to_descriptor_sets(const entt::entity entity);
 
-void update_global_bindings_to_descriptor_sets(const entt::entity entity);
+void update_global_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o);
 
 #define Update_descriptor_binding_fixed_temp  \
 Update_descriptor_binding temp     = {};\
@@ -141,10 +141,10 @@ temp.descriptor_write_binding.pTexelBufferView = nullptr;
 
 
 template<typename T1>
-bool set_render_parameter_detail(sets_map &sets_map_in_for,
-                                 std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
-                                 const std::string &binding_name,
-                                 T1 &binding_data) {
+bool set_render_parameter(sets_map &sets_map_in_for,
+                          std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
+                          const std::string &binding_name,
+                          T1 &binding_data) {
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
@@ -265,31 +265,6 @@ inline bool set_render_picture(const entt::entity entity,
  * @return
  */
 template<typename T1>
-bool set_render_parameter_detail(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        }
-        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
-        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
-        if (binding_name.find("global") != std::string::npos) {
-            set_render_parameter_detail(shader_data->global_sets_bindings,
-                                        parameter.update_global_descriptor_sets, binding_name,
-                                        binding_data);
-            Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
-            return true;
-        } else {
-            set_render_parameter_detail(shader_data->object_sets_bindings,
-                                        parameter.update_object_descriptor_sets, binding_name,
-                                        binding_data);
-            Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
-            return true;
-        }
-    }
-    return false;
-}
-
-template<typename T1>
 bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
         if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
@@ -297,23 +272,23 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
         }
         const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
         auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
-        if (binding_name.find("bindless") != std::string::npos) {
-            if constexpr (std::is_same_v<std::decay_t<T1>, std::string> ||
-                          std::is_same_v<std::decay_t<T1>, const char *>) {
-                auto &handle = VK_backend::get();
-                auto texture = create_textures_to_gpu(handle, binding_data);
-
-                // add_bindless_uniform_sampler2D
-                // set_render_parameter_detail(entity, binding_name, binding_data); //binding_data 会变成一个特殊的 int 值
-            } else if constexpr (std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> >) {
-                // 需要看看怎么放，之后呢？
-            } else {
-            }
-            //
+        if (binding_name.find("global") != std::string::npos) {
+            set_render_parameter(shader_data->global_sets_bindings,
+                                 parameter.update_global_descriptor_sets, binding_name,
+                                 binding_data);
+            Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
+            return true;
+        } else {
+            set_render_parameter(shader_data->object_sets_bindings,
+                                 parameter.update_object_descriptor_sets, binding_name,
+                                 binding_data);
+            Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
+            return true;
         }
-        set_render_parameter_detail(entity, binding_name, binding_data);
     }
+    return false;
 }
+
 
 template<typename T1>
 bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
