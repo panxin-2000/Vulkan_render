@@ -88,7 +88,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
             break;
         case EVT_KEY_ESCAPE:
             if (event.event_code == KM_PRESS) {
-                std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
+                // std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态 先用按下的状态，之后再更改
                 return OPERATOR_CANCELLED;
             }
@@ -96,12 +96,12 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
         case MOUSE_LEFT:
             if (event.event_code == KM_PRESS) {
                 status.select_status_ = select_current;
-                std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
+                // std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
                 // 需要增加模态的处理 返回锁定模态
                 return OPERATOR_RUNNING_MODAL;
             }
             if (event.event_code == KM_RELEASE) {
-                std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
+                // std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
                 // 需要增加模态的处理 返回结束模态
                 // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
                 status.select_status_ = no_select_current;

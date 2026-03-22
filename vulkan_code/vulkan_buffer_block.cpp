@@ -30,7 +30,7 @@ VKR_buffer_block::~VKR_buffer_block() {
                                             {ptr, offset_},
                                             block_timeline_
                                         });
-        LOG_INFO(g_log(), "VKR_buffer_block add to discard {}  timeline  {}", offset_, block_timeline_);
+        LOG_DEBUG(g_log(), "VKR_buffer_block add to discard {}  timeline  {}", offset_, block_timeline_);
 
         offset_ = 0;
         size_   = 0;
@@ -48,10 +48,10 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uin
         // it->second 是对应的偏移量
         auto found_free_block_size   = found_free_block_it->first;
         auto found_free_block_offset = found_free_block_it->second.offset_;
-        LOG_INFO(g_log(), "find free memory size {} offset {} request_size {} ",
-                 found_free_block_size,
-                 found_free_block_offset,
-                 request_size);
+        LOG_DEBUG(g_log(), "find free memory size {} offset {} request_size {} ",
+                  found_free_block_size,
+                  found_free_block_offset,
+                  request_size);
         const auto it_offset = offset_and_size_map.find(found_free_block_offset);
         if (found_free_block_size != request_size) {
             if (found_free_block_it != size_and_offset_map.end()) {
@@ -74,7 +74,7 @@ VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uin
             it_offset->second = {request_size, false};
             size_and_offset_map.erase(found_free_block_it);
         }
-        LOG_INFO(g_log(), "VKR_buffer_block GPU_pool_alloc {}", found_free_block_offset);
+        LOG_DEBUG(g_log(), "VKR_buffer_block GPU_pool_alloc {}", found_free_block_offset);
         return std::make_shared<VKR_buffer_block>(buffer, found_free_block_offset, request_size);
     } else {
         LOG_DEBUG(g_log(), "find free memory failed for request_size {} ", request_size);
@@ -183,10 +183,10 @@ void discard_buffer_block_map_clean() {
     for (auto it = discard_buffer_block_map.begin(); it != discard_buffer_block_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
         if (current_finish_time >= timeline + 12) {
-            LOG_INFO(g_log(), "discard_buffer_block timeline {}  , timeline {} offset {}",
-                     current_finish_time,
-                     timeline,
-                     buffer.second);
+            LOG_DEBUG(g_log(), "discard_buffer_block timeline {}  , timeline {} offset {}",
+                      current_finish_time,
+                      timeline,
+                      buffer.second);
             GPU_pool_free(buffer.first, buffer.second);
             it = discard_buffer_block_map.erase(it);
         } else {
