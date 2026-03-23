@@ -181,3 +181,68 @@ TEST(AABB_bounding_box, have_intersect_axis) {
     EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {-1, 1,0}}), true);
     EXPECT_EQ(intersect(box_3d, Ray<Point_3> {{2, 2,0}, {-1, -1,0}}), true);
 }
+
+
+TEST(distance, point_to_segment) { {
+        Segment<Point_2> temp{{0, 0}, {2, 0}};
+        EXPECT_EQ(distance(temp, {1, 1} ), 1);
+        EXPECT_EQ(distance(temp,{1,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1}), 1);
+        EXPECT_EQ(distance(temp,{3,1}), 2);
+        EXPECT_EQ(distance(temp,{-1,1}), 2);
+    } {
+        Segment<Point_3> temp{{0, 0, 0}, {2, 0, 0}};
+        EXPECT_EQ(distance(temp, {1, 1,0} ), 1);
+        EXPECT_EQ(distance(temp,{1,0,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1,0}), 1);
+        EXPECT_EQ(distance(temp,{3,1,0}), 2);
+        EXPECT_EQ(distance(temp,{-1,1,0}), 2);
+    }
+}
+
+
+TEST(distance, ray_to_segment) { {
+        Ray<Point_2> temp{{0, 0}, {2, 0}};
+        EXPECT_EQ(distance(temp, {1, 1} ), 1);
+        EXPECT_EQ(distance(temp,{1,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1}), 1);
+        EXPECT_EQ(distance(temp,{3,1}), 1);
+        EXPECT_EQ(distance(temp,{-1,1}), 2);
+    } {
+        Ray<Point_3> temp{{0, 0, 0}, {2, 0, 0}};
+        EXPECT_EQ(distance(temp, {1, 1,0} ), 1);
+        EXPECT_EQ(distance(temp,{1,0,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1,0}), 1);
+        EXPECT_EQ(distance(temp,{3,1,0}), 1);
+        EXPECT_EQ(distance(temp,{-1,1,0}), 2);
+    }
+}
+
+TEST(distance, ray_to_straight_line) { {
+        Straight_line<Point_2> temp{{0, 0}, {2, 0}};
+        EXPECT_EQ(distance(temp, {1, 1} ), 1);
+        EXPECT_EQ(distance(temp,{1,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1}), 1);
+        EXPECT_EQ(distance(temp,{3,1}), 1);
+        EXPECT_EQ(distance(temp,{-1,1}), 1);
+    } {
+        Straight_line<Point_3> temp{{0, 0, 0}, {2, 0, 0}};
+        EXPECT_EQ(distance(temp, {1, 1,0} ), 1);
+        EXPECT_EQ(distance(temp,{1,0,0}), 0);
+        EXPECT_EQ(distance(temp,{0,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,0,0}), 0);
+        EXPECT_EQ(distance(temp,{2,1,0}), 1);
+        EXPECT_EQ(distance(temp,{3,1,0}), 1);
+        EXPECT_EQ(distance(temp,{-1,1,0}), 1);
+    }
+}

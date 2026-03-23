@@ -6,6 +6,57 @@
 #define HELLO_MAC_INTERSECTION_H
 #include "base_geometry/base.h"
 
+/**
+ * 返回的值是距离的平方
+ * @tparam T
+ * @param segment
+ * @param test_point
+ * @return
+ */
+template<typename T>
+float distance(const Segment<T> &segment, const T &test_point) {
+    auto direction = segment.end_point - segment.start_point;
+    auto PA        = test_point - segment.start_point;
+    auto t         = dot(PA, direction) / dot(direction, direction);
+    if (t > 0 && t < 1) {
+        auto D        = segment.start_point + direction * t;
+        auto distance = dot(test_point - D, test_point - D);
+        return distance;
+    } else if (t <= 0) {
+        auto distance = dot(test_point - segment.start_point, test_point - segment.start_point);
+        return distance;
+    } else if (t >= 0) {
+        auto distance = dot(test_point - segment.end_point, test_point - segment.end_point);
+        return distance;
+    }
+    return NAN;
+}
+
+template<typename T>
+float distance(const Ray<T> &ray, const T &test_point) {
+    auto direction = ray.direction;
+    auto PA        = test_point - ray.point;
+    auto t         = dot(PA, direction) / dot(direction, direction);
+    if (t > 0) {
+        auto D        = ray.point + direction * t;
+        auto distance = dot(test_point - D, test_point - D);
+        return distance;
+    } else if (t <= 0) {
+        auto distance = dot(test_point - ray.point, test_point - ray.point);
+        return distance;
+    }
+    return NAN;
+}
+
+template<typename T>
+float distance(const Straight_line<T> &line, const T &test_point) {
+    auto direction = line.direction;
+    auto PA        = test_point - line.point;
+    auto t         = dot(PA, direction) / dot(direction, direction);
+    auto D         = line.point + direction * t;
+    auto distance  = dot(test_point - D, test_point - D);
+    return distance;
+}
 
 template<typename T>
 bool intersect(const AABB_min_max<T> &box, const T &test_point) {
