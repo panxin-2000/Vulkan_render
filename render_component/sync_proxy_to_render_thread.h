@@ -4,6 +4,8 @@
 
 #ifndef HELLO_MAC_SYNC_PROXY_TO_RENDER_THREAD_H
 #define HELLO_MAC_SYNC_PROXY_TO_RENDER_THREAD_H
+#include "global_singleton.h"
+
 
 struct UI_transform_dirty {
 };

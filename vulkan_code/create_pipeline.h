@@ -86,13 +86,20 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         VK_DYNAMIC_STATE_SCISSOR,  // vkCmdSetScissor
 
         // VkPipelineDepthStencilStateCreateInfo
-        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,        // vkCmdSetDepthTestEnable
-        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,       // vkCmdSetDepthWriteEnable
-        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP,         // vkCmdSetDepthCompareOp
+        VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,  // vkCmdSetDepthTestEnable
+        VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, // vkCmdSetDepthWriteEnable
+        VK_DYNAMIC_STATE_DEPTH_COMPARE_OP,   // vkCmdSetDepthCompareOp
+
         VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, // vkCmdSetDepthBoundsTestEnable
-        VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE,      // vkCmdSetStencilTestEnable
-        VK_DYNAMIC_STATE_STENCIL_OP,               // vkCmdSetStencilOp          vkCmdSetStencilOp
-        VK_DYNAMIC_STATE_DEPTH_BOUNDS,             // vkCmdSetDepthBounds        vkCmdSetDepthBounds
+        VK_DYNAMIC_STATE_DEPTH_BOUNDS,             // vkCmdSetDepthBounds
+
+        VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE, // vkCmdSetStencilTestEnable
+        VK_DYNAMIC_STATE_STENCIL_OP,          // vkCmdSetStencilOp          vkCmdSetStencilOp
+
+        VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+        VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+
 
         // VkPipelineRasterizationStateCreateInfo
         VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, // vkCmdSetDepthBiasEnable
@@ -111,9 +118,19 @@ inline VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &d
         .scissorCount  = 1
     };
     VkPipelineRasterizationStateCreateInfo rasterizationState{
-        .sType           = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .depthBiasEnable = VK_FALSE,
-        .lineWidth       = 1.0f,
+        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .pNext                   = nullptr,
+        .flags                   = 0,
+        .depthClampEnable        = VK_FALSE,
+        .rasterizerDiscardEnable = VK_FALSE,
+        .polygonMode             = VK_POLYGON_MODE_FILL,
+        .cullMode                = VK_CULL_MODE_NONE,
+        .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .depthBiasEnable         = VK_FALSE,
+        .depthBiasConstantFactor = 0.0f,
+        .depthBiasClamp          = 0.0f,
+        .depthBiasSlopeFactor    = 0.0f,
+        .lineWidth               = 1.0f, // 在 VK_POLYGON_MODE_LINE 模式下，线的粗细由该结构体中的 lineWidth 成员控制
     };
     VkPipelineMultisampleStateCreateInfo multisampleState{
         .sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
