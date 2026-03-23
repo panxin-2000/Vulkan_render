@@ -33,7 +33,12 @@ float hash(int xy) {
 
 void main()
 {
-
+    //    vec4 inColor;
+    //    if (index == 0) {
+    //        inColor = vec4(0.7, 0, 0, 0);
+    //    } else {
+    //        inColor = vec4(0, 0.7, 0, 0);
+    //    }
     vec4 inColor = texture(bindless_samplerColorMap[index], inUV);
 
     vec3 N = normalize(inNormal);

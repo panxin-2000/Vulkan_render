@@ -330,4 +330,8 @@ void uniform_buffer_update_function();
 
 void global_uniform_buffer_update_function();
 
+void add_bindless_update_tag();
+
+void bindless_uniform_sampler2D_update_function();
+
 #endif //HELLO_MAC_SHADER_COMPONENT_H

@@ -37,6 +37,9 @@ struct global_uniform_buffer_update {
 struct descriptor_set_update {
 };
 
+struct bindless_set_update_detail {
+};
+
 //
 void sync_render_data_to_render_thread();
 

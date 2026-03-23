@@ -301,6 +301,20 @@ void global_uniform_buffer_update_function() {
     }
 }
 
+void add_bindless_update_tag() {
+    auto world_entity = get_world_root();
+    Logic_entt().emplace_or_replace<bindless_set_update_detail>(world_entity);
+}
+
+void bindless_uniform_sampler2D_update_function() {
+    const auto view = Logic_entt().view<bindless_set_update_detail>();
+    for (const auto &it: view) {
+        update_bindings_to_descriptor_sets(it, "bindless");
+        Logic_entt().emplace_or_replace<descriptor_set_update>(it); // 不需要，因为 只是增加了内容，不改变 set
+        Logic_entt().remove<bindless_set_update_detail>(it);
+    }
+}
+
 void uniform_buffer_update_function() {
     const auto view = Logic_entt().view<uniform_buffer_update>();
     for (const auto &it: view) {

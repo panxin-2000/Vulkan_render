@@ -80,9 +80,9 @@ int main(int argc, char *argv[]) {
     }
     // 3d 模型
     {
-        auto entity  = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-        auto index   = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+        uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
