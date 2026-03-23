@@ -13,9 +13,8 @@ public:
     point_type point;
     point_type normal;
 
-
-    float distance(point_type q) {
-        return dot(normal, (q - point)) / dot(normal, normal);
+    Plane(const point_type &point, const point_type &normal) : point(point), normal(normal) {
+        assert(dot(normal,normal ) == 1);
     }
 };
 

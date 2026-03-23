@@ -65,12 +65,8 @@ inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
 
 template<typename T>
 float distance(const Plane<T> &plane, const T &test_point) {
-    auto cos_angle = dot(plane.normal, plane.point - test_point); //射线的起点到平面的最近距离
-    if (cos_angle == 0) {
-        return 0;
-    }
-    auto result_value = intersect_result(plane, Ray{test_point, plane.point - test_point});
-    return dot(result_value - test_point, result_value - test_point);
+    auto result = dot(plane.normal, (test_point - plane.point));
+    return result * result;
 }
 
 

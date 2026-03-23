@@ -257,6 +257,6 @@ TEST(distance, point_to_plane) {
     EXPECT_EQ(distance(temp,{3,1,0}), 0);
     EXPECT_EQ(distance(temp,{-1,1,0}), 0);
 
-    EXPECT_EQ(distance(temp, {1, 1,1} ), 3);
-    EXPECT_EQ(distance(temp,{2,-2,-2}), 12);
+    EXPECT_EQ(distance(temp, {1, 1,1} ), 1);
+    EXPECT_EQ(distance(temp,{2,-2,-2}), 4);
 }
