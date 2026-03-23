@@ -18,7 +18,7 @@ entt::entity UI_block(const std::string &name,
                       float max_x,
                       float max_y) {
     auto entity = UI_button(name, min_x, min_y, max_x, max_y);
-    std::cout << "UI_block" << std::endl;
+    // std::cout << "UI_block" << std::endl;
     // set_Input_Component_on_Event_function()
     return entity;
 }

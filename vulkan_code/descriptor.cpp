@@ -11,25 +11,25 @@
 std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
 std::mutex discard_descriptor_set_map_mutex;
 
-void update_descriptor_sets(const VK_backend &backend, std::vector<VkDescriptorImageInfo> &textureDescriptors,
-                            const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
-    std::vector<VkWriteDescriptorSet> writeDescSet;
-    for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
-        VkWriteDescriptorSet temp{
-            .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .dstSet          = descriptor_set_texture[i]->get_descriptor_set(),
-            .dstBinding      = 0,
-            .descriptorCount = static_cast<uint32_t>(textureDescriptors.size()),
-            .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo      = textureDescriptors.data()
-        };
-        writeDescSet.push_back(temp);
-    }
-    std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-    vkUpdateDescriptorSets(backend.get_device(),
-                           writeDescSet.size(),
-                           writeDescSet.data(), 0, nullptr);
-}
+// void update_descriptor_sets(const VK_backend &backend, std::vector<VkDescriptorImageInfo> &textureDescriptors,
+//                             const std::vector<DescriptorSet_ptr> &descriptor_set_texture) {
+//     std::vector<VkWriteDescriptorSet> writeDescSet;
+//     for (uint32_t i = 0; i < descriptor_set_texture.size(); i++) {
+//         VkWriteDescriptorSet temp{
+//             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+//             .dstSet          = descriptor_set_texture[i]->get_descriptor_set(),
+//             .dstBinding      = 0,
+//             .descriptorCount = static_cast<uint32_t>(textureDescriptors.size()),
+//             .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+//             .pImageInfo      = textureDescriptors.data()
+//         };
+//         writeDescSet.push_back(temp);
+//     }
+//     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
+//     vkUpdateDescriptorSets(backend.get_device(),
+//                            writeDescSet.size(),
+//                            writeDescSet.data(), 0, nullptr);
+// }
 
 
 auto variable_descriptor(const uint32_t binding_less_size,

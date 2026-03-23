@@ -55,14 +55,10 @@ int main(int argc, char *argv[]) {
     init_current_descriptor_pool();
 
 
-    render_thread_start(backend);
-
-    register_glfw(backend.get_window());
-
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    // UI_block("按钮1", 0, 0, 60, 60);
-    // UI_block("功能块", 0, 0, 50, 200);
-    // UI_block("按钮2", 0, 0, 145, 130);
+    UI_block("按钮1", 0, 0, 60, 60);
+    UI_block("功能块", 0, 0, 50, 200);
+    UI_block("按钮2", 0, 0, 145, 130);
 
 
     // load_gltf_model("sky box", "assets/Box.gltf");
@@ -92,6 +88,10 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     }
+
+    render_thread_start(backend);
+
+    register_glfw(backend.get_window());
 
     // Render loop
     while (!glfwWindowShouldClose(backend.get_window())) {

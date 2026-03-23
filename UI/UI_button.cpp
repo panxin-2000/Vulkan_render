@@ -72,7 +72,7 @@ entt::entity UI_button(const std::string &name,
                        float min_y,
                        float max_x,
                        float max_y) {
-    std::cout << "UI_button" << std::endl;
+    // std::cout << "UI_button" << std::endl;
     std::string_view df = "";
 
     LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
