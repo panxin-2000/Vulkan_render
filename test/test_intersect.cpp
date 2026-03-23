@@ -246,3 +246,17 @@ TEST(distance, ray_to_straight_line) { {
         EXPECT_EQ(distance(temp,{-1,1,0}), 1);
     }
 }
+
+TEST(distance, point_to_plane) {
+    Plane<Point_3> temp{{0, 0, 0}, {0, 0, 1}};
+    EXPECT_EQ(distance(temp, {1, 1,0} ), 0);
+    EXPECT_EQ(distance(temp,{1,0,0}), 0);
+    EXPECT_EQ(distance(temp,{0,0,0}), 0);
+    EXPECT_EQ(distance(temp,{2,0,0}), 0);
+    EXPECT_EQ(distance(temp,{2,1,0}), 0);
+    EXPECT_EQ(distance(temp,{3,1,0}), 0);
+    EXPECT_EQ(distance(temp,{-1,1,0}), 0);
+
+    EXPECT_EQ(distance(temp, {1, 1,1} ), 3);
+    EXPECT_EQ(distance(temp,{2,-2,-2}), 12);
+}
