@@ -59,9 +59,10 @@ int main(int argc, char *argv[]) {
 
     register_glfw(backend.get_window());
 
-    UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 50, 200);
-    UI_block("按钮2", 0, 0, 145, 130);
+    // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
+    // UI_block("按钮1", 0, 0, 60, 60);
+    // UI_block("功能块", 0, 0, 50, 200);
+    // UI_block("按钮2", 0, 0, 145, 130);
 
 
     // load_gltf_model("sky box", "assets/Box.gltf");
@@ -79,12 +80,16 @@ int main(int argc, char *argv[]) {
     }
     // 3d 模型
     {
-        auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        set_render_parameter(entity, "samplerColor", "assets/suzanne0.ktx");
+        auto entity  = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+        auto index   = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
-        set_render_parameter(entity, "samplerColor", "assets/suzanne1.ktx");
+        auto entity  = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+        auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
+        auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
+        set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     }
 

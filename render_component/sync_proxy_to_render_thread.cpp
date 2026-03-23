@@ -13,6 +13,7 @@ void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
     update_camera_transform();
     update_object_transform_function();
+    // bindlessuniform_sampler2D_update_function(); // 这个函数需要去写上去
     global_uniform_buffer_update_function();
     uniform_buffer_update_function();
     descriptor_set_update_function();

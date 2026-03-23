@@ -234,7 +234,7 @@ static void collect_and_sorted_fragment_output_resources(const spirv_cross::Comp
 static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
                                          spirv_cross::ShaderResources &resources,
                                          const std::string &shaderStage,
-                                         sets_map &bindless_set,
+                                         sets_map &bindless_bindings_set,
                                          sets_map &global_bindings_set,
                                          sets_map &sorted_sets_bindings) {
     // Use a map to automatically sort by Binding ID (the key)
@@ -305,9 +305,9 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         } else {
             // array[0] 存储的是最外层括号的长度
             uint32_t array_size = type.array[0];
-            if (array_size == 0) {
+            if (array_size <= 1) {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
-                tem.descriptorCount = 1024; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
+                tem.descriptorCount = 1023; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
                 flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
                        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             } else {
@@ -318,7 +318,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         if (res.name.find("bindless") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
-            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
+            bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
         } else if (res.name.find("global") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
@@ -341,7 +341,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         if (res.name.find("bindless") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
-            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+            bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         } else if (res.name.find("global") != std::string::npos) {
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
@@ -366,7 +366,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
             if (res.name.find("bindless") != std::string::npos) {
                 auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
                 tem.stageFlags                    = tem.stageFlags | stageFlag;
-                global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+                bindless_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
             } else if (res.name.find("global") != std::string::npos) {
                 auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
                 tem.stageFlags                    = tem.stageFlags | stageFlag;

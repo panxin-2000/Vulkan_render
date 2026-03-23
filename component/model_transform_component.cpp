@@ -177,13 +177,43 @@ public:
 };
 
 
-uint32_t add_bindless_uniform_sampler2D(const std::string &name, Update_descriptor_binding &update) {
-    const auto entity = world_scene_root::get();
-    auto &bindless    = Logic_entt().get_or_emplace<bindless_uniform_sampler2D>(entity);
+uint32_t add_bindless_uniform_sampler2D(const std::string &name,
+                                        std::optional<Texture_parameter> &update) {
+    const auto world_entity = world_scene_root::get();
+    auto &bindless          = Logic_entt().get_or_emplace<bindless_uniform_sampler2D>(world_entity);
+    auto return_value       = bindless.bindings.size();
+    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(world_entity)) {
+        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(world_entity)) {
+            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(world_entity, VKR_shader_init(*shader_temp));
+        }
+        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(world_entity);
+        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(world_entity);
 
-    bindless.bindings[name] = update;
-    auto index              = 0;
-    return index;
+        for (auto const &[set_value, bindings_map]: shader_data->bindless_sets_bindings) {
+            for (const auto &[binding_value, info]: bindings_map) {
+                if (info.binding_name == "bindless_samplerColorMap") {
+                    Update_descriptor_binding temp                 = {};
+                    temp.binding_name                              = "bindless_samplerColorMap";
+                    temp.resource_type                             = "uniform sampler2D";
+                    temp.dstSet                                    = set_value; // get 不用 get 了
+                    temp.descriptor_write_binding.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                    temp.descriptor_write_binding.dstBinding       = binding_value;
+                    temp.descriptor_write_binding.dstArrayElement  = bindless.bindings.size();
+                    temp.descriptor_write_binding.descriptorCount  = 1;
+                    temp.descriptor_write_binding.pBufferInfo      = nullptr;
+                    temp.descriptor_write_binding.pImageInfo       = nullptr;
+                    temp.descriptor_write_binding.pTexelBufferView = nullptr;
+                    temp.descriptor_write_binding.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    temp.texture_info                              = {true, update.value()};
+                    parameter.update_bindless_descriptor_sets
+                            ["bindless_samplerColorMap"] = temp;
+                    // 这个时候需要做什么呢？ 添加一个更新的函数，这是记录了需要更新的内容，还没有真正更新
+                    bindless.bindings[name] = temp;
+                }
+            }
+        }
+    }
+    return return_value;
 }
 
 

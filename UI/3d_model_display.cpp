@@ -25,7 +25,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
 
     Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
                                            "", "");
     add_geometry_data(entity, mesh_path);
     auto [vertices, indices] = load_model(mesh_path);

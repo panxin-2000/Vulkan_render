@@ -27,6 +27,9 @@ void update_bindings_to_descriptor_sets(const entt::entity entity, const std::st
         auto &vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(entity);
         std::map<std::string, Update_descriptor_binding> *temp_map = nullptr;
         if (b_or_g_or_o == "bindless") {
+            vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(get_world_root());
+            temp_map = &vk_s_d_s.update_bindless_descriptor_sets;
+            // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
         } else if (b_or_g_or_o == "global") {
             if (vk_s_d_s.update_global_descriptor_sets.empty()) {
                 return;
@@ -111,7 +114,7 @@ std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const entt::entity en
 
     if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
         if (!(*shader_temp)->bindless_set_layout.empty()) {
-            auto current_entity = entity;
+            auto current_entity = get_world_root();
             while (current_entity != entt::null) {
                 if (const auto para = Logic_entt().try_get<Parameter_used>(current_entity)) {
                     if (!para->bindless_descriptor_sets.empty()) {
@@ -144,7 +147,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
                 vk_s_d_s.bindless_descriptor_sets = allocate_descriptor_sets(handle,
                                                                              (*shader_temp)->
                                                                              bindless_set_layout,
-                                                                             {});
+                                                                             sets_flags);
             }
         } else if (one_binding_name.find("global") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {

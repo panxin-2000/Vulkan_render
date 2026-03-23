@@ -73,7 +73,7 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_backend &handle,
         return return_value;
 
     std::vector<uint32_t> variableDescCount;
-    descriptor_sets.resize(resize_number);
+    descriptor_sets.resize(resize_number,VK_NULL_HANDLE);
     return_value.resize(resize_number);
 
 
@@ -88,7 +88,7 @@ std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_backend &handle,
     if (!binding_flags.empty()) {
         for (const auto flag: binding_flags) {
             if (flag != 0) {
-                const uint32_t binding_less_size = 1024; // 这里肯定还是有问题的
+                const uint32_t binding_less_size = 1023; // 这里肯定还是有问题的
 
                 auto variableDescCountAI = variable_descriptor(binding_less_size, binding_flags, variableDescCount);
                 texDescSetAlloc.pNext    = &variableDescCountAI;
