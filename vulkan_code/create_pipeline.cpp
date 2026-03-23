@@ -10,6 +10,22 @@ auto &get_pipeline_map() {
     return pipeline_map_;
 }
 
+/**
+ * 目前在 binding = 0 的情况下还没有出错过，其他的尽量用 SSBO 来保存与更改
+ * @param vertexBindings
+ * @param vertexAttributes
+ */
+inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription> &vertexBindings,
+                                     std::vector<VkVertexInputAttributeDescription> &vertexAttributes) {
+    const VkPipelineVertexInputStateCreateInfo vertexInputState{
+        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount   = to_u32(vertexBindings.size()),
+        .pVertexBindingDescriptions      = vertexBindings.data(),
+        .vertexAttributeDescriptionCount = to_u32(vertexAttributes.size()),
+        .pVertexAttributeDescriptions    = vertexAttributes.data(),
+    };
+    return vertexInputState;
+}
 
 VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
     // Pipeline

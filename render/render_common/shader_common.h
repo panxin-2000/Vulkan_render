@@ -210,4 +210,9 @@ struct Picture_parameters {
     unsigned char *image_data;
 };
 
+template<typename T>
+uint32_t to_u32(T val) {
+    assert(val <= std::numeric_limits<uint32_t>::max());
+    return static_cast<uint32_t>(val);
+}
 #endif //HELLO_MAC_SHADER_COMMON_H

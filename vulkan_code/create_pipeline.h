@@ -10,31 +10,14 @@
 #include "shader_component.h"
 #include "vulkan_backend.h"
 
-template<typename T>
-uint32_t to_u32(T val) {
-    assert(val <= std::numeric_limits<uint32_t>::max());
-    return static_cast<uint32_t>(val);
-}
-
 
 /**
- * 目前在 binding = 0 的情况下还没有出错过，其他的尽量用 SSBO 来保存与更改
- * @param vertexBindings
- * @param vertexAttributes
+ * 没有具体的写明白这个函数
+ * @param handle
+ * @param shaderStages
+ * @param descriptorSetLayout
+ * @return
  */
-inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription> &vertexBindings,
-                                     std::vector<VkVertexInputAttributeDescription> &vertexAttributes) {
-    const VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = static_cast<uint32_t>(vertexBindings.size()),
-        .pVertexBindingDescriptions      = vertexBindings.data(),
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions    = vertexAttributes.data(),
-    };
-    return vertexInputState;
-}
-
-
 inline VkPipeline CreateComputePipelines(VK_backend &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
                                          VkDescriptorSetLayout &descriptorSetLayout) {
     if (shaderStages.empty() == true) {
