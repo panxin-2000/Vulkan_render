@@ -13,13 +13,11 @@
 #include "UI/UI_button.h"
 
 #include "global_singleton.h"
-#include <iostream>
 #include "descriptor_pool.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
 #include "vulkan_sample.h"
-#include "gltf_model/load_gltf_model.h"
 #include "UI/3d_model_display.h"
 
 void register_glfw(GLFWwindow *window);

@@ -92,11 +92,13 @@ void VK_backend::create_surface() {
         // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         window_ = glfwCreateWindow(1280, 720, "Vulkan", nullptr, nullptr);
-        glfwSetWindowUserPointer(window_, this);
-        glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
-        auto result = glfwCreateWindowSurface(instance_, window_, VK_ORIGINAL_Allocator, &surface_);
-        if (result != VK_SUCCESS) {
-            throw std::runtime_error("failed to create window surface!");
+        if (window_ != nullptr) {
+            glfwSetWindowUserPointer(window_, this);
+            glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
+            auto result = glfwCreateWindowSurface(instance_, window_, VK_ORIGINAL_Allocator, &surface_);
+            if (result != VK_SUCCESS) {
+                throw std::runtime_error("failed to create window surface!");
+            }
         }
     }
 }

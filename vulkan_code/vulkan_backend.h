@@ -185,7 +185,7 @@ public:
     }
 
     void recreate_swap_chain() {
-        std::cout << "recreate_swap_chain" << std::endl;
+        // std::cout << "recreate_swap_chain" << std::endl;
         framebufferResized = false;
         vkDeviceWaitIdle(device_);
         const auto old_swap_chain = swap_chain_;
