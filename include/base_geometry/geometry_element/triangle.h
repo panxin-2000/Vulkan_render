@@ -77,9 +77,9 @@ struct Triangle {
         T a2b       = b - a;
         T a2c       = c - a;
         auto a2p    = point - a;
-        float area  = a2b.single_area(a2c);        // ABC
-        float gamma = a2b.single_area(a2p) / area; // ABP
-        float beta  = a2p.single_area(a2c) / area; // APC
+        float area  = a2b.cross_product(a2c);        // ABC
+        float gamma = a2b.cross_product(a2p) / area; // ABP
+        float beta  = a2p.cross_product(a2c) / area; // APC
         float alpha = 1.0f - (gamma + beta);       // PBC
         return {alpha, beta, gamma};
     }

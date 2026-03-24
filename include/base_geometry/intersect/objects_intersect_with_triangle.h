@@ -12,10 +12,10 @@ float distance(const Triangle<T> &triangle, const T &point) {
     T a2b             = triangle.b - triangle.a;
     T a2c             = triangle.c - triangle.a;
     auto a2p          = point - triangle.a;
-    float area        = a2b.single_area(a2c);        // ABC
-    const float gamma = a2b.single_area(a2p) / area; // ABP
-    const float beta  = a2p.single_area(a2c) / area; // APC
-    const float alpha = 1.0f - (gamma + beta);       // PBC
+    float area        = cross_product(a2b, a2c);        // ABC
+    const float gamma = cross_product(a2b, a2p) / area; // ABP
+    const float beta  = cross_product(a2p, a2c) / area; // APC
+    const float alpha = 1.0f - (gamma + beta);          // PBC
 
     // P = alpha * A +  beta * B +  gamma * C
     const auto u = alpha;

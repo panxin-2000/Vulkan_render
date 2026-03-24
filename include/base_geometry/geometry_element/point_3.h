@@ -138,6 +138,15 @@ inline float dot(const Point_3 &A, const Point_3 &b) {
     return A.x * b.x + A.y * b.y + A.z * b.z;
 }
 
+inline Point_3 cross_product(const Point_3 &A, const Point_3 &b) {
+    return {
+        A.y * b.z - A.z * b.y,
+        A.z * b.x - A.x * b.z,
+        A.x * b.y - A.y * b.x
+    };
+}
+
+
 inline Point_3 clamp(const Point_3 input, const Point_3 min, const Point_3 max) {
     auto result_x = std::clamp(input.x, min.x, max.x);
     auto result_y = std::clamp(input.y, min.y, max.y);

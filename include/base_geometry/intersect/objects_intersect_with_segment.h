@@ -168,13 +168,13 @@ inline bool intersect_pass_AABB(const Segment<Point_2> &L_segment, const Segment
     const Point_2 cb = L_segment.end_point - segment.start_point;
 
     // ac ad 在 ab 的 不同侧的边 且  ca cb 在 cd 的不同侧的边
-    const float f1 = ab.single_area(ac);
-    const float f2 = ab.single_area(ad);
+    const float f1 = cross_product(ab, ac);
+    const float f2 = cross_product(ab, ad);
     if (f1 * f2 > 0) {
         return false;
     }
-    const float f3 = cd.single_area(ca);
-    const float f4 = cd.single_area(cb);
+    const float f3 = cross_product(cd, ca);
+    const float f4 = cross_product(cd, cb);
     if (f3 * f4 > 0) {
         return false;
     }

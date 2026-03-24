@@ -34,7 +34,7 @@
 bool if_colinear(Point_2 a, Point_2 b, Point_2 c) {
     Point_2 ab = b - a;
     Point_2 ac = c - a;
-    float f1 = ab.single_area(ac);
+    float f1   = cross_product(ab, ac);
     if (abs(f1) < 0.00001)
         return false;
     else
@@ -61,7 +61,7 @@ TEST(centre, the_centre_of_a_circle_2) {
 
     struct MyStruct {
         using type = int; // 用 using 定义嵌套类型 type（等价于 typedef int type;）
-    }; // 这个结构体的大小
+    };                    // 这个结构体的大小
     MyStruct::type f = 200;
     // 上面的f的本质应该还是int,主要的目的是什么其他的数据类型，可以被外部使用
     int g = f;

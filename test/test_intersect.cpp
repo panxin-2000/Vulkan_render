@@ -314,7 +314,7 @@ TEST(distance, Barycentric_coordinates) {
 }
 
 TEST(intersect, point_in_OBB) {
-    OBB_2D temp{
+    OBB_2D<Point_2> temp{
         {0, 0},
         {sqrt(2.0f) / 2.0f, sqrt(2.0f) / 2.0f},
         {sqrt(2.0f) / 2.0f, -sqrt(2.0f) / 2.0f},

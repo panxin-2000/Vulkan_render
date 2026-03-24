@@ -150,14 +150,14 @@ public:
      * @param R
      * @return
      */
-    [[nodiscard]] float single_area(const Point_2 &R) const {
-        return this->x * R.y - this->y * R.x;
+    static float cross_product(const Point_2 &L, const Point_2 &R) {
+        return L.x * R.y - L.y * R.x;
     }
 
     static float single_area(const Point_2 &a, const Point_2 b, const Point_2 c) {
-        Point_2 ab = b - a;
-        Point_2 ac = c - a;
-        return ab.single_area(ac);
+        const Point_2 ab = b - a;
+        const Point_2 ac = c - a;
+        return cross_product(ab, ac);
     }
 
 
@@ -188,7 +188,7 @@ public:
     static anticlockwise is_anticlockwise(const Point_2 &a, const Point_2 &b, const Point_2 &c) {
         Point_2 ab = b - a;
         Point_2 ac = c - a;
-        float area = ab.single_area(ac);
+        float area = cross_product(ab, ac);
         if (abs(area) < 0.00001)
             return anticlockwise::collinear;
         if (area > 0) return anticlockwise::counterclockwise;
@@ -198,6 +198,10 @@ public:
 
 inline float dot(const Point_2 &A, const Point_2 &b) {
     return A.x * b.x + A.y * b.y;
+}
+
+inline float cross_product(const Point_2 &A, const Point_2 &b) {
+    return Point_2::cross_product(A, b);
 }
 
 inline Point_2 clamp(const Point_2 input, const Point_2 min, const Point_2 max) {
