@@ -299,3 +299,17 @@ TEST(distance, point_to_Sphere) { {
         EXPECT_EQ(distance(temp, {2, 2,0} ), (sqrt(2.0f) * 2.0f - 2.0f) * (sqrt(2.0f) * 2.0f - 2.0f));
     }
 }
+
+TEST(distance, Barycentric_coordinates) {
+    Triangle<Point_2> a{{0, 0}, {4, 0}, {2, 4}};
+    // 给出顶点，测试 Voronoi 区域的类型
+    auto ab    = distance(a, {-1, 0});
+    auto bc    = distance(a, {5, 0});
+    auto ac    = distance(a, {2, 5});
+    auto acf   = distance(a, {3, 3});
+    auto acff  = distance(a, {2, -1});
+    auto acsf  = distance(a, {1, 3});
+    auto actsf = distance(a, {2, 2});
+
+    int d = 0;
+}

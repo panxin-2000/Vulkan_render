@@ -33,6 +33,11 @@ float distance(const Segment<T> &segment, const T &test_point) {
 }
 
 template<typename T>
+float distance(const T &point_L, const T &point_R) {
+    return dot(point_L - point_R, point_L - point_R);
+}
+
+template<typename T>
 float distance(const Ray<T> &ray, const T &test_point) {
     auto direction = ray.direction;
     auto PA        = test_point - ray.point;
@@ -146,6 +151,20 @@ bool intersect(const Triangle<T> &triangle, const T &test_point) {
         return true;
     }
     return false;
+
+    // 另一种表示方式，
+    // T a2b       = triangle.b - triangle.a;
+    // T a2c       = triangle.c - triangle.a;
+    // auto a2p    = test_point - triangle.a;
+    // float area  = a2b.single_area(a2c);
+    // float alpha = a2p.single_area(a2c) / area;
+    // float beta  = a2b.single_area(a2p) / area;
+    // float gamma = 1.0f - (alpha + beta);
+    // if (alpha < 0.0f || beta < 0.0f || gamma < 0.0f) {
+    //     return false;
+    // }
+    // return true;
+
 
     // 下面的逻辑应该是和上面的一样的
     if (((temp1 | temp2 | temp3) == Point_2::anticlockwise::clockwise_and_counterclockwise) ||

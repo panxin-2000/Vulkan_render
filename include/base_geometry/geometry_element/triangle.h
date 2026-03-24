@@ -8,6 +8,7 @@
 #include <vector>
 #include <ostream>
 #include "point_2.h"
+#include "point_3.h"
 #include "../../point_in_on_out_triangle.h"
 #include "AABB_bounding_box.h"
 
@@ -36,7 +37,7 @@ struct Triangle {
     }
 
     bool operator<(const Triangle &R) const {
-        auto left = this->a + this->b + this->c;
+        auto left  = this->a + this->b + this->c;
         auto right = R.a + R.b + R.c;
         if (left < right) {
             return true;
@@ -70,16 +71,17 @@ struct Triangle {
         return {(a + b + c) / 3};
     }
 
-    // 先调用intersect，为true之后再调用这个，用于得到三个分量
-    // 之后再想想办法，看看能否再优化了
-    void point_position_of_triangle(T point, float &alpha, float &beta, float &gamma) {
-        T a2b = b - a;
-        T a2c = c - a;
-        auto a2p = point - a;
-        float area = a2b.single_area(a2c);
-        alpha = a2p.single_area(a2c) / area;
-        beta = a2b.single_area(a2p) / area;
-        gamma = 1.0f - (alpha + beta);
+
+    //  point =  alpha * a + beta * b + gamma * c
+    Point_3 Barycentric_coordinates(T point) {
+        T a2b       = b - a;
+        T a2c       = c - a;
+        auto a2p    = point - a;
+        float area  = a2b.single_area(a2c);        // ABC
+        float gamma = a2b.single_area(a2p) / area; // ABP
+        float beta  = a2p.single_area(a2c) / area; // APC
+        float alpha = 1.0f - (gamma + beta);       // PBC
+        return {alpha, beta, gamma};
     }
 };
 
