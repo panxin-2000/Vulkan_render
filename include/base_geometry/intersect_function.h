@@ -9,6 +9,7 @@
 #include "base.h"
 
 #include "intersect/objects_intersect_with_AABB.h"
+#include "intersect/objects_intersect_with_OBB.h"
 #include "intersect/objects_intersect_with_cylinder.h"
 #include "intersect/objects_intersect_with_eight_DOP.h"
 #include "intersect/objects_intersect_with_plane.h"

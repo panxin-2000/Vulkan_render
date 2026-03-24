@@ -136,7 +136,6 @@ TEST(AABB_bounding_box, have_intersect_axis) {
     Point_2 a(1, 1);
     Point_2 b(4, 3);
     AABB_min_max<Point_2> box{a, b};
-    Ray<Point_2>{{0, 0}, {1, 2}};
     EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 0}, {1, 2}}), true);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, 1}}), true);
     EXPECT_EQ(intersect(box, Ray<Point_2> {{0, 2}, {1, 1.001}}), false);
@@ -312,4 +311,38 @@ TEST(distance, Barycentric_coordinates) {
     auto actsf = distance(a, {2, 2});
 
     int d = 0;
+}
+
+TEST(intersect, point_in_OBB) {
+    OBB_2D temp{
+        {0, 0},
+        {sqrt(2.0f) / 2.0f, sqrt(2.0f) / 2.0f},
+        {sqrt(2.0f) / 2.0f, -sqrt(2.0f) / 2.0f},
+        {2, 2}
+    };
+    EXPECT_EQ(intersect(temp, {1, 1} ), true);
+    EXPECT_EQ(intersect(temp, {-1, 1} ), true);
+    EXPECT_EQ(intersect(temp, {-1, -1} ), true);
+    EXPECT_EQ(intersect(temp, {1, -1} ), true);
+    EXPECT_EQ(intersect(temp, {0, 0} ), true);
+    EXPECT_EQ(intersect(temp, {sqrt(2.0f) * 2.0f, 0} ), true);
+    EXPECT_EQ(intersect(temp, {0,sqrt(2.0f) * 2.0f} ), true);
+    EXPECT_EQ(intersect(temp, {sqrt(2.0f) * 2.0f + 0.001f, 0} ), false);
+    EXPECT_EQ(intersect(temp, {0,sqrt(2.0f) * 2.0f + 0.001f } ), false);
+    EXPECT_EQ(intersect(temp, {1, 2} ), false);
+    EXPECT_EQ(intersect(temp, {2, 1} ), false);
+
+    EXPECT_EQ(distance(temp, {1, 1} ), 0.0f);
+    EXPECT_EQ(distance(temp, {-1, 1} ), 0.0f);
+    EXPECT_EQ(distance(temp, {-1, -1} ), 0.0f);
+    EXPECT_EQ(distance(temp, {1, -1} ), 0.0f);
+    EXPECT_EQ(distance(temp, {0, 0} ), 0.0f);
+    EXPECT_EQ(distance(temp, {sqrt(2.0f) * 2.0f, 0} ), 0.0f);
+    EXPECT_EQ(distance(temp, {0,sqrt(2.0f) * 2.0f} ), 0.0f);
+    EXPECT_NEAR(distance(temp, {sqrt(2.0f) * 2.0f + 1.0f, 0} ), 1.0f, 1e-6);
+    EXPECT_NEAR(distance(temp, {0,sqrt(2.0f) * 2.0f + 1.0f } ), 1.0f, 1e-6);
+    EXPECT_NEAR(distance(temp, {2, 2} ),
+                (sqrt(2.0f) * 2.0f - 2.0f) * (sqrt(2.0f) * 2.0f - 2.0f),
+                1e-6);
+    // EXPECT_EQ(intersect(temp, {2, 1} ), false);
 }
