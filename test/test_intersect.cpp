@@ -278,3 +278,24 @@ TEST(distance, point_to_AABB) {
     EXPECT_EQ(distance(temp, {1, 1,1} ), 0);
     EXPECT_EQ(distance(temp,{2,-2,-2}), 1 + 4 + 4);
 }
+
+TEST(distance, point_to_Sphere) { {
+        Sphere temp{Point_2{0, 0}, 2};
+        EXPECT_EQ(distance(temp, {1, 1} ), 0);
+        EXPECT_EQ(distance(temp, {-1, 1} ), 0);
+        EXPECT_EQ(distance(temp, {-1, -1} ), 0);
+        EXPECT_EQ(distance(temp, {1, -1} ), 0);
+        EXPECT_EQ(distance(temp, {0, 0} ), 0);
+        // 下面一行判断相等的时候需要注意精度问题
+        EXPECT_EQ(distance(temp, {2, 2} ), (sqrt(2.0f) * 2.0f - 2.0f) * (sqrt(2.0f) * 2.0f - 2.0f));
+    } {
+        Sphere temp{Point_3{0, 0, 0}, 2};
+        EXPECT_EQ(distance(temp, {1, 1,0} ), 0);
+        EXPECT_EQ(distance(temp, {-1, 1,0} ), 0);
+        EXPECT_EQ(distance(temp, {-1, -1,0} ), 0);
+        EXPECT_EQ(distance(temp, {1, -1,0} ), 0);
+        EXPECT_EQ(distance(temp, {0, 0,0} ), 0);
+        // 下面一行判断相等的时候需要注意精度问题
+        EXPECT_EQ(distance(temp, {2, 2,0} ), (sqrt(2.0f) * 2.0f - 2.0f) * (sqrt(2.0f) * 2.0f - 2.0f));
+    }
+}

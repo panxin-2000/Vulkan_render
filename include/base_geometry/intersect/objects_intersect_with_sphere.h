@@ -45,5 +45,16 @@ bool intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
 // 两个圆相交之后的结果也是一个圆，或者一个点
 // 或者拿到的结果是相交之后体积， 怎么表示这个圆呢？
 
+template<typename T>
+float distance(const Sphere<T> &sphere, const T &test_point) {
+    auto distance        = dot({sphere.center - test_point}, {sphere.center - test_point});
+    auto distanceSquared = sphere.radius * sphere.radius;
+    if (distance <= distanceSquared) {
+        return 0;
+    } else {
+        // 点到圆心的距离，再减去半径，得到点到圆的距离，之后再平方
+        return (sqrt(distance) - sphere.radius) * (sqrt(distance) - sphere.radius);
+    }
+}
 
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_SPHERE_H

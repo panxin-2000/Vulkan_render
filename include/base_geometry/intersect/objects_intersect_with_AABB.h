@@ -39,5 +39,11 @@ float distance(const AABB_min_max<T> &box, const T &test_point) {
     return dot({test_point - projection}, {test_point - projection});
 }
 
+template<typename T>
+float distance(const AABB_centroid<T> &box, const T &test_point) {
+    AABB_min_max<T> L_box = box;
+    return distance(L_box, test_point);
+}
+
 
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_AABB_H
