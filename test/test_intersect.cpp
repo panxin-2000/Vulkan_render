@@ -205,7 +205,7 @@ TEST(distance, point_to_segment) { {
 }
 
 
-TEST(distance, ray_to_segment) { {
+TEST(distance, point_to_ray) { {
         Ray<Point_2> temp{{0, 0}, {2, 0}};
         EXPECT_EQ(distance(temp, {1, 1} ), 1);
         EXPECT_EQ(distance(temp,{1,0}), 0);
@@ -226,7 +226,7 @@ TEST(distance, ray_to_segment) { {
     }
 }
 
-TEST(distance, ray_to_straight_line) { {
+TEST(distance, point_to_straight_line) { {
         Straight_line<Point_2> temp{{0, 0}, {2, 0}};
         EXPECT_EQ(distance(temp, {1, 1} ), 1);
         EXPECT_EQ(distance(temp,{1,0}), 0);
@@ -259,4 +259,22 @@ TEST(distance, point_to_plane) {
 
     EXPECT_EQ(distance(temp, {1, 1,1} ), 1);
     EXPECT_EQ(distance(temp,{2,-2,-2}), 4);
+}
+
+TEST(distance, point_to_AABB) {
+    auto a = std::clamp(10, 2, 5);
+    auto b = clamp(Point_2{1, 23}, Point_2{2, 3}, Point_2{5, 6});
+    auto c = clamp(Point_3{1, 23, 9}, Point_3{2, 3, 3}, Point_3{5, 6, 15});
+
+    AABB_min_max<Point_3> temp{{0, 0, 0}, {1, 1, 1}};
+    EXPECT_EQ(distance(temp, {1, 1,0} ), 0);
+    EXPECT_EQ(distance(temp,{1,0,0}), 0);
+    EXPECT_EQ(distance(temp,{0,0,0}), 0);
+    EXPECT_EQ(distance(temp,{2,0,0}), 1);
+    EXPECT_EQ(distance(temp,{2,1,0}), 1);
+    EXPECT_EQ(distance(temp,{3,1,0}), 4);
+    EXPECT_EQ(distance(temp,{-1,1,0}), 1);
+
+    EXPECT_EQ(distance(temp, {1, 1,1} ), 0);
+    EXPECT_EQ(distance(temp,{2,-2,-2}), 1 + 4 + 4);
 }

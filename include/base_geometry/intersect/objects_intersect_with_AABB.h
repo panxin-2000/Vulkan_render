@@ -32,4 +32,12 @@ inline bool intersect(const AABB_centroid<T> &L_box, const AABB_centroid<T> &R_b
 }
 
 
+template<typename T>
+float distance(const AABB_min_max<T> &box, const T &test_point) {
+    auto projection = clamp(test_point, box.min_point_, box.max_point_);
+    // auto error      = clamp({}, box.max_point_ - test_point, test_point - box.min_point_);
+    return dot({test_point - projection}, {test_point - projection});
+}
+
+
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_AABB_H

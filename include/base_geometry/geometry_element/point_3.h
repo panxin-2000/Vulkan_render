@@ -138,4 +138,11 @@ inline float dot(const Point_3 &A, const Point_3 &b) {
     return A.x * b.x + A.y * b.y + A.z * b.z;
 }
 
+inline Point_3 clamp(const Point_3 input, const Point_3 min, const Point_3 max) {
+    auto result_x = std::clamp(input.x, min.x, max.x);
+    auto result_y = std::clamp(input.y, min.y, max.y);
+    auto result_z = std::clamp(input.z, min.z, max.z);
+    return {result_x, result_y, result_z};
+}
+
 #endif //HELLO_MAC_POINT_3_H

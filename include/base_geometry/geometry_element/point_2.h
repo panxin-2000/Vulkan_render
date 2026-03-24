@@ -200,5 +200,10 @@ inline float dot(const Point_2 &A, const Point_2 &b) {
     return A.x * b.x + A.y * b.y;
 }
 
+inline Point_2 clamp(const Point_2 input, const Point_2 min, const Point_2 max) {
+    auto result_x = std::clamp(input.x, min.x, max.x);
+    auto result_y = std::clamp(input.y, min.y, max.y);
+    return {result_x, result_y};
+}
 
 #endif //HELLO_MAC_POINT_2_H
