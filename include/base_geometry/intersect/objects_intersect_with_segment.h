@@ -241,5 +241,18 @@ bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     return false;
 }
 
+template<typename T>
+float distance(const Segment<T> &segment_L, const Segment<T> &segment_R) {
+    if (intersect(segment_L, segment_R)) {
+        return 0.0f;
+    }
+    // 比较暴力的一个方法
+    auto a = distance(segment_L, segment_R.start_point);
+    auto b = distance(segment_L, segment_R.end_point);
+    auto c = distance(segment_R, segment_L.start_point);
+    auto d = distance(segment_R, segment_L.end_point);
+    return std::min<float>(std::min<float>(a, b), std::min<float>(c, d));
+}
+
 
 #endif //HELLO_MAC_OBJECTS_INTERSECT_WITH_SEGMENT_H
