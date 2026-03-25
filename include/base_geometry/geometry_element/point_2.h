@@ -104,6 +104,7 @@ public:
         return temp;
     }
 
+
     Point_2 operator/(const float number) const {
         Point_2 temp{0, 0};
         temp.x = this->x / number;
@@ -142,6 +143,18 @@ public:
     friend Point_2 abs(const Point_2 &R) {
         const Point_2 temp{std::abs(R.x), std::abs(R.y)};
         return temp;
+    }
+
+    Point_2 &operator+=(const Point_2 &R) {
+        x += R.x;
+        y += R.y;
+        return (*this);
+    }
+
+    Point_2 &operator-=(const Point_2 &R) {
+        x -= R.x;
+        y -= R.y;
+        return (*this);
     }
 
 

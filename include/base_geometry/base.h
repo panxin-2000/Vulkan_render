@@ -25,4 +25,23 @@
 #include "geometry_element/triangle.h"
 
 
+template<typename T>
+inline T mean(const std::vector<T> &points) {
+    T temp_point = {0, 0};
+    for (const auto point: points) {
+        temp_point += point;
+    }
+    temp_point = temp_point / static_cast<float>(points.size());
+    return temp_point;
+}
+
+
+
+template<typename T>
+inline auto Covariance_Matrix(const std::vector<T> &points) {
+
+
+}
+
+
 #endif //HELLO_MAC_BASE_H

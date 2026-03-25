@@ -129,6 +129,20 @@ public:
         return temp;
     }
 
+    Point_3 &operator+=(const Point_3 &R) {
+        x += R.x;
+        y += R.y;
+        z += R.z;
+        return (*this);
+    }
+
+    Point_3 &operator-=(const Point_3 &R) {
+        x -= R.x;
+        y -= R.y;
+        z -= R.z;
+        return (*this);
+    }
+
 
     float single_area(const Point_3 &R);
 };
