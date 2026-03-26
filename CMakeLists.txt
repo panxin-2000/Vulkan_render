@@ -185,39 +185,39 @@ if (WITH_VULKAN_BACKEND)
 
     file(GLOB_RECURSE vulkan_code
             #        "vulkan_code/glfw_vulkan.cpp"
-            "vulkan_code/vulkan_utility.cpp"
-            "vulkan_code/vulkan_read_attribute.cpp"
-            "vulkan_code/vulkan_validation_layer.cpp"
-            "vulkan_code/vulkan_image.cpp"
-            "vulkan_code/vulkan_image_view.cpp"
-            "vulkan_code/vulkan_image_and_view_discard.cpp"
-            "vulkan_code/vulkan_sample.cpp"
-            "vulkan_code/vulkan_buffer.cpp"
-            "vulkan_code/vulkan_buffer_block.cpp"
-            "vulkan_code/vulkan_backend.cpp"
-            "vulkan_code/transfer_texture_to_gpu.cpp"
-            "render_thread/backend.cpp"
-            "vulkan_code/engine.cpp"
-            "vulkan_code/create_shader.cpp"
-            "vulkan_code/descriptor.cpp"
-            "vulkan_code/create_texture.cpp"
-            "vulkan_code/create_pipeline.cpp"
-            "vulkan_code/descriptor_pool.cpp"
-            "vulkan_code/pipeline_layout.cpp"
-            "vulkan_code/sets_and_bindings_layout.cpp"
-            "vulkan_code/render_function.cpp"
-            "vulkan_code/vulkan_texture_bindless.cpp"
-            "vulkan_code/vulkan_update_descriptor.cpp"
-            "vulkan_code/updata_push_constants_data.cpp"
+            "render/vulkan_code/vulkan_utility.cpp"
+            "render/vulkan_code/vulkan_read_attribute.cpp"
+            "render/vulkan_code/vulkan_validation_layer.cpp"
+            "render/vulkan_code/vulkan_image.cpp"
+            "render/vulkan_code/vulkan_image_view.cpp"
+            "render/vulkan_code/vulkan_image_and_view_discard.cpp"
+            "render/vulkan_code/vulkan_sample.cpp"
+            "render/vulkan_code/vulkan_buffer.cpp"
+            "render/vulkan_code/vulkan_buffer_block.cpp"
+            "render/vulkan_code/vulkan_backend.cpp"
+            "render/vulkan_code/transfer_texture_to_gpu.cpp"
+            "render/render_thread/backend.cpp"
+            "render/vulkan_code/engine.cpp"
+            "render/vulkan_code/create_shader.cpp"
+            "render/vulkan_code/descriptor.cpp"
+            "render/vulkan_code/create_texture.cpp"
+            "render/vulkan_code/create_pipeline.cpp"
+            "render/vulkan_code/descriptor_pool.cpp"
+            "render/vulkan_code/pipeline_layout.cpp"
+            "render/vulkan_code/sets_and_bindings_layout.cpp"
+            "render/vulkan_code/render_function.cpp"
+            "render/vulkan_code/vulkan_texture_bindless.cpp"
+            "render/vulkan_code/vulkan_update_descriptor.cpp"
+            "render/vulkan_code/updata_push_constants_data.cpp"
 
-            "render_component/pipeline_component.cpp"
-            "render_component/pipeline_layout_component.cpp"
-            "render_component/shader_component.cpp"
-            "render_component/sync_proxy_to_render_thread.cpp"
-            "render_component/mesh_component.cpp"
-            "render_component/VKR_proxy_component.cpp"
+            "render/render_component/pipeline_component.cpp"
+            "render/render_component/pipeline_layout_component.cpp"
+            "render/render_component/shader_component.cpp"
+            "render/render_component/sync_proxy_to_render_thread.cpp"
+            "render/render_component/mesh_component.cpp"
+            "render/render_component/VKR_proxy_component.cpp"
     )
-    include_directories(vulkan_code)
+    include_directories(render/vulkan_code)
 
 endif ()
 # 极致性能优化
@@ -293,9 +293,9 @@ include_directories(event)
 include_directories(singleton)
 include_directories(labyrinth)
 include_directories(input_device)
-include_directories(render_thread)
+include_directories(render/render_thread)
 include_directories(component)
-include_directories(render_component)
+include_directories(render/render_component)
 include_directories(interactable_object)
 
 
