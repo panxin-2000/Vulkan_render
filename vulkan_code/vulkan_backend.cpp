@@ -115,7 +115,9 @@ bool VK_backend::choose_one_physical_device() {
             bool temp_4 = check_have_present_support(physical_device, family_property, queueFamilyIndex, surface_);
             if (temp_1 && temp_2 && temp_3 && temp_4) {
                 physical_device_ = physical_device;
-                VkPhysicalDeviceProperties2 deviceProperties{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};
+                VkPhysicalDeviceProperties2 deviceProperties{
+                    .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2
+                };
                 vkGetPhysicalDeviceProperties2(physical_device_, &deviceProperties);
                 LOG_INFO(g_log(), "Selected device:  {}!", deviceProperties.properties.deviceName);
                 return true;
@@ -533,4 +535,27 @@ uint32_t get_maxPushConstantsSize() {
     // 获取最大字节限制
     uint32_t maxSize = properties.limits.maxPushConstantsSize;
     return maxSize;
+}
+
+/**
+ * 苹果电脑关于采样器是有限制的，最大是1024个，也就是1024，只是对 after 有限制
+ * @return
+ */
+uint32_t get_max_descriptor_update_after_bind_samplers() {
+    // 准备结构体链
+    const auto &backend = VK_backend::get();
+
+    VkPhysicalDeviceDescriptorIndexingProperties indexingProps{};
+    indexingProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES;
+
+    VkPhysicalDeviceProperties2 deviceProps{};
+    deviceProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    deviceProps.pNext = &indexingProps;
+
+    // 查询属性
+    vkGetPhysicalDeviceProperties2(backend.get_physical_device(), &deviceProps);
+
+    // 现在你可以获取最大值，例如支持 100,000+ 的纹理绑定
+    uint32_t maxBindlessTextures = indexingProps.maxPerStageDescriptorUpdateAfterBindSampledImages;
+    return maxBindlessTextures;
 }

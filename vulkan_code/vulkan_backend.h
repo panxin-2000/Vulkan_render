@@ -16,9 +16,7 @@
 #include "global_singleton.h"
 
 
-
 #include "vulkan_image.h"
-
 
 
 class VK_backend {
@@ -329,4 +327,5 @@ public:
 
 uint32_t get_maxPushConstantsSize();
 
+uint32_t get_max_descriptor_update_after_bind_samplers();
 #endif //HELLO_MAC_GLFW_VULKAN_H
