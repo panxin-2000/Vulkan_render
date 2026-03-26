@@ -4,10 +4,10 @@
 
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
-#include "descriptor.h"
-#include "engine.h"
+#include "../vulkan_code/descriptor.h"
+#include "../vulkan_code/engine.h"
 #include "render_proxy.h"
-#include "vertex_and_buffer_index.h"
+#include "../vulkan_code/vertex_and_buffer_index.h"
 
 struct scoped_debug_label {
     VkCommandBuffer cmd;

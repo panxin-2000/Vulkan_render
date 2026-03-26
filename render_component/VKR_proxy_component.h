@@ -11,11 +11,7 @@
 #include "vulkan_render_manage.h"
 
 
-bool create_VKR_object_proxy(const entt::entity entity);
-
-
 using entt_proxy_update_lambda = const std::function<void(void)> &;
-
 
 bool clean_VKR_object_proxy(const entt::entity entity);
 

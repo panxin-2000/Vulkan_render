@@ -16,8 +16,6 @@
 #include "update_push_constants_data.h"
 
 
-
-
 #include "vulkan_update_descriptor.h"
 
 using Push_constant_map = std::map<std::string, VkPushConstantRange>;
@@ -49,7 +47,6 @@ struct vk_shader_data {
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     Fragment_output_map fragment_output_map;
 };
-
 
 
 class VKR_shader_paths {
@@ -90,36 +87,6 @@ public:
 };
 
 std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
-
-void update_object_bindings_to_descriptor_sets(const entt::entity entity);
-
-void update_global_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o);
-
-
-inline bool set_render_picture(const entt::entity entity,
-                               const std::string &binding_name,
-                               const std::string &picture_path) {
-    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        }
-        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
-        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
-        if (binding_name.find("global") != std::string::npos) {
-            add_texture_data_detail(shader_data->global_sets_bindings,
-                                    parameter.update_global_descriptor_sets, binding_name,
-                                    picture_path);
-            Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
-        } else {
-            add_texture_data_detail(shader_data->object_sets_bindings,
-                                    parameter.update_object_descriptor_sets, binding_name,
-                                    picture_path);
-            Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
-        }
-    }
-    return false;
-}
-
 
 /**
  *
@@ -189,9 +156,6 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
 
 std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity);
 
-VkPipeline get_pipeline(const entt::entity entity);
-
-VkPipelineLayout get_pipeline_layout(const entt::entity entity);
 
 void descriptor_set_update_function();
 

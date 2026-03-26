@@ -4,10 +4,11 @@
 
 #include "shader_component.h"
 #include <memory_resource>
+#include <pipeline_layout.h>
 
 #include "create_shader.h"
 #include "descriptor.h"
-#include "pipeline_layout.h"
+#include "pipeline_layout_component.h"
 #include "scene_component.h"
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
@@ -219,38 +220,6 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
     }
 
     return shader_data_handle;
-}
-
-#include "create_pipeline.h"
-
-
-VkPipeline get_pipeline(const entt::entity entity) {
-    auto &handle          = VK_backend::get();
-    VkPipeline pipeline_t = VK_NULL_HANDLE;
-    if (auto shader_data = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
-        pipeline_t = find_pipeline(handle, *shader_data);
-        return pipeline_t;
-    } else {
-        // 打印一个 entity name 没有 VKR_shader
-    }
-    return VK_NULL_HANDLE;
-}
-
-VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
-    auto &handle                     = VK_backend::get();
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        }
-    }
-    if (auto shader_data = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
-        pipeline_layout = (*shader_data)->pipeline_layout;
-        return pipeline_layout;
-    } else {
-        // 打印一个 entity name 没有 VKR_shader
-    }
-    return VK_NULL_HANDLE;
 }
 
 

@@ -7,6 +7,8 @@
 #include "name_component.h"
 #include "Rect_2D_component.h"
 #include "vulkan_render_manage.h"
+#include "pipeline_component.h"
+#include "pipeline_layout_component.h"
 
 
 void add_render_UI_2D_tag(entt::entity entity) {

@@ -15,7 +15,10 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
     std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
     std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
+    // 可以再次做一个缓存，等到全部的都更新完成之后一次性 vkUpdateDescriptorSets
     std::vector<VkWriteDescriptorSet> descriptor_write_bindings{};
+
+
     descriptor_write_bindings.resize(update_descriptor_sets.size());
     size_t i = 0;
     for (auto &[name,binding_update]: update_descriptor_sets) {

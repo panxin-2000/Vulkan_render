@@ -210,6 +210,8 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/vulkan_update_descriptor.cpp"
             "vulkan_code/updata_push_constants_data.cpp"
 
+            "render_component/pipeline_component.cpp"
+            "render_component/pipeline_layout_component.cpp"
             "render_component/shader_component.cpp"
             "render_component/sync_proxy_to_render_thread.cpp"
             "render_component/mesh_component.cpp"
