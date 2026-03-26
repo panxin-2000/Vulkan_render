@@ -1,3 +1,3 @@
-[submodule "thirdparty/openGJK"]
-	path = thirdparty/openGJK
-	url = https://github.com/MattiaMontanari/openGJK.git
+[submodule "thirdparty/libccd"]
+	path = thirdparty/libccd
+	url = https://github.com/danfis/libccd.git

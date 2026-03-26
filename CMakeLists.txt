@@ -81,14 +81,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tinygltf)
 
 
-option(BUILD_SCALAR "Build scalar (C) implementation" ON)
-option(BUILD_SIMD "Build SIMD (C++ Highway) implementation" ON)
-option(BUILD_GPU "Build GPU (CUDA) implementation" OFF)
-option(BUILD_TESTS "Build unit tests" OFF)
-option(BUILD_EXAMPLES "Build example applications" OFF)
-option(USE_32BITS "Use float instead of double" ON)
-
-add_subdirectory(thirdparty/openGJK)
+add_subdirectory(thirdparty/libccd)
 
 
 if (APPLE)
@@ -463,7 +456,7 @@ target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE tinygltf)
-target_link_libraries(learn_render PRIVATE opengjk_scalar)
+target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # 使用自定义命令复制文件
