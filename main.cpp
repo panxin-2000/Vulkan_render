@@ -73,15 +73,21 @@ void test_lib_ccd() {
     CCD_INIT(&ccd);
 
     // 设置回调函数
-    ccd.support1               = my_support;
-    ccd.support2               = my_support;
-    ccd.max_iterations         = 100; // 迭代次数限制
-    std::vector<Point_3> meshA = {{0, 0, 0}, {2, 0, 0}, {0, 2, 0}};
-    std::vector<Point_3> meshB = {{1, 1, 0}, {6, 5, 0}, {5, 6, 0}};
+    ccd.support1       = my_support;
+    ccd.support2       = my_support;
+    ccd.max_iterations = 100;    // 迭代次数限制
+    ccd.epa_tolerance  = 0.0001; // maximal tolerance fro EPA part
 
+    std::vector<Point_3> meshA = {{0, 0, 0}, {2, 0, 0}, {0, 2, 0}};
+    std::vector<Point_3> meshB = {{0, 3, 3}, {2, 3, 3}, {0, 6, 3}};
+
+    ccd_vec3_t sep;
+
+    ccd_real_t depth;
+    ccd_vec3_t dir, pos;
 
     // 直接传入 vector 的地址即可
-    int intersect = ccdGJKIntersect(&meshA, &meshB, &ccd);
+    int intersect = ccdGJKPenetration(&meshA, &meshB, &ccd, &depth, &dir, &pos);
 
     if (intersect) {
         // 发生了碰撞！
@@ -89,7 +95,7 @@ void test_lib_ccd() {
 }
 
 int main(int argc, char *argv[]) {
-    // test_lib_ccd();
+    test_lib_ccd();
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();
