@@ -199,8 +199,8 @@ struct uv_struct {
 
 struct Vertex {
     Point_3 pos;
-    normal_struct normal;
-    uv_struct uv;
+    normal_struct normal{0, 0, 1};
+    uv_struct uv{0, 0};
 };
 
 struct Picture_parameters {

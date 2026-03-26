@@ -50,7 +50,6 @@ using bindings_map = std::map<uint32_t, binding_resource>;
 using sets_map     = std::map<uint32_t, bindings_map>;
 
 
-
 #define Update_descriptor_binding_fixed_temp  \
 Update_descriptor_binding temp     = {};\
 temp.binding_name                   = binding_name;\
@@ -153,5 +152,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
 }
 
 
+void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &update_descriptor_sets,
+                            const std::vector<DescriptorSet_ptr> &descriptor_sets);
 
 #endif //HELLO_MAC_VULKAN_UPDATE_DESCRIPTOR_H

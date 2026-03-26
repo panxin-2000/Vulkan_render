@@ -207,6 +207,7 @@ if (WITH_VULKAN_BACKEND)
             "vulkan_code/sets_and_bindings_layout.cpp"
             "vulkan_code/render_function.cpp"
             "vulkan_code/vulkan_texture_bindless.cpp"
+            "vulkan_code/vulkan_update_descriptor.cpp"
             "vulkan_code/updata_push_constants_data.cpp"
 
             "render_component/shader_component.cpp"
