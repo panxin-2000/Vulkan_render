@@ -6,6 +6,7 @@
 #define HELLO_MAC_OBJECTS_INTERSECT_WITH_TRIANGLE_H
 
 #include "objects_intersect_with_point.h"
+#include "ccd/ccd.h"
 
 template<typename T>
 float distance(const Triangle<T> &triangle, const T &point) {
@@ -44,6 +45,53 @@ float distance(const Triangle<T> &triangle, const T &point) {
         return 0.0f;
     }
     return 0.0f;
+}
+
+inline void my_support(const void *obj, const ccd_vec3_t *dir, ccd_vec3_t *vec) {
+    // 1. 强制转回你的连续内存容器
+    const auto &mesh = *static_cast<const std::vector<Point_3> *>(obj);
+
+    float max_dot = -FLT_MAX;
+    int best_idx  = 0;
+
+    // 2. 直接在连续内存上进行点积（性能极高）
+    for (size_t i = 0; i < mesh.size(); ++i) {
+        float dot = mesh[i].x * dir->v[0] + mesh[i].y * dir->v[1] + mesh[i].z * dir->v[2];
+        if (dot > max_dot) {
+            max_dot  = dot;
+            best_idx = i;
+        }
+    }
+
+    // 3. 将结果写回给 libccd
+    vec->v[0] = mesh[best_idx].x;
+    vec->v[1] = mesh[best_idx].y;
+    vec->v[2] = mesh[best_idx].z;
+}
+
+
+template<typename T>
+bool intersect(const Triangle<T> &L, const Triangle<T> &R) {
+    ccd_t ccd;
+    CCD_INIT(&ccd);
+
+    // 设置回调函数
+    ccd.support1       = my_support;
+    ccd.support2       = my_support;
+    ccd.max_iterations = 100;    // 迭代次数限制
+    ccd.epa_tolerance  = 0.0001; // maximal tolerance fro EPA part
+
+    std::vector<Point_3> meshA = {L.a, L.b, L.c};
+    std::vector<Point_3> meshB = {R.a, R.b, R.c};
+
+    // 直接传入 vector 的地址即可
+    int intersect = ccdGJKIntersect(&meshA, &meshB, &ccd);
+
+    if (intersect) {
+        // 发生了碰撞！
+        return true;
+    }
+    return false;
 }
 
 
