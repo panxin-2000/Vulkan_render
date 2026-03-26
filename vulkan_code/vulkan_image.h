@@ -105,6 +105,7 @@ struct Texture_parameter {
     }
 };
 
+
 Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters);
 
 VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters);

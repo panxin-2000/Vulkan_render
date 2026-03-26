@@ -6,6 +6,7 @@
 
 #include "camera_optical_component.h"
 #include "input_component.h"
+#include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
 
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
@@ -171,17 +172,27 @@ void init_world_scene_root(entt::entity instance) {
 }
 
 
-class bindless_uniform_sampler2D {
-public:
-    std::map<std::string, Update_descriptor_binding> bindings;
-};
-
+uint32_t free_bindless_uniform_sampler2D(const std::string &name) {
+    const auto world_entity = world_scene_root::get();
+    auto &bindless          = Logic_entt().get_or_emplace<bindless_uniform_sampler2D>(world_entity);
+    const auto it_offset    = bindless.bindings.find(name);
+    if (it_offset != bindless.bindings.end()) {
+        bindless.freeSlots.emplace(it_offset->second.first);
+        bindless.bindings.erase(it_offset);
+    } else {
+    }
+}
 
 uint32_t add_bindless_uniform_sampler2D(const std::string &name,
                                         std::optional<Texture_parameter> &update) {
     const auto world_entity = world_scene_root::get();
     auto &bindless          = Logic_entt().get_or_emplace<bindless_uniform_sampler2D>(world_entity);
-    auto return_value       = bindless.bindings.size();
+    auto return_value       = bindless.bindings.size() + bindless.freeSlots.size(); // free为空时，在最大值处更新
+    if (!bindless.freeSlots.empty()) {
+        // 不为空时，拿取 队列中的 第一个被释放的 slot
+        return_value = bindless.freeSlots.front();
+        bindless.freeSlots.pop();
+    }
     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(world_entity)) {
         if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(world_entity)) {
             Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(world_entity, VKR_shader_init(*shader_temp));
@@ -207,7 +218,7 @@ uint32_t add_bindless_uniform_sampler2D(const std::string &name,
                     temp.texture_info                               = {true, update.value()};
                     parameter.update_bindless_descriptor_sets[name] = temp;
                     // 这个时候需要做什么呢？ 添加一个更新的函数，这是记录了需要更新的内容，还没有真正更新
-                    bindless.bindings[name] = temp;
+                    bindless.bindings[name] = {return_value, temp};
                 }
             }
         }

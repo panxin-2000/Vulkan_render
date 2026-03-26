@@ -130,6 +130,9 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon);
 
 wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with_stamp &event);
 
+
+uint32_t free_bindless_uniform_sampler2D(const std::string &name);
+
 uint32_t add_bindless_uniform_sampler2D(const std::string &name,
                                         std::optional<Texture_parameter> &update);
 #endif //HELLO_MAC_RENDER_COMPONENT_H
