@@ -81,6 +81,15 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(tinygltf)
 
 
+FetchContent_Declare(
+        manifold
+        GIT_REPOSITORY https://github.com/elalish/manifold.git
+        GIT_TAG v3.3.2
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(manifold)
+
+
 add_subdirectory(thirdparty/libccd)
 
 
@@ -460,6 +469,7 @@ target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE tinygltf)
+target_link_libraries(learn_render PRIVATE manifold)
 target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 

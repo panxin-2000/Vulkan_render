@@ -19,6 +19,7 @@
 #include "vk_render_to_image.h"
 #include "vulkan_sample.h"
 #include "ccd/ccd.h"
+#include "manifold/manifold.h"
 #include "UI/3d_model_display.h"
 
 void register_glfw(GLFWwindow *window);
@@ -75,6 +76,52 @@ int main(int argc, char *argv[]) {
     }
     // 3d 模型
     {
+        manifold::Manifold box = manifold::Manifold::Cube({10, 10, 10}, true);
+        manifold::MeshGL mesh  = box.GetMeshGL();
+    } {
+        // 创建两个简单的几何体并取交集
+        manifold::Manifold box = manifold::Manifold::Cube({10, 10, 10}, true);
+
+        manifold::MeshGL mesh = box.GetMeshGL();
+        mesh.numProp          = 8; // 现在每个顶点占 5 个 float (x, y, z, nx, ny, nz, u, v)
+        std::vector<float> newProps;
+        newProps.reserve(mesh.NumVert() * mesh.numProp); // 预留空间
+        // 4. 为原有的每个顶点补充 UV 数据
+        // 注意：mesh.vertProperties 原本只存了 [x0, y0, z0, x1, y1, z1...]
+        for (size_t i = 0; i < mesh.vertProperties.size(); i += 3) {
+            // 复制 XYZ
+            newProps.push_back(mesh.vertProperties[i]);     // x
+            newProps.push_back(mesh.vertProperties[i + 1]); // y
+            newProps.push_back(mesh.vertProperties[i + 2]); // z
+
+            newProps.push_back(0.0f); // nx
+            newProps.push_back(0.0f); // ny
+            newProps.push_back(0.0f); // nz
+            // 计算并添加简单的 UV (例如根据坐标映射)
+            float u = (mesh.vertProperties[i] + 5.0f) / 10.0f;
+            float v = (mesh.vertProperties[i + 1] + 5.0f) / 10.0f;
+            newProps.push_back(u);
+            newProps.push_back(v);
+        }
+        mesh.vertProperties.resize(newProps.size(), 0.0f);
+        for (size_t i = 0; i < newProps.size(); i++) {
+            mesh.vertProperties[i] = newProps[i];
+        }
+        manifold::Manifold boxWithUV(mesh);
+
+        manifold::Manifold ball = manifold::Manifold::Sphere(7, 32);
+
+        // 使用布尔运算符
+        manifold::Manifold intersected = boxWithUV ^ ball; // '^' 为交集, '+' 为并集, '-' 为差集
+
+        // 导出为网格数据
+        auto mesh_last = intersected.GetMeshGL(3);
+
+        auto entity    = object_3d_model("manifold ", mesh_last, {0, 0, 50});
+        uint32_t index = 7;
+        set_render_parameter(entity, "samplerColor", index);
+        logic_update_add_tag<opacity_tag>(entity);
+    } {
         auto value     = get_max_descriptor_update_after_bind_samplers();
         auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
         auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
