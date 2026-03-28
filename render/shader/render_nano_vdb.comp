@@ -5,7 +5,7 @@
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 
-layout(std430, binding = 0) readonly buffer NanoVDBBuffer {
+layout (std430, binding = 0) readonly buffer NanoVDBBuffer {
     uint pnanovdb_buf_data[];
 };
 
@@ -16,9 +16,24 @@ layout(std430, binding = 0) readonly buffer NanoVDBBuffer {
 
 void main()
 {
-    // 获取网格句柄（通常在缓冲区的开头）
-    //    nanovdb_address_t addr = { 0 }; // 假设网格从偏移量 0 开始
-    //    nanovdb_grid_handle_t grid = nanovdb_get_grid(pnvdb.data, addr);
+    pnanovdb_buf_t dd;
+
+    vec3 u_camPos;
+    vec3 u_rayDir;
+    vec3 worldPos = u_camPos + u_rayDir * 10.0;
+    pnanovdb_vec3_t ijk = pnanovdb_vec3_t(worldPos.x, worldPos.y, worldPos.z);
+
+    pnanovdb_root_handle_t root;
+
+    pnanovdb_readaccessor_t acc;
+    pnanovdb_readaccessor_init(acc, root);
+
+
+
+    // 现在这里应该能编译过了
+    uint magic = pnanovdb_buf_read_uint32(dd, 0);
+//    float value = pnanovdb_readaccessor_get_float(dd, acc, ijk);
+
 
 
 }

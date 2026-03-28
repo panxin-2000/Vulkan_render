@@ -1,4 +1,4 @@
-#version 450
+#version 450 core
 
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
