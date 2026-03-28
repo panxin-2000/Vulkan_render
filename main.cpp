@@ -14,11 +14,13 @@
 
 #include "global_singleton.h"
 #include "descriptor_pool.h"
+#include "earcut.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
 #include "vulkan_sample.h"
 #include "ccd/ccd.h"
+#include "manifold/cross_section.h"
 #include "manifold/manifold.h"
 #include "UI/3d_model_display.h"
 
@@ -44,6 +46,30 @@ inline entt::entity add_render_pass(const std::string &name) {
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     return entity;
+}
+
+using Point       = std::array<double, 2>;
+using ear_Polygon = std::vector<std::vector<Point> >;
+
+void triangulateSlice(const manifold::Polygons &manifoldPolys) {
+    // 2. 转换 manifold 数据到 earcut 格式
+    ear_Polygon polygon;
+    for (const auto &ring: manifoldPolys) {
+        std::vector<Point> earcut_ring;
+        for (const auto &p: ring) {
+            earcut_ring.push_back({(double) p.x, (double) p.y});
+        }
+        polygon.push_back(earcut_ring);
+    }
+
+    // 3. 执行三角化
+    // 返回的是顶点索引，每 3 个索引代表一个三角形
+    std::vector<uint32_t> indices = mapbox::earcut<uint32_t>(polygon);
+
+    // 4. 渲染逻辑 (伪代码)
+    // for (size_t i = 0; i < indices.size(); i += 3) {
+    //     drawTriangle(polygon_flattened[indices[i]], ...);
+    // }
 }
 
 
@@ -73,6 +99,18 @@ int main(int argc, char *argv[]) {
         logic_update_add_tag<skybox_tag>(entity);
 
         // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
+    } {
+        // 创建一个球体模型
+        manifold::Manifold sphere = manifold::Manifold::Sphere(10.0f);
+
+        // 在高度 5.0 处切片
+        // 返回值是一个 CrossSection 对象，内部封装了 Clipper2 库来处理二维布尔运算
+        manifold::CrossSection section = sphere.Slice(5.0f);
+
+        // 导出多边形顶点数据
+        manifold::Polygons polys = section.ToPolygons();
+
+        triangulateSlice(polys);
     }
     // 3d 模型
     {
@@ -112,12 +150,12 @@ int main(int argc, char *argv[]) {
         manifold::Manifold ball = manifold::Manifold::Sphere(7, 32);
 
         // 使用布尔运算符
-        manifold::Manifold intersected = boxWithUV ^ ball; // '^' 为交集, '+' 为并集, '-' 为差集
+        manifold::Manifold intersected = boxWithUV + ball; // '^' 为交集, '+' 为并集, '-' 为差集
 
         // 导出为网格数据
         auto mesh_last = intersected.GetMeshGL(3);
 
-        auto entity    = object_3d_model("manifold ", mesh_last, {0, 0, 50});
+        auto entity    = object_3d_model("manifold ", mesh_last, {0, 0, -50});
         uint32_t index = 7;
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
