@@ -162,6 +162,8 @@ uint64_t pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint64_t byte_offset) {
 struct pnanovdb_buf_t {
     uint unused; // to satisfy min struct size?
 };
+
+// 最后的最底层还是在这里，从 SSBO 的 pnanovdb_buf_data 读取数据
 uint pnanovdb_buf_read_uint32(pnanovdb_buf_t buf, uint byte_offset) {
     return pnanovdb_buf_data[(byte_offset >> 2u)];
 }
@@ -397,6 +399,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_max(const pnanovdb_vec3_t a,
     v.z = a.z > b.z ? a.z : b.z;
     return v;
 }
+
+// 从3个 int 转换为了 3个 float
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_coord_to_vec3(const pnanovdb_coord_t coord) {
     pnanovdb_vec3_t v;
     v.x = pnanovdb_int32_to_float(coord.x);
@@ -561,6 +565,10 @@ PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_read_int32(pnanovdb_buf_t buf, p
     return pnanovdb_uint32_as_int32(pnanovdb_read_uint32(buf, address));
 }
 
+// 这里是读取的函数， 输入的参数是整体的 buffer , address 是相对于 buffer 初始位置的一个偏移
+// 这里想到了另一个问题，那么地址的偏移是如何获取的呢？
+// 哪个函数提供了获取具体存储地址偏移了呢？ pnanovdb_readaccessor_get_value_address
+// 在最后的 pnanovdb_hdda_zero_crossing 函数中有一个简单的示例
 PNANOVDB_FORCE_INLINE float pnanovdb_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address) {
     return pnanovdb_uint32_as_float(pnanovdb_read_uint32(buf, address));
 }
@@ -2437,6 +2445,7 @@ struct pnanovdb_hdda_t {
 };
 PNANOVDB_STRUCT_TYPEDEF(pnanovdb_hdda_t)
 
+// 猜测一个这个函数是做什么的，将 float 的坐标 转换为了 三个 int 的坐标
 PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_hdda_pos_to_ijk(PNANOVDB_IN(pnanovdb_vec3_t) pos) {
     pnanovdb_coord_t voxel;
     voxel.x = pnanovdb_float_to_int32(pnanovdb_floor(PNANOVDB_DEREF(pos).x));
@@ -2564,7 +2573,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_update(PNANOVDB_INOUT(pnanov
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_step(PNANOVDB_INOUT(pnanovdb_hdda_t) hdda) {
     pnanovdb_bool_t ret;
     if (PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).next.y && PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).
-        next.z) { 
+        next.z) {
 #ifdef PNANOVDB_ENFORCE_FORWARD_STEPPING
 if (PNANOVDB_DEREF(hdda).next.x<= PNANOVDB_DEREF (hdda).tmin)
 		{
@@ -2636,37 +2645,61 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
     PNANOVDB_IN (pnanovdb_vec3_t) direction, float tmax,
     PNANOVDB_INOUT (float) thit,
     PNANOVDB_INOUT (float) v) {
+
+    // 3个 int 类型 的 最大值，最小值 坐标
     pnanovdb_coord_t bbox_min = pnanovdb_root_get_bbox_min(buf, PNANOVDB_DEREF(acc).root);
     pnanovdb_coord_t bbox_max = pnanovdb_root_get_bbox_max(buf, PNANOVDB_DEREF(acc).root);
+
+    // 拿到物理世界中的 包围盒的坐标
     pnanovdb_vec3_t bbox_minf = pnanovdb_coord_to_vec3(bbox_min);
     pnanovdb_vec3_t bbox_maxf = pnanovdb_coord_to_vec3(pnanovdb_coord_add(bbox_max, pnanovdb_coord_uniform(1)));
+
 
     pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
                                                  PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
     if (!hit || tmax > 1.0e20f) {
+        // 不与包围盒相交，直接返回
         return PNANOVDB_FALSE;
     }
 
+    // 拿到第一个相交的 世界坐标
     pnanovdb_vec3_t pos  = pnanovdb_hdda_ray_start(origin, tmin, direction);
+    // 转换坐标
     pnanovdb_coord_t ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos));
-
+    // 拿到在 buffer 中的地址
     pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT, buf, acc,
                                                                          PNANOVDB_REF(ijk));
+    // 读取值
     float v0 = pnanovdb_read_float(buf, address);
 
+    // pnanovdb_readaccessor_get_dim 主要是这个函数， 返回的是 Accessor 当前在其内部三级缓存（Root, Internal, Leaf）中所命中的那个 Node 的边长（以体素 Voxel 为单位）
     pnanovdb_int32_t dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT, buf, acc,
                                                              PNANOVDB_REF(ijk)));
     pnanovdb_hdda_t hdda;
+    // 不是重新创建了一个，而是首次创建了一个  // 这里的dim 才是一个正确的创建方式
     pnanovdb_hdda_init(PNANOVDB_REF(hdda), origin, tmin, direction, tmax, dim);
+    // 开始步进  结果会存储 在 hdda 中
     while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
+        // 这里 开启一步的 目的是什么？
+
+        // 确定了 起始 的位置？ 主要的目的应该是确认 起始 的 dim
         pnanovdb_vec3_t pos_start = pnanovdb_hdda_ray_start(origin, hdda.tmin + 1.0001f, direction);
         ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos_start));
         dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT, buf, acc,
                                                                      PNANOVDB_REF(ijk)));
+        // init 时不是已经设置过了吗？ 再次的的目的是？
         pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin, direction, dim);
         if (hdda.dim > 1 || !pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(ijk))) {
+            //  dim = 1:  Accessor 当前直接指向一个具体的 Voxel（体素）
+            //  背景值时 跳过后面的内容 ，继续 步进 ，
+            // hdda.tmin 在什么时候更新的？
             continue;
         }
+        // pnanovdb_readaccessor_is_active
+        // 空间被分为“激活（Active）”和“非激活（Inactive） false ”两种状态  非激活表示当前为背景值
+
+        // 首次碰到了非背景值的内容， 再步进一步
+        // 为什么判断的是 hdda.voxel ，和之前的不同了呢？
         while (pnanovdb_hdda_step(PNANOVDB_REF(hdda)) && pnanovdb_readaccessor_is_active(grid_type, buf, acc,
                         PNANOVDB_REF(hdda.voxel))) {
             ijk                        = hdda.voxel;
@@ -2674,7 +2707,9 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
                      PNANOVDB_REF(ijk));
             PNANOVDB_DEREF(v) = pnanovdb_read_float(buf, address);
             if (PNANOVDB_DEREF(v) * v0 < 0.f) {
-                PNANOVDB_DEREF(thit) = hdda.tmin;
+                // 为什么 要 小于的时候 才返回呢 ？ 不小于的时候继续步进，不，因为内部的时候才是负值 ？？
+                // 那么这个函数就只能用于 SDF 了，而不能用于 密度
+                PNANOVDB_DEREF(thit) = hdda.tmin; // t hit ，这样分开的理解才是对的。并且返回了 第一个击中的 位置，可以做其他操作
                 return PNANOVDB_TRUE;
             }
         }
