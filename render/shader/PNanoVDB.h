@@ -9,6 +9,7 @@
     \brief  This file is a portable (e.g. pointer-less) C99/GLSL/HLSL port 
 	        of NanoVDB.h, which is compatible with most graphics APIs.
 */
+// 可以按照多个短横线来区分代码是哪部分的代码
 
 #ifndef NANOVDB_PNANOVDB_H_HAS_BEEN_INCLUDED
 #define NANOVDB_PNANOVDB_H_HAS_BEEN_INCLUDED
@@ -16,7 +17,7 @@
 // ------------------------------------------------ Configuration -----------------------------------------------------------
 
 // platforms
-//#define PNANOVDB_C
+#define PNANOVDB_C
 //#define PNANOVDB_HLSL
 //#define PNANOVDB_GLSL
 
@@ -57,6 +58,10 @@
 #ifdef PNANOVDB_CMATH
 #include <math.h>
 #endif
+
+// Buffer
+// Basic Types
+// Coord/Vec3 Utilties (实用工具)
 
 // ------------------------------------------------ Buffer -----------------------------------------------------------
 
@@ -112,6 +117,7 @@ return data64 [wordaddress64];
 }
 #elif defined(PNANOVDB_ADDRESS_64)
 PNANOVDB_BUF_FORCE_INLINE uint32_t pnanovdb_buf_read_uint32(pnanovdb_buf_t buf, uint64_t byte_offset) {
+    // 以 32 位为基础偏移的， 底层是以字节为单位寻地址的
     uint64_t wordaddress = (byte_offset >> 2u);
 #ifdef PNANOVDB_BUF_BOUNDS_CHECK
 return wordaddress<buf.size_in_words ? buf.data[wordaddress] : 0u;
@@ -184,6 +190,7 @@ uvec2 pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint byte_offset) {
 #if defined(_WIN32)
 #define PNANOVDB_FORCE_INLINE static inline __forceinline
 #else
+// __attribute__((always_inline)) 是一个强制性内联命令
 #define PNANOVDB_FORCE_INLINE static inline __attribute__((always_inline))
 #endif
 #elif defined(PNANOVDB_HLSL)
@@ -193,6 +200,7 @@ uvec2 pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint byte_offset) {
 #endif
 
 // struct typedef, static const, inout
+// 做了一个封装，融合了几种语言的不同
 #if defined(PNANOVDB_C)
 #define PNANOVDB_STRUCT_TYPEDEF(X) typedef struct X X;
 #define PNANOVDB_STATIC_CONST static const
@@ -446,6 +454,9 @@ pnanovdb_coord_t pnanovdb_coord_uniform(pnanovdb_int32_t a) { return ivec3(a, a,
 pnanovdb_coord_t pnanovdb_coord_add(pnanovdb_coord_t a, pnanovdb_coord_t b) { return a + b; }
 #endif
 
+
+//  一个和 地址 相关的内容，
+
 // ------------------------------------------------ Address Type -----------------------------------------------------------
 
 #if defined(PNANOVDB_ADDRESS_32)
@@ -552,6 +563,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_address_in_interval(pnanovdb_addr
 #endif
 
 // ------------------------------------------------ High Level Buffer Read -----------------------------------------------------------
+// 全部是和 Read 有关的内容
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_read_uint32(pnanovdb_buf_t buf, pnanovdb_address_t address) {
     return pnanovdb_buf_read_uint32(buf, address.byte_offset);
@@ -622,6 +634,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_read_half(pnanovdb_buf_t buf, pnanovdb_addr
 #define PNANOVDB_MINOR_VERSION_NUMBER  3// reflects changes to the API but not ABI
 #define PNANOVDB_PATCH_VERSION_NUMBER  3// reflects bug-fixes with no ABI or API changes
 
+// 应该是记录的具体存储的数据 类型，可能是在 开头定义的
 #define PNANOVDB_GRID_TYPE_UNKNOWN 0
 #define PNANOVDB_GRID_TYPE_FLOAT 1
 #define PNANOVDB_GRID_TYPE_DOUBLE 2
@@ -653,6 +666,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_read_half(pnanovdb_buf_t buf, pnanovdb_addr
 #define PNANOVDB_GRID_CLASS_VOXEL_VOLUME 7	// volume of geometric cubes, e.g. minecraft
 #define PNANOVDB_GRID_CLASS_END 8
 
+// 不清楚
 #define PNANOVDB_GRID_FLAGS_HAS_LONG_GRID_NAME (1 << 0)
 #define PNANOVDB_GRID_FLAGS_HAS_BBOX (1 << 1)
 #define PNANOVDB_GRID_FLAGS_HAS_MIN_MAX (1 << 2)
@@ -665,6 +679,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_read_half(pnanovdb_buf_t buf, pnanovdb_addr
 #define PNANOVDB_LEAF_TYPE_LITE 1
 #define PNANOVDB_LEAF_TYPE_FP 2
 
+// 在 NanoVDB 中用于定义不同数据类型的内存步幅（Stride）
 PNANOVDB_STATIC_CONST pnanovdb_uint32_t pnanovdb_grid_type_value_strides_bits[PNANOVDB_GRID_TYPE_END] = {
     0, 32, 64, 16, 32, 64, 96, 192, 0, 16, 32, 1, 32, 4, 8, 16, 0, 128, 256
 };
@@ -684,11 +699,12 @@ PNANOVDB_STATIC_CONST pnanovdb_uint32_t pnanovdb_grid_type_leaf_type[PNANOVDB_GR
     0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 2, 2, 2, 2, 0, 0
 };
 
+// 专门负责 坐标变换（Transform） 的核心结构体
 struct pnanovdb_map_t {
     float matf[9];
     float invmatf[9];
     float vecf[3];
-    float taperf;
+    float taperf;  // Taper（锥形变换） 是一种非线性坐标映射（Non-linear Mapping）
     double matd[9];
     double invmatd[9];
     double vecd[3];
@@ -754,6 +770,7 @@ PNANOVDB_FORCE_INLINE double pnanovdb_map_get_taperd(pnanovdb_buf_t buf, pnanovd
     return pnanovdb_read_double(buf, pnanovdb_address_offset(p.address, PNANOVDB_MAP_OFF_TAPERD));
 }
 
+// 整个数据的顶层容器（根句柄）
 struct pnanovdb_grid_t {
     pnanovdb_uint64_t magic;                // 8 bytes, 	0
     pnanovdb_uint64_t checksum;             // 8 bytes,		8
@@ -762,12 +779,12 @@ struct pnanovdb_grid_t {
     pnanovdb_uint32_t grid_index;           // 4 bytes,		24
     pnanovdb_uint32_t grid_count;           // 4 bytes,		28
     pnanovdb_uint64_t grid_size;            // 8 bytes,		32
-    pnanovdb_uint32_t grid_name[256 / 4];   // 256 bytes, 	40
+    pnanovdb_uint32_t grid_name[256 / 4];   // 256 bytes, 	40   // 最多长 256 字节的 一个字符串
     pnanovdb_map_t map;                     // 264 bytes,	296
     double world_bbox[6];                   // 48 bytes,	560
-    double voxel_size[3];                   // 24 bytes,	608
+    double voxel_size[3];                   // 24 bytes,	608  // 基础体素的大小
     pnanovdb_uint32_t grid_class;           // 4 bytes,		632
-    pnanovdb_uint32_t grid_type;            // 4 bytes,		636
+    pnanovdb_uint32_t grid_type;            // 4 bytes,		636  // 告诉你这是一个 SDF (Level Set) 还是 Density (Fog)
     pnanovdb_int64_t blind_metadata_offset; // 8 bytes,		640
     pnanovdb_uint32_t blind_metadata_count; // 4 bytes,		648
     pnanovdb_uint32_t pad[5];               // 20 bytes,	652
@@ -877,7 +894,9 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_version_get_minor(pnanovdb_uint
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_version_get_patch(pnanovdb_uint32_t version) {
     return version & ((1u << 10u) - 1u);
 }
+// 文件头的解析
 
+// 盲数据 对 NanoVDB 的核心树结构（Tree/Root/Node）是不可见的
 struct pnanovdb_gridblindmetadata_t {
     pnanovdb_int64_t byte_offset;    // 8 bytes,		0
     pnanovdb_uint64_t element_count; // 8 bytes,		8
@@ -885,11 +904,12 @@ struct pnanovdb_gridblindmetadata_t {
     pnanovdb_uint32_t semantic;      // 4 bytes,		20
     pnanovdb_uint32_t data_class;    // 4 bytes,		24
     pnanovdb_uint32_t data_type;     // 4 bytes,		28
-    pnanovdb_uint32_t name[256 / 4]; // 256 bytes,	32
+    pnanovdb_uint32_t name[256 / 4]; // 256 bytes,	    32
 };
 
 PNANOVDB_STRUCT_TYPEDEF(pnanovdb_gridblindmetadata_t)
 
+// 似乎习惯用 handle 来表示地址
 struct pnanovdb_gridblindmetadata_handle_t {
     pnanovdb_address_t address;
 };
@@ -942,6 +962,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_gridblindmetadata_get_name(
                                                              PNANOVDB_GRIDBLINDMETADATA_OFF_NAME + 4u * index));
 }
 
+// 存储了指向树中各个关键部分的偏移量
 struct pnanovdb_tree_t {
     pnanovdb_uint64_t node_offset_leaf;
     pnanovdb_uint64_t node_offset_lower;
@@ -1040,6 +1061,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint64_t pnanovdb_tree_get_voxel_count(pnanovdb_b
     return pnanovdb_read_uint64(buf, pnanovdb_address_offset(p.address, PNANOVDB_TREE_OFF_VOXEL_COUNT));
 }
 
+
+// 根结点
 struct pnanovdb_root_t {
     pnanovdb_coord_t bbox_min;
     pnanovdb_coord_t bbox_max;
@@ -1074,6 +1097,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_root_get_tile_count(pnanovdb_bu
     return pnanovdb_read_uint32(buf, pnanovdb_address_offset(p.address, PNANOVDB_ROOT_OFF_TABLE_SIZE));
 }
 
+// 根节点 块
 struct pnanovdb_root_tile_t {
     pnanovdb_uint64_t key;
     pnanovdb_int64_t child;
@@ -1111,6 +1135,7 @@ pnanovdb_root_tile_get_state(pnanovdb_buf_t buf, pnanovdb_root_tile_handle_t p) 
     return pnanovdb_read_uint32(buf, pnanovdb_address_offset(p.address, PNANOVDB_ROOT_TILE_OFF_STATE));
 }
 
+//
 struct pnanovdb_upper_t {
     pnanovdb_coord_t bbox_min;
     pnanovdb_coord_t bbox_max;
@@ -1265,6 +1290,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_leaf_get_value_mask(pnanovdb_buf_
     return ((value >> (bit_index & 31u)) & 1) != 0u;
 }
 
+// 有 27 行 与之前看到的一个 28 估计有的对应
 struct pnanovdb_grid_type_constants_t {
     pnanovdb_uint32_t root_off_background;
     pnanovdb_uint32_t root_off_min;
@@ -1380,6 +1406,7 @@ PNANOVDB_STATIC_CONST pnanovdb_grid_type_constants_t pnanovdb_grid_type_constant
 
 // ------------------------------------------------ Basic Lookup -----------------------------------------------------------
 
+// 到 1859 行
 PNANOVDB_FORCE_INLINE pnanovdb_gridblindmetadata_handle_t pnanovdb_grid_get_gridblindmetadata(
     pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid, pnanovdb_uint32_t index) {
     pnanovdb_gridblindmetadata_handle_t meta = {grid.address};
@@ -1833,7 +1860,8 @@ PNANOVDB_FORCE_INLINE float pnanovdb_root_fpn_read_float(pnanovdb_buf_t buf, pna
 }
 
 // ------------------------------------------------ ReadAccessor -----------------------------------------------------------
-
+// 关于获取数据的加速的结构
+// 第一个 key 是什么意思？ 我知道是 3 个 int 组成的值，但是表示是哪一块呢？
 struct pnanovdb_readaccessor_t {
     pnanovdb_coord_t key;
     pnanovdb_leaf_handle_t leaf;
@@ -1844,6 +1872,7 @@ struct pnanovdb_readaccessor_t {
 
 PNANOVDB_STRUCT_TYPEDEF(pnanovdb_readaccessor_t)
 
+// 其实只有一个参数，root ,将 root 的 值 更新给 acc
 PNANOVDB_FORCE_INLINE void pnanovdb_readaccessor_init(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
                                                       pnanovdb_root_handle_t root) {
     PNANOVDB_DEREF(acc).key.x         = 0x7FFFFFFF;
@@ -1855,6 +1884,7 @@ PNANOVDB_FORCE_INLINE void pnanovdb_readaccessor_init(PNANOVDB_INOUT(pnanovdb_re
     PNANOVDB_DEREF(acc).root          = root;
 }
 
+// 不清楚下面的三个 is chached 是什么意思？ 是比较靠 底下的三个层吗？
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_iscached0(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
 
 int dirty
@@ -1894,6 +1924,7 @@ int dirty
     return PNANOVDB_TRUE;
 }
 
+// 这里的计算 脏又是什么意思？
 PNANOVDB_FORCE_INLINE int pnanovdb_readaccessor_computedirty(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
                                                              PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     return (PNANOVDB_DEREF(ijk).x ^ PNANOVDB_DEREF(acc).key.x) | (PNANOVDB_DEREF(ijk).y ^ PNANOVDB_DEREF(acc).key.y) | (
@@ -2014,6 +2045,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address
     return pnanovdb_readaccessor_get_value_address_and_level(grid_type, buf, acc, ijk, PNANOVDB_REF(level));
 }
 
+// 对应的状态位
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address_bit(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
     PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_uint32_t) bit_index) {
@@ -2104,7 +2136,11 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_readaccessor_get_dim(pnanovdb_g
 }
 
 // ------------------------------------------------ ReadAccessor IsActive -----------------------------------------------------------
-
+// 四层的 结构
+// Root
+// Upper Internal
+// Lower Internal
+// Leaf
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_leaf_is_active_and_cache(pnanovdb_grid_type_t grid_type,
                                                                         pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf,
                                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk,
@@ -2164,6 +2200,10 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_root_is_active_and_cache(pnanovdb
     }
     return is_active;
 }
+
+// HDDA 中 用到过，有具体的解释
+// 这个函数中 间接 调用了上面的四个层级的函数 ，
+// 空间被分为“激活（Active）”和“非激活（Inactive） false ”两种状态  非激活表示当前为背景值
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_is_active(pnanovdb_grid_type_t grid_type,
                                                                       pnanovdb_buf_t buf,
@@ -2230,7 +2270,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_jacobi(pnanovdb_buf_t b
             pnanovdb_map_get_matf(buf, map, 8);
     return dst;
 }
-
+// Jacobian（雅可比矩阵）
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse_jacobi(pnanovdb_buf_t buf, pnanovdb_map_handle_t map,
                                                                         PNANOVDB_IN (pnanovdb_vec3_t) src) {
     pnanovdb_vec3_t dst;
@@ -2245,7 +2285,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse_jacobi(pnanovdb
             pnanovdb_map_get_invmatf(buf, map, 8);
     return dst;
 }
-
+// 由于 VDB 的网格可能有旋转、平移或缩放（Transform），你必须先将射线的世界坐标转为索引坐标，才能在 VDB 树中查找体素
+// 功能：将世界坐标（浮点数）转换为索引坐标（浮点数）。
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_world_to_indexf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
                                                                     PNANOVDB_IN (pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
@@ -2258,6 +2299,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_index_to_worldf(pnanovdb_buf
     return pnanovdb_map_apply(buf, map, src);
 }
 
+// 将射线的方向从世界空间转到索引空间。
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_world_to_index_dirf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
                                                                         PNANOVDB_IN (pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
@@ -2421,12 +2463,14 @@ PNANOVDB_STATIC_CONST float pnanovdb_dither_lut[512] =
     0.614035f, 0.11501f, 0.0526316f, 0.551657f, 0.0760234f, 0.575049f, 0.88694f, 0.387914f,
 };
 
+// Dither 抖动
 PNANOVDB_FORCE_INLINE float pnanovdb_dither_lookup(pnanovdb_bool_t enabled, int offset) {
     return enabled ? pnanovdb_dither_lut[offset & 511] : 0.5f;
 }
 
 // ------------------------------------------------ HDDA -----------------------------------------------------------
-
+// -------------------------------Hierarchical Digital Differential Analyzer ---------------------------------------
+// ------------------------------------------- 层级数字微分分析器 -----------------------------------------------------
 #ifdef PNANOVDB_HDDA
 
 // Comment out to disable this explicit round-off check
@@ -2454,6 +2498,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_hdda_pos_to_ijk(PNANOVDB_IN(pnan
     return voxel;
 }
 
+// 返回了 3个 int ,但是不清楚 后面的 & 做了什么操作
+// 从这里看 dim 的值应该是固定的 , 最小的是 1 ，之后依次为 2 的 次方
 PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_hdda_pos_to_voxel(PNANOVDB_IN(pnanovdb_vec3_t) pos, int dim) {
     pnanovdb_coord_t voxel;
     voxel.x = pnanovdb_float_to_int32(pnanovdb_floor(PNANOVDB_DEREF(pos).x)) & (~(dim - 1));
@@ -2462,6 +2508,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_hdda_pos_to_voxel(PNANOVDB_IN(pn
     return voxel;
 }
 
+// 根据 tmin 确定 当前 光线 到达的位置，并作为起点
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_hdda_ray_start(PNANOVDB_IN(pnanovdb_vec3_t) origin, float tmin,
                                                               PNANOVDB_IN(pnanovdb_vec3_t) direction) {
     pnanovdb_vec3_t pos = pnanovdb_vec3_add(
@@ -2471,6 +2518,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_hdda_ray_start(PNANOVDB_IN(pnanov
     return pos;
 }
 
+// 从函数的名字上看只是初始化的内容
 PNANOVDB_FORCE_INLINE void pnanovdb_hdda_init(PNANOVDB_INOUT(pnanovdb_hdda_t) hdda, PNANOVDB_IN(pnanovdb_vec3_t) origin,
 float tmin, PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax, int dim) {
     PNANOVDB_DEREF(hdda).dim  = dim;
@@ -2531,6 +2579,7 @@ float tmin, PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax, int dim) {
     }
 }
 
+// 主要是 为了更新 dim ，还做了一些其他的操作 与 hdda 有关
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_update(PNANOVDB_INOUT(pnanovdb_hdda_t) hdda,
                                                            PNANOVDB_IN(pnanovdb_vec3_t) origin,
                                                            PNANOVDB_IN(pnanovdb_vec3_t) direction, int dim) {
@@ -2570,6 +2619,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_update(PNANOVDB_INOUT(pnanov
     return PNANOVDB_TRUE;
 }
 
+// 步进 的具体函数
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_step(PNANOVDB_INOUT(pnanovdb_hdda_t) hdda) {
     pnanovdb_bool_t ret;
     if (PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).next.y && PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).
@@ -2614,6 +2664,8 @@ ret= PNANOVDB_DEREF(hdda).tmin<= PNANOVDB_DEREF (hdda).tmax;
 	return ret;
 }
 
+// pnanovdb_hdda_zero_crossing 中调用的一个函数
+// 用于判断光线是否与包围盒相交
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_ray_clip(
                                                              PNANOVDB_IN(pnanovdb_vec3_t) bbox_min,
                                                              PNANOVDB_IN(pnanovdb_vec3_t) bbox_max,
@@ -2655,6 +2707,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
     pnanovdb_vec3_t bbox_maxf = pnanovdb_coord_to_vec3(pnanovdb_coord_add(bbox_max, pnanovdb_coord_uniform(1)));
 
 
+    // 这里其实也有一个加速，如果与包围盒碰撞，会返回 碰到到包围盒的 tmin 的值，并不完全从 view 的位置查找
     pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
                                                  PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
     if (!hit || tmax > 1.0e20f) {
