@@ -17,7 +17,7 @@
 // ------------------------------------------------ Configuration -----------------------------------------------------------
 
 // platforms
-#define PNANOVDB_C
+//#define PNANOVDB_C
 //#define PNANOVDB_HLSL
 //#define PNANOVDB_GLSL
 
@@ -2690,8 +2690,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_ray_clip(
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
-    pnanovdb_grid_type_t grid_type,
-    pnanovdb_buf_t buf,
+    pnanovdb_grid_type_t grid_type,                      // pnanovdb_grid_get_grid_type 获取
+    pnanovdb_buf_t buf,                                  //
     PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
     PNANOVDB_IN (pnanovdb_vec3_t) origin, float tmin,
     PNANOVDB_IN (pnanovdb_vec3_t) direction, float tmax,
