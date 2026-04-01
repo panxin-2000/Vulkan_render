@@ -559,3 +559,19 @@ uint32_t get_max_descriptor_update_after_bind_samplers() {
     uint32_t maxBindlessTextures = indexingProps.maxPerStageDescriptorUpdateAfterBindSampledImages;
     return maxBindlessTextures;
 }
+
+
+void get_support_texture_formats() {
+    const auto &backend = VK_backend::get();
+
+
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(backend.get_physical_device(), &supportedFeatures);
+    bool supportsBC   = supportedFeatures.textureCompressionBC;   // 支持 BC7, BC3 等 (PC 常用)
+    bool supportsETC2 = supportedFeatures.textureCompressionETC2; // 支持 ETC2 (移动端常用)
+    bool supportsASTC = supportedFeatures.textureCompressionASTC_LDR;
+
+    // ASTC      >     BC7      >        ETC2
+    // 全能王者      桌面端画质巅峰     移动端基石/低保底
+
+}

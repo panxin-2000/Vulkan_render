@@ -328,4 +328,6 @@ public:
 uint32_t get_maxPushConstantsSize();
 
 uint32_t get_max_descriptor_update_after_bind_samplers();
+
+void get_support_texture_formats();
 #endif //HELLO_MAC_GLFW_VULKAN_H
