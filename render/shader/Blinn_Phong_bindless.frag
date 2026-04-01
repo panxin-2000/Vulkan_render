@@ -19,8 +19,27 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
+layout (location = 4) in vec4 inShadowCoord;
+
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+
+
+layout (set = 2, binding = 2) uniform sampler2D shadowMap;
+
+float calculateShadow(vec4 fragPosLightSpace) {
+    // 1. 透视除法
+    vec3 shadowCoord = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+    // 3. 采样和比较
+    float closestDepth = texture(shadowMap, shadowCoord.xy).r;
+    float currentDepth = shadowCoord.z;
+
+    // 注意：为了防止 Shadow Acne，通常会加一个 bias
+    float shadow = (currentDepth > closestDepth + 0.005) ? 0.0 : 1.0;
+
+    return shadow;
+}
 
 
 float hash(int xy) {
@@ -54,7 +73,15 @@ void main()
     // --- 修改后的 Blinn-Phong 逻辑 ---
     vec3 H = normalize(L + V); // 计算半程向量
     vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
+    vec3 in_light_color = vec3(1.0);
+    vec3 specular_color = specular * in_light_color;
 
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);
+    vec3 diffuse_color = diffuse * in_light_color;
+    vec3 shadow = vec3(0.1);
+    vec3 out_color = (ambient + (1.0 - shadow) * (diffuse + specular)) * inColor.rgb;
+
+
+
+    outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
 }
