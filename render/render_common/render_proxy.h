@@ -78,6 +78,9 @@ public:
 struct deferred_pass_tag {
 };
 
+struct shadow_pass_tag {
+};
+
 struct skybox_tag {
 };
 

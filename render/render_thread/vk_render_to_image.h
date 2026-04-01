@@ -51,6 +51,22 @@ public:
         const uint64_t time_line = VK_backend::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
+
+        // 阴影的 pass
+        {
+            // g_buffer_image_indices 这是需要看看怎么传递进入其中
+            const auto view = Render_entt().view<shadow_pass_tag>();
+            if (!view.empty()) {
+                begin_shadow_pass(handle, time_line);
+
+                // 中间需要添加 被光 照 到的物体，能产生阴影的物体
+
+                end_rendering(handle);
+                shadow_pass_barrier(handle, time_line);
+            }
+        }
+
+
         auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line);
         //  g_buffer 中需要渲染的不透明物体
         // {
