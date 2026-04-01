@@ -32,6 +32,21 @@ layout (push_constant) uniform PushConstants {
 
 void main()
 {
+
+    // world_pos 可以反向 计算出来 ， 代码如下 ，减少 GPU 带宽 的压力
+    // // 1. Get the depth value from the depth attachment
+    // float z = texture(depthSampler, inUV).r;
+    //
+    // // 2. Convert UV and Z to Normalized Device Coordinates (NDC)
+    // // Vulkan NDC: x,y in [-1, 1], z in [0, 1]
+    // vec4 clipPos = vec4(inUV * 2.0 - 1.0, z, 1.0);
+    //
+    // // 3. Transform from Clip Space to World Space
+    // vec4 worldPos = pc.invViewProj * clipPos;
+    //
+    // // 4. Perspective Division
+    // worldPos /= worldPos.w;
+
     // Get G-Buffer values
     vec3 world_pos = texture(samplerPosition, inUV).rgb;
     vec3 normal = texture(samplerNormal, inUV).rgb;

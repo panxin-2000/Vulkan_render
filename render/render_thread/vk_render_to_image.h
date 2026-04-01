@@ -65,16 +65,15 @@ public:
                 shadow_pass_barrier(handle, time_line);
             }
         }
-
-
-        auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line);
-        //  g_buffer 中需要渲染的不透明物体
-        // {
-        //     auto view = Render_entt().view<opacity_tag>();
-        //     for (const auto it: view) {
-        //         build_command_buffer(handle, it, time_line);
-        //     }
-        // }
+        auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line); {
+            auto view = Render_entt().view<deferred_pass_tag>();
+            if (!view.empty()) {
+                auto view_opacity = Render_entt().view<opacity_tag>();
+                for (const auto it: view_opacity) {
+                    build_command_buffer(handle, it, time_line);
+                }
+            }
+        }
 
         end_rendering(handle);
         g_buffer_attachment_barrier(handle, time_line);
