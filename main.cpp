@@ -74,6 +74,7 @@ void triangulateSlice(const manifold::Polygons &manifoldPolys) {
 
 
 int main(int argc, char *argv[]) {
+
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();

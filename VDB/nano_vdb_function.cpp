@@ -42,6 +42,7 @@ void convert(const std::string &filename) {
                 auto name      = nanoGrid->gridName();
                 auto gridClass = nanoGrid->gridClass();
                 auto acc       = nanoGrid->getAccessor();
+                auto &tree     = nanoGrid->tree(); // 自定义的树遍历（而不是简单的坐标查询），必须通过 tree
                 // 3. 坐标读取 ，很少使用  传递的参数是3个 int 值
                 nanovdb::Coord ijk(105, 205, 305);
                 float value = acc.getValue(ijk);

@@ -46,30 +46,39 @@ struct VdbSampler InitVdbSampler(pnanovdb_buf_t buf) {
  * @param t_max       射线的最大传播距离
  * @return            如果撞击到等值面返回 true
  */
-bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
+bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
                             const pnanovdb_vec3_t world_p,
                             const pnanovdb_vec3_t world_d,
                             float tmin,
                             float tmax) {
     pnanovdb_grid_handle_t Grid;
-    pnanovdb_buf_t GridBuffer;
     pnanovdb_readaccessor_t Accessor;
-    pnanovdb_uint32_t GridType;
     pnanovdb_root_handle_t Root;
 
-    GridBuffer = root_buf;
     pnanovdb_address_t address;
-    address.byte_offset         = 0;
-    Grid.address                = address;
-    pnanovdb_tree_handle_t tree = pnanovdb_grid_get_tree(GridBuffer, Grid);
-    Root                        = pnanovdb_tree_get_root(GridBuffer, tree);
+    address.byte_offset = 0;
+    Grid.address        = address;
+
+    pnanovdb_tree_handle_t tree = pnanovdb_grid_get_tree(nanovdb_buffer, Grid);
+    Root                        = pnanovdb_tree_get_root(nanovdb_buffer, tree);
     pnanovdb_readaccessor_init(&Accessor, Root);
-    GridType = pnanovdb_grid_get_grid_type(GridBuffer, Grid);
+    pnanovdb_uint32_t grid_type = pnanovdb_grid_get_grid_type(nanovdb_buffer, Grid);
+
+    // 只要你拿到了其中一个网格的地址，调用该函数都能得到整个缓冲区包含的网格总数
+    auto grid_count = pnanovdb_grid_get_grid_count(nanovdb_buffer, Grid);
+    if (grid_count > 1) {
+        // 拿到第二个的
+        auto next_size = pnanovdb_grid_get_grid_size(nanovdb_buffer, Grid);
+        pnanovdb_grid_handle_t Grid_2;
+        pnanovdb_address_t address_grid_2;
+        address_grid_2.byte_offset = 0;
+        Grid_2.address             = address_grid_2;
+    }
 
     // 1. 初始化 Buffer 和 Grid 地址
     // 注意：size_in_words 填入实际大小，或者如果是指针访问模式，填入一个足够大的占位值
     // 这里是创建一个 pnanovdb_buf_t 的方式， 给出地址和最大的大小，在需要检查边界时才最使用最大的大小
-    pnanovdb_buf_t buf = pnanovdb_make_buf(root_buf.data, 0xFFFFFFFF);
+    pnanovdb_buf_t buf = pnanovdb_make_buf(nanovdb_buffer.data, 0xFFFFFFFF);
 
 
     // 3. 坐标转换：将世界空间射线转到索引空间
@@ -86,10 +95,10 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
     // 该函数会沿着射线步进，寻找符号变化（正负交替）的点
 
     float v     = 0;
-    bool is_hit = pnanovdb_hdda_zero_crossing(GridType,
-                                              buf,      // Buffer 对象
-                                              &Accessor,     // 访问器指针
-                                              &index_p, //  origin
+    bool is_hit = pnanovdb_hdda_zero_crossing(grid_type,
+                                              buf,       // Buffer 对象
+                                              &Accessor, // 访问器指针
+                                              &index_p,  //  origin
                                               tmin,
                                               &index_d, //  direction
                                               tmax,
