@@ -2,11 +2,13 @@
 // Created by 潘鑫 on 2026/3/30.
 //
 
+
 #define PNANOVDB_C
 #define PNANOVDB_HDDA
 #include <stdbool.h>
 
 #include "../render/shader/PNanoVDB.h"
+
 
 struct VdbSampler {
     pnanovdb_grid_handle_t Grid;
@@ -34,6 +36,7 @@ struct VdbSampler InitVdbSampler(pnanovdb_buf_t buf) {
 
     return Sampler;
 }
+
 /**
  * 完整函数：在 NanoVDB Grid 中检测射线与等值面（Level Set）的交点
  * @param buf_ptr     NanoVDB 数据的原始内存指针
@@ -63,7 +66,6 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
     pnanovdb_readaccessor_init(&Accessor, Root);
     GridType = pnanovdb_grid_get_grid_type(GridBuffer, Grid);
 
-
     // 1. 初始化 Buffer 和 Grid 地址
     // 注意：size_in_words 填入实际大小，或者如果是指针访问模式，填入一个足够大的占位值
     // 这里是创建一个 pnanovdb_buf_t 的方式， 给出地址和最大的大小，在需要检查边界时才最使用最大的大小
@@ -74,11 +76,6 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
     // HDDA 必须在索引空间（Index Space）运行
     pnanovdb_vec3_t index_p = pnanovdb_grid_world_to_indexf(buf, Grid, &world_p);
     pnanovdb_vec3_t index_d = pnanovdb_grid_world_to_index_dirf(buf, Grid, &world_d);
-
-    // 4. 初始化读取访问器（ReadAccessor），加速层级遍历
-    pnanovdb_readaccessor_t acc;
-    pnanovdb_root_handle_t root;
-    pnanovdb_readaccessor_init(&acc, root);
 
     // 5. 准备输出参数
     pnanovdb_vec3_t hit_ijk; // 撞击点所在的体素索引坐标
@@ -91,7 +88,7 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
     float v     = 0;
     bool is_hit = pnanovdb_hdda_zero_crossing(GridType,
                                               buf,      // Buffer 对象
-                                              &acc,     // 访问器指针
+                                              &Accessor,     // 访问器指针
                                               &index_p, //  origin
                                               tmin,
                                               &index_d, //  direction
@@ -110,17 +107,16 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t root_buf,
     return false;
 }
 
-void test() {
+void test(void *ptr, uint64_t size) {
     // handle.bufferSize(): 返回该句柄管理的整个内存缓冲区的字节数
     // handle.gridSize(n): 返回缓冲区中第 n 个特定网格的大小
     // 3. 将 C++ 指针和大小转换为 PNanoVDB 兼容的 Buffer
     // 在 PNanoVDB 中，buffer 通常以 uint32_t (Word) 为单位
-    // pnanovdb_buf_t buf = pnanovdb_make_buf(static_cast<uint32_t *>(handle.data()),
-    //                                        static_cast<uint32_t>(handle.bufferSize() / 4));
-    // const pnanovdb_vec3_t world_p{0, 0, 0};
-    // const pnanovdb_vec3_t world_d{0, 0, 1};
-    // float tmax = 1000;
-    // float tmin = 0;
-    // trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax);
-
+    pnanovdb_buf_t buf = pnanovdb_make_buf(static_cast<uint32_t *>(ptr),
+                                           static_cast<uint32_t>(size / 4));
+    const pnanovdb_vec3_t world_p{-110, 0, 0};
+    const pnanovdb_vec3_t world_d{1, 0, 0};
+    float tmax = 1000;
+    float tmin = 0;
+    trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax);
 }

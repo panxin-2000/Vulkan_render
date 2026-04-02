@@ -7,7 +7,6 @@
 #include <openvdb/openvdb.h>
 
 
-
 #include <openvdb/tools/LevelSetSphere.h> // replace with your own dependencies for generating the OpenVDB grid
 #include <fstream>
 #include <nanovdb/tools/CreateNanoGrid.h> // converter from OpenVDB to NanoVDB (includes NanoVDB.h and GridManager.h)
@@ -15,6 +14,7 @@
 #include <nanovdb/math/SampleFromVoxels.h>
 
 
+void test(void *ptr, uint64_t size);
 
 
 void convert(const std::string &filename) {
@@ -24,23 +24,33 @@ void convert(const std::string &filename) {
         nanovdb::GridHandle handle = nanovdb::tools::createNanoGrid(*srcGrid);
         // 一个 nanovdb::GridHandle 可以包含多个网格 如密度场、温度场、速度场等
 
+        auto ptr  = handle.data();
+        auto size = handle.bufferSize();
+        test(ptr, size);
+
 
         auto gridCount = handle.gridCount();
         for (uint32_t i = 0; i < gridCount; ++i) {
             auto gridType = handle.gridType(i);
             if (gridType == nanovdb::GridType::Float) {
                 const auto nanoGrid = handle.grid<float>(i);
-                auto name           = nanoGrid->gridName();
-                auto gridClass      = nanoGrid->gridClass();
-                auto acc            = nanoGrid->getAccessor();
+
+                nanovdb::CoordBBox bbox = nanoGrid->indexBBox();
+                nanovdb::Coord minCoord = bbox.min();
+                nanovdb::Coord maxCoord = bbox.max();
+
+                auto name      = nanoGrid->gridName();
+                auto gridClass = nanoGrid->gridClass();
+                auto acc       = nanoGrid->getAccessor();
                 // 3. 坐标读取 ，很少使用  传递的参数是3个 int 值
-                nanovdb::Coord ijk(10, 20, 30);
+                nanovdb::Coord ijk(105, 205, 305);
                 float value = acc.getValue(ijk);
                 nanoGrid->tree().getValue(nanovdb::Coord(99, 0, 0));
                 nanovdb::Vec3d worldPos(1.5, 2.0, 3.5);
                 nanovdb::Vec3d indexPos = nanoGrid->worldToIndex(worldPos);
                 nanovdb::Coord ijk_2    = nanovdb::Coord::Floor(indexPos);
                 float value_2           = acc.getValue(ijk_2);
+
 
                 auto smp = nanovdb::math::createSampler<1>(acc);
                 // 创建了 sample ,之后呢？
@@ -57,8 +67,6 @@ void convert(const std::string &filename) {
         const auto nanoGrid = handle.grid<float>(); // Get a (raw) pointer to the NanoVDB grid form the GridManager.
         if (!nanoGrid)
             throw std::runtime_error("GridHandle does not contain a grid with value type float");
-
-
 
 
         // 5. 基础查询测试 (类似于之前 C 语言版本的采样)

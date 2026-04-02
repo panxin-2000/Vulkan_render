@@ -450,10 +450,11 @@ file(GLOB SHADER_FILES
         "${SHADER_SOURCE_DIR}/*.comp"
 )
 
-add_executable(learn_render main.cpp VDB/nano_vdb_function.cpp
+add_executable(learn_render main.cpp
+        VDB/nano_vdb_function.cpp
+        VDB/nanovdb_c.cpp
 
         external/tinyobj/tiny_obj_loader.cc
-        VDB/nanovdb_c.c
         assets/shader.slang
         ${SHADER_FILES} ${component} ${RENDER} ${gltf_model} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
 
