@@ -112,6 +112,8 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 
 Texture_parameter create_skybox_texture_all(const std::string &picture_path);
 
+Texture_parameter create_2d_texture(const std::string &picture_path);
+
 
 void discard_image_and_view_map_clean();
 #endif //HELLO_MAC_VULKAN_IMAGE_H

@@ -511,6 +511,19 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 }
 
 
+Texture_parameter create_2d_texture(const std::string &picture_path) {
+    Picture_parameters picture_parameters{};
+    picture_parameters.image_data = stbi_load(picture_path.c_str(),
+                                              &picture_parameters.width,
+                                              &picture_parameters.height,
+                                              &picture_parameters.channels, STBI_rgb_alpha);
+    picture_parameters.channels = 4;
+    auto result                 = create_2d_texture(picture_parameters);
+    stbi_image_free(picture_parameters.image_data);
+    picture_parameters.image_data = nullptr;
+    return result;
+}
+
 Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     auto &handle = VK_backend::get();
     std::vector<std::string> paths;

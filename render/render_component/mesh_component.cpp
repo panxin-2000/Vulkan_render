@@ -212,6 +212,13 @@ bool add_geometry_data(entt::entity entity,
         indices->push_back(vertices->size() + 2);
         indices->push_back(vertices->size() + 3);
         indices->push_back(vertices->size() + 0);
+        //     3            2
+        //      ************
+        //      *        * *
+        //      *     *    *
+        //      *  *       *
+        //      ************
+        //     0            1
         vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, 0, 0}); //0 1 2
         vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, 1, 0});
         vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, 1, 1}); // 2 3 0

@@ -139,8 +139,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, cons
         VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cbOneTime));
         VkSubmitInfo oneTimeSI{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &cbOneTime
-        };
-        {
+        }; {
             std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
             VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(handle.get_queue(), 1, &oneTimeSI, fenceOneTime));
         }
@@ -172,6 +171,8 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, cons
         texture.sampler     = sampler;
         texture.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
         return texture;
+    } else if (ext == ".png" || ext == ".jpg" || ext == ".bmp" || ext == ".tga") {
+        return create_2d_texture(filename);
     }
     return {};
 }
