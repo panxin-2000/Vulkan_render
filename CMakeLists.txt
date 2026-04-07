@@ -80,6 +80,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(tinygltf)
 
+set(MSDFGEN_USE_VCPKG OFF)
+set(MSDFGEN_USE_SKIA OFF)
 
 FetchContent_Declare(
         manifold
@@ -88,6 +90,18 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 FetchContent_MakeAvailable(manifold)
+
+
+find_package(Freetype REQUIRED)
+
+include(FetchContent)
+FetchContent_Declare(
+        msdfgen
+        GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
+        GIT_TAG v1.13
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(msdfgen)
 
 
 add_subdirectory(thirdparty/libccd)
@@ -474,6 +488,9 @@ target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE tinygltf)
+target_link_libraries(learn_render PRIVATE Freetype)
+target_link_libraries(learn_render PRIVATE msdfgen-core)
+target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
 target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)

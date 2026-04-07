@@ -23,6 +23,7 @@
 #include "manifold/cross_section.h"
 #include "manifold/manifold.h"
 #include "UI/3d_model_display.h"
+#include "UI/UI_text.h"
 
 void register_glfw(GLFWwindow *window);
 
@@ -72,8 +73,66 @@ void triangulateSlice(const manifold::Polygons &manifoldPolys) {
     // }
 }
 
+#include <msdfgen.h>
+#include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
+
 
 int main(int argc, char *argv[]) {
+    msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
+
+    msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    if (!font) {
+        deinitializeFreetype(ft);
+        return -1;
+    }
+    msdfgen::Shape shape;
+    if (loadGlyph(shape, font, 'A', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+        // 预处理：标准化轮廓方向
+        shape.normalize();
+
+        // 为边分配颜色（MSDF 的核心步骤，确保角点锐利）
+        edgeColoringByDistance(shape, 3.0);
+
+        float size_of_msdf = 32;
+
+        // 4. 配置输出位图 (32x32 像素)
+        msdfgen::Bitmap<float, 3> msdf(size_of_msdf, size_of_msdf);
+
+
+        // 5. 设置投影变换 (缩放和位移)
+        // 参数：Projection(scale, translation), range (边缘影响范围)
+        double padding = 2.0;
+        msdfgen::SDFTransformation t(
+                                     msdfgen::Projection(size_of_msdf,
+                                                         msdfgen::Vector2(8.0 / size_of_msdf,
+                                                                          4.0 / size_of_msdf + padding / size_of_msdf)),
+                                     msdfgen::Range(2.0 / size_of_msdf));
+
+        // 推荐设置：range = 2.0
+        // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
+        // 6. 执行 MSDF 生成核心算法
+        generateMSDF(msdf, shape, t);
+
+
+        // 将 msdf 转换为 0-1，然后再上传到 GPU  也可以直接上传，之后再到 GPU 中 调用计算着色器做转移
+        // float range = 2.0f; // 必须与生成时设置的 range 一致
+        // float dist = pixelValue; // 来自 Bitmap<float, 3> 的值
+        // // 1. 归一化到 [0, 1]
+        // float normalized = dist / range + 0.5f;
+        // // 2. 截断并映射到 [0, 255]
+        // unsigned char out = (unsigned char)std::max(0.0f, std::min(255.0f, normalized * 255.0f + 0.5f));
+
+        // 想要实现单个字体的替换更新
+        // 字符排版管理器 (Packer)
+        // 动态 LRU 缓存系统
+        // GPU 纹理更新 (Incremental Updates)
+
+
+        // 7. 保存为 PNG 文件 (需要链接 msdfgen-ext)
+        savePng(msdf, "output_A_msdf.png");
+        std::cout << "MSDF image generated successfully!" << std::endl;
+    }
+    // return 0;
 
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
@@ -98,7 +157,6 @@ int main(int argc, char *argv[]) {
         std::optional<Texture_parameter> sampler_skybox = texture;
         set_render_parameter(entity, "sampler_skybox", sampler_skybox);
         logic_update_add_tag<skybox_tag>(entity);
-
         // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
     } {
         // 创建一个球体模型
@@ -160,6 +218,9 @@ int main(int argc, char *argv[]) {
         uint32_t index = 7;
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
+    } {
+        auto entity = UI_text("文字A", 200, 200, 500, 500);
+        set_render_parameter(entity, "msdf", "output_A_msdf.png");
     } {
         auto value     = get_max_descriptor_update_after_bind_samplers();
         auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
