@@ -8,7 +8,7 @@ layout (location = 0) in vec2 in_UV;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-layout (set = 2, binding = 0) uniform sampler2D msdf;
+layout (set = 2, binding = 1) uniform sampler2D msdf;
 
 
 float median(float r, float g, float b) {
@@ -19,13 +19,17 @@ float median(float r, float g, float b) {
 vec2 sqr(vec2 x) { return x * x; } // squares vector components
 
 float screenPxRange(vec2 in_UV) {
-    float pxRange = 0.125; // set to distance field's pixel range
-    vec2 unitRange = vec2(pxRange) / vec2(textureSize(msdf, 0));
+    float pixel_range = 0.0625; // set to distance field's pixel range
+    vec2 unitRange = vec2(pixel_range) / vec2(textureSize(msdf, 0));
     // If inversesqrt is not available, use vec2(1.0)/sqrt
     vec2 screenTexSize = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
-    //    inversesqrt 应该是可以用length 这个函数替代的
+    //    vec2 screen_Size = vec2(dFdx(in_UV), dFdy(in_UV));
+    //    float screenTexSize = length(screen_Size);
+    //    float unitRange = length(vec2(dFdx(in_UV), dFdy(in_UV)));
+
+    //    inversesqrt 应该是可以用 length 这个函数替代的
     // Can also be approximated as screenTexSize = vec2(1.0)/fwidth(texCoord);
-    return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+    return max(5 * dot(unitRange, screenTexSize), 1.0);
 }
 
 void main()
@@ -43,5 +47,5 @@ void main()
     vec3 fgColor = vec3(1, 1, 1);
     vec3 color = mix(bgColor, fgColor, opacity);
     outFragColor_B8G8R8A8_SRGB = vec4(color.rgb, 1.0);
-
+    //    outFragColor_B8G8R8A8_SRGB = vec4(texture(msdf, in_UV).rgb, 1.0);
 }

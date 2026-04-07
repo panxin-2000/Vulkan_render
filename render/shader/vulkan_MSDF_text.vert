@@ -27,5 +27,6 @@ layout (location = 0) out vec2 out_UV;
 
 void main()
 {
+    out_UV = inUV;
     gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
 }

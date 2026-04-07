@@ -8,7 +8,7 @@ layout (location = 0) in vec2 in_UV;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-layout (set = 2, binding = 0) uniform sampler2D msdf;
+layout (set = 2, binding = 1) uniform sampler2D sdf;
 
 
 float median(float r, float g, float b) {
@@ -20,7 +20,7 @@ vec2 sqr(vec2 x) { return x * x; } // squares vector components
 
 float screenPxRange(vec2 in_UV) {
     float pxRange = 0.125; // set to distance field's pixel range
-    vec2 unitRange = vec2(pxRange) / vec2(textureSize(msdf, 0));
+    vec2 unitRange = vec2(pxRange) / vec2(textureSize(sdf, 0));
     // If inversesqrt is not available, use vec2(1.0)/sqrt
     vec2 screenTexSize = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
     // Can also be approximated as screenTexSize = vec2(1.0)/fwidth(texCoord);
@@ -32,7 +32,7 @@ void main()
 
 
     // msdf 还没把图片插入成功
-    float sd = texture(msdf, in_UV).r;
+    float sd = texture(sdf, in_UV).r;
     float screenPxDistance = screenPxRange(in_UV) * (sd - 0.5);
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
     //    float opacity = smoothstep(screenPxDistance + 0.5, 0.0, 1.0);
