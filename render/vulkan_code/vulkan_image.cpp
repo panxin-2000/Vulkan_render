@@ -240,30 +240,30 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
     auto [textureImage,textureImage_allocation] = create_2D_Image(picture_parameters.width,
                                                                   picture_parameters.height,
                                                                   mipLevels,
-                                                                  VK_FORMAT_R8G8B8A8_SRGB,
+                                                                  VK_FORMAT_R8G8B8A8_UNORM,
                                                                   VK_IMAGE_TILING_OPTIMAL,
                                                                   VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                                                   VK_IMAGE_USAGE_SAMPLED_BIT);
 
 
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
     copyBufferToImage(staging_buffer->get_buffer_handle(), textureImage,
                       static_cast<uint32_t>(picture_parameters.width),
                       static_cast<uint32_t>(picture_parameters.height));
-    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
     staging_buffer->destroy_buffer();
 
     if (mipLevels > 1)
-        generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_SRGB, picture_parameters.width,
+        generateMipmaps(handle, textureImage, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters.width,
                         picture_parameters.height,
                         mipLevels);
 
 
     auto texture_view = createImageView(textureImage,
-                                        VK_FORMAT_R8G8B8A8_SRGB,
+                                        VK_FORMAT_R8G8B8A8_UNORM,
                                         VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 
 
