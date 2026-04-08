@@ -95,23 +95,36 @@ int main(int argc, char *argv[]) {
 
         float size_of_msdf = 32;
 
+
         // 4. 配置输出位图 (32x32 像素)
         msdfgen::Bitmap<float, 3> msdf(size_of_msdf, size_of_msdf);
-
 
         // 5. 设置投影变换 (缩放和位移)
         // 参数：Projection(scale, translation), range (边缘影响范围)
         double padding = 2.0;
         msdfgen::SDFTransformation t(
                                      msdfgen::Projection(size_of_msdf,
-                                                         msdfgen::Vector2(8.0 / size_of_msdf,
+                                                         msdfgen::Vector2(7.0 / size_of_msdf,
                                                                           4.0 / size_of_msdf + padding / size_of_msdf)),
-                                     msdfgen::Range(2.0 / size_of_msdf));
+                                     msdfgen::Range(4.0 / size_of_msdf));
 
         // 推荐设置：range = 2.0
         // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
         // 6. 执行 MSDF 生成核心算法
-        generateMSDF(msdf, shape, t);
+
+
+        //
+        msdfgen::MSDFGeneratorConfig config;
+        config.overlapSupport                    = true; // 开启重叠支持
+        config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+        config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+
+        generateMSDF(msdf, shape, t, config);
+
+        // overlapSupport (bool)：
+        // 描述：是否开启重叠支持（默认为 true）。
+        // 作用：如果矢量路径中存在重叠的轮廓（Contours），该参数可以确保距离场计算的正确性。
+        // A 的 上面 确实是重叠的路径 ，主要还是指向了这个
 
 
         // 将 msdf 转换为 0-1，然后再上传到 GPU  也可以直接上传，之后再到 GPU 中 调用计算着色器做转移
