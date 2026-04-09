@@ -23,7 +23,7 @@ float screenPxRange(vec2 in_UV) {
     //边缘处的梯度有多宽 从“完全背景”（0.0）到“完全前景”（1.0）所覆盖的像素数量。
 
     // 内置函数  textureSize(msdf, 0) 获取纹理的大小 32 * 32
-    vec2 unitRange = vec2(pixel_range) / vec2(textureSize(msdf, 0));
+    vec2 unitRange = vec2(pixel_range) / vec2(32); // 需要更改为通过一个参数传入
     // If inversesqrt is not available, use vec2(1.0)/sqrt
     //    vec2 screenTexSize = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
     //    vec2 screen_Size = vec2(dFdx(in_UV), dFdy(in_UV));

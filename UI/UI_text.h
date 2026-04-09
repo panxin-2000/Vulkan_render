@@ -165,6 +165,7 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
 
         auto glyph = msdf_text.glyphs.find(glyph_id);
         if (glyph != msdf_text.glyphs.end()) {
+            // 方向可能都稍微有点问题，但是结果是对的
             add_text_box(vertices, indices, {
                              current_x + char_size * glyph->second.planeBounds.left,
                              current_y - char_size * glyph->second.planeBounds.bottom,
@@ -175,10 +176,10 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
                              current_y - char_size * glyph->second.planeBounds.top,
                              0
                          },
-                         glyph->second.atlasBounds.left,
-                         glyph->second.atlasBounds.bottom,
-                         glyph->second.atlasBounds.right,
-                         glyph->second.atlasBounds.top);
+                         (glyph->second.atlasBounds.left) / msdf_text.atlas.width,
+                         (msdf_text.atlas.height - glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
+                         (glyph->second.atlasBounds.right) / msdf_text.atlas.width,
+                         (msdf_text.atlas.height - glyph->second.atlasBounds.top) / msdf_text.atlas.height);
             current_x += x_advance * char_size;
             current_y += y_advance * char_size;
         }
@@ -220,8 +221,8 @@ entt::entity UI_text(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.frag.spv",
                                            "", "");
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
