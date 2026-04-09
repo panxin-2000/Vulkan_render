@@ -50,7 +50,7 @@ void main()
 
     //为什么会有“更亮的缝”？（数学原因）
     //这是因为 median(r, g, b) 在两条线交汇处，由于插值误差，计算出的 sd 值可能会超过正常的最大值（例如本该是 0.8，结果变成了 1.2）。
-    // VK_FORMAT_R8G8B8A8_UNORM 图片的格式也是有要求的。
+    // VK_FORMAT_R8G8B8A8_UNORM 图片的格式也是有要求的。 // 主要是格式的问题
 
 
     vec3 msd_linear = texture(msdf, in_UV).rgb;
@@ -60,32 +60,51 @@ void main()
     //sd < 0.5：表示该像素位于形状外部。
     //sd = 0.5：正好是形状的边缘（边界）
     // 1. 调整 sd 的对比度（最直接的方法）
-    float contrast = 1.5; // 值越大边缘越硬，通常 1.0 - 2.0
-    float sd_adjusted = (0.5 - sd) * contrast;
+    //    float contrast = 1.5; // 值越大边缘越硬，通常 1.0 - 2.0
+    //    float sd_adjusted = (0.5 - sd) * contrast;
 
-    float screenPxDistance = screenPxRange(in_UV) * (0.5 - sd);  // 这里是什么？ 这里最重要，重点改这里
-    // 0是边界 负数代表内部 正数代表外部
+    // sd - 0.5 表示什么？ 正负 表示内外
 
-    float thickness = 0.5; // 边缘厚度
-    float outlineWidth = 2.0; // 描边宽度（像素）
+    float screenPxDistance = screenPxRange(in_UV) * (sd - 0.5);  // 这里是什么？ 这里最重要，重点改这里
+    // 结果 screenPxDistance: 它的单位已经从“纹理坐标”转换成了“屏幕像素坐标”
+    // 如果 screenPxDistance =  5.0，说明这个像素点在文字边缘内部 5 像素处。
+    // 如果 screenPxDistance = -2.0，说明这个像素点在文字边缘外部 2 像素处。
 
-    // 计算主体
-    float body = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-    // 计算描边（判断距离是否在某个范围内）
-    float outline = clamp(screenPxDistance + 0.5 + outlineWidth, 0.0, 1.0) - body;
 
-    vec3 finalColor = mix(vec3(1, 1, 1), vec3(1, 1, 1), body);
-    float finalAlpha = body + outline;
+    // 设定你想要的固定像素宽度，例如 2.0 像素
+    float pixel_range = 4.0;
+    float outlinePixelWidth = 2.0;
+    float outlinePxDistance = screenPxRange(in_UV) * (sd - 0.5 + outlinePixelWidth / pixel_range / 2);  // 这里是什么？ 这里最重要，重点改这里
 
-    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-    float opacity_2 = smoothstep(0.0, 1.0, opacity);
 
-    vec3 bgColor = vec3(0, 0, 0);
-    vec3 fgColor = vec3(1, 1, 1);
-    // opacity  越接近1 越 靠近后者
-    vec3 color = mix(bgColor, fgColor, finalAlpha);
-    //  smoothstep 三次曲线，根据平滑  3 * t^2 - 2 * t^2
-    //  smoothstep 是为了让文字好看（没锯齿）
-    outFragColor_B8G8R8A8_SRGB = vec4(color.rgb, 1.0);
-    //    outFragColor_B8G8R8A8_SRGB = vec4(sd, sd, sd, 1.0);
+    // 0.5 就是半个像素的偏移。它配合 clamp 函数，人为制造了一个 1 像素宽的线性淡入淡出效果
+    float textMask = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+
+    float outlineMask = clamp(outlinePxDistance + 0.5, 0.0, 1.0);
+
+    // 2. 计算“纯描边”区域的权重 (即：在外面那一圈，但不在文字里)
+    // 使用 saturate 或 clamp 确保结果在 0-1
+    float onlyOutlineWeight = clamp(outlineMask - textMask, 0.0, 1.0);
+
+    // 逻辑从“数值区间剪裁”变成了 “图层颜色叠加（Alpha Blending）”
+    vec4 color = vec4(0.0);
+    vec4 baseColor = vec4(0.0, 1.0, 1.0, 1.0); // 白色文字
+    vec4 outlineColor = vec4(1.0, 0.0, 0.0, 1.0); // 红色描边
+    // 第一层：在背景上混合描边色 (使用描边掩码)
+
+    // 4. 混合逻辑：
+    // 最终颜色 = 文字色 * 文字掩码 + 描边色 * 纯描边权重
+    vec4 finalColor = baseColor * textMask + outlineColor * onlyOutlineWeight;
+
+    // 5. 输出结果 (保留整体的 Alpha 范围)
+    // 这里的 Alpha 应该是整个描边范围内都有值
+    finalColor.a = outlineMask;
+
+
+    outFragColor_B8G8R8A8_SRGB = finalColor;
+
+    // smoothstep(0.5 - outlineWidth, 0.5, sigDist)  创建一个比原字体“胖一圈”的形状
+    // smoothstep(0.5, 0.5 + unit, sigDist)          精确定位“原字体”的实心区域
+    // A - B  [胖一圈的字体] - [原字体]  中间被“掏空”了，只剩下外围那一层薄薄的边框
+    // float outlineMask = smoothstep(0.5 - outlineWidth, 0.5, screenPxDistance) - smoothstep(0.5, 0.5 + unit, screenPxDistance);
 }

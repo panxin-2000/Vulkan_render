@@ -110,7 +110,7 @@ void test_single_char() {
         // 5. 设置投影变换 (缩放和位移)
         // 参数：Projection(scale, translation), range (边缘影响范围)
         double padding = 2.0;
-        msdfgen::SDFTransformation t(
+            msdfgen::SDFTransformation t(
                                      msdfgen::Projection(size_of_msdf,
                                                          msdfgen::Vector2(7.0 / size_of_msdf,
                                                                           4.0 / size_of_msdf + padding / size_of_msdf)),
@@ -155,17 +155,8 @@ void test_single_char() {
     }
 }
 
-#include "utf8.h"
 
 int main(int argc, char *argv[]) {
-    std::string utf8_text = "Abcdf\nr你好";
-    std::vector<uint32_t> unicode_points;
-
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
-
-
-    // return 0;
-
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();
