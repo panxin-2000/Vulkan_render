@@ -463,6 +463,8 @@ file(GLOB SHADER_FILES
         "${SHADER_SOURCE_DIR}/*.geom"
         "${SHADER_SOURCE_DIR}/*.comp"
 )
+find_package(harfbuzz REQUIRED)
+
 
 add_executable(learn_render main.cpp
         VDB/nano_vdb_function.cpp
@@ -490,6 +492,7 @@ target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 target_link_libraries(learn_render PRIVATE tinygltf)
 target_link_libraries(learn_render PRIVATE nlohmann_json::nlohmann_json) # 纯头文件，链接不链接无所谓
 target_link_libraries(learn_render PRIVATE Freetype)
+target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)

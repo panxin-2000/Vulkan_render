@@ -86,6 +86,11 @@ bool add_geometry_data(entt::entity entity,
                        Point_3 b,
                        Point_3 c);
 
+void add_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
+                  const std::shared_ptr<std::vector<unsigned short> > &indices,
+                  Point_3 min, Point_3 max,
+                  float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
+
 bool add_sky_box_data(entt::entity entity);
 
 inline std::pair<Point_3, Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {

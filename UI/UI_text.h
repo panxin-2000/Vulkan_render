@@ -5,9 +5,205 @@
 #ifndef HELLO_MAC_UI_TEXT_H
 #define HELLO_MAC_UI_TEXT_H
 
+#include "json.hpp"
 #include "name_component.h"
 #include "Rect_2D_component.h"
 
+
+struct Atlas {
+    std::string type;
+    float distanceRange       = 0.0f;
+    float distanceRangeMiddle = 0.0f;
+    float size                = 0.0f;
+    float width               = 0.0f;
+    float height              = 0.0f;
+    std::string yOrigin;
+};
+
+struct Metrics {
+    float emSize             = 0.0f; // 基准单位
+    float lineHeight         = 0.0f; // 下一行的起始位置 字体大小 * lineHeight
+    float ascender           = 0.0f; // 字符（如 'h' 或 'A'）从基线向上延伸的最大距离
+    float descender          = 0.0f; // 字符（如 'g' 或 'p'）掉到基线以下的最大深度
+    float underlineY         = 0.0f; // 下划线的垂直位置， 下划线位于基线 下方 underlineY 个单位处
+    float underlineThickness = 0.0f; // 下划线的粗细
+};
+
+
+struct glyph {
+    uint32_t unicode = 0;
+    float advance    = 0.0f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
+
+    struct direction {
+        float left   = 0.0f;
+        float bottom = 0.0f;
+        float right  = 0.0f;
+        float top    = 0.0f;
+    };
+
+    direction planeBounds; // 描述该字符在逻辑空间（渲染画布）中的形状范围
+    direction atlasBounds; // 描述该字符在实际图片文件（纹理贴图）中的像素坐标
+};
+
+struct Msdf_text {
+    Atlas atlas;
+    Metrics metrics;
+    std::map<uint32_t, glyph> glyphs;
+};
+
+inline void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
+    // 1. 打开文件流
+    std::ifstream file(file_path);
+
+    if (!file.is_open()) {
+        std::cerr << "无法打开文件！" << std::endl;
+        return;
+    }
+    try {
+        // 2. 直接从流解析
+        nlohmann::json data = nlohmann::json::parse(file);
+
+        if (data.contains("atlas")) {
+            auto atlas = data.at("atlas");
+            if (atlas.contains("type")) msdf_text.atlas.type = atlas.at("type");
+            if (atlas.contains("distanceRange")) msdf_text.atlas.distanceRange = atlas.at("distanceRange");
+            if (atlas.contains("distanceRangeMiddle"))
+                msdf_text.atlas.distanceRangeMiddle = atlas.at("distanceRangeMiddle");
+            if (atlas.contains("size")) msdf_text.atlas.size = atlas.at("size");
+            if (atlas.contains("width")) msdf_text.atlas.width = atlas.at("width");
+            if (atlas.contains("height")) msdf_text.atlas.height = atlas.at("height");
+            if (atlas.contains("yOrigin")) msdf_text.atlas.yOrigin = atlas.at("yOrigin");
+        }
+        if (data.contains("metrics")) {
+            auto metrics = data.at("metrics");
+            if (metrics.contains("emSize")) msdf_text.metrics.emSize = metrics.at("emSize");
+            if (metrics.contains("lineHeight")) msdf_text.metrics.lineHeight = metrics.at("lineHeight");
+            if (metrics.contains("ascender")) msdf_text.metrics.ascender = metrics.at("ascender");
+            if (metrics.contains("descender")) msdf_text.metrics.descender = metrics.at("descender");
+            if (metrics.contains("underlineY")) msdf_text.metrics.underlineY = metrics.at("underlineY");
+            if (metrics.contains("underlineThickness"))
+                msdf_text.metrics.underlineThickness = metrics.at("underlineThickness");
+        }
+
+        for (auto &glyph: data["glyphs"]) {
+            auto unicode = glyph.at("unicode");
+            struct glyph tem;
+            tem.unicode = glyph.at("unicode");
+            tem.advance = glyph.at("advance");
+            if (glyph.contains("planeBounds")) {
+                auto planeBounds       = glyph.at("planeBounds");
+                tem.planeBounds.left   = planeBounds.at("left");
+                tem.planeBounds.bottom = planeBounds.at("bottom");
+                tem.planeBounds.right  = planeBounds.at("right");
+                tem.planeBounds.top    = planeBounds.at("top");
+            }
+            if (glyph.contains("atlasBounds")) {
+                auto atlasBounds       = glyph.at("atlasBounds");
+                tem.atlasBounds.left   = atlasBounds.at("left");
+                tem.atlasBounds.bottom = atlasBounds.at("bottom");
+                tem.atlasBounds.right  = atlasBounds.at("right");
+                tem.atlasBounds.top    = atlasBounds.at("top");
+            }
+            msdf_text.glyphs.insert({unicode, tem});
+        }
+    } catch (nlohmann::json::parse_error &e) {
+        std::cerr << "JSON 语法错误: " << e.what() << std::endl;
+    }
+}
+
+#include <hb.h>
+
+#include "utf8.h"
+
+void create_text_render(const entt::entity entity, const std::string &name, Msdf_text &msdf_text,
+                        float min_x,
+                        float min_y) {
+    // 1. 创建缓冲区
+    hb_buffer_t *buf = hb_buffer_create();
+
+    // 2. 添加文本 (UTF-8 格式)
+    hb_buffer_add_utf8(buf, name.c_str(), -1, 0, -1);
+    // 3. 设置文本属性（必须指定，否则可能排版错误）
+
+    hb_buffer_set_direction(buf, HB_DIRECTION_LTR);                 // 从左往右
+    hb_buffer_set_script(buf, HB_SCRIPT_LATIN);                     // 拉丁脚本
+    hb_buffer_set_language(buf, hb_language_from_string("en", -1)); // 英语
+
+    // 使用 HarfBuzz 内置的 OpenType 支持加载字体
+    hb_blob_t *blob = hb_blob_create_from_file("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    hb_face_t *face = hb_face_create(blob, 0);
+    hb_font_t *font = hb_font_create(face);
+    auto UPEM       = hb_face_get_upem(face);
+
+    // 传入字体和缓冲区，执行塑造
+    hb_shape(font, buf, NULL, 0);
+
+    // 从缓冲区中提取字形索引和它们相对于基线的偏移量
+    unsigned int glyph_count;
+    hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
+    hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+
+    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
+
+    float char_size = 40;
+    float current_x = min_x;
+    float current_y = min_y + char_size;
+
+    std::string utf8_text = name;
+    std::vector<uint32_t> unicode_points;
+
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+
+    for (unsigned int i = 0; i < unicode_points.size(); i++) {
+        hb_codepoint_t glyph_id = unicode_points[i];
+        // glyph_id 去map中查找索引
+        // 得到的是一组相对于基线（Baseline）的数值
+        float x_advance = (float) glyph_pos[i].x_advance / (float) UPEM; // 通常需要除以缩放系数
+        float y_advance = (float) glyph_pos[i].y_advance / (float) UPEM;
+
+
+        auto glyph = msdf_text.glyphs.find(glyph_id);
+        if (glyph != msdf_text.glyphs.end()) {
+            add_text_box(vertices, indices, {
+                             current_x + char_size * glyph->second.planeBounds.left,
+                             current_y - char_size * glyph->second.planeBounds.bottom,
+                             0
+                         },
+                         {
+                             current_x + char_size * glyph->second.planeBounds.right,
+                             current_y - char_size * glyph->second.planeBounds.top,
+                             0
+                         },
+                         glyph->second.atlasBounds.left,
+                         glyph->second.atlasBounds.bottom,
+                         glyph->second.atlasBounds.right,
+                         glyph->second.atlasBounds.top);
+            current_x += x_advance * char_size;
+            current_y += y_advance * char_size;
+        }
+
+
+        // 使用这些数据配合渲染引擎（如 OpenGL/FreeType）绘制每一帧
+
+        // 1. 步进值 (Advance) —— “笔尖移动了多少”
+        // x_advance: 绘制完当前字形后，画笔（光标）应该在水平方向挪动多少距离。
+        // y_advance: 垂直排版时画笔移动的距离。
+        // 用途：它是决定下一个字画在哪里的核心依据。
+        // 2. 偏移量 (Offset) —— “相对于基线的微调”
+        // x_offset / y_offset: 有些字形（如阿拉伯语的变音符号）需要偏离标准位置。
+        // 用途：在绘制当前字形时，给它一个临时的位移，但不影响下一个字的位置。
+
+        // 用 HarfBuzz 的结果代替 JSON 的 advance 来更新光标位置
+    }
+    add_geometry_data(entity, vertices, indices);
+
+
+    hb_buffer_destroy(buf);
+    hb_font_destroy(font);
+    hb_face_destroy(face);
+    hb_blob_destroy(blob);
+}
 
 entt::entity UI_text(const std::string &name,
                      float min_x,
@@ -24,8 +220,8 @@ entt::entity UI_text(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                            "", "");
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
@@ -33,9 +229,11 @@ entt::entity UI_text(const std::string &name,
     }
     Logic_entt().emplace<Drag_event>(entity);
     Logic_entt().emplace<Name_component>(entity, name);
-    add_geometry_data(entity, {min_x, min_y, 0.0f}, {max_x, max_y, 0.0f});
 
+    Msdf_text msdf_text;
+    read_msdf_atlas(msdf_text, "atlas.json");
 
+    create_text_render(entity, name, msdf_text, min_x, min_y);
 
     matrix_4x4 model;
     UI_matrix_4x4(&model, {1, 1}, {0, 0});

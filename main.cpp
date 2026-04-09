@@ -73,133 +73,25 @@ void triangulateSlice(const manifold::Polygons &manifoldPolys) {
     // }
 }
 
-struct Atlas {
-    std::string type;
-    float distanceRange       = 0.0f;
-    float distanceRangeMiddle = 0.0f;
-    float size                = 0.0f;
-    float width               = 0.0f;
-    float height              = 0.0f;
-    std::string yOrigin;
-};
-
-struct Metrics {
-    float emSize             = 0.0f; // 基准单位
-    float lineHeight         = 0.0f; // 下一行的起始位置 字体大小 * lineHeight
-    float ascender           = 0.0f; // 字符（如 'h' 或 'A'）从基线向上延伸的最大距离
-    float descender          = 0.0f; // 字符（如 'g' 或 'p'）掉到基线以下的最大深度
-    float underlineY         = 0.0f; // 下划线的垂直位置， 下划线位于基线 下方 underlineY 个单位处
-    float underlineThickness = 0.0f; // 下划线的粗细
-};
 
 
-struct glyph {
-    uint32_t unicode = 0;
-    float advance    = 0.0f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
-
-    struct direction {
-        float left   = 0.0f;
-        float bottom = 0.0f;
-        float right  = 0.0f;
-        float top    = 0.0f;
-    };
-
-    direction planeBounds; // 描述该字符在逻辑空间（渲染画布）中的形状范围
-    direction atlasBounds; // 描述该字符在实际图片文件（纹理贴图）中的像素坐标
-};
-
-struct Msdf_text {
-    Atlas atlas;
-    Metrics metrics;
-    std::map<uint32_t, glyph> glyphs;
-};
 
 
-#include <iostream>
-#include "json.hpp"
 
-using json = nlohmann::json;
 
-void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
-    // 1. 打开文件流
-    std::ifstream file(file_path);
-
-    if (!file.is_open()) {
-        std::cerr << "无法打开文件！" << std::endl;
-        return;
-    }
-    try {
-        // 2. 直接从流解析
-        json data = json::parse(file);
-
-        if (data.contains("atlas")) {
-            auto atlas = data.at("atlas");
-            if (atlas.contains("type")) msdf_text.atlas.type = atlas.at("type");
-            if (atlas.contains("distanceRange")) msdf_text.atlas.distanceRange = atlas.at("distanceRange");
-            if (atlas.contains("distanceRangeMiddle"))
-                msdf_text.atlas.distanceRangeMiddle = atlas.at("distanceRangeMiddle");
-            if (atlas.contains("size")) msdf_text.atlas.size = atlas.at("size");
-            if (atlas.contains("width")) msdf_text.atlas.width = atlas.at("width");
-            if (atlas.contains("height")) msdf_text.atlas.height = atlas.at("height");
-            if (atlas.contains("yOrigin")) msdf_text.atlas.yOrigin = atlas.at("yOrigin");
-        }
-        if (data.contains("metrics")) {
-            auto metrics = data.at("metrics");
-            if (metrics.contains("emSize")) msdf_text.metrics.emSize = metrics.at("emSize");
-            if (metrics.contains("lineHeight")) msdf_text.metrics.lineHeight = metrics.at("lineHeight");
-            if (metrics.contains("ascender")) msdf_text.metrics.ascender = metrics.at("ascender");
-            if (metrics.contains("descender")) msdf_text.metrics.descender = metrics.at("descender");
-            if (metrics.contains("underlineY")) msdf_text.metrics.underlineY = metrics.at("underlineY");
-            if (metrics.contains("underlineThickness"))
-                msdf_text.metrics.underlineThickness = metrics.at("underlineThickness");
-        }
-
-        for (auto &glyph: data["glyphs"]) {
-            auto unicode = glyph.at("unicode");
-            struct glyph tem;
-            tem.unicode = glyph.at("unicode");
-            tem.advance = glyph.at("advance");
-            if (glyph.contains("planeBounds")) {
-                auto planeBounds       = glyph.at("planeBounds");
-                tem.planeBounds.left   = planeBounds.at("left");
-                tem.planeBounds.bottom = planeBounds.at("bottom");
-                tem.planeBounds.right  = planeBounds.at("right");
-                tem.planeBounds.top    = planeBounds.at("top");
-            }
-            if (glyph.contains("atlasBounds")) {
-                auto atlasBounds       = glyph.at("atlasBounds");
-                tem.atlasBounds.left   = atlasBounds.at("left");
-                tem.atlasBounds.bottom = atlasBounds.at("bottom");
-                tem.atlasBounds.right  = atlasBounds.at("right");
-                tem.atlasBounds.top    = atlasBounds.at("top");
-            }
-            msdf_text.glyphs.insert({unicode, tem});
-        }
-    } catch (json::parse_error &e) {
-        std::cerr << "JSON 语法错误: " << e.what() << std::endl;
-    }
-}
 
 
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
-#include "utf8.h"
 
-int main(int argc, char *argv[]) {
-    Msdf_text msdf_text;
-    read_msdf_atlas(msdf_text, "atlas.json");
-    std::string utf8_text = "Abcdf\nr你好";
-    std::vector<uint32_t> unicode_points;
-
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
-
+void test_single_char() {
     msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 
     msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     if (!font) {
         deinitializeFreetype(ft);
-        return -1;
+        return;
     }
     msdfgen::Shape shape;
     if (loadGlyph(shape, font, 'A', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
@@ -261,6 +153,17 @@ int main(int argc, char *argv[]) {
         savePng(msdf, "output_A_msdf.png");
         std::cout << "MSDF image generated successfully!" << std::endl;
     }
+}
+
+#include "utf8.h"
+
+int main(int argc, char *argv[]) {
+    std::string utf8_text = "Abcdf\nr你好";
+    std::vector<uint32_t> unicode_points;
+
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+
+
     // return 0;
 
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
@@ -348,8 +251,8 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity = UI_text("文字A", 200, 200, 500, 500);
-        set_render_parameter(entity, "msdf", "output_A_msdf.png");
+        auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+        set_render_parameter(entity, "msdf", "atlas.png");
     } {
         auto value     = get_max_descriptor_update_after_bind_samplers();
         auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});

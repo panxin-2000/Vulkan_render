@@ -228,6 +228,29 @@ bool add_geometry_data(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
+void add_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
+                  const std::shared_ptr<std::vector<unsigned short> > &indices,
+                  Point_3 min, Point_3 max,
+                  float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y) {
+    indices->push_back(vertices->size() + 0);
+    indices->push_back(vertices->size() + 1);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 3);
+    indices->push_back(vertices->size() + 0);
+    //     3            2
+    //      ************
+    //      *        * *
+    //      *     *    *
+    //      *  *       *
+    //      ************
+    //     0            1
+    vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, uv_min_x, uv_min_y}); //0 1 2
+    vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, uv_max_x, uv_min_y});
+    vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, uv_max_x, uv_max_y}); // 2 3 0
+    vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, uv_min_x, uv_max_y});
+}
+
 bool add_sky_box_data(entt::entity entity) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
