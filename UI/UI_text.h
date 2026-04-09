@@ -161,14 +161,16 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
         // 得到的是一组相对于基线（Baseline）的数值
         float x_advance = (float) glyph_pos[i].x_advance / (float) UPEM; // 通常需要除以缩放系数
         float y_advance = (float) glyph_pos[i].y_advance / (float) UPEM;
+        float x_offset  = (float) glyph_pos[i].x_offset / (float) UPEM;
+        float y_offset  = (float) glyph_pos[i].x_offset / (float) UPEM;
 
 
         auto glyph = msdf_text.glyphs.find(glyph_id);
         if (glyph != msdf_text.glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             add_text_box(vertices, indices, {
-                             current_x + char_size * glyph->second.planeBounds.left,
-                             current_y - char_size * glyph->second.planeBounds.bottom,
+                             current_x + char_size * (x_offset + glyph->second.planeBounds.left),
+                             current_y - char_size * (y_offset + glyph->second.planeBounds.bottom),
                              0
                          },
                          {
