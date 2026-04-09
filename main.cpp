@@ -184,10 +184,15 @@ void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
+#include "utf8.h"
 
 int main(int argc, char *argv[]) {
     Msdf_text msdf_text;
     read_msdf_atlas(msdf_text, "atlas.json");
+    std::string utf8_text = "Abcdf\nr你好";
+    std::vector<uint32_t> unicode_points;
+
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
 
     msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 
