@@ -68,7 +68,7 @@ void main()
     outViewVec = viewPos.xyz - pos.xyz;
 
     // 多个光源时 输出世界空间下的顶点位置 outWorldPos，让片元着色器去遍历光源。
-    outShadowCoord = (biasMat * lightSpace * model) * vec4(inPos, 1.0);
+    //    outShadowCoord = (biasMat * lightSpace * model) * vec4(inPos, 1.0);
 
 
 }
