@@ -74,13 +74,13 @@ void main()
     // 设定你想要的固定像素宽度，例如 2.0 像素
     float pixel_range = 4.0;
     float outlinePixelWidth = 2.0;
-    float outlinePxDistance = screenPxRange(in_UV) * (sd - 0.5 + outlinePixelWidth / pixel_range / 2);  // 这里是什么？ 这里最重要，重点改这里
+    float outlinePxDistance = screenPxRange(in_UV) * (outlinePixelWidth / pixel_range / 2);
 
 
     // 0.5 就是半个像素的偏移。它配合 clamp 函数，人为制造了一个 1 像素宽的线性淡入淡出效果
     float textMask = clamp(screenPxDistance + 0.5, 0.0, 1.0);
 
-    float outlineMask = clamp(outlinePxDistance + 0.5, 0.0, 1.0);
+    float outlineMask = clamp(screenPxDistance + outlinePxDistance + 0.5, 0.0, 1.0);
 
     // 2. 计算“纯描边”区域的权重 (即：在外面那一圈，但不在文字里)
     // 使用 saturate 或 clamp 确保结果在 0-1
