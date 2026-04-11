@@ -131,6 +131,7 @@ public:
         } {
             auto view = Render_entt().view<Mesh, opacity_tag>();
             for (const auto it: view) {
+                auto name = Render_entt().get<Proxy_debug_name>(it);
                 build_command_buffer(handle, it, time_line);
             }
         } {

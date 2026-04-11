@@ -51,6 +51,12 @@ public:
         rotate_ = rotate;
     }
 
+    explicit model_transform(const Point_3 offset, const Eigen::Quaternionf &rotate, const Point_3 zoom) {
+        offset_ = offset;
+        rotate_ = rotate;
+        zoom_   = zoom;
+    }
+
 
     [[nodiscard]] Eigen::Quaternionf get_rotate() const {
         return rotate_;

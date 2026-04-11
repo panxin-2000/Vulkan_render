@@ -15,6 +15,7 @@
 #include "global_singleton.h"
 #include "descriptor_pool.h"
 #include "earcut.h"
+#include "load_gltf_model.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
@@ -72,13 +73,6 @@ void triangulateSlice(const manifold::Polygons &manifoldPolys) {
     //     drawTriangle(polygon_flattened[indices[i]], ...);
     // }
 }
-
-
-
-
-
-
-
 
 
 #include <msdfgen.h>
@@ -169,7 +163,9 @@ int main(int argc, char *argv[]) {
     UI_block("功能块", 0, 0, 50, 200);
     UI_block("按钮2", 0, 0, 145, 130);
 
-
+    //
+    {
+    }
     // load_gltf_model("sky box", "assets/Box.gltf");
     // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
@@ -240,7 +236,7 @@ int main(int argc, char *argv[]) {
         auto entity    = object_3d_model("manifold ", mesh_last, {0, 0, -50});
         uint32_t index = 7;
         set_render_parameter(entity, "samplerColor", index);
-        logic_update_add_tag<opacity_tag>(entity);
+        // logic_update_add_tag<opacity_tag>(entity);
     } {
         auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
         set_render_parameter(entity, "msdf", "atlas.png");
@@ -252,7 +248,7 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity  = object_3d_model("blender Suzanne +3", "assets/suzanne.obj", {3.0f, 0.0f, 0.0f});
+        auto entity  = load_gltf_model("sphere", "assets/sphere.gltf");
         auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
         auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
         set_render_parameter(entity, "samplerColor", index);
@@ -339,5 +335,3 @@ void add_deferred_pass(void) {
         set_render_parameter(entity, "light_buffer", temp_ptr);
     }
 }
-
-

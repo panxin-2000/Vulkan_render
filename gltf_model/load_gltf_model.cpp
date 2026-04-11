@@ -47,7 +47,7 @@ Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index
         return {0, 0, 0};
     } else {
         auto node = model.nodes[node_index];
-        if (node.translation.size() == 0) {
+        if (node.translation.empty()) {
             return {0, 0, 0};
         } else if (node.translation.size() == 3) {
             offset.x = node.translation[0];
@@ -58,6 +58,26 @@ Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index
     }
     return {0, 0, 0};
 }
+
+Point_3 get_zoom_from_model(const tinygltf::Model &model, const int node_index) {
+    Point_3 zoom{1, 1, 1};
+    int nodes_num = model.nodes.size();
+    if (node_index > nodes_num) {
+        return {1, 1, 1};
+    } else {
+        auto node = model.nodes[node_index];
+        if (node.scale.empty()) {
+            return {1, 1, 1};
+        } else if (node.scale.size() == 3) {
+            zoom.x = node.scale[0];
+            zoom.y = node.scale[1];
+            zoom.z = node.scale[2];
+            return zoom;
+        }
+    }
+    return {1, 1, 1};
+}
+
 
 Eigen::Quaternionf get_rotate_from_model(const tinygltf::Model &model, const int node_index) {
     int nodes_num = model.nodes.size();
@@ -240,28 +260,41 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
  * @return
  */
 entt::entity load_node_data(tinygltf::Model &model,
+                            std::vector<bool> &nodes_have_deal,
                             const int current_node_index,
                             const int parent_node_index           = -1,
                             const entt::entity parent_node_entity = entt::null) {
-    const entt::entity entity = Logic_entt().create();
-    auto node                 = model.nodes[current_node_index];
-    Point_3 offset            = get_offset_from_model(model, current_node_index);
-    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
-    Logic_entt().emplace<Name_component>(entity, node.name);
+    entt::entity entity                    = entt::null;
+    auto node                              = model.nodes[current_node_index];
+    nodes_have_deal.at(current_node_index) = true;
+
+    entity = Logic_entt().create();
+
+    // 改的太多，我都忘记下面一行是需要添加的了
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
     Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
                                            "", "");
-    Logic_entt().emplace<model_transform>(entity, offset, rotate);
-    const auto &transform  = Logic_entt().get<model_transform>(entity);
+
+    Logic_entt().emplace<Name_component>(entity, node.name);
+
+    Point_3 offset            = get_offset_from_model(model, current_node_index);
+    Point_3 zoom              = get_zoom_from_model(model, current_node_index);
+    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
+    // matrix 与之前的内容互斥 但是没有搞定互斥的部分
+    const auto &transform  = Logic_entt().emplace_or_replace<model_transform>(entity, offset, rotate, zoom);
     const auto modelMatrix = transform.update_model_matrix();
     set_render_parameter(entity, "model_4x4", modelMatrix);
-    world_root_add_child(entity);
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+
+
     if (node.mesh >= 0) {
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
         get_mesh_from_gltf_model(entity, model, node.mesh);
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+        world_root_add_child(entity);
+        Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+        logic_update_add_tag<opacity_tag>(entity);
     }
     if (node.camera >= 0) {
         LOG_INFO(g_log(), "need deal node  camera ");
@@ -282,7 +315,7 @@ entt::entity load_node_data(tinygltf::Model &model,
         add_relation(parent_node_entity, entity);
     }
     for (int i = 0; i < node.children.size(); ++i) {
-        load_node_data(model, node.children[i], current_node_index, entity);
+        load_node_data(model, nodes_have_deal, node.children[i], current_node_index, entity);
     }
     return entity;
 }
@@ -341,17 +374,18 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
 
 
 entt::entity load_gltf_model(const std::string &name, const std::string &path) {
-    entt::entity entity;
+    entt::entity entity = entt::null;
     auto optional_model = get_gltf_model(path);
     if (optional_model.has_value()) {
         auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
-        if (nodes_num > 0) {
-            entity = load_node_data(model, 0, -1, entt::null);
+        std::vector<bool> nodes_have_deal;
+        nodes_have_deal.resize(nodes_num, false);
+
+        for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
+            // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
+            entity = load_node_data(model, nodes_have_deal, i, -1, entt::null);
             load_material(entity, model);
-        } else {
-            // 空的
-            entity = entt::null;
         }
     }
     return entity;
