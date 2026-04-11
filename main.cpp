@@ -110,7 +110,7 @@ void test_single_char() {
         // 5. 设置投影变换 (缩放和位移)
         // 参数：Projection(scale, translation), range (边缘影响范围)
         double padding = 2.0;
-            msdfgen::SDFTransformation t(
+        msdfgen::SDFTransformation t(
                                      msdfgen::Projection(size_of_msdf,
                                                          msdfgen::Vector2(7.0 / size_of_msdf,
                                                                           4.0 / size_of_msdf + padding / size_of_msdf)),
@@ -339,3 +339,5 @@ void add_deferred_pass(void) {
         set_render_parameter(entity, "light_buffer", temp_ptr);
     }
 }
+
+

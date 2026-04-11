@@ -9,12 +9,100 @@
 
 #include <openvdb/tools/LevelSetSphere.h> // replace with your own dependencies for generating the OpenVDB grid
 #include <fstream>
+#include <entt/entity/entity.hpp>
 #include <nanovdb/tools/CreateNanoGrid.h> // converter from OpenVDB to NanoVDB (includes NanoVDB.h and GridManager.h)
 #include <nanovdb/io/IO.h>
 #include <nanovdb/math/SampleFromVoxels.h>
 
+#include "shader_component.h"
+#include "update_push_constants_data.h"
+
 
 void test(void *ptr, uint64_t size);
+
+void add_nanovdb_to_gpu(entt::entity entity, void *ptr, uint64_t size) {
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+    auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
+    auto mem_copy_function = [ptr,size](void *dst) {
+        memcpy(dst, ptr, size);
+    };
+    copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
+
+    set_render_parameter(entity, "VdbBuffer", temp_ptr);
+}
+
+void add_nanovdb_to_gpu(entt::entity entity) {
+    auto srcGrid = openvdb::tools::createLevelSetSphere<openvdb::FloatGrid>(100.0f, openvdb::Vec3f(0.0f), 1.0f);
+    nanovdb::GridHandle handle = nanovdb::tools::createNanoGrid(*srcGrid);
+    auto ptr = handle.data();
+    auto size = handle.bufferSize();
+    add_nanovdb_to_gpu(entity, ptr, size);
+}
+
+void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name) {
+    std::filesystem::path filePath = file_name;
+    std::string ext                = filePath.extension().string();
+    if (ext == ".vdb") {
+        openvdb::initialize();
+        openvdb::io::File file(file_name);
+        file.open();
+
+        // 1. 存储所有从 OpenVDB 读取的网格指针
+        openvdb::GridPtrVec vdbGrids;
+        for (auto iter = file.beginName(); iter != file.endName(); ++iter) {
+            vdbGrids.push_back(file.readGrid(iter.gridName()));
+            std::cout << "Reading grid: " << iter.gridName() << std::endl;
+        }
+        file.close();
+
+        // 2. 将所有网格批量转换为 NanoVDB GridHandles
+        // NanoVDB 的 openToNanoVDB 支持传入 GridPtrVec
+        std::vector<nanovdb::GridHandle<nanovdb::HostBuffer> > handles;
+
+
+        // 遍历所有 Grid 名称
+        for (auto iter = file.beginName(); iter != file.endName(); ++iter) {
+            auto vdbGrid = file.readGrid(iter.gridName());
+
+            if (vdbGrid) {
+                std::cout << "Converting grid: " << iter.gridName() << std::endl;
+                // 使用新版 createNanoGrid 函数
+
+                auto baseGrid = file.readGrid(iter.gridName());
+
+                if (baseGrid->isType<openvdb::FloatGrid>()) {
+                    auto grid = openvdb::gridPtrCast<openvdb::FloatGrid>(baseGrid);
+                    handles.push_back(nanovdb::tools::createNanoGrid(*grid));
+                } else if (baseGrid->isType<openvdb::Vec3fGrid>()) {
+                    auto grid = openvdb::gridPtrCast<openvdb::Vec3fGrid>(baseGrid);
+                    handles.push_back(nanovdb::tools::createNanoGrid(*grid));
+                }
+            }
+        }
+        file.close();
+        // 将所有 Handle 一次性写入同一个 .nvdb 文件
+        if (!handles.empty()) {
+            // 1. 创建内存输出流
+            std::stringstream ms;
+
+            // 2. 将所有 handles 写入流（这会在内存中生成完整的 .nvdb 文件格式）
+            nanovdb::io::writeGrids(ms, handles);
+
+            // 3. 获取内存中的连续数据
+            std::string data = ms.str();
+            void *rawData    = data.data();
+            size_t totalSize = data.size();
+            add_nanovdb_to_gpu(entity, rawData, totalSize);
+        }
+    } else if (ext == ".nvdb") {
+        auto handle = nanovdb::io::readGrid(file_name);
+        if (handle.empty()) {
+            const auto ptr  = handle.data();
+            const auto size = handle.bufferSize();
+            add_nanovdb_to_gpu(entity, ptr, size);
+        }
+    }
+}
 
 
 void convert(const std::string &filename) {
@@ -26,6 +114,8 @@ void convert(const std::string &filename) {
 
         auto ptr  = handle.data();
         auto size = handle.bufferSize();
+
+
         test(ptr, size);
 
 
