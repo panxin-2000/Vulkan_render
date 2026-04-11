@@ -1,21 +1,18 @@
 #version 450
 
+
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
 layout (location = 0) in vec3 inWorldPos;
 layout (location = 1) in vec3 inNormal;
 
-layout (binding = 0) uniform UBO
-{
-    mat4 projection;
-    mat4 model;
-    mat4 view;
-    vec3 camPos;
-} ubo;
 
-layout (binding = 1) uniform UBOShared {
+layout (set = 2, binding = 1) uniform UBOShared {
     vec4 lights[4];
 } uboParams;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 layout (push_constant) uniform PushConsts {
     layout (offset = 12) float roughness;
@@ -24,6 +21,9 @@ layout (push_constant) uniform PushConsts {
     layout (offset = 24) float g;
     layout (offset = 28) float b;
 } material;
+
+// vkCmdPushConstants 上面的好像是每个都push 一次
+// 其实顶点中的也是每个push 一次
 
 const float PI = 3.14159265359;
 
@@ -99,7 +99,7 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, float metallic, float roughness)
 void main()
 {
     vec3 N = normalize(inNormal);
-    vec3 V = normalize(ubo.camPos - inWorldPos);
+    vec3 V = normalize(viewPos - inWorldPos);
 
     float roughness = material.roughness;
 
@@ -122,5 +122,5 @@ void main()
     // Gamma correct
     color = pow(color, vec3(0.4545));
 
-    outColor = vec4(color, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4(color, 1.0);
 }
