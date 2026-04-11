@@ -132,7 +132,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .layerCount           = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments    = &colorAttachmentInfo,
-        .pDepthAttachment     = &depthAttachmentInfo
+        .pDepthAttachment     = &depthAttachmentInfo  // pDepthAttachment 在缩放时有问题。
     };
     vkCmdBeginRendering(cb, &renderingInfo);
 }
