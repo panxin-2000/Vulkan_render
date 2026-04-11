@@ -12,15 +12,23 @@ layout (set = 1, binding = 1) uniform global_projection_4x4
 {
     mat4 projection;
 };
-layout (set = 1, binding = 2) uniform global_world_light
+layout (set = 1, binding = 2) uniform global_ins_view_4x4
+{
+    mat4 invView;
+};
+layout (set = 1, binding = 3) uniform global_inv_projection_4x4
+{
+    mat4 invProjection;
+};
+layout (set = 1, binding = 4) uniform global_world_light
 {
     mat4 lightSpace;
 };
-layout (set = 1, binding = 3) uniform global_world_light_Pos
+layout (set = 1, binding = 5) uniform global_world_light_Pos
 {
     vec3 lightPos;
 };
-layout (set = 1, binding = 4) uniform global_world_view_Pos
+layout (set = 1, binding = 6) uniform global_world_view_Pos
 {
     vec3 viewPos;
 };

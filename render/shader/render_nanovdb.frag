@@ -1,11 +1,11 @@
 #version 450 core
 #extension GL_GOOGLE_include_directive: enable
-
+#include "global_shader_common.glsl"
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-layout (std430, binding = 0) readonly buffer VdbBuffer {
+layout (set = 2, std430, binding = 0) readonly buffer VdbBuffer {
     uint raw_data[];
 } vdb_ssbo;
 
@@ -13,6 +13,8 @@ layout (set = 2, binding = 1) uniform nanovdb_size
 {
     uint size;
 };
+
+layout (location = 0) in vec2 in_UV;
 
 
 // 2. 核心：将库内部访问宏指向这个数组
@@ -87,11 +89,23 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
 
 
 void main() {
+    vec2 ndc = in_UV * 2.0 - 1.0;
+
+    // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
+    vec4 viewTarget = invProjection * vec4(ndc, 1.0, 1.0);
+    vec3 viewDir = viewTarget.xyz / viewTarget.w;
+
+    // 3. 转换到世界空间
+    // 这里 target.xyz / target.w 是世界空间的方向向量
+    vec3 rayDir = normalize((invView * vec4(viewDir, 0.0)).xyz);
+
+    vec3 rayOrigin = viewPos;
+
     pnanovdb_buf_t buf; // = pnanovdb_make_buf(ptr, size / 4);
 
     // 射线的方向可以 由 观察点 和 UV 坐标计算得出
-    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(-110, 0, 0);
-    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(1, 0, 0);
+    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(rayOrigin);
+    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(rayDir);
     float tmax = 1000;
     float tmin = 0;
     if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax)) {
