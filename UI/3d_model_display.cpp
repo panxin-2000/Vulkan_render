@@ -12,6 +12,7 @@
 #include <Eigen/Eigen>
 #include "base_geometry/intersect_function.h"
 #include "model_transform_component.h"
+#include <meshoptimizer.h>
 
 
 entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
@@ -46,7 +47,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     return entity;
 }
 
-entt::entity object_3d_model(const std::string &name, const manifold::MeshGL &mesh, const Point_3 offset,
+entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, const Point_3 offset,
                              const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
@@ -59,6 +60,38 @@ entt::entity object_3d_model(const std::string &name, const manifold::MeshGL &me
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
                                            "", "");
+    const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
+    // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
+
+    // 先优化顶点缓存 (减少 VS 计算)
+    meshopt_optimizeVertexCache(mesh.triVerts.data(),
+                                mesh.triVerts.data(),
+                                mesh.triVerts.size(),
+                                vertex_count);
+
+    // 再优化过渡绘制 (减少 PS 浪费)
+    // 通过重排三角形减少 Overdraw（适合深度前传或不透明物体）
+    meshopt_optimizeOverdraw(mesh.triVerts.data(),
+                             mesh.triVerts.data(),
+                             mesh.triVerts.size(),
+                             mesh.vertProperties.data(), vertex_count,
+                             mesh.numProp * sizeof(float), 1.05f);
+
+    // 最后排列顶点 (提升内存访问效率)
+    // 重新排列顶点属性数据，使内存访问与索引顺序对齐
+    std::vector<float> optimized_vertices(mesh.vertProperties.size());
+    meshopt_optimizeVertexFetch(
+                                optimized_vertices.data(),                  // 输出
+                                mesh.triVerts.data(), mesh.triVerts.size(), // 已优化的索引
+                                mesh.vertProperties.data(),                 // 原始顶点属性
+                                vertex_count,                               // 顶点数
+                                mesh.numProp * sizeof(float)                // 每个顶点的字节步长
+                               );
+
+    // 将优化后的顶点数据写回
+    mesh.vertProperties = std::move(optimized_vertices);
+
+
     auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
     sp_vertices->resize(mesh.vertProperties.size() / mesh.numProp);
