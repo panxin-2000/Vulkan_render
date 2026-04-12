@@ -431,6 +431,16 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
         } else {
             pbr_component.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
         }
+        if (material.emissiveFactor.size() == 3) {
+            pbr_component.EmissiveFactor_ = {
+                static_cast<float>(material.emissiveFactor[0]),
+                static_cast<float>(material.emissiveFactor[1]),
+                static_cast<float>(material.emissiveFactor[2]),
+                1.0f,
+            };
+        } else {
+            pbr_component.EmissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+        }
         if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
             const auto texture_index              = material.pbrMetallicRoughness.baseColorTexture.index;
             const auto image_index                = model.textures[texture_index].source;
@@ -440,6 +450,36 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             set_render_parameter(entity, "samplerColor", temp);
         }
         if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+            const auto texture_index              = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+            const auto image_index                = model.textures[texture_index].source;
+            auto &image                           = model.images[image_index];
+            auto texture                          = load_image(image);
+            std::optional<Texture_parameter> temp = texture;
+            set_render_parameter(entity, "metallicRoughness", temp);
+        }
+        if (material.normalTexture.index >= 0) {
+            const auto texture_index              = material.normalTexture.index;
+            const auto image_index                = model.textures[texture_index].source;
+            auto &image                           = model.images[image_index];
+            auto texture                          = load_image(image);
+            std::optional<Texture_parameter> temp = texture;
+            set_render_parameter(entity, "normal", temp);
+        }
+        if (material.occlusionTexture.index >= 0) {
+            const auto texture_index              = material.occlusionTexture.index;
+            const auto image_index                = model.textures[texture_index].source;
+            auto &image                           = model.images[image_index];
+            auto texture                          = load_image(image);
+            std::optional<Texture_parameter> temp = texture;
+            set_render_parameter(entity, "occlusion", temp);
+        }
+        if (material.emissiveTexture.index >= 0) {
+            const auto texture_index              = material.emissiveTexture.index;
+            const auto image_index                = model.textures[texture_index].source;
+            auto &image                           = model.images[image_index];
+            auto texture                          = load_image(image);
+            std::optional<Texture_parameter> temp = texture;
+            set_render_parameter(entity, "emissive", temp);
         }
     }
 }
