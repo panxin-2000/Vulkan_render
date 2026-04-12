@@ -15,8 +15,10 @@ struct Color {
 };
 
 
-class PBR_component {
+class alignas(16) PBR_component {
 public:
+    // Factor_ 是需要保留的
+
     Color baseColorFactor_; // 基础颜色 和 透明度
     //                         非金属时：代表漫反射颜色。
     //                         金属时：代表反射光的颜色（金属几乎没有漫反射）。
@@ -29,17 +31,26 @@ public:
     float roughnessFactor_; // 粗糙度
     //                         值越高 (1.0/白色)：表面越粗糙，反射光越分散（亚光感）
     //                         值越低 (0.0/黑色)：表面越光滑，反射越清晰（镜面感）
+    float occlusion_strength_; // 强度的公式稍微有点不一样
 
     float alphaCutoff;
-    uint8_t doubleSided = false; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
-    uint8_t alphaMode;           // 有三个值
+    uint32_t doubleSided = false; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
+    uint32_t alphaMode;           // 有三个值
     //                              OPAQUE (不透明 - 默认)
     //                              MASK  基于 alphaCutoff 阈值进行“全有或全无”的硬切
     //                              BLEND (混合/半透明)
-    uint8_t baseColorTexture = -1; // 基础颜色 贴图
-    uint8_t emissiveTexture  = -1; // 自发光 贴图
-    uint8_t ORM_Texture;
-    uint8_t normalTexture;
+    // 需要一个为全为一的贴图，也就是纯白的贴图
+    uint32_t baseColorTexture = 0; // 基础颜色 贴图
+    uint32_t normalTexture    = 0; //
+    uint32_t emissiveTexture  = 0; // 自发光 贴图
+    uint32_t ORM_Texture      = 0; // Occlusion, Roughness, Metallic
+    // 视差贴图 位移贴图
+
+    // 清漆贴图 (Clearcoat Texture)：模拟车漆表面的透明涂层。
+    // 透射贴图 (Transmission Texture)：用于玻璃、水等半透明材质。
+    // 厚度贴图 (Thickness Texture)：配合 KHR_materials_volume 扩展，定义体积材质的厚度。
+    // 光泽贴图 (Sheen Texture)：模拟丝绒、织物的边缘反光。
+
     // uint8_t AlphaTexture;     // 没有专门的一张，baseColorTexture的第四通道
 
     // ORM 合用一张贴图的三个不同通道 必须是 Linear (线性)
