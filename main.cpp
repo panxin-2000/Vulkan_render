@@ -248,18 +248,18 @@ int main(int argc, char *argv[]) {
         auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
         set_render_parameter(entity, "msdf", "atlas.png");
     } {
-        auto value     = get_max_descriptor_update_after_bind_samplers();
-        auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-        uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-        set_render_parameter(entity, "samplerColor", index);
+        auto value  = get_max_descriptor_update_after_bind_samplers();
+        auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        // auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+        // uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        // set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity  = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
-        auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
-        auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
+        auto entity = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
+        // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
+        // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
         // index        = 0;
-        set_render_parameter(entity, "samplerColor", index);
+        // set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     }
 

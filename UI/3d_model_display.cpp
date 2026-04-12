@@ -14,6 +14,8 @@
 #include "model_transform_component.h"
 #include <meshoptimizer.h>
 
+#include "PBR_component.h"
+
 
 entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
                              const Eigen::Quaternionf &rotate) {
@@ -26,7 +28,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
 
     Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                                            "", "");
     add_geometry_data(entity, mesh_path);
     auto [vertices, indices] = load_model(mesh_path);
@@ -42,6 +44,8 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     set_render_parameter(entity, "model_4x4", modelMatrix);
 
     world_root_add_child(entity);
+    auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
+    set_render_parameter(entity, "object_material", material);
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     return entity;

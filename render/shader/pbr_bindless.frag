@@ -23,7 +23,7 @@ layout (location = 4) in vec4 inShadowCoord;
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-layout (set = 2, binding = 3) uniform object_material {
+layout (set = 2, binding = 1) uniform object_material {
     ShaderMaterial material;
 };
 

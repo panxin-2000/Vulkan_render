@@ -72,6 +72,7 @@ public:
     [[nodiscard]] uint64_t get_finished_timeline() const {
         uint64_t current_timeline;
         // todo: 偶尔出现一个这个错误，应该是两个线程之间的一个同步问题
+        // 确定一下 这个 can't be called on VkImageView 出现后才会出现  assert 失败的情况
         VkResult result = vkGetSemaphoreCounterValue(get_device(), vk_timeline_semaphore_, &current_timeline);
         assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
         return current_timeline;

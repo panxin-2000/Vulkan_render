@@ -354,9 +354,10 @@ entt::entity load_node_data(tinygltf::Model &model,
     Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
     Logic_entt().emplace<VKR_shader_paths>(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                                            "", "");
-
+    auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
+    set_render_parameter(entity, "object_material", material);
     Logic_entt().emplace<Name_component>(entity, node.name);
     set_model_matrix(entity, model, current_node_index);
 
