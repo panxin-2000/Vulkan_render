@@ -42,6 +42,9 @@ class alignas(16) model_transform {
     Point_3 offset_            = {0, 0, 0};
 
 public:
+    explicit model_transform(const Eigen::Matrix4f matrix) {
+    }
+
     explicit model_transform(const Point_3 offset) {
         offset_ = offset;
     }

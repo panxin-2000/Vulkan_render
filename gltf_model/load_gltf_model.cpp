@@ -59,6 +59,22 @@ Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index
     return {0, 0, 0};
 }
 
+std::vector<double> get_matrix_from_model(const tinygltf::Model &model, const int node_index) {
+    std::vector<double> translation;
+    int nodes_num = model.nodes.size();
+    if (node_index > nodes_num) {
+        return translation;
+    } else {
+        auto node = model.nodes[node_index];
+        if (node.translation.empty()) {
+            return translation;
+        } else if (node.translation.size() == 3) {
+            return node.matrix;
+        }
+    }
+    return translation;
+}
+
 Point_3 get_zoom_from_model(const tinygltf::Model &model, const int node_index) {
     Point_3 zoom{1, 1, 1};
     int nodes_num = model.nodes.size();
@@ -251,6 +267,29 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
     add_geometry_data(entity, sp_vertices, sp_indices);
 }
 
+
+void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, const int current_node_index) {
+    Eigen::Matrix4f temp_matrix;
+    auto temp = get_matrix_from_model(model, current_node_index);
+    if (!temp.empty()) {
+        for (int i = 0; i < temp.size(); ++i) {
+            auto *p_float = reinterpret_cast<float *>(&temp_matrix);
+            p_float[i]    = static_cast<float>(temp.at(i));
+        }
+        const auto &transform = Logic_entt().emplace_or_replace<model_transform>(entity, temp_matrix);
+        set_render_parameter(entity, "model_4x4", temp_matrix);
+        return;
+    }
+    // matrix 与之前的内容互斥 搞定互斥的部分
+
+    Point_3 offset            = get_offset_from_model(model, current_node_index);
+    Point_3 zoom              = get_zoom_from_model(model, current_node_index);
+    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
+    const auto &transform     = Logic_entt().emplace_or_replace<model_transform>(entity, offset, rotate, zoom);
+    const auto modelMatrix    = transform.update_model_matrix();
+    set_render_parameter(entity, "model_4x4", modelMatrix);
+}
+
 /**
  *
  * @param model
@@ -278,15 +317,7 @@ entt::entity load_node_data(tinygltf::Model &model,
                                            "", "");
 
     Logic_entt().emplace<Name_component>(entity, node.name);
-
-    Point_3 offset            = get_offset_from_model(model, current_node_index);
-    Point_3 zoom              = get_zoom_from_model(model, current_node_index);
-    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
-    // matrix 与之前的内容互斥 但是没有搞定互斥的部分
-    const auto &transform  = Logic_entt().emplace_or_replace<model_transform>(entity, offset, rotate, zoom);
-    const auto modelMatrix = transform.update_model_matrix();
-    set_render_parameter(entity, "model_4x4", modelMatrix);
-
+    set_model_matrix(entity, model, current_node_index);
 
     if (node.mesh >= 0) {
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
