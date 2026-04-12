@@ -163,11 +163,18 @@ int main(int argc, char *argv[]) {
     UI_block("功能块", 0, 0, 50, 200);
     UI_block("按钮2", 0, 0, 145, 130);
 
-    //
+    // 添加一张纯白的背景图片
+    {
+        std::optional<Texture_parameter> white_texture = create_white_texture();
+        uint32_t index = add_bindless_uniform_sampler2D("white_color_texture", white_texture);
+        assert(index == 0);
+    }
+    // Some allocations were not freed before destruction of this memory block
+    // 应该是这里出的问题，需要 free ，有 free 的函数，什么时候调用
     {
     }
     // load_gltf_model("sky box", "assets/Box.gltf");
-    load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
+    // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
     // 天空盒
     {
@@ -248,9 +255,10 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity  = load_gltf_model("sphere", "assets/venus.gltf");
+        auto entity  = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
         auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
         auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
+        // index        = 0;
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     }
@@ -274,6 +282,7 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
+    // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
     Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
     // vk_render_GPU::instance().exit_and_clean(backend);

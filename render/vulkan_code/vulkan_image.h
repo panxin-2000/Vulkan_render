@@ -114,6 +114,7 @@ Texture_parameter create_skybox_texture_all(const std::string &picture_path);
 
 Texture_parameter create_2d_texture(const std::string &picture_path);
 
+Texture_parameter create_white_texture();
 
 void discard_image_and_view_map_clean();
 #endif //HELLO_MAC_VULKAN_IMAGE_H

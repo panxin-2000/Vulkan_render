@@ -525,6 +525,20 @@ Texture_parameter create_2d_texture(const std::string &picture_path) {
     return result;
 }
 
+
+Texture_parameter create_white_texture() {
+    Picture_parameters picture_parameters{};
+    picture_parameters.height = 2;
+    picture_parameters.width  = 2;
+    std::array<uint8_t, 2 * 2 * 4> color_array{};
+    for (unsigned char &color: color_array) color = 255;
+    picture_parameters.image_data = color_array.data();
+    picture_parameters.channels   = 4;
+    auto result                   = create_2d_texture(picture_parameters);
+    return result;
+}
+
+
 Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     auto &handle = VK_backend::get();
     std::vector<std::string> paths;
