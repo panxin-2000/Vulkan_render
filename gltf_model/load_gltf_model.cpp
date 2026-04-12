@@ -168,8 +168,9 @@ int get_stride(const tinygltf::Model &model, const tinygltf::Accessor &current_a
 
 struct Attribute {
     const unsigned char *data_ptr = nullptr;
-    int element_size              = 0;
-    int element_stride            = 0;
+    size_t element_size           = 0;
+    size_t element_count          = 0;
+    size_t element_stride         = 0;
 };
 
 unsigned char *memcpy_attribute(unsigned char *dst_address, Attribute attribute, const uint32_t index) {
@@ -183,13 +184,14 @@ void read_attribute(tinygltf::Model &model, tinygltf::Accessor &accessor, Attrib
     attribute.data_ptr       = get_accessor_start_address(model, accessor);
     attribute.element_size   = get_element_size(accessor);
     attribute.element_stride = get_stride(model, accessor);
+    attribute.element_count  = accessor.count;
 }
 
 unsigned char *memcopy_all_attributes(const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                                      Attribute position,
-                                      Attribute normal,
-                                      Attribute texcoord,
-                                      const uint32_t count) {
+                                      const Attribute &position,
+                                      const Attribute &normal,
+                                      const Attribute &texcoord) {
+    const uint32_t count                = position.element_count;
     const auto sp_vertices_current_size = sp_vertices->size();
     sp_vertices->resize(sp_vertices_current_size + count);
     auto dst_address = reinterpret_cast<unsigned char *>(sp_vertices->data() + sp_vertices_current_size);
@@ -207,6 +209,7 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
     Attribute normal   = {nullptr, 12, 0};
     Attribute texcoord = {nullptr, 8, 0};
 
+    // todo: 这三个可以看看应该怎么删除了，下一步要做的
     std::optional<tinygltf::Accessor> position_accessor;
     std::optional<tinygltf::Accessor> normal_accessor;
     std::optional<tinygltf::Accessor> texcoord_accessor;
@@ -216,32 +219,37 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
         auto it = primitive.attributes.find("POSITION");
         if (it != primitive.attributes.end()) {
             position_accessor = model.accessors[it->second];
-            read_attribute(model, position_accessor.value(), position);
+            read_attribute(model, model.accessors[it->second], position);
         }
     } {
         auto it = primitive.attributes.find("NORMAL");
         if (it != primitive.attributes.end()) {
             normal_accessor = model.accessors[it->second];
-            read_attribute(model, normal_accessor.value(), normal);
+            read_attribute(model, model.accessors[it->second], normal);
         }
     } {
         auto it = primitive.attributes.find("TEXCOORD_0");
         if (it != primitive.attributes.end()) {
             texcoord_accessor = model.accessors[it->second];
-            read_attribute(model, texcoord_accessor.value(), texcoord);
+            read_attribute(model, model.accessors[it->second], texcoord);
         }
     }
-    // 这里的处理稍微有点问题  // TEXCOORD_0 没有时没有进行完整的复制
-
+    memcopy_all_attributes(sp_vertices, position, normal, texcoord);
+    // 之后就是看如何进行细分加速了
+    // 这里可以直接用一个替代的原因是 position, normal, texcoord 的 count 是一致的，不一致就会有问题
+    return;
     if (position_accessor.has_value() && normal_accessor.has_value() && !texcoord_accessor.has_value() &&
         position_accessor.value().count == normal_accessor.value().count) {
         if (position.element_stride == position.element_size && normal.element_stride == normal.element_size) {
             // 这里if的判断是为了确定是 三个属性是 单独 存储的
-            memcopy_all_attributes(sp_vertices, position, normal, texcoord, position_accessor.value().count);
+            memcopy_all_attributes(sp_vertices, position, normal, texcoord);
         }
     }
     if (position_accessor.has_value() && !normal_accessor.has_value() && !texcoord_accessor.has_value()) {
-        memcopy_all_attributes(sp_vertices, position, normal, texcoord, position_accessor.value().count);
+        memcopy_all_attributes(sp_vertices, position, normal, texcoord);
+    }
+    if (position_accessor.has_value() && !normal_accessor.has_value() && texcoord_accessor.has_value()) {
+        memcopy_all_attributes(sp_vertices, position, normal, texcoord);
     }
 
     if (position_accessor.has_value() && normal_accessor.has_value() && texcoord_accessor.has_value() &&
@@ -255,12 +263,13 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
             position.element_size == normal_accessor.value().byteOffset &&
             position.element_size + normal.element_size == texcoord_accessor.value().byteOffset) {
             LOG_INFO(g_log(), "need deal continue position normal texcoord ");
+            assert(false && "need deal continue position normal texcoord");
         }
 
         if (position.element_stride == position.element_size &&
             normal.element_stride == normal.element_size &&
             texcoord.element_stride == texcoord.element_size) {
-            memcopy_all_attributes(sp_vertices, position, normal, texcoord, position_accessor.value().count);
+            memcopy_all_attributes(sp_vertices, position, normal, texcoord);
         }
     }
 }
