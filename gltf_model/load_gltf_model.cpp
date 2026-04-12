@@ -170,41 +170,72 @@ int get_stride(const tinygltf::Model &model, const tinygltf::Accessor &current_a
 void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices, tinygltf::Model &model,
                         const tinygltf::Primitive &primitive) {
     std::optional<tinygltf::Accessor> position_accessor;
+    const unsigned char *position_data_ptr;
     std::optional<tinygltf::Accessor> normal_accessor;
+    const unsigned char *normal_data_ptr;
     std::optional<tinygltf::Accessor> texcoord_accessor;
+    const unsigned char *texcoord_data_ptr;
+
+    int position_element_size = 12;
+    int normal_element_size   = 12;
+    int texcoord_element_size = 8;
+
+    int position_element_stride = 0;
+    int normal_element_stride   = 0;
+    int texcoord_element_stride = 0;
+
+
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
         auto it = primitive.attributes.find("POSITION");
         if (it != primitive.attributes.end()) {
-            position_accessor = model.accessors[it->second];
+            position_accessor       = model.accessors[it->second];
+            position_data_ptr       = get_accessor_start_address(model, position_accessor.value());
+            position_element_size   = get_element_size(position_accessor.value());
+            position_element_stride = get_stride(model, position_accessor.value());
         }
     } {
         auto it = primitive.attributes.find("NORMAL");
         if (it != primitive.attributes.end()) {
-            normal_accessor = model.accessors[it->second];
+            normal_accessor       = model.accessors[it->second];
+            normal_data_ptr       = get_accessor_start_address(model, normal_accessor.value());
+            normal_element_size   = get_element_size(normal_accessor.value());
+            normal_element_stride = get_stride(model, normal_accessor.value());
         }
     } {
         auto it = primitive.attributes.find("TEXCOORD_0");
         if (it != primitive.attributes.end()) {
-            texcoord_accessor = model.accessors[it->second];
+            texcoord_accessor       = model.accessors[it->second];
+            texcoord_data_ptr       = get_accessor_start_address(model, texcoord_accessor.value());
+            texcoord_element_size   = get_element_size(texcoord_accessor.value());
+            texcoord_element_stride = get_stride(model, texcoord_accessor.value());
         }
     }
+    // 这里的处理稍微有点问题  // TEXCOORD_0 没有时没有进行完整的复制
+
+    if (position_accessor.has_value() && normal_accessor.has_value() && !texcoord_accessor.has_value() &&
+        position_accessor.value().count == normal_accessor.value().count) {
+        if (position_element_stride == position_element_size &&
+            normal_element_stride == normal_element_size) {
+            const auto sp_vertices_current_size = sp_vertices->size();
+            sp_vertices.get()->resize(sp_vertices_current_size + position_accessor.value().count);
+            unsigned char *dst_address = reinterpret_cast<unsigned char *>
+                    (sp_vertices.get()->data() + sp_vertices_current_size);
+            for (size_t i = 0; i < position_accessor.value().count; ++i) {
+                memcpy(dst_address, position_data_ptr + i * position_element_size, position_element_size);
+                dst_address += position_element_size;
+                memcpy(dst_address, normal_data_ptr + i * normal_element_size, normal_element_size);
+                dst_address += normal_element_size;
+                // memcpy(dst_address, texcoord_data_ptr + i * texcoord_element_size, texcoord_element_size);
+                dst_address += texcoord_element_size;
+            }
+        }
+    }
+
     if (position_accessor.has_value() && normal_accessor.has_value() && texcoord_accessor.has_value() &&
         position_accessor.value().count == normal_accessor.value().count &&
         position_accessor.value().count == texcoord_accessor.value().count) {
-        const unsigned char *position_data_ptr =
-                get_accessor_start_address(model, position_accessor.value());
-        const unsigned char *normal_data_ptr =
-                get_accessor_start_address(model, normal_accessor.value());
-        const unsigned char *texcoord_data_ptr =
-                get_accessor_start_address(model, texcoord_accessor.value());
-        const int position_element_size   = get_element_size(position_accessor.value());
-        const int normal_element_size     = get_element_size(normal_accessor.value());
-        const int texcoord_element_size   = get_element_size(texcoord_accessor.value());
-        const int position_element_stride = get_stride(model, position_accessor.value());
-        const int normal_element_stride   = get_stride(model, normal_accessor.value());
-        const int texcoord_element_stride = get_stride(model, texcoord_accessor.value());
-        const int all_elements_size       = position_element_size + normal_element_size + texcoord_element_size;
+        const int all_elements_size = position_element_size + normal_element_size + texcoord_element_size;
         if (position_element_stride == all_elements_size &&
             texcoord_element_stride == all_elements_size &&
             normal_element_stride == all_elements_size &&

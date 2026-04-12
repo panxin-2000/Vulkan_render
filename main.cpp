@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
-        auto entity  = load_gltf_model("sphere", "assets/sphere.gltf");
+        auto entity  = load_gltf_model("sphere", "assets/teapot.gltf");
         auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
         auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
         set_render_parameter(entity, "samplerColor", index);
