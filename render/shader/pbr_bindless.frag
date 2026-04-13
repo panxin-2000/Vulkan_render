@@ -207,18 +207,25 @@ void main()
     float metallic = get_Metallic(material, inUV);
     vec3 base_color = get_base_color(material, inUV).rgb;
 
+
+    vec3 f0 = mix(vec3(0.04), base_color.rgb, metallic);
+    vec3 c_diff = base_color.rgb * (1.0 - f0) * (1.0 - metallic);
+
+    // 3. Lambert 漫反射计算
+    vec3 diffuseBRDF = c_diff / 3.14159265359;
+
     vec3 N = get_normal(inWorldPos, inNormal, inUV);
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
+    // 4. 结合光源（假设光源颜色为 lightColor）
+    float dotNL = clamp(dot(N, L), 0.0, 1.0);
+
+    vec3 lightColor = vec3(1.0);
+
+    vec3 finalDiffuse = diffuseBRDF * lightColor * dotNL;
 
     // 这里其实并没有把遮挡算进去
     vec3 Lo = BRDF(L, V, N, base_color, metallic, roughness);
-
-    vec3 ambient = base_color * 0.04;
-
-
-    vec3 out_color = ambient + Lo;
-
-
+    vec3 out_color = finalDiffuse + Lo;
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
 }
