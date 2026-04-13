@@ -16,6 +16,7 @@
 #include "descriptor_pool.h"
 #include "earcut.h"
 #include "load_gltf_model.h"
+#include "PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
@@ -248,11 +249,11 @@ int main(int argc, char *argv[]) {
         auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
         set_render_parameter(entity, "msdf", "atlas.png");
     } {
-        auto value  = get_max_descriptor_update_after_bind_samplers();
-        auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        // auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-        // uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-        // set_render_parameter(entity, "samplerColor", index);
+        auto value     = get_max_descriptor_update_after_bind_samplers();
+        auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+        uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        set_baseColor_Texture_index(entity, index);
         logic_update_add_tag<opacity_tag>(entity);
     } {
         auto entity = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");

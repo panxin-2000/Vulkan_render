@@ -433,14 +433,14 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             pbr_component.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
         }
         if (material.emissiveFactor.size() == 3) {
-            pbr_component.EmissiveFactor_ = {
+            pbr_component.emissiveFactor_ = {
                 static_cast<float>(material.emissiveFactor[0]),
                 static_cast<float>(material.emissiveFactor[1]),
                 static_cast<float>(material.emissiveFactor[2]),
                 1.0f,
             };
         } else {
-            pbr_component.EmissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+            pbr_component.emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
         }
         if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
             const auto texture_index              = material.pbrMetallicRoughness.baseColorTexture.index;

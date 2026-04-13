@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_PBR_COMPONENT_H
 #define HELLO_MAC_PBR_COMPONENT_H
-#include <glm/fwd.hpp>
+#include "global_singleton.h"
 
 
 struct Color {
@@ -22,7 +22,7 @@ public:
     Color baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f}; // 基础颜色 和 透明度
     //                         非金属时：代表漫反射颜色。
     //                         金属时：代表反射光的颜色（金属几乎没有漫反射）。
-    Color EmissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f}; // 自发光
+    Color emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f}; // 自发光
 
     //   渲染方程中的 材料属性输入
     float metallicFactor_ = 1.0f; // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。
@@ -61,4 +61,21 @@ public:
 };
 
 
+void set_PBR_base_color(const entt::entity entity, Color baseColorFactor = {1.0f, 1.0f, 1.0f, 1.0f});
+
+
+void set_PBR_Emissive_color(const entt::entity entity, Color EmissiveFactor = {1.0f, 1.0f, 1.0f, 1.0f});
+
+void set_PBR_metallic_roughness_occlusion(const entt::entity entity,
+                                          float metallic  = 1.0f,
+                                          float roughness = 1.0f,
+                                          float occlusion = 1.0f);
+
+void set_baseColor_Texture_index(const entt::entity entity, uint32_t index = 0);
+
+void set_normal_Texture_index(const entt::entity entity, uint32_t index = 0);
+
+void set_emissive_Texture_index(const entt::entity entity, uint32_t index = 0);
+
+void set_ORM_Texture_index(const entt::entity entity, uint32_t index = 0);
 #endif //HELLO_MAC_PBR_COMPONENT_H
