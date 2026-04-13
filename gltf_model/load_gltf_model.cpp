@@ -419,36 +419,39 @@ Texture_parameter load_image(tinygltf::Image &image) {
 
 void load_material(const entt::entity entity, tinygltf::Model &model) {
     for (const auto &material: model.materials) {
-        PBR_component pbr_component;
-        pbr_component.metallicFactor_  = material.pbrMetallicRoughness.metallicFactor;
-        pbr_component.roughnessFactor_ = material.pbrMetallicRoughness.roughnessFactor;
+        auto pbr_material = Logic_entt().get_or_emplace<PBR_component>(entity);
+
+        pbr_material.metallicFactor_  = material.pbrMetallicRoughness.metallicFactor;
+        pbr_material.roughnessFactor_ = material.pbrMetallicRoughness.roughnessFactor;
         if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
-            pbr_component.baseColorFactor_ = {
+            pbr_material.baseColorFactor_ = {
                 static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
                 static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
                 static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
                 static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]),
             };
         } else {
-            pbr_component.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+            pbr_material.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
         }
         if (material.emissiveFactor.size() == 3) {
-            pbr_component.emissiveFactor_ = {
+            pbr_material.emissiveFactor_ = {
                 static_cast<float>(material.emissiveFactor[0]),
                 static_cast<float>(material.emissiveFactor[1]),
                 static_cast<float>(material.emissiveFactor[2]),
                 1.0f,
             };
         } else {
-            pbr_component.emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+            pbr_material.emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
         }
+        pbr_material.occlusion_strength_ = static_cast<float>(material.occlusionTexture.strength);
         if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
             const auto texture_index              = material.pbrMetallicRoughness.baseColorTexture.index;
             const auto image_index                = model.textures[texture_index].source;
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            set_render_parameter(entity, "samplerColor", temp);
+            uint32_t index                        = add_bindless_uniform_sampler2D("baseColor", temp);
+            pbr_material.baseColorTexture         = index;
         }
         if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
             const auto texture_index              = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -456,7 +459,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            set_render_parameter(entity, "metallicRoughness", temp);
+            uint32_t index                        = add_bindless_uniform_sampler2D("metallicRoughness", temp);
+            pbr_material.ORM_Texture              = index;
         }
         if (material.normalTexture.index >= 0) {
             const auto texture_index              = material.normalTexture.index;
@@ -465,6 +469,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
             set_render_parameter(entity, "normal", temp);
+            uint32_t index             = add_bindless_uniform_sampler2D("normal", temp);
+            pbr_material.normalTexture = index;
         }
         if (material.occlusionTexture.index >= 0) {
             const auto texture_index              = material.occlusionTexture.index;
@@ -472,7 +478,9 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            set_render_parameter(entity, "occlusion", temp);
+            uint32_t index                        = add_bindless_uniform_sampler2D("occlusion", temp);
+            // pbr_material.ORM_Texture              = index;
+            // todo: ORM_Texture 需要合并两张贴图 问题是在这里应该如何合并
         }
         if (material.emissiveTexture.index >= 0) {
             const auto texture_index              = material.emissiveTexture.index;
@@ -480,8 +488,10 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            set_render_parameter(entity, "emissive", temp);
+            uint32_t index                        = add_bindless_uniform_sampler2D("emissive", temp);
+            pbr_material.emissiveTexture          = index;
         }
+        set_render_parameter(entity, "object_material", pbr_material);
     }
 }
 
