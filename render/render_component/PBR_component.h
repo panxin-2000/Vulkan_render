@@ -41,7 +41,7 @@ public:
     //                              BLEND (混合/半透明)
     // 需要一个为全为一的贴图，也就是纯白的贴图
     uint32_t baseColorTexture = 0; // 基础颜色 贴图
-    uint32_t normalTexture    = 0; //
+    uint32_t normalTexture    = 1; //
     uint32_t emissiveTexture  = 0; // 自发光 贴图
     uint32_t ORM_Texture      = 0; // Occlusion, Roughness, Metallic
     // 视差贴图 位移贴图
@@ -73,7 +73,7 @@ void set_PBR_metallic_roughness_occlusion(const entt::entity entity,
 
 void set_baseColor_Texture_index(const entt::entity entity, uint32_t index = 0);
 
-void set_normal_Texture_index(const entt::entity entity, uint32_t index = 0);
+void set_normal_Texture_index(const entt::entity entity, uint32_t index = 1);
 
 void set_emissive_Texture_index(const entt::entity entity, uint32_t index = 0);
 

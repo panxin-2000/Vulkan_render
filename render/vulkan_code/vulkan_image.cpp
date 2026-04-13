@@ -526,12 +526,18 @@ Texture_parameter create_2d_texture(const std::string &picture_path) {
 }
 
 
-Texture_parameter create_white_texture() {
+Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, const uint8_t B) {
     Picture_parameters picture_parameters{};
     picture_parameters.height = 2;
     picture_parameters.width  = 2;
     std::array<uint8_t, 2 * 2 * 4> color_array{};
-    for (unsigned char &color: color_array) color = 255;
+    for (uint i = 0; i < color_array.size();) {
+        color_array[i]     = R;
+        color_array[i + 1] = G;
+        color_array[i + 2] = B;
+        color_array[i + 3] = 0xFF;
+        i                  += 4;
+    }
     picture_parameters.image_data = color_array.data();
     picture_parameters.channels   = 4;
     auto result                   = create_2d_texture(picture_parameters);

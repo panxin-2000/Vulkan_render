@@ -166,9 +166,14 @@ int main(int argc, char *argv[]) {
 
     // 添加一张纯白的背景图片
     {
-        std::optional<Texture_parameter> white_texture = create_white_texture();
-        uint32_t index = add_bindless_uniform_sampler2D("white_color_texture", white_texture);
+        std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
+        uint32_t index = add_bindless_uniform_sampler2D("default_base_Color_texture", texture);
         assert(index == 0);
+    } // 添加一张纯白的背景图片
+    {
+        std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
+        uint32_t index                           = add_bindless_uniform_sampler2D("default_normal_texture", texture);
+        assert(index == 1);
     }
     // Some allocations were not freed before destruction of this memory block
     // 应该是这里出的问题，需要 free ，有 free 的函数，什么时候调用
