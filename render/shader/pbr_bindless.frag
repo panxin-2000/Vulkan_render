@@ -18,7 +18,9 @@ layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec4 inShadowCoord;
+layout (location = 5) in vec3 inWorldPos;
 
+// 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
@@ -144,15 +146,68 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughnes
 
 
 
+
+// Calculation of TBN matrix and terminology based on "Surface
+// Gradient-Based Bump Mapping Framework" (2020)
+mat3
+ComputeTBNMatrix(vec3 P, vec3 N, vec2 st)
+{
+    // Get screen space derivatives of position
+    vec3 dPdx = dFdx(P);
+    vec3 dPdy = dFdy(P);
+
+    // Ensure position derivatives are perpendicular to N
+    vec3 sigmaX = dPdx - dot(dPdx, N) * N;
+    vec3 sigmaY = dPdy - dot(dPdy, N) * N;
+
+    float flipSign = dot(dPdy, cross(N, dPdx)) < 0 ? -1 : 1;
+
+    // Get screen space derivatives of st
+    vec2 dSTdx = dFdx(st);
+    vec2 dSTdy = dFdy(st);
+
+    // Get determinant and determinant sign of st matrix
+    float det = dot(dSTdx, vec2(dSTdy.y, -dSTdy.x));
+    float signDet = det < 0 ? -1 : 1;
+
+    // Get first column of inv st matrix
+    // Don't divide by det, but scale by its sign
+    vec2 invC0 = signDet * vec2(dSTdy.y, -dSTdx.y);
+
+    vec3 T = sigmaX * invC0.x + sigmaY * invC0.y;
+
+    if (abs(det) > 0) {
+        T = normalize(T);
+    }
+
+    vec3 B = (signDet * flipSign) * cross(N, T);
+
+    return mat3(T, B, N);
+}
+
+
+vec3 get_normal(vec3 world_pos, vec3 inNormal, vec2 inUV) {
+    // 1. 从贴图采样（得到 0.0 到 1.0 之间的值）
+    vec3 normalSample = texture(bindless_samplerColorMap[material.normalTexture], inUV).rgb;
+    // 2. 解码到 [-1, 1] 范围
+    // 公式：n = color * 2.0 - 1.0
+    vec3 tangent_space_Normal = normalSample * 2.0 - 1.0;
+
+    vec3 N_object = normalize(inNormal);
+    mat3 TBN = ComputeTBNMatrix(world_pos, N_object, inUV);
+    vec3 N = TBN * normalize(tangent_space_Normal);
+    return N;
+
+}
+
 void main()
 {
-
 
     float roughness = get_Roughness(material, inUV);
     float metallic = get_Metallic(material, inUV);
     vec3 base_color = get_base_color(material, inUV).rgb;
 
-    vec3 N = normalize(inNormal);
+    vec3 N = get_normal(inWorldPos, inNormal, inUV);
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
 

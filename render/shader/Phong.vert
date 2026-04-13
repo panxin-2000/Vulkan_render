@@ -47,6 +47,7 @@ layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outLightVec;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec4 outShadowCoord;
+layout (location = 5) out vec3 outWorldPos;
 
 
 const mat4 biasMat = mat4(
@@ -58,12 +59,13 @@ const mat4 biasMat = mat4(
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
+    vec4 pos = model * vec4(inPos.xyz, 1.0);
+    outWorldPos = pos.xyz;
+    gl_Position = projection * view * pos;
     outNormal = inNormal;
     outUV = inUV;
     // 世界空间
     outNormal = mat3(model) * inNormal;
-    vec4 pos = model * vec4(inPos.xyz, 1.0);
     outLightVec = lightPos.xyz - pos.xyz;
     outViewVec = viewPos.xyz - pos.xyz;
 
