@@ -22,7 +22,7 @@ public:
     Color baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f}; // 基础颜色 和 透明度
     //                         非金属时：代表漫反射颜色。
     //                         金属时：代表反射光的颜色（金属几乎没有漫反射）。
-    Color emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f}; // 自发光
+    Color emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f}; // 自发光
 
     //   渲染方程中的 材料属性输入
     float metallicFactor_ = 1.0f; // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。

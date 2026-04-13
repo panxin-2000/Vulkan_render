@@ -104,13 +104,20 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 vec3 F_Schlick(float cosTheta, vec3 baseColor, float metallic)
 {
     vec3 F0 = mix(vec3(0.04), baseColor, metallic); // * material.specular
-    vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    vec3 F = F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0, 1), 5.0);
     return F;
 }
 
 // Specular BRDF composition --------------------------------------------
 
 
+vec3 get_BRDF(float dotNV, float dotNL, float dotLH, float dotNH, float D, float G, vec3 F) {
+    vec3 color = vec3(0.0);
+    vec3 lightColor = vec3(1.0);
+    vec3 spec = D * F * G / (4.0 * dotNL * dotNV);
+    color += spec * dotNL * lightColor;
+    return color;
+}
 
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughness)
 {
@@ -128,11 +135,10 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughnes
 
     if (dotNL > 0.0)
     {
-        float rroughness = max(0.05, roughness);
         // D = Normal distribution (Distribution of the microfacets)
         float D = D_GGX(dotNH, roughness);
         // G = Geometric shadowing term (Microfacets shadowing)
-        float G = G_SchlicksmithGGX(dotNL, dotNV, rroughness);
+        float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
         // F = Fresnel factor (Reflectance depending on angle of incidence)
         vec3 F = F_Schlick(dotNV, baseColor, metallic);
 
@@ -207,25 +213,49 @@ void main()
     float metallic = get_Metallic(material, inUV);
     vec3 base_color = get_base_color(material, inUV).rgb;
 
+    // 2. 通过 SH 函数计算当前法线方向受到的环境光辐射
+    // 这个函数返回的是该方向上的预集成光照
+    //    vec3 irradiance = computeSH(worldNormal);
 
-    vec3 f0 = mix(vec3(0.04), base_color.rgb, metallic);
-    vec3 c_diff = base_color.rgb * (1.0 - f0) * (1.0 - metallic);
+    // 3. 最终环境漫反射颜色
+    // 注意：标准的 SH 预计算通常已经把 1/PI 包含在系数里了，所以这里直接乘
+    //    vec3 indirectDiffuse = irradiance * c_diff;
+
+    // 4. 应用 AO（环境遮蔽）
+    //    indirectDiffuse *= occlusion;  // 不需要dotNL
+
 
     // 3. Lambert 漫反射计算
-    vec3 diffuseBRDF = c_diff / 3.14159265359;
 
     vec3 N = get_normal(inWorldPos, inNormal, inUV);
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
-    // 4. 结合光源（假设光源颜色为 lightColor）
+    vec3 H = normalize(V + L);
+    float dotNV = clamp(dot(N, V), 0.0, 1.0);
     float dotNL = clamp(dot(N, L), 0.0, 1.0);
+    float dotLH = clamp(dot(L, H), 0.0, 1.0);
+    float dotNH = clamp(dot(N, H), 0.0, 1.0);
+    float D = D_GGX(dotNH, roughness);
+    // G = Geometric shadowing term (Microfacets shadowing)
+    float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
+    // F = Fresnel factor (Reflectance depending on angle of incidence)
+    vec3 F = F_Schlick(dotNV, base_color, metallic);
 
-    vec3 lightColor = vec3(1.0);
 
-    vec3 finalDiffuse = diffuseBRDF * lightColor * dotNL;
+    vec3 k_d = (1 - F) * (1.0 - metallic);
+    vec3 f_lambert = base_color.rgb / 3.14159265359;
+    vec3 indirectDiffuse = k_d * f_lambert;
+    // indirectDiffuse *= occlusion;  // 环境光遮蔽  occlusion 应该怎么样获取或提前计算
+    // 球谐函数部分的算法
+    // vec3 irradiance = computeSH(worldNormal);
+    // vec3 indirectDiffuse = kd * irradiance * baseColor;
+    // indirectDiffuse 间接漫反射
 
     // 这里其实并没有把遮挡算进去
-    vec3 Lo = BRDF(L, V, N, base_color, metallic, roughness);
-    vec3 out_color = finalDiffuse + Lo;
+    vec3 finalSpecular = get_BRDF(dotNV, dotNL, dotLH, dotNH, D, G, F);
+
+    vec3 finalEmissive = get_emissive_color(material, inUV).rgb;
+    vec3 out_color = finalEmissive + indirectDiffuse + finalSpecular;
+
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
 }

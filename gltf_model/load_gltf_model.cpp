@@ -441,7 +441,7 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
                 1.0f,
             };
         } else {
-            pbr_material.emissiveFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
+            pbr_material.emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f};
         }
         pbr_material.occlusion_strength_ = static_cast<float>(material.occlusionTexture.strength);
         if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
