@@ -117,39 +117,9 @@ vec3 get_BRDF(float dotNV, float dotNL, float dotLH, float dotNH, float D, float
     vec3 spec = D * F * G / (4.0 * dotNL * dotNV);
     color += spec * dotNL * lightColor;
     return color;
+    // 法线与半程向量非常接近时会出现高光                 形成一个极亮、极小的高光点（类似太阳在镜子里的倒影）
+    // dotNL  dotNV 都接近 90度时，也就是值都接近于零时   在物体轮廓边缘产生一道极亮的“银边”
 }
-
-vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughness)
-{
-    // Precalculate vectors and dot products
-    vec3 H = normalize(V + L);
-    float dotNV = clamp(dot(N, V), 0.0, 1.0);
-    float dotNL = clamp(dot(N, L), 0.0, 1.0);
-    float dotLH = clamp(dot(L, H), 0.0, 1.0);
-    float dotNH = clamp(dot(N, H), 0.0, 1.0);
-
-    // Light color fixed
-    vec3 lightColor = vec3(1.0);
-
-    vec3 color = vec3(0.0);
-
-    if (dotNL > 0.0)
-    {
-        // D = Normal distribution (Distribution of the microfacets)
-        float D = D_GGX(dotNH, roughness);
-        // G = Geometric shadowing term (Microfacets shadowing)
-        float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
-        // F = Fresnel factor (Reflectance depending on angle of incidence)
-        vec3 F = F_Schlick(dotNV, baseColor, metallic);
-
-        vec3 spec = D * F * G / (4.0 * dotNL * dotNV);
-
-        color += spec * dotNL * lightColor;
-    }
-
-    return color;
-}
-
 
 
 
@@ -231,8 +201,8 @@ void main()
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
     vec3 H = normalize(V + L);
-    float dotNV = clamp(dot(N, V), 0.0, 1.0);
-    float dotNL = clamp(dot(N, L), 0.0, 1.0);
+    float dotNV = clamp(dot(N, V), 0.0001, 1.0); // 会作为分母，需要一个偏移
+    float dotNL = clamp(dot(N, L), 0.0001, 1.0); // 会作为分母，需要一个偏移
     float dotLH = clamp(dot(L, H), 0.0, 1.0);
     float dotNH = clamp(dot(N, H), 0.0, 1.0);
     float D = D_GGX(dotNH, roughness);
@@ -258,4 +228,5 @@ void main()
     vec3 out_color = finalEmissive + indirectDiffuse + finalSpecular;
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
+    // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }
