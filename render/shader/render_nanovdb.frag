@@ -124,24 +124,26 @@ void main() {
     vec2 ndc = in_UV * 2.0 - 1.0;
 
     // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
-    vec4 viewTarget = invProjection * vec4(ndc, 1.0, 1.0);
-    vec3 viewDir = viewTarget.xyz / viewTarget.w;
+    //    vec4 viewTarget = invView * invProjection * vec4(1.0, 1.0, 0.2, 1.0);
+    //    上面有问题？？ 下面没有问题 ？？
+    vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
+    vec3 far_point = viewTarget.xyz / viewTarget.w;
 
     // 3. 转换到世界空间
     // 这里 target.xyz / target.w 是世界空间的方向向量
-    vec3 rayDir = normalize((invView * vec4(viewDir, 0.0)).xyz);
+    vec3 rayDir = normalize(far_point - viewPos);
 
     vec3 rayOrigin = viewPos;
 
     pnanovdb_buf_t buf; // = pnanovdb_make_buf(ptr, size / 4);
 
     // 射线的方向可以 由 观察点 和 UV 坐标计算得出
-    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(-110, 0, 0);
-    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(1, 0, 0);
+    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(rayOrigin);
+    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(rayDir);
     float tmax = 1000;
     float tmin = 0;
 
-//    outFragColor_B8G8R8A8_SRGB = vec4(check_grid_class(0, PNANOVDB_GRID_CLASS_LEVEL_SET), 0);
+//    outFragColor_B8G8R8A8_SRGB = vec4(abs(rayDir), 1.0);
 
     if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
         outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);

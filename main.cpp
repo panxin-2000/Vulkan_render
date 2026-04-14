@@ -78,6 +78,12 @@ inline entt::entity add_volume_pass(const std::string &name) {
     // };
     // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
     // set_render_parameter(entity, "light_buffer", temp_ptr);
+    uint32_t t = 1024;
+    set_render_parameter(entity, "nanovdb_size", t);
+
+
+
+
 
 
     world_root_add_child(entity);
@@ -187,7 +193,10 @@ void test_single_char() {
 }
 
 
+void convert(const std::string &filename);
+
 int main(int argc, char *argv[]) {
+    convert("");
     const std::vector<double> coeffs = {
         -1.028, 0.779, -0.275, 0.601, -0.256,
         1.891, -1.658, -0.370, -0.772

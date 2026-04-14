@@ -86,7 +86,7 @@ inline void update_camera_optical() {
             const auto projection_matrix = optical.get_projection();
             set_render_parameter(it, "global_projection_4x4", projection_matrix);
             const auto inv_projection_matrix = projection_matrix.inverse();
-            set_render_parameter(it, "global_inv_projection_4x4", projection_matrix);
+            set_render_parameter(it, "global_inv_projection_4x4", inv_projection_matrix);
 
         }
         Logic_entt().remove<Camera_optical_specifications_dirty>(it);

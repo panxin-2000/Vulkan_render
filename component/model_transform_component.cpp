@@ -8,6 +8,7 @@
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
+#include "manifold/linalg.h"
 
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     static Point_2 last_mouse_position = {0, 0};
@@ -32,6 +33,8 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     float x = (4.0f * mouse_positon.x) / width - 1.0f;
     float y = (4.0f * mouse_positon.y) / height - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
 
+    // 这里是什么空间？
+    LOG_INFO(g_log(), "NDC x: {} y: {}", x, y);
     // 2. 构造近裁剪面和远裁剪面的点 (在裁剪空间)
     // Vulkan 的近平面通常是 z=0.0，远平面是 z=1.0
     Eigen::Vector4f ray_start_clip(x, y, 0.0f, 1.0f);
@@ -158,18 +161,43 @@ void init_world_scene_root(entt::entity instance) {
     const Point_3 world_light_pos{0, 10, 6};
 
     const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{
-                                                                             0, 0, 6
+                                                                             -120, 60, 6
                                                                          });
     const auto view_matrix     = camera_pos.get_view_projection();
     Point_3 world_camera_pos   = camera_pos.get_offset();
     const auto inv_view_matrix = view_matrix.inverse();
 
+    Eigen::Matrix4f invVP = (projection * view_matrix).inverse();
+
     set_render_parameter(instance, "global_projection_4x4", projection);
     set_render_parameter(instance, "global_inv_projection_4x4", inv_projection_matrix);
+
+
     set_render_parameter(instance, "global_view_4x4", view_matrix);
     set_render_parameter(instance, "global_ins_view_4x4", inv_view_matrix);
     set_render_parameter(instance, "global_world_view_Pos", world_camera_pos);
+    set_render_parameter(instance, "global_inv_VP", invVP);
+
+
     set_render_parameter(instance, "global_world_light_Pos", world_light_pos);
+
+    // vec2 ndc = in_UV * 2.0 - 1.0;
+
+    // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
+    auto viewTarget            = (inv_view_matrix * inv_projection_matrix * Eigen::Vector4f(0.0f, -1.0f, 1.0, 1.0));
+    auto far_x                 = viewTarget.x() / viewTarget.w();
+    auto far_y                 = viewTarget.y() / viewTarget.w();
+    auto far_z                 = viewTarget.z() / viewTarget.w();
+    auto viewTarget_normalized = Eigen::Vector3f(far_x, far_y, far_z).normalized();
+
+
+    auto ray_dir_x = far_x - world_camera_pos.x;
+    auto ray_dir_y = far_y - world_camera_pos.y;
+    auto ray_dir_z = far_z - world_camera_pos.z;
+
+    auto pow = std::sqrt(ray_dir_x * ray_dir_x + ray_dir_y * ray_dir_y + ray_dir_z * ray_dir_z);
+
+    Point_3 ray_dir{ray_dir_x / pow, ray_dir_y / pow, ray_dir_z / pow};
 
     allocate_descriptor_sets(instance, "bindless"); // todo : 需要确定放在哪里？
 }
@@ -241,8 +269,11 @@ void update_camera_transform() {
             set_render_parameter(it, "global_view_4x4", view_matrix);
             Point_3 world_camera_pos = camera_pos.get_offset();
             const Point_3 world_light_pos{0, 10, 6};
+            const auto inv_view_matrix = view_matrix.inverse();
 
+            set_render_parameter(it, "global_ins_view_4x4", inv_view_matrix);
             set_render_parameter(it, "global_world_view_Pos", world_camera_pos);
+
             set_render_parameter(it, "global_world_light_Pos", world_light_pos);
 
             auto lambda = [](const entt::entity entity) {
