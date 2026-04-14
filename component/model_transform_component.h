@@ -109,7 +109,7 @@ public:
 void update_camera_transform();
 
 
-void init_world_scene_root(entt::entity instance);
+void init_world_scene_root(entt::entity entity);
 
 class world_scene_root {
 public:

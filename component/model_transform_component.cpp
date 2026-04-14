@@ -147,21 +147,14 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
     return OPERATOR_HANDLED;
 }
 
-
-void init_world_scene_root(entt::entity instance) {
-    Logic_entt().emplace<Scene_Component>(instance);
-    Logic_entt().emplace<Name_component>(instance, "world_scene_root");
-    Logic_entt().emplace<VKR_shader_paths>(instance,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
-                                           "", "");
-    auto camera                      = Logic_entt().get_or_emplace<camera_optical_component>(instance);
+void update_camera_parameter(entt::entity entity) {
+    auto camera                      = Logic_entt().get_or_emplace<camera_optical_component>(entity);
     const auto projection            = camera.get_projection();
     const auto inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
-    const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{
-                                                                             -120, 60, 6
+    const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(entity, Point_3{
+                                                                             0, 0, 6
                                                                          });
     const auto view_matrix     = camera_pos.get_view_projection();
     Point_3 world_camera_pos   = camera_pos.get_offset();
@@ -169,37 +162,48 @@ void init_world_scene_root(entt::entity instance) {
 
     Eigen::Matrix4f invVP = (projection * view_matrix).inverse();
 
-    set_render_parameter(instance, "global_projection_4x4", projection);
-    set_render_parameter(instance, "global_inv_projection_4x4", inv_projection_matrix);
+    set_render_parameter(entity, "global_projection_4x4", projection);
+    set_render_parameter(entity, "global_inv_projection_4x4", inv_projection_matrix);
 
 
-    set_render_parameter(instance, "global_view_4x4", view_matrix);
-    set_render_parameter(instance, "global_ins_view_4x4", inv_view_matrix);
-    set_render_parameter(instance, "global_world_view_Pos", world_camera_pos);
-    set_render_parameter(instance, "global_inv_VP", invVP);
+    set_render_parameter(entity, "global_view_4x4", view_matrix);
+    set_render_parameter(entity, "global_ins_view_4x4", inv_view_matrix);
+    set_render_parameter(entity, "global_world_view_Pos", world_camera_pos);
+    set_render_parameter(entity, "global_inv_VP", invVP);
+
+    set_render_parameter(entity, "global_world_light_Pos", world_light_pos);
+}
 
 
-    set_render_parameter(instance, "global_world_light_Pos", world_light_pos);
-
-    // vec2 ndc = in_UV * 2.0 - 1.0;
-
-    // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
-    auto viewTarget            = (inv_view_matrix * inv_projection_matrix * Eigen::Vector4f(0.0f, -1.0f, 1.0, 1.0));
-    auto far_x                 = viewTarget.x() / viewTarget.w();
-    auto far_y                 = viewTarget.y() / viewTarget.w();
-    auto far_z                 = viewTarget.z() / viewTarget.w();
-    auto viewTarget_normalized = Eigen::Vector3f(far_x, far_y, far_z).normalized();
+void init_world_scene_root(entt::entity entity) {
+    Logic_entt().emplace<Scene_Component>(entity);
+    Logic_entt().emplace<Name_component>(entity, "world_scene_root");
+    Logic_entt().emplace<VKR_shader_paths>(entity,
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
+                                           "", "");
 
 
-    auto ray_dir_x = far_x - world_camera_pos.x;
-    auto ray_dir_y = far_y - world_camera_pos.y;
-    auto ray_dir_z = far_z - world_camera_pos.z;
+    update_camera_parameter(entity);
+    // // vec2 ndc = in_UV * 2.0 - 1.0;
+    //
+    // // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
+    // auto viewTarget            = (inv_view_matrix * inv_projection_matrix * Eigen::Vector4f(0.0f, -1.0f, 1.0, 1.0));
+    // auto far_x                 = viewTarget.x() / viewTarget.w();
+    // auto far_y                 = viewTarget.y() / viewTarget.w();
+    // auto far_z                 = viewTarget.z() / viewTarget.w();
+    // auto viewTarget_normalized = Eigen::Vector3f(far_x, far_y, far_z).normalized();
+    //
+    //
+    // auto ray_dir_x = far_x - world_camera_pos.x;
+    // auto ray_dir_y = far_y - world_camera_pos.y;
+    // auto ray_dir_z = far_z - world_camera_pos.z;
+    //
+    // auto pow = std::sqrt(ray_dir_x * ray_dir_x + ray_dir_y * ray_dir_y + ray_dir_z * ray_dir_z);
+    //
+    // Point_3 ray_dir{ray_dir_x / pow, ray_dir_y / pow, ray_dir_z / pow};
 
-    auto pow = std::sqrt(ray_dir_x * ray_dir_x + ray_dir_y * ray_dir_y + ray_dir_z * ray_dir_z);
-
-    Point_3 ray_dir{ray_dir_x / pow, ray_dir_y / pow, ray_dir_z / pow};
-
-    allocate_descriptor_sets(instance, "bindless"); // todo : 需要确定放在哪里？
+    allocate_descriptor_sets(entity, "bindless"); // todo : 需要确定放在哪里？
 }
 
 
@@ -265,17 +269,7 @@ void update_camera_transform() {
         auto &camera_pos = view.get<model_transform>(it);
         auto &name       = view.get<Name_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
-            const auto view_matrix = camera_pos.get_view_projection();
-            set_render_parameter(it, "global_view_4x4", view_matrix);
-            Point_3 world_camera_pos = camera_pos.get_offset();
-            const Point_3 world_light_pos{0, 10, 6};
-            const auto inv_view_matrix = view_matrix.inverse();
-
-            set_render_parameter(it, "global_ins_view_4x4", inv_view_matrix);
-            set_render_parameter(it, "global_world_view_Pos", world_camera_pos);
-
-            set_render_parameter(it, "global_world_light_Pos", world_light_pos);
-
+            update_camera_parameter(it);
             auto lambda = [](const entt::entity entity) {
                 if (Logic_entt().all_of<Scene_Component>(entity))
                     Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
