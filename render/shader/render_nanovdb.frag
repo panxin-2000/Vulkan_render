@@ -141,15 +141,12 @@ void main() {
     float tmax = 1000;
     float tmin = 0;
 
-    outFragColor_B8G8R8A8_SRGB = vec4(check_grid_class(0, PNANOVDB_GRID_CLASS_LEVEL_SET), 0);
+//    outFragColor_B8G8R8A8_SRGB = vec4(check_grid_class(0, PNANOVDB_GRID_CLASS_LEVEL_SET), 0);
 
-
-
-
-    //    if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
-    //        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);
-    //    } else {
-    //        // 不相交的时候就忽略当前像素的颜色
-    //        discard;
-    //    }
+    if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
+        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);
+    } else {
+        // 不相交的时候就忽略当前像素的颜色
+        discard;
+    }
 }
