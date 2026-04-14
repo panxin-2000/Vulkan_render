@@ -28,7 +28,7 @@ void add_nanovdb_to_gpu(entt::entity entity, void *ptr, uint64_t size) {
     };
     copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
-    set_render_parameter(entity, "VdbBuffer", temp_ptr);
+    set_render_parameter(entity, "nanovdb_buffer", temp_ptr);
 }
 
 void add_nanovdb_to_gpu(entt::entity entity) {

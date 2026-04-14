@@ -54,6 +54,39 @@ inline entt::entity add_render_pass(const std::string &name) {
     return entity;
 }
 
+
+void add_nanovdb_to_gpu(entt::entity entity);
+
+inline entt::entity add_volume_pass(const std::string &name) {
+    entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+
+    Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
+
+    Logic_entt().emplace<VKR_shader_paths>(entity,
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
+                                           "", "");
+
+    logic_update_add_tag<volume_pass_tag>(entity);
+    add_nanovdb_to_gpu(entity);
+
+    // auto temp_ptr          = create_SSBO_buffer(1024 * 5);
+    // float color[16]        = {1.0f, 0.0f, 0.0f, 1.0f};
+    // auto mem_copy_function = [color](void *dst) {
+    //     memcpy(dst, color, sizeof(color));
+    // };
+    // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
+    // set_render_parameter(entity, "light_buffer", temp_ptr);
+
+
+    world_root_add_child(entity);
+
+
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    return entity;
+}
+
 using Point       = std::array<double, 2>;
 using ear_Polygon = std::vector<std::vector<Point> >;
 
@@ -198,6 +231,7 @@ int main(int argc, char *argv[]) {
     // load_gltf_model("sky box", "assets/Box.gltf");
     // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
 
+    add_volume_pass("nanovdb_volume");
     // 天空盒
     {
         auto entity                                     = add_sky_box("skybox");

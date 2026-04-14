@@ -1,17 +1,28 @@
 #version 450 core
+#extension GL_EXT_shader_explicit_arithmetic_types_int64: enable
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-layout (set = 2, std430, binding = 0) readonly buffer VdbBuffer {
+layout (set = 2, std430, binding = 1) readonly buffer nanovdb_buffer {
     uint raw_data[];
 } vdb_ssbo;
 
-layout (set = 2, binding = 1) uniform nanovdb_size
+layout (set = 2, binding = 2) uniform nanovdb_size
 {
     uint size;
+};
+
+struct Light {
+    vec3 color;
+    vec4 position;
+    float radius;
+};
+
+layout (set = 2, std140, binding = 3) readonly buffer light_buffer {
+    Light lights[];
 };
 
 layout (location = 0) in vec2 in_UV;
@@ -86,7 +97,28 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
     return false;
 }
 
+// grid_class
+// PNANOVDB_GRID_CLASS_LEVEL_SET 1		// narrow band levelset, e.g. SDF
+// PNANOVDB_GRID_CLASS_FOG_VOLUME 2	// fog volume, e.g. density
+// PNANOVDB_GRID_CLASS_STAGGERED 3		// staggered MAC grid, e.g. velocity
+// PNANOVDB_GRID_CLASS_POINT_INDEX 4	// point index grid
+// PNANOVDB_GRID_CLASS_POINT_DATA 5	// point data grid
+// PNANOVDB_GRID_CLASS_TOPOLOGY 6		// grid with active states only (no values)
+// PNANOVDB_GRID_CLASS_VOXEL_VOLUME 7	// volume of geometric cubes, e.g. minecraft
+vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class) {
+    pnanovdb_buf_t buf;
+    pnanovdb_grid_handle_t Grid;
+    pnanovdb_address_t address;
+    address.byte_offset = 0;
+    Grid.address = address;
+    pnanovdb_uint32_t grid_class_read = pnanovdb_grid_get_grid_class(buf, Grid);
+    if (grid_class_read == grid_class) {
+        return vec3(0, 1.0, 0);
+    } else {
+        return vec3(1.0, 0, 0);
+    }
 
+}
 
 void main() {
     vec2 ndc = in_UV * 2.0 - 1.0;
@@ -104,14 +136,20 @@ void main() {
     pnanovdb_buf_t buf; // = pnanovdb_make_buf(ptr, size / 4);
 
     // 射线的方向可以 由 观察点 和 UV 坐标计算得出
-    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(rayOrigin);
-    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(rayDir);
+    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(-110, 0, 0);
+    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(1, 0, 0);
     float tmax = 1000;
     float tmin = 0;
-    if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax)) {
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);
-    } else {
-        // 不相交的时候就忽略当前像素的颜色
-        discard;
-    }
+
+    outFragColor_B8G8R8A8_SRGB = vec4(check_grid_class(0, PNANOVDB_GRID_CLASS_LEVEL_SET), 0);
+
+
+
+
+    //    if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
+    //        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);
+    //    } else {
+    //        // 不相交的时候就忽略当前像素的颜色
+    //        discard;
+    //    }
 }

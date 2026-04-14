@@ -152,19 +152,22 @@ void init_world_scene_root(entt::entity instance) {
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                            "", "");
-    auto camera           = Logic_entt().get_or_emplace<camera_optical_component>(instance);
-    const auto projection = camera.get_projection();
+    auto camera                      = Logic_entt().get_or_emplace<camera_optical_component>(instance);
+    const auto projection            = camera.get_projection();
+    const auto inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
     const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(instance, Point_3{
                                                                              0, 0, 6
                                                                          });
-    const auto view_matrix   = camera_pos.get_view_projection();
-    Point_3 world_camera_pos = camera_pos.get_offset();
-
+    const auto view_matrix     = camera_pos.get_view_projection();
+    Point_3 world_camera_pos   = camera_pos.get_offset();
+    const auto inv_view_matrix = view_matrix.inverse();
 
     set_render_parameter(instance, "global_projection_4x4", projection);
+    set_render_parameter(instance, "global_inv_projection_4x4", inv_projection_matrix);
     set_render_parameter(instance, "global_view_4x4", view_matrix);
+    set_render_parameter(instance, "global_ins_view_4x4", inv_view_matrix);
     set_render_parameter(instance, "global_world_view_Pos", world_camera_pos);
     set_render_parameter(instance, "global_world_light_Pos", world_light_pos);
 

@@ -145,6 +145,11 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
+            auto view = Render_entt().view<volume_pass_tag>();
+            for (const auto it: view) {
+                build_command_buffer(handle, it, time_line);
+            }
+        } {
             auto view = Render_entt().view<Mesh, UI_2D_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);

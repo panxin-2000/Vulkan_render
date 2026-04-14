@@ -132,7 +132,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .layerCount           = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments    = &colorAttachmentInfo,
-        .pDepthAttachment     = &depthAttachmentInfo  // pDepthAttachment 在缩放时有问题。
+        .pDepthAttachment     = &depthAttachmentInfo // pDepthAttachment 在缩放时有问题。
     };
     vkCmdBeginRendering(cb, &renderingInfo);
 }
@@ -171,13 +171,11 @@ struct G_buffer_image_index {
 };
 
 inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
-
     // 不存储位置，但是我之前都在存储位置， 之后看看如果更改为这个样子 现在的是 pos normal base_color depth
     // G-Buffer A: 法线 (Normal) + 粗糙度 (Roughness)
     // G-Buffer B: 金属度 (Metallic) + 高光 (Spec) + 遮蔽 (AO)
     // G-Buffer C: 基础色 (BaseColor)
     // Depth Buffer: 深度值（关键就在这里）
-
 
 
     auto cb = handle.engine_.get_current_command_buffer();
@@ -496,7 +494,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
         }
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断
-        if (Render_entt().all_of<deferred_pass_tag>(entity))
+        if (Render_entt().any_of<deferred_pass_tag, volume_pass_tag>(entity))
             vkCmdDraw(cb, 3, 1, 0, 0);
     }
 }
