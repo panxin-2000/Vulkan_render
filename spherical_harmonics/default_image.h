@@ -21,15 +21,23 @@
 namespace sh {
     class DefaultImage : public Image {
     public:
-        DefaultImage(int width, int height);
+        DefaultImage(int width, int height) : width_(width), height_(height) {
+            pixels_.reset(new Eigen::Array3f[width * height]);
+        }
 
-        int width() const override;
+        int width() const override { return width_; };
 
-        int height() const override;
+        int height() const override { return height_; };
 
-        Eigen::Array3f GetPixel(int x, int y) const override;
+        Eigen::Array3f GetPixel(int x, int y) const override {
+            int index = x + y * width_;
+            return pixels_[index];
+        };
 
-        void SetPixel(int x, int y, const Eigen::Array3f &v) override;
+        void SetPixel(int x, int y, const Eigen::Array3f &v) override {
+            int index      = x + y * width_;
+            pixels_[index] = v;
+        }
 
     private:
         const int width_;

@@ -31,6 +31,9 @@ void register_glfw(GLFWwindow *window);
 
 void deal_glfw_event();
 
+#include "spherical_harmonics.h"
+#include "spherical_SH.h"
+
 
 inline entt::entity add_render_pass(const std::string &name) {
     entt::entity entity = Logic_entt().create();
@@ -152,6 +155,19 @@ void test_single_char() {
 
 
 int main(int argc, char *argv[]) {
+    const std::vector<double> coeffs = {
+        -1.028, 0.779, -0.275, 0.601, -0.256,
+        1.891, -1.658, -0.370, -0.772
+    };
+
+    // Project and compare the fitted coefficients, which should be near identical
+    // to the initial coefficients
+    sh::SphericalFunction func = [&](double phi, double theta) {
+        return sh::EvalSHSum(2, coeffs, phi, theta);
+    };
+    std::unique_ptr<std::vector<double> > fitted = sh::ProjectFunction(
+                                                                       2, func, 5000);
+
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();

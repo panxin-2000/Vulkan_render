@@ -330,6 +330,7 @@ include_directories(render/render_thread)
 include_directories(component)
 include_directories(render/render_component)
 include_directories(interactable_object)
+include_directories(spherical_harmonics)
 
 
 file(GLOB_RECURSE LABYRINTH
@@ -482,7 +483,15 @@ add_executable(learn_render main.cpp
 
         external/tinyobj/tiny_obj_loader.cc
         assets/shader.slang
-        ${SHADER_FILES} ${component} ${RENDER} ${gltf_model} ${INPUT_DEVICE} ${LABYRINTH} ${WINDOW} ${vulkan_code})
+        ${SHADER_FILES}
+        ${component}
+        ${RENDER}
+        ${gltf_model}
+        ${INPUT_DEVICE}
+        ${LABYRINTH}
+        ${WINDOW}
+        ${vulkan_code}
+)
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
