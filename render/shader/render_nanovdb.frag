@@ -125,7 +125,7 @@ void main() {
 
     // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
     //    vec4 viewTarget = invView * invProjection * vec4(1.0, 1.0, 0.2, 1.0);
-    //    上面有问题？？ 下面没有问题 ？？
+    //    上面有问题？？ 下面没有问题 ？？ // 确实有问题，确实过不了，不知道为什么
     vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
     vec3 far_point = viewTarget.xyz / viewTarget.w;
 
@@ -143,7 +143,7 @@ void main() {
     float tmax = 1000;
     float tmin = 0;
 
-//    outFragColor_B8G8R8A8_SRGB = vec4(abs(rayDir), 1.0);
+    //    outFragColor_B8G8R8A8_SRGB = vec4(abs(rayDir), 1.0);
 
     if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
         outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);

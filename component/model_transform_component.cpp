@@ -160,7 +160,9 @@ void update_camera_parameter(entt::entity entity) {
     Point_3 world_camera_pos   = camera_pos.get_offset();
     const auto inv_view_matrix = view_matrix.inverse();
 
-    Eigen::Matrix4f invVP = (projection * view_matrix).inverse();
+    Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
+    Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
+
 
     set_render_parameter(entity, "global_projection_4x4", projection);
     set_render_parameter(entity, "global_inv_projection_4x4", inv_projection_matrix);
