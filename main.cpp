@@ -82,10 +82,6 @@ inline entt::entity add_volume_pass(const std::string &name) {
     set_render_parameter(entity, "nanovdb_size", t);
 
 
-
-
-
-
     world_root_add_child(entity);
 
 
@@ -195,33 +191,8 @@ void test_single_char() {
 
 void convert(const std::string &filename);
 
-int main(int argc, char *argv[]) {
-    convert("");
-    const std::vector<double> coeffs = {
-        -1.028, 0.779, -0.275, 0.601, -0.256,
-        1.891, -1.658, -0.370, -0.772
-    };
 
-    // Project and compare the fitted coefficients, which should be near identical
-    // to the initial coefficients
-    sh::SphericalFunction func = [&](double phi, double theta) {
-        return sh::EvalSHSum(2, coeffs, phi, theta);
-    };
-    std::unique_ptr<std::vector<double> > fitted = sh::ProjectFunction(
-                                                                       2, func, 5000);
-
-    LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
-    auto &backend = VK_backend::get();
-    backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
-    init_current_descriptor_pool();
-
-
-    // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 50, 200);
-    UI_block("按钮2", 0, 0, 145, 130);
-
+void add_pbr_default_textures() {
     // 添加一张纯白的背景图片
     {
         std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
@@ -233,15 +204,9 @@ int main(int argc, char *argv[]) {
         uint32_t index                           = add_bindless_uniform_sampler2D("default_normal_texture", texture);
         assert(index == 1);
     }
-    // Some allocations were not freed before destruction of this memory block
-    // 应该是这里出的问题，需要 free ，有 free 的函数，什么时候调用
-    {
-    }
-    // load_gltf_model("sky box", "assets/Box.gltf");
-    // load_gltf_model("Damaged Helmet", "assets/DamagedHelmet.gltf");
+}
 
-    add_volume_pass("nanovdb_volume");
-    // 天空盒
+void add_skybox_entity() {
     {
         auto entity                                     = add_sky_box("skybox");
         auto texture                                    = create_skybox_texture_all("");
@@ -249,7 +214,11 @@ int main(int argc, char *argv[]) {
         set_render_parameter(entity, "sampler_skybox", sampler_skybox);
         logic_update_add_tag<skybox_tag>(entity);
         // 还需再增加一个特殊的标记，用于最后绘制，UI前，所有3D 完成后
-    } {
+    }
+}
+
+
+void add_manifold_entity() { {
         // 创建一个球体模型
         manifold::Manifold sphere = manifold::Manifold::Sphere(10.0f);
 
@@ -309,24 +278,65 @@ int main(int argc, char *argv[]) {
         uint32_t index = 7;
         set_render_parameter(entity, "samplerColor", index);
         // logic_update_add_tag<opacity_tag>(entity);
-    } {
-        auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-        set_render_parameter(entity, "msdf", "atlas.png");
-    } {
-        auto value     = get_max_descriptor_update_after_bind_samplers();
-        auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-        uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-        set_baseColor_Texture_index(entity, index);
-        logic_update_add_tag<opacity_tag>(entity);
-    } {
-        auto entity = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
-        // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
-        // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
-        // index        = 0;
-        // set_render_parameter(entity, "samplerColor", index);
-        logic_update_add_tag<opacity_tag>(entity);
     }
+}
+
+int main(int argc, char *argv[]) {
+    convert("");
+    const std::vector<double> coeffs = {
+        -1.028, 0.779, -0.275, 0.601, -0.256,
+        1.891, -1.658, -0.370, -0.772
+    };
+
+    // Project and compare the fitted coefficients, which should be near identical
+    // to the initial coefficients
+    sh::SphericalFunction func = [&](double phi, double theta) {
+        return sh::EvalSHSum(2, coeffs, phi, theta);
+    };
+    std::unique_ptr<std::vector<double> > fitted = sh::ProjectFunction(
+                                                                       2, func, 5000);
+
+    LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
+    auto &backend = VK_backend::get();
+    backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
+    init_current_descriptor_pool();
+
+
+    // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
+    UI_block("按钮1", 0, 0, 60, 60);
+    UI_block("功能块", 0, 0, 50, 200);
+    UI_block("按钮2", 0, 0, 145, 130);
+
+    add_pbr_default_textures();
+
+    add_skybox_entity();
+    add_manifold_entity();
+
+    // add_volume_pass("nanovdb_volume");
+    // 天空盒
+
+
+    // {
+    //     auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+    //     set_render_parameter(entity, "msdf", "atlas.png");
+    // }
+    // {
+    //     auto value     = get_max_descriptor_update_after_bind_samplers();
+    //     auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    //     auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+    //     uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+    //     set_baseColor_Texture_index(entity, index);
+    //     logic_update_add_tag<opacity_tag>(entity);
+    // }
+    // {
+    //     auto entity = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
+    //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
+    //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
+    //     // index        = 0;
+    //     // set_render_parameter(entity, "samplerColor", index);
+    //     logic_update_add_tag<opacity_tag>(entity);
+    // }
 
     render_thread_start(backend);
 
@@ -340,6 +350,8 @@ int main(int argc, char *argv[]) {
         }
         glfwPollEvents();  // Event polling
         deal_glfw_event(); // 统一分发执行
+        Logic_entt().emplace_or_replace<Camera_transform_dirty>(get_world_root());
+
         clean_render_entity();
         sync_render_data_to_render_thread();
 
