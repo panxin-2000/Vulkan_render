@@ -32,10 +32,10 @@ float sd_RoundBox(vec3 pos, vec3 center, vec3 half_box, float r) {
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
 }
 
-float sd_RoundBox(vec3 p, vec3 half_box, float r)
+float sd_RoundBox(vec3 p, vec3 half_box, vec3 r)
 {
     vec3 q = abs(p) - half_box + r;
-    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r.x;
 }
 float sd_RoundBox(vec2 p, vec2 half_box, float r) {
     vec2 q = abs(p) - half_box + r;
@@ -60,12 +60,12 @@ void main()
     float min_y = box.y;
     float max_x = box.z;
     float max_y = box.w;
-    vec2 center = vec2((min_x + max_x) / 2, (min_y + max_y) / 2);
-    vec2 half_box = vec2((max_x - min_x) / 2, (max_y - min_y) / 2);
+    vec3 center = vec3((min_x + max_x) / 2, (min_y + max_y) / 2, 0);
+    vec3 half_box = vec3((max_x - min_x) / 2, (max_y - min_y) / 2, 0);
 
     //     输入参数
     // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
-    float sd = sd_RoundBox(in_uv - center, half_box, radius.x * 2);
+    float sd = sd_RoundBox(vec3(in_uv, 0) - center, half_box, vec3(radius.x, radius.x, 0));
     vec3 bgColor = vec3(1.0); // 背景色
     vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
     vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
