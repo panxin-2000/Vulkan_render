@@ -85,5 +85,13 @@ void main()
     //    // 3. 叠加边框
     //    finalColor = mix(finalColor, borderColor, borderMask);
 
-    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0);
+    // coloring
+    float d = sd;
+    vec3 col = (d > 0.0) ? vec3(0.9, 0.6, 0.3) : vec3(0.65, 0.85, 1.0);
+    col *= 1.0 - exp(-6.0 * abs(d));
+    col *= 0.8 + 0.2 * cos(150.0 * d);
+    col = mix(col, vec3(1.0), 1.0 - smoothstep(0.0, 0.01, abs(d)));
+
+
+    outFragColor_B8G8R8A8_SRGB = vec4(col, 1.0);
 }
