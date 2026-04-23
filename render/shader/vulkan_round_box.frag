@@ -75,7 +75,7 @@ void main()
 
     //     输入参数
     // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
-    float sd = sd_RoundBox(vec3(in_uv, 0) - center, half_box, vec3(radius.x, radius.x, 0));
+    float sd = sd_RoundBox(gl_FragCoord.xyz * 0.5 - center, half_box, vec3(radius.x, radius.x, 0));
     vec3 bgColor = vec3(1.0); // 背景色
     vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
     vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
