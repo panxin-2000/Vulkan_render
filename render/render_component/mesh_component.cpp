@@ -228,6 +228,35 @@ bool add_geometry_data(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
+bool add_geometry_data_with_UV(entt::entity entity,
+                               Point_3 min,
+                               Point_3 max) {
+    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
+    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+    {
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 3);
+        indices->push_back(vertices->size() + 0);
+        //     3            2
+        //      ************
+        //      *        * *
+        //      *     *    *
+        //      *  *       *
+        //      ************
+        //     0            1
+        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, min.x, min.y}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, max.x, min.y});
+        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, max.x, max.y}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, min.x, max.y});
+    }
+
+    add_geometry_data(entity, vertices, indices);
+}
+
 void add_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
                   const std::shared_ptr<std::vector<unsigned short> > &indices,
                   Point_3 min, Point_3 max,

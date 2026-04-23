@@ -81,6 +81,10 @@ bool add_geometry_data(entt::entity entity,
                        Point_3 min,
                        Point_3 max);
 
+bool add_geometry_data_with_UV(entt::entity entity,
+                               Point_3 min,
+                               Point_3 max);
+
 bool add_geometry_data(entt::entity entity,
                        Point_3 a,
                        Point_3 b,

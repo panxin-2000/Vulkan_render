@@ -94,7 +94,7 @@ entt::entity UI_button(const std::string &name,
     }
     Logic_entt().emplace<Drag_event>(entity);
     Logic_entt().emplace<Name_component>(entity, name);
-    add_geometry_data(entity, {min_x, min_y, 0.0f}, {max_x, max_y, 0.0f});
+    add_geometry_data_with_UV(entity, {min_x, min_y, 0.0f}, {max_x, max_y, 0.0f});
 
 
     matrix_4x4 model;
