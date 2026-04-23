@@ -425,7 +425,7 @@ add_executable(hello_test ${LABYRINTH}
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
+target_link_libraries(hello_test ccd GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 
 
