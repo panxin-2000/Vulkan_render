@@ -54,6 +54,16 @@ float sdSphere(vec3 p, float r)
     return length(p) - r;
 }
 
+vec3 distColor(float dist) {
+    vec3 color = dist > 0. ? vec3(0.9, 0.6, 0.3) : vec3(0.65, 0.85, 1.0);
+    color *= 1. - exp(-6. * abs(dist));// 这里按照距离球体表面的值 进行颜色衰减
+    color *= (1. + 0.1 * sin(150. * abs(dist)));// 对已有颜色乘以某种周期性的函数
+
+    // smoothstep(0.01,0.,abs(dist)) 距离绝对值大于0.01 的都是0，距离绝对值小于等于0的 结果是1
+    color = mix(color, vec3(1.), smoothstep(0.01, 0., abs(dist))); // 添加上边缘线条
+    return color;
+}
+
 void main()
 {
     float min_x = box.x;
@@ -85,13 +95,7 @@ void main()
     //    // 3. 叠加边框
     //    finalColor = mix(finalColor, borderColor, borderMask);
 
-    // coloring
-    float d = sd;
-    vec3 col = (d > 0.0) ? vec3(0.9, 0.6, 0.3) : vec3(0.65, 0.85, 1.0);
-    col *= 1.0 - exp(-6.0 * abs(d));
-    col *= 0.8 + 0.2 * cos(150.0 * d);
-    col = mix(col, vec3(1.0), 1.0 - smoothstep(0.0, 0.01, abs(d)));
 
 
-    outFragColor_B8G8R8A8_SRGB = vec4(col, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4(distColor(sd), 1.0);
 }
