@@ -133,7 +133,7 @@ VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
         .sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+        .topology = data.topology
     };
     VkGraphicsPipelineCreateInfo pipelineCI{
         .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

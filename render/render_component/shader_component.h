@@ -32,7 +32,7 @@ using Fragment_output_map = std::map<uint32_t, color_attachment_format>;
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
-
+    VkPrimitiveTopology topology;
     // 再想增加一个组的时候，还是需要到这里来增加
     sets_map bindless_sets_bindings;
     sets_map global_sets_bindings;
@@ -54,11 +54,13 @@ public:
     VKR_shader_paths(const std::string &vertex_path,
                      const std::string &fragment_path,
                      const std::string &geometry_path,
-                     const std::string &computer_path) {
+                     const std::string &computer_path,
+                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
         vertex_path_   = vertex_path;
         fragment_path_ = fragment_path;
         geometry_path_ = geometry_path;
         computer_path_ = computer_path;
+        topology_      = topology;
     }
 
     VKR_shader_paths() = delete;
@@ -67,6 +69,7 @@ public:
     std::string geometry_path_;
     std::string fragment_path_;
     std::string computer_path_;
+    VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 
     void set_vertex_shader(const std::string &path) {

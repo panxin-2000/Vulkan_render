@@ -179,6 +179,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
         shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
                  shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);
+        shader_data_handle->topology   = shader_paths.topology_;
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
 
         // descriptor_sets_layout 中包含 global 的 set
