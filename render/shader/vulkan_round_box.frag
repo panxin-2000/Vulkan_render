@@ -26,9 +26,20 @@ layout (location = 0) in vec2 in_uv;
 // max(q, 0.0) 将 box + r 的 内部全部变为零
 // length(max(q, 0.0)) 得出 外部距离
 // min(max(q.x, max(q.y, q.z)), 0.0) 给出了 内部的矩形
-float sd_RoundBox(vec3 pos, vec3 center, vec3 a, float r) {
-    vec3 q = abs(pos - center) - (a - r);
+float sd_RoundBox(vec3 pos, vec3 center, vec3 half_box, float r) {
+    //
+    vec3 q = abs(pos - center) - half_box + r;
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+}
+
+float sd_RoundBox(vec3 p, vec3 half_box, float r)
+{
+    vec3 q = abs(p) - half_box + r;
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+}
+float sd_RoundBox(vec2 p, vec2 half_box, float r) {
+    vec2 q = abs(p) - half_box + r;
+    return length(max(q, 0.0)) - r;
 }
 
 layout (set = 2, binding = 1) uniform round_box
@@ -37,18 +48,24 @@ layout (set = 2, binding = 1) uniform round_box
     vec4 radius;
 };
 
+
+float sdSphere(vec3 p, float r)
+{
+    return length(p) - r;
+}
+
 void main()
 {
     float min_x = box.x;
     float min_y = box.y;
     float max_x = box.z;
     float max_y = box.w;
-    vec3 center = vec3((min_x + max_x) / 2, (min_y + max_y) / 2, 0);
-    vec3 a = vec3(max_x - center.x, max_y - center.y, 0);
+    vec2 center = vec2((min_x + max_x) / 2, (min_y + max_y) / 2);
+    vec2 half_box = vec2((max_x - min_x) / 2, (max_y - min_y) / 2);
 
     //     输入参数
-    float sd; // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
-    sd = sd_RoundBox(vec3(in_uv, 0), center, a, radius.x);
+    // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
+    float sd = sd_RoundBox(in_uv - center, half_box, radius.x * 2);
     vec3 bgColor = vec3(1.0); // 背景色
     vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
     vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
@@ -58,6 +75,7 @@ void main()
     // 1. 计算填充遮罩 (前景色 vs 背景色)
     // 当 d < 0 是内部，d > 0 是外部
     float fillMask = smoothstep(-smoothW, smoothW, sd);
+    // 为什么会有 粉色？ 因为内部很少是负的？
     vec3 finalColor = mix(fgColor, bgColor, fillMask);
 
     // 2. 计算边框遮罩 (在 d=0 的两侧绘制)

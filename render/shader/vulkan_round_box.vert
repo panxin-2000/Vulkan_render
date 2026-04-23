@@ -27,6 +27,6 @@ layout (location = 0) out vec2 out_UV;
 
 void main()
 {
-    out_UV = inPos.xy; // 其实UV 传递到 fragment 中的部分就是 pos,只不过是被插值之后的
+    out_UV = inUV; // 其实UV 传递到 fragment 中的部分就是 pos,只不过是被插值之后的
     gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
 }
