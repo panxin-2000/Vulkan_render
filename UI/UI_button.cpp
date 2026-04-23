@@ -85,9 +85,9 @@ entt::entity UI_button(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-                                           "", "");
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_round_box.vert.spv",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_round_box.frag.spv",
+                                           "", ""); // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 暂时还不用
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
@@ -100,6 +100,12 @@ entt::entity UI_button(const std::string &name,
     matrix_4x4 model;
     UI_matrix_4x4(&model, {1, 1}, {0, 0});
     set_render_parameter(entity, "model_4x4", model);
+    struct Round_box {
+        float min_x, min_y, max_x, max_y;
+        float radius_min_x, radius_min_y, radius_max_x, radius_max_y;
+    };
+    Round_box round_box = {min_x, min_y, max_x, max_y, 20, 10, 10, 10};
+    set_render_parameter(entity, "round_box", round_box);
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     Logic_entt().emplace_or_replace<UI_2D_tag>(entity);

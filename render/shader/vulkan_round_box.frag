@@ -1,0 +1,71 @@
+#version 450
+#extension GL_EXT_nonuniform_qualifier: require
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+float rand(int seed) {return fract(sin(float(seed)) * 43758.5453);}
+
+float hash(int xy) {
+    uint x = uint(xy);
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = (x >> 16u) ^ x;
+    return float(x) / 4294967295.0;
+}
+
+layout (location = 0) in vec2 in_uv;
+
+// p 是 像素的坐标 - 圆角矩形 中心点的 坐标
+// b 是 圆角矩形 中心点到各个面的基础距离
+// 全面解析一下圆角矩形，
+// abs(pos - center) 得到像素点 到 中心的2维向量 此时已经是在第一区间中了
+// abs(pos - center) - a 得到的是什么？ 它是否在 box 外的 全部为 正，box 内的全部为负
+// abs(pos - center) - (a - r) 将 范围设置 为 包围盒  减去 一个 半径的范围
+// max(q, 0.0) 将 box + r 的 内部全部变为零
+// length(max(q, 0.0)) 得出 外部距离
+// min(max(q.x, max(q.y, q.z)), 0.0) 给出了 内部的矩形
+float sd_RoundBox(vec3 pos, vec3 center, vec3 a, float r) {
+    vec3 q = abs(pos - center) - (a - r);
+    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+}
+
+layout (set = 2, binding = 1) uniform round_box
+{
+    vec4 box;
+    vec4 radius;
+};
+
+void main()
+{
+    float min_x = box.x;
+    float min_y = box.y;
+    float max_x = box.z;
+    float max_y = box.w;
+    vec3 center = vec3((min_x + max_x) / 2, (min_y + max_y) / 2, 0);
+    vec3 a = vec3(max_x - center.x, max_y - center.y, 0);
+
+    //     输入参数
+    float sd; // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
+    sd = sd_RoundBox(vec3(in_uv, 0), center, a, radius.x);
+    vec3 bgColor = vec3(1.0); // 背景色
+    vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
+    vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
+    float thickness = 2.0; // 边框厚度（单位：像素）
+    float smoothW = 1.0; // 平滑宽度（单位：像素，通常取 1.0-1.5）
+
+    // 1. 计算填充遮罩 (前景色 vs 背景色)
+    // 当 d < 0 是内部，d > 0 是外部
+    float fillMask = smoothstep(-smoothW, smoothW, sd);
+    vec3 finalColor = mix(fgColor, bgColor, fillMask);
+
+    // 2. 计算边框遮罩 (在 d=0 的两侧绘制)
+    // abs(d) 是点到边缘的绝对距离，thickness 是边框半径
+    //    float borderMask = smoothstep(thickness + smoothW, thickness - smoothW, abs(sd));
+    //
+    //    // 3. 叠加边框
+    //    finalColor = mix(finalColor, borderColor, borderMask);
+
+    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0);
+}

@@ -496,6 +496,8 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
         // 为空并且有一个deferred 标记 // todo: 标记判断
         if (Render_entt().any_of<deferred_pass_tag, volume_pass_tag>(entity))
             vkCmdDraw(cb, 3, 1, 0, 0);
+        if (Render_entt().any_of<UI_2D_tag>(entity))
+            vkCmdDraw(cb, 4, 1, 0, 0);
     }
 }
 
