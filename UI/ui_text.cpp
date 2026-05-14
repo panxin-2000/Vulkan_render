@@ -184,6 +184,9 @@ Msdf_text &get_msdf_text() {
         msdf_text->metrics.underlineY         = -0.17999999999999999;
         msdf_text->metrics.underlineThickness = 0.050000000000000003;
 
+        msdf_text->image.init(static_cast<size_t>(msdf_text->atlas.width),
+                              static_cast<size_t>(msdf_text->atlas.height));
+
         // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
         msdf_text->texture_of_MSDF.Init(2048, 2048, false);
         return *msdf_text;
@@ -237,7 +240,7 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
     // std::string utf8_text = name;
     // std::vector<uint32_t> unicode_points;
     // utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
-    auto msdf_text_tem = get_msdf_text();
+    auto &msdf_text_tem = get_msdf_text();
 
     msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 
@@ -257,14 +260,20 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
             glyph.unicode = unicode_point;
             auto bitmap   = generate_sdf_bitmap_and(glyph, font, unicode_point);
             if (bitmap.has_value()) {
-                auto width  = bitmap.value().width();
-                auto height = bitmap.value().height();
-
-                auto position = msdf_text_tem.texture_of_MSDF.Insert(width, height,
+                auto bit_map      = bitmap.value();
+                const auto width  = bitmap.value().width();
+                const auto height = bitmap.value().height();
+                auto position     = msdf_text_tem.texture_of_MSDF.Insert(width, height,
                                                                      rbp::MaxRectsBinPack::RectBestShortSideFit);
                 // 需要将 bitmap.value() 的内容写入图片 的 position
                 if (position.width == width) {
                     // 没有翻转
+                    for (auto i = 0; i < position.width; i++) {
+                        for (auto j = 0; j < position.height; j++) {
+                            const auto ptr = bit_map(i, j);
+                            msdf_text_tem.image.write(position.x + i, position.y + j, *ptr, *(ptr + 1), *(ptr + 2));
+                        }
+                    }
                 } else {
                     // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
                 }
@@ -310,8 +319,8 @@ entt::entity UI_text(const std::string &name,
     std::vector<uint32_t> unicode_points;
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
 
-    auto msdf_text_tem = get_msdf_text_add_string(unicode_points,
-                                                  "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    auto &msdf_text_tem = get_msdf_text_add_string(unicode_points,
+                                                   "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     // read_msdf_atlas(msdf_text_tem, "atlas.json");
     create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
     // 不同的材质？ 不同的着色器

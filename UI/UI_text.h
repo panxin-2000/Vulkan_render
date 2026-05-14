@@ -85,18 +85,23 @@ class rect_Packing {
 };
 
 
+#include "image.h"
+
+
 class Msdf_text {
 public:
     Atlas atlas;
     Metrics metrics;
     using unicode_value = uint32_t;
     std::map<unicode_value, Glyph> glyphs;
-    LRU_cache<unicode_value, Glyph> unicode_cache;
+    // LRU_cache<unicode_value, Glyph> unicode_cache;
 
     // 没有 LRU (Least Recently Used)可以考虑之后添加
     rbp::MaxRectsBinPack texture_of_MSDF;
+    Image image;
 
-    Msdf_text(const size_t max_size) : unicode_cache(max_size) {
+    explicit Msdf_text(const size_t max_size) //: unicode_cache(max_size)
+    {
     }
 
     [[nodiscard]] float get_scale() const {
