@@ -50,6 +50,11 @@ struct Msdf_text {
     Metrics metrics;
     using unicode_value = uint32_t;
     std::map<unicode_value, Glyph> glyphs;
+
+public:
+    const uint get_scale() const {
+        return static_cast<int>(atlas.size);
+    }
 };
 
 

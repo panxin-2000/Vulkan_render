@@ -127,7 +127,7 @@ void test_single_char() {
         return;
     }
     msdfgen::Shape shape;
-    if (loadGlyph(shape, font, 'y', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+    if (loadGlyph(shape, font, 'A', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
         // 预处理：标准化轮廓方向
         shape.normalize();
         auto bounds = shape.getBounds();
@@ -137,31 +137,27 @@ void test_single_char() {
         edgeColoringByDistance(shape, 3.0);
 
         // 距离场需要留白空间存储过渡渐变，否则外轮廓会被直接截断
-        // double padding = 4.0;
-        double padding = 2.0;
+        double distanceRange = 4.0;
 
         float size_of_msdf = 32;
-        float scale = 32;
+        float scale        = 32;
 
         // 4. 根据 Bounds 计算目标 Bitmap 的物理宽高  需要向上对齐
         //    添加微小偏置，防止浮点数无限接近整数时因精度问题导致少算 1 像素
-        int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * padding + 0.9999);
-        int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * padding + 0.9999);
+        int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
+        int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
 
         // 2. 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
-        if (width  % 2 != 0) width++;
+        if (width % 2 != 0) width++;
         if (height % 2 != 0) height++;
 
         // 实例化浮点型 Bitmap 容器（3通道代表包含 R, G, B 的 MSDF）  配置输出位图 (32x32 像素)
         msdfgen::Bitmap<float, 3> msdf(width, height);
 
-        // 5. 设置投影变换 (缩放和位移)
-        // 参数：Projection(scale, translation), range (边缘影响范围)
-        msdfgen::SDFTransformation t(
-                                     msdfgen::Projection(size_of_msdf,
-                                                         msdfgen::Vector2(7.0 / size_of_msdf,
-                                                                          4.0 / size_of_msdf + padding / size_of_msdf)),
-                                     msdfgen::Range(4.0 / size_of_msdf));
+        auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
+                                          -bounds.b + distanceRange / scale);
+        msdfgen::SDFTransformation transform(msdfgen::Projection(size_of_msdf, translate),
+                                             msdfgen::Range(distanceRange / size_of_msdf));
 
         // 推荐设置：range = 2.0
         // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
@@ -174,7 +170,7 @@ void test_single_char() {
         config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
         config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
 
-        generateMSDF(msdf, shape, t, config);
+        generateMSDF(msdf, shape, transform, config);
 
         // overlapSupport (bool)：
         // 描述：是否开启重叠支持（默认为 true）。
@@ -296,7 +292,6 @@ void add_manifold_entity() { {
 }
 
 int main(int argc, char *argv[]) {
-
     test_single_char();
 
     // convert("");

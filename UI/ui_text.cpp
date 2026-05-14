@@ -226,29 +226,28 @@ Msdf_text &get_msdf_text_add_string(const std::string &name) {
                 // 为边分配颜色（MSDF 的核心步骤，确保角点锐利）
                 edgeColoringByDistance(shape, 3.0);
 
-                float size_of_msdf = 32;
-                float scale        = 32;
-                double padding     = 2.0;
+                float size_of_msdf   = 32;
+                float scale          = get_msdf_text().get_scale(); //     = 32;
+                double distanceRange = 4.0;                         // 让画布留白正好等于渐变宽度
 
                 // 4. 配置输出位图 (32x32 像素)
-                msdfgen::Bitmap<float, 3> msdf(size_of_msdf, size_of_msdf);
-                int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * padding + 0.9999);
-                int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * padding + 0.9999);
+                int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
+                int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
 
                 // 2. 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
                 if (width % 2 != 0) width++;
                 if (height % 2 != 0) height++;
+                msdfgen::Bitmap<float, 3> msdf(width, height);
+
                 // width 和 height 就是需要排列的盒子，装箱算法中需要放置的箱子
                 // 只剩下装箱需要去管理了
 
                 // 5. 设置投影变换 (缩放和位移)
                 // 参数：Projection(scale, translation), range (边缘影响范围)
-                msdfgen::SDFTransformation transform(
-                                                     msdfgen::Projection(size_of_msdf,
-                                                                         msdfgen::Vector2(7.0 / size_of_msdf,
-                                                                                  4.0 / size_of_msdf + padding /
-                                                                                  size_of_msdf)),
-                                                     msdfgen::Range(4.0 / size_of_msdf));
+                auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
+                                                  -bounds.b + distanceRange / scale);
+                msdfgen::SDFTransformation transform(msdfgen::Projection(size_of_msdf, translate),
+                                                     msdfgen::Range(distanceRange / size_of_msdf));
 
                 // 推荐设置：range = 2.0
                 // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
