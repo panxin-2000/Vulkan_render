@@ -6,6 +6,7 @@
 #define HELLO_MAC_UI_TEXT_H
 
 
+#include "MaxRectsBinPack.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"
 
@@ -45,18 +46,56 @@ struct Glyph {
     direction atlasBounds; // 描述该字符在实际图片文件（纹理贴图）中的像素坐标
 };
 
+
+class rect_Packing {
+    // 需要装箱函数
+    // 需要给出一个map,里面存储的是全部的空白的位置
+    // 存储的是什么呢？ 一系列的空白box,
+    struct uint_xy {
+        uint x = 0;
+        uint y = 0;
+
+        bool operator<(const uint_xy &other) const {
+            return std::tie(x, y) < std::tie(other.x, other.y);
+        }
+    };
+
+    using start_point   = uint_xy;
+    using size_of_block = uint_xy;
+
+    std::map<size_of_block, start_point> boxs;
+
+
+    start_point add_box(uint_xy box_size) {
+        uint_xy start_position = {
+            std::numeric_limits<uint>::max(),
+            std::numeric_limits<uint>::max()
+        };
+        std::vector<std::pair<const uint_xy, uint_xy> *> keys;
+        for (auto box: boxs) {
+            if (box.first.x >= box_size.x && box.first.y >= box_size.y) {
+                // 能够装箱
+                keys.push_back(&box);
+                // 直接更改值，
+            }
+        }
+        return start_position;
+    }
+};
+
+
 struct Msdf_text {
     Atlas atlas;
     Metrics metrics;
     using unicode_value = uint32_t;
     std::map<unicode_value, Glyph> glyphs;
+    rbp::MaxRectsBinPack texture_of_MSDF;
 
-public:
-    const float get_scale() const {
+    [[nodiscard]] float get_scale() const {
         return atlas.size;
     }
 
-    const uint get_distanceRange() const {
+    [[nodiscard]] uint get_distanceRange() const {
         return static_cast<int>(atlas.distanceRange);
     }
 };

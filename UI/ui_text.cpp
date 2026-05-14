@@ -184,6 +184,7 @@ Msdf_text &get_msdf_text() {
         msdf_text->metrics.underlineY         = -0.17999999999999999;
         msdf_text->metrics.underlineThickness = 0.050000000000000003;
 
+        msdf_text->texture_of_MSDF.Init(2048, 2048, false);
         return *msdf_text;
     } else {
         return *msdf_text;
@@ -249,6 +250,7 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
     for (auto unicode_point: unicode_points) {
         // 需要
         if (msdf_text_tem.glyphs.find(unicode_point) != msdf_text_tem.glyphs.end()) {
+            // 已经存在，
         } else {
             Glyph glyph;
             glyph.unicode = unicode_point;
@@ -256,10 +258,21 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
             if (bitmap.has_value()) {
                 auto width  = bitmap.value().width();
                 auto height = bitmap.value().height();
-                // 需要将 bitmap.value() 的内容写入图片中
+
+                auto position = msdf_text_tem.texture_of_MSDF.Insert(width, height,
+                                                                     rbp::MaxRectsBinPack::RectBestShortSideFit);
+                // 需要将 bitmap.value() 的内容写入图片 的 position
+                if (position.width == width) {
+                    // 没有翻转
+                } else {
+                    // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
+                }
+                // 也可能因为上下翻转需要处理一下下面的四个字
+                glyph.atlasBounds.left   = (static_cast<float>(position.x) + 0.5f);
+                glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
+                glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
+                glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
             }
-
-
             msdf_text_tem.glyphs.insert({unicode_point, glyph});
         }
     }
@@ -292,9 +305,14 @@ entt::entity UI_text(const std::string &name,
     Logic_entt().emplace<Drag_event>(entity);
     Logic_entt().emplace<Name_component>(entity, name);
 
-    Msdf_text msdf_text;
-    read_msdf_atlas(msdf_text, "atlas.json");
-    create_text_render(entity, name, msdf_text, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
+    std::string utf8_text = name;
+    std::vector<uint32_t> unicode_points;
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+
+    auto msdf_text_tem = get_msdf_text_add_string(unicode_points,
+                                                  "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    // read_msdf_atlas(msdf_text_tem, "atlas.json");
+    create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
     // 不同的材质？ 不同的着色器
 
     matrix_4x4 model;
