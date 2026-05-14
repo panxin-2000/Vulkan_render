@@ -6,6 +6,7 @@
 #define HELLO_MAC_UI_TEXT_H
 
 
+#include "LRU_cache.h"
 #include "MaxRectsBinPack.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"
@@ -84,12 +85,19 @@ class rect_Packing {
 };
 
 
-struct Msdf_text {
+class Msdf_text {
+public:
     Atlas atlas;
     Metrics metrics;
     using unicode_value = uint32_t;
     std::map<unicode_value, Glyph> glyphs;
+    LRU_cache<unicode_value, Glyph> unicode_cache;
+
+    // 没有 LRU (Least Recently Used)可以考虑之后添加
     rbp::MaxRectsBinPack texture_of_MSDF;
+
+    Msdf_text(const size_t max_size) : unicode_cache(max_size) {
+    }
 
     [[nodiscard]] float get_scale() const {
         return atlas.size;

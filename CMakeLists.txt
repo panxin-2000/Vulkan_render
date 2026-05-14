@@ -307,6 +307,8 @@ file(GLOB_RECURSE component
         "UI/UI_block.cpp"
         "UI/UI_button.cpp"
         "UI/UI_text.cpp"
+        "UI/Rect.cpp"
+        "UI/MaxRectBinPact.cpp"
         "UI/3d_model_display.cpp"
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"

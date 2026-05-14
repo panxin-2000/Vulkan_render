@@ -168,7 +168,7 @@ Msdf_text *msdf_text = nullptr;
 
 Msdf_text &get_msdf_text() {
     if (msdf_text == nullptr) {
-        msdf_text                            = new Msdf_text();
+        msdf_text                            = new Msdf_text(2048);
         msdf_text->atlas.type                = "msdf";
         msdf_text->atlas.distanceRange       = 4;
         msdf_text->atlas.distanceRangeMiddle = 0;
@@ -184,6 +184,7 @@ Msdf_text &get_msdf_text() {
         msdf_text->metrics.underlineY         = -0.17999999999999999;
         msdf_text->metrics.underlineThickness = 0.050000000000000003;
 
+        // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
         msdf_text->texture_of_MSDF.Init(2048, 2048, false);
         return *msdf_text;
     } else {
