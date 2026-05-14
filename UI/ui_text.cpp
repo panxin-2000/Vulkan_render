@@ -134,9 +134,9 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
                              0
                          },
                          (glyph->second.atlasBounds.left) / msdf_text.atlas.width,
-                         (msdf_text.atlas.height - glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
+                         (glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
                          (glyph->second.atlasBounds.right) / msdf_text.atlas.width,
-                         (msdf_text.atlas.height - glyph->second.atlasBounds.top) / msdf_text.atlas.height);
+                         (glyph->second.atlasBounds.top) / msdf_text.atlas.height);
             current_x += x_advance * char_size;
             current_y += y_advance * char_size;
         }
@@ -347,8 +347,7 @@ entt::entity UI_text(const std::string &name,
                                                                              msdf_text_tem.image.get_width(),
                                                                              msdf_text_tem.image.get_height(),
                                                                              4);
-        uint32_t index = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
-        set_render_parameter(entity, "msdf", index);
+        set_render_parameter(entity, "msdf", texture);
         // assert(index == 1);
     }
 

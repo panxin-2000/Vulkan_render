@@ -8,9 +8,7 @@ layout (location = 0) in vec2 in_UV;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-layout (set = 2, binding = 1) uniform msdf_index {
-    uint msdf;
-};
+layout (set = 2, binding = 1) uniform sampler2D msdf;
 
 
 float median(float r, float g, float b) {
@@ -54,7 +52,8 @@ void main()
     //这是因为 median(r, g, b) 在两条线交汇处，由于插值误差，计算出的 sd 值可能会超过正常的最大值（例如本该是 0.8，结果变成了 1.2）。
     // VK_FORMAT_R8G8B8A8_UNORM 图片的格式也是有要求的。 // 主要是格式的问题
 
-    vec3 msd_linear = texture(bindless_samplerColorMap[msdf], in_UV).rgb;
+
+    vec3 msd_linear = texture(msdf, in_UV).rgb;
     float sd = median(msd_linear.r, msd_linear.g, msd_linear.b);
 
     //sd > 0.5（或 0，取决于归一化方式）：表示该像素位于形状内部。

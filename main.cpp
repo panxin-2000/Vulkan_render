@@ -213,6 +213,10 @@ void add_pbr_default_textures() {
         std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
         uint32_t index                           = add_bindless_uniform_sampler2D("default_normal_texture", texture);
         assert(index == 1);
+    } {
+        // std::optional<Texture_parameter> texture = create_texture_from_image( );
+        // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
+        // assert(index == 1);
     }
 }
 
