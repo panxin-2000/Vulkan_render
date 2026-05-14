@@ -30,6 +30,19 @@ public:
         height_ = height;
     }
 
+    uint8_t *get_data() {
+        return reinterpret_cast<uint8_t *>(data.data());
+    }
+
+    [[nodiscard]] size_t get_width() const {
+        return width_;
+    }
+
+    [[nodiscard]] size_t get_height() const {
+        return height_;
+    }
+
+
     bool write(const uint x, const uint y, const float r, const float g, const float b, const float a = 0) {
         return write(x, y, floatToByte(r), floatToByte(g), floatToByte(b), floatToByte(a));
     }

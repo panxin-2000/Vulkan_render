@@ -331,7 +331,6 @@ int main(int argc, char *argv[]) {
 
     {
         auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-        set_render_parameter(entity, "msdf", "atlas.png");
     }
     // {
     //     auto value     = get_max_descriptor_update_after_bind_samplers();

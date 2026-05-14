@@ -545,6 +545,20 @@ Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, 
 }
 
 
+Texture_parameter create_texture_from_image(uint8_t *image,
+                                            const int width,
+                                            const int height,
+                                            const int channels) {
+    Picture_parameters picture_parameters{};
+    picture_parameters.height     = height;
+    picture_parameters.width      = width;
+    picture_parameters.image_data = image;
+    picture_parameters.channels   = channels;
+    auto result                   = create_2d_texture(picture_parameters);
+    return result;
+}
+
+
 Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     auto &handle = VK_backend::get();
     std::vector<std::string> paths;

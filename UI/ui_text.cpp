@@ -341,6 +341,17 @@ entt::entity UI_text(const std::string &name,
     create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
     // 不同的材质？ 不同的着色器
 
+    {
+        auto &msdf_text_tem                      = get_msdf_text();
+        std::optional<Texture_parameter> texture = create_texture_from_image(msdf_text_tem.image.get_data(),
+                                                                             msdf_text_tem.image.get_width(),
+                                                                             msdf_text_tem.image.get_height(),
+                                                                             4);
+        uint32_t index = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
+        set_render_parameter(entity, "msdf", index);
+        // assert(index == 1);
+    }
+
     matrix_4x4 model;
     UI_matrix_4x4(&model, {1, 1}, {0, 0});
     set_render_parameter(entity, "model_4x4", model);

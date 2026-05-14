@@ -116,5 +116,10 @@ Texture_parameter create_2d_texture(const std::string &picture_path);
 
 Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, const uint8_t B);
 
+Texture_parameter create_texture_from_image(uint8_t *image,
+                                            const int width,
+                                            const int height,
+                                            const int channels);
+
 void discard_image_and_view_map_clean();
 #endif //HELLO_MAC_VULKAN_IMAGE_H

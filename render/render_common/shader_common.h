@@ -207,7 +207,7 @@ struct Picture_parameters {
     int width;
     int height;
     int channels;
-    unsigned char *image_data;
+    uint8_t *image_data;
 };
 
 template<typename T>
