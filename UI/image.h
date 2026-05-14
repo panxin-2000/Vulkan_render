@@ -15,13 +15,17 @@ inline unsigned char floatToByte(const float value) {
 }
 
 class Image {
-    std::vector<uint8_t> data;
+    struct RGBA {
+        uint8_t r, g, b, a;
+    };
+
+    std::vector<RGBA> data;
     size_t width_  = 0;
     size_t height_ = 0;
 
 public:
     void init(const size_t width, const size_t height) {
-        data.reserve(width * height * 4);
+        data.resize(width * height * 4);
         width_  = width;
         height_ = height;
     }
@@ -32,10 +36,10 @@ public:
 
     bool write(const uint x, const uint y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0) {
         if (x < width_ && y < height_) {
-            data[(x + width_ * y) * 4 + 0] = r;
-            data[(x + width_ * y) * 4 + 1] = g;
-            data[(x + width_ * y) * 4 + 2] = b;
-            data[(x + width_ * y) * 4 + 3] = a;
+            data[(x + width_ * y)].r = r;
+            data[(x + width_ * y)].g = g;
+            data[(x + width_ * y)].b = b;
+            data[(x + width_ * y)].a = a;
             return true;
         }
         return false;
@@ -48,10 +52,10 @@ public:
             return false;
         }
         fprintf(f, "P3\n%lu %lu\n%d\n", width_, height_, 255);
-        for (int i = 0; i < width_; i++)
-            for (int j = 0; j < height_; j++) {
-                fprintf(f, "%d %d %d\n", data[i + j * width_ + 0], data[i + j * width_ + 1], data[i + j * width_ + 2]);
-            }
+        for (int j = 0; j < height_; j++) {
+            for (int i = 0; i < width_; i++)
+                fprintf(f, "%d %d %d\n", data[i + j * width_].r, data[i + j * width_].g, data[i + j * width_].b);
+        }
         fclose(f);
         return true;
     }

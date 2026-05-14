@@ -173,8 +173,8 @@ Msdf_text &get_msdf_text() {
         msdf_text->atlas.distanceRange       = 4;
         msdf_text->atlas.distanceRangeMiddle = 0;
         msdf_text->atlas.size                = 32;
-        msdf_text->atlas.width               = 2048;
-        msdf_text->atlas.height              = 2048;
+        msdf_text->atlas.width               = 256;
+        msdf_text->atlas.height              = 256;
         msdf_text->atlas.yOrigin             = "bottom";
 
         msdf_text->metrics.emSize             = 1;
@@ -188,7 +188,8 @@ Msdf_text &get_msdf_text() {
                               static_cast<size_t>(msdf_text->atlas.height));
 
         // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
-        msdf_text->texture_of_MSDF.Init(2048, 2048, false);
+        msdf_text->texture_of_MSDF.Init(static_cast<int>(msdf_text->atlas.width),
+                                        static_cast<int>(msdf_text->atlas.height), false);
         return *msdf_text;
     } else {
         return *msdf_text;
@@ -232,9 +233,19 @@ std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, 
 
         generateMSDF(msdf, shape, transform, config);
         // Bitmap 中的数据生成好了
+        return msdf;
     }
+    return {};
 }
 
+template<typename T>
+inline T clamp(T n) {
+    return n >= T(0) && n <= T(1) ? n : T(n > T(0));
+}
+
+inline std::uint8_t pixelFloatToByte(float x) {
+    return std::uint8_t(~int(255.5f - 255.f * clamp(x)));
+}
 
 Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points, const std::string &filename) {
     // std::string utf8_text = name;
@@ -264,14 +275,17 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
                 const auto width  = bitmap.value().width();
                 const auto height = bitmap.value().height();
                 auto position     = msdf_text_tem.texture_of_MSDF.Insert(width, height,
-                                                                     rbp::MaxRectsBinPack::RectBestShortSideFit);
+                                                                         rbp::MaxRectsBinPack::RectBestShortSideFit);
                 // 需要将 bitmap.value() 的内容写入图片 的 position
                 if (position.width == width) {
                     // 没有翻转
-                    for (auto i = 0; i < position.width; i++) {
-                        for (auto j = 0; j < position.height; j++) {
+                    for (auto j = 0; j < position.height; j++) {
+                        for (auto i = 0; i < position.width; i++) {
                             const auto ptr = bit_map(i, j);
-                            msdf_text_tem.image.write(position.x + i, position.y + j, *ptr, *(ptr + 1), *(ptr + 2));
+                            msdf_text_tem.image.write(position.x + i, position.y + j,
+                                                      pixelFloatToByte(*(ptr + 0)),
+                                                      pixelFloatToByte(*(ptr + 1)),
+                                                      pixelFloatToByte(*(ptr + 2)));
                         }
                     }
                 } else {
@@ -286,6 +300,8 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
             msdf_text_tem.glyphs.insert({unicode_point, glyph});
         }
     }
+    auto result = msdf_text_tem.image.write_to_file("msdf_text");
+
     return get_msdf_text();
 }
 
