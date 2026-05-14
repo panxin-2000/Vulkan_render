@@ -275,13 +275,13 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
                 const auto width  = bitmap.value().width();
                 const auto height = bitmap.value().height();
                 auto position     = msdf_text_tem.texture_of_MSDF.Insert(width, height,
-                                                                         rbp::MaxRectsBinPack::RectBestShortSideFit);
+                                                                     rbp::MaxRectsBinPack::RectBestShortSideFit);
                 // 需要将 bitmap.value() 的内容写入图片 的 position
                 if (position.width == width) {
                     // 没有翻转
                     for (auto j = 0; j < position.height; j++) {
                         for (auto i = 0; i < position.width; i++) {
-                            const auto ptr = bit_map(i, j);
+                            const auto ptr = bit_map(i, position.height - 1 - j);
                             msdf_text_tem.image.write(position.x + i, position.y + j,
                                                       pixelFloatToByte(*(ptr + 0)),
                                                       pixelFloatToByte(*(ptr + 1)),
@@ -300,7 +300,7 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
             msdf_text_tem.glyphs.insert({unicode_point, glyph});
         }
     }
-    auto result = msdf_text_tem.image.write_to_file("msdf_text");
+    // auto result = msdf_text_tem.image.write_to_file("msdf_text");
 
     return get_msdf_text();
 }

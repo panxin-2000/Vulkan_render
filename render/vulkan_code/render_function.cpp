@@ -77,7 +77,7 @@ void VK_backend::submit_render_queue(uint64_t time_line) {
         .pWaitSemaphores      = &engine_.get_current_presentSemaphores(),
         .pWaitDstStageMask    = &waitStages,
         .commandBufferCount   = 1,
-        .pCommandBuffers      = &cb,
+        .pCommandBuffers      = &cb, // 这里可以是一个向量，记录多个线程写入的指令。
         .signalSemaphoreCount = 2,
         .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
     }; {

@@ -99,7 +99,7 @@ inline void update_object_transform_function() { {
             auto offset = pos.get_offset();
             matrix_4x4 view;
             UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
-            set_render_parameter(it, "model_4x4", view);
+            set_render_parameter(it, "model_4x4", view); // 这里直接设置有问题，到渲染线程之后再设置
             Logic_entt().remove<UI_transform_dirty>(it);
         }
     } {

@@ -1,0 +1,221 @@
+#version 450
+
+layout (binding = 2) uniform UBO
+{
+    mat4 projection;
+    mat4 modelview;
+    vec4 cameraPos;
+    vec4 frustumPlanes[6];
+} ubo;
+
+// 球与视锥体平面的判断函数
+bool frustumCheck(vec4 pos, float radius)
+{
+    // Check sphere against frustum planes
+    for (int i = 0; i < 6; i++)
+    {
+        // 给出的是6个平面，视锥体 的 6个平面 世界空间中
+        // distance = x * A + y * B + z * C + D
+        // vec4 的四个值 是 ABCD
+        // pos 设为 vec4(x, y, z, 1.0)， 最后一位必须是 1.0
+        if (dot(pos, ubo.frustumPlanes[i]) + radius < 0.0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// 也是球与视锥体平面的判断函数，不过 mat 传入的应该是 project * view
+// 	bool is_visible = check_is_visible(global_uniform.proj_view, vec3(model.x, model.y, model.z), model.r);
+bool check_is_visible(mat4 mat, vec3 origin, float radius)
+{
+    uint plane_index = 0;
+    for (uint i = 0; i < 3; ++i)
+    {
+        for (uint j = 0; j < 2; ++j, ++plane_index)
+        {
+            if (plane_index == 2 || plane_index == 3)
+            {
+                continue;
+            }
+            const float sign = (j > 0) ? 1.f : -1.f;
+            vec4 plane = vec4(0, 0, 0, 0);
+            for (uint k = 0; k < 4; ++k)
+            {
+                plane[k] = mat[k][3] + sign * mat[k][i];
+            }
+            plane.xyzw /= sqrt(dot(plane.xyz, plane.xyz));
+            if (dot(origin, plane.xyz) + plane.w + radius < 0)
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+// AABB 与 视锥体平面 核心判定函数
+bool IsAABBInFrustum(vec3 minBounds, vec3 maxBounds)
+{
+    // 1. 转换为中心点与半径表达形式
+    vec3 center = (maxBounds + minBounds) * 0.5;
+    vec3 extent = (maxBounds - minBounds) * 0.5;
+
+    for (int i = 0; i < 6; ++i)
+    {
+        vec3 planeNormal = ubo.frustumPlanes[i].xyz;
+        float planeD = ubo.frustumPlanes[i].w;
+
+        // 2. 将 AABB 沿平面的最大正向投影投影半径计算出来
+        // 使用 abs(planeNormal) 可以完美保证 projectedRadius 永远为正最大值
+        float projectedRadius = dot(extent, abs(planeNormal));
+
+        // 3. 计算中心点到平面的有向物理距离
+        float distanceToCenter = dot(center, planeNormal) + planeD;
+
+        // 如果中心点在平面外侧，且其外侧垂直距离超过了盒子的投影外延半径
+        if (distanceToCenter < -projectedRadius)
+        {
+            return false; // 说明整个 AABB 盒体与此平面完全分离（不可见）
+        }
+    }
+    return true; // 与视锥体相交或完全包裹在内
+}
+
+bool frustum_cull(vec3 lo, vec3 hi)
+{
+    bool ret = true;
+    // 遍历视锥体的 6 个裁剪平面（前、后、左、右、上、下）
+    for (int i = 0; i < 6 && ret; i++)
+    {
+        // 获取当前平面的系数。p.xyz 是法向量，p.w 是从原点到平面的距离
+        vec4 p = ubo.frustumPlanes[i];
+
+        // 关键优化 1：生成一个布尔型三维掩码（bvec3）
+        // 检查平面法向量的 x, y, z 分量是否大于 0
+        bvec3 high_mask = greaterThan(p.xyz, vec3(0.0));
+
+        // 关键优化 2：利用硬件的 mix（混合选择）特性，完全避免了 CPU 级别的 if-else 分支
+        // 如果法向量分量为正 (true)，最远点就选择 AABB 的最大边界 hi
+        // 如果法向量分量为负 (false)，最远点就选择 AABB 的最小边界 lo
+        vec3 max_coord = mix(lo, hi, high_mask);
+
+        // 核心数学计算：计算最远点到平面的带符号距离（Signed Distance）
+        // dot(vec4(max_coord, 1.0), p) 展开后等同于：dot(max_coord, p.xyz) + p.w
+        if (dot(vec4(max_coord, 1.0), p) < 0.0)
+        ret = false; // 如果连最远的点都在该平面外面（距离 < 0），说明整个 AABB 都在视锥体外，剔除
+    }
+
+
+    #if MESHLET_RENDER_PHASE == 2
+    // Very crude cull, but only way to get anything resembling culling of skinned meshes.
+    if (ret)
+    ret = cluster_cull_hiz(0.5 * (lo + hi), 0.5 * length(hi - lo));
+    #endif
+
+    return ret;
+}
+
+
+
+#if MESHLET_RENDER_PHASE == 2
+bool hiz_cull(vec2 view_range_x, vec2 view_range_y, float closest_z)
+{
+    // Viewport scale first applies any projection scale in X/Y (without Y flip).
+    // The scale also does viewport size / 2 and then offsets into integer window coordinates.
+    vec2 range_x = view_range_x * frustum.viewport_scale_bias.x + frustum.viewport_scale_bias.z;
+    vec2 range_y = view_range_y * frustum.viewport_scale_bias.y + frustum.viewport_scale_bias.w;
+
+    ivec2 ix = ivec2(range_x);
+    ivec2 iy = ivec2(range_y);
+
+    ix.x = clamp(ix.x, 0, frustum.hiz_resolution.x - 1);
+    ix.y = clamp(ix.y, ix.x, frustum.hiz_resolution.x - 1);
+    iy.x = clamp(iy.x, 0, frustum.hiz_resolution.y - 1);
+    iy.y = clamp(iy.y, iy.x, frustum.hiz_resolution.y - 1);
+
+    // We need to sample from a LOD where there is at most one texel delta
+    // between lo/hi values.
+    int max_delta = max(ix.y - ix.x, iy.y - iy.x);
+    int lod = clamp(findMSB(max_delta - 1) + 1, frustum.hiz_min_lod, frustum.hiz_max_lod);
+    ivec2 lod_max_coord = max(frustum.hiz_resolution >> lod, ivec2(1)) - 1;
+    ix = min(ix >> lod, lod_max_coord.xx);
+    iy = min(iy >> lod, lod_max_coord.yy);
+
+    ivec2 hiz_coord = ivec2(ix.x, iy.x);
+
+    // We didn't write the top LOD.
+    lod -= frustum.hiz_min_lod;
+
+    float d = texelFetch(uHiZDepth, hiz_coord, lod).x;
+    bool nx = ix.y != ix.x;
+    bool ny = iy.y != iy.x;
+    if (nx)
+    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 0)).x);
+    if (ny)
+    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(0, 1)).x);
+    if (nx && ny)
+    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 1)).x);
+
+    return closest_z < d;
+}
+#endif
+
+
+
+#if MESHLET_RENDER_PHASE == 2
+bool cluster_cull_hiz(vec3 bound_center, float effective_radius)
+{
+    vec3 view = view_transform_yz_flip(bound_center);
+    bool ret = true;
+
+    // Ensure there is no clipping against near plane.
+    // If the sphere is close enough, we accept it.
+    // There is no effective near plane in ORTHO.
+    if (ORTHO || view.z > effective_radius + 0.1)
+    {
+        vec2 range_x, range_y;
+
+        if (ORTHO)
+        {
+            range_x = view.x + vec2(-effective_radius, effective_radius);
+            range_y = view.y + vec2(-effective_radius, effective_radius);
+        }
+        else
+        {
+            // Have to project in view space since the sphere is still a sphere.
+            range_x = project_sphere_flat(view.x, view.z, effective_radius);
+            range_y = project_sphere_flat(view.y, view.z, effective_radius);
+        }
+        ret = hiz_cull(range_x, range_y, view.z - effective_radius);
+    }
+
+    return ret;
+}
+#endif
+
+
+
+void main()
+{
+
+}
+
+
+// 动态写入 commands buffer 的部分代码，
+//layout(binding = 2, std430) buffer           CounterBuffer  { uint drawCount; }; // 全局原子计数器
+//
+//// 执行视锥体测试
+//if (IsVisible(instance.boundingSphere.xyz, instance.boundingSphere.w)) {
+//
+//// 关键点：利用原子操作在间接缓冲中抢占当前可见物体的存储槽位
+//// 从而实现“数据紧凑化”，把被剔除的空位压缩掉
+//uint drawIndex = atomicAdd(drawCount, 1);
+//
+//commands[drawIndex].indexCount    = instance.indexCount;
+//commands[drawIndex].instanceCount = 1; // 激活绘制
+//commands[drawIndex].firstIndex    = instance.firstIndex;
+//commands[drawIndex].vertexOffset  = 0;
+//commands[drawIndex].firstInstance = gID; // 将原始全局 ID 作为 InstanceID 传给后方顶点着色器
+//}

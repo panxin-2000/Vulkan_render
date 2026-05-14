@@ -292,7 +292,7 @@ void add_manifold_entity() { {
 }
 
 int main(int argc, char *argv[]) {
-    test_single_char();
+    // test_single_char();
 
     // convert("");
     const std::vector<double> coeffs = {
