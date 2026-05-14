@@ -30,9 +30,9 @@ struct Metrics {
 };
 
 
-struct glyph {
+struct Glyph {
     uint32_t unicode = 0;
-    float advance    = 0.0f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
+    float advance    = 0.6f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
 
     struct direction {
         float left   = 0.0f;
@@ -48,7 +48,8 @@ struct glyph {
 struct Msdf_text {
     Atlas atlas;
     Metrics metrics;
-    std::map<uint32_t, glyph> glyphs;
+    using unicode_value = uint32_t;
+    std::map<unicode_value, Glyph> glyphs;
 };
 
 

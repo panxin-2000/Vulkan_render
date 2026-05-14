@@ -127,22 +127,36 @@ void test_single_char() {
         return;
     }
     msdfgen::Shape shape;
-    if (loadGlyph(shape, font, 'A', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+    if (loadGlyph(shape, font, 'y', msdfgen::FONT_SCALING_EM_NORMALIZED)) {
         // 预处理：标准化轮廓方向
         shape.normalize();
+        auto bounds = shape.getBounds();
+
 
         // 为边分配颜色（MSDF 的核心步骤，确保角点锐利）
         edgeColoringByDistance(shape, 3.0);
 
+        // 距离场需要留白空间存储过渡渐变，否则外轮廓会被直接截断
+        // double padding = 4.0;
+        double padding = 2.0;
+
         float size_of_msdf = 32;
+        float scale = 32;
 
+        // 4. 根据 Bounds 计算目标 Bitmap 的物理宽高  需要向上对齐
+        //    添加微小偏置，防止浮点数无限接近整数时因精度问题导致少算 1 像素
+        int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * padding + 0.9999);
+        int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * padding + 0.9999);
 
-        // 4. 配置输出位图 (32x32 像素)
-        msdfgen::Bitmap<float, 3> msdf(size_of_msdf, size_of_msdf);
+        // 2. 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
+        if (width  % 2 != 0) width++;
+        if (height % 2 != 0) height++;
+
+        // 实例化浮点型 Bitmap 容器（3通道代表包含 R, G, B 的 MSDF）  配置输出位图 (32x32 像素)
+        msdfgen::Bitmap<float, 3> msdf(width, height);
 
         // 5. 设置投影变换 (缩放和位移)
         // 参数：Projection(scale, translation), range (边缘影响范围)
-        double padding = 2.0;
         msdfgen::SDFTransformation t(
                                      msdfgen::Projection(size_of_msdf,
                                                          msdfgen::Vector2(7.0 / size_of_msdf,
@@ -282,7 +296,10 @@ void add_manifold_entity() { {
 }
 
 int main(int argc, char *argv[]) {
-    convert("");
+
+    test_single_char();
+
+    // convert("");
     const std::vector<double> coeffs = {
         -1.028, 0.779, -0.275, 0.601, -0.256,
         1.891, -1.658, -0.370, -0.772
@@ -317,10 +334,10 @@ int main(int argc, char *argv[]) {
     // 天空盒
 
 
-    // {
-    //     auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-    //     set_render_parameter(entity, "msdf", "atlas.png");
-    // }
+    {
+        auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+        set_render_parameter(entity, "msdf", "atlas.png");
+    }
     // {
     //     auto value     = get_max_descriptor_update_after_bind_samplers();
     //     auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});

@@ -45,7 +45,7 @@ void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 
         for (auto &glyph: data["glyphs"]) {
             auto unicode = glyph.at("unicode");
-            struct glyph tem;
+            struct Glyph tem;
             tem.unicode = glyph.at("unicode");
             tem.advance = glyph.at("advance");
             if (glyph.contains("planeBounds")) {
@@ -161,6 +161,135 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
     hb_font_destroy(font);
     hb_face_destroy(face);
     hb_blob_destroy(blob);
+}
+
+
+Msdf_text *msdf_text = nullptr;
+
+Msdf_text &get_msdf_text() {
+    if (msdf_text == nullptr) {
+        msdf_text                            = new Msdf_text();
+        msdf_text->atlas.type                = "msdf";
+        msdf_text->atlas.distanceRange       = 4;
+        msdf_text->atlas.distanceRangeMiddle = 0;
+        msdf_text->atlas.size                = 32;
+        msdf_text->atlas.width               = 2048;
+        msdf_text->atlas.height              = 2048;
+        msdf_text->atlas.yOrigin             = "bottom";
+
+        msdf_text->metrics.emSize             = 1;
+        msdf_text->metrics.lineHeight         = 1.3200000000000001;
+        msdf_text->metrics.ascender           = 1.02;
+        msdf_text->metrics.descender          = -0.29999999999999999;
+        msdf_text->metrics.underlineY         = -0.17999999999999999;
+        msdf_text->metrics.underlineThickness = 0.050000000000000003;
+
+        return *msdf_text;
+    } else {
+        return *msdf_text;
+    }
+}
+
+#include <msdfgen.h>
+#include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
+
+Msdf_text &get_msdf_text_add_string(const std::string &name) {
+    std::string utf8_text = name;
+    std::vector<uint32_t> unicode_points;
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+    auto msdf_text = get_msdf_text();
+
+    msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
+
+    msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    if (!font) {
+        deinitializeFreetype(ft);
+        return msdf_text;
+    }
+
+    for (auto unicode_point: unicode_points) {
+        // 需要
+        if (msdf_text.glyphs.find(unicode_point) != msdf_text.glyphs.end()) {
+        } else {
+            Glyph glyph;
+            glyph.unicode = unicode_point;
+            msdfgen::Shape shape;
+            if (loadGlyph(shape, font, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                // 预处理：标准化轮廓方向
+                shape.normalize();
+                auto bounds              = shape.getBounds();
+                glyph.planeBounds.left   = static_cast<float>(bounds.l);
+                glyph.planeBounds.right  = static_cast<float>(bounds.r);
+                glyph.planeBounds.top    = static_cast<float>(bounds.t);
+                glyph.planeBounds.bottom = static_cast<float>(bounds.b);
+
+                // 为边分配颜色（MSDF 的核心步骤，确保角点锐利）
+                edgeColoringByDistance(shape, 3.0);
+
+                float size_of_msdf = 32;
+                float scale        = 32;
+                double padding     = 2.0;
+
+                // 4. 配置输出位图 (32x32 像素)
+                msdfgen::Bitmap<float, 3> msdf(size_of_msdf, size_of_msdf);
+                int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * padding + 0.9999);
+                int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * padding + 0.9999);
+
+                // 2. 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
+                if (width % 2 != 0) width++;
+                if (height % 2 != 0) height++;
+                // width 和 height 就是需要排列的盒子，装箱算法中需要放置的箱子
+                // 只剩下装箱需要去管理了
+
+                // 5. 设置投影变换 (缩放和位移)
+                // 参数：Projection(scale, translation), range (边缘影响范围)
+                msdfgen::SDFTransformation transform(
+                                                     msdfgen::Projection(size_of_msdf,
+                                                                         msdfgen::Vector2(7.0 / size_of_msdf,
+                                                                                  4.0 / size_of_msdf + padding /
+                                                                                  size_of_msdf)),
+                                                     msdfgen::Range(4.0 / size_of_msdf));
+
+                // 推荐设置：range = 2.0
+                // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
+                // 6. 执行 MSDF 生成核心算法
+
+                msdfgen::MSDFGeneratorConfig config;
+                config.overlapSupport                    = true; // 开启重叠支持
+                config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+                config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+
+                generateMSDF(msdf, shape, transform, config);
+
+                // overlapSupport (bool)：
+                // 描述：是否开启重叠支持（默认为 true）。
+                // 作用：如果矢量路径中存在重叠的轮廓（Contours），该参数可以确保距离场计算的正确性。
+                // A 的 上面 确实是重叠的路径 ，主要还是指向了这个
+
+
+                // 将 msdf 转换为 0-1，然后再上传到 GPU  也可以直接上传，之后再到 GPU 中 调用计算着色器做转移
+                // float range = 2.0f; // 必须与生成时设置的 range 一致
+                // float dist = pixelValue; // 来自 Bitmap<float, 3> 的值
+                // // 1. 归一化到 [0, 1]
+                // float normalized = dist / range + 0.5f;
+                // // 2. 截断并映射到 [0, 255]
+                // unsigned char out = (unsigned char)std::max(0.0f, std::min(255.0f, normalized * 255.0f + 0.5f));
+
+                // 想要实现单个字体的替换更新
+                // 字符排版管理器 (Packer)
+                // 动态 LRU 缓存系统
+                // GPU 纹理更新 (Incremental Updates)
+
+
+                // 7. 保存为 PNG 文件 (需要链接 msdfgen-ext)
+                savePng(msdf, "output_A_msdf.png");
+                std::cout << "MSDF image generated successfully!" << std::endl;
+                // 因为是需要输出，所以不能save Png,需要写入到其他位置
+            }
+
+            msdf_text.glyphs.insert({unicode_point, glyph});
+        }
+    }
 }
 
 
