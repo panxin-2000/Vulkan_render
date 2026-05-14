@@ -52,8 +52,12 @@ struct Msdf_text {
     std::map<unicode_value, Glyph> glyphs;
 
 public:
-    const uint get_scale() const {
-        return static_cast<int>(atlas.size);
+    const float get_scale() const {
+        return atlas.size;
+    }
+
+    const uint get_distanceRange() const {
+        return static_cast<int>(atlas.distanceRange);
     }
 };
 

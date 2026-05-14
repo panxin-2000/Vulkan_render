@@ -193,102 +193,77 @@ Msdf_text &get_msdf_text() {
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
-Msdf_text &get_msdf_text_add_string(const std::string &name) {
-    std::string utf8_text = name;
-    std::vector<uint32_t> unicode_points;
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
-    auto msdf_text = get_msdf_text();
+
+std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, msdfgen::FontHandle *font,
+                                                                  uint32_t unicode_point) {
+    msdfgen::Shape shape;
+    if (loadGlyph(shape, font, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+        // 预处理：标准化轮廓方向
+        shape.normalize();
+        const auto bounds        = shape.getBounds();
+        glyph.planeBounds.left   = static_cast<float>(bounds.l);
+        glyph.planeBounds.right  = static_cast<float>(bounds.r);
+        glyph.planeBounds.top    = static_cast<float>(bounds.t);
+        glyph.planeBounds.bottom = static_cast<float>(bounds.b);
+        edgeColoringByDistance(shape, 3.0);
+        const float scale          = get_msdf_text().get_scale();         // 英文字母其实16就够了，行字需要 32;
+        const double distanceRange = get_msdf_text().get_distanceRange(); // 让画布留白正好等于渐变宽度
+        int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
+        int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
+
+        // 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
+        if (width % 2 != 0) width++;
+        if (height % 2 != 0) height++;
+        msdfgen::Bitmap<float, 3> msdf(width, height);
+        const auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
+                                                -bounds.b + distanceRange / scale);
+        const msdfgen::SDFTransformation transform(msdfgen::Projection(scale, translate),
+                                                   msdfgen::Range(distanceRange / scale));
+
+        msdfgen::MSDFGeneratorConfig config;
+        config.overlapSupport                    = true; // 开启重叠支持
+        config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+        config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+
+        generateMSDF(msdf, shape, transform, config);
+        // Bitmap 中的数据生成好了
+    }
+}
+
+
+Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points, const std::string &filename) {
+    // std::string utf8_text = name;
+    // std::vector<uint32_t> unicode_points;
+    // utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+    auto msdf_text_tem = get_msdf_text();
 
     msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 
-    msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    // msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    msdfgen::FontHandle *font = loadFont(ft, filename.c_str());
     if (!font) {
         deinitializeFreetype(ft);
-        return msdf_text;
+        return get_msdf_text();
     }
 
     for (auto unicode_point: unicode_points) {
         // 需要
-        if (msdf_text.glyphs.find(unicode_point) != msdf_text.glyphs.end()) {
+        if (msdf_text_tem.glyphs.find(unicode_point) != msdf_text_tem.glyphs.end()) {
         } else {
             Glyph glyph;
             glyph.unicode = unicode_point;
-            msdfgen::Shape shape;
-            if (loadGlyph(shape, font, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
-                // 预处理：标准化轮廓方向
-                shape.normalize();
-                auto bounds              = shape.getBounds();
-                glyph.planeBounds.left   = static_cast<float>(bounds.l);
-                glyph.planeBounds.right  = static_cast<float>(bounds.r);
-                glyph.planeBounds.top    = static_cast<float>(bounds.t);
-                glyph.planeBounds.bottom = static_cast<float>(bounds.b);
-
-                // 为边分配颜色（MSDF 的核心步骤，确保角点锐利）
-                edgeColoringByDistance(shape, 3.0);
-
-                float size_of_msdf   = 32;
-                float scale          = get_msdf_text().get_scale(); //     = 32;
-                double distanceRange = 4.0;                         // 让画布留白正好等于渐变宽度
-
-                // 4. 配置输出位图 (32x32 像素)
-                int width  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
-                int height = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
-
-                // 2. 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
-                if (width % 2 != 0) width++;
-                if (height % 2 != 0) height++;
-                msdfgen::Bitmap<float, 3> msdf(width, height);
-
-                // width 和 height 就是需要排列的盒子，装箱算法中需要放置的箱子
-                // 只剩下装箱需要去管理了
-
-                // 5. 设置投影变换 (缩放和位移)
-                // 参数：Projection(scale, translation), range (边缘影响范围)
-                auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
-                                                  -bounds.b + distanceRange / scale);
-                msdfgen::SDFTransformation transform(msdfgen::Projection(size_of_msdf, translate),
-                                                     msdfgen::Range(distanceRange / size_of_msdf));
-
-                // 推荐设置：range = 2.0
-                // 如果要加外发光/描边：可以设为 4.0 或更高，因为你需要额外的空间来存储边缘之外的距离信息。
-                // 6. 执行 MSDF 生成核心算法
-
-                msdfgen::MSDFGeneratorConfig config;
-                config.overlapSupport                    = true; // 开启重叠支持
-                config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
-                config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
-
-                generateMSDF(msdf, shape, transform, config);
-
-                // overlapSupport (bool)：
-                // 描述：是否开启重叠支持（默认为 true）。
-                // 作用：如果矢量路径中存在重叠的轮廓（Contours），该参数可以确保距离场计算的正确性。
-                // A 的 上面 确实是重叠的路径 ，主要还是指向了这个
-
-
-                // 将 msdf 转换为 0-1，然后再上传到 GPU  也可以直接上传，之后再到 GPU 中 调用计算着色器做转移
-                // float range = 2.0f; // 必须与生成时设置的 range 一致
-                // float dist = pixelValue; // 来自 Bitmap<float, 3> 的值
-                // // 1. 归一化到 [0, 1]
-                // float normalized = dist / range + 0.5f;
-                // // 2. 截断并映射到 [0, 255]
-                // unsigned char out = (unsigned char)std::max(0.0f, std::min(255.0f, normalized * 255.0f + 0.5f));
-
-                // 想要实现单个字体的替换更新
-                // 字符排版管理器 (Packer)
-                // 动态 LRU 缓存系统
-                // GPU 纹理更新 (Incremental Updates)
-
-
-                // 7. 保存为 PNG 文件 (需要链接 msdfgen-ext)
-                savePng(msdf, "output_A_msdf.png");
-                std::cout << "MSDF image generated successfully!" << std::endl;
-                // 因为是需要输出，所以不能save Png,需要写入到其他位置
+            auto bitmap   = generate_sdf_bitmap_and(glyph, font, unicode_point);
+            if (bitmap.has_value()) {
+                auto width  = bitmap.value().width();
+                auto height = bitmap.value().height();
+                // 需要将 bitmap.value() 的内容写入图片中
             }
 
-            msdf_text.glyphs.insert({unicode_point, glyph});
+
+            msdf_text_tem.glyphs.insert({unicode_point, glyph});
         }
     }
+    return get_msdf_text();
 }
 
 
