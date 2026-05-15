@@ -7,7 +7,7 @@
 
 
 #include "LRU_cache.h"
-#include "MaxRectsBinPack.h"
+#include "bin_pack/MaxRectsBinPack.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"
 

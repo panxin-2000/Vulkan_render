@@ -17,6 +17,10 @@
 
 #include "MaxRectsBinPack.h"
 
+
+
+
+
 namespace rbp {
     using namespace std;
 
