@@ -190,6 +190,13 @@ Msdf_text &get_msdf_text() {
         // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
         msdf_text->texture_of_MSDF.Init(static_cast<int>(msdf_text->atlas.width),
                                         static_cast<int>(msdf_text->atlas.height), false);
+
+        msdf_text->ft = msdfgen::initializeFreetype();
+        msdf_text->add_font("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+
+        // msdfgen::deinitializeFreetype(ft); //  对应的删除函数
+
+
         return *msdf_text;
     } else {
         return *msdf_text;
@@ -200,42 +207,37 @@ Msdf_text &get_msdf_text() {
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
 
-std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, msdfgen::FontHandle *font,
-                                                                  uint32_t unicode_point) {
-    msdfgen::Shape shape;
-    if (loadGlyph(shape, font, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
-        // 预处理：标准化轮廓方向
-        shape.normalize();
-        const auto bounds        = shape.getBounds();
-        glyph.planeBounds.left   = static_cast<float>(bounds.l);
-        glyph.planeBounds.right  = static_cast<float>(bounds.r);
-        glyph.planeBounds.top    = static_cast<float>(bounds.t);
-        glyph.planeBounds.bottom = static_cast<float>(bounds.b);
-        edgeColoringByDistance(shape, 3.0);
-        const float scale          = get_msdf_text().get_scale();         // 英文字母其实16就够了，行字需要 32;
-        const double distanceRange = get_msdf_text().get_distanceRange(); // 让画布留白正好等于渐变宽度
-        int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
-        int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
+std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, msdfgen::Shape &shape) {
+    // 预处理：标准化轮廓方向
+    shape.normalize();
+    const auto bounds        = shape.getBounds();
+    glyph.planeBounds.left   = static_cast<float>(bounds.l);
+    glyph.planeBounds.right  = static_cast<float>(bounds.r);
+    glyph.planeBounds.top    = static_cast<float>(bounds.t);
+    glyph.planeBounds.bottom = static_cast<float>(bounds.b);
+    edgeColoringByDistance(shape, 3.0);
+    const float scale          = get_msdf_text().get_scale();         // 英文字母其实16就够了，行字需要 32;
+    const double distanceRange = get_msdf_text().get_distanceRange(); // 让画布留白正好等于渐变宽度
+    int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
+    int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
 
-        // 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
-        if (width % 2 != 0) width++;
-        if (height % 2 != 0) height++;
-        msdfgen::Bitmap<float, 3> msdf(width, height);
-        const auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
-                                                -bounds.b + distanceRange / scale);
-        const msdfgen::SDFTransformation transform(msdfgen::Projection(scale, translate),
-                                                   msdfgen::Range(distanceRange / scale));
+    // 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
+    if (width % 2 != 0) width++;
+    if (height % 2 != 0) height++;
+    msdfgen::Bitmap<float, 3> msdf(width, height);
+    const auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
+                                            -bounds.b + distanceRange / scale);
+    const msdfgen::SDFTransformation transform(msdfgen::Projection(scale, translate),
+                                               msdfgen::Range(distanceRange / scale));
 
-        msdfgen::MSDFGeneratorConfig config;
-        config.overlapSupport                    = true; // 开启重叠支持
-        config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
-        config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
+    msdfgen::MSDFGeneratorConfig config;
+    config.overlapSupport                    = true; // 开启重叠支持
+    config.errorCorrection.mode              = msdfgen::ErrorCorrectionConfig::EDGE_PRIORITY;
+    config.errorCorrection.distanceCheckMode = msdfgen::ErrorCorrectionConfig::ALWAYS_CHECK_DISTANCE;
 
-        generateMSDF(msdf, shape, transform, config);
-        // Bitmap 中的数据生成好了
-        return msdf;
-    }
-    return {};
+    generateMSDF(msdf, shape, transform, config);
+    // Bitmap 中的数据生成好了
+    return msdf;
 }
 
 template<typename T>
@@ -247,57 +249,65 @@ inline std::uint8_t pixelFloatToByte(float x) {
     return std::uint8_t(~int(255.5f - 255.f * clamp(x)));
 }
 
+
+void write_bitmap_to_bin_pack_image(const rbp::Rect &position, msdfgen::Bitmap<float, 3> &bit_map, Image &image) {
+    for (auto j = 0; j < position.height; j++) {
+        for (auto i = 0; i < position.width; i++) {
+            const auto ptr = bit_map(i, position.height - 1 - j);
+            image.write(position.x + i, position.y + j,
+                        pixelFloatToByte(*(ptr + 0)),
+                        pixelFloatToByte(*(ptr + 1)),
+                        pixelFloatToByte(*(ptr + 2)));
+        }
+    }
+}
+
+
 Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points, const std::string &filename) {
-    // std::string utf8_text = name;
-    // std::vector<uint32_t> unicode_points;
-    // utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
     auto &msdf_text_tem = get_msdf_text();
 
-    msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 
-    // msdfgen::FontHandle *font = loadFont(ft, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
-    msdfgen::FontHandle *font = loadFont(ft, filename.c_str());
+    msdfgen::FontHandle *font = msdfgen::loadFont(msdf_text_tem.ft, filename.c_str());
     if (!font) {
-        deinitializeFreetype(ft);
-        return get_msdf_text();
     }
+    std::vector<std::pair<Msdf_text::Filename, msdfgen::FontHandle *> > temp_fonts;
+    // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
+
 
     for (auto unicode_point: unicode_points) {
         // 需要
         if (msdf_text_tem.glyphs.find(unicode_point) != msdf_text_tem.glyphs.end()) {
             // 已经存在，
         } else {
-            Glyph glyph;
-            glyph.unicode = unicode_point;
-            auto bitmap   = generate_sdf_bitmap_and(glyph, font, unicode_point);
-            if (bitmap.has_value()) {
-                auto bit_map      = bitmap.value();
-                const auto width  = bitmap.value().width();
-                const auto height = bitmap.value().height();
-                auto position     = msdf_text_tem.texture_of_MSDF.Insert(width, height,
-                                                                     rbp::MaxRectsBinPack::RectBestShortSideFit);
-                // 需要将 bitmap.value() 的内容写入图片 的 position
-                if (position.width == width) {
-                    // 没有翻转
-                    for (auto j = 0; j < position.height; j++) {
-                        for (auto i = 0; i < position.width; i++) {
-                            const auto ptr = bit_map(i, position.height - 1 - j);
-                            msdf_text_tem.image.write(position.x + i, position.y + j,
-                                                      pixelFloatToByte(*(ptr + 0)),
-                                                      pixelFloatToByte(*(ptr + 1)),
-                                                      pixelFloatToByte(*(ptr + 2)));
+            for (const auto &font: msdf_text_tem.fonts) {
+                msdfgen::Shape shape;
+                if (loadGlyph(shape, font.second, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                    Glyph glyph;
+                    glyph.unicode = unicode_point;
+                    auto bitmap   = generate_sdf_bitmap_and(glyph, shape);
+                    if (bitmap.has_value()) {
+                        auto bit_map      = bitmap.value();
+                        const auto width  = bitmap.value().width();
+                        const auto height = bitmap.value().height();
+                        auto position     = msdf_text_tem.texture_of_MSDF.Insert(width, height,
+                                                                             rbp::MaxRectsBinPack::RectBestShortSideFit);
+                        // 需要将 bitmap.value() 的内容写入图片 的 position
+                        if (position.width == width) {
+                            // 没有翻转
+                            write_bitmap_to_bin_pack_image(position, bit_map, msdf_text_tem.image);
+                        } else {
+                            // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
                         }
+                        // 也可能因为上下翻转需要处理一下下面的四个字
+                        glyph.atlasBounds.left   = (static_cast<float>(position.x) + 0.5f);
+                        glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
+                        glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
+                        glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
+                        msdf_text_tem.glyphs.insert({unicode_point, glyph});
+                        break;
                     }
-                } else {
-                    // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
                 }
-                // 也可能因为上下翻转需要处理一下下面的四个字
-                glyph.atlasBounds.left   = (static_cast<float>(position.x) + 0.5f);
-                glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
-                glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
-                glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
             }
-            msdf_text_tem.glyphs.insert({unicode_point, glyph});
         }
     }
     // auto result = msdf_text_tem.image.write_to_file("msdf_text");

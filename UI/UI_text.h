@@ -10,6 +10,8 @@
 #include "bin_pack/MaxRectsBinPack.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"
+#include <msdfgen.h>
+#include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
 
 struct Atlas {
@@ -100,8 +102,23 @@ public:
     rbp::MaxRectsBinPack texture_of_MSDF;
     Image image;
 
+    msdfgen::FreetypeHandle *ft;
+    using Filename = std::string;
+    std::vector<std::pair<Filename, msdfgen::FontHandle *> > fonts;
+
     explicit Msdf_text(const size_t max_size) //: unicode_cache(max_size)
     {
+    }
+
+    bool add_font(const Filename &file_name) {
+        if (ft != nullptr) {
+            msdfgen::FontHandle *font = msdfgen::loadFont(ft, file_name.c_str());
+            if (font != nullptr) {
+                fonts.push_back({file_name.c_str(), font});
+                return true;
+            }
+        }
+        return false;
     }
 
     [[nodiscard]] float get_scale() const {
