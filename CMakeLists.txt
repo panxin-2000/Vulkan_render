@@ -422,6 +422,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_ear_clip.cpp
         test/test_mutex.cpp
         test/test_intersect.cpp
+        test/test_lazy_Evaluation.cpp
         test/test_signed_area.cpp
         test/test_conveyor_belt.cpp
         test/test_cut_rod.cpp)
