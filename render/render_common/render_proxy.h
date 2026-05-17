@@ -53,10 +53,7 @@ public:
     std::optional<float> line_width;
 };
 
-class Mesh {
-public:
-    std::vector<VKR_Primitive> mesh;
-};
+
 
 
 class Proxy_entity {

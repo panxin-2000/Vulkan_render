@@ -59,16 +59,6 @@ void logic_update_proxy_descriptor_sets(const entt::entity logic_entity,
     };
 }
 
-void logic_update_Mesh(const entt::entity logic_entity,
-                       const std::vector<VKR_Primitive> mesh) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, mesh ]() {
-            auto &temp = Render_entt().get_or_emplace<Mesh>(proxy_entity);
-            temp.mesh  = mesh;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
 
 void logic_update_scissor(const entt::entity logic_entity,
                           const VkRect2D scissor) {
@@ -99,7 +89,7 @@ void add_new_peoxy_to_render_function() {
         logic_update_proxy<Name_component>(it);
 
         const auto mesh = get_VKR_mesh(it);
-        logic_update_Mesh(it, mesh);
+        logic_update_proxy(it, mesh);
         auto pipeline_layout = get_pipeline_layout(it);
         logic_update_pipeline_layout(it, pipeline_layout);
 

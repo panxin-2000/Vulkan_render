@@ -387,7 +387,7 @@ void update_object_mesh() {
 
         const auto mesh = create_mesh(it);
 
-        logic_update_Mesh(it, mesh);
+        logic_update_proxy(it, mesh);
 
         Logic_entt().remove<UI_transform_dirty>(it);
     }

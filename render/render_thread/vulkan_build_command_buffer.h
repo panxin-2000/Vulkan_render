@@ -532,7 +532,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
     //                        &push_constants_address);
     // }
-    auto mesh = Render_entt().get<Mesh>(entity).mesh;
+    auto mesh = Render_entt().get<std::vector<VKR_Primitive> >(entity);
     if (!mesh.empty()) {
         for (int i = 0; i < mesh.size(); ++i) {
             mesh[i].draw(cb, time_line);

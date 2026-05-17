@@ -129,17 +129,17 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<Mesh, opacity_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, opacity_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<Mesh, skybox_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<Mesh, translate_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
@@ -149,7 +149,7 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<Mesh, UI_2D_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
