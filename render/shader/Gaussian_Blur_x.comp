@@ -1,0 +1,63 @@
+#version 430 core
+
+#define RADIUS 4
+#define GROUP_SIZE 256
+#define TILE_SIZE (GROUP_SIZE + 2 * RADIUS)
+
+// 定义本地线程组大小：横向 256 个线程，纵向 1 个线程
+layout (local_size_x = GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+// 输入与输出图像
+layout (binding = 0, rgba32f) uniform readonly image2D InputImage;
+layout (binding = 1, rgba32f) uniform writeonly image2D OutputImage;
+
+// 预计算的高斯权重（半径为 4），所有权重之和必须为 1.0
+const float Weights[RADIUS + 1] = float[](0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+
+// 声明片上片源共享内存，用于缓存像素
+shared vec4 s_Pixels[TILE_SIZE];
+
+void main()
+{
+    ivec2 texSize = imageSize(InputImage);
+    ivec2 centerCoord = ivec2(gl_GlobalInvocationID.xy);
+    uint localId = gl_LocalInvocationID.x;
+    uint sharedIdx = localId + RADIUS;
+
+    // 1. 协同加载：每个线程将自己负责的中心像素读入共享内存
+    s_Pixels[sharedIdx] = imageLoad(InputImage, clamp(centerCoord, ivec2(0), texSize - ivec2(1)));
+
+    // 左侧边界填充（前几个线程额外加载左侧越界所需的像素）
+    if (localId < RADIUS)
+    {
+        ivec2 leftCoord = ivec2(centerCoord.x - RADIUS, centerCoord.y);
+        s_Pixels[localId] = imageLoad(InputImage, clamp(leftCoord, ivec2(0), texSize - ivec2(1)));
+    }
+
+    // 右侧边界填充（后几个线程额外加载右侧越界所需的像素）
+    if (localId >= (GROUP_SIZE - RADIUS))
+    {
+        ivec2 rightCoord = ivec2(centerCoord.x + RADIUS, centerCoord.y);
+        s_Pixels[sharedIdx + RADIUS] = imageLoad(InputImage, clamp(rightCoord, ivec2(0), texSize - ivec2(1)));
+    }
+
+    // 阻塞同步，确保当前工作组内所有线程都已将数据写入共享内存
+    barrier();
+    memoryBarrierShared();
+
+    // 边界检查：防止分派的线程超出纹理实际大小
+    if (centerCoord.x >= texSize.x || centerCoord.y >= texSize.y)
+    return;
+
+    // 2. 利用高速共享内存进行一维高斯卷积计算
+    vec4 blurredColor = s_Pixels[sharedIdx] * Weights[0];
+
+    for (int i = 1; i <= RADIUS; ++i)
+    {
+        blurredColor += s_Pixels[sharedIdx - i] * Weights[i];
+        blurredColor += s_Pixels[sharedIdx + i] * Weights[i];
+    }
+
+    // 3. 将中间结果写入临时缓冲区
+    imageStore(OutputImage, centerCoord, blurredColor);
+}
