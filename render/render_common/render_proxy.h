@@ -31,11 +31,6 @@ public:
     VkPipeline vk_pipeline;
 };
 
-class Proxy_pipeline_layout {
-public:
-    VkPipelineLayout pipeline_layout;
-};
-
 
 class Proxy_descriptor_sets {
 public:

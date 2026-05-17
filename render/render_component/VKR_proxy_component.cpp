@@ -34,16 +34,6 @@ entt::entity get_proxy_entity(const entt::entity logic_entity) {
 }
 
 
-void logic_update_debug_name(const entt::entity logic_entity, const std::string &debug_name) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, debug_name ]() {
-            auto &name      = Render_entt().get_or_emplace<Proxy_debug_name>(proxy_entity);
-            name.debug_name = debug_name;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
-
 void logic_update_pipeline(const entt::entity logic_entity, const VkPipeline vk_pipeline) {
     if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity, vk_pipeline ]() {
@@ -55,13 +45,7 @@ void logic_update_pipeline(const entt::entity logic_entity, const VkPipeline vk_
 }
 
 void logic_update_pipeline_layout(const entt::entity logic_entity, const VkPipelineLayout pipeline_layout) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, pipeline_layout ]() {
-            auto &temp           = Render_entt().get_or_emplace<Proxy_pipeline_layout>(proxy_entity);
-            temp.pipeline_layout = pipeline_layout;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
+    logic_update_proxy<VkPipelineLayout>(logic_entity, pipeline_layout);
 }
 
 void logic_update_proxy_descriptor_sets(const entt::entity logic_entity,
@@ -114,10 +98,13 @@ void add_new_peoxy_to_render_function() {
     for (const auto &it: view) {
         logic_update_proxy<Name_component>(it);
 
-        auto mesh = get_VKR_mesh(it);
+        const auto mesh = get_VKR_mesh(it);
         logic_update_Mesh(it, mesh);
         auto pipeline_layout = get_pipeline_layout(it);
         logic_update_pipeline_layout(it, pipeline_layout);
+
+        // logic_update_compute_group_count(it, group_count);
+        // 有点问题
 
 
         auto scissor = VK_backend::get().get_scissor();

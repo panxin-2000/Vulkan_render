@@ -434,12 +434,12 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
                 LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
-                         Render_entt().get<Proxy_debug_name>(entity).debug_name);
+                         Render_entt().get_or_emplace<Name_component>(entity).name_);
                 return;
             }
         }
         vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                Render_entt().get<Proxy_pipeline_layout>(entity).pipeline_layout,
+                                Render_entt().get<VkPipelineLayout>(entity),
                                 0,
                                 temp_descriptor_sets.size(),
                                 temp_descriptor_sets.data(), 0,
@@ -517,7 +517,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
             }
         }
         vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                Render_entt().get<Proxy_pipeline_layout>(entity).pipeline_layout,
+                                Render_entt().get<VkPipelineLayout>(entity),
                                 0,
                                 temp_descriptor_sets.size(),
                                 temp_descriptor_sets.data(), 0,

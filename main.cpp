@@ -243,8 +243,8 @@ void add_simple_computer_buffer_write() {
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
     Logic_entt().emplace<compute_group_count>(entity, 10, 10, 10);
-    auto group_count = Logic_entt().get<compute_group_count>(entity);
-    auto temp_ptr    = create_SSBO_buffer(ALIGN_1024(sizeof(VkDrawIndexedIndirectCommand) *
+    const auto group_count = Logic_entt().get<compute_group_count>(entity);
+    auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(sizeof(VkDrawIndexedIndirectCommand) *
                                                   group_count.X *
                                                   group_count.Y *
                                                   group_count.Z *
@@ -259,6 +259,7 @@ void add_simple_computer_buffer_write() {
     logic_create_proxy(entity);
 
     logic_update_add_tag<compute_pass_tag>(entity);
+    logic_update_proxy<compute_group_count>(entity);
 
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
