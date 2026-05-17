@@ -16,7 +16,7 @@ using entt_proxy_update_lambda = const std::function<void(void)> &;
 bool clean_VKR_object_proxy(const entt::entity entity);
 
 
-void add_new_peoxy_to_render_function();
+void add_new_proxy_to_render_function();
 
 
 

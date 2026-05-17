@@ -27,29 +27,25 @@ void logic_update_pipeline_layout(const entt::entity logic_entity, const VkPipel
 }
 
 
-void add_new_peoxy_to_render_function() {
+void add_new_proxy_to_render_function() {
     const auto view = Logic_entt().view<add_to_render_tag>();
     for (const auto &it: view) {
         logic_update_proxy<Name_component>(it);
 
         const auto mesh = get_VKR_mesh(it);
         logic_update_proxy(it, mesh);
-        auto pipeline_layout = get_pipeline_layout(it);
+        const auto pipeline_layout = get_pipeline_layout(it);
         logic_update_pipeline_layout(it, pipeline_layout);
 
-        // logic_update_compute_group_count(it, group_count);
-        // 有点问题
-
-
-        auto scissor = VK_backend::get().get_scissor();
+        const auto scissor = VK_backend::get().get_scissor();
         logic_update_proxy(it, scissor);
         const auto viewport = VK_backend::get().get_viewport();
         logic_update_proxy(it, viewport);
 
-        auto vk_pipeline = get_pipeline(it);
+        const auto vk_pipeline = get_pipeline(it);
         logic_update_proxy(it, vk_pipeline);
 
-        auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
+        const auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
         logic_update_proxy(it, vk_descriptor_set);
 
         Logic_entt().remove<add_to_render_tag>(it);
