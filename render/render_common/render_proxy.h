@@ -81,10 +81,19 @@ struct deferred_pass_tag {
 struct volume_pass_tag {
 };
 
-struct compute_group_count {
+class compute_group_count {
+public:
     uint32_t X = 0;
     uint32_t Y = 0;
     uint32_t Z = 0;
+
+    compute_group_count(const uint32_t x,
+                        const uint32_t y,
+                        const uint32_t z) {
+        X = x;
+        Y = y;
+        Z = z;
+    }
 };
 
 struct compute_pass_tag {

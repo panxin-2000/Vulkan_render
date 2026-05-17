@@ -68,7 +68,6 @@ inline entt::entity add_volume_pass(const std::string &name) {
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
                                            "", "");
 
-    logic_update_add_tag<volume_pass_tag>(entity);
     add_nanovdb_to_gpu(entity);
 
     // auto temp_ptr          = create_SSBO_buffer(1024 * 5);
@@ -243,8 +242,8 @@ void add_simple_computer_buffer_write() {
 
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
-    Render_entt().emplace<compute_group_count>(entity, 10, 10, 10);
-    auto group_count = Render_entt().get<compute_group_count>(entity);
+    Logic_entt().emplace<compute_group_count>(entity, 10, 10, 10);
+    auto group_count = Logic_entt().get<compute_group_count>(entity);
     auto temp_ptr    = create_SSBO_buffer(ALIGN_1024(sizeof(VkDrawIndexedIndirectCommand) *
                                                   group_count.X *
                                                   group_count.Y *
@@ -256,6 +255,11 @@ void add_simple_computer_buffer_write() {
     // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
     set_render_parameter(entity, "IndirectDraws", temp_ptr);
+
+    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+
+    logic_update_add_tag<compute_pass_tag>(entity);
+
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
 }
