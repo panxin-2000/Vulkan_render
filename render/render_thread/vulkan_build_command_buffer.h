@@ -472,7 +472,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<Proxy_pipeline>(entity).vk_pipeline);
 
-    vkCmdSetViewport(cb, 0, 1, &Render_entt().get<Viewport>(entity).viewport);
+    vkCmdSetViewport(cb, 0, 1, &Render_entt().get<VkViewport>(entity));
     vkCmdSetScissor(cb, 0, 1, &Render_entt().get<Scissor>(entity).scissor);
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
     vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);

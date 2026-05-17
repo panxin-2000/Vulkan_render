@@ -11,8 +11,6 @@
 #include "pipeline_layout_component.h"
 
 
-
-
 entt::entity get_proxy_entity(const entt::entity logic_entity) {
     if (Logic_entt().all_of<Proxy_entity>(logic_entity)) {
         const auto vk_data     = Logic_entt().get<Proxy_entity>(logic_entity);
@@ -61,17 +59,6 @@ void logic_update_scissor(const entt::entity logic_entity,
     };
 }
 
-void logic_update_Viewport(const entt::entity logic_entity,
-                           const VkViewport viewport) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, viewport ]() {
-            auto &temp    = Render_entt().get_or_emplace<Viewport>(proxy_entity);
-            temp.viewport = viewport;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
-
 
 void add_new_peoxy_to_render_function() {
     const auto view = Logic_entt().view<add_to_render_tag>();
@@ -89,16 +76,14 @@ void add_new_peoxy_to_render_function() {
 
         auto scissor = VK_backend::get().get_scissor();
         logic_update_scissor(it, scissor);
-        auto viewport = VK_backend::get().get_viewport();
-        logic_update_Viewport(it, viewport);
+        const auto viewport = VK_backend::get().get_viewport();
+        logic_update_proxy(it, viewport);
 
         auto vk_pipeline = get_pipeline(it);
         logic_update_pipeline(it, vk_pipeline);
 
         auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
         logic_update_proxy_descriptor_sets(it, vk_descriptor_set);
-
-        add_render_UI_2D_tag(it);
 
         Logic_entt().remove<add_to_render_tag>(it);
     }
