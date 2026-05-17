@@ -47,9 +47,10 @@ void logic_update_proxy(const entt::entity logic_entity) {
 
 template<typename T>
 void logic_update_add_tag(const entt::entity logic_entity /*tag*/) {
+    Logic_entt().emplace_or_replace<T>(logic_entity);
     if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity ]() {
-            Render_entt().get_or_emplace<T>(proxy_entity);
+            Render_entt().emplace_or_replace<T>(proxy_entity);
         };
         vk_render_queue::instance().render_update_entt(lambda);
     }
@@ -57,6 +58,7 @@ void logic_update_add_tag(const entt::entity logic_entity /*tag*/) {
 
 template<typename T>
 void logic_update_remove_tag(const entt::entity logic_entity) {
+    Logic_entt().remove<T>(logic_entity);
     if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity ]() {
             Render_entt().remove<T>(proxy_entity);

@@ -108,7 +108,8 @@ entt::entity UI_button(const std::string &name,
     set_render_parameter(entity, "round_box", round_box);
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
-    Logic_entt().emplace_or_replace<UI_2D_tag>(entity);
+    logic_update_add_tag<UI_2D_tag>(entity);
+
 
     scene_root_add_child(entity);
     return entity;

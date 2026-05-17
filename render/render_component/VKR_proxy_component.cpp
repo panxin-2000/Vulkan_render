@@ -11,16 +11,6 @@
 #include "pipeline_layout_component.h"
 
 
-void add_render_UI_2D_tag(entt::entity entity) {
-    if (Logic_entt().all_of<UI_2D_tag, Proxy_entity>(entity)) {
-        const auto &vk_data    = Logic_entt().get<Proxy_entity>(entity);
-        const auto entity_temp = vk_data.entity_;
-        auto lambda            = [entity_temp]() {
-            Render_entt().emplace_or_replace<UI_2D_tag>(entity_temp);
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    }
-}
 
 
 entt::entity get_proxy_entity(const entt::entity logic_entity) {
