@@ -446,7 +446,7 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
                                 nullptr);
     }
     // 下面一行估计还是有问题
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, Render_entt().get<Proxy_pipeline>(entity).vk_pipeline);
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, Render_entt().get<VkPipeline>(entity));
 
     // if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
     vkCmdDispatch(cb, 10, 10, 10);
@@ -470,7 +470,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     const auto cb = engine.engine_.get_current_command_buffer();
 
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<Proxy_pipeline>(entity).vk_pipeline);
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<VkPipeline>(entity));
 
     vkCmdSetViewport(cb, 0, 1, &Render_entt().get<VkViewport>(entity));
     vkCmdSetScissor(cb, 0, 1, &Render_entt().get<VkRect2D>(entity));

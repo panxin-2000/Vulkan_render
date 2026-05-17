@@ -26,10 +26,7 @@
 // };
 
 
-class Proxy_pipeline {
-public:
-    VkPipeline vk_pipeline;
-};
+
 
 
 class Proxy_descriptor_sets {
