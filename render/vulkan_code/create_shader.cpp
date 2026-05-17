@@ -67,58 +67,36 @@ VkShaderModule find_one_shader_module(const VK_backend &backend, const std::stri
 }
 
 
-std::vector<VkPipelineShaderStageCreateInfo> find_one_compute_shader_module(const VK_backend &backend,
-                                                                            const std::string &compute_path) {
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    VkShaderModule computeShaderModule = find_one_shader_module(backend, compute_path, get_shader_map());
-    if (computeShaderModule != VK_NULL_HANDLE) {
+void create_Shader_Module(const VK_backend &backend, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                          const std::string &shader_path, const VkShaderStageFlagBits stage) {
+    if (shader_path.empty())
+        return;
+    VkShaderModule ShaderModule = find_one_shader_module(backend, shader_path, get_shader_map());
+    if (ShaderModule != VK_NULL_HANDLE) {
         VkPipelineShaderStageCreateInfo ShaderStageInfo{};
         ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        ShaderStageInfo.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
-        ShaderStageInfo.module = computeShaderModule;
+        ShaderStageInfo.stage  = stage;
+        ShaderStageInfo.module = ShaderModule;
         ShaderStageInfo.pName  = "main";
         shaderStages.push_back(ShaderStageInfo);
     }
+}
+
+
+std::vector<VkPipelineShaderStageCreateInfo> find_compute_shader_module(const VK_backend &backend,
+                                                                        const VKR_shader_paths &paths) {
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    create_Shader_Module(backend, shaderStages, paths.computer_path_, VK_SHADER_STAGE_COMPUTE_BIT);
     return shaderStages;
 }
 
 
 std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &backend,
-                                                                         VKR_shader_paths &paths) {
-    const std::string &vertex_path   = paths.vertex_path_;
-    const std::string &fragment_path = paths.fragment_path_;
-    const std::string &geometry_path = paths.geometry_path_;
-
+                                                                         const VKR_shader_paths &paths) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-
-    VkShaderModule vertShaderModule       = find_one_shader_module(backend, vertex_path, get_shader_map());
-    VkShaderModule fragShaderModule       = find_one_shader_module(backend, fragment_path, get_shader_map());
-    VkShaderModule geometry_shader_module = find_one_shader_module(backend, geometry_path, get_shader_map());
-
-    if (vertShaderModule != VK_NULL_HANDLE) {
-        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
-        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        ShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        ShaderStageInfo.module = vertShaderModule;
-        ShaderStageInfo.pName  = "main";
-        shaderStages.push_back(ShaderStageInfo);
-    }
-    if (fragShaderModule != VK_NULL_HANDLE) {
-        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
-        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        ShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-        ShaderStageInfo.module = fragShaderModule;
-        ShaderStageInfo.pName  = "main"; //运行我们把多个着色器程序放到一个文件中
-        shaderStages.push_back(ShaderStageInfo);
-    }
-    if (geometry_shader_module != VK_NULL_HANDLE) {
-        VkPipelineShaderStageCreateInfo ShaderStageInfo{};
-        ShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        ShaderStageInfo.stage  = VK_SHADER_STAGE_GEOMETRY_BIT;
-        ShaderStageInfo.module = geometry_shader_module;
-        ShaderStageInfo.pName  = "main";
-        shaderStages.push_back(ShaderStageInfo);
-    }
+    create_Shader_Module(backend, shaderStages, paths.vertex_path_, VK_SHADER_STAGE_VERTEX_BIT);
+    create_Shader_Module(backend, shaderStages, paths.fragment_path_, VK_SHADER_STAGE_FRAGMENT_BIT);
+    create_Shader_Module(backend, shaderStages, paths.geometry_path_, VK_SHADER_STAGE_GEOMETRY_BIT);
     return shaderStages;
 }
 

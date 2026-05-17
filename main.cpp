@@ -231,6 +231,35 @@ void add_skybox_entity() {
     }
 }
 
+void add_simple_computer_buffer_write() {
+    const entt::entity entity = Logic_entt().create();
+    Logic_entt().emplace<VKR_shader_paths>(entity,
+                                           "",
+                                           "",
+                                           "",
+                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/simple_write_buffer.comp.spv"
+                                          );
+
+
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+
+    Render_entt().emplace<compute_group_count>(entity, 10, 10, 10);
+    auto group_count = Render_entt().get<compute_group_count>(entity);
+    auto temp_ptr    = create_SSBO_buffer(ALIGN_1024(sizeof(VkDrawIndexedIndirectCommand) *
+                                                  group_count.X *
+                                                  group_count.Y *
+                                                  group_count.Z *
+                                                  8 * 8 * 1));
+    // auto mem_copy_function = [ptr,size](void *dst) {
+    //     memcpy(dst, ptr, size);
+    // };
+    // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
+
+    set_render_parameter(entity, "IndirectDraws", temp_ptr);
+
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+}
+
 
 void add_manifold_entity() { {
         // 创建一个球体模型
@@ -328,6 +357,8 @@ int main(int argc, char *argv[]) {
 
     add_skybox_entity();
     add_manifold_entity();
+
+    add_simple_computer_buffer_write();
 
     // add_volume_pass("nanovdb_volume");
     // 天空盒

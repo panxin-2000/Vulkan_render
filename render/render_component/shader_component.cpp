@@ -176,6 +176,7 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
         auto &handle = VK_backend::get();
         shader_data_handle = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
+        shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(handle, shader_paths);
         shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
                  shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);

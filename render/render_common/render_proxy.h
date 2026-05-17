@@ -81,6 +81,15 @@ struct deferred_pass_tag {
 struct volume_pass_tag {
 };
 
+struct compute_group_count {
+    uint32_t X = 0;
+    uint32_t Y = 0;
+    uint32_t Z = 0;
+};
+
+struct compute_pass_tag {
+};
+
 struct shadow_pass_tag {
 };
 

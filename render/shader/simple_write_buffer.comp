@@ -1,0 +1,36 @@
+#version 430 core
+
+// 8x8 的二维线程块
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// Same layout as VkDrawIndexedIndirectCommand
+struct IndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int vertexOffset;
+    uint firstInstance;
+};
+
+// Binding 1: Multi draw output
+layout (binding = 0, std430) writeonly buffer IndirectDraws
+{
+    IndexedIndirectCommand indirectDraws[];
+};
+
+void main()
+{
+    // gl_NumWorkGroups 由 glDispatchCompute(32, 32, 1) 决定
+    // gl_WorkGroupSize 由 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in; 决定
+    // gl_GlobalInvocationID = gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID
+    uint idx = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+
+
+    indirectDraws[idx].indexCount = 0;
+    indirectDraws[idx].instanceCount = 0;
+    indirectDraws[idx].firstIndex = idx;
+    indirectDraws[idx].vertexOffset = 0;
+    indirectDraws[idx].firstInstance = 0;
+
+}

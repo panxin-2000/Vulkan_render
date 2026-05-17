@@ -150,6 +150,12 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
+            auto view = Render_entt().view<compute_pass_tag>();
+            for (const auto it: view) {
+                // 这里还需要改为 dispatch
+                build_compute_dispatch(handle, it, time_line);
+            }
+        } {
             auto view = Render_entt().view<Mesh, UI_2D_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);

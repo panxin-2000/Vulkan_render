@@ -32,6 +32,7 @@ using Fragment_output_map = std::map<uint32_t, color_attachment_format>;
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
+    std::vector<VkPipelineShaderStageCreateInfo> computer_shader_stage_create_infos;
     VkPrimitiveTopology topology;
     // 再想增加一个组的时候，还是需要到这里来增加
     sets_map bindless_sets_bindings;

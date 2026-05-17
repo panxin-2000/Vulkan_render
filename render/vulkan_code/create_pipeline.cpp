@@ -27,7 +27,40 @@ inline auto VertexInputStateFunction(std::vector<VkVertexInputBindingDescription
     return vertexInputState;
 }
 
-VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
+
+VkPipeline create_compute_pipeline(VK_backend &backend, vk_shader_data &data) {
+    VkPipeline pipeline = VK_NULL_HANDLE;
+
+    VkComputePipelineCreateInfo pipelineCreateInfo = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+    pipelineCreateInfo.sType                       = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineCreateInfo.stage                       = data.computer_shader_stage_create_infos.at(0);
+    pipelineCreateInfo.layout                      = data.pipeline_layout;
+    pipelineCreateInfo.flags                       = 0;
+    pipelineCreateInfo.basePipelineHandle          = VK_NULL_HANDLE;
+    pipelineCreateInfo.basePipelineIndex           = 0;
+    pipelineCreateInfo.pNext                       = nullptr;
+
+    VK_CHECK_RESULT(vkCreateComputePipelines(backend.get_device(),
+                        nullptr,
+                        1,
+                        &pipelineCreateInfo,
+                        nullptr,
+                        &pipeline));
+    return pipeline;
+}
+
+VkPipeline create_compute_or_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
+    if (!data.pipeline_shader_stage_create_infos.empty()) {
+        return create_graphics_pipeline(backend, data);
+    }
+    if (!data.computer_shader_stage_create_infos.empty()) {
+        return create_compute_pipeline(backend, data);
+    }
+    return VK_NULL_HANDLE;
+}
+
+
+VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
     std::vector<VkPipelineShaderStageCreateInfo> &shaderStages       = data.pipeline_shader_stage_create_infos;
@@ -128,7 +161,7 @@ VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
         .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .colorAttachmentCount    = static_cast<uint32_t>(pColorAttachmentFormats.size()),
         .pColorAttachmentFormats = pColorAttachmentFormats.data(),
-        .depthAttachmentFormat   = handle.get_depth_format()
+        .depthAttachmentFormat   = backend.get_depth_format()
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
@@ -150,7 +183,7 @@ VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
         .pDynamicState       = &dynamicState,               // 设置动态相关内容
         .layout              = pipelineLayout               // 不能动态
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateGraphicsPipelines(handle.get_device(),
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateGraphicsPipelines(backend.get_device(),
                                  VK_NULL_HANDLE,
                                  1,
                                  &pipelineCI,
@@ -160,7 +193,7 @@ VkPipeline create_graphics_pipeline(VK_backend &handle, vk_shader_data &data) {
 }
 
 
-VkPipeline create_pipeline(VK_backend &handle, vk_shader_data &data) {
+VkPipeline create_pipeline(VK_backend &backend, vk_shader_data &data) {
     std::map<std::string, pipeline_and_share> &map = get_pipeline_map();
     if (!data.shader_key.empty()) {
         auto it = map.find(data.shader_key);
@@ -168,7 +201,7 @@ VkPipeline create_pipeline(VK_backend &handle, vk_shader_data &data) {
             it->second.shared_number++;
             return it->second.pipeline;
         } else {
-            auto pipeline = create_graphics_pipeline(handle, data);
+            auto pipeline = create_compute_or_graphics_pipeline(backend, data);
             map.insert({data.shader_key, {pipeline, 1}});
             return pipeline;
         }
