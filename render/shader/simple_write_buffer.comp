@@ -26,6 +26,34 @@ void main()
     // gl_GlobalInvocationID = gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID
     uint idx = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
+    // 启动时如何优化的呢？
+    // 一个 WorkGroups 一定是在同一个 CU 中的
+    // local_size 决定了一个 CU 中有几个线程
+    // 每次启动时都是32个或64线程一起启动的，作为一个 wave 或者说 wave_front
+    // wave 遇到 取数据 比较忙的时候就切换 wave
+    // 只有留在 CU 里的 Wave 足够多，才能把读写内存的死等时间彻底“填满”
+
+    //                    当前CU中实际运行的  wave数量
+    // 占用率（Occupancy = --------------------------
+    //                    该 CU 硬件支持的最大wave数量
+
+    // 占用率并不是越高越好。通常达到 50% ~ 70% 左右，就已经足够完美隐藏内存延迟了。
+    // 如果为了追求 100% 的占用率而极力压缩每个线程的寄存器使用量，
+    // 反而会导致编译器把寄存器数据强制溢出到慢速的内存中（Register Spilling），导致性能暴跌。
+
+    // 每个 RDNA CU 内部包含 4 个 SIMD32 单元
+    // 在 RDNA 2 和 RDNA 3 中，每个 SIMD32 单元最多可跟踪 16 个 Wave ，那么结果应该是 64 个 wave 每 CU
+    // 那么 每 CU 的总线程数 是 ： 64 * 32 = 2048 个线程
+
+    // --查看寄存器占用--
+    // 现代着色器动辄几千行，纯靠看纯文本 ISA 效率较低，强烈建议使用可视化工具：
+    // Radeon GPU Analyzer (RGA)：AMD 官方的独立工具。
+    // 你把 GLSL/HLSL 代码粘进去，选择你的目标显卡型号（如 RX 7900 XTX），
+    // 它会自动编译并生成一个极其直观的表格，直接告诉你 "VGPRs: 48, Occupancy: 100%"，
+    // 甚至能给你的汇编代码标红（提示哪一行导致了寄存器飙升）。
+
+    // Compiler Explorer (godbolt.org)：线上网站，支持 HLSL/GLSL 到 AMDGPU/NVIDIA 汇编的实时编译，
+    // 在右侧的汇编输出中直接看头部注释即可。
 
     indirectDraws[idx].indexCount = 0;
     indirectDraws[idx].instanceCount = 0;
