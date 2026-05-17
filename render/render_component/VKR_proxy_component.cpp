@@ -12,13 +12,12 @@
 
 
 entt::entity get_proxy_entity(const entt::entity logic_entity) {
-    if (Logic_entt().all_of<Proxy_entity>(logic_entity)) {
-        const auto vk_data     = Logic_entt().get<Proxy_entity>(logic_entity);
-        const auto entity_temp = vk_data.entity_;
-        return entity_temp;
-    } else {
-        return entt::null;
+    if (const auto render_entity = Logic_entt().try_get<Proxy_entity>(logic_entity)) {
+        return render_entity->entity_;
     }
+    auto value = Render_entt().create();
+    Logic_entt().emplace<Proxy_entity>(logic_entity, value);
+    return value;
 }
 
 

@@ -254,15 +254,14 @@ void add_simple_computer_buffer_write() {
     // };
     // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
+    // 下面是设置一个参数
     set_render_parameter(entity, "IndirectDraws", temp_ptr);
 
+
     logic_create_proxy(entity);
-
     logic_update_add_tag<compute_pass_tag>(entity);
+    logic_update_add_tag<add_to_render_tag>(entity);
     logic_update_proxy<compute_group_count>(entity);
-
-
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
 }
 
 
