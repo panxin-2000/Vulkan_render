@@ -27,6 +27,27 @@ void logic_update_Mesh(const entt::entity logic_entity,
 
 entt::entity get_proxy_entity(const entt::entity logic_entity);
 
+
+template<typename T>
+void logic_update_proxy(const entt::entity logic_entity, const T data) {
+    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
+        auto lambda = [ proxy_entity, data ]() {
+            Render_entt().emplace_or_replace<T>(proxy_entity, data);
+        };
+        vk_render_queue::instance().render_update_entt(lambda);
+    };
+}
+
+inline void logic_create_proxy(const entt::entity logic_entity) {
+    Logic_entt().emplace<Proxy_entity>(logic_entity, Render_entt().create());
+}
+
+template<typename T>
+void logic_update_proxy(const entt::entity logic_entity) {
+    if (auto data = Logic_entt().try_get<T>(logic_entity))
+        logic_update_proxy(logic_entity, *data);
+}
+
 template<typename T>
 void logic_update_add_tag(const entt::entity logic_entity /*tag*/) {
     if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {

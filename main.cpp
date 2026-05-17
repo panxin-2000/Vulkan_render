@@ -37,7 +37,7 @@ void deal_glfw_event();
 
 inline entt::entity add_render_pass(const std::string &name) {
     entt::entity entity = Logic_entt().create();
-    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+    logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 
@@ -59,7 +59,7 @@ void add_nanovdb_to_gpu(entt::entity entity);
 
 inline entt::entity add_volume_pass(const std::string &name) {
     entt::entity entity = Logic_entt().create();
-    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+    logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
@@ -256,7 +256,7 @@ void add_simple_computer_buffer_write() {
 
     set_render_parameter(entity, "IndirectDraws", temp_ptr);
 
-    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+    logic_create_proxy(entity);
 
     logic_update_add_tag<compute_pass_tag>(entity);
 

@@ -326,7 +326,7 @@ entt::entity UI_text(const std::string &name,
     LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
 
     const entt::entity entity = Logic_entt().create();
-    Logic_entt().emplace<Proxy_entity>(entity, Render_entt().create());
+    logic_create_proxy(entity);
 
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
