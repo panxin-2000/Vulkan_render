@@ -39,10 +39,7 @@ public:
 
 
 
-class Scissor {
-public:
-    VkRect2D scissor;
-};
+
 
 class Line_width {
 public:

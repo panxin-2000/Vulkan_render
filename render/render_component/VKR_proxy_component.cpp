@@ -48,16 +48,7 @@ void logic_update_proxy_descriptor_sets(const entt::entity logic_entity,
 }
 
 
-void logic_update_scissor(const entt::entity logic_entity,
-                          const VkRect2D scissor) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, scissor ]() {
-            auto &temp   = Render_entt().get_or_emplace<Scissor>(proxy_entity);
-            temp.scissor = scissor;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
+
 
 
 void add_new_peoxy_to_render_function() {
@@ -75,7 +66,7 @@ void add_new_peoxy_to_render_function() {
 
 
         auto scissor = VK_backend::get().get_scissor();
-        logic_update_scissor(it, scissor);
+        logic_update_proxy(it, scissor);
         const auto viewport = VK_backend::get().get_viewport();
         logic_update_proxy(it, viewport);
 
