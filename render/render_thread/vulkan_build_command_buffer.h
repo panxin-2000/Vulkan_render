@@ -423,7 +423,7 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 
 inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
     const auto cb            = engine.engine_.get_current_command_buffer();
-    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity).vk_descriptor_sets;
+    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity);
     if (!vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
         temp_descriptor_sets.resize(vk_descriptor_sets.size());
@@ -501,7 +501,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     // float                                     minDepthBounds;
     // float                                     maxDepthBounds;
 
-    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity).vk_descriptor_sets;
+    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity);
     if (!vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
         temp_descriptor_sets.resize(vk_descriptor_sets.size());

@@ -271,7 +271,7 @@ void descriptor_set_update_function() {
     for (const auto it: view) {
         auto temp_des = get_descriptor_sets(it);
 
-        logic_update_proxy_descriptor_sets(it, temp_des);
+        logic_update_proxy(it, temp_des);
 
         Logic_entt().remove<descriptor_set_update>(it);
     }

@@ -22,24 +22,9 @@ entt::entity get_proxy_entity(const entt::entity logic_entity) {
 }
 
 
-
 void logic_update_pipeline_layout(const entt::entity logic_entity, const VkPipelineLayout pipeline_layout) {
     logic_update_proxy<VkPipelineLayout>(logic_entity, pipeline_layout);
 }
-
-void logic_update_proxy_descriptor_sets(const entt::entity logic_entity,
-                                        const std::vector<DescriptorSet_ptr> vk_descriptor_sets) {
-    if (auto proxy_entity = get_proxy_entity(logic_entity); proxy_entity != entt::null) {
-        auto lambda = [ proxy_entity, vk_descriptor_sets ]() {
-            auto &temp              = Render_entt().get_or_emplace<Proxy_descriptor_sets>(proxy_entity);
-            temp.vk_descriptor_sets = vk_descriptor_sets;
-        };
-        vk_render_queue::instance().render_update_entt(lambda);
-    };
-}
-
-
-
 
 
 void add_new_peoxy_to_render_function() {
@@ -65,7 +50,7 @@ void add_new_peoxy_to_render_function() {
         logic_update_proxy(it, vk_pipeline);
 
         auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
-        logic_update_proxy_descriptor_sets(it, vk_descriptor_set);
+        logic_update_proxy(it, vk_descriptor_set);
 
         Logic_entt().remove<add_to_render_tag>(it);
     }

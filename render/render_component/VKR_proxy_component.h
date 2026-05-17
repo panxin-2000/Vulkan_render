@@ -19,8 +19,6 @@ bool clean_VKR_object_proxy(const entt::entity entity);
 void add_new_peoxy_to_render_function();
 
 
-void logic_update_proxy_descriptor_sets(const entt::entity logic_entity,
-                                        const std::vector<DescriptorSet_ptr> vk_descriptor_sets);
 
 entt::entity get_proxy_entity(const entt::entity logic_entity);
 
