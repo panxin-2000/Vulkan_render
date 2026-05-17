@@ -112,8 +112,7 @@ void logic_update_Viewport(const entt::entity logic_entity,
 void add_new_peoxy_to_render_function() {
     const auto view = Logic_entt().view<add_to_render_tag>();
     for (const auto &it: view) {
-        auto name = get_entity_name(it);
-        logic_update_debug_name(it, name);
+        logic_update_proxy<Name_component>(it);
 
         auto mesh = get_VKR_mesh(it);
         logic_update_Mesh(it, mesh);

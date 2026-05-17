@@ -512,7 +512,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
                 LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
-                         Render_entt().get<Proxy_debug_name>(entity).debug_name);
+                         Render_entt().get_or_emplace<Name_component>(entity).name_);
                 return;
             }
         }

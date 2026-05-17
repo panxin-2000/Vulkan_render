@@ -26,11 +26,6 @@
 // };
 
 
-class Proxy_debug_name {
-public:
-    std::string debug_name;
-};
-
 class Proxy_pipeline {
 public:
     VkPipeline vk_pipeline;

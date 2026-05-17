@@ -8,9 +8,9 @@
 #include "global_singleton.h"
 
 struct Name_component {
+public:
     std::string name_;
 
-public:
     friend std::ostream &operator<<(std::ostream &output,
                                     const Name_component &P) {
         output << P.name_;
