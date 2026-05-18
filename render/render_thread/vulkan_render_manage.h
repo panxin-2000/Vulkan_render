@@ -4,11 +4,6 @@
 
 #ifndef HELLO_MAC_VULKAN_RENDER_MANAGE_H
 #define HELLO_MAC_VULKAN_RENDER_MANAGE_H
-#include <mutex>
-#include <thread>
-#include <utility>
-
-#include "render_proxy.h"
 
 #include <readerwriterqueue.h>
 
@@ -17,7 +12,7 @@ class vk_render_queue {
 private:
     moodycamel::BlockingReaderWriterQueue<const std::function<void(void)>> logic_add_function;
     moodycamel::BlockingReaderWriterQueue<const std::function<void(void)>> render_execute_function;
-    std::atomic<bool> logic_thread_finished = false;
+    alignas(64) std::atomic<bool> logic_thread_finished = false;
 
 public:
     static vk_render_queue &instance() {
@@ -63,8 +58,7 @@ private:
     vk_render_queue() {
     }
 
-    ~vk_render_queue() {
-    }
+    ~vk_render_queue() = default;
 
 public:
     vk_render_queue(const vk_render_queue &) = delete;
