@@ -15,6 +15,8 @@
 #include "global_singleton.h"
 #include "descriptor_pool.h"
 #include "earcut.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
 #include "PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
@@ -26,6 +28,8 @@
 #include "manifold/manifold.h"
 #include "UI/3d_model_display.h"
 #include "UI/UI_text.h"
+
+struct ImGui_ImplVulkan_Data;
 
 void register_glfw(GLFWwindow *window);
 
@@ -324,6 +328,9 @@ void add_manifold_entity() { {
     }
 }
 
+#include "imgui.h"
+
+
 int main(int argc, char *argv[]) {
     // test_single_char();
 
@@ -388,6 +395,33 @@ int main(int argc, char *argv[]) {
 
     register_glfw(backend.get_window());
 
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsLight();
+    io.Fonts->AddFontDefault();
+
+    // 扩展和层并不在意添加的顺序，能否在一开始就将需要的层和扩展添加了，之后根据具体的实现判断是否能获得，能获得就添加。
+
+    // Setup Platform/Renderer backends
+    // getSingleInstance() ···等申请的内容，都是是在 SetupVulkan  中做完的，之后绘制的时候绑定提交会调用init_info中的内容（或者说指向）
+    ImGui_ImplGlfw_InitForVulkan(backend.get_window(), true);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    ImGui_ImplVulkan_Init(&init_info);
+
+
+    bool show_demo_window    = true;
+    bool show_another_window = false;
+    ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+
     // Render loop
     while (!glfwWindowShouldClose(backend.get_window())) {
         glfwWaitEvents();
@@ -398,6 +432,59 @@ int main(int argc, char *argv[]) {
         deal_glfw_event(); // 统一分发执行
         Logic_entt().emplace_or_replace<Camera_transform_dirty>(get_world_root());
 
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
+
+        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        {
+            static float f     = 0.0f;
+            static int counter = 0;
+
+            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+
+            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
+            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
+            ImGui::Checkbox("Another Window", &show_another_window);
+
+            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
+
+            if (ImGui::Button("Button"))
+                // Buttons return true when clicked (most widgets return true when edited/activated)
+                counter++;
+            ImGui::SameLine();
+            ImGui::Text("counter = %d", counter);
+
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+            ImGui::End();
+        }
+        // 3. Show another simple window.
+        if (show_another_window) {
+            ImGui::Begin("Another Window", &show_another_window);
+            // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+            ImGui::Text("Hello from another window!");
+            if (ImGui::Button("Close Me"))
+                show_another_window = false;
+            ImGui::End();
+        }
+        // Rendering
+        ImGui::Render();
+        ImDrawData *draw_data   = ImGui::GetDrawData(); //这里也是获取数据，之后再去拿去渲染。最后的数据是什么呢？
+        const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+        if (!is_minimized) {
+            // wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+            // wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+            // wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+            // wd->ClearValue.color.float32[3] = clear_color.w;
+            // FrameRender(wd, draw_data);  // 最后调用了这个 vkCmdDrawIndexed
+            // FramePresent(wd); // 这个里面是显示，去掉这个屏幕上就没有显示了
+        }
+
+
         clean_render_entity();
         sync_render_data_to_render_thread();
 
@@ -405,6 +492,14 @@ int main(int argc, char *argv[]) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
     }
+
+    // IM_ASSERT_USER_ERROR(g.IO.BackendPlatformUserData == NULL, "Forgot to shutdown Platform backend?");
+    // IM_ASSERT_USER_ERROR(g.IO.BackendRendererUserData == NULL, "Forgot to shutdown Renderer backend?");
+    // 上面两个需要清理
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
     Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 

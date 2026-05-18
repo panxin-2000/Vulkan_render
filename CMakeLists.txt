@@ -70,6 +70,19 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# tinygltf 中占据了 IMGUI_DIR 这个符号，所需需要放在 tinygltf 之前
+set(IMGUI_DIR ./imgui)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
+
+file(GLOB imgui_sources
+        ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
+        ${IMGUI_DIR}/imgui.cpp
+        ${IMGUI_DIR}/imgui_draw.cpp
+        ${IMGUI_DIR}/imgui_demo.cpp
+        ${IMGUI_DIR}/imgui_tables.cpp
+        ${IMGUI_DIR}/imgui_widgets.cpp)
+
 
 # tinygltf  中有一些选择，需要看自己的需求打开，重要的是一个禁止异常的选项
 FetchContent_Declare(
@@ -508,6 +521,7 @@ add_executable(learn_render main.cpp
         ${LABYRINTH}
         ${WINDOW}
         ${vulkan_code}
+        ${imgui_sources}
 )
 
 

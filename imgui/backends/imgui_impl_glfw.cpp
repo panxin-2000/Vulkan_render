@@ -627,7 +627,7 @@ static bool ImGui_ImplGlfw_Init(GLFWwindow* window, bool install_callbacks, Glfw
 #ifdef _WIN32
     main_viewport->PlatformHandleRaw = glfwGetWin32Window(bd->Window);
 #elif defined(__APPLE__)
-    main_viewport->PlatformHandleRaw = (__bridge void *) glfwGetCocoaWindow(bd->Window);
+    main_viewport->PlatformHandleRaw = ( void *) glfwGetCocoaWindow(bd->Window);
 #else
     IM_UNUSED(main_viewport);
 #endif
@@ -664,21 +664,7 @@ void ImGui_ImplGlfw_Shutdown()
     IM_ASSERT(bd != nullptr && "No platform backend to shutdown, or already shutdown?");
     ImGuiIO& io = ImGui::GetIO();
 
-    if (bd->InstalledCallbacks)
-        ImGui_ImplGlfw_RestoreCallbacks(bd->Window);
-#ifdef __EMSCRIPTEN__
-    emscripten_set_wheel_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, false, nullptr);
-#endif
-
-    for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
-        glfwDestroyCursor(bd->MouseCursors[cursor_n]);
-
-    // Windows: restore our WndProc hook
-#ifdef _WIN32
-    ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    ::SetWindowLongPtrW((HWND)main_viewport->PlatformHandleRaw, GWLP_WNDPROC, (LONG_PTR)bd->PrevWndProc);
-    bd->PrevWndProc = nullptr;
-#endif
+    // 中间删除了一些内容
 
     io.BackendPlatformName = nullptr;
     io.BackendPlatformUserData = nullptr;
