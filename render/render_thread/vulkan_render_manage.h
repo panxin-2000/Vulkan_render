@@ -10,12 +10,13 @@
 
 #include "render_proxy.h"
 
+#include <readerwriterqueue.h>
+
 
 class vk_render_queue {
 private:
-    mutable std::mutex mtx;
-    std::queue<const std::function<void(void)>> logic_add_function;
-    std::queue<const std::function<void(void)>> render_execute_function;
+    moodycamel::BlockingReaderWriterQueue<const std::function<void(void)>> logic_add_function;
+    moodycamel::BlockingReaderWriterQueue<const std::function<void(void)>> render_execute_function;
     std::atomic<bool> logic_thread_finished = false;
 
 public:
@@ -29,11 +30,9 @@ public:
     }
 
     void execute_update_lambda() {
-        std::unique_lock<std::mutex> lock(mtx);
         if (logic_thread_finished.load() == true) {
-            while (!render_execute_function.empty()) {
-                auto callback = render_execute_function.front();
-                render_execute_function.pop();
+            std::function<void(void)> callback;
+            while (render_execute_function.try_dequeue(callback)) {
                 callback();
             }
             logic_thread_finished.store(false);
@@ -42,24 +41,21 @@ public:
 
     void logic_add_finished() {
         // 如果 lambda 正在执行中，那么只有等执行完，那么 render_execute_function 比如为空
-        std::unique_lock<std::mutex> lock(mtx);
-        if (render_execute_function.empty() == true) {
+        if (render_execute_function.size_approx() == 0) {
             std::swap(render_execute_function, logic_add_function);
             logic_thread_finished.store(true);
         } else {
             // 如果 lambda 不在执行中， 那么将 logic queue 中的内容全部复制到 执行中
             // 那么执行时就是有可能能执行两帧的更新内容了
-            while (!logic_add_function.empty()) {
-                auto callback = logic_add_function.front();
+            std::function<void(void)> callback;
+            while (logic_add_function.try_dequeue(callback)) {
                 render_execute_function.emplace(callback);
-                logic_add_function.pop();
             }
             logic_thread_finished.store(true);
         }
     }
 
     void render_update_entt(const std::function<void(void)> &callback) {
-        std::unique_lock<std::mutex> lock(mtx);
         logic_add_function.emplace(callback);
     }
 
