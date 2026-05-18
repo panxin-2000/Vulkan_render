@@ -249,10 +249,6 @@ void add_simple_computer_buffer_write() {
                                                   group_count.Y *
                                                   group_count.Z *
                                                   8 * 8 * 1));
-    // auto mem_copy_function = [ptr,size](void *dst) {
-    //     memcpy(dst, ptr, size);
-    // };
-    // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
     // 下面是设置一个参数
     set_render_parameter(entity, "IndirectDraws", temp_ptr);

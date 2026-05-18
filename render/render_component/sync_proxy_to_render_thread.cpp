@@ -17,7 +17,7 @@ void sync_render_data_to_render_thread() {
     global_uniform_buffer_update_function();
     uniform_buffer_update_function();
     descriptor_set_update_function();
-    add_new_proxy_to_render_function();
+    add_proxy_to_render_function();
 }
 
 

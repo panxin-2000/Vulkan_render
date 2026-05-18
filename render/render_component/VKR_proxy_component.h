@@ -16,12 +16,20 @@ using entt_proxy_update_lambda = const std::function<void(void)> &;
 bool clean_VKR_object_proxy(const entt::entity entity);
 
 
-void add_new_proxy_to_render_function();
+/**
+ * 这个函数的逻辑应该是将固定区域内的内容，添加到渲染线程之中，
+ */
+void add_proxy_to_render_function();
 
 
-
-entt::entity get_proxy_entity(const entt::entity logic_entity);
-
+inline entt::entity get_proxy_entity(const entt::entity logic_entity) {
+    if (const auto render_entity = Logic_entt().try_get<Proxy_entity>(logic_entity)) {
+        return render_entity->entity_;
+    }
+    auto value = Render_entt().create();
+    Logic_entt().emplace<Proxy_entity>(logic_entity, value);
+    return value;
+}
 
 template<typename T>
 void logic_update_proxy(const entt::entity logic_entity, const T data) {
