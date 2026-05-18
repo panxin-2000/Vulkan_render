@@ -112,6 +112,16 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(meshoptimizer)
 
+
+FetchContent_Declare(
+        readerwriterqueue
+        GIT_REPOSITORY https://github.com/cameron314/readerwriterqueue
+        GIT_TAG master
+)
+
+FetchContent_MakeAvailable(readerwriterqueue)
+
+
 add_subdirectory(thirdparty/libccd)
 
 
@@ -422,6 +432,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_ear_clip.cpp
         test/test_mutex.cpp
         test/test_intersect.cpp
+        test/test_reader_writer_queue.cpp
         test/test_lazy_Evaluation.cpp
         test/test_signed_area.cpp
         test/test_conveyor_belt.cpp
@@ -431,7 +442,7 @@ add_executable(hello_test ${LABYRINTH}
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test ccd GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
+target_link_libraries(hello_test ccd readerwriterqueue GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 
 
@@ -521,6 +532,7 @@ target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
+target_link_libraries(learn_render PRIVATE readerwriterqueue)
 target_link_libraries(learn_render PRIVATE meshoptimizer)
 target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
