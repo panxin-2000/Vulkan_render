@@ -170,6 +170,39 @@ struct G_buffer_image_index {
     uint32_t baseColor_image_index;
 };
 
+inline void add_one_indirect_draw_barrier(VK_backend &handle, VkBuffer buffer, VkDeviceSize size,
+                                          VkDeviceSize offset = 0) {
+    auto cb = handle.engine_.get_current_command_buffer();
+    std::array<VkBufferMemoryBarrier2, 1> write_finish_buffer{
+        VkBufferMemoryBarrier2{
+            .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext               = nullptr,
+            .srcStageMask        = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            .srcAccessMask       = VK_ACCESS_SHADER_WRITE_BIT,
+            .dstStageMask        = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+            .dstAccessMask       = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer              = buffer,
+            .offset              = offset,
+            .size                = size,
+        },
+
+    };
+    VkDependencyInfo barrierDependencyInfo{
+        .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext                    = nullptr,
+        .dependencyFlags          = 0, // 默认填零，需要VR 或其他选项时才需要填
+        .memoryBarrierCount       = 0,
+        .pMemoryBarriers          = nullptr,
+        .bufferMemoryBarrierCount = write_finish_buffer.size(),
+        .pBufferMemoryBarriers    = write_finish_buffer.data(),
+        .imageMemoryBarrierCount  = 0,
+        .pImageMemoryBarriers     = nullptr,
+    };
+    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+}
+
 inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
     // 不存储位置，但是我之前都在存储位置， 之后看看如果更改为这个样子 现在的是 pos normal base_color depth
     // G-Buffer A: 法线 (Normal) + 粗糙度 (Roughness)
@@ -448,8 +481,9 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
     // 下面一行估计还是有问题
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, Render_entt().get<VkPipeline>(entity));
 
-    // if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
-    vkCmdDispatch(cb, 10, 10, 10);
+    if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
+        vkCmdDispatch(cb, group_count->X, group_count->Y, group_count->Z);
+    }
     // layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in; // 工作组大小
     // 上面是什么内容呢？ 第一个需要理解的是，wave,  local_size 的 总数必须是 wave (32或64) 的整数倍
     // local_size 总是是分配在一个 CU 中
