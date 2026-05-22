@@ -2,13 +2,61 @@
 // Created by 潘鑫 on 2026/3/18.
 //
 
-#include "model_transform_component.h"
+#include "transform_component.h"
 
 #include "camera_optical_component.h"
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
 #include "manifold/linalg.h"
+
+
+/**
+ * 使用位置和四元数构建 View 矩阵
+ * 适配 Vulkan (列优先)
+ */
+Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
+    // 1. 将四元数转换为旋转矩阵（Eigen 会自动处理归一化并使用 NEON 加速）
+    // 注意：View 矩阵需要的是相机的逆旋转
+    Eigen::Matrix3f R = q.toRotationMatrix().transpose();
+
+    // 2. 计算平移部分：-(R * pos)
+    Eigen::Vector3f t = -(R * pos);
+
+    // 3. 组合成 4x4 矩阵
+    Eigen::Matrix4f view   = Eigen::Matrix4f::Identity();
+    view.block<3, 3>(0, 0) = R;
+    view.block<3, 1>(0, 3) = t;
+
+    return view;
+}
+
+
+[[nodiscard]] Eigen::Matrix4f get_view_matrix(const Transform transform) {
+    const auto view = view_matrix({
+                                      transform.get_position().x,
+                                      transform.get_position().y,
+                                      transform.get_position().z
+                                  },
+                                  transform.get_rotate());
+    return view;
+}
+
+[[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform) {
+    // 定义一个仿射变换（4x4 矩阵）
+    Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
+    // 1. 平移 (Translation)
+    model_4x4.translate(Eigen::Vector3f(transform.get_position().x, transform.get_position().y,
+                                        transform.get_position().z));
+    // 2. 旋转 (Rotation) - 使用四元数
+    model_4x4.rotate(transform.get_rotate());
+    // 3. 缩放 (Scaling)
+    model_4x4.scale(Eigen::Vector3f(transform.get_zoom().x, transform.get_zoom().y, transform.get_zoom().z));
+    // 获取最终传给 Vulkan 的 4x4 矩阵
+    Eigen::Matrix4f modelMatrix = model_4x4.matrix();
+    return modelMatrix;
+}
+
 
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     static Point_2 last_mouse_position = {0, 0};
@@ -21,12 +69,12 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 
     auto world_entity     = get_world_root();
     auto camera           = Logic_entt().try_get<camera_optical_component>(world_entity);
-    const auto camera_pos = Logic_entt().try_get<model_transform>(world_entity);
+    const auto camera_pos = Logic_entt().try_get<Transform>(world_entity);
 
     const auto &backend    = VK_backend::get();
     auto [width, height]   = backend.get_current_extent();
     const auto projection  = camera->get_projection_matrix();
-    const auto view_matrix = camera_pos->get_view_projection();
+    const auto view_matrix = get_view_matrix(*camera_pos);
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
     // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
@@ -72,7 +120,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
             auto temp = event.scroll;
             // 绕 Z 轴旋转 45 度
 
-            if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+            if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY())) * q_current;
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX())) * q_current;
@@ -116,18 +164,18 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
         case MOUSE_RIGHT:
             break;
         case WHEEL_UP_MOUSE:
-            if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
+            if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
             }
             break;
         case MOUSE_MOVE:
             if (status.select_status_ == select_current) {
-                if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
+                if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
                     const auto object_position = transform->get_position();
                     const auto world_entity    = get_world_root();
                     const auto current_ray     = get_screen_ray(event.current_position);
                     const auto last_ray        = get_screen_ray(event.last_position);
 
-                    const auto camera_position = Logic_entt().try_get<model_transform>(world_entity);
+                    const auto camera_position = Logic_entt().try_get<Transform>(world_entity);
 
                     const auto quat        = camera_position->get_rotate();
                     Eigen::Vector3f normal = quat * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
@@ -159,10 +207,10 @@ void update_camera_parameter(const entt::entity entity) {
     const auto inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
-    const auto camera_pos = Logic_entt().get_or_emplace<model_transform>(entity, Point_3{
+    const auto camera_pos = Logic_entt().get_or_emplace<Transform>(entity, Point_3{
                                                                              0, 0, 6
                                                                          });
-    const auto view_matrix     = camera_pos.get_view_projection();
+    const auto view_matrix     = get_view_matrix(camera_pos);
     Point_3 world_camera_pos   = camera_pos.get_position();
     const auto inv_view_matrix = view_matrix.inverse();
 
@@ -272,9 +320,9 @@ uint32_t add_bindless_uniform_sampler2D(const std::string &name,
 
 
 void update_camera_transform() {
-    const auto view = Logic_entt().view<Camera_transform_dirty, Name_component, model_transform>();
+    const auto view = Logic_entt().view<Camera_transform_dirty, Name_component, Transform>();
     for (const auto it: view) {
-        auto &camera_pos = view.get<model_transform>(it);
+        auto &camera_pos = view.get<Transform>(it);
         auto &name       = view.get<Name_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
             update_camera_parameter(it);

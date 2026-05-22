@@ -338,7 +338,8 @@ file(GLOB_RECURSE component
         "UI/3d_model_display.cpp"
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"
-        "component/model_transform_component.cpp"
+        "component/transform_component.cpp"
+        "component/Rect_2D_component.cpp"
 )
 
 

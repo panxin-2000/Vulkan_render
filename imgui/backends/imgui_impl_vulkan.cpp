@@ -86,6 +86,11 @@
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_vulkan.h"
 #include <stdio.h>
+#include <entt/entity/entity.hpp>
+
+#include "global_singleton.h"
+#include "shader_component.h"
+#include "VKR_proxy_component.h"
 #ifndef IM_MAX
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif

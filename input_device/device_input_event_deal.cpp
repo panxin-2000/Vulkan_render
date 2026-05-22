@@ -1,6 +1,6 @@
 #include <GLFW/glfw3.h>
 
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include "../event/base_event.h"
 #include "name_component.h"
 #include "global_singleton.h"
@@ -8,6 +8,7 @@
 #include "../event/input_device_manage.h"
 #include "scene_component.h"
 #include "Rect_2D_component.h"
+#include "UI_manager.h"
 #include "base_geometry/base.h"
 
 
@@ -144,7 +145,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case MOUSE_ROTATE: {
             auto temp = event.scroll;
 
-            if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+            if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
                 q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
@@ -156,7 +157,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
             // 删除当前鼠标位置的元素
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
                         position->add_offset({0, 0, -1});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
@@ -166,7 +167,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case EVT_KEY_S: {
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
                         position->add_offset({0, 0, 1});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
@@ -178,7 +179,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case EVT_KEY_A: {
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
                         position->add_offset({-1, 0, 0});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
@@ -190,7 +191,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case EVT_KEY_D: {
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
                         position->add_offset({1, 0, 0});
                         Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                     }
@@ -202,7 +203,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
         case EVT_KEY_SPACE_KEY: {
             if (event.event_code == KM_PRESS)
                 if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<model_transform>(entity)) {
+                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
                         if (event.modifier_flag & KM_SHIFT)
                             position->add_offset({0, -1, 0});
                         else
@@ -223,9 +224,9 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const bas
 #include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
-    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, model_transform>();
+    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, Transform>();
     for (auto &entity: view) {
-        auto position = view.get<model_transform>(entity);
+        auto position = view.get<Transform>(entity);
         auto box      = view.get<AABB_centroid<Point_3> >(entity);
         box.add_offset(position.get_position());
         if (intersect(box, ray)) {

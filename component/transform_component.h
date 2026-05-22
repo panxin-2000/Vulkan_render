@@ -15,37 +15,16 @@
 #include <Eigen/Eigen>
 
 
-/**
- * 使用位置和四元数构建 View 矩阵
- * 适配 Vulkan (列优先)
- */
-inline Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
-    // 1. 将四元数转换为旋转矩阵（Eigen 会自动处理归一化并使用 NEON 加速）
-    // 注意：View 矩阵需要的是相机的逆旋转
-    Eigen::Matrix3f R = q.toRotationMatrix().transpose();
-
-    // 2. 计算平移部分：-(R * pos)
-    Eigen::Vector3f t = -(R * pos);
-
-    // 3. 组合成 4x4 矩阵
-    Eigen::Matrix4f view   = Eigen::Matrix4f::Identity();
-    view.block<3, 3>(0, 0) = R;
-    view.block<3, 1>(0, 3) = t;
-
-    return view;
-}
-
-
-class alignas(16) model_transform {
+class alignas(16) Transform {
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};
     Point_3 position_          = {0, 0, 0};
 
 public:
-    explicit model_transform(const Eigen::Matrix4f matrix) {
+    explicit Transform(const Eigen::Matrix4f matrix) {
     }
 
-    explicit model_transform(const Point_3 position,
+    explicit Transform(const Point_3 position,
                              const Eigen::Quaternionf &rotate = {1, 0, 0, 0},
                              const Point_3 zoom               = {1, 1, 1}) {
         position_ = position;
@@ -91,13 +70,11 @@ public:
         Eigen::Matrix4f modelMatrix = model_4x4.matrix();
         return modelMatrix;
     }
-
-    Eigen::Matrix4f get_view_projection() const {
-        const auto view = view_matrix({position_.x, position_.y, position_.z}, rotate_);
-        return view;
-    }
 };
 
+[[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform);
+
+[[nodiscard]] Eigen::Matrix4f get_view_matrix(const Transform transform);
 
 void update_camera_transform();
 

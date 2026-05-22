@@ -11,7 +11,7 @@
 #include "shader_component.h"
 #include <Eigen/Eigen>
 #include "base_geometry/intersect_function.h"
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include <meshoptimizer.h>
 
 #include "PBR_component.h"
@@ -37,10 +37,10 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
 
     // 更新物体的模型矩阵
-    Logic_entt().emplace<model_transform>(entity, offset, rotate);
-    auto &transform = Logic_entt().get<model_transform>(entity);
+    Logic_entt().emplace<Transform>(entity, offset, rotate);
+    auto &transform = Logic_entt().get<Transform>(entity);
 
-    const auto modelMatrix = transform.get_transform_matrix();
+    const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
 
     world_root_add_child(entity);
@@ -109,10 +109,10 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
 
     // 更新物体的模型矩阵
-    Logic_entt().emplace<model_transform>(entity, offset, rotate);
-    auto &transform = Logic_entt().get<model_transform>(entity);
+    Logic_entt().emplace<Transform>(entity, offset, rotate);
+    auto &transform = Logic_entt().get<Transform>(entity);
 
-    const auto modelMatrix = transform.get_transform_matrix();
+    const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
 
     world_root_add_child(entity);

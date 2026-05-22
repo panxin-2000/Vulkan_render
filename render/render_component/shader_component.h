@@ -9,7 +9,7 @@
 
 #include "create_texture.h"
 #include "descriptor.h"
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"

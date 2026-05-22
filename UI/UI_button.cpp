@@ -48,13 +48,13 @@ static wmOperatorStatus on_Event(const entt::entity entity, const base_event_wit
             break;
         case WHEEL_UP_MOUSE:
             if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-                UI->set_zoom(entity, event);
+                deal_zoom(entity, event);
             }
             break;
         case MOUSE_MOVE:
             if (status.select_status_ == select_current) {
                 if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-                    UI->set_position_offset(entity, event);
+                    deal_position_offset(entity, event);
                     // 包围盒的位置还需要同步更新
                     return OPERATOR_RUNNING_MODAL;
                 }

@@ -7,7 +7,7 @@
 
 #include "global_singleton.h"
 #include "base_geometry/base.h"
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include "manifold/manifold.h"
 
 entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,

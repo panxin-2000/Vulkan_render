@@ -5,7 +5,7 @@
 #include "load_gltf_model.h"
 
 #include "input_component.h"
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include "name_component.h"
 #include "PBR_component.h"
 #include "tiny_gltf.h"
@@ -317,7 +317,7 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
             auto *p_float = reinterpret_cast<float *>(&temp_matrix);
             p_float[i]    = static_cast<float>(temp.at(i));
         }
-        const auto &transform = Logic_entt().emplace_or_replace<model_transform>(entity, temp_matrix);
+        const auto &transform = Logic_entt().emplace_or_replace<Transform>(entity, temp_matrix);
         set_render_parameter(entity, "model_4x4", temp_matrix);
         return;
     }
@@ -326,8 +326,8 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
     Point_3 offset            = get_offset_from_model(model, current_node_index);
     Point_3 zoom              = get_zoom_from_model(model, current_node_index);
     Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
-    const auto &transform     = Logic_entt().emplace_or_replace<model_transform>(entity, offset, rotate, zoom);
-    const auto modelMatrix    = transform.get_transform_matrix();
+    const auto &transform     = Logic_entt().emplace_or_replace<Transform>(entity, offset, rotate, zoom);
+    const auto modelMatrix    = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
 }
 

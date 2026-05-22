@@ -3,8 +3,9 @@
 //
 #include "scene_component.h"
 
-#include "model_transform_component.h"
+#include "transform_component.h"
 #include "Rect_2D_component.h"
+#include "UI_manager.h"
 
 void world_root_add_child(const entt::entity entity) {
     const auto root = get_world_root();
