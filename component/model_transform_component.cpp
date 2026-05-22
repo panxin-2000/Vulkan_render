@@ -25,7 +25,7 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 
     const auto &backend    = VK_backend::get();
     auto [width, height]   = backend.get_current_extent();
-    const auto projection  = camera->get_projection();
+    const auto projection  = camera->get_projection_matrix();
     const auto view_matrix = camera_pos->get_view_projection();
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
@@ -153,9 +153,9 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
     return OPERATOR_HANDLED;
 }
 
-void update_camera_parameter(entt::entity entity) {
+void update_camera_parameter(const entt::entity entity) {
     auto camera                      = Logic_entt().get_or_emplace<camera_optical_component>(entity);
-    const auto projection            = camera.get_projection();
+    const auto projection            = camera.get_projection_matrix();
     const auto inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 

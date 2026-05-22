@@ -40,7 +40,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     Logic_entt().emplace<model_transform>(entity, offset, rotate);
     auto &transform = Logic_entt().get<model_transform>(entity);
 
-    const auto modelMatrix = transform.update_model_matrix();
+    const auto modelMatrix = transform.get_transform_matrix();
     set_render_parameter(entity, "model_4x4", modelMatrix);
 
     world_root_add_child(entity);
@@ -112,7 +112,7 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     Logic_entt().emplace<model_transform>(entity, offset, rotate);
     auto &transform = Logic_entt().get<model_transform>(entity);
 
-    const auto modelMatrix = transform.update_model_matrix();
+    const auto modelMatrix = transform.get_transform_matrix();
     set_render_parameter(entity, "model_4x4", modelMatrix);
 
     world_root_add_child(entity);

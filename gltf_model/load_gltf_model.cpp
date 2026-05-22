@@ -327,7 +327,7 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
     Point_3 zoom              = get_zoom_from_model(model, current_node_index);
     Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
     const auto &transform     = Logic_entt().emplace_or_replace<model_transform>(entity, offset, rotate, zoom);
-    const auto modelMatrix    = transform.update_model_matrix();
+    const auto modelMatrix    = transform.get_transform_matrix();
     set_render_parameter(entity, "model_4x4", modelMatrix);
 }
 

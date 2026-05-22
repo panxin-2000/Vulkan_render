@@ -45,16 +45,9 @@ public:
     explicit model_transform(const Eigen::Matrix4f matrix) {
     }
 
-    explicit model_transform(const Point_3 position) {
-        position_ = position;
-    }
-
-    explicit model_transform(const Point_3 position, const Eigen::Quaternionf &rotate) {
-        position_ = position;
-        rotate_   = rotate;
-    }
-
-    explicit model_transform(const Point_3 position, const Eigen::Quaternionf &rotate, const Point_3 zoom) {
+    explicit model_transform(const Point_3 position,
+                             const Eigen::Quaternionf &rotate = {1, 0, 0, 0},
+                             const Point_3 zoom               = {1, 1, 1}) {
         position_ = position;
         rotate_   = rotate;
         zoom_     = zoom;
@@ -77,15 +70,15 @@ public:
         return position_ = position_ + offset;
     }
 
-    void mult_rotate(const Eigen::Quaternionf &quaternion) {
-        rotate_ = rotate_ * quaternion; // multiply
+    Eigen::Quaternionf mult_rotate(const Eigen::Quaternionf &quaternion) {
+        return rotate_ = rotate_ * quaternion; // multiply
     }
 
-    void set_rotate(const Eigen::Quaternionf &quaternion) {
-        rotate_ = quaternion;
+    Eigen::Quaternionf set_rotate(const Eigen::Quaternionf &quaternion) {
+        return rotate_ = quaternion;
     }
 
-    Eigen::Matrix4f update_model_matrix() const {
+    [[nodiscard]] Eigen::Matrix4f get_transform_matrix() const {
         // 定义一个仿射变换（4x4 矩阵）
         Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
         // 1. 平移 (Translation)

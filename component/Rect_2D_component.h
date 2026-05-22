@@ -106,7 +106,7 @@ inline void update_object_transform_function() { {
         const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, model_transform>();
         for (const auto it: view) {
             auto &transform  = view.get<model_transform>(it);
-            auto modelMatrix = transform.update_model_matrix();
+            auto modelMatrix = transform.get_transform_matrix();
             set_render_parameter(it, "model_4x4", modelMatrix);
             Logic_entt().remove<UI_transform_dirty>(it);
         }
