@@ -39,25 +39,25 @@ inline Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quat
 class alignas(16) model_transform {
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};
-    Point_3 offset_            = {0, 0, 0};
+    Point_3 position_          = {0, 0, 0};
 
 public:
     explicit model_transform(const Eigen::Matrix4f matrix) {
     }
 
-    explicit model_transform(const Point_3 offset) {
-        offset_ = offset;
+    explicit model_transform(const Point_3 position) {
+        position_ = position;
     }
 
-    explicit model_transform(const Point_3 offset, const Eigen::Quaternionf &rotate) {
-        offset_ = offset;
-        rotate_ = rotate;
+    explicit model_transform(const Point_3 position, const Eigen::Quaternionf &rotate) {
+        position_ = position;
+        rotate_   = rotate;
     }
 
-    explicit model_transform(const Point_3 offset, const Eigen::Quaternionf &rotate, const Point_3 zoom) {
-        offset_ = offset;
-        rotate_ = rotate;
-        zoom_   = zoom;
+    explicit model_transform(const Point_3 position, const Eigen::Quaternionf &rotate, const Point_3 zoom) {
+        position_ = position;
+        rotate_   = rotate;
+        zoom_     = zoom;
     }
 
 
@@ -69,16 +69,16 @@ public:
         return zoom_;
     }
 
-    [[nodiscard]] Point_3 get_offset() const {
-        return offset_;
+    [[nodiscard]] Point_3 get_position() const {
+        return position_;
     }
 
-    Point_3 add_offset(const Point_3 offset_add) {
-        return offset_ = offset_ + offset_add;
+    Point_3 add_offset(const Point_3 offset) {
+        return position_ = position_ + offset;
     }
 
-    void rotate(const Eigen::Quaternionf &quaternion) {
-        rotate_ = rotate_ * quaternion;
+    void mult_rotate(const Eigen::Quaternionf &quaternion) {
+        rotate_ = rotate_ * quaternion; // multiply
     }
 
     void set_rotate(const Eigen::Quaternionf &quaternion) {
@@ -89,7 +89,7 @@ public:
         // 定义一个仿射变换（4x4 矩阵）
         Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
         // 1. 平移 (Translation)
-        model_4x4.translate(Eigen::Vector3f(offset_.x, offset_.y, offset_.z));
+        model_4x4.translate(Eigen::Vector3f(position_.x, position_.y, position_.z));
         // 2. 旋转 (Rotation) - 使用四元数
         model_4x4.rotate(rotate_);
         // 3. 缩放 (Scaling)
@@ -100,7 +100,7 @@ public:
     }
 
     Eigen::Matrix4f get_view_projection() const {
-        const auto view = view_matrix({offset_.x, offset_.y, offset_.z}, rotate_);
+        const auto view = view_matrix({position_.x, position_.y, position_.z}, rotate_);
         return view;
     }
 };

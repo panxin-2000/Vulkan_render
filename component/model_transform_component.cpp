@@ -50,7 +50,7 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     // 5. 透视除法 (W 分量归一化)
     world_start /= world_start.w();
     world_end   /= world_end.w();
-    auto offset = camera_pos->get_offset(); // 这里给出的相机的位置
+    auto offset = camera_pos->get_position(); // 这里给出的相机的位置
     // 6. 确定射线
     Eigen::Vector3f ray_origin    = world_start.head<3>();
     Eigen::Vector3f ray_direction = (world_end.head<3>() - ray_origin).normalized();
@@ -66,6 +66,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
     auto temp_type = event.event_type;
     auto &status   = Logic_entt().get<Input_Component>(entity);
 
+    // 这里并没有 订阅事件 ，全部的时间都会来处理，不处理的话就返回 OPERATOR_PASS_THROUGH
     switch (temp_type) {
         case MOUSE_ROTATE: {
             auto temp = event.scroll;
@@ -121,18 +122,23 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
         case MOUSE_MOVE:
             if (status.select_status_ == select_current) {
                 if (auto *transform = Logic_entt().try_get<model_transform>(entity)) {
-                    auto object_offset = transform->get_offset();
-                    auto world_entity  = get_world_root();
-                    auto ray           = get_screen_ray(event.current_position);
-                    auto ray_2         = get_screen_ray(event.last_position);
+                    const auto object_position = transform->get_position();
+                    const auto world_entity    = get_world_root();
+                    const auto current_ray     = get_screen_ray(event.current_position);
+                    const auto last_ray        = get_screen_ray(event.last_position);
 
-                    const auto camera_pos = Logic_entt().try_get<model_transform>(world_entity);
+                    const auto camera_position = Logic_entt().try_get<model_transform>(world_entity);
 
-                    auto q            = camera_pos->get_rotate();
-                    Eigen::Vector3f n = q * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
-                    n.normalize();
-                    auto a = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray);
-                    auto b = intersect_result({object_offset, {n.x(), n.y(), n.z()}}, ray_2);
+                    const auto quat        = camera_position->get_rotate();
+                    Eigen::Vector3f normal = quat * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
+                    normal.normalize();                                       // 这个法线的求法是对的吗？
+                    // normal 其实是 view direction
+                    // Eigen::Vector3f normal = camera_matrix.block<3, 1>(0, 2); // 另一种拿 法线的办法
+                    // quat 乘于 unit Z (0,0,1) 的结果是可以被简化的 ，之后再看
+                    const Plane plane{object_position, {normal.x(), normal.y(), normal.z()}};
+
+                    const auto a = intersect_result(plane, current_ray);
+                    const auto b = intersect_result(plane, last_ray);
 
                     transform->add_offset(a - b);
                     // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
@@ -157,7 +163,7 @@ void update_camera_parameter(entt::entity entity) {
                                                                              0, 0, 6
                                                                          });
     const auto view_matrix     = camera_pos.get_view_projection();
-    Point_3 world_camera_pos   = camera_pos.get_offset();
+    Point_3 world_camera_pos   = camera_pos.get_position();
     const auto inv_view_matrix = view_matrix.inverse();
 
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
