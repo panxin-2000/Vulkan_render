@@ -440,6 +440,7 @@ add_executable(hello_test ${LABYRINTH}
         test/cut_rod.cpp
         test/test_tree_node.cpp
         test/test_class.cpp
+        test/knapsack.cpp
         test/test_template.cpp
         test/test_plane_sweep.cpp
         test/ear_clip.cpp
