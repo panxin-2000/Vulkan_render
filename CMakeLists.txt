@@ -339,6 +339,7 @@ file(GLOB_RECURSE component
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"
         "component/transform_component.cpp"
+        "component/farmhash.cpp"
         "component/Rect_2D_component.cpp"
 )
 
