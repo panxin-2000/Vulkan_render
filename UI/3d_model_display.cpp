@@ -14,6 +14,7 @@
 #include "transform_component.h"
 #include <meshoptimizer.h>
 
+#include "parse_geometry_file.h"
 #include "PBR_component.h"
 
 
@@ -30,10 +31,8 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
                "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
                "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                "", "");
-    auto [vertices, indices] = load_model(mesh_path);
-    add_geometry_data(entity, vertices, indices);
-    auto [min, max] = find_min_max_point(vertices);
-    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
+    auto aabb  = load_model(entity, mesh_path);
+    auto &AABB = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, aabb.value());
 
     // 更新物体的模型矩阵
     Logic_entt().emplace<Transform>(entity, offset, rotate);

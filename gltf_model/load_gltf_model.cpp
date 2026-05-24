@@ -210,9 +210,9 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
     Attribute texcoord = {nullptr, 8, 0};
 
     // todo: 这三个可以看看应该怎么删除了，下一步要做的
-    std::optional<tinygltf::Accessor> position_accessor;
-    std::optional<tinygltf::Accessor> normal_accessor;
-    std::optional<tinygltf::Accessor> texcoord_accessor;
+    std::optional<tinygltf::Accessor> position_accessor = {};
+    std::optional<tinygltf::Accessor> normal_accessor   = {};
+    std::optional<tinygltf::Accessor> texcoord_accessor = {};
 
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
@@ -235,48 +235,12 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
         }
     }
     memcopy_all_attributes(sp_vertices, position, normal, texcoord);
-    // 之后就是看如何进行细分加速了
-    // 这里可以直接用一个替代的原因是 position, normal, texcoord 的 count 是一致的，不一致就会有问题
-    return;
-    if (position_accessor.has_value() && normal_accessor.has_value() && !texcoord_accessor.has_value() &&
-        position_accessor.value().count == normal_accessor.value().count) {
-        if (position.element_stride == position.element_size && normal.element_stride == normal.element_size) {
-            // 这里if的判断是为了确定是 三个属性是 单独 存储的
-            memcopy_all_attributes(sp_vertices, position, normal, texcoord);
-        }
-    }
-    if (position_accessor.has_value() && !normal_accessor.has_value() && !texcoord_accessor.has_value()) {
-        memcopy_all_attributes(sp_vertices, position, normal, texcoord);
-    }
-    if (position_accessor.has_value() && !normal_accessor.has_value() && texcoord_accessor.has_value()) {
-        memcopy_all_attributes(sp_vertices, position, normal, texcoord);
-    }
-
-    if (position_accessor.has_value() && normal_accessor.has_value() && texcoord_accessor.has_value() &&
-        position_accessor.value().count == normal_accessor.value().count &&
-        position_accessor.value().count == texcoord_accessor.value().count) {
-        const int all_elements_size = position.element_size + normal.element_size + texcoord.element_size;
-        if (position.element_stride == all_elements_size &&
-            texcoord.element_stride == all_elements_size &&
-            normal.element_stride == all_elements_size &&
-            0 == position_accessor.value().byteOffset &&
-            position.element_size == normal_accessor.value().byteOffset &&
-            position.element_size + normal.element_size == texcoord_accessor.value().byteOffset) {
-            LOG_INFO(g_log(), "need deal continue position normal texcoord ");
-            assert(false && "need deal continue position normal texcoord");
-        }
-
-        if (position.element_stride == position.element_size &&
-            normal.element_stride == normal.element_size &&
-            texcoord.element_stride == texcoord.element_size) {
-            memcopy_all_attributes(sp_vertices, position, normal, texcoord);
-        }
-    }
+    // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
 void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
-    auto sp_vertices = std::make_shared<std::vector<Vertex> >();
-    auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
+    const auto sp_vertices = std::make_shared<std::vector<Vertex> >();
+    const auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
 
     // std::vector<VKR_Primitive> // 如果可以的话，尽可能在这里搞定，之后只需要复制一下就好
     const auto mesh    = model.meshes[mesh_index];
@@ -285,12 +249,12 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
     for (const auto &primitive: mesh.primitives) {
         // 最开始需要能够确定数量
         if (primitive.indices > -1) {
-            auto current_accessor = model.accessors[primitive.indices]; // 复制的函数需要处理
-            indices_count         = indices_count + current_accessor.count;
+            const auto current_accessor = model.accessors[primitive.indices]; // 复制的函数需要处理
+            indices_count               = indices_count + current_accessor.count;
         }
         for (const auto &attribute: primitive.attributes) {
-            auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
-            vertices_count        += current_accessor.count;
+            const auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
+            vertices_count              += current_accessor.count;
         }
     }
     sp_vertices->reserve(vertices_count);
@@ -353,9 +317,9 @@ entt::entity load_node_data(tinygltf::Model &model,
     // 改的太多，我都忘记下面一行是需要添加的了
     logic_create_proxy(entity);
     add_shader(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-                                           "", "");
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+               "", "");
     auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
     set_render_parameter(entity, "object_material", material);
     Logic_entt().emplace<Name_component>(entity, node.name);

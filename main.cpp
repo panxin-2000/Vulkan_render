@@ -46,9 +46,9 @@ inline entt::entity add_render_pass(const std::string &name) {
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 
     add_shader(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
-                                           "", "");
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
+               "", "");
 
     // 更新物体的模型矩阵
 
@@ -68,9 +68,9 @@ inline entt::entity add_volume_pass(const std::string &name) {
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
     add_shader(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
-                                           "", "");
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
+               "", "");
 
     add_nanovdb_to_gpu(entity);
 
@@ -237,11 +237,11 @@ void add_skybox_entity() {
 void add_simple_computer_buffer_write() {
     const entt::entity entity = Logic_entt().create();
     add_shader(entity,
-                                           "",
-                                           "",
-                                           "",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/simple_write_buffer.comp.spv"
-                                          );
+               "",
+               "",
+               "",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/simple_write_buffer.comp.spv"
+              );
 
 
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
@@ -373,17 +373,16 @@ int main(int argc, char *argv[]) {
 
     {
         auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+    } {
+        auto value           = get_max_descriptor_update_after_bind_samplers();
+        const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture         = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+        const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        set_baseColor_Texture_index(entity, index);
+        logic_update_add_tag<opacity_tag>(entity);
     }
     // {
-    //     auto value     = get_max_descriptor_update_after_bind_samplers();
-    //     auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-    //     auto texture   = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-    //     uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-    //     set_baseColor_Texture_index(entity, index);
-    //     logic_update_add_tag<opacity_tag>(entity);
-    // }
-    // {
-    //     auto entity = load_gltf_model("sphere", "assets/DamagedHelmet.gltf");
+    //     const auto entity = load_gltf_model("DamagedHelmet", "assets/DamagedHelmet.gltf");
     //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
     //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
     //     // index        = 0;

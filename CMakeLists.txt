@@ -271,6 +271,7 @@ if (WITH_VULKAN_BACKEND)
             "render/render_component/sync_proxy_to_render_thread.cpp"
             "render/render_component/mesh_component.cpp"
             "render/render_component/Geometry_data.cpp"
+            "render/render_component/parse_geometry_file.cpp"
             "render/render_component/VKR_proxy_component.cpp"
     )
     include_directories(render/vulkan_code)

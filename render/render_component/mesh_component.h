@@ -26,8 +26,6 @@ struct mesh_and_share {
 };
 
 
-std::pair<const std::shared_ptr<std::vector<Vertex> >,
-          const std::shared_ptr<std::vector<uint16_t> >> load_model(const std::string &path);
 
 void clean_all_mesh_object();
 

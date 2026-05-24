@@ -75,50 +75,9 @@ void clean_all_mesh_object() {
 #include <tiny_obj_loader.h>
 
 
-inline bool load_model_to_vector(const std::string &path, std::shared_ptr<std::vector<Vertex> > &vertices,
-                                 std::shared_ptr<std::vector<uint16_t> > &indices) {
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    auto result = tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, path.c_str());
-    // todo : result need check
-    if (result == false) {
-        return false;
-    }
-    const VkDeviceSize indexCount{shapes[0].mesh.indices.size()};
-    // Load vertex and index data
-    for (auto &index: shapes[0].mesh.indices) {
-        Vertex v{
-            .pos = {
-                attrib.vertices[index.vertex_index * 3], -attrib.vertices[index.vertex_index * 3 + 1],
-                attrib.vertices[index.vertex_index * 3 + 2]
-            },
-            .normal = {
-                attrib.normals[index.normal_index * 3], -attrib.normals[index.normal_index * 3 + 1],
-                attrib.normals[index.normal_index * 3 + 2]
-            },
-            .uv = {attrib.texcoords[index.texcoord_index * 2], 1.0f - attrib.texcoords[index.texcoord_index * 2 + 1]}
-        };
-        vertices->push_back(v);
-        indices->push_back(indices->size());
-    }
-}
 
 
-std::pair<const std::shared_ptr<std::vector<Vertex> >,
-          const std::shared_ptr<std::vector<uint16_t> >> load_model(const std::string &path) {
-    auto sp_vertices               = std::make_shared<std::vector<Vertex> >();
-    auto sp_indices                = std::make_shared<std::vector<uint16_t> >();
-    std::filesystem::path filePath = path;
-    std::string ext                = filePath.extension().string();
 
-    if (ext == ".obj") {
-        load_model_to_vector(path, sp_vertices, sp_indices);
-        return {sp_vertices, sp_indices};
-    } else {
-    }
-    return {sp_vertices, sp_indices};
-}
 
 VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive) {
     switch (primitive.mode) {

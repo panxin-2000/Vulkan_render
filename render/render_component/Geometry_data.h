@@ -43,6 +43,31 @@ public:
         return indices_;
     };
 
+    void set(const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
+             const std::shared_ptr<std::vector<uint16_t> > &sp_indices) {
+        if (sp_vertices != nullptr) {
+            const share_block vertices_buffer = {
+                sp_vertices,
+                sp_vertices->data(),
+                sp_vertices->size() * sizeof(Vertex),
+                sp_vertices->size(),
+                sizeof(Vertex)
+            };
+            vertices_ = vertices_buffer;
+        }
+
+        if (sp_indices != nullptr) {
+            const share_block indices_buffer = {
+                sp_indices,
+                sp_indices->data(),
+                sp_indices->size() * sizeof(uint16_t),
+                sp_indices->size(),
+                sizeof(uint16_t)
+            };
+            indices_ = indices_buffer;
+        }
+    }
+
 private:
     share_block vertices_;
     share_block indices_;
@@ -68,13 +93,13 @@ bool add_triangle_geometry(entt::entity entity,
                            Point_3 c);
 
 void append_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
-                  const std::shared_ptr<std::vector<unsigned short> > &indices,
-                  Point_3 min, Point_3 max,
-                  float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
+                     const std::shared_ptr<std::vector<unsigned short> > &indices,
+                     Point_3 min, Point_3 max,
+                     float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
 bool add_sky_box_data(entt::entity entity);
 
-inline std::pair<Point_3, Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
+inline AABB_min_max<Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
     Point_3 min = Point_3::init_max_limit();
     Point_3 max = Point_3::init_min_limit();
     for (auto &vertex: *vertices) {

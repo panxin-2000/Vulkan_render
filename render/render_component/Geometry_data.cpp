@@ -17,24 +17,7 @@ void add_geometry_data(const entt::entity entity,
 
     auto &geometry = Logic_entt().get<Geometry_data>(entity);
 
-
-    const share_block vertices_buffer = {
-        sp_vertices,
-        sp_vertices->data(),
-        sp_vertices->size() * sizeof(Vertex),
-        sp_vertices->size(),
-        sizeof(Vertex)
-    };
-    const share_block indices_buffer = {
-        sp_indices,
-        sp_indices->data(),
-        sp_indices->size() * sizeof(uint16_t),
-        sp_indices->size(),
-        sizeof(uint16_t)
-    };
-
-    geometry.set_vertices(vertices_buffer);
-    geometry.set_indices(indices_buffer);
+    geometry.set(sp_vertices, sp_indices);
 }
 
 
