@@ -39,10 +39,10 @@
 //         bindless.freeSlots.pop();
 //     }
 //     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(world_entity)) {
-//         if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(world_entity)) {
-//             Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(world_entity, VKR_shader_init(*shader_temp));
+//         if (!Logic_entt().all_of<shader_data >(world_entity)) {
+//             Logic_entt().emplace<shader_data >(world_entity, VKR_shader_init(*shader_temp));
 //         }
-//         const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(world_entity);
+//         const auto &shader_data = Logic_entt().get<shader_data >(world_entity);
 //         auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(world_entity);
 //
 //         for (auto const &[set_value, bindings_map]: shader_data->bindless_sets_bindings) {

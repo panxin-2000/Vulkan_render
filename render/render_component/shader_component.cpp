@@ -49,7 +49,7 @@ void update_bindings_to_descriptor_sets(const entt::entity entity, const std::st
 std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> global_descriptor_set;
 
-    if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
             auto current_entity = entity;
             while (current_entity != entt::null) {
@@ -82,7 +82,7 @@ std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity enti
 std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> global_descriptor_set;
 
-    if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
         if (!(*shader_temp)->bindless_set_layout.empty()) {
             auto current_entity = get_world_root();
             while (current_entity != entt::null) {
@@ -106,7 +106,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_backend::get();
-    if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+    if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(entity);
 
@@ -144,7 +144,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
 std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> descriptor_sets; // 这里是需要按照顺序的
     if (const auto vk_s_d_s = Logic_entt().try_get<Parameter_used>(entity)) {
-        if (const auto shader_temp = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
+        if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = get_bindless_descriptor_set(entity);
                 auto global_descriptor_sets   = get_global_descriptor_set(entity);
@@ -170,8 +170,8 @@ std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
     return descriptor_sets;
 }
 
-std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) {
-    std::shared_ptr<vk_shader_data> shader_data_handle;
+shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
+    shader_data shader_data_handle;
     // if (shader_data_handle.get() == nullptr)
     {
         auto &handle = VK_backend::get();
@@ -229,7 +229,7 @@ void add_shader(const entt::entity entity, const std::string &vertex_path,
                 const std::string &computer_path) {
     Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, geometry_path, fragment_path, computer_path);
     auto &shader_temp = Logic_entt().get<VKR_shader_paths>(entity);
-    Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(shader_temp));
+    Logic_entt().emplace<shader_data>(entity, VKR_shader_init(shader_temp));
 }
 
 

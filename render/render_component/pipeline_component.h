@@ -10,10 +10,9 @@
 
 
 inline VkPipeline get_pipeline(const entt::entity entity) {
-    auto &handle          = VK_backend::get();
-    VkPipeline pipeline_t = VK_NULL_HANDLE;
-    if (auto shader_data = Logic_entt().try_get<std::shared_ptr<vk_shader_data> >(entity)) {
-        pipeline_t = find_pipeline(handle, *shader_data);
+    auto &handle = VK_backend::get();
+    if (auto &shader_data_ref = Logic_entt().get<shader_data>(entity)) {
+        const VkPipeline pipeline_t = find_pipeline(handle, shader_data_ref);
         return pipeline_t;
     } else {
         // 打印一个 entity name 没有 VKR_shader

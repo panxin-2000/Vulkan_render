@@ -55,7 +55,7 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data);
 
 VkPipeline create_pipeline(VK_backend &backend, vk_shader_data &data);
 
-VkPipeline find_pipeline(VK_backend &handle, std::shared_ptr<vk_shader_data> &data);
+VkPipeline find_pipeline(VK_backend &handle, shader_data &data);
 
 
 void clean_all_pipeline(VK_backend &handle);

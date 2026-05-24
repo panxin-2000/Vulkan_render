@@ -109,8 +109,9 @@ public:
     }
 };
 
+using shader_data = std::shared_ptr<vk_shader_data>;
 
-std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
+shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
 
 void add_shader(const entt::entity entity,
                 const std::string &vertex_path,
@@ -132,25 +133,20 @@ void add_shader(const entt::entity entity,
  */
 template<typename T1>
 bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        }
-        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
-        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
-        if (binding_name.find("global") != std::string::npos) {
-            set_render_parameter(shader_data->global_sets_bindings,
-                                 parameter.update_global_descriptor_sets, binding_name,
-                                 binding_data);
-            Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
-            return true;
-        } else {
-            set_render_parameter(shader_data->object_sets_bindings,
-                                 parameter.update_object_descriptor_sets, binding_name,
-                                 binding_data);
-            Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
-            return true;
-        }
+    auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
+    auto &parameter       = Logic_entt().get_or_emplace<Parameter_used>(entity);
+    if (binding_name.find("global") != std::string::npos) {
+        set_render_parameter(shader_data_ref->global_sets_bindings,
+                             parameter.update_global_descriptor_sets, binding_name,
+                             binding_data);
+        Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
+        return true;
+    } else {
+        set_render_parameter(shader_data_ref->object_sets_bindings,
+                             parameter.update_object_descriptor_sets, binding_name,
+                             binding_data);
+        Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
+        return true;
     }
     return false;
 }
@@ -158,17 +154,12 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 
 template<typename T1>
 bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(*shader_temp));
-        }
-        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(entity);
-        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(entity);
-        for (auto &[name,value]: shader_data->push_constant_map) {
-            if (name == binding_name && sizeof(T1) <= value.size) {
-                memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
-                Logic_entt().emplace_or_replace<push_constant_update>(entity);
-            }
+    const auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
+    auto &parameter             = Logic_entt().get_or_emplace<Parameter_used>(entity);
+    for (auto &[name,value]: shader_data_ref->push_constant_map) {
+        if (name == binding_name && sizeof(T1) <= value.size) {
+            memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
+            Logic_entt().emplace_or_replace<push_constant_update>(entity);
         }
     }
     return false;

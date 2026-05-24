@@ -208,8 +208,8 @@ void update_camera_parameter(const entt::entity entity) {
     const Point_3 world_light_pos{0, 10, 6};
 
     const auto camera_pos = Logic_entt().get_or_emplace<Transform>(entity, Point_3{
-                                                                             0, 0, 6
-                                                                         });
+                                                                       0, 0, 6
+                                                                   });
     const auto view_matrix     = get_view_matrix(camera_pos);
     Point_3 world_camera_pos   = camera_pos.get_position();
     const auto inv_view_matrix = view_matrix.inverse();
@@ -235,9 +235,9 @@ void init_world_scene_root(entt::entity entity) {
     Logic_entt().emplace<Scene_Component>(entity);
     Logic_entt().emplace<Name_component>(entity, "world_scene_root");
     add_shader(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
-                                           "", "");
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
+               "", "");
 
 
     update_camera_parameter(entity);
@@ -285,13 +285,10 @@ uint32_t add_bindless_uniform_sampler2D(const std::string &name,
         bindless.freeSlots.pop();
     }
     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(world_entity)) {
-        if (!Logic_entt().all_of<std::shared_ptr<vk_shader_data> >(world_entity)) {
-            Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(world_entity, VKR_shader_init(*shader_temp));
-        }
-        const auto &shader_data = Logic_entt().get<std::shared_ptr<vk_shader_data> >(world_entity);
-        auto &parameter         = Logic_entt().get_or_emplace<Parameter_used>(world_entity);
+        const auto &shader_data_ref = Logic_entt().get<shader_data>(world_entity);
+        auto &parameter             = Logic_entt().get_or_emplace<Parameter_used>(world_entity);
 
-        for (auto const &[set_value, bindings_map]: shader_data->bindless_sets_bindings) {
+        for (auto const &[set_value, bindings_map]: shader_data_ref->bindless_sets_bindings) {
             for (const auto &[binding_value, info]: bindings_map) {
                 if (info.binding_name == "bindless_samplerColorMap") {
                     Update_descriptor_binding temp                  = {};
