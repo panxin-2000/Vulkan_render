@@ -143,7 +143,7 @@ static void collect_and_sorted_vertex_input_resources(const spirv_cross::Compile
             // 3. Get the Type (e.g., vec3, vec2)
             auto &type                   = compiler.get_type(resource.type_id);
             auto [format, size]          = map_spirv_type_to_vk_format(type);
-            vertexAttributes_t[location] = {size, {location, binding, format, 0, name}};
+            vertexAttributes_t[location] = {size, {location, binding, format, 0, size, name}};
         }
         uint32_t total_offset = 0;
         for (auto [location,pair_data]: vertexAttributes_t) {

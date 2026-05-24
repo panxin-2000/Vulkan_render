@@ -10,12 +10,12 @@
 class VKR_Primitive {
 public:
     // 不做
-    VKR_buffer_ptr vertices = {};
-    VKR_buffer_ptr indices  = {};
-    // VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
-    // VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
-    VkIndexType index_type = VK_INDEX_TYPE_UINT16;
-    int material_index_    = 0;
+    VKR_buffer_ptr vertices      = {};
+    VKR_buffer_ptr indices       = {};
+    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
+    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
+    VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
+    int material_index_          = 0;
 
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};
@@ -27,10 +27,9 @@ public:
     void draw(const VkCommandBuffer &cb, const uint64_t time_line) {
         if (vertices == nullptr || vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        VkDeviceSize temp_offset = 0;
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &temp_offset);
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
         if (indices != nullptr && indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), 0, index_type);
+            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,
                              indexed_command.firstIndex,
@@ -50,8 +49,11 @@ public:
 class Model_mesh_vector {
 public:
     // 不做
-    VKR_buffer_ptr vertices = {};
-    VKR_buffer_ptr indices  = {};
+    VKR_buffer_ptr vertices      = {};
+    VKR_buffer_ptr indices       = {};
+    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
+    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
+
     // 其实还是要去分区的，看看那些内容在变化，哪些内容没有变化
     // 为什么2d的内容可以 变化时 覆盖原有内容，而 3d 不行呢 ？
 
@@ -66,9 +68,9 @@ public:
 
 
     void draw(const VkCommandBuffer &cb, const uint64_t time_line) const {
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), 0);
+        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
         if (indices->get_buffer_handle() != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), 0, index_type);
+            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexedIndirect(cb,
                                      // draw_commands 相关内容
                                      draw_commands_buffer->get_buffer_handle(),

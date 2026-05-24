@@ -30,7 +30,6 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
                "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
                "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                "", "");
-    add_geometry_data(entity, mesh_path);
     auto [vertices, indices] = load_model(mesh_path);
     add_geometry_data(entity, vertices, indices);
     auto [min, max] = find_min_max_point(vertices);

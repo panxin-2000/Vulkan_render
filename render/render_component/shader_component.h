@@ -35,6 +35,7 @@ struct InputAttributeDescription {
     uint32_t binding;
     VkFormat format;
     uint32_t offset;
+    uint32_t size;
     std::string name;
 };
 
@@ -118,6 +119,8 @@ void add_shader(const entt::entity entity,
                 const std::string &geometry_path,
                 const std::string &fragment_path,
                 const std::string &computer_path);
+
+const std::vector<InputAttributeDescription> &get_attribute_description(const entt::entity entity);
 
 /**
  *

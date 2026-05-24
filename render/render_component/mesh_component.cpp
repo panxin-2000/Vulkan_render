@@ -39,6 +39,8 @@ VKR_Primitive create_mesh_data(const VK_backend &backend, const share_block &ver
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
     // mesh.indices_offset = vBufSize;
+    // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
+    // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
     mesh.indexed_command.indexCount = indices_.count; // 是可以这么替换的
     mesh.indexed_command.firstIndex = vBufSize / 2; // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
     //确实是可以通过计算偏移的
@@ -52,30 +54,17 @@ VKR_Primitive create_mesh_data(const VK_backend &backend, const share_block &ver
 
 
 std::vector<VKR_Primitive> create_mesh(const entt::entity entity) {
-    const auto &handle = VK_backend::get();
+    const auto &backend = VK_backend::get();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
-        if (data->mesh_path_.empty() == false) {
-        } else {
-            // todo : 这里的逻辑还是有问题的
-            const auto mesh = create_mesh_data(handle, data->vertices_, data->indices_);
-            std::vector<VKR_Primitive> result;
-            result.push_back(mesh);
-            return result;
-        }
+        // todo : 这里的逻辑还是有问题的
+        const auto mesh = create_mesh_data(backend, data->get_vertices(), data->get_indices());
+        std::vector<VKR_Primitive> result;
+        result.push_back(mesh);
+        return result;
     }
     return {};
 }
 
-
-inline VKR_Primitive *find_mesh(Geometry_data data,
-                                std::map<Geometry_data *, mesh_and_share> &map) {
-    auto it = map.find(&data);
-    if (it != map.end()) {
-        return &it->second.mesh;
-    } else {
-        return nullptr;
-    }
-}
 
 void clean_all_mesh_object() {
     // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
@@ -156,214 +145,11 @@ VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive)
 }
 
 
-bool add_geometry_data(entt::entity entity, const std::string &mesh_path) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
-        Logic_entt().remove<Geometry_data>(entity);
-    }
-    Logic_entt().emplace<Geometry_data>(entity);
-
-    auto &geometry      = Logic_entt().get<Geometry_data>(entity);
-    geometry.mesh_path_ = mesh_path;
-    return true;
-}
 
 
-void add_geometry_data(const entt::entity entity,
-                       const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                       const std::shared_ptr<std::vector<uint16_t> > &sp_indices) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
-        Logic_entt().remove<Geometry_data>(entity);
-    }
-    Logic_entt().emplace<Geometry_data>(entity);
-
-    auto &geometry = Logic_entt().get<Geometry_data>(entity);
 
 
-    const share_block vertices_buffer = {
-        sp_vertices,
-        sp_vertices->data(),
-        sp_vertices->size() * sizeof(Vertex),
-        sp_vertices->size(),
-        sizeof(Vertex)
-    };
-    const share_block indices_buffer = {
-        sp_indices,
-        sp_indices->data(),
-        sp_indices->size() * sizeof(uint16_t),
-        sp_indices->size(),
-        sizeof(uint16_t)
-    };
 
-    geometry.set_vertices(vertices_buffer);
-    geometry.set_indices(indices_buffer);
-}
-
-
-bool add_geometry_data(entt::entity entity,
-                       Point_3 min,
-                       Point_3 max) {
-    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
-    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-    {
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 3);
-        indices->push_back(vertices->size() + 0);
-        //     3            2
-        //      ************
-        //      *        * *
-        //      *     *    *
-        //      *  *       *
-        //      ************
-        //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, 0, 0}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, 1, 0});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, 1, 1}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, 0, 1});
-    }
-
-    add_geometry_data(entity, vertices, indices);
-}
-
-bool add_geometry_data_with_UV(entt::entity entity,
-                               Point_3 min,
-                               Point_3 max) {
-    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
-    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-    {
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 2);
-        indices->push_back(vertices->size() + 3);
-        indices->push_back(vertices->size() + 0);
-        //     3            2
-        //      ************
-        //      *        * *
-        //      *     *    *
-        //      *  *       *
-        //      ************
-        //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, min.x, min.y}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, max.x, min.y});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, max.x, max.y}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, min.x, max.y});
-    }
-
-    add_geometry_data(entity, vertices, indices);
-}
-
-void add_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
-                  const std::shared_ptr<std::vector<unsigned short> > &indices,
-                  Point_3 min, Point_3 max,
-                  float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y) {
-    indices->push_back(vertices->size() + 0);
-    indices->push_back(vertices->size() + 1);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 3);
-    indices->push_back(vertices->size() + 0);
-    //     3            2
-    //      ************
-    //      *        * *
-    //      *     *    *
-    //      *  *       *
-    //      ************
-    //     0            1
-    vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, uv_min_x, uv_min_y}); //0 1 2
-    vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, uv_max_x, uv_min_y});
-    vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, uv_max_x, uv_max_y}); // 2 3 0
-    vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, uv_min_x, uv_max_y});
-}
-
-bool add_sky_box_data(entt::entity entity) {
-    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
-    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
-    indices->push_back(vertices->size() + 0);
-    indices->push_back(vertices->size() + 1);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 3);
-    indices->push_back(vertices->size() + 2);
-    indices->push_back(vertices->size() + 1);
-    indices->push_back(vertices->size() + 4);
-    indices->push_back(vertices->size() + 5);
-    indices->push_back(vertices->size() + 6);
-    indices->push_back(vertices->size() + 7);
-    indices->push_back(vertices->size() + 6);
-    indices->push_back(vertices->size() + 5);
-    indices->push_back(vertices->size() + 8);
-    indices->push_back(vertices->size() + 9);
-    indices->push_back(vertices->size() + 10);
-    indices->push_back(vertices->size() + 11);
-    indices->push_back(vertices->size() + 10);
-    indices->push_back(vertices->size() + 9);
-    indices->push_back(vertices->size() + 12);
-    indices->push_back(vertices->size() + 13);
-    indices->push_back(vertices->size() + 14);
-    indices->push_back(vertices->size() + 15);
-    indices->push_back(vertices->size() + 14);
-    indices->push_back(vertices->size() + 13);
-    indices->push_back(vertices->size() + 16);
-    indices->push_back(vertices->size() + 17);
-    indices->push_back(vertices->size() + 18);
-    indices->push_back(vertices->size() + 19);
-    indices->push_back(vertices->size() + 18);
-    indices->push_back(vertices->size() + 17);
-    indices->push_back(vertices->size() + 20);
-    indices->push_back(vertices->size() + 21);
-    indices->push_back(vertices->size() + 22);
-    indices->push_back(vertices->size() + 23);
-    indices->push_back(vertices->size() + 22);
-    indices->push_back(vertices->size() + 21);
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    add_geometry_data(entity, vertices, indices);
-}
-
-
-bool add_geometry_data(entt::entity entity,
-                       Point_3 a,
-                       Point_3 b,
-                       Point_3 c) {
-    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 3 = 96
-    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 3 = 6
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-    {
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        indices->push_back(vertices->size() + 2);
-        vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-    }
-    add_geometry_data(entity, vertices, indices);
-}
 
 std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity) {
     const auto mesh = create_mesh(entity);
@@ -376,14 +162,14 @@ void update_object_mesh() {
     // 包围盒发生了更新
     for (const auto it: view) {
         auto pos = view.get<Rect_2D_transform>(it);
-        add_geometry_data(it, {
-                              pos.get_bounding_box().min_point_.x,
-                              pos.get_bounding_box().min_point_.y, 0.0f
-                          },
-                          {
-                              pos.get_bounding_box().max_point_.x,
-                              pos.get_bounding_box().max_point_.y, 0.0f
-                          });
+        add_2D_bound_box_geometry(it, {
+                                      pos.get_bounding_box().min_point_.x,
+                                      pos.get_bounding_box().min_point_.y, 0.0f
+                                  },
+                                  {
+                                      pos.get_bounding_box().max_point_.x,
+                                      pos.get_bounding_box().max_point_.y, 0.0f
+                                  });
 
         const auto mesh = create_mesh(it);
 

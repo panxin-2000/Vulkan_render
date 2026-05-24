@@ -9,15 +9,7 @@
 #include "render_mesh.h"
 #include "shader_common.h"
 #include "base_geometry/base.h"
-
-struct share_block {
-    std::shared_ptr<void> ptr;
-    void *data;
-    size_t total_size;
-    size_t count;
-    size_t single_size;
-    // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
-};
+#include "Geometry_data.h"
 
 
 //
@@ -33,78 +25,22 @@ struct mesh_and_share {
     uint16_t shared_number;
 };
 
-class Geometry_data : public NonCopyable {
-public:
-    share_block vertices_;
-    share_block indices_;
-    std::string mesh_path_;
-
-
-    Geometry_data() = default;
-
-    ~Geometry_data() = default;
-
-
-    void set_vertices(const share_block &temp) {
-        vertices_ = temp;
-    }
-
-
-    auto get_indices() const {
-        return indices_;
-    }
-
-    void set_indices(const share_block &indices) {
-        indices_ = indices;
-    }
-};
 
 std::pair<const std::shared_ptr<std::vector<Vertex> >,
           const std::shared_ptr<std::vector<uint16_t> >> load_model(const std::string &path);
 
 void clean_all_mesh_object();
 
-
+/**
+ * 创建一个mesh,所有需要的数据都在 entity 的 Geometry_data 中
+ * @param entity
+ * @return
+ */
 std::vector<VKR_Primitive> create_mesh(const entt::entity entity);
 
 std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity);
 
 
-void add_geometry_data(const entt::entity entity,
-                       const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                       const std::shared_ptr<std::vector<uint16_t> > &sp_indices);
 
-
-bool add_geometry_data(entt::entity entity, const std::string &mesh_path);
-
-bool add_geometry_data(entt::entity entity,
-                       Point_3 min,
-                       Point_3 max);
-
-bool add_geometry_data_with_UV(entt::entity entity,
-                               Point_3 min,
-                               Point_3 max);
-
-bool add_geometry_data(entt::entity entity,
-                       Point_3 a,
-                       Point_3 b,
-                       Point_3 c);
-
-void add_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
-                  const std::shared_ptr<std::vector<unsigned short> > &indices,
-                  Point_3 min, Point_3 max,
-                  float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
-
-bool add_sky_box_data(entt::entity entity);
-
-inline std::pair<Point_3, Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
-    Point_3 min = Point_3::init_max_limit();
-    Point_3 max = Point_3::init_min_limit();
-    for (auto &vertex: *vertices) {
-        min = Point_3::min_two_point(vertex.pos, min);
-        max = Point_3::max_two_point(vertex.pos, max);
-    }
-    return {min, max};
-}
 
 #endif //HELLO_MAC_MESH_COMPONENT_H

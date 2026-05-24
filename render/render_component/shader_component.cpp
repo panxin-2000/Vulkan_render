@@ -232,6 +232,11 @@ void add_shader(const entt::entity entity, const std::string &vertex_path,
     Logic_entt().emplace<shader_data>(entity, VKR_shader_init(shader_temp));
 }
 
+const std::vector<InputAttributeDescription> &get_attribute_description(const entt::entity entity) {
+    const auto &shader_temp = Logic_entt().get<shader_data>(entity);
+    return shader_temp->vertexAttributes;
+}
+
 
 void global_uniform_buffer_update_function() {
     // 就是检查一下，已经给过 渲染线程，就添加一个 lambda 更新部分内容就好

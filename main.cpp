@@ -517,7 +517,7 @@ int main(int argc, char *argv[]) {
 
 void test_projection_matrix() {
     auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
-    add_geometry_data(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
+    add_triangle_geometry(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 }
 
 
