@@ -11,7 +11,7 @@
 #include "pipeline_layout_component.h"
 
 
-void add_proxy_to_render_function() {
+void add_new_proxy_to_render() {
     const auto view = Logic_entt().view<add_to_render_tag>();
     for (const auto &it: view) {
         logic_update_proxy<Name_component>(it);

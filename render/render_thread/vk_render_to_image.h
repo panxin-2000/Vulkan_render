@@ -213,7 +213,7 @@ public:
         // VkDescriptorSet
         clean_all_descriptor_sets_layout(handle);
 
-        clean_all_mesh_object(); // 放在这里似乎并不是太好，
+        // clean_all_mesh_object(); // 放在这里似乎并不是太好， 函数被清理了
 
         destroy_texture(&handle);
 

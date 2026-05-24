@@ -203,6 +203,11 @@ struct Vertex {
     uv_struct uv{0, 0};
 };
 
+struct Vertex_2D {
+    Point_2 pos;
+    uv_struct uv{0, 0};
+};
+
 struct Picture_parameters {
     int width;
     int height;

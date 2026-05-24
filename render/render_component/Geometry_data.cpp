@@ -7,23 +7,37 @@
 #include "shader_component.h"
 
 
-void add_geometry_data(const entt::entity entity,
-                       const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                       const std::shared_ptr<std::vector<uint16_t> > &sp_indices) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
-        Logic_entt().remove<Geometry_data>(entity);
+bool add_2D_bound_box_geometry(const entt::entity entity,
+                               const Point_2 min,
+                               const Point_2 max) {
+    const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
+    {
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 2);
+        indices->push_back(vertices->size() + 3);
+        indices->push_back(vertices->size() + 0);
+        //     3            2
+        //      ************
+        //      *        * *
+        //      *     *    *
+        //      *  *       *
+        //      ************
+        //     0            1
+        vertices->emplace_back(Vertex_2D{{min.x, min.y}, 0, 0}); //0 1 2
+        vertices->emplace_back(Vertex_2D{{max.x, min.y}, 1, 0});
+        vertices->emplace_back(Vertex_2D{{max.x, max.y}, 1, 1}); // 2 3 0
+        vertices->emplace_back(Vertex_2D{{min.x, max.y}, 0, 1});
     }
-    Logic_entt().emplace<Geometry_data>(entity);
-
-    auto &geometry = Logic_entt().get<Geometry_data>(entity);
-
-    geometry.set(sp_vertices, sp_indices);
+    add_geometry_data(entity, vertices, indices);
+    return true;
 }
 
-
-bool add_2D_bound_box_geometry(entt::entity entity,
-                               Point_3 min,
-                               Point_3 max) {
+bool add_2D_bound_box_geometry(const entt::entity entity,
+                               const Point_3 min,
+                               const Point_3 max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
@@ -46,8 +60,8 @@ bool add_2D_bound_box_geometry(entt::entity entity,
         vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, 1, 1}); // 2 3 0
         vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, 0, 1});
     }
-
     add_geometry_data(entity, vertices, indices);
+    return true;
 }
 
 bool add_round_box_geometry(entt::entity entity,

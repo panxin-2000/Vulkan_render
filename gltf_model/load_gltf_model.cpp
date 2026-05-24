@@ -477,3 +477,27 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path) {
     }
     return entity;
 }
+
+VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive) {
+    switch (primitive.mode) {
+        case TINYGLTF_MODE_POINTS:
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+        case TINYGLTF_MODE_LINE:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+        case TINYGLTF_MODE_LINE_STRIP:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+        case TINYGLTF_MODE_TRIANGLES:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case TINYGLTF_MODE_TRIANGLE_STRIP:
+            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        default:
+            // 默认的值有点问题
+            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    }
+    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
+    //     VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
+    //     VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
+    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
+    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
+    //     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
+}

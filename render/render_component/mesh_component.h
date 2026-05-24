@@ -12,22 +12,6 @@
 #include "Geometry_data.h"
 
 
-//
-// Model_mesh create_mesh_data(const VK_handle &handle, const share_block &vertices,
-//                             const share_block &indices_);
-
-struct mesh_and_share {
-#ifdef WITH_VULKAN_BACKEND
-    VKR_Primitive mesh;
-#elif  WITH_OPENGL_BACKEND
-    unsigned int buffer;
-#endif
-    uint16_t shared_number;
-};
-
-
-
-void clean_all_mesh_object();
 
 /**
  * 创建一个mesh,所有需要的数据都在 entity 的 Geometry_data 中

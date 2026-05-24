@@ -477,6 +477,39 @@ static void ImGui_ImplVulkan_SetupRenderState(ImDrawData* draw_data, VkPipeline 
     }
 }
 
+
+entt::entity object_2d_model(const std::string &name, ImDrawData* draw_data) {
+    const entt::entity entity = Logic_entt().create();
+    logic_create_proxy(entity);
+    add_shader(entity,
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/imgui.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/imgui.frag.spv",
+               "", "");
+
+
+    const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
+
+    if (draw_data->TotalVtxCount > 0) {
+        // Create or resize the vertex/index buffers
+        vertices->resize(draw_data->TotalVtxCount);
+        indices->resize(draw_data->TotalIdxCount);
+        auto vtx_dst = (vertices->data());
+        auto idx_dst = (indices->data());
+        for (int n = 0; n < draw_data->CmdListsCount; n++) {
+            const ImDrawList *cmd_list = draw_data->CmdLists[n];
+            memcpy(vtx_dst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+            memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+            vtx_dst += cmd_list->VtxBuffer.Size;
+            idx_dst += cmd_list->IdxBuffer.Size;
+        }
+        add_geometry_data(entity, vertices, indices);
+        // 应该只是几何数据对了， imgui 还是分了好几个批次去绘制 不同的 内容，还有 不同的 裁剪窗口
+    }
+    // 需要添加一个的特殊的 imgui 的 标记
+}
+
+
 // Render function
 void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer command_buffer, VkPipeline pipeline)
 {

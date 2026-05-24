@@ -9,25 +9,15 @@
 #include "vulkan_backend.h"
 
 
-// #define TINYGLTF_IMPLEMENTATION
-#include "tiny_gltf.h"
-#include "vulkan_render_manage.h"
-
-std::map<std::string, mesh_and_share> mesh_map_;
-
-auto &get_mesh_map() {
-    return mesh_map_;
-}
-
 VKR_Primitive create_mesh_data(const VK_backend &backend, const share_block &vertices,
-                               const share_block &indices_) {
+                               const share_block &indices) {
     VkDeviceSize vBufSize{vertices.total_size};
-    VkDeviceSize iBufSize{indices_.total_size};
+    VkDeviceSize iBufSize{indices.total_size};
 
     // 具体的复制函数
-    auto mem_copy_function = [vertices,vBufSize,indices_,iBufSize](void *dst) {
+    auto mem_copy_function = [vertices,vBufSize,indices,iBufSize](void *dst) {
         memcpy(dst, vertices.data, vBufSize);
-        memcpy(static_cast<char *>(dst) + vBufSize, indices_.data, iBufSize);
+        memcpy(static_cast<char *>(dst) + vBufSize, indices.data, iBufSize);
     };
 
     const auto vertices_buffer =
@@ -38,11 +28,21 @@ VKR_Primitive create_mesh_data(const VK_backend &backend, const share_block &ver
     VKR_Primitive mesh;
     mesh.vertices = vertices_buffer;
     mesh.indices  = vertices_buffer;
+
     // mesh.indices_offset = vBufSize;
     // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
     // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
-    mesh.indexed_command.indexCount = indices_.count; // 是可以这么替换的
-    mesh.indexed_command.firstIndex = vBufSize / 2; // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
+    mesh.indexed_command.indexCount = indices.count; // 是可以这么替换的
+    if (indices.single_size == 2) {
+        mesh.index_type                 = VK_INDEX_TYPE_UINT16;
+        mesh.indexed_command.firstIndex = vBufSize / 2;
+        // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
+    } else if (indices.single_size == 4) {
+        mesh.index_type                 = VK_INDEX_TYPE_UINT32;
+        mesh.indexed_command.firstIndex = vBufSize / 4;
+    } else {
+        assert(false && "Unknown index type");
+    }
     //确实是可以通过计算偏移的
     mesh.indexed_command.vertexOffset  = 0;
     mesh.indexed_command.instanceCount = 1;
@@ -66,74 +66,7 @@ std::vector<VKR_Primitive> create_mesh(const entt::entity entity) {
 }
 
 
-void clean_all_mesh_object() {
-    // 正式项目中，确保 vkDeviceWaitIdle 后按顺序销毁资源是专业开发者的标准做法
-    get_mesh_map().clear();
-    discard_buffer_map_clean();
-}
-
-#include <tiny_obj_loader.h>
-
-
-
-
-
-
-VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive) {
-    switch (primitive.mode) {
-        case TINYGLTF_MODE_POINTS:
-            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case TINYGLTF_MODE_LINE:
-            return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case TINYGLTF_MODE_LINE_STRIP:
-            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case TINYGLTF_MODE_TRIANGLES:
-            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case TINYGLTF_MODE_TRIANGLE_STRIP:
-            return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        default:
-            // 默认的值有点问题
-            return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    }
-    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN = 5,
-    //     VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY = 6,
-    //     VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY = 7,
-    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY = 8,
-    //     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY = 9,
-    //     VK_PRIMITIVE_TOPOLOGY_PATCH_LIST = 10,
-}
-
-
-
-
-
-
-
-
 std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity) {
     const auto mesh = create_mesh(entity);
     return mesh;
-}
-
-
-void update_object_mesh() {
-    const auto view = Logic_entt().view<UI_transform_dirty, Rect_2D_transform>();
-    // 包围盒发生了更新
-    for (const auto it: view) {
-        auto pos = view.get<Rect_2D_transform>(it);
-        add_2D_bound_box_geometry(it, {
-                                      pos.get_bounding_box().min_point_.x,
-                                      pos.get_bounding_box().min_point_.y, 0.0f
-                                  },
-                                  {
-                                      pos.get_bounding_box().max_point_.x,
-                                      pos.get_bounding_box().max_point_.y, 0.0f
-                                  });
-
-        const auto mesh = create_mesh(it);
-
-        logic_update_proxy(it, mesh);
-
-        Logic_entt().remove<UI_transform_dirty>(it);
-    }
 }

@@ -24,7 +24,7 @@ public:
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
-    void draw(const VkCommandBuffer &cb, const uint64_t time_line) {
+    void draw(const VkCommandBuffer &cb, const uint64_t time_line) const {
         if (vertices == nullptr || vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
         vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
@@ -46,7 +46,8 @@ public:
 };
 
 
-class Model_mesh_vector {
+//
+class Draw_commands {
 public:
     // 不做
     VKR_buffer_ptr vertices      = {};

@@ -43,15 +43,16 @@ public:
         return indices_;
     };
 
-    void set(const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-             const std::shared_ptr<std::vector<uint16_t> > &sp_indices) {
+    template<typename vertex_t, typename index_t>
+    void set(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
+             const std::shared_ptr<std::vector<index_t> > &sp_indices) {
         if (sp_vertices != nullptr) {
             const share_block vertices_buffer = {
                 sp_vertices,
                 sp_vertices->data(),
-                sp_vertices->size() * sizeof(Vertex),
+                sp_vertices->size() * sizeof(vertex_t),
                 sp_vertices->size(),
-                sizeof(Vertex)
+                sizeof(vertex_t)
             };
             vertices_ = vertices_buffer;
         }
@@ -60,9 +61,9 @@ public:
             const share_block indices_buffer = {
                 sp_indices,
                 sp_indices->data(),
-                sp_indices->size() * sizeof(uint16_t),
+                sp_indices->size() * sizeof(index_t),
                 sp_indices->size(),
-                sizeof(uint16_t)
+                sizeof(index_t)
             };
             indices_ = indices_buffer;
         }
@@ -73,15 +74,27 @@ private:
     share_block indices_;
 };
 
-
+template<typename vertex_t, typename index_t>
 void add_geometry_data(const entt::entity entity,
-                       const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                       const std::shared_ptr<std::vector<uint16_t> > &sp_indices);
+                       const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
+                       const std::shared_ptr<std::vector<index_t> > &sp_indices) {
+    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
+        Logic_entt().remove<Geometry_data>(entity);
+    }
+    Logic_entt().emplace<Geometry_data>(entity);
 
+    auto &geometry = Logic_entt().get<Geometry_data>(entity);
 
-bool add_2D_bound_box_geometry(entt::entity entity,
-                               Point_3 min,
-                               Point_3 max);
+    geometry.set(sp_vertices, sp_indices);
+}
+
+bool add_2D_bound_box_geometry(const entt::entity entity,
+                               const Point_2 min,
+                               const Point_2 max);
+
+bool add_2D_bound_box_geometry(const entt::entity entity,
+                               const Point_3 min,
+                               const Point_3 max);
 
 bool add_round_box_geometry(entt::entity entity,
                             Point_3 min,
