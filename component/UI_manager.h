@@ -23,7 +23,7 @@ public:
         std::call_once(flag, []() {
                            Logic_entt().emplace<Scene_Component>(instance);
                            Logic_entt().emplace<Name_component>(instance, "scene_root");
-                           Logic_entt().emplace<VKR_shader_paths>(instance,
+                           add_shader(instance,
                                                                   "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
                                                                   "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                                                                   "", "");

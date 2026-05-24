@@ -352,7 +352,7 @@ entt::entity load_node_data(tinygltf::Model &model,
 
     // 改的太多，我都忘记下面一行是需要添加的了
     logic_create_proxy(entity);
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                                            "", "");

@@ -26,10 +26,10 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
 
 
-    Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-                                           "", "");
+    add_shader(entity,
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+               "", "");
     add_geometry_data(entity, mesh_path);
     auto [vertices, indices] = load_model(mesh_path);
     add_geometry_data(entity, vertices, indices);
@@ -60,10 +60,10 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
 
 
-    Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
-                                           "", "");
+    add_shader(entity,
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
+               "", "");
     const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
     // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
 
@@ -131,10 +131,10 @@ entt::entity add_sky_box(const std::string &name) {
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
 
 
-    Logic_entt().emplace<VKR_shader_paths>(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.frag.spv",
-                                           "", "");
+    add_shader(entity,
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.frag.spv",
+               "", "");
     add_sky_box_data(entity);
 
     // 更新物体的模型矩阵

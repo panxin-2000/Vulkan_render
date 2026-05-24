@@ -330,7 +330,7 @@ entt::entity UI_text(const std::string &name,
 
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.frag.spv",
                                            "", "");

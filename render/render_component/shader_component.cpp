@@ -172,7 +172,8 @@ std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
 
 std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) {
     std::shared_ptr<vk_shader_data> shader_data_handle;
-    if (shader_data_handle.get() == nullptr) {
+    // if (shader_data_handle.get() == nullptr)
+    {
         auto &handle = VK_backend::get();
         shader_data_handle = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
@@ -218,10 +219,17 @@ std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths) 
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
                                                                      temp, shader_data_handle->push_constant_map);
-    } else {
     }
-
     return shader_data_handle;
+}
+
+void add_shader(const entt::entity entity, const std::string &vertex_path,
+                const std::string &geometry_path,
+                const std::string &fragment_path,
+                const std::string &computer_path) {
+    Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, geometry_path, fragment_path, computer_path);
+    auto &shader_temp = Logic_entt().get<VKR_shader_paths>(entity);
+    Logic_entt().emplace<std::shared_ptr<vk_shader_data> >(entity, VKR_shader_init(shader_temp));
 }
 
 

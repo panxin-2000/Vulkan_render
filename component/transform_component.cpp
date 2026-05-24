@@ -234,7 +234,7 @@ void update_camera_parameter(const entt::entity entity) {
 void init_world_scene_root(entt::entity entity) {
     Logic_entt().emplace<Scene_Component>(entity);
     Logic_entt().emplace<Name_component>(entity, "world_scene_root");
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
                                            "", "");

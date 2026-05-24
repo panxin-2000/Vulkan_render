@@ -63,11 +63,11 @@ VkPipeline create_compute_or_graphics_pipeline(VK_backend &backend, vk_shader_da
 VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
     // Pipeline
     VkPipeline pipeline{VK_NULL_HANDLE};
-    std::vector<VkPipelineShaderStageCreateInfo> &shaderStages       = data.pipeline_shader_stage_create_infos;
-    VkPipelineLayout &pipelineLayout                                 = data.pipeline_layout;
-    std::vector<VkVertexInputBindingDescription> &vertexBindings     = data.vertexBindings;
-    std::vector<VkVertexInputAttributeDescription> &vertexAttributes = data.vertexAttributes;
-    Fragment_output_map &colorAttachmentFormat                       = data.fragment_output_map;
+    std::vector<VkPipelineShaderStageCreateInfo> &shaderStages      = data.pipeline_shader_stage_create_infos;
+    VkPipelineLayout &pipelineLayout                                = data.pipeline_layout;
+    std::vector<VkVertexInputBindingDescription> &vertexBindings    = data.vertexBindings;
+    std::vector<VkVertexInputAttributeDescription> vertexAttributes = data.get_vertexAttributes();
+    Fragment_output_map &colorAttachmentFormat                      = data.fragment_output_map;
 
     auto vertexInputState = VertexInputStateFunction(vertexBindings, vertexAttributes);
 

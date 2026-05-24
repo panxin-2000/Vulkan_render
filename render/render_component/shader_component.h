@@ -29,6 +29,16 @@ struct color_attachment_format {
 
 using Fragment_output_map = std::map<uint32_t, color_attachment_format>;
 
+
+struct InputAttributeDescription {
+    uint32_t location;
+    uint32_t binding;
+    VkFormat format;
+    uint32_t offset;
+    std::string name;
+};
+
+
 struct vk_shader_data {
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
@@ -44,9 +54,18 @@ struct vk_shader_data {
     std::vector<VkDescriptorSetLayout> object_descriptor_sets_layout;
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes;
+    std::vector<InputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     Fragment_output_map fragment_output_map;
+
+
+    [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_vertexAttributes() const {
+        std::vector<VkVertexInputAttributeDescription> temp;
+        for (const auto &attribute: vertexAttributes) {
+            temp.push_back({attribute.location, attribute.binding, attribute.format, attribute.offset});
+        }
+        return temp;
+    }
 };
 
 
@@ -90,7 +109,14 @@ public:
     }
 };
 
+
 std::shared_ptr<vk_shader_data> VKR_shader_init(VKR_shader_paths &shader_paths);
+
+void add_shader(const entt::entity entity,
+                const std::string &vertex_path,
+                const std::string &geometry_path,
+                const std::string &fragment_path,
+                const std::string &computer_path);
 
 /**
  *

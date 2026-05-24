@@ -45,7 +45,7 @@ inline entt::entity add_render_pass(const std::string &name) {
 
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.frag.spv",
                                            "", "");
@@ -67,7 +67,7 @@ inline entt::entity add_volume_pass(const std::string &name) {
 
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
                                            "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
                                            "", "");
@@ -236,7 +236,7 @@ void add_skybox_entity() {
 
 void add_simple_computer_buffer_write() {
     const entt::entity entity = Logic_entt().create();
-    Logic_entt().emplace<VKR_shader_paths>(entity,
+    add_shader(entity,
                                            "",
                                            "",
                                            "",
