@@ -180,9 +180,9 @@ bool add_sky_box_data(entt::entity entity) {
 }
 
 
-void append_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
+void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      const std::shared_ptr<std::vector<unsigned short> > &indices,
-                     Point_3 min, Point_3 max,
+                     Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y) {
     indices->push_back(vertices->size() + 0);
     indices->push_back(vertices->size() + 1);
@@ -197,8 +197,8 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
     //      *  *       *
     //      ************
     //     0            1
-    vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, uv_min_x, uv_min_y}); //0 1 2
-    vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, uv_max_x, uv_min_y});
-    vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, uv_max_x, uv_max_y}); // 2 3 0
-    vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, uv_min_x, uv_max_y});
+    vertices->emplace_back(Vertex_2D{{min.x, min.y}, uv_min_x, uv_min_y}); //0 1 2
+    vertices->emplace_back(Vertex_2D{{max.x, min.y}, uv_max_x, uv_min_y});
+    vertices->emplace_back(Vertex_2D{{max.x, max.y}, uv_max_x, uv_max_y}); // 2 3 0
+    vertices->emplace_back(Vertex_2D{{min.x, max.y}, uv_min_x, uv_max_y});
 }

@@ -105,9 +105,9 @@ bool add_triangle_geometry(entt::entity entity,
                            Point_3 b,
                            Point_3 c);
 
-void append_text_box(const std::shared_ptr<std::vector<Vertex> > &vertices,
+void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      const std::shared_ptr<std::vector<unsigned short> > &indices,
-                     Point_3 min, Point_3 max,
+                     Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
 bool add_sky_box_data(entt::entity entity);

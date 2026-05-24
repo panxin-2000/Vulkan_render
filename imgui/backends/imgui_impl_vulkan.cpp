@@ -487,7 +487,8 @@ entt::entity object_2d_model(const std::string &name, ImDrawData* draw_data) {
                "", "");
 
 
-    const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
+    // 还是有点小问题的，已修改
+    const auto vertices = std::make_shared<std::vector<Vertex_imgui> >(); //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
 
     if (draw_data->TotalVtxCount > 0) {

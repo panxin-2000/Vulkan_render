@@ -98,8 +98,8 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
     hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
     hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-    const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
-    const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
+    const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
 
     float char_size = 40;
     float current_x = min_x;
@@ -124,19 +124,17 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
         if (glyph != msdf_text.glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             append_text_box(vertices, indices, {
-                             current_x + char_size * (x_offset + glyph->second.planeBounds.left),
-                             current_y - char_size * (y_offset + glyph->second.planeBounds.bottom),
-                             0
-                         },
-                         {
-                             current_x + char_size * glyph->second.planeBounds.right,
-                             current_y - char_size * glyph->second.planeBounds.top,
-                             0
-                         },
-                         (glyph->second.atlasBounds.left) / msdf_text.atlas.width,
-                         (glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
-                         (glyph->second.atlasBounds.right) / msdf_text.atlas.width,
-                         (glyph->second.atlasBounds.top) / msdf_text.atlas.height);
+                                current_x + char_size * (x_offset + glyph->second.planeBounds.left),
+                                current_y - char_size * (y_offset + glyph->second.planeBounds.bottom)
+                            },
+                            {
+                                current_x + char_size * glyph->second.planeBounds.right,
+                                current_y - char_size * glyph->second.planeBounds.top
+                            },
+                            (glyph->second.atlasBounds.left) / msdf_text.atlas.width,
+                            (glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
+                            (glyph->second.atlasBounds.right) / msdf_text.atlas.width,
+                            (glyph->second.atlasBounds.top) / msdf_text.atlas.height);
             current_x += x_advance * char_size;
             current_y += y_advance * char_size;
         }
@@ -331,9 +329,9 @@ entt::entity UI_text(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     add_shader(entity,
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.vert.spv",
-                                           "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.frag.spv",
-                                           "", "");
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_MSDF_text.frag.spv",
+               "", "");
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});

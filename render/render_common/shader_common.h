@@ -208,6 +208,15 @@ struct Vertex_2D {
     uv_struct uv{0, 0};
 };
 
+struct Vertex_imgui {
+    Point_2 pos;
+    uv_struct uv{0, 0};
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
 struct Picture_parameters {
     int width;
     int height;
