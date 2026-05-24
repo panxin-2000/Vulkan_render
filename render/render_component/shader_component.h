@@ -67,6 +67,10 @@ struct vk_shader_data {
         }
         return temp;
     }
+
+    Push_constant_map &get_push_constant_map() {
+        return push_constant_map;
+    }
 };
 
 
@@ -163,6 +167,7 @@ bool set_push_constant_parameter(const entt::entity entity, const std::string &b
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
             Logic_entt().emplace_or_replace<push_constant_update>(entity);
+            return true;
         }
     }
     return false;

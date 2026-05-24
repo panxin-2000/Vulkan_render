@@ -230,6 +230,7 @@ void add_shader(const entt::entity entity, const std::string &vertex_path,
     Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, geometry_path, fragment_path, computer_path);
     auto &shader_temp = Logic_entt().get<VKR_shader_paths>(entity);
     Logic_entt().emplace<shader_data>(entity, VKR_shader_init(shader_temp));
+    logic_update_proxy<shader_data>(entity);
 }
 
 const std::vector<InputAttributeDescription> &get_attribute_description(const entt::entity entity) {
@@ -294,20 +295,9 @@ void push_constant_update_function() {
     const auto view = Logic_entt().view<push_constant_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
-        auto &parameter = Logic_entt().get_or_emplace<Parameter_used>(it);
+        const auto &parameter = Logic_entt().get_or_emplace<Parameter_used>(it);
 
-        std::byte push_constant_pool[128];
-        memcpy(push_constant_pool, parameter.push_constant_pool, 128);
-
-        //
-        // if (const auto render = Logic_entt().try_get<Proxy_entity>(it)) {
-        //     const auto entity_temp = render->entity_;
-        //     auto lambda            = [entity_temp, push_constant_pool]() {
-        //         if (const auto proxy = Render_entt().try_get<VKR_object_proxy>(entity_temp))
-        //             memcpy(proxy->push_constants_pool, push_constant_pool, 128);
-        //     };
-        //     vk_render_queue::instance().render_update_entt(lambda);
-        // }
+        logic_update_proxy(it, parameter);
 
         Logic_entt().remove<push_constant_update>(it);
     }

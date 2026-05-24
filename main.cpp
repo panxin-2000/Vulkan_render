@@ -236,6 +236,8 @@ void add_skybox_entity() {
 
 void add_simple_computer_buffer_write() {
     const entt::entity entity = Logic_entt().create();
+    logic_create_proxy(entity);
+
     add_shader(entity,
                "",
                "",
@@ -258,7 +260,6 @@ void add_simple_computer_buffer_write() {
     set_render_parameter(entity, "IndirectDraws", temp_ptr);
 
 
-    logic_create_proxy(entity);
     logic_update_add_tag<compute_pass_tag>(entity);
     logic_update_add_tag<add_to_render_tag>(entity);
     logic_update_proxy<compute_group_count>(entity);
@@ -486,7 +487,6 @@ int main(int argc, char *argv[]) {
 
         clean_render_entity();
         sync_render_data_to_render_thread();
-
         // vk_render_GPU::instance().one_cycle(backend);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));

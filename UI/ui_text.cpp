@@ -363,6 +363,17 @@ entt::entity UI_text(const std::string &name,
     UI_matrix_4x4(&model, {1, 1}, {0, 0});
     set_render_parameter(entity, "model_4x4", model);
 
+    float scale[2];
+    scale[0] = 2.0f / 1280.f;
+    scale[1] = 2.0f / 720;
+    float translate[2];
+    translate[0] = -1.0f - 0.0f * scale[0];
+    translate[1] = -1.0f - 0.0f * scale[1];
+
+    set_push_constant_parameter(entity, "uScale", scale);
+    set_push_constant_parameter(entity, "uTranslate", translate);
+
+
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     logic_update_add_tag<UI_2D_tag>(entity);
 

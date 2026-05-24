@@ -560,12 +560,15 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    // if (vk_draw.push_constants_pool != nullptr) {
-    //     auto push_constants_address = vk_draw.push_constants_pool->get_gpu_device_address(time_line);
-    //     vkCmdPushConstants(cb, vk_draw.pipeline_layout,
-    //                        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint64_t),
-    //                        &push_constants_address);
-    // }
+    //  shader_data 还没有传送过来
+    const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
+    if (const auto parameter = Render_entt().try_get<Parameter_used>(entity))
+        for (auto &[name,value]: shader_data_ref->push_constant_map) {
+            vkCmdPushConstants(cb, Render_entt().get<VkPipelineLayout>(entity),
+                               value.stageFlags, value.offset, value.size,
+                               parameter->push_constant_pool + value.offset);
+        }
+
     auto mesh = Render_entt().get<std::vector<VKR_Primitive> >(entity);
     if (!mesh.empty()) {
         for (int i = 0; i < mesh.size(); ++i) {

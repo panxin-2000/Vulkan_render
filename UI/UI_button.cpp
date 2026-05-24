@@ -110,7 +110,15 @@ entt::entity UI_button(const std::string &name,
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     logic_update_add_tag<UI_2D_tag>(entity);
 
+    float scale[2];
+    scale[0] = 2.0f / 1280.f;
+    scale[1] = 2.0f / 720;
+    float translate[2];
+    translate[0] = -1.0f - 0.0f * scale[0];
+    translate[1] = -1.0f - 0.0f * scale[1];
 
+    set_push_constant_parameter(entity, "uScale", scale);
+    set_push_constant_parameter(entity, "uTranslate", translate);
     scene_root_add_child(entity);
     return entity;
 
