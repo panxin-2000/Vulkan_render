@@ -447,6 +447,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_template.cpp
         test/test_plane_sweep.cpp
         test/ear_clip.cpp
+        test/test_Tent_Filter.cpp
         test/test_ear_clip.cpp
         test/test_mutex.cpp
         test/test_intersect.cpp
