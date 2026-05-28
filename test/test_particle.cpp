@@ -64,21 +64,23 @@ TEST(particle, matrix) {
                 }
         }
     } {
-        std::vector<Eigen::Vector4f> position(size);
+        using point_dim = Eigen::Vector4f;
+        std::vector<point_dim> position(size);
 
         for (size_t i = 0; i < size; ++i) {
             position[i] = {1.0f, 1.0f, 1.0f, 1.0f};
-            position[i] = position[i].array() * Eigen::Vector4f(get_fast_random_float(),
-                                                                get_fast_random_float(),
-                                                                get_fast_random_float(),
-                                                                1.0f).array();
+            position[i] = position[i].array() * point_dim(get_fast_random_float(),
+                                                          get_fast_random_float(),
+                                                          get_fast_random_float(),
+                                                          1.0f).array();
         }
-        std::vector<Eigen::Vector4f> speed(size);
+        std::vector<point_dim> speed(size);
         for (size_t i = 0; i < size; ++i) {
-            speed[i] = Eigen::Vector4f{
+            speed[i] = point_dim{
                 get_fast_random_float(),
                 get_fast_random_float(),
-                get_fast_random_float(), 1.0f
+                get_fast_random_float(),
+                1.0f
             };
         } {
             ScopeTimer particle("eigen particle  ");
@@ -91,18 +93,24 @@ TEST(particle, matrix) {
             for (size_t time = 0; time < size; ++time) {
                 const hn::ScalableTag<float> d;
                 // 参数含义: (数据标签, 数组A开头, 数组A结尾, 数组B开头, 结果C开头, SIMD操作Lambda)
-                hn::Transform2(d, position.data()->data(), 4 * position.size(), // 输入1 的指针和总长度
+                hn::Transform2(d, position.data()->data(), 3 * position.size(), // 输入1 的指针和总长度
                                position.data()->data(),                         // 输入2 的指针
                                speed.data()->data(),                            // 输出 的指针
                                [](auto d, auto a, auto v_a, auto v_b) {
                                    return hn::Add(v_a, v_b); // 核心 SIMD 运算
                                });                           // 确实是一个很细节的函数
             }
-            for (size_t i = 0; i < size; ++i) {
-                position[i] = position[i] + speed[i];
-            }
         }
     }
+    // [Timer] simple particle  耗时: 33577375 ns 3个float
+    // [Timer] eigen particle   耗时: 45357084 ns 4个float
+    // [Timer] highway particle 耗时: 44731292 ns 4个float
+    // simple particle 是3个float 所以会更快一点
+    // 全部为3个float时
+    // [Timer] simple particle  耗时: 33550875 ns
+    // [Timer] eigen particle   耗时: 59196500 ns 最慢
+    // [Timer] highway particle 耗时: 34108959 ns
+    // 大致可以看出来，时间与数据量基本成正比
 
 
     int a = 10;
