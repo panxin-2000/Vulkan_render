@@ -137,6 +137,21 @@ FetchContent_MakeAvailable(readerwriterqueue)
 
 add_subdirectory(thirdparty/libccd)
 
+find_package(highway)
+if (highway_FOUND)
+    message("find highway has installed")
+else ()
+    FetchContent_Declare(
+            highway
+            GIT_REPOSITORY https://github.com/google/highway.git
+            GIT_TAG 1.2.0 #
+            GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+    )
+    set(HWY_ENABLE_TESTS OFF CACHE INTERNAL "")
+    set(HWY_ENABLE_EXAMPLES OFF CACHE INTERNAL "")
+    FetchContent_MakeAvailable(highway)
+endif ()
+
 
 if (APPLE)
     list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
@@ -429,8 +444,11 @@ FetchContent_MakeAvailable(entt)
 
 enable_testing()
 
-add_executable(hello_test ${LABYRINTH}
+add_executable(cache_time
         test/hello_test.cpp
+)
+
+add_executable(hello_test ${LABYRINTH}
         test/add_char_calculata.cpp
         test/test_add_char_calculata.cpp
         test/the_centre_of_a_circle.cpp
@@ -451,6 +469,8 @@ add_executable(hello_test ${LABYRINTH}
         test/test_Tent_Filter.cpp
         test/test_ear_clip.cpp
         test/test_mutex.cpp
+        test/test_highway.cpp
+        test/test_particle.cpp
         test/test_intersect.cpp
         test/test_reader_writer_queue.cpp
         test/test_lazy_Evaluation.cpp
@@ -462,9 +482,11 @@ add_executable(hello_test ${LABYRINTH}
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
-target_link_libraries(hello_test ccd readerwriterqueue GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
+gtest_discover_tests(cache_time)
+target_link_libraries(hello_test ccd hwy readerwriterqueue GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
-
+target_compile_options(hello_test PRIVATE -O3)
+target_compile_definitions(hello_test PRIVATE NDEBUG)
 
 add_executable(test_mutex
         #        test_curve.cpp
