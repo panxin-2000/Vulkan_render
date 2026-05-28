@@ -331,6 +331,7 @@ file(GLOB_RECURSE gltf_model
 file(GLOB_RECURSE component
         "UI/UI_block.cpp"
         "UI/UI_button.cpp"
+        "UI/UI_imgui.cpp"
         "UI/UI_text.cpp"
         "UI/bin_pack/Rect.cpp"
         "UI/bin_pack/MaxRectBinPact.cpp"

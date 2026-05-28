@@ -79,6 +79,44 @@ public:
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
 
+
+        std::array<VkBufferMemoryBarrier2, 1> write_buffer{
+            VkBufferMemoryBarrier2{
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .pNext         = nullptr,
+                .srcStageMask  = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                .srcAccessMask = VK_ACCESS_NONE,
+                .dstStageMask  = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
+
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .buffer              = VK_NULL_HANDLE,
+                .offset              = 0,
+                .size                = 1,
+            },
+
+        };
+        // dispatch 不能 render pass 中间调用
+        {
+        // Indirect draw ,先说需要哪几个 buffer ，
+        // 需要准备一个需要写入 command 的 buffer
+        // 数据，有哪些不透明的物体需要绘制的，位置或包围盒，
+        // 然后是对应的不透明的物体 draw command ,只是被复制，不需要被重新计算
+        // 上面是最简单的
+        // Hi-Z 遮挡剔除 需要什么呢？
+        // 一个深度图
+        // 上一帧绘制的 command 的 buffer
+        //
+            auto view = Render_entt().view<compute_pass_tag>();
+            for (const auto it: view) {
+                // 这里还需要改为 dispatch
+                build_compute_dispatch(handle, it, time_line);
+            }
+            // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
+        }
+
+
         // 阴影的 pass
         {
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
@@ -153,18 +191,15 @@ public:
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
+        }{
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
+            for (const auto it: view) {
+                build_command_buffer(handle, it, time_line);
+            }
         }
 
         end_rendering(handle);
 
-        // dispatch 不能 render pass 中间调用
-        {
-            auto view = Render_entt().view<compute_pass_tag>();
-            for (const auto it: view) {
-                // 这里还需要改为 dispatch
-                build_compute_dispatch(handle, it, time_line);
-            }
-        }
 
         end_command_buffer(handle, queryPool, time_line);
 
