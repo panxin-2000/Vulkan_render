@@ -141,7 +141,7 @@ const std::vector<InputAttributeDescription> &get_attribute_description(const en
 template<typename T1>
 bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
-    auto &parameter       = Logic_entt().get_or_emplace<Parameter_used>(entity);
+    auto &parameter       = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
     if (binding_name.find("global") != std::string::npos) {
         set_render_parameter(shader_data_ref->global_sets_bindings,
                              parameter.update_global_descriptor_sets, binding_name,
@@ -162,7 +162,7 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 template<typename T1>
 bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     const auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
-    auto &parameter             = Logic_entt().get_or_emplace<Parameter_used>(entity);
+    auto &parameter             = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));

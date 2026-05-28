@@ -25,6 +25,9 @@ struct add_to_render_tag {
 struct UI_2D_tag {
 };
 
+struct imgui_draw {
+};
+
 struct uniform_buffer_update {
 };
 

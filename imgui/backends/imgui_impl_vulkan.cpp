@@ -507,6 +507,20 @@ entt::entity object_2d_model(const std::string &name, ImDrawData* draw_data) {
         add_geometry_data(entity, vertices, indices);
         // 应该只是几何数据对了， imgui 还是分了好几个批次去绘制 不同的 内容，还有 不同的 裁剪窗口
     }
+    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_add_tag<imgui_draw>(entity);
+    float scale[2];
+    scale[0] = 2.0f / 1280.f;
+    scale[1] = 2.0f / 720;
+    float translate[2];
+    translate[0] = -1.0f - 0.0f * scale[0];
+    translate[1] = -1.0f - 0.0f * scale[1];
+
+    set_push_constant_parameter(entity, "uScale", scale);
+    set_push_constant_parameter(entity, "uTranslate", translate);
+    scene_root_add_child(entity);
+    return entity;
+
     // 需要添加一个的特殊的 imgui 的 标记
 }
 

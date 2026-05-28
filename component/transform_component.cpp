@@ -285,7 +285,7 @@ uint32_t add_bindless_uniform_sampler2D(const std::string &name,
         bindless.freeSlots.pop();
     }
     const auto &shader_data_ref = Logic_entt().get<shader_data>(world_entity);
-    auto &parameter             = Logic_entt().get_or_emplace<Parameter_used>(world_entity);
+    auto &parameter             = Logic_entt().get_or_emplace<shader_need_parameter>(world_entity);
 
     for (auto const &[set_value, bindings_map]: shader_data_ref->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {

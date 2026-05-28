@@ -9,6 +9,32 @@
 #include "VKR_proxy_component.h"
 #include "vulkan_render_manage.h"
 
+
+inline void update_object_transform_function() { {
+        const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
+        // 包围盒发生了更新
+        for (const auto it: view) {
+            auto pos    = view.get<Rect_2D_transform>(it);
+            auto offset = pos.get_offset();
+            matrix_4x4 view;
+            UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
+            set_render_parameter(it, "model_4x4", view); // 这里直接设置有问题，到渲染线程之后再设置
+            Logic_entt().remove<UI_transform_dirty>(it);
+        }
+    } {
+        const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Transform>();
+        for (const auto it: view) {
+            auto &transform  = view.get<Transform>(it);
+            auto modelMatrix = get_model_matrix(transform);
+            set_render_parameter(it, "model_4x4", modelMatrix);
+            Logic_entt().remove<UI_transform_dirty>(it);
+        }
+    }
+}
+
+void push_constant_update_function();
+
+
 void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
     update_camera_transform();
@@ -17,6 +43,7 @@ void sync_render_data_to_render_thread() {
     global_uniform_buffer_update_function();
     uniform_buffer_update_function();
     descriptor_set_update_function();
+    push_constant_update_function();
     add_new_proxy_to_render();
 }
 

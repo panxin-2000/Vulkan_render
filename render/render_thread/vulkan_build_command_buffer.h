@@ -562,7 +562,7 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
 
     //  shader_data 还没有传送过来
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
-    if (const auto parameter = Render_entt().try_get<Parameter_used>(entity))
+    if (const auto parameter = Render_entt().try_get<shader_need_parameter>(entity))
         for (auto &[name,value]: shader_data_ref->push_constant_map) {
             vkCmdPushConstants(cb, Render_entt().get<VkPipelineLayout>(entity),
                                value.stageFlags, value.offset, value.size,

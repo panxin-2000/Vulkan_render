@@ -22,9 +22,9 @@ void update_bindings_to_descriptor_sets(const entt::entity entity, const std::st
     if (const auto shader_temp = Logic_entt().try_get<VKR_shader_paths>(entity)) {
         auto &handle = VK_backend::get();
 
-        auto &vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(entity);
+        auto &vk_s_d_s = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
         if (b_or_g_or_o == "bindless") {
-            vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(get_world_root());
+            vk_s_d_s = Logic_entt().get_or_emplace<shader_need_parameter>(get_world_root());
             // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
             const std::vector<DescriptorSet_ptr> &descriptor_sets = get_descriptor_sets(entity);
             update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
@@ -53,7 +53,7 @@ std::vector<DescriptorSet_ptr> get_global_descriptor_set(const entt::entity enti
         if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
             auto current_entity = entity;
             while (current_entity != entt::null) {
-                if (const auto para = Logic_entt().try_get<Parameter_used>(current_entity)) {
+                if (const auto para = Logic_entt().try_get<shader_need_parameter>(current_entity)) {
                     if (!para->global_descriptor_sets.empty()) {
                         global_descriptor_set = para->global_descriptor_sets;
                         break;
@@ -86,7 +86,7 @@ std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const entt::entity en
         if (!(*shader_temp)->bindless_set_layout.empty()) {
             auto current_entity = get_world_root();
             while (current_entity != entt::null) {
-                if (const auto para = Logic_entt().try_get<Parameter_used>(current_entity)) {
+                if (const auto para = Logic_entt().try_get<shader_need_parameter>(current_entity)) {
                     if (!para->bindless_descriptor_sets.empty()) {
                         global_descriptor_set = para->bindless_descriptor_sets;
                         break;
@@ -108,7 +108,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
     auto &handle = VK_backend::get();
     if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
-        auto &vk_s_d_s = Logic_entt().get_or_emplace<Parameter_used>(entity);
+        auto &vk_s_d_s = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
 
         if (one_binding_name.find("bindless") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
@@ -143,7 +143,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
 
 std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity) {
     std::vector<DescriptorSet_ptr> descriptor_sets; // 这里是需要按照顺序的
-    if (const auto vk_s_d_s = Logic_entt().try_get<Parameter_used>(entity)) {
+    if (const auto vk_s_d_s = Logic_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Logic_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = get_bindless_descriptor_set(entity);
@@ -295,7 +295,7 @@ void push_constant_update_function() {
     const auto view = Logic_entt().view<push_constant_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
-        const auto &parameter = Logic_entt().get_or_emplace<Parameter_used>(it);
+        const auto &parameter = Logic_entt().get_or_emplace<shader_need_parameter>(it);
 
         logic_update_proxy(it, parameter);
 
