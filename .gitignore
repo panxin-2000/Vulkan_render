@@ -4,6 +4,7 @@ cmake-build-debug/
 cmake-build-release/
 *.spv
 thirdparty/
+.cmake_fetch_cache/
 
 /sphere2.nvdb
 /output_A_msdf.png

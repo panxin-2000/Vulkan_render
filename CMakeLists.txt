@@ -5,6 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
+if (NOT FETCHCONTENT_BASE_DIR)
+    set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/../.cmake_fetch_cache" CACHE PATH "FetchContent base directory")
+endif ()
+if (APPLE)
+    # 强制指定编译时和 CLion 解析时使用 Homebrew LLVM 的标准库与头文件
+    add_compile_options("-stdlib=libc++" "-I/opt/homebrew/opt/llvm/include")
+    add_link_options("-L/opt/homebrew/opt/llvm/lib" "-Wl,-rpath,/opt/homebrew/opt/llvm/lib")
+endif ()
 
 #IF (WIN32)
 #    # Nothing here (yet)
