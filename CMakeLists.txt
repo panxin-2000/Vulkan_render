@@ -75,6 +75,7 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/nlohmann/json.git
         GIT_TAG v3.12.0
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SUBMODULES ""   # 不下载任何子模块
 )
 FetchContent_MakeAvailable(json)
 
