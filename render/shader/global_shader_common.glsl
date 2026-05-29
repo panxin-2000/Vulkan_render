@@ -77,6 +77,32 @@ vec3 octDecode(vec2 v) {
     return normalize(n);
 }
 
+
+mat4 calculate_matrix(vec3 instancePos, vec3 instanceDir) {
+    vec3 forward = normalize(instanceDir);
+
+    // 2. 定义世界坐标系的临时“上”方向
+    vec3 worldUp = vec3(0.0, 1.0, 0.0);
+    // 防止物体正向上导致叉乘为 0，做一个微小的兜底
+    if (abs(dot(forward, worldUp)) > 0.99) {
+        worldUp = vec3(0.0, 0.0, 1.0);
+    }
+
+    // 3. 叉乘构建互相正交的 X 轴 (right) 和 Y 轴 (up)
+    vec3 right = normalize(cross(worldUp, forward));
+    vec3 up = cross(forward, right);
+
+    // 4. 在 GLSL 中实时动态构建 4x4 变换矩阵
+    // 注意：GLSL 的 mat4 是 列主序 (Column-Major)，传参按列排列
+    mat4 model = mat4(
+    vec4(right, 0.0), // 第一列：X 轴 (旋转)
+    vec4(up, 0.0), // 第二列：Y 轴 (旋转)
+    vec4(forward, 0.0), // 第三列：Z 轴 (旋转)
+    vec4(instancePos, 1.0) // 第四列：位移 (Position)
+    );
+    return model;
+}
+
 // 用正八面体做环境贴图
 // vec3 R = reflect(-V, N);
 // vec2 uv = octEncode(R) * 0.5 + 0.5; // 映射到 [0, 1] 范围

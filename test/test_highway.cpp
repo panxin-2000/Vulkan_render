@@ -1,16 +1,17 @@
+// Copyright 2026 Google LLC
+// SPDX-License-Identifier: Apache-2.0
 //
-// Created by 潘鑫 on 2026/5/28.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-
-#include <iostream>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-
-#include <hwy/highway.h>
-
-#include "hwy/ops/set_macros-inl.h"
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -18,7 +19,12 @@
 
 #include <numeric>
 #include <vector>
+#include "gtest/gtest.h"
 
+// #undef HWY_TARGET_INCLUDE
+// #define HWY_TARGET_INCLUDE \
+// "/Users/panxin/CLionProjects/hello_mac/test/test_highway.cpp"
+// #include "hwy/foreach_target.h"  // IWYU pragma: keep
 
 #include "hwy/highway.h"
 
@@ -50,32 +56,24 @@ namespace hwy {
     } // namespace HWY_NAMESPACE
 }     // namespace hwy
 HWY_AFTER_NAMESPACE();
-namespace hn = hwy::HWY_NAMESPACE;
 
-#include <hwy/contrib/algo/transform-inl.h>
+#if HWY_ONCE
+namespace hwy {
+    // HWY_EXPORT(SumArraySIMD);
+
+    float CallSumArraySIMD(const float *array, size_t count) {
+        // return HWY_DYNAMIC_DISPATCH(SumArraySIMD)(array, count); // 可以动态，但是编辑器警告，能正常编译
+        return HWY_STATIC_DISPATCH(SumArraySIMD)(array, count);
+    }
+} // namespace hwy
+
 
 TEST(highway, add) {
-    const size_t size = 1000;
-    // std::vector<float> a(size, 1.0f);
-    // std::vector<float> b(size, -2.0f);
-    // std::vector<float> c(size, 0.0f);
-    std::vector<float> result(size, 0.0f);
+    const size_t count = 1025;
+    std::vector<float> data(count, 1.0f);
+    // std::iota(data.begin(), data.end(), 1.0f);
 
-    // auto total = hwy::HWY_NAMESPACE::SumArraySIMD(a.data(), size);
-    std::vector<float> a       = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
-    const std::vector<float> b = {10.0f, 20.0f, 30.0f, 40.0f, 50.0f};
-    const std::vector<float> c(5, 4.0f); // 存放结果
-
-    const hn::ScalableTag<float> d;
-
-    // 2. 直接调用 Transform 二元运算函数，完全不需要自己写循环！
-    // 参数含义: (数据标签, 数组A开头, 数组A结尾, 数组B开头, 结果C开头, SIMD操作Lambda)
-    hn::Transform2(d, a.data(), a.size(), // 输入1 的指针和总长度
-                   b.data(),              // 输入2 的指针
-                   c.data(),              // 输出 的指针
-                   [](auto d, auto a, auto v_a, auto v_b) {
-                       return hn::Add(v_a, v_b); // 核心 SIMD 运算
-                   }); // 确实是一个很细节的函数
-    EXPECT_EQ(c.size(), result.size());
-    EXPECT_EQ(c, result);
+    float sum = hwy::CallSumArraySIMD(data.data(), count);
+    EXPECT_EQ(sum, count);
 }
+#endif  // HWY_ONCE

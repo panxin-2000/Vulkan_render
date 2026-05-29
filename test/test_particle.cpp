@@ -58,10 +58,23 @@ TEST(particle, matrix) {
             speed[i] = Point_3{get_fast_random_float(), get_fast_random_float(), get_fast_random_float()};
         } {
             ScopeTimer particle("simple particle ");
-            for (size_t time = 0; time < size; ++time)
+            for (size_t time = 0; time < size; ++time) {
                 for (size_t i = 0; i < size; ++i) {
                     position[i] = position[i] + speed[i];
                 }
+                for (size_t i = 0; i < size; ++i) {
+                    auto position_error = position[(i - 1) % size] - position[i];
+                    auto dx             = Point_3{1, 1, 1};
+                    auto m              = Point_3{1, 1, 1};
+                    auto time_error     = Point_3{1, 1, 1};
+                    auto f              = dx / (position_error * position_error);
+                    speed[i]            = speed[i] + f * time_error;
+                    position[i]         = position_error + speed[i] * time_error;
+                }
+                for (size_t i = 0; i < size; ++i) {
+                    position[i] = clamp(position[i], {0, 0, 0}, {1, 1, 1});
+                }
+            }
         }
     } {
         using point_dim = Eigen::Vector4f;
@@ -101,6 +114,9 @@ TEST(particle, matrix) {
                                });                           // 确实是一个很细节的函数
             }
         }
+    } {
+        Eigen::Array<float, 3, 1> arr(size);
+        arr = (arr > 255.0f).select(255.0f, arr);
     }
     // [Timer] simple particle  耗时: 33577375 ns 3个float
     // [Timer] eigen particle   耗时: 45357084 ns 4个float

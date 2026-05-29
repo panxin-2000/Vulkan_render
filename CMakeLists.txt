@@ -139,6 +139,7 @@ FetchContent_Declare(
         readerwriterqueue
         GIT_REPOSITORY https://github.com/cameron314/readerwriterqueue
         GIT_TAG master
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 
 FetchContent_MakeAvailable(readerwriterqueue)
@@ -494,7 +495,13 @@ gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
 target_link_libraries(hello_test ccd hwy readerwriterqueue GTest::gtest_main GLFW TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT GPUOpen::VulkanMemoryAllocator volk quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
-target_compile_options(hello_test PRIVATE -O3)
+target_compile_options(hello_test PRIVATE -O3 -g)
+#target_compile_options(hello_test PRIVATE -fsanitize=address)
+#target_compile_options(hello_test PRIVATE -fsanitize=undefined)
+#target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
+target_compile_options(hello_test PRIVATE -fno-omit-frame-pointer)
+#target_link_options(hello_test PRIVATE -fsanitize=address)
+#target_link_options(hello_test PRIVATE -fsanitize=undefined)
 target_compile_definitions(hello_test PRIVATE NDEBUG)
 
 add_executable(test_mutex
