@@ -16,16 +16,35 @@
 #include "vulkan_buffer.h"
 #include "vulkan_sample.h"
 
-static VK_backend *instance = nullptr;
+static std::atomic<VK_backend *> instance{nullptr};
 
 VK_backend &VK_backend::get() {
-    static std::once_flag flag;
-    std::call_once(flag, []() {
-        instance = new VK_backend();
-        assert(instance != nullptr);
-        instance->init_device_handle();
-    });
-    return *instance;
+    // 1. 第一次读取（使用 Acquire 保证能看到初始化后的完整内存）
+    VK_backend *current = instance.load(std::memory_order_acquire);
+
+    if (current == nullptr) {
+        // 2. 抢输了的线程，或者刚进来的线程，都在这里准备
+        const auto new_value = new VK_backend();
+
+        // 【关键修复】：在把指针暴露给全局之前，在线程私有空间内彻底把句柄初始化好！
+        new_value->init_device_handle();
+
+        VK_backend *expected = nullptr;
+        // 3. 经典的无锁自旋尝试
+        // 如果 instance 是 expected(nullptr)，就写入 new_value
+        if (instance.compare_exchange_strong(expected, new_value,
+                                             std::memory_order_release,
+                                             std::memory_order_acquire)) {
+            // 抢赢了！
+            current = new_value;
+        } else {
+            // 抢输了！说明别的线程已经把一个【完全初始化好】的单例塞进 instance 了
+            new_value->destroy();
+            delete new_value;   // 销毁自己这个备胎
+            current = expected; // expected 已经被 CAS 自动更新为抢赢线程的那个完整指针
+        }
+    }
+    return *current;
 }
 
 
