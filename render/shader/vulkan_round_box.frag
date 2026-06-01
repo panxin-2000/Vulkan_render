@@ -1,7 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier: require
 #extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
 
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
@@ -42,7 +41,7 @@ float sd_RoundBox(vec2 p, vec2 half_box, float r) {
     return length(max(q, 0.0)) - r;
 }
 
-layout (set = 2, binding = 1) uniform round_box
+layout (set = 0, binding = 1) uniform round_box
 {
     vec4 box;
     vec4 radius;

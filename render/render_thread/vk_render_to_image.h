@@ -85,8 +85,7 @@ public:
         global_uniform_buffer_update_function();
         uniform_buffer_update_function();
         descriptor_set_update_function();
-        push_constant_update_function();
-        {
+        push_constant_update_function(); {
             const auto view = Render_entt().view<Render_destroy_tag>();
             Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
@@ -275,11 +274,32 @@ public:
         need_render             = not_start;
     }
 
+    void add_pbr_default_textures() {
+        // 添加一张纯白的背景图片
+        {
+            std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
+            uint32_t index = add_bindless_uniform_sampler2D("default_base_Color_texture", texture);
+            assert(index == 0);
+        } // 添加一张纯白的背景图片
+        {
+            std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
+            uint32_t index = add_bindless_uniform_sampler2D("default_normal_texture", texture);
+            // assert(index == 1);
+        } {
+            // std::optional<Texture_parameter> texture = create_texture_from_image( );
+            // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
+            // assert(index == 1);
+        }
+    }
+
     void render_thread(VK_backend &handle) {
         if (need_render == running) {
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
+        add_pbr_default_textures();
+        init_current_descriptor_pool();
+
 
         while (need_render == running) {
             one_cycle(handle);

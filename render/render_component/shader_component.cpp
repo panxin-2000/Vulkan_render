@@ -20,7 +20,7 @@
 void update_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o) {
     // 以 binding 为一个最小数量
     auto &handle = VK_backend::get();
-    if (static_cast<uint>(entity) == 1) {
+    if (static_cast<uint>(entity) == 1 || static_cast<uint>(entity) == 5) {
         return;
     }
 
@@ -82,6 +82,7 @@ Proxy_descriptor_sets get_global_descriptor_set(const entt::entity entity) {
  */
 Proxy_descriptor_sets get_bindless_descriptor_set(const entt::entity entity) {
     Proxy_descriptor_sets global_descriptor_set;
+
 
     if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
         if (!(*shader_temp)->bindless_set_layout.empty()) {

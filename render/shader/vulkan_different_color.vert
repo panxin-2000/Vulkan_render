@@ -33,8 +33,13 @@ layout (set = 2, binding = 0) uniform model_4x4
 };
 
 
+layout (push_constant) uniform uPushConstant {
+    vec2 uScale;
+    vec2 uTranslate;
+} pc;
+
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(inPos.xyz, 1.0);
+    gl_Position = vec4(inPos.xy * pc.uScale + pc.uTranslate, 0, 1);
 }

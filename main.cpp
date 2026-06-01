@@ -206,24 +206,6 @@ void test_single_char() {
 void convert(const std::string &filename);
 
 
-void add_pbr_default_textures() {
-    // 添加一张纯白的背景图片
-    {
-        std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
-        uint32_t index = add_bindless_uniform_sampler2D("default_base_Color_texture", texture);
-        assert(index == 0);
-    } // 添加一张纯白的背景图片
-    {
-        std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
-        uint32_t index                           = add_bindless_uniform_sampler2D("default_normal_texture", texture);
-        assert(index == 1);
-    } {
-        // std::optional<Texture_parameter> texture = create_texture_from_image( );
-        // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
-        // assert(index == 1);
-    }
-}
-
 void add_skybox_entity() {
     {
         auto entity                                     = add_sky_box("skybox");
@@ -360,15 +342,13 @@ int main(int argc, char *argv[]) {
     // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
     auto &backend = VK_backend::get();
     backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
-    init_current_descriptor_pool();
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    // UI_block("按钮1", 0, 0, 60, 60);
-    // UI_block("功能块", 0, 0, 50, 200);
-    // UI_block("按钮2", 0, 0, 145, 130);
+    UI_block("按钮1", 0, 0, 60, 60);
+    UI_block("功能块", 0, 0, 50, 200);
+    UI_block("按钮2", 0, 0, 145, 130);
 
-    // add_pbr_default_textures();
 
     // add_skybox_entity();
     // add_manifold_entity();
