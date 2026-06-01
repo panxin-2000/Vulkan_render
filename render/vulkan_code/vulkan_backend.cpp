@@ -18,7 +18,6 @@
 
 static VK_backend *instance = nullptr;
 
-
 VK_backend &VK_backend::get() {
     static std::once_flag flag;
     std::call_once(flag, []() {
@@ -573,5 +572,4 @@ void get_support_texture_formats() {
 
     // ASTC      >     BC7      >        ETC2
     // 全能王者      桌面端画质巅峰     移动端基石/低保底
-
 }

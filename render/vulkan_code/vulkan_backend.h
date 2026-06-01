@@ -14,12 +14,13 @@
 
 #include "engine.h"
 #include "global_singleton.h"
+#include "GPU_backend.h"
 
 
 #include "vulkan_image.h"
 
 
-class VK_backend {
+class VK_backend : public GPU_backend {
 private:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
@@ -59,7 +60,7 @@ private:
 public:
     Engine engine_;
 
-    const Engine &get_engine() const {
+    Engine &get_engine() {
         return engine_;
     }
 

@@ -116,7 +116,7 @@ DescriptorSet_detail::~DescriptorSet_detail() {
 
 
 void discard_descriptor_set_map_clean() {
-    const auto &backend = VK_backend::get();
+    auto &backend = VK_backend::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
         const auto &[descriptor_set, timeline] = *it;
         LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", backend.get_finished_timeline(),

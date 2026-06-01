@@ -9,6 +9,8 @@
 #include "json.hpp"
 #include <fstream>
 
+#include "model_matrix.h"
+
 void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
     // 1. 打开文件流
     std::ifstream file(file_path);

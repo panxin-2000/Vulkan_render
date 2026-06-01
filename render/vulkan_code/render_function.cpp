@@ -8,19 +8,19 @@
 #include "vulkan_buffer.h"
 
 const VkImage &VK_backend::get_current_swap_chain_image() const {
-    return get_swap_chain_images()[engine_.imageIndex]->get_image_handle();
+    return get_swap_chain_images()[engine_.get_imageIndex()]->get_image_handle();
 }
 
 const VkImageView &VK_backend::get_current_swap_image_view() const {
-    return get_swap_chain_images()[engine_.imageIndex]->get_image_view();
+    return get_swap_chain_images()[engine_.get_imageIndex()]->get_image_view();
 }
 
 const VkImage &VK_backend::get_current_depth_image() const {
-    return get_depth_images()[engine_.imageIndex]->get_image_handle();
+    return get_depth_images()[engine_.get_imageIndex()]->get_image_handle();
 }
 
 const VkImageView &VK_backend::get_current_depth_view() const {
-    return get_depth_images()[engine_.imageIndex]->get_image_view();
+    return get_depth_images()[engine_.get_imageIndex()]->get_image_view();
 }
 
 const VkImage &VK_backend::get_current_position_image() const {
@@ -57,7 +57,7 @@ void VK_backend::submit_render_queue(uint64_t time_line) {
     uint32_t signal_semaphore_len    = 2;
     VkSemaphore signal_semaphores[2] = {
         vk_timeline_semaphore_,
-        engine_.get_can_render_to_image_semaphores()[engine_.imageIndex]
+        engine_.get_can_render_to_image_semaphores()[engine_.get_imageIndex()]
     };
     uint64_t signal_semaphore_values[2] = {time_line, 0};
 

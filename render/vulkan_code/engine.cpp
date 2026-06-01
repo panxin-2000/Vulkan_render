@@ -167,7 +167,6 @@ void Engine::destroy_command_pool() {
 
 void Engine::create_command_pool() {
     // Command pool
-    command_pools_.resize(maxFramesInFlight,VK_NULL_HANDLE);
     const auto &backend = VK_backend::get();
     const VkCommandPoolCreateInfo commandPoolCI{
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -175,7 +174,9 @@ void Engine::create_command_pool() {
         .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = backend.get_queue_Family()
     };
-    VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, command_pools_.data()));
+    VkCommandPool commandPool;
+    VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, &commandPool));
+    command_pools_.push_back(commandPool);
 }
 
 std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std::string &one_binding_name) {

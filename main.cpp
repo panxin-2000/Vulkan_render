@@ -20,6 +20,7 @@
 #include "load_gltf_model.h"
 #include "PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
+#include "UI_manager.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
 #include "vulkan_sample.h"
@@ -339,9 +340,13 @@ int main(int argc, char *argv[]) {
                                                                        2, func, 5000);
 
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-    // std::cout << " UI_component.h:111  " << std::endl; // 是文件的路径就可以在clion中直接点击显示
+
     auto &backend = VK_backend::get();
     backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
+    auto world_root = get_world_root();
+    auto UI_root    = get_UI_scene_root();
+    // 需要确定启动的顺序
+    render_thread_start(backend);
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
@@ -379,7 +384,6 @@ int main(int argc, char *argv[]) {
     //     logic_update_add_tag<opacity_tag>(entity);
     // }
 
-    render_thread_start(backend);
 
     register_glfw(backend.get_window());
 

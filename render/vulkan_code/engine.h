@@ -9,16 +9,14 @@
 #include "vulkan_utility.h"
 #include <string>
 #include <vector>
-#include <vk_mem_alloc.h>
-#include <GLFW/glfw3.h>
 
 #include "descriptor.h"
 #include "descriptor_pool.h"
-#include "model_matrix.h"
-
+#include <Eigen/Eigen>
 
 struct Engine {
-    std::vector<VkCommandPool> command_pools_                        = {};
+private:
+    std::vector<VkCommandPool> command_pools_                       = {};
     std::vector<VkSemaphore> render_to_image_semaphores_            = {};
     std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
     std::array<VkQueryPool, maxFramesInFlight> query_pools          = {};
@@ -26,13 +24,64 @@ struct Engine {
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_        = {};
     std::vector<DescriptorSet_ptr> global_descriptor_sets_          = {};
-    std::vector<VkDescriptorPool> descriptor_pools                    = {};
+    std::vector<VkDescriptorPool> descriptor_pools                  = {};
 
+    Eigen::Matrix4f projection_matrix;
+    Eigen::Matrix4f inv_projection_matrix;
+    Eigen::Matrix4f view_matrix;
+    Eigen::Matrix4f inv_view_matrix;
+    Eigen::Matrix4f invVP;
+    Eigen::Vector3f world_camera_pos;
+    Eigen::Vector3f world_light_pos;
 
+public:
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
 
-public:
+    uint32_t get_frameIndex() const {
+        return frameIndex;
+    }
+
+    uint32_t get_imageIndex() const {
+        return imageIndex;
+    }
+
+    bool set_projection_matrix(const Eigen::Matrix4f &matrix) {
+        projection_matrix = matrix;
+        return true;
+    }
+
+    bool set_inv_projection_matrix(const Eigen::Matrix4f &matrix) {
+        inv_projection_matrix = matrix;
+        return true;
+    }
+
+    bool set_view_matrix(const Eigen::Matrix4f &matrix) {
+        view_matrix = matrix;
+        return true;
+    }
+
+    bool set_inv_view_matrix(const Eigen::Matrix4f &matrix) {
+        inv_view_matrix = matrix;
+        return true;
+    }
+
+    bool set_invVP(const Eigen::Matrix4f &matrix) {
+        invVP = matrix;
+        return true;
+    }
+
+    bool set_world_camera_pos(const Eigen::Vector3f &matrix) {
+        world_camera_pos = matrix;
+        return true;
+    }
+
+    bool set_world_light_pos(const Eigen::Vector3f &matrix) {
+        world_light_pos = matrix;
+        return true;
+    }
+
+
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences_;
     }

@@ -218,16 +218,13 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
 
 
-    // set_render_parameter(entity, "global_projection_4x4", projection);
-    // set_render_parameter(entity, "global_inv_projection_4x4", inv_projection_matrix);
-    //
-    //
-    // set_render_parameter(entity, "global_view_4x4", view_matrix);
-    // set_render_parameter(entity, "global_ins_view_4x4", inv_view_matrix);
-    // set_render_parameter(entity, "global_world_view_Pos", world_camera_pos);
-    // set_render_parameter(entity, "global_inv_VP", invVP);
-    //
-    // set_render_parameter(entity, "global_world_light_Pos", world_light_pos);
+    VK_backend::get().get_engine().set_projection_matrix(projection);
+    VK_backend::get().get_engine().set_inv_projection_matrix(inv_projection_matrix);
+    VK_backend::get().get_engine().set_view_matrix(view_matrix);
+    VK_backend::get().get_engine().set_inv_view_matrix(inv_view_matrix);
+    VK_backend::get().get_engine().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
+    VK_backend::get().get_engine().set_invVP(invVP);
+    VK_backend::get().get_engine().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
 }
 
 
