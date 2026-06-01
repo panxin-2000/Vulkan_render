@@ -202,9 +202,9 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
 }
 
 void update_camera_parameter(const entt::entity entity) {
-    auto camera                      = Logic_entt().get_or_emplace<camera_optical_component>(entity);
-    const auto projection            = camera.get_projection_matrix();
-    const auto inv_projection_matrix = projection.inverse();
+    auto camera                           = Logic_entt().get_or_emplace<camera_optical_component>(entity);
+    const auto projection                 = camera.get_projection_matrix();
+    Eigen::Matrix4f inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
     const auto camera_pos = Logic_entt().get_or_emplace<Transform>(entity, Point_3{
@@ -212,7 +212,7 @@ void update_camera_parameter(const entt::entity entity) {
                                                                    });
     const auto view_matrix     = get_view_matrix(camera_pos);
     Point_3 world_camera_pos   = camera_pos.get_position();
-    const auto inv_view_matrix = view_matrix.inverse();
+    Eigen::Matrix4f inv_view_matrix = view_matrix.inverse();
 
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;

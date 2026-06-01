@@ -32,18 +32,18 @@ inline void update_object_transform_function() { {
     }
 }
 
-void push_constant_update_function();
 
 
 void sync_render_data_to_render_thread() {
     // 应该不止更新 position，还有很多的都需要更新
+    // 其实下面的两个也不应该这样写
     update_camera_transform();
     update_object_transform_function();
-    bindless_uniform_sampler2D_update_function();
-    global_uniform_buffer_update_function();
-    uniform_buffer_update_function();
-    descriptor_set_update_function();
-    push_constant_update_function();
+
+    // 中间这部分需要移动
+
+
+
     add_new_proxy_to_render();
 }
 

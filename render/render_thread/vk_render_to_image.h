@@ -22,8 +22,10 @@
 
 
 #include "descriptor_pool.h"
-#include "name_component.h"
 #include "pipeline_layout.h"
+#include "pipeline_layout_component.h"
+#include "pipeline_component.h"
+#include "name_component.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
 
@@ -69,6 +71,22 @@ public:
             std::unique_lock<std::mutex> lock(mtx);
             vk_render_queue::instance().execute_update_lambda();
         } {
+            const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
+            for (const auto it: view) {
+                auto pipeline_layout   = get_pipeline_layout(it);
+                auto vk_pipeline       = get_pipeline(it);
+                auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
+                Render_entt().emplace_or_replace<decltype(pipeline_layout)>(it, pipeline_layout);
+                Render_entt().emplace_or_replace<decltype(vk_pipeline)>(it, vk_pipeline);
+                Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
+            }
+        }
+        bindless_uniform_sampler2D_update_function();
+        global_uniform_buffer_update_function();
+        uniform_buffer_update_function();
+        descriptor_set_update_function();
+        push_constant_update_function();
+        {
             const auto view = Render_entt().view<Render_destroy_tag>();
             Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
@@ -99,15 +117,15 @@ public:
         };
         // dispatch 不能 render pass 中间调用
         {
-        // Indirect draw ,先说需要哪几个 buffer ，
-        // 需要准备一个需要写入 command 的 buffer
-        // 数据，有哪些不透明的物体需要绘制的，位置或包围盒，
-        // 然后是对应的不透明的物体 draw command ,只是被复制，不需要被重新计算
-        // 上面是最简单的
-        // Hi-Z 遮挡剔除 需要什么呢？
-        // 一个深度图
-        // 上一帧绘制的 command 的 buffer
-        //
+            // Indirect draw ,先说需要哪几个 buffer ，
+            // 需要准备一个需要写入 command 的 buffer
+            // 数据，有哪些不透明的物体需要绘制的，位置或包围盒，
+            // 然后是对应的不透明的物体 draw command ,只是被复制，不需要被重新计算
+            // 上面是最简单的
+            // Hi-Z 遮挡剔除 需要什么呢？
+            // 一个深度图
+            // 上一帧绘制的 command 的 buffer
+            //
             auto view = Render_entt().view<compute_pass_tag>();
             for (const auto it: view) {
                 // 这里还需要改为 dispatch
@@ -191,7 +209,7 @@ public:
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
-        }{
+        } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);

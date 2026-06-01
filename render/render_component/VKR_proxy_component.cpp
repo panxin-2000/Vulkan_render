@@ -18,19 +18,17 @@ void add_new_proxy_to_render() {
 
         const auto mesh = get_VKR_mesh(it);
         logic_update_proxy(it, mesh);
-        const auto pipeline_layout = get_pipeline_layout(it);
-        logic_update_proxy<VkPipelineLayout>(it, pipeline_layout);
+
 
         const auto scissor = VK_backend::get().get_scissor();
         logic_update_proxy(it, scissor);
         const auto viewport = VK_backend::get().get_viewport();
         logic_update_proxy(it, viewport);
 
-        const auto vk_pipeline = get_pipeline(it);
-        logic_update_proxy(it, vk_pipeline);
 
-        const auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
-        logic_update_proxy(it, vk_descriptor_set);
+        // logic_update_proxy<VkPipelineLayout>(it, pipeline_layout);
+        // logic_update_proxy(it, vk_pipeline);
+        // logic_update_proxy(it, vk_descriptor_set);
 
         Logic_entt().remove<add_to_render_tag>(it);
     }

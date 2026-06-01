@@ -2,15 +2,15 @@
 // Created by 潘鑫 on 2026/3/27.
 //
 
-#ifndef HELLO_MAC_PIPELINE_LAYOUT_H
-#define HELLO_MAC_PIPELINE_LAYOUT_H
+#ifndef HELLO_MAC_PIPELINE_LAYOUT_COMPONENT_H
+#define HELLO_MAC_PIPELINE_LAYOUT_COMPONENT_H
 #include "global_singleton.h"
 #include "shader_component.h"
 #include "vulkan_backend.h"
 
 inline VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
     auto &handle = VK_backend::get();
-    if (const auto &shader_data_ref = Logic_entt().get<shader_data>(entity)) {
+    if (const auto &shader_data_ref = Render_entt().get<shader_data>(entity)) {
         const VkPipelineLayout pipeline_layout = shader_data_ref->pipeline_layout;
         return pipeline_layout;
     } else {
@@ -18,4 +18,4 @@ inline VkPipelineLayout get_pipeline_layout(const entt::entity entity) {
     }
     return VK_NULL_HANDLE;
 }
-#endif //HELLO_MAC_PIPELINE_LAYOUT_H
+#endif //HELLO_MAC_PIPELINE_LAYOUT_COMPONENT_H

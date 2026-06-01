@@ -62,12 +62,12 @@ auto variable_descriptor(const uint32_t binding_less_size,
 }
 
 
-std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_backend &handle,
+Proxy_descriptor_sets allocate_descriptor_sets(VK_backend &handle,
                                                         const std::vector<VkDescriptorSetLayout> &
                                                         descriptor_set_layouts,
                                                         const std::vector<VkDescriptorBindingFlags> &binding_flags) {
     const uint32_t resize_number = descriptor_set_layouts.size();
-    std::vector<DescriptorSet_ptr> return_value;
+    Proxy_descriptor_sets return_value;
     std::vector<VkDescriptorSet> descriptor_sets;
     if (descriptor_set_layouts.empty())
         return return_value;

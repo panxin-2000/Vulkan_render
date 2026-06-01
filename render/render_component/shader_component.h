@@ -17,6 +17,7 @@
 
 
 #include "vulkan_update_descriptor.h"
+#include "VKR_proxy_component.h"
 
 using Push_constant_map = std::map<std::string, VkPushConstantRange>;
 
@@ -138,35 +139,48 @@ const std::vector<InputAttributeDescription> &get_attribute_description(const en
  *
  * @return
  */
+
+
 template<typename T1>
-bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
-    auto &parameter       = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
+bool render_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+    auto &shader_data_ref = Render_entt().get<shader_data>(entity);
+    auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
     if (binding_name.find("global") != std::string::npos) {
         set_render_parameter(shader_data_ref->global_sets_bindings,
                              parameter.update_global_descriptor_sets, binding_name,
                              binding_data);
-        Logic_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
+        Render_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
         return true;
     } else {
         set_render_parameter(shader_data_ref->object_sets_bindings,
                              parameter.update_object_descriptor_sets, binding_name,
                              binding_data);
-        Logic_entt().emplace_or_replace<uniform_buffer_update>(entity);
+        Render_entt().emplace_or_replace<uniform_buffer_update>(entity);
         return true;
     }
     return false;
 }
 
+template<typename T1>
+bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+    logic_update_proxy(entity, binding_data);
+    if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
+        auto lambda = [ proxy_entity,binding_name, binding_data ]() {
+            render_render_parameter(proxy_entity, binding_name, binding_data);
+        };
+        vk_render_queue::instance().render_update_entt(lambda);
+    };
+    return true;
+}
 
 template<typename T1>
 bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    const auto &shader_data_ref = Logic_entt().get<shader_data>(entity);
-    auto &parameter             = Logic_entt().get_or_emplace<shader_need_parameter>(entity);
+    const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
+    auto &parameter             = Render_entt().get_or_emplace<shader_need_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
-            Logic_entt().emplace_or_replace<push_constant_update>(entity);
+            Render_entt().emplace_or_replace<push_constant_update>(entity);
             return true;
         }
     }
@@ -183,7 +197,7 @@ VKR_buffer_block_ptr set_render_push_constant_parameter(const entt::entity entit
 
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
 
-std::vector<DescriptorSet_ptr> get_descriptor_sets(const entt::entity entity);
+Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity);
 
 
 void descriptor_set_update_function();
@@ -195,5 +209,8 @@ void global_uniform_buffer_update_function();
 void add_bindless_update_tag();
 
 void bindless_uniform_sampler2D_update_function();
+
+void push_constant_update_function();
+
 
 #endif //HELLO_MAC_SHADER_COMPONENT_H

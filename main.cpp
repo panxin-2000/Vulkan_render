@@ -238,6 +238,9 @@ void add_skybox_entity() {
 void add_simple_computer_buffer_write() {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
+    logic_update_proxy<Name_component>(entity);
+    Logic_entt().emplace<Name_component>(entity, "computer_buffer_write");
+
 
     add_shader(entity,
                "",
@@ -361,31 +364,32 @@ int main(int argc, char *argv[]) {
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 50, 200);
-    UI_block("按钮2", 0, 0, 145, 130);
+    // UI_block("按钮1", 0, 0, 60, 60);
+    // UI_block("功能块", 0, 0, 50, 200);
+    // UI_block("按钮2", 0, 0, 145, 130);
 
-    add_pbr_default_textures();
+    // add_pbr_default_textures();
 
-    add_skybox_entity();
-    add_manifold_entity();
+    // add_skybox_entity();
+    // add_manifold_entity();
 
-    add_simple_computer_buffer_write();
+    // add_simple_computer_buffer_write();
 
     // add_volume_pass("nanovdb_volume");
     // 天空盒
 
 
     {
-        auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-    } {
-        auto value           = get_max_descriptor_update_after_bind_samplers();
-        const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture         = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
-        const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-        set_baseColor_Texture_index(entity, index);
-        logic_update_add_tag<opacity_tag>(entity);
+        // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     }
+    // {
+    //     auto value           = get_max_descriptor_update_after_bind_samplers();
+    //     const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+    //     auto texture         = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+    //     const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+    //     set_baseColor_Texture_index(entity, index);
+    //     logic_update_add_tag<opacity_tag>(entity);
+    // }
     // {
     //     const auto entity = load_gltf_model("DamagedHelmet", "assets/DamagedHelmet.gltf");
     //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
@@ -409,8 +413,12 @@ int main(int argc, char *argv[]) {
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
-    io.Fonts->AddFontDefault();
+    // io.Fonts->AddFontDefault();
+    io.Fonts->AddFontFromFileTTF("/Users/panxin/CLionProjects/hello_mac/imgui/misc/fonts/Cousine-Regular.ttf", 20.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    io.Fonts->Build();
+    // 字体的内容存储在了alpha通道中
 
     // 扩展和层并不在意添加的顺序，能否在一开始就将需要的层和扩展添加了，之后根据具体的实现判断是否能获得，能获得就添加。
 
@@ -426,6 +434,7 @@ int main(int argc, char *argv[]) {
     ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     auto imgui_entity = create_imgui_entity("imgui", nullptr);
+
 
     // Render loop
     while (!glfwWindowShouldClose(backend.get_window())) {
