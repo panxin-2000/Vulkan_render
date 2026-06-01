@@ -163,7 +163,6 @@ bool render_render_parameter(const entt::entity entity, const std::string &bindi
 
 template<typename T1>
 bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
-    logic_update_proxy(entity, binding_data);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, binding_data ]() {
             render_render_parameter(proxy_entity, binding_name, binding_data);
@@ -174,7 +173,7 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 }
 
 template<typename T1>
-bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+bool render_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
     auto &parameter             = Render_entt().get_or_emplace<shader_need_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
@@ -187,6 +186,16 @@ bool set_push_constant_parameter(const entt::entity entity, const std::string &b
     return false;
 }
 
+template<typename T1>
+bool set_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+    if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
+        auto lambda = [ proxy_entity, binding_name, binding_data ]() {
+            render_push_constant_parameter(proxy_entity, binding_name, binding_data);
+        };
+        vk_render_queue::instance().render_update_entt(lambda);
+    };
+    return true;
+}
 
 template<typename T1>
 VKR_buffer_block_ptr set_render_push_constant_parameter(const entt::entity entity, const std::string &binding_name,

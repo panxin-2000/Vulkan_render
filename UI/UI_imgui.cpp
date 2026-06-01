@@ -138,8 +138,8 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
     translate[0] = -1.0f - 0.0f * scale[0];
     translate[1] = -1.0f - 0.0f * scale[1];
 
-    // set_push_constant_parameter(entity, "uScale", scale);
-    // set_push_constant_parameter(entity, "uTranslate", translate);
+    set_push_constant_parameter(entity, "uScale", scale);
+    set_push_constant_parameter(entity, "uTranslate", translate);
     scene_root_add_child(entity);
     return entity;
 

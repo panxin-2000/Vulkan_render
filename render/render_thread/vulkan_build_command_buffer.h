@@ -561,17 +561,6 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    float scale[2];
-    scale[0] = 2.0f / 1280.f;
-    scale[1] = 2.0f / 720;
-    float translate[2];
-    translate[0] = -1.0f - 0.0f * scale[0];
-    translate[1] = -1.0f - 0.0f * scale[1];
-
-    set_push_constant_parameter(entity, "uScale", scale);
-    set_push_constant_parameter(entity, "uTranslate", translate);
-
-
     //  shader_data 还没有传送过来
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
     if (const auto parameter = Render_entt().try_get<shader_need_parameter>(entity))
