@@ -255,7 +255,7 @@ public:
 
         clean_need_objects();
 
-        destroy_descriptorPool();
+        // destroy_descriptorPool();
 
 
         // pipeline 建议提前清理
@@ -298,7 +298,6 @@ public:
         }
         need_render = running; // 设置为运行中
         add_pbr_default_textures();
-        init_current_descriptor_pool();
 
 
         while (need_render == running) {

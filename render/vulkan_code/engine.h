@@ -12,18 +12,21 @@
 #include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 
+#include "descriptor.h"
+#include "descriptor_pool.h"
 #include "model_matrix.h"
 
 
 struct Engine {
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-
-    std::vector<VkSemaphore> render_to_image_semaphores_;
-    // std::array<VkCommandPool, maxFramesInFlight> command_pools_     = {};
+    std::vector<VkCommandPool> command_pools_                        = {};
+    std::vector<VkSemaphore> render_to_image_semaphores_            = {};
     std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
     std::array<VkQueryPool, maxFramesInFlight> query_pools          = {};
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
+    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_        = {};
+    std::vector<DescriptorSet_ptr> global_descriptor_sets_          = {};
+    std::vector<VkDescriptorPool> descriptor_pools                    = {};
 
 
     uint32_t frameIndex = 0;
@@ -34,8 +37,8 @@ public:
         return fences_;
     }
 
-    const VkCommandPool &get_command_pool() const {
-        return commandPool;
+    const VkCommandPool &get_command_pool(const uint index = 0) const {
+        return command_pools_.at(index);
     }
 
     VkFence &get_current_fences() {
@@ -97,12 +100,30 @@ public:
 
     void destroy_command_pool();
 
+    std::vector<DescriptorSet_ptr> allocate_global_descriptor_sets(const std::string &one_binding_name);
+
+    std::vector<DescriptorSet_ptr> allocate_bindless_descriptor_sets(const std::string &one_binding_name);
+
+    std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const uint index = 0);
+
+    std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
+
+
+    VkDescriptorPool get_descriptor_pool(const uint index = 0) const {
+        return descriptor_pools.at(index);
+    }
+
     void engine_init() {
         create_command_pool();
         create_command_buffer();
         create_fences();
         create_present_Semaphores();
         create_renderSemaphores();
+        descriptor_pools.resize(1,VK_NULL_HANDLE);
+        descriptor_pools.at(0) = init_current_descriptor_pool();
+
+        bindless_descriptor_sets_ = allocate_bindless_descriptor_sets("");
+        global_descriptor_sets_   = allocate_global_descriptor_sets("");
     }
 
     void engine_destroy();

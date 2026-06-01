@@ -23,17 +23,6 @@ public:
         std::call_once(flag, []() {
                            Logic_entt().emplace<Scene_Component>(instance);
                            Logic_entt().emplace<Name_component>(instance, "scene_root");
-                           add_shader(instance,
-                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-                                                                  "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-                                                                  "", "");
-                           matrix_4x4 view;
-                           identity_matrix_4x4(&view);
-                           set_render_parameter(instance, "global_view_4x4", view);
-
-                           matrix_4x4 projection;
-                           UI_projection_4x4(&projection, 1280, 720);
-                           set_render_parameter(instance, "global_projection_4x4", projection);
 
                            if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(instance)) {
                                scene_node->set_bounding_box({0, 0},

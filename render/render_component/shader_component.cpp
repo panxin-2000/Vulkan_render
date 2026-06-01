@@ -20,24 +20,26 @@
 void update_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o) {
     // 以 binding 为一个最小数量
     auto &handle = VK_backend::get();
-    if (static_cast<uint>(entity) == 1 || static_cast<uint>(entity) == 5) {
-        return;
-    }
+    // if (static_cast<uint>(entity) == 1 || static_cast<uint>(entity) == 5) {
+    //     return;
+    // }
 
     auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-    if (b_or_g_or_o == "bindless") {
-        vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(get_world_root());
-        // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
-        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-        update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
-    } else if (b_or_g_or_o == "global") {
-        if (vk_s_d_s.update_global_descriptor_sets.empty()) {
-            return;
-        }
-        allocate_descriptor_sets(entity, "global");
-        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-        update_descriptor_sets(vk_s_d_s.update_global_descriptor_sets, descriptor_sets);
-    } else if (b_or_g_or_o == "object") {
+    // if (b_or_g_or_o == "bindless") {
+    //     vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(get_world_root());
+    //     // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
+    //     const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+    //     update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
+    // } else if (b_or_g_or_o == "global") {
+    //     if (vk_s_d_s.update_global_descriptor_sets.empty()) {
+    //         return;
+    //     }
+    //     allocate_descriptor_sets(entity, "global");
+    //     const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+    //     update_descriptor_sets(vk_s_d_s.update_global_descriptor_sets, descriptor_sets);
+    // } else
+
+    if (b_or_g_or_o == "object") {
         if (vk_s_d_s.update_object_descriptor_sets.empty()) {
             return;
         }
@@ -45,62 +47,6 @@ void update_bindings_to_descriptor_sets(const entt::entity entity, const std::st
         const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
         update_descriptor_sets(vk_s_d_s.update_object_descriptor_sets, descriptor_sets);
     }
-}
-
-Proxy_descriptor_sets get_global_descriptor_set(const entt::entity entity) {
-    Proxy_descriptor_sets global_descriptor_set;
-
-    if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
-        if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-            auto current_entity = entity;
-            while (current_entity != entt::null) {
-                if (const auto para = Render_entt().try_get<shader_need_parameter>(current_entity)) {
-                    if (!para->global_descriptor_sets.empty()) {
-                        global_descriptor_set = para->global_descriptor_sets;
-                        break;
-                    }
-                }
-                const auto parent_entity = get_parent(current_entity);
-                current_entity           = parent_entity;
-            }
-            // 那就不应该由这里去创建了，而是应该向 父节点 查找，查找到话就拿到并返回
-            // 那么要求是什么呢？父节点 和这个节点有相同的着色器
-            // 那么是否可以这样呢？ 只要有几何节点，就可以查找自身，使用自身的着色器，
-            // 如果自身没有，就使用父节点的着色器
-            // 好处是什么呢？只要能分出几何体，就可以绘制，glfw 的物体的 mesh也是可以被解析的
-            // 如果一个 mesh 有特殊的材质，就可以专门指定，但是 model 还是用的父节点的数据
-        }
-    }
-
-    return global_descriptor_set;
-}
-
-/**
- * 复制上面的函数，
- * @param entity
- * @return
- */
-Proxy_descriptor_sets get_bindless_descriptor_set(const entt::entity entity) {
-    Proxy_descriptor_sets global_descriptor_set;
-
-
-    if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
-        if (!(*shader_temp)->bindless_set_layout.empty()) {
-            auto current_entity = get_world_root();
-            while (current_entity != entt::null) {
-                if (const auto para = Render_entt().try_get<shader_need_parameter>(current_entity)) {
-                    if (!para->bindless_descriptor_sets.empty()) {
-                        global_descriptor_set = para->bindless_descriptor_sets;
-                        break;
-                    }
-                }
-                const auto parent_entity = get_parent(current_entity);
-                current_entity           = parent_entity;
-            }
-        }
-    }
-
-    return global_descriptor_set;
 }
 
 
@@ -111,31 +57,11 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
     if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-
-        if (one_binding_name.find("bindless") != std::string::npos) {
-            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
-                auto sets_flags = create_descriptor_sets_flags(handle,
-                                                               (*shader_temp)->bindless_sets_bindings);
-                vk_s_d_s.bindless_descriptor_sets = allocate_descriptor_sets(handle,
-                                                                             (*shader_temp)->
-                                                                             bindless_set_layout,
-                                                                             sets_flags);
-            }
-        } else if (one_binding_name.find("global") != std::string::npos) {
-            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
-                auto sets_flags = create_descriptor_sets_flags(handle,
-                                                               (*shader_temp)->global_sets_bindings);
-                vk_s_d_s.global_descriptor_sets = allocate_descriptor_sets(handle,
-                                                                           (*shader_temp)->
-                                                                           global_descriptor_sets_layout,
-                                                                           {});
-            }
-        } else if (one_binding_name.find("object") != std::string::npos) {
+        if (one_binding_name.find("object") != std::string::npos) {
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
                 auto sets_flags = create_descriptor_sets_flags(handle,
                                                                (*shader_temp)->object_sets_bindings);
-                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(handle,
-                                                                           (*shader_temp)->
+                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets((*shader_temp)->
                                                                            object_descriptor_sets_layout,
                                                                            {});
             }
@@ -148,8 +74,8 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                auto bindless_descriptor_sets = get_bindless_descriptor_set(entity);
-                auto global_descriptor_sets   = get_global_descriptor_set(entity);
+                auto bindless_descriptor_sets = VK_backend::get().engine_.get_bindless_descriptor_set();
+                auto global_descriptor_sets   = VK_backend::get().engine_.get_global_descriptor_set();
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
                 // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
                 descriptor_sets.reserve(bindless_descriptor_sets.size() +

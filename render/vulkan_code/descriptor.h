@@ -5,8 +5,8 @@
 #ifndef HOWTOVULKAN_DESCRIPTOR_H
 #define HOWTOVULKAN_DESCRIPTOR_H
 #include "APP_utility_mixins.h"
-#include "vulkan_backend.h"
-
+#include <volk.h>
+#include <vector>
 
 class DescriptorSet_detail : public NonCopyable {
 public:
@@ -59,8 +59,7 @@ auto variable_descriptor(const uint32_t binding_less_size,
  * @param binding_flags
  * @return
  */
-std::vector<DescriptorSet_ptr> allocate_descriptor_sets(VK_backend &handle,
-                                                        const std::vector<VkDescriptorSetLayout> &
+std::vector<DescriptorSet_ptr> allocate_descriptor_sets(const std::vector<VkDescriptorSetLayout> &
                                                         descriptor_set_layouts,
                                                         const std::vector<VkDescriptorBindingFlags> &binding_flags =
                                                                 {});

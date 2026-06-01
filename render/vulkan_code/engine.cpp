@@ -3,6 +3,8 @@
 //
 #include "engine.h"
 
+#include "sets_and_bindings_layout.h"
+#include "shader_component.h"
 #include "vulkan_backend.h"
 
 
@@ -149,20 +151,70 @@ void Engine::engine_destroy() {
     destroy_renderSemaphores();
     destroy_command_buffer();
     destroy_command_pool();
+    for (auto descriptor_pool: descriptor_pools) {
+        if (descriptor_pool != VK_NULL_HANDLE)
+            destroy_descriptorPool(descriptor_pool);
+    }
 }
 
 void Engine::destroy_command_pool() {
     const auto &backend = VK_backend::get();
-    vkDestroyCommandPool(backend.get_device(), get_command_pool(), nullptr);
+    for (auto command_pool: command_pools_) {
+        if (command_pool != VK_NULL_HANDLE)
+            vkDestroyCommandPool(backend.get_device(), command_pool, nullptr);
+    }
 }
 
 void Engine::create_command_pool() {
     // Command pool
+    command_pools_.resize(maxFramesInFlight,VK_NULL_HANDLE);
     const auto &backend = VK_backend::get();
     const VkCommandPoolCreateInfo commandPoolCI{
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext            = nullptr,
         .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = backend.get_queue_Family()
     };
-    VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, &commandPool));
+    VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, command_pools_.data()));
+}
+
+std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std::string &one_binding_name) {
+    VKR_shader_paths shader_paths{
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+        "", ""
+    };
+    auto shader_date = VKR_shader_init(shader_paths);
+    auto &handle     = VK_backend::get();
+    auto sets_flags  = create_descriptor_sets_flags(handle,
+                                                   shader_date->global_sets_bindings);
+    auto bindless_descriptor_sets = allocate_descriptor_sets(
+                                                             shader_date->global_descriptor_sets_layout,
+                                                             sets_flags);
+    return bindless_descriptor_sets;
+}
+
+
+std::vector<DescriptorSet_ptr> Engine::allocate_bindless_descriptor_sets(const std::string &one_binding_name) {
+    VKR_shader_paths shader_paths{
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+        "", ""
+    };
+    auto shader_date = VKR_shader_init(shader_paths);
+    auto &handle     = VK_backend::get();
+    auto sets_flags  = create_descriptor_sets_flags(handle,
+                                                   shader_date->bindless_sets_bindings);
+    auto bindless_descriptor_sets = allocate_descriptor_sets(shader_date->bindless_set_layout,
+                                                             sets_flags);
+    return bindless_descriptor_sets;
+}
+
+
+Proxy_descriptor_sets Engine::get_bindless_descriptor_set(const uint index) {
+    return bindless_descriptor_sets_;
+}
+
+Proxy_descriptor_sets Engine::get_global_descriptor_set(const uint index) {
+    return global_descriptor_sets_;
 }

@@ -59,6 +59,10 @@ private:
 public:
     Engine engine_;
 
+    const Engine &get_engine() const {
+        return engine_;
+    }
+
     void engine_init() {
         engine_.engine_init();
         create_timeline_Semaphores();

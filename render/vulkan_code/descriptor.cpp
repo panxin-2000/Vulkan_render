@@ -62,10 +62,10 @@ auto variable_descriptor(const uint32_t binding_less_size,
 }
 
 
-Proxy_descriptor_sets allocate_descriptor_sets(VK_backend &handle,
-                                                        const std::vector<VkDescriptorSetLayout> &
-                                                        descriptor_set_layouts,
-                                                        const std::vector<VkDescriptorBindingFlags> &binding_flags) {
+Proxy_descriptor_sets allocate_descriptor_sets(const std::vector<VkDescriptorSetLayout> &
+                                               descriptor_set_layouts,
+                                               const std::vector<VkDescriptorBindingFlags> &binding_flags) {
+    auto &backend                = VK_backend::get();
     const uint32_t resize_number = descriptor_set_layouts.size();
     Proxy_descriptor_sets return_value;
     std::vector<VkDescriptorSet> descriptor_sets;
@@ -80,7 +80,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(VK_backend &handle,
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = nullptr,
-        .descriptorPool     = get_descriptor_pool(),
+        .descriptorPool     = backend.get_engine().get_descriptor_pool(),
         .descriptorSetCount = static_cast<uint32_t>(descriptor_set_layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
@@ -96,7 +96,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(VK_backend &handle,
         }
     }
     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(handle.get_device(), &texDescSetAlloc,
+    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(backend.get_device(), &texDescSetAlloc,
                                  descriptor_sets.data()));
 
     for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
@@ -123,7 +123,7 @@ void discard_descriptor_set_map_clean() {
                   timeline);
         if (backend.get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-            vkFreeDescriptorSets(backend.get_device(), get_descriptor_pool(), 1, &descriptor_set);
+            vkFreeDescriptorSets(backend.get_device(), backend.get_engine().get_descriptor_pool(), 1, &descriptor_set);
             // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
             it = discard_descriptor_set_map.erase(it);
         } else {

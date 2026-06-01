@@ -84,9 +84,9 @@ inline void update_camera_optical() {
         auto &optical = view.get<camera_optical_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
             const auto projection_matrix = optical.get_projection_matrix();
-            set_render_parameter(it, "global_projection_4x4", projection_matrix);
+            // set_render_parameter(it, "global_projection_4x4", projection_matrix);
             Eigen::Matrix4f inv_projection_matrix = projection_matrix.inverse();
-            set_render_parameter(it, "global_inv_projection_4x4", inv_projection_matrix);
+            // set_render_parameter(it, "global_inv_projection_4x4", inv_projection_matrix);
 
         }
         Logic_entt().remove<Camera_optical_specifications_dirty>(it);

@@ -218,26 +218,22 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
 
 
-    set_render_parameter(entity, "global_projection_4x4", projection);
-    set_render_parameter(entity, "global_inv_projection_4x4", inv_projection_matrix);
-
-
-    set_render_parameter(entity, "global_view_4x4", view_matrix);
-    set_render_parameter(entity, "global_ins_view_4x4", inv_view_matrix);
-    set_render_parameter(entity, "global_world_view_Pos", world_camera_pos);
-    set_render_parameter(entity, "global_inv_VP", invVP);
-
-    set_render_parameter(entity, "global_world_light_Pos", world_light_pos);
+    // set_render_parameter(entity, "global_projection_4x4", projection);
+    // set_render_parameter(entity, "global_inv_projection_4x4", inv_projection_matrix);
+    //
+    //
+    // set_render_parameter(entity, "global_view_4x4", view_matrix);
+    // set_render_parameter(entity, "global_ins_view_4x4", inv_view_matrix);
+    // set_render_parameter(entity, "global_world_view_Pos", world_camera_pos);
+    // set_render_parameter(entity, "global_inv_VP", invVP);
+    //
+    // set_render_parameter(entity, "global_world_light_Pos", world_light_pos);
 }
 
 
 void init_world_scene_root(entt::entity entity) {
     Logic_entt().emplace<Scene_Component>(entity);
     Logic_entt().emplace<Name_component>(entity, "world_scene_root");
-    add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/multiple_render_targets.frag.spv",
-               "", "");
 
 
     update_camera_parameter(entity);
@@ -259,7 +255,7 @@ void init_world_scene_root(entt::entity entity) {
     //
     // Point_3 ray_dir{ray_dir_x / pow, ray_dir_y / pow, ray_dir_z / pow};
 
-    allocate_descriptor_sets(entity, "bindless"); // todo : 需要确定放在哪里？
+    // allocate_descriptor_sets(entity, "bindless"); // todo : 需要确定放在哪里？
 }
 
 

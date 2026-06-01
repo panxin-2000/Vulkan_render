@@ -145,13 +145,14 @@ template<typename T1>
 bool render_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     auto &shader_data_ref = Render_entt().get<shader_data>(entity);
     auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-    if (binding_name.find("global") != std::string::npos) {
-        set_render_parameter(shader_data_ref->global_sets_bindings,
-                             parameter.update_global_descriptor_sets, binding_name,
-                             binding_data);
-        Render_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
-        return true;
-    } else {
+    // if (binding_name.find("global") != std::string::npos) {
+    //     set_render_parameter(shader_data_ref->global_sets_bindings,
+    //                          parameter.update_global_descriptor_sets, binding_name,
+    //                          binding_data);
+    //     Render_entt().emplace_or_replace<global_uniform_buffer_update>(entity);
+    //     return true;
+    // } else
+    {
         set_render_parameter(shader_data_ref->object_sets_bindings,
                              parameter.update_object_descriptor_sets, binding_name,
                              binding_data);

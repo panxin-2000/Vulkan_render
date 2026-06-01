@@ -3,17 +3,15 @@
 //
 
 #include "descriptor_pool.h"
-uint32_t descriptor_count_      = 500;            //static_cast<uint32_t>(textures.size())
-VkDescriptorPool descriptorPool = VK_NULL_HANDLE; // 最大的问题就是这里有一个pool
+
+#include "vulkan_backend.h"
 
 
-VkDescriptorPool get_descriptor_pool() {
-    return descriptorPool;
-}
+VkDescriptorPool init_current_descriptor_pool() {
+    uint32_t descriptor_count_ = 500; //static_cast<uint32_t>(textures.size())
 
-
-void init_current_descriptor_pool() {
-    const auto &backend = VK_backend::get();
+    const auto &backend             = VK_backend::get();
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE; // 最大的问题就是这里有一个pool
 
     static constexpr uint32_t POOL_SIZE_DESCRIPTOR_SETS = 5000;
 
@@ -44,10 +42,11 @@ void init_current_descriptor_pool() {
         .pPoolSizes    = pool_sizes.data(),
     };
     VK_CHECK_RESULT(vkCreateDescriptorPool(backend.get_device(), &descPoolCI, nullptr, &descriptorPool));
+    return descriptorPool;
 }
 
 
-void destroy_descriptorPool() {
+void destroy_descriptorPool(const VkDescriptorPool descriptorPool) {
     const auto &backend = VK_backend::get();
     vkDestroyDescriptorPool(backend.get_device(), descriptorPool, nullptr);
 }

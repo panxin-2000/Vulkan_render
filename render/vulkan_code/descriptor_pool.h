@@ -4,14 +4,13 @@
 
 #ifndef HOWTOVULKAN_DESCRIPTOR_POOL_H
 #define HOWTOVULKAN_DESCRIPTOR_POOL_H
-#include "vulkan_backend.h"
+#include "volk.h"
 
 
-void init_current_descriptor_pool();
+VkDescriptorPool init_current_descriptor_pool();
 
-VkDescriptorPool get_descriptor_pool();
 
-void destroy_descriptorPool();
+void destroy_descriptorPool(const VkDescriptorPool descriptorPool);
 
 #endif //HOWTOVULKAN_DESCRIPTOR_POOL_H
 
