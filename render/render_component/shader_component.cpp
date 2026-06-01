@@ -19,30 +19,31 @@
 
 void update_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o) {
     // 以 binding 为一个最小数量
-    if (const auto shader_temp = Render_entt().try_get<VKR_shader_paths>(entity)) {
-        auto &handle = VK_backend::get();
+    auto &handle = VK_backend::get();
+    if (static_cast<uint>(entity) == 1) {
+        return;
+    }
 
-        auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-        if (b_or_g_or_o == "bindless") {
-            vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(get_world_root());
-            // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
-            const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-            update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
-        } else if (b_or_g_or_o == "global") {
-            if (vk_s_d_s.update_global_descriptor_sets.empty()) {
-                return;
-            }
-            allocate_descriptor_sets(entity, "global");
-            const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-            update_descriptor_sets(vk_s_d_s.update_global_descriptor_sets, descriptor_sets);
-        } else if (b_or_g_or_o == "object") {
-            if (vk_s_d_s.update_object_descriptor_sets.empty()) {
-                return;
-            }
-            allocate_descriptor_sets(entity, "object");
-            const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-            update_descriptor_sets(vk_s_d_s.update_object_descriptor_sets, descriptor_sets);
+    auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
+    if (b_or_g_or_o == "bindless") {
+        vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(get_world_root());
+        // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
+        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+        update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
+    } else if (b_or_g_or_o == "global") {
+        if (vk_s_d_s.update_global_descriptor_sets.empty()) {
+            return;
         }
+        allocate_descriptor_sets(entity, "global");
+        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+        update_descriptor_sets(vk_s_d_s.update_global_descriptor_sets, descriptor_sets);
+    } else if (b_or_g_or_o == "object") {
+        if (vk_s_d_s.update_object_descriptor_sets.empty()) {
+            return;
+        }
+        allocate_descriptor_sets(entity, "object");
+        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+        update_descriptor_sets(vk_s_d_s.update_object_descriptor_sets, descriptor_sets);
     }
 }
 
