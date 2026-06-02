@@ -62,8 +62,8 @@ auto variable_descriptor(const uint32_t binding_less_size,
 }
 
 
-Proxy_descriptor_sets allocate_descriptor_sets(const std::vector<VkDescriptorSetLayout> &
-                                               descriptor_set_layouts,
+Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
+                                               const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
                                                const std::vector<VkDescriptorBindingFlags> &binding_flags) {
     auto &backend                = VK_backend::get();
     const uint32_t resize_number = descriptor_set_layouts.size();
@@ -80,7 +80,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(const std::vector<VkDescriptorSet
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = nullptr,
-        .descriptorPool     = backend.get_engine().get_descriptor_pool(),
+        .descriptorPool     = descriptorPool,
         .descriptorSetCount = static_cast<uint32_t>(descriptor_set_layouts.size()), // // 打算分配的集合数量
         .pSetLayouts        = descriptor_set_layouts.data(), // 指向布局数组的指针,长度必须等于 descriptorSetCount
     };
@@ -119,11 +119,12 @@ void discard_descriptor_set_map_clean() {
     auto &backend = VK_backend::get();
     for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
         const auto &[descriptor_set, timeline] = *it;
-        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ", backend.get_finished_timeline(),
+        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ",
+                  Engine::get().get_finished_timeline(),
                   timeline);
-        if (backend.get_finished_timeline() >= timeline) {
+        if (Engine::get().get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-            vkFreeDescriptorSets(backend.get_device(), backend.get_engine().get_descriptor_pool(), 1, &descriptor_set);
+            vkFreeDescriptorSets(backend.get_device(), Engine::get().get_descriptor_pool(), 1, &descriptor_set);
             // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
             it = discard_descriptor_set_map.erase(it);
         } else {

@@ -340,6 +340,7 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
         .clipped        = VK_TRUE,
         .oldSwapchain   = old_swap_chain,
     };
+    vkDeviceWaitIdle(device_);
     VK_CHECK_RESULT(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
     // VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
@@ -354,11 +355,12 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     // }
 }
 
-void VK_backend::create_swap_chain_image_and_view() {
+std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     uint32_t imageCount{0};
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, nullptr));
 
+    std::vector<VKR_image_ptr> result;
     std::vector<VkImage> images;
     std::vector<VkImageView> image_views;
     images.resize(imageCount);
@@ -382,8 +384,9 @@ void VK_backend::create_swap_chain_image_and_view() {
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
     }
     for (auto i = 0; i < imageCount; i++) {
-        swap_chain_images_.emplace_back(images[i],VK_NULL_HANDLE, image_views[i]);
+        result.emplace_back(images[i],VK_NULL_HANDLE, image_views[i]);
     }
+    return result;
 }
 
 
@@ -496,31 +499,16 @@ void VK_backend::destroy() {
     if (instance_ == VK_NULL_HANDLE)
         return; {
         // 基本上是一个整体
-        for (const auto &image: depth_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: swap_chain_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: G_buffer_Position_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: g_buffer_Normal_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: G_buffer_BaseColor_images_) {
-            image->destroy_image();
-        }
+
         vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
         swap_chain_ = VK_NULL_HANDLE;
     }
 
+    // 这里的顺序不对
     discard_buffer_map_clean();
     discard_image_and_view_map_clean();
 
     // 销毁 timeline_semaphore 再全部检查一遍再销毁
-    vkDestroySemaphore(get_device(), vk_timeline_semaphore_, nullptr);
-    vk_timeline_semaphore_ = VK_NULL_HANDLE;
     destroy_all_vulkan_sample();
 
     vkDestroySurfaceKHR(instance_, surface_, nullptr);

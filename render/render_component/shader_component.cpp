@@ -62,7 +62,8 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
                 auto sets_flags = create_descriptor_sets_flags(handle,
                                                                (*shader_temp)->object_sets_bindings);
-                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets((*shader_temp)->
+                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::get().get_descriptor_pool(),
+                                                                           (*shader_temp)->
                                                                            object_descriptor_sets_layout,
                                                                            {});
             }
@@ -75,8 +76,8 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                auto bindless_descriptor_sets = VK_backend::get().engine_.get_bindless_descriptor_set();
-                auto global_descriptor_sets   = VK_backend::get().engine_.get_global_descriptor_set();
+                auto bindless_descriptor_sets = Engine::get().get_bindless_descriptor_set();
+                auto global_descriptor_sets   = Engine::get().get_global_descriptor_set();
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
                 // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
                 descriptor_sets.reserve(bindless_descriptor_sets.size() +
@@ -108,7 +109,7 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
         shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(handle, shader_paths);
         shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
-                 shader_data_handle);
+            shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);
         shader_data_handle->topology   = shader_paths.topology_;
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求

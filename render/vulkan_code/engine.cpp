@@ -8,6 +8,37 @@
 #include "vulkan_backend.h"
 
 
+static std::atomic<Engine *> instance{nullptr};
+
+Engine &Engine::get() {
+    // 1. 第一次读取（使用 Acquire 保证能看到初始化后的完整内存）
+    Engine *current = instance.load(std::memory_order_acquire);
+    if (current == nullptr) {
+        // 2. 抢输了的线程，或者刚进来的线程，都在这里准备
+        const auto new_value = new Engine();
+
+        // 【关键修复】：在把指针暴露给全局之前，在线程私有空间内彻底把句柄初始化好！
+        new_value->engine_init();
+
+        Engine *expected = nullptr;
+        // 3. 经典的无锁自旋尝试
+        // 如果 instance 是 expected(nullptr)，就写入 new_value
+        if (instance.compare_exchange_strong(expected, new_value,
+                                             std::memory_order_release,
+                                             std::memory_order_acquire)) {
+            // 抢赢了！
+            current = new_value;
+        } else {
+            // 抢输了！说明别的线程已经把一个【完全初始化好】的单例塞进 instance 了
+            // new_value();
+            delete new_value;   // 销毁自己这个备胎
+            current = expected; // expected 已经被 CAS 自动更新为抢赢线程的那个完整指针
+        }
+    }
+    return *current;
+}
+
+
 void Engine::get_query_results() {
     const auto &backend = VK_backend::get();
     if (get_current_query_pool() != VK_NULL_HANDLE) {
@@ -116,7 +147,7 @@ void Engine::destroy_present_Semaphores() {
 void Engine::create_renderSemaphores() {
     const auto &backend = VK_backend::get();
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    render_to_image_semaphores_.resize(backend.get_swap_chain_images().size());
+    render_to_image_semaphores_.resize(get_swap_chain_images().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
     for (auto &semaphore: render_to_image_semaphores_) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(backend.get_device(), &semaphoreCI, nullptr, &semaphore));
@@ -143,9 +174,96 @@ void Engine::destroy_and_recreate_fence_and_semaphore() {
     frameIndex = 0;
 }
 
-void Engine::engine_destroy() {
+void Engine::destroy_render_image() {
+    for (const auto &image: depth_images_) {
+        image->destroy_image();
+    }
+    depth_images_.clear();
+    for (const auto &image: swap_chain_images_) {
+        image->destroy_image();
+    }
+    swap_chain_images_.clear();
+    for (const auto &image: G_buffer_Position_images_) {
+        image->destroy_image();
+    }
+    G_buffer_Position_images_.clear();
+    for (const auto &image: g_buffer_Normal_images_) {
+        image->destroy_image();
+    }
+    g_buffer_Normal_images_.clear();
+    for (const auto &image: G_buffer_BaseColor_images_) {
+        image->destroy_image();
+    }
+    G_buffer_BaseColor_images_.clear();
+}
+
+void Engine::create_render_image() {
+    swap_chain_images_ = VK_backend::get().create_swap_chain_image_and_view();
+
+    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
+    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
+
+    G_buffer_Position_images_.push_back(VK_backend::get().
+                                        create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    G_buffer_Position_images_.push_back(VK_backend::get().
+                                        create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    g_buffer_Normal_images_.push_back(VK_backend::get().
+                                      create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    g_buffer_Normal_images_.push_back(VK_backend::get().
+                                      create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    G_buffer_BaseColor_images_.push_back(VK_backend::get().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    G_buffer_BaseColor_images_.push_back(VK_backend::get().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+}
+
+
+void Engine::engine_init() {
+    create_render_image();
+    create_command_pool();
+    create_command_buffer();
+    create_fences();
+    create_present_Semaphores();
+    create_renderSemaphores();
+    create_timeline_Semaphores();
+    descriptor_pools.resize(1,VK_NULL_HANDLE);
+    descriptor_pools.at(0) = init_current_descriptor_pool();
+
+    VKR_shader_paths shader_paths{
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+        "", ""
+    };
+    shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
+    shader_date = VKR_shader_init(shader_paths);
+
+
+    bindless_descriptor_sets_ = allocate_bindless_descriptor_sets("");
+    global_descriptor_sets_   = allocate_global_descriptor_sets("");
+}
+
+void Engine::recreate_swap_chain() {
+    VK_backend::get().set_frame_buffer_resize(false);
+    const auto old_swap_chain = VK_backend::get().get_swap_chain();
+    VK_backend::get().create_swap_chain(old_swap_chain);
+    destroy_render_image();
+    create_render_image();
+    VK_backend::get().destroy_swap_chain(old_swap_chain);
+}
+
+void Engine::destroy() {
     const auto &backend = VK_backend::get();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
+
+    destroy_render_image();
+    vkDestroySemaphore(VK_backend::get().get_device(), vk_timeline_semaphore_, nullptr);
+    vk_timeline_semaphore_ = VK_NULL_HANDLE;
+
+
     destroy_fences();
     destroy_present_Semaphores();
     destroy_renderSemaphores();
@@ -183,7 +301,7 @@ std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std
     auto &handle    = VK_backend::get();
     auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->global_sets_bindings);
-    auto bindless_descriptor_sets = allocate_descriptor_sets(
+    auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(),
                                                              shader_date->global_descriptor_sets_layout,
                                                              sets_flags);
     // 这里申请完 descriptor_sets 了
@@ -209,8 +327,8 @@ void Engine::update_global_parameter() {
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_world_light_Pos", world_light_pos);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
-    auto bindless_descriptor_sets = VK_backend::get().engine_.get_bindless_descriptor_set();
-    auto global_descriptor_sets   = VK_backend::get().engine_.get_global_descriptor_set();
+    auto bindless_descriptor_sets = get_bindless_descriptor_set();
+    auto global_descriptor_sets   = get_global_descriptor_set();
     // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
     // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
     descriptor_sets.reserve(bindless_descriptor_sets.size() +
@@ -229,7 +347,7 @@ std::vector<DescriptorSet_ptr> Engine::allocate_bindless_descriptor_sets(const s
     auto &handle    = VK_backend::get();
     auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->bindless_sets_bindings);
-    auto bindless_descriptor_sets = allocate_descriptor_sets(shader_date->bindless_set_layout,
+    auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(), shader_date->bindless_set_layout,
                                                              sets_flags);
 
     return bindless_descriptor_sets;

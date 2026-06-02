@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "create_texture.h"
+#include "engine.h"
 #include "vulkan_buffer.h"
 #include "vulkan_sample.h"
 
@@ -78,7 +79,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         VkCommandBuffer cbOneTime{};
         VkCommandBufferAllocateInfo cbOneTimeAI{
             .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = handle.engine_.get_command_pool(),
+            .commandPool        = Engine::get().get_command_pool(),
             .commandBufferCount = 1
         };
         VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(handle.get_device(), &cbOneTimeAI, &cbOneTime));
@@ -177,6 +178,3 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
     }
     return {};
 }
-
-
-

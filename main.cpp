@@ -341,8 +341,8 @@ int main(int argc, char *argv[]) {
 
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
 
-    auto &backend = VK_backend::get();
-    backend.engine_init(); // 必须单独调用，不能在 std::call_once 中 ，否则会死锁
+    auto &backend   = VK_backend::get();
+    auto &engine    = Engine::get();
     auto world_root = get_world_root();
     auto UI_root    = get_UI_scene_root();
     // 需要确定启动的顺序
@@ -455,7 +455,7 @@ int main(int argc, char *argv[]) {
     auto &buffer = get_uniform_buffer();
     buffer->destroy_buffer();
 
-    backend.engine_destroy();
+    engine.destroy();
     backend.destroy();
 }
 
@@ -473,19 +473,19 @@ void add_deferred_pass(void) {
         logic_update_add_tag<deferred_pass_tag>(entity);
 
         Texture_parameter position_texture = {
-            .image       = backend.G_buffer_Position_images_.at(0), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::get().get_current_position_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> position = position_texture;
         Texture_parameter normal_texture          = {
-            .image       = backend.g_buffer_Normal_images_.at(0), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::get().get_current_normal_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> normal = normal_texture;
         Texture_parameter baseColor_texture     = {
-            .image       = backend.G_buffer_BaseColor_images_.at(0), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::get().get_current_baseColor_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };

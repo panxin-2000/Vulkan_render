@@ -1,6 +1,7 @@
 //
 // Created by 潘鑫 on 2026/3/7.
 //
+#include "engine.h"
 #include "vulkan_buffer.h"
 #include "vulkan_backend.h"
 
@@ -179,7 +180,7 @@ void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const uint64_t offset) {
 
 void discard_buffer_block_map_clean() {
     const auto &handle             = VK_backend::get();
-    const auto current_finish_time = handle.get_finished_timeline();
+    const auto current_finish_time = Engine::get().get_finished_timeline();
     for (auto it = discard_buffer_block_map.begin(); it != discard_buffer_block_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
         if (current_finish_time >= timeline + 12) {

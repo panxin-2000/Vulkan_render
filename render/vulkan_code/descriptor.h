@@ -59,10 +59,10 @@ auto variable_descriptor(const uint32_t binding_less_size,
  * @param binding_flags
  * @return
  */
-std::vector<DescriptorSet_ptr> allocate_descriptor_sets(const std::vector<VkDescriptorSetLayout> &
-                                                        descriptor_set_layouts,
-                                                        const std::vector<VkDescriptorBindingFlags> &binding_flags =
-                                                                {});
+std::vector<DescriptorSet_ptr>
+allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
+                         const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                         const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
 
 
 void discard_descriptor_set_map_clean();

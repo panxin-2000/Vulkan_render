@@ -217,16 +217,15 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
 
-    VK_backend::get().get_engine().set_projection_matrix(projection);
-    VK_backend::get().get_engine().set_inv_projection_matrix(inv_projection_matrix);
-    VK_backend::get().get_engine().set_view_matrix(view_matrix);
-    VK_backend::get().get_engine().set_inv_view_matrix(inv_view_matrix);
-    VK_backend::get().get_engine().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
-    VK_backend::get().get_engine().set_invVP(invVP);
-    VK_backend::get().get_engine().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
+    Engine::get().set_projection_matrix(projection);
+    Engine::get().set_inv_projection_matrix(inv_projection_matrix);
+    Engine::get().set_view_matrix(view_matrix);
+    Engine::get().set_inv_view_matrix(inv_view_matrix);
+    Engine::get().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
+    Engine::get().set_invVP(invVP);
+    Engine::get().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
     auto lambda = [ ]() {
-        auto backend = VK_backend::get().get_engine();
-        backend.update_global_parameter();
+        Engine::get().update_global_parameter();
     };
     vk_render_queue::instance().render_update_entt(lambda);
 }

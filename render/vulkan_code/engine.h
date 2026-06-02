@@ -16,6 +16,7 @@
 
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
+#include "vulkan_backend.h"
 
 
 using Push_constant_map = std::map<std::string, VkPushConstantRange>;
@@ -154,6 +155,7 @@ public:
 
 struct Engine {
 private:
+    // 也许这里需要一个 VK_backend 的指针
     std::vector<VkCommandPool> command_pools_                       = {};
     std::vector<VkSemaphore> render_to_image_semaphores_            = {};
     std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
@@ -163,6 +165,16 @@ private:
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_        = {};
     std::vector<DescriptorSet_ptr> global_descriptor_sets_          = {};
     std::vector<VkDescriptorPool> descriptor_pools                  = {};
+
+
+    std::vector<VKR_image_ptr> swap_chain_images_;
+    std::vector<VKR_image_ptr> G_buffer_Position_images_;
+    std::vector<VKR_image_ptr> g_buffer_Normal_images_;
+    std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
+    std::vector<VKR_image_ptr> depth_images_;
+
+    VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
+
 
     Eigen::Matrix4f projection_matrix;
     Eigen::Matrix4f inv_projection_matrix;
@@ -175,6 +187,34 @@ private:
     std::shared_ptr<vk_shader_data> shader_date;
 
 public:
+    static Engine &get();
+
+    [[nodiscard]] uint64_t get_finished_timeline() const {
+        uint64_t current_timeline;
+        // todo: 偶尔出现一个这个错误，应该是两个线程之间的一个同步问题
+        // 确定一下 这个 can't be called on VkImageView 出现后才会出现  assert 失败的情况
+        // vkGetSemaphoreCounterValue(): semaphore Invalid VkSemaphore Object 0x0
+        VkResult result = vkGetSemaphoreCounterValue(VK_backend::get().get_device(), vk_timeline_semaphore_,
+                                                     &current_timeline);
+        assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
+        return current_timeline;
+    }
+
+    void submit_render_queue(uint64_t time_line);
+
+    void copy_image_to_screen();
+
+    void get_image_to_render();
+
+    void create_timeline_Semaphores();
+
+
+    static uint64_t get_current_submit_timeline() {
+        static std::atomic<uint64_t> time_line = 1;
+        ++time_line;
+        return time_line - 1; // 第一次拿到的时候就是 1
+    }
+
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
 
@@ -303,30 +343,52 @@ public:
         return descriptor_pools.at(index);
     }
 
+    void create_render_image();
 
-    void engine_init() {
-        create_command_pool();
-        create_command_buffer();
-        create_fences();
-        create_present_Semaphores();
-        create_renderSemaphores();
-        descriptor_pools.resize(1,VK_NULL_HANDLE);
-        descriptor_pools.at(0) = init_current_descriptor_pool();
+    [[nodiscard]] const VkImage &get_current_swap_chain_image(uint index = 0) const;
 
-        VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-            "", ""
-        };
-        shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
-        shader_date = VKR_shader_init(shader_paths);
+    [[nodiscard]] const VkImageView &get_current_swap_image_view(uint index = 0) const;
+
+    [[nodiscard]] const VkImage &get_current_depth_image(uint index = 0) const;
+
+    [[nodiscard]] const VkImageView &get_current_depth_view(uint index = 0) const;
+
+    [[nodiscard]] const VKR_image_ptr &get_current_position_image_ptr(uint index = 0) const;
+
+    [[nodiscard]] const VKR_image_ptr &get_current_normal_image_ptr(uint index = 0) const;
+
+    [[nodiscard]] const VKR_image_ptr &get_current_baseColor_image_ptr(uint index = 0) const;
+
+    [[nodiscard]] const VKR_image_ptr &get_current_depth_image_ptr(uint index = 0) const;
+
+    [[nodiscard]] const VkImage &get_current_position_image(uint index = 0) const;
+
+    [[nodiscard]] const VkImageView &get_current_position_view(uint index = 0) const;
+
+    [[nodiscard]] const VkImage &get_current_normal_image(uint index = 0) const;
+
+    [[nodiscard]] const VkImageView &get_current_normal_view(uint index = 0) const;
+
+    [[nodiscard]] const VkImage &get_current_baseColor_image(uint index = 0) const;
+
+    [[nodiscard]] const VkImageView &get_current_baseColor_view(uint index = 0) const;
 
 
-        bindless_descriptor_sets_ = allocate_bindless_descriptor_sets("");
-        global_descriptor_sets_   = allocate_global_descriptor_sets("");
+    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
+        return swap_chain_images_;
     }
 
-    void engine_destroy();
+    [[nodiscard]] const std::vector<VKR_image_ptr> &get_depth_images() const {
+        return depth_images_;
+    }
+
+    void destroy_render_image();
+
+    void engine_init();
+
+    void recreate_swap_chain();
+
+    void destroy();
 
     void destroy_and_recreate_fence_and_semaphore();
 };

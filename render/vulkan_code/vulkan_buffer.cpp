@@ -3,6 +3,8 @@
 //
 
 #include "vulkan_buffer.h"
+
+#include "engine.h"
 #include "vulkan_backend.h"
 
 static std::mutex buffer_block_mutex;
@@ -131,7 +133,7 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     }
     vkQueueWaitIdle(backend.get_queue());
 
-    vkFreeCommandBuffers(backend.get_device(), backend.engine_.get_command_pool(), 1, &commandBuffer);
+    vkFreeCommandBuffers(backend.get_device(), Engine::get().get_command_pool(), 1, &commandBuffer);
 }
 
 
@@ -140,7 +142,7 @@ VkCommandBuffer begin_one_command_buffer() {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = backend.engine_.get_command_pool();
+    allocInfo.commandPool        = Engine::get().get_command_pool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -231,8 +233,8 @@ void discard_buffer_map_clean() {
     discard_buffer_block_map_clean();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", backend.get_finished_timeline(), timeline);
-        if (backend.get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::get().get_finished_timeline(), timeline);
+        if (Engine::get().get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
             vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);

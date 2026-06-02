@@ -12,7 +12,6 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-#include "engine.h"
 #include "global_singleton.h"
 #include "GPU_backend.h"
 
@@ -33,18 +32,17 @@ private:
     std::vector<const char *> instanceExtensions;
 
     // 需要给外部看到的变量，添加函数给出
-    GLFWwindow *window_                = nullptr;
-    VkInstance instance_               = VK_NULL_HANDLE;
-    VkSurfaceKHR surface_              = VK_NULL_HANDLE;
-    VkPhysicalDevice physical_device_  = VK_NULL_HANDLE;
-    VkDevice device_                   = VK_NULL_HANDLE;
-    VkQueue graphics_queue_            = VK_NULL_HANDLE;
-    VkQueue present_queue_             = VK_NULL_HANDLE;
-    VkQueue transfer_queue_            = VK_NULL_HANDLE;
-    VkQueue compute_queue_             = VK_NULL_HANDLE;
-    VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
-    VkSwapchainKHR swap_chain_         = VK_NULL_HANDLE;
-    VmaAllocator allocator_            = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
+    GLFWwindow *window_               = nullptr;
+    VkInstance instance_              = VK_NULL_HANDLE;
+    VkSurfaceKHR surface_             = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
+    VkDevice device_                  = VK_NULL_HANDLE;
+    VkQueue graphics_queue_           = VK_NULL_HANDLE;
+    VkQueue present_queue_            = VK_NULL_HANDLE;
+    VkQueue transfer_queue_           = VK_NULL_HANDLE;
+    VkQueue compute_queue_            = VK_NULL_HANDLE;
+    VkSwapchainKHR swap_chain_        = VK_NULL_HANDLE;
+    VmaAllocator allocator_           = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
 
 
     /**
@@ -58,75 +56,7 @@ private:
 
 
 public:
-    Engine engine_;
-
-    Engine &get_engine() {
-        return engine_;
-    }
-
-    void engine_init() {
-        engine_.engine_init();
-        create_timeline_Semaphores();
-    }
-
-    void engine_destroy() {
-        engine_.engine_destroy();
-    }
-
-
-    [[nodiscard]] uint64_t get_finished_timeline() const {
-        uint64_t current_timeline;
-        // todo: 偶尔出现一个这个错误，应该是两个线程之间的一个同步问题
-        // 确定一下 这个 can't be called on VkImageView 出现后才会出现  assert 失败的情况
-        VkResult result = vkGetSemaphoreCounterValue(get_device(), vk_timeline_semaphore_, &current_timeline);
-        assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
-        return current_timeline;
-    }
-
-    [[nodiscard]] const VkImage &get_current_swap_chain_image() const;
-
-    [[nodiscard]] const VkImageView &get_current_swap_image_view() const;
-
-    [[nodiscard]] const VkImage &get_current_depth_image() const;
-
-    [[nodiscard]] const VkImageView &get_current_depth_view() const;
-
-    [[nodiscard]] const VkImage &get_current_position_image() const;
-
-    [[nodiscard]] const VkImageView &get_current_position_view() const;
-
-    [[nodiscard]] const VkImage &get_current_normal_image() const;
-
-    [[nodiscard]] const VkImageView &get_current_normal_view() const;
-
-    [[nodiscard]] const VkImage &get_current_baseColor_image() const;
-
-    [[nodiscard]] const VkImageView &get_current_baseColor_view() const;
-
-
-    void create_timeline_Semaphores();
-
-    void submit_render_queue(uint64_t time_line);
-
-    static uint64_t get_current_submit_timeline() {
-        static std::atomic<uint64_t> time_line = 1;
-        ++time_line;
-        return time_line - 1; // 第一次拿到的时候就是 1
-    }
-
-
-    void get_image_to_render();
-
-
-    void copy_image_to_screen();
-
-
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
-    std::vector<VKR_image_ptr> swap_chain_images_;
-    std::vector<VKR_image_ptr> G_buffer_Position_images_;
-    std::vector<VKR_image_ptr> g_buffer_Normal_images_;
-    std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
-    std::vector<VKR_image_ptr> depth_images_;
 
     uint32_t queue_family_{0}; // 不清楚是否能够删除
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
@@ -139,7 +69,16 @@ public:
 
     bool framebufferResized = false;
 
-private:
+public:
+    bool set_frame_buffer_resize(const bool value) {
+        framebufferResized = value;
+        return framebufferResized;
+    };
+
+    [[nodiscard]] bool is_frame_buffer_resize() const {
+        return framebufferResized;
+    };
+
     uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
     void create_instance();
@@ -154,13 +93,12 @@ private:
 
     void create_swap_chain(VkSwapchainKHR old_swap_chain);
 
-    void create_swap_chain_image_and_view();
+    std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
 
     VKR_image_ptr create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const;
 
     VKR_image_ptr create_depth_image_and_view();
 
-public:
     static VK_backend &get();
 
     void init_device_handle() {
@@ -172,61 +110,10 @@ public:
         create_VMA();
         create_swap_chain(VK_NULL_HANDLE);
         create_swap_chain_image_and_view();
-        depth_images_.push_back(create_depth_image_and_view());
-        depth_images_.push_back(create_depth_image_and_view());
-
-        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     }
 
-    void recreate_swap_chain() {
-        // std::cout << "recreate_swap_chain" << std::endl;
-        framebufferResized = false;
-        vkDeviceWaitIdle(device_);
-        const auto old_swap_chain = swap_chain_;
-        create_swap_chain(old_swap_chain);
-        for (const auto &image: depth_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: swap_chain_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: G_buffer_Position_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: g_buffer_Normal_images_) {
-            image->destroy_image();
-        }
-        for (const auto &image: G_buffer_BaseColor_images_) {
-            image->destroy_image();
-        }
+    void destroy_swap_chain(VkSwapchainKHR old_swap_chain) const {
         vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
-
-        create_swap_chain_image_and_view();
-        depth_images_.push_back(create_depth_image_and_view());
-        depth_images_.push_back(create_depth_image_and_view());
-        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_Position_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     }
 
     void destroy();
@@ -303,13 +190,6 @@ public:
         return window_;
     }
 
-    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
-        return swap_chain_images_;
-    }
-
-    [[nodiscard]] const std::vector<VKR_image_ptr> &get_depth_images() const {
-        return depth_images_;
-    }
 
     [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const {
         VkSurfaceCapabilitiesKHR surface_caps_{};
