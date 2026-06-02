@@ -56,7 +56,7 @@ bool set_render_parameter(sets_map &sets_map_in_for,
                 // 有需要的时候可以去除引用
                 if constexpr (std::is_same_v<std::decay_t<T1>, std::string> ||
                               std::is_same_v<std::decay_t<T1>, const char *>) {
-                    auto &handle = VK_backend::get();
+                    auto &handle = VK_backend::instance();
                     auto texture = create_textures_to_gpu(handle, binding_data);
                     if (texture.has_value()) {
                         Update_descriptor_binding_fixed_temp;
@@ -88,7 +88,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
-                auto &handle = VK_backend::get();
+                auto &handle = VK_backend::instance();
                 auto texture = create_textures_to_gpu(picture_path);
                 if (texture.has_value()) {
                     Update_descriptor_binding temp      = {};

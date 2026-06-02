@@ -11,7 +11,7 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -24,7 +24,7 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] VkDeviceAddress VKR_buffer::get_gpu_device_address() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer_handle_
@@ -35,7 +35,7 @@ static std::mutex buffer_block_mutex;
 
 
 [[nodiscard]] bool VKR_buffer::host_visible() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -45,7 +45,7 @@ static std::mutex buffer_block_mutex;
 }
 
 VkDeviceSize VKR_buffer::complete_size() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
 
     VmaAllocationInfo allocInfo_for_map;
     vmaGetAllocationInfo(backend.get_allocator(), allocation_, &allocInfo_for_map);
@@ -53,7 +53,7 @@ VkDeviceSize VKR_buffer::complete_size() const {
 }
 
 bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     if (size == 0) {
         VmaAllocationInfo allocInfo_for_map;
         vmaGetAllocationInfo(backend.get_allocator(), allocation_, &allocInfo_for_map);
@@ -66,21 +66,21 @@ bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
 }
 
 bool VKR_buffer::unmap_memory() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     vmaUnmapMemory(backend.get_allocator(), allocation_);
     return true;
 }
 
 
 void *VKR_buffer::map_memory() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     void *bufferPtr     = nullptr;
     vmaMapMemory(backend.get_allocator(), allocation_, &bufferPtr);
     return bufferPtr;
 }
 
 bool VKR_buffer::need_flush() const {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VmaAllocationInfo info;
     vmaGetAllocationInfo(backend.get_allocator(), allocation_, &info);
     VkMemoryPropertyFlags props;
@@ -91,7 +91,7 @@ bool VKR_buffer::need_flush() const {
 
 
 [[nodiscard]] VkDeviceAddress get_gpu_device_address(const VkBuffer &buffer) {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
         .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
         .buffer = buffer
@@ -120,7 +120,7 @@ std::mutex &get_vkQueueSubmit_mutex() {
 }
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
 
     vkEndCommandBuffer(commandBuffer);
 
@@ -133,16 +133,16 @@ void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
     }
     vkQueueWaitIdle(backend.get_queue());
 
-    vkFreeCommandBuffers(backend.get_device(), Engine::get().get_command_pool(), 1, &commandBuffer);
+    vkFreeCommandBuffers(backend.get_device(), Engine::instance().get_command_pool(), 1, &commandBuffer);
 }
 
 
 VkCommandBuffer begin_one_command_buffer() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = Engine::get().get_command_pool();
+    allocInfo.commandPool        = Engine::instance().get_command_pool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
@@ -191,7 +191,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
     VmaAllocationInfo allocInfo = {};
-    const auto &handle          = VK_backend::get();
+    const auto &handle          = VK_backend::instance();
     std::lock_guard<std::mutex> lock(buffer_block_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
                                  &BufferCreateInfo, &AllocationCreateInfo,
@@ -229,12 +229,12 @@ VKR_buffer::~VKR_buffer() {
 void discard_buffer_block_map_clean();
 
 void discard_buffer_map_clean() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     discard_buffer_block_map_clean();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::get().get_finished_timeline(), timeline);
-        if (Engine::get().get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(), timeline);
+        if (Engine::instance().get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
             vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);

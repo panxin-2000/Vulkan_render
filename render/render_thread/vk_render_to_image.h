@@ -92,7 +92,7 @@ public:
         }
         const VkQueryPool queryPool = VK_NULL_HANDLE;
 
-        Engine::get().get_image_to_render();
+        Engine::instance().get_image_to_render();
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
@@ -221,8 +221,8 @@ public:
 
         end_command_buffer(handle, queryPool, time_line);
 
-        Engine::get().submit_render_queue(time_line);
-        Engine::get().copy_image_to_screen();
+        Engine::instance().submit_render_queue(time_line);
+        Engine::instance().copy_image_to_screen();
 
 
         // render_object_function();
@@ -250,7 +250,7 @@ public:
         // image_views_
         // images_
 
-        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::get().get_device()));
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::instance().get_device()));
 
         Render_entt().clear();
 

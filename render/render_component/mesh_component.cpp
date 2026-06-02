@@ -54,7 +54,7 @@ VKR_Primitive create_mesh_data(const VK_backend &backend, const share_block &ver
 
 
 std::vector<VKR_Primitive> create_mesh(const entt::entity entity) {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         // todo : 这里的逻辑还是有问题的
         const auto mesh = create_mesh_data(backend, data->get_vertices(), data->get_indices());

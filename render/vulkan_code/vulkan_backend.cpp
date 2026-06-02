@@ -10,43 +10,38 @@
 #include <volk.h>
 #endif
 #include "vulkan_backend.h"
-
-#include "vulkan_image.h"
 #include "global_singleton.h"
-#include "vulkan_buffer.h"
-#include "vulkan_sample.h"
 
-static std::atomic<VK_backend *> instance{nullptr};
+// 必须使用 atomic 保证多线程可见性与禁止指令重排
+static std::atomic<VK_backend *> backend_instance{nullptr};
+static std::mutex backend_mutex;
 
-VK_backend &VK_backend::get() {
-    // 1. 第一次读取（使用 Acquire 保证能看到初始化后的完整内存）
-    VK_backend *current = instance.load(std::memory_order_acquire);
-
+VK_backend &VK_backend::instance() {
+    VK_backend *current = backend_instance.load(std::memory_order_acquire);
     if (current == nullptr) {
-        // 2. 抢输了的线程，或者刚进来的线程，都在这里准备
-        const auto new_value = new VK_backend();
-
-        // 【关键修复】：在把指针暴露给全局之前，在线程私有空间内彻底把句柄初始化好！
-        new_value->init_device_handle();
-
-        VK_backend *expected = nullptr;
-        // 3. 经典的无锁自旋尝试
-        // 如果 instance 是 expected(nullptr)，就写入 new_value
-        if (instance.compare_exchange_strong(expected, new_value,
-                                             std::memory_order_release,
-                                             std::memory_order_acquire)) {
-            // 抢赢了！
-            current = new_value;
-        } else {
-            // 抢输了！说明别的线程已经把一个【完全初始化好】的单例塞进 instance 了
-            new_value->destroy();
-            delete new_value;   // 销毁自己这个备胎
-            current = expected; // expected 已经被 CAS 自动更新为抢赢线程的那个完整指针
+        std::lock_guard<std::mutex> lock(backend_mutex);
+        current = backend_instance.load(std::memory_order_relaxed);
+        if (current == nullptr) {
+            current = new VK_backend();
+            assert(current != nullptr);
+            current->create(); // 完全初始化
+            backend_instance.store(current, std::memory_order_release);
         }
     }
     return *current;
 }
 
+void VK_backend::destroy_instance() {
+    VK_backend *current = backend_instance.load(std::memory_order_acquire);
+    if (current == nullptr) return;
+    std::lock_guard<std::mutex> lock(backend_mutex);
+    current = backend_instance.load(std::memory_order_relaxed);
+    if (current != nullptr) {
+        backend_instance.store(nullptr, std::memory_order_release);
+        current->destroy(); // 销毁 VkDevice, VkInstance 等
+        delete current;     // 释放 C++ 内存
+    }
+}
 
 VK_backend::~VK_backend() {
     volkFinalize();
@@ -83,7 +78,7 @@ void VK_backend::create_instance() {
     instanceCreateInfo.enabledExtensionCount   = instanceExtensions.size();
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
-    if (instanceExtensions.size() > 0) {
+    if (!instanceExtensions.empty()) {
         instanceCreateInfo.enabledExtensionCount   = instanceExtensions.size();
         instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
     } else {
@@ -143,6 +138,7 @@ bool VK_backend::choose_one_physical_device() {
             queueFamilyIndex++;
         }
     }
+    return true;
 }
 
 
@@ -496,27 +492,34 @@ VKR_image_ptr VK_backend::create_depth_image_and_view() {
 }
 
 void VK_backend::destroy() {
-    if (instance_ == VK_NULL_HANDLE)
-        return;
-    destroy_swap_chain(swap_chain_);
+    if (swap_chain_ != VK_NULL_HANDLE)
+        destroy_swap_chain(swap_chain_);
 
-    vkDestroySurfaceKHR(instance_, surface_, nullptr);
-
-    surface_ = VK_NULL_HANDLE;
-    VmaTotalStatistics stats;
-    vmaCalculateStatistics(allocator_, &stats);
-    // 获取全局未销毁的分配总数
-    uint32_t activeAllocCount = stats.total.statistics.allocationCount;
-
-    vmaDestroyAllocator(allocator_);
-    allocator_ = VK_NULL_HANDLE;
-    vkDestroyDevice(device_, nullptr);
-    device_ = VK_NULL_HANDLE;
-    vkDestroyInstance(instance_, nullptr);
-    instance_ = VK_NULL_HANDLE;
-    glfwDestroyWindow(window_);
-    window_ = nullptr;
-    glfwTerminate();
+    if (instance_ != VK_NULL_HANDLE && surface_ != VK_NULL_HANDLE) {
+        vkDestroySurfaceKHR(instance_, surface_, nullptr);
+        surface_ = VK_NULL_HANDLE;
+    }
+    if (allocator_ != VK_NULL_HANDLE) {
+        VmaTotalStatistics stats;
+        vmaCalculateStatistics(allocator_, &stats);
+        // 获取全局未销毁的分配总数
+        uint32_t activeAllocCount = stats.total.statistics.allocationCount;
+        vmaDestroyAllocator(allocator_);
+        allocator_ = VK_NULL_HANDLE;
+    }
+    if (device_ != VK_NULL_HANDLE) {
+        vkDestroyDevice(device_, nullptr);
+        device_ = VK_NULL_HANDLE;
+    }
+    if (instance_ != VK_NULL_HANDLE) {
+        vkDestroyInstance(instance_, nullptr);
+        instance_ = VK_NULL_HANDLE;
+    }
+    if (window_ != VK_NULL_HANDLE) {
+        glfwDestroyWindow(window_);
+        window_ = nullptr;
+        glfwTerminate();
+    }
 }
 
 /**
@@ -524,7 +527,7 @@ void VK_backend::destroy() {
  * @return
  */
 uint32_t get_maxPushConstantsSize() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(backend.get_physical_device(), &properties);
 
@@ -539,7 +542,7 @@ uint32_t get_maxPushConstantsSize() {
  */
 uint32_t get_max_descriptor_update_after_bind_samplers() {
     // 准备结构体链
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
 
     VkPhysicalDeviceDescriptorIndexingProperties indexingProps{};
     indexingProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES;
@@ -558,7 +561,7 @@ uint32_t get_max_descriptor_update_after_bind_samplers() {
 
 
 void get_support_texture_formats() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
 
 
     VkPhysicalDeviceFeatures supportedFeatures;

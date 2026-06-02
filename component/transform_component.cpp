@@ -71,7 +71,7 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     auto camera           = Logic_entt().try_get<camera_optical_component>(world_entity);
     const auto camera_pos = Logic_entt().try_get<Transform>(world_entity);
 
-    const auto &backend    = VK_backend::get();
+    const auto &backend    = VK_backend::instance();
     auto [width, height]   = backend.get_current_extent();
     const auto projection  = camera->get_projection_matrix();
     const auto view_matrix = get_view_matrix(*camera_pos);
@@ -217,15 +217,15 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
 
-    Engine::get().set_projection_matrix(projection);
-    Engine::get().set_inv_projection_matrix(inv_projection_matrix);
-    Engine::get().set_view_matrix(view_matrix);
-    Engine::get().set_inv_view_matrix(inv_view_matrix);
-    Engine::get().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
-    Engine::get().set_invVP(invVP);
-    Engine::get().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
+    Engine::instance().set_projection_matrix(projection);
+    Engine::instance().set_inv_projection_matrix(inv_projection_matrix);
+    Engine::instance().set_view_matrix(view_matrix);
+    Engine::instance().set_inv_view_matrix(inv_view_matrix);
+    Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
+    Engine::instance().set_invVP(invVP);
+    Engine::instance().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
     auto lambda = [ ]() {
-        Engine::get().update_global_parameter();
+        Engine::instance().update_global_parameter();
     };
     vk_render_queue::instance().render_update_entt(lambda);
 }

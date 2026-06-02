@@ -9,29 +9,30 @@
 #include "vulkan_code/vulkan_sample.h"
 
 
-static std::atomic<Engine *> instance{nullptr};
+static std::atomic<Engine *> engine_instance{nullptr};
 
-Engine &Engine::get() {
+Engine &Engine::instance() {
     // 1. 第一次读取（使用 Acquire 保证能看到初始化后的完整内存）
-    Engine *current = instance.load(std::memory_order_acquire);
+    Engine *current = engine_instance.load(std::memory_order_acquire);
     if (current == nullptr) {
         // 2. 抢输了的线程，或者刚进来的线程，都在这里准备
         const auto new_value = new Engine();
 
         // 【关键修复】：在把指针暴露给全局之前，在线程私有空间内彻底把句柄初始化好！
-        new_value->engine_init();
+        new_value->create();
 
         Engine *expected = nullptr;
         // 3. 经典的无锁自旋尝试
         // 如果 instance 是 expected(nullptr)，就写入 new_value
-        if (instance.compare_exchange_strong(expected, new_value,
-                                             std::memory_order_release,
-                                             std::memory_order_acquire)) {
+        if (engine_instance.compare_exchange_strong(expected, new_value,
+                                                    std::memory_order_release,
+                                                    std::memory_order_acquire)) {
             // 抢赢了！
             current = new_value;
         } else {
             // 抢输了！说明别的线程已经把一个【完全初始化好】的单例塞进 instance 了
             // new_value();
+            new_value->destroy();
             delete new_value;   // 销毁自己这个备胎
             current = expected; // expected 已经被 CAS 自动更新为抢赢线程的那个完整指针
         }
@@ -41,7 +42,7 @@ Engine &Engine::get() {
 
 
 void Engine::get_query_results() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     if (get_current_query_pool() != VK_NULL_HANDLE) {
         uint64_t timestamps[2]; // 准备接收数组
         VkResult result = vkGetQueryPoolResults(
@@ -65,7 +66,7 @@ void Engine::get_query_results() {
 }
 
 void Engine::create_query_pool() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkQueryPoolCreateInfo queryPoolInfo{};
     queryPoolInfo.sType      = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     queryPoolInfo.queryType  = VK_QUERY_TYPE_TIMESTAMP; // 指定为时间戳类型
@@ -81,7 +82,7 @@ void Engine::create_query_pool() {
 }
 
 void Engine::destroy_query_pool() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkDestroyQueryPool(backend.get_device(), query_pools[i], nullptr);
         command_buffers_[i] = VK_NULL_HANDLE;
@@ -90,7 +91,7 @@ void Engine::destroy_query_pool() {
 
 
 void Engine::create_command_buffer() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
 
     VkCommandBufferAllocateInfo cbAllocCI{
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -103,7 +104,7 @@ void Engine::create_command_buffer() {
 }
 
 void Engine::destroy_command_buffer() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkFreeCommandBuffers(backend.get_device(), get_command_pool(), 1, &command_buffers_[i]);
         command_buffers_[i] = VK_NULL_HANDLE;
@@ -112,7 +113,7 @@ void Engine::destroy_command_buffer() {
 
 
 void Engine::create_fences() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(backend.get_device(), &fenceCI, nullptr, &fences_[i]));
@@ -120,7 +121,7 @@ void Engine::create_fences() {
 }
 
 void Engine::destroy_fences() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkDestroyFence(backend.get_device(), fences_[i], nullptr); //  这里还需要
         fences_[i] = VK_NULL_HANDLE;
@@ -128,7 +129,7 @@ void Engine::destroy_fences() {
 }
 
 void Engine::create_present_Semaphores() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     for (auto i = 0; i < maxFramesInFlight; i++) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(backend.get_device(), &semaphoreCI,
@@ -137,7 +138,7 @@ void Engine::create_present_Semaphores() {
 }
 
 void Engine::destroy_present_Semaphores() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < maxFramesInFlight; i++) {
         vkDestroySemaphore(backend.get_device(), present_semaphores_[i], nullptr); //
         present_semaphores_[i] = VK_NULL_HANDLE;
@@ -146,7 +147,7 @@ void Engine::destroy_present_Semaphores() {
 
 
 void Engine::create_renderSemaphores() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     render_to_image_semaphores_.resize(get_swap_chain_images().size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
@@ -156,7 +157,7 @@ void Engine::create_renderSemaphores() {
 }
 
 void Engine::destroy_renderSemaphores() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
         vkDestroySemaphore(backend.get_device(), render_to_image_semaphores_[i], nullptr);
         render_to_image_semaphores_[i] = VK_NULL_HANDLE;
@@ -199,32 +200,32 @@ void Engine::destroy_render_image() {
 }
 
 void Engine::create_render_image() {
-    swap_chain_images_ = VK_backend::get().create_swap_chain_image_and_view();
+    swap_chain_images_ = VK_backend::instance().create_swap_chain_image_and_view();
 
-    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
-    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
-    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
+    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
 
-    G_buffer_Position_images_.push_back(VK_backend::get().
+    G_buffer_Position_images_.push_back(VK_backend::instance().
                                         create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_Position_images_.push_back(VK_backend::get().
+    G_buffer_Position_images_.push_back(VK_backend::instance().
                                         create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    g_buffer_Normal_images_.push_back(VK_backend::get().
+    g_buffer_Normal_images_.push_back(VK_backend::instance().
                                       create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    g_buffer_Normal_images_.push_back(VK_backend::get().
+    g_buffer_Normal_images_.push_back(VK_backend::instance().
                                       create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_BaseColor_images_.push_back(VK_backend::get().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+    G_buffer_BaseColor_images_.push_back(VK_backend::instance().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_BaseColor_images_.push_back(VK_backend::get().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+    G_buffer_BaseColor_images_.push_back(VK_backend::instance().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 }
 
 
-void Engine::engine_init() {
+void Engine::create() {
     create_render_image();
     create_command_pool();
     create_command_buffer();
@@ -249,20 +250,17 @@ void Engine::engine_init() {
 }
 
 void Engine::recreate_swap_chain() {
-    VK_backend::get().set_frame_buffer_resize(false);
-    const auto old_swap_chain = VK_backend::get().get_swap_chain();
-    VK_backend::get().create_swap_chain(old_swap_chain);
+    VK_backend::instance().set_frame_buffer_resize(false);
+    const auto old_swap_chain = VK_backend::instance().get_swap_chain();
+    VK_backend::instance().create_swap_chain(old_swap_chain);
     destroy_render_image();
     create_render_image();
-    VK_backend::get().destroy_swap_chain(old_swap_chain);
+    VK_backend::instance().destroy_swap_chain(old_swap_chain);
 }
 
 void Engine::destroy() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
-
-
-    VK_backend::get().destroy_swap_chain(VK_backend::get().get_swap_chain());
 
     // 这里的顺序不对
     destroy_render_image();
@@ -273,7 +271,7 @@ void Engine::destroy() {
     destroy_all_vulkan_sample();
 
 
-    vkDestroySemaphore(VK_backend::get().get_device(), vk_timeline_semaphore_, nullptr);
+    vkDestroySemaphore(VK_backend::instance().get_device(), vk_timeline_semaphore_, nullptr);
     vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
 
@@ -289,7 +287,7 @@ void Engine::destroy() {
 }
 
 void Engine::destroy_command_pool() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto command_pool: command_pools_) {
         if (command_pool != VK_NULL_HANDLE)
             vkDestroyCommandPool(backend.get_device(), command_pool, nullptr);
@@ -298,7 +296,7 @@ void Engine::destroy_command_pool() {
 
 void Engine::create_command_pool() {
     // Command pool
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     const VkCommandPoolCreateInfo commandPoolCI{
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext            = nullptr,
@@ -311,7 +309,7 @@ void Engine::create_command_pool() {
 }
 
 std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std::string &one_binding_name) {
-    auto &handle    = VK_backend::get();
+    auto &handle    = VK_backend::instance();
     auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->global_sets_bindings);
     auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(),
@@ -357,7 +355,7 @@ void Engine::update_global_parameter() {
 
 
 std::vector<DescriptorSet_ptr> Engine::allocate_bindless_descriptor_sets(const std::string &one_binding_name) {
-    auto &handle    = VK_backend::get();
+    auto &handle    = VK_backend::instance();
     auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->bindless_sets_bindings);
     auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(), shader_date->bindless_set_layout,

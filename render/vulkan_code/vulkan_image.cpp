@@ -54,7 +54,7 @@ std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width,
                                                   VkFormat format,
                                                   VkImageTiling tiling,
                                                   VkImageUsageFlags usage) {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     VkImageCreateInfo imageInfo{};
     imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType     = VK_IMAGE_TYPE_2D;
@@ -287,7 +287,7 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
 }
 
 void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, int layerCount) {
-    const auto &handle            = VK_backend::get();
+    const auto &handle            = VK_backend::instance();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     std::vector<VkBufferImageCopy> regions;
@@ -323,7 +323,7 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
 
 inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                   VkImageLayout newLayout, uint32_t mipLevels) {
-    const auto &handle            = VK_backend::get();
+    const auto &handle            = VK_backend::instance();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkImageMemoryBarrier barrier{};
@@ -382,7 +382,7 @@ inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
 
 inline void transitionImageLayout_box(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                       VkImageLayout newLayout, uint32_t mipLevels) {
-    const auto &handle            = VK_backend::get();
+    const auto &handle            = VK_backend::instance();
     VkCommandBuffer commandBuffer = begin_one_command_buffer();
 
     VkImageMemoryBarrier barrier{};
@@ -444,7 +444,7 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
         return {};
     }
 
-    auto &handle                 = VK_backend::get();
+    auto &handle                 = VK_backend::instance();
     const bool have_mip          = false;
     const VkDeviceSize imageSize = picture_parameters[0].width *
                                    picture_parameters[0].height *
@@ -560,7 +560,7 @@ Texture_parameter create_texture_from_image(uint8_t *image,
 
 
 Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
-    auto &handle = VK_backend::get();
+    auto &handle = VK_backend::instance();
     std::vector<std::string> paths;
     paths.push_back("assets/skybox_right.jpg");
     paths.push_back("assets/skybox_left.jpg");
@@ -606,7 +606,7 @@ Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
 
 
 Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters) {
-    auto &handle   = VK_backend::get();
+    auto &handle   = VK_backend::instance();
     auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 
     auto textureSampler = create_2d_Texture_Sampler();

@@ -10,12 +10,8 @@
 #include <vector>
 #include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-
 #include "global_singleton.h"
 #include "GPU_backend.h"
-
-
 #include "vulkan_image.h"
 
 
@@ -98,9 +94,11 @@ public:
 
     VKR_image_ptr create_depth_image_and_view();
 
-    static VK_backend &get();
+    static VK_backend &instance();
 
-    void init_device_handle() {
+    static void destroy_instance();
+
+    void create() {
         // 顺序不能更改
         create_instance();
         create_surface();

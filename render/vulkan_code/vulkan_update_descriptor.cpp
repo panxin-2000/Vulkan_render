@@ -10,7 +10,7 @@
 
 void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &update_descriptor_sets,
                             const std::vector<DescriptorSet_ptr> &descriptor_sets) {
-    const auto &vk_backend = VK_backend::get();
+    const auto &vk_backend = VK_backend::instance();
     char stack_memory_pool[1024];
     std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
     std::pmr::polymorphic_allocator<std::byte> alloc{&pool};

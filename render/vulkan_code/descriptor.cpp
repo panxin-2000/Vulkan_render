@@ -65,7 +65,7 @@ auto variable_descriptor(const uint32_t binding_less_size,
 Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
                                                const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
                                                const std::vector<VkDescriptorBindingFlags> &binding_flags) {
-    auto &backend                = VK_backend::get();
+    auto &backend                = VK_backend::instance();
     const uint32_t resize_number = descriptor_set_layouts.size();
     Proxy_descriptor_sets return_value;
     std::vector<VkDescriptorSet> descriptor_sets;

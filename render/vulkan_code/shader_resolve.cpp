@@ -14,7 +14,7 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
     shader_data shader_data_handle;
     // if (shader_data_handle.get() == nullptr)
     {
-        auto &handle = VK_backend::get();
+        auto &handle = VK_backend::instance();
         shader_data_handle = std::make_shared<vk_shader_data>();
         shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
         shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(handle, shader_paths);

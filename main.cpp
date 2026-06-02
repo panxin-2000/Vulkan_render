@@ -341,8 +341,8 @@ int main(int argc, char *argv[]) {
 
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
 
-    auto &backend   = VK_backend::get();
-    auto &engine    = Engine::get();
+    auto &backend   = VK_backend::instance();
+    auto &engine    = Engine::instance();
     auto world_root = get_world_root();
     auto UI_root    = get_UI_scene_root();
     // 需要确定启动的顺序
@@ -456,7 +456,7 @@ int main(int argc, char *argv[]) {
     buffer->destroy_buffer();
 
     engine.destroy();
-    backend.destroy();
+    VK_backend::destroy_instance();
 }
 
 
@@ -467,25 +467,25 @@ void test_projection_matrix() {
 
 
 void add_deferred_pass(void) {
-    auto &backend      = VK_backend::get();
+    auto &backend      = VK_backend::instance();
     const auto sampler = base_sample(); {
         const auto entity = add_render_pass("blank");
         logic_update_add_tag<deferred_pass_tag>(entity);
 
         Texture_parameter position_texture = {
-            .image       = Engine::get().get_current_position_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::instance().get_current_position_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> position = position_texture;
         Texture_parameter normal_texture          = {
-            .image       = Engine::get().get_current_normal_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::instance().get_current_normal_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> normal = normal_texture;
         Texture_parameter baseColor_texture     = {
-            .image       = Engine::get().get_current_baseColor_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = Engine::instance().get_current_baseColor_image_ptr(), // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };

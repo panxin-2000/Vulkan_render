@@ -20,7 +20,7 @@
 // std::array<Texture_parameter, 3> textures{};
 
 std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename) {
-    VK_backend &handle             = VK_backend::get();
+    VK_backend &handle             = VK_backend::instance();
     std::filesystem::path filePath = filename;
     std::string ext                = filePath.extension().string();
     if (ext == ".ktx") {
@@ -79,7 +79,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         VkCommandBuffer cbOneTime{};
         VkCommandBufferAllocateInfo cbOneTimeAI{
             .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = Engine::get().get_command_pool(),
+            .commandPool        = Engine::instance().get_command_pool(),
             .commandBufferCount = 1
         };
         VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(handle.get_device(), &cbOneTimeAI, &cbOneTime));

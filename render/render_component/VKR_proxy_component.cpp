@@ -20,9 +20,9 @@ void add_new_proxy_to_render() {
         logic_update_proxy(it, mesh);
 
 
-        const auto scissor = VK_backend::get().get_scissor();
+        const auto scissor = VK_backend::instance().get_scissor();
         logic_update_proxy(it, scissor);
-        const auto viewport = VK_backend::get().get_viewport();
+        const auto viewport = VK_backend::instance().get_viewport();
         logic_update_proxy(it, viewport);
 
 

@@ -1,0 +1,8 @@
+//
+// Created by 潘鑫 on 2026/6/2.
+//
+
+#ifndef HELLO_MAC_DESCRIPTOR_MANAGER_H
+#define HELLO_MAC_DESCRIPTOR_MANAGER_H
+
+#endif //HELLO_MAC_DESCRIPTOR_MANAGER_H

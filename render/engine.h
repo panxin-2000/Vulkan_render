@@ -55,14 +55,14 @@ private:
     std::shared_ptr<vk_shader_data> shader_date;
 
 public:
-    static Engine &get();
+    static Engine &instance();
 
     [[nodiscard]] uint64_t get_finished_timeline() const {
         uint64_t current_timeline;
         // todo: 偶尔出现一个这个错误，应该是两个线程之间的一个同步问题
         // 确定一下 这个 can't be called on VkImageView 出现后才会出现  assert 失败的情况
         // vkGetSemaphoreCounterValue(): semaphore Invalid VkSemaphore Object 0x0
-        VkResult result = vkGetSemaphoreCounterValue(VK_backend::get().get_device(), vk_timeline_semaphore_,
+        VkResult result = vkGetSemaphoreCounterValue(VK_backend::instance().get_device(), vk_timeline_semaphore_,
                                                      &current_timeline);
         assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
         return current_timeline;
@@ -252,7 +252,7 @@ public:
 
     void destroy_render_image();
 
-    void engine_init();
+    void create();
 
     void recreate_swap_chain();
 

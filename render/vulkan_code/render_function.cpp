@@ -99,7 +99,7 @@ void Engine::submit_render_queue(uint64_t time_line) {
         .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
     }; {
         std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VK_backend::get().get_queue(), 1, &submitInfo, get_current_fences()));
+        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VK_backend::instance().get_queue(), 1, &submitInfo, get_current_fences()));
     }
 }
 
@@ -111,14 +111,14 @@ void Engine::copy_image_to_screen() {
         .waitSemaphoreCount = 1,
         .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
         .swapchainCount     = 1,
-        .pSwapchains        = &VK_backend::get().get_swap_chain(),
+        .pSwapchains        = &VK_backend::instance().get_swap_chain(),
         .pImageIndices      = &imageIndex
     }; {
         std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        auto result = vkQueuePresentKHR(VK_backend::get().get_queue(), &presentInfo);
+        auto result = vkQueuePresentKHR(VK_backend::instance().get_queue(), &presentInfo);
         if (result == VK_SUCCESS) {
         } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-                   VK_backend::get().is_frame_buffer_resize()) {
+                   VK_backend::instance().is_frame_buffer_resize()) {
             recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -130,25 +130,25 @@ void Engine::copy_image_to_screen() {
 
 void Engine::get_image_to_render() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::get().get_device(), 1, &get_current_fences(), true,
+    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true,
                                  UINT64_MAX));
-    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::get().get_device(), 1, &get_current_fences()));
-    auto result = vkAcquireNextImageKHR(VK_backend::get().get_device(),
-                                        VK_backend::get().get_swap_chain(),
+    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
+    auto result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
+                                        VK_backend::instance().get_swap_chain(),
                                         UINT64_MAX,
                                         get_current_presentSemaphores(),
                                         VK_NULL_HANDLE,
                                         &imageIndex); // 其实是在这里执行了 ++ 的工作
     if (result == VK_SUCCESS) {
     } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-               VK_backend::get().is_frame_buffer_resize()) {
+               VK_backend::instance().is_frame_buffer_resize()) {
         recreate_swap_chain();
         destroy_and_recreate_fence_and_semaphore();
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::get().get_device(), 1, &get_current_fences(), true,
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true,
                                      UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::get().get_device(), 1, &get_current_fences()));
-        auto result = vkAcquireNextImageKHR(VK_backend::get().get_device(),
-                                            VK_backend::get().get_swap_chain(),
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
+        auto result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
+                                            VK_backend::instance().get_swap_chain(),
                                             UINT64_MAX,
                                             get_current_presentSemaphores(),
                                             VK_NULL_HANDLE,
@@ -171,5 +171,5 @@ void Engine::create_timeline_Semaphores() {
     VkSemaphoreCreateInfo vk_semaphore_create_info = {
         VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, &vk_semaphore_type_create_info, 0
     };
-    vkCreateSemaphore(VK_backend::get().get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
+    vkCreateSemaphore(VK_backend::instance().get_device(), &vk_semaphore_create_info, nullptr, &vk_timeline_semaphore_);
 }

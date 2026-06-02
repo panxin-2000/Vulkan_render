@@ -26,11 +26,11 @@ void VKR_image::destroy_image() {
 }
 
 void discard_image_and_view_map_clean() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (auto it = discard_image_view_map.begin(); it != discard_image_view_map.end(); /* 后面不加 ++ */) {
         const auto &[image_view, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::get().get_finished_timeline(), timeline);
-        if (Engine::get().get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(), timeline);
+        if (Engine::instance().get_finished_timeline() >= timeline) {
             vkDestroyImageView(backend.get_device(), image_view, nullptr);
             it = discard_image_view_map.erase(it);
         } else {
@@ -39,8 +39,8 @@ void discard_image_and_view_map_clean() {
     }
     for (auto it = discard_image_map.begin(); it != discard_image_map.end(); /* 后面不加 ++ */) {
         const auto &[image, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::get().get_finished_timeline(), timeline);
-        if (Engine::get().get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(), timeline);
+        if (Engine::instance().get_finished_timeline() >= timeline) {
             vmaDestroyImage(backend.get_allocator(), image.first, image.second);
             it = discard_image_map.erase(it);
         } else {

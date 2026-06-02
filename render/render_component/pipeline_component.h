@@ -10,7 +10,7 @@
 
 
 inline VkPipeline get_pipeline(const entt::entity entity) {
-    auto &handle = VK_backend::get();
+    auto &handle = VK_backend::instance();
     if (auto &shader_data_ref = Render_entt().get<shader_data>(entity)) {
         const VkPipeline pipeline_t = find_pipeline(handle, shader_data_ref);
         return pipeline_t;

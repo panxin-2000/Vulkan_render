@@ -8,7 +8,7 @@
 VKR_buffer_pool_ptr buffer = nullptr;
 
 VKR_buffer_pool_ptr &get_uniform_buffer() {
-    auto &handle = VK_backend::get();
+    auto &handle = VK_backend::instance();
 
     if (buffer == nullptr) {
         VkBuffer vBuffer{VK_NULL_HANDLE};

@@ -20,7 +20,7 @@
 
 void update_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o) {
     // 以 binding 为一个最小数量
-    auto &handle = VK_backend::get();
+    auto &handle = VK_backend::instance();
     // if (static_cast<uint>(entity) == 1 || static_cast<uint>(entity) == 5) {
     //     return;
     // }
@@ -54,7 +54,7 @@ void update_bindings_to_descriptor_sets(const entt::entity entity, const std::st
 void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-    auto &handle = VK_backend::get();
+    auto &handle = VK_backend::instance();
     if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
@@ -62,7 +62,7 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
             if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
                 auto sets_flags = create_descriptor_sets_flags(handle,
                                                                (*shader_temp)->object_sets_bindings);
-                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::get().get_descriptor_pool(),
+                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
                                                                            (*shader_temp)->
                                                                            object_descriptor_sets_layout,
                                                                            {});
@@ -76,8 +76,8 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                auto bindless_descriptor_sets = Engine::get().get_bindless_descriptor_set();
-                auto global_descriptor_sets   = Engine::get().get_global_descriptor_set();
+                auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
+                auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
                 // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
                 // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
                 descriptor_sets.reserve(bindless_descriptor_sets.size() +

@@ -12,7 +12,7 @@ std::vector<VkSampler> vulkan_sample_vector;
 VkSampler create_vulkan_sample(VkSamplerCreateInfo &samplerCI) {
     // 很简单，只有16个参数 ， 其实只有一个问题，你是用索引呢？ 还是用其他的呢？
     VkSampler sampler   = VK_NULL_HANDLE;
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     // Sampler
     assert(samplerCI.sType == VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
 
@@ -26,7 +26,7 @@ VkSampler create_vulkan_sample(VkSamplerCreateInfo &samplerCI) {
 
 
 void destroy_all_vulkan_sample() {
-    const auto &backend = VK_backend::get();
+    const auto &backend = VK_backend::instance();
     for (const auto &sampler: vulkan_sample_vector) {
         vkDestroySampler(backend.get_device(), sampler, nullptr);
     }
@@ -34,7 +34,7 @@ void destroy_all_vulkan_sample() {
 }
 
 VkSampler base_sample() {
-    const auto &backend    = VK_backend::get();
+    const auto &backend    = VK_backend::instance();
     VkSampler colorSampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -55,7 +55,7 @@ VkSampler base_sample() {
 
 
 VkSampler create_2d_Texture_Sampler() {
-    auto &backend = VK_backend::get();
+    auto &backend = VK_backend::instance();
 
 
     VkSampler textureSampler;
@@ -105,7 +105,7 @@ VkSampler create_2d_Texture_Sampler() {
 }
 
 VkSampler create_skybox_Texture_Sampler() {
-    auto &backend = VK_backend::get();
+    auto &backend = VK_backend::instance();
 
 
     VkSampler textureSampler;
