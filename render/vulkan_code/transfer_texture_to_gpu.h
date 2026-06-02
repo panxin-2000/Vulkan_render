@@ -6,11 +6,11 @@
 #define HOWTOVULKAN_TRANSFER_TEXTURE_TO_GPU_H
 
 #include <volk.h>
-#include "vulkan_backend.h"
+
+#include "vulkan_image.h"
 
 
-std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, const std::string &filename);
+std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename);
 
-void destroy_texture(VK_backend *handle);
 
 #endif //HOWTOVULKAN_TRANSFER_TEXTURE_TO_GPU_H

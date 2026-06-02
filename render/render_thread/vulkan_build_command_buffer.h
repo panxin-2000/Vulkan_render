@@ -8,6 +8,7 @@
 #include "../vulkan_code/engine.h"
 #include "render_proxy.h"
 #include "../vulkan_code/vertex_and_buffer_index.h"
+#include "name_component.h"
 
 struct scoped_debug_label {
     VkCommandBuffer cmd;

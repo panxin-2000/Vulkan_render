@@ -11,43 +11,8 @@
 #include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
-
-
-struct binding_resource {
-    VkDescriptorSetLayoutBinding LayoutBinding{};
-    std::string binding_name;
-    std::string resource_type; //  "uniform", "uniform sampler2D", "buffer", "uniform sampler" "uniform texture2D"
-    std::string shaderStage;
-    size_t uniform_buffer_size    = 0;
-    VkDescriptorBindingFlags flag = 0;
-};
-
-struct Update_descriptor_binding {
-    std::string binding_name;
-    std::string resource_type;
-    uint32_t dstSet                               = 0;
-    VkWriteDescriptorSet descriptor_write_binding = {};
-
-    std::pair<bool, VKR_buffer_block_ptr> bufferInfo = {};
-    std::pair<bool, VKR_buffer_ptr> SSBO_bufferInfo  = {};
-    std::pair<bool, Texture_parameter> texture_info;
-    // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
-    std::pair<bool, VkBufferView> TexelBufferView;
-};
-
-
-struct shader_need_parameter {
-    // std::vector<DescriptorSet_ptr> bindless_descriptor_sets; // descriptor_set 的 共享指针保存点
-    // std::vector<DescriptorSet_ptr> global_descriptor_sets;   // descriptor_set 的 共享指针保存点
-    std::vector<DescriptorSet_ptr> object_descriptor_sets;   // descriptor_set 的 共享指针保存点
-    // std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets;
-    // std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
-    std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
-    std::byte push_constant_pool[128];
-};
-
-using bindings_map = std::map<uint32_t, binding_resource>;
-using sets_map     = std::map<uint32_t, bindings_map>;
+#include "engine.h"
+#include "vulkan_backend.h"
 
 
 #define Update_descriptor_binding_fixed_temp  \
@@ -124,7 +89,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
                 auto &handle = VK_backend::get();
-                auto texture = create_textures_to_gpu(handle, picture_path);
+                auto texture = create_textures_to_gpu(picture_path);
                 if (texture.has_value()) {
                     Update_descriptor_binding temp      = {};
                     temp.binding_name                   = binding_name;

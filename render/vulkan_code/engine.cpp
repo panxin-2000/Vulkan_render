@@ -180,34 +180,58 @@ void Engine::create_command_pool() {
 }
 
 std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std::string &one_binding_name) {
-    VKR_shader_paths shader_paths{
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-        "", ""
-    };
-    auto shader_date = VKR_shader_init(shader_paths);
-    auto &handle     = VK_backend::get();
-    auto sets_flags  = create_descriptor_sets_flags(handle,
+    auto &handle    = VK_backend::get();
+    auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->global_sets_bindings);
     auto bindless_descriptor_sets = allocate_descriptor_sets(
                                                              shader_date->global_descriptor_sets_layout,
                                                              sets_flags);
+    // 这里申请完 descriptor_sets 了
+    // 那么之后需要上传参数了
+    // 那么应该就算搞定了
     return bindless_descriptor_sets;
+}
+
+void Engine::update_global_parameter() {
+    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_projection_4x4", projection_matrix);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_inv_projection_4x4", inv_projection_matrix);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_view_4x4", view_matrix);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_ins_view_4x4", inv_view_matrix);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_inv_VP", invVP);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_world_view_Pos", world_camera_pos);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_world_light_Pos", world_light_pos);
+    Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
+    auto bindless_descriptor_sets = VK_backend::get().engine_.get_bindless_descriptor_set();
+    auto global_descriptor_sets   = VK_backend::get().engine_.get_global_descriptor_set();
+    // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
+    // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
+    descriptor_sets.reserve(bindless_descriptor_sets.size() +
+                            global_descriptor_sets.size());
+    descriptor_sets.insert(descriptor_sets.end(),
+                           bindless_descriptor_sets.begin(),
+                           bindless_descriptor_sets.end());
+    descriptor_sets.insert(descriptor_sets.end(),
+                           global_descriptor_sets.begin(),
+                           global_descriptor_sets.end());
+    update_descriptor_sets(update_global_descriptor_sets, descriptor_sets);
 }
 
 
 std::vector<DescriptorSet_ptr> Engine::allocate_bindless_descriptor_sets(const std::string &one_binding_name) {
-    VKR_shader_paths shader_paths{
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
-        "", ""
-    };
-    auto shader_date = VKR_shader_init(shader_paths);
-    auto &handle     = VK_backend::get();
-    auto sets_flags  = create_descriptor_sets_flags(handle,
+    auto &handle    = VK_backend::get();
+    auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_date->bindless_sets_bindings);
     auto bindless_descriptor_sets = allocate_descriptor_sets(shader_date->bindless_set_layout,
                                                              sets_flags);
+
     return bindless_descriptor_sets;
 }
 

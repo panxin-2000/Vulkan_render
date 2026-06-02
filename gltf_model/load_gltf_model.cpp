@@ -9,6 +9,7 @@
 #include "name_component.h"
 #include "PBR_component.h"
 #include "tiny_gltf.h"
+#include "vulkan_texture_bindless.h"
 
 
 std::optional<tinygltf::Model> get_gltf_model(const std::string &path) {

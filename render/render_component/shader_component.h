@@ -9,9 +9,8 @@
 
 #include "create_texture.h"
 #include "descriptor.h"
-#include "transform_component.h"
+#include "engine.h"
 #include "sync_proxy_to_render_thread.h"
-#include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
 
@@ -19,103 +18,11 @@
 #include "vulkan_update_descriptor.h"
 #include "VKR_proxy_component.h"
 
-using Push_constant_map = std::map<std::string, VkPushConstantRange>;
-
-struct color_attachment_format {
-    uint32_t location;
-    // uint32_t size;
-    VkFormat format;
-    std::string output_name;
-};
-
-using Fragment_output_map = std::map<uint32_t, color_attachment_format>;
 
 
-struct InputAttributeDescription {
-    uint32_t location;
-    uint32_t binding;
-    VkFormat format;
-    uint32_t offset;
-    uint32_t size;
-    std::string name;
-};
 
 
-struct vk_shader_data {
-    std::string shader_key;
-    std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
-    std::vector<VkPipelineShaderStageCreateInfo> computer_shader_stage_create_infos;
-    VkPrimitiveTopology topology;
-    // 再想增加一个组的时候，还是需要到这里来增加
-    sets_map bindless_sets_bindings;
-    sets_map global_sets_bindings;
-    sets_map object_sets_bindings;
-    Push_constant_map push_constant_map;
-    std::vector<VkDescriptorSetLayout> bindless_set_layout;
-    std::vector<VkDescriptorSetLayout> global_descriptor_sets_layout;
-    std::vector<VkDescriptorSetLayout> object_descriptor_sets_layout;
 
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    std::vector<InputAttributeDescription> vertexAttributes;
-    std::vector<VkVertexInputBindingDescription> vertexBindings;
-    Fragment_output_map fragment_output_map;
-
-
-    [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_vertexAttributes() const {
-        std::vector<VkVertexInputAttributeDescription> temp;
-        for (const auto &attribute: vertexAttributes) {
-            temp.push_back({attribute.location, attribute.binding, attribute.format, attribute.offset});
-        }
-        return temp;
-    }
-
-    Push_constant_map &get_push_constant_map() {
-        return push_constant_map;
-    }
-};
-
-
-class VKR_shader_paths {
-public:
-    VKR_shader_paths(const std::string &vertex_path,
-                     const std::string &fragment_path,
-                     const std::string &geometry_path,
-                     const std::string &computer_path,
-                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
-        vertex_path_   = vertex_path;
-        fragment_path_ = fragment_path;
-        geometry_path_ = geometry_path;
-        computer_path_ = computer_path;
-        topology_      = topology;
-    }
-
-    VKR_shader_paths() = delete;
-
-    std::string vertex_path_;
-    std::string geometry_path_;
-    std::string fragment_path_;
-    std::string computer_path_;
-    VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-
-    void set_vertex_shader(const std::string &path) {
-        vertex_path_ = path;
-    }
-
-    void set_fragment_shader(const std::string &path) {
-        fragment_path_ = path;
-    }
-
-    void set_geometry_shader(const std::string &path) {
-        geometry_path_ = path;
-    }
-
-    void set_computer_path(const std::string &path) {
-        computer_path_ = path;
-    }
-};
-
-using shader_data = std::shared_ptr<vk_shader_data>;
 
 shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
 

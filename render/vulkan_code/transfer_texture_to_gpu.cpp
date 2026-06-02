@@ -18,7 +18,8 @@
 
 // std::array<Texture_parameter, 3> textures{};
 
-std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, const std::string &filename) {
+std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename) {
+    VK_backend &handle             = VK_backend::get();
     std::filesystem::path filePath = filename;
     std::string ext                = filePath.extension().string();
     if (ext == ".ktx") {
@@ -178,10 +179,4 @@ std::optional<Texture_parameter> create_textures_to_gpu(VK_backend &handle, cons
 }
 
 
-void destroy_texture(VK_backend *handle) {
-    // for (const auto &texture: textures) {
-    //     vkDestroySampler(handle->get_device(), texture.sampler, nullptr);
-    //     if (texture.image)
-    //         texture.image->destroy_image();
-    // }
-}
+

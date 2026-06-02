@@ -15,6 +15,7 @@
 #include "vertex_and_buffer_index.h"
 #include "vulkan_build_command_buffer.h"
 #include "vulkan_backend.h"
+#include "vulkan_texture_bindless.h"
 
 
 #define GLM_FORCE_RADIANS
@@ -267,7 +268,7 @@ public:
 
         // clean_all_mesh_object(); // 放在这里似乎并不是太好， 函数被清理了
 
-        destroy_texture(&handle);
+        // destroy_texture();
 
 
         have_object_need_update = false;

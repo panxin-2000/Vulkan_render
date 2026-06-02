@@ -12,6 +12,7 @@
 #include "scene_component.h"
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
+#include "transform_component.h"
 #include "VKR_proxy_component.h"
 #include "vulkan_backend.h"
 #include "vulkan_render_manage.h"

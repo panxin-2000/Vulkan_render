@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
     UI_block("按钮2", 0, 0, 145, 130);
 
 
-    // add_skybox_entity();
+    add_skybox_entity();
     // add_manifold_entity();
 
     // add_simple_computer_buffer_write();
