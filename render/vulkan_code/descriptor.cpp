@@ -6,7 +6,7 @@
 #include "create_texture.h"
 #include "descriptor_organized_sets_and_bindings.h"
 #include "descriptor_pool.h"
-
+#include "shader_resolve.h"
 
 std::map<VkDescriptorSet, uint64_t> discard_descriptor_set_map;
 std::mutex discard_descriptor_set_map_mutex;
@@ -115,20 +115,20 @@ DescriptorSet_detail::~DescriptorSet_detail() {
 }
 
 
-void discard_descriptor_set_map_clean() {
-    auto &backend = VK_backend::get();
-    for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
-        const auto &[descriptor_set, timeline] = *it;
-        LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ",
-                  Engine::get().get_finished_timeline(),
-                  timeline);
-        if (Engine::get().get_finished_timeline() >= timeline) {
-            std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-            vkFreeDescriptorSets(backend.get_device(), Engine::get().get_descriptor_pool(), 1, &descriptor_set);
-            // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
-            it = discard_descriptor_set_map.erase(it);
-        } else {
-            ++it;
-        }
-    }
+void discard_descriptor_set_map_clean(uint64_t current_timeline) {
+    // auto &backend = VK_backend::get();
+    // for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
+    //     const auto &[descriptor_set, timeline] = *it;
+    //     LOG_DEBUG(g_log(), "descriptor_pool finished timeline {}  , timeline {} ",
+    //               current_timeline,
+    //               timeline);
+    //     if (current_timeline >= timeline) {
+    //         std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
+    //         vkFreeDescriptorSets(backend.get_device(), Engine::get().get_descriptor_pool(), 1, &descriptor_set);
+    //         // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
+    //         it = discard_descriptor_set_map.erase(it);
+    //     } else {
+    //         ++it;
+    //     }
+    // }
 }

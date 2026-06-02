@@ -11,7 +11,7 @@
 #include <fstream>
 #include <spirv_cross/spirv_glsl.hpp>
 
-#include "shader_component.h"
+#include "shader_resolve.h"
 
 static inline VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo(
     const std::vector<VkDescriptorSetLayoutBinding> &bindings, const void *pNext = nullptr,

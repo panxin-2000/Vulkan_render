@@ -9,7 +9,7 @@
 
 #include "create_texture.h"
 #include "descriptor.h"
-#include "engine.h"
+#include "../engine.h"
 #include "sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
@@ -19,12 +19,8 @@
 #include "VKR_proxy_component.h"
 
 
+#include "shader_resolve.h"
 
-
-
-
-
-shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
 
 void add_shader(const entt::entity entity,
                 const std::string &vertex_path,

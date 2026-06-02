@@ -497,21 +497,11 @@ VKR_image_ptr VK_backend::create_depth_image_and_view() {
 
 void VK_backend::destroy() {
     if (instance_ == VK_NULL_HANDLE)
-        return; {
-        // 基本上是一个整体
-
-        vkDestroySwapchainKHR(device_, swap_chain_, nullptr);
-        swap_chain_ = VK_NULL_HANDLE;
-    }
-
-    // 这里的顺序不对
-    discard_buffer_map_clean();
-    discard_image_and_view_map_clean();
-
-    // 销毁 timeline_semaphore 再全部检查一遍再销毁
-    destroy_all_vulkan_sample();
+        return;
+    destroy_swap_chain(swap_chain_);
 
     vkDestroySurfaceKHR(instance_, surface_, nullptr);
+
     surface_ = VK_NULL_HANDLE;
     VmaTotalStatistics stats;
     vmaCalculateStatistics(allocator_, &stats);

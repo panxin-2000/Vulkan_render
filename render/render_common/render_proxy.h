@@ -24,7 +24,6 @@
 //     // 但是还是需要共享 同一个 vk_descriptor_sets ，不同的材质部分通过索引或者其他方式的偏移来完成绘制
 //     // 对不同的材质做区分，有的需要先绘制，有的之后绘制
 // };
-using Proxy_descriptor_sets = std::vector<DescriptorSet_ptr>;
 
 class Proxy_entity {
 public:

@@ -28,7 +28,6 @@ private:
     uint32_t engine_version_      = 0;
     uint32_t api_version_         = VK_API_VERSION_1_3;
 
-
     std::vector<const char *> instanceExtensions;
 
     // 需要给外部看到的变量，添加函数给出
@@ -112,8 +111,13 @@ public:
         create_swap_chain_image_and_view();
     }
 
-    void destroy_swap_chain(VkSwapchainKHR old_swap_chain) const {
-        vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+    void destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
+        if (old_swap_chain == swap_chain_ && old_swap_chain != VK_NULL_HANDLE) {
+            vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+            swap_chain_ = VK_NULL_HANDLE;
+        } else if (old_swap_chain != VK_NULL_HANDLE) {
+            vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+        }
     }
 
     void destroy();

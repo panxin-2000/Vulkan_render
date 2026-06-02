@@ -3,9 +3,10 @@
 //
 #include "engine.h"
 
-#include "sets_and_bindings_layout.h"
+#include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
-#include "vulkan_backend.h"
+#include "vulkan_code/vulkan_backend.h"
+#include "vulkan_code/vulkan_sample.h"
 
 
 static std::atomic<Engine *> instance{nullptr};
@@ -202,6 +203,7 @@ void Engine::create_render_image() {
 
     depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
     depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
+    depth_images_.push_back(VK_backend::get().create_depth_image_and_view());
 
     G_buffer_Position_images_.push_back(VK_backend::get().
                                         create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -259,7 +261,18 @@ void Engine::destroy() {
     const auto &backend = VK_backend::get();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
 
+
+    VK_backend::get().destroy_swap_chain(VK_backend::get().get_swap_chain());
+
+    // 这里的顺序不对
     destroy_render_image();
+    discard_buffer_map_clean();
+    discard_image_and_view_map_clean();
+
+    // 销毁 timeline_semaphore 再全部检查一遍再销毁
+    destroy_all_vulkan_sample();
+
+
     vkDestroySemaphore(VK_backend::get().get_device(), vk_timeline_semaphore_, nullptr);
     vk_timeline_semaphore_ = VK_NULL_HANDLE;
 

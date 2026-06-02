@@ -28,6 +28,8 @@ public:
 
 using DescriptorSet_ptr = std::shared_ptr<DescriptorSet_detail>;
 
+using Proxy_descriptor_sets = std::vector<DescriptorSet_ptr>;
+
 
 // /**
 //  * 更新描述符

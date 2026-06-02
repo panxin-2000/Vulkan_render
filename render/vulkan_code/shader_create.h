@@ -7,7 +7,7 @@
 
 #include "vulkan_backend.h"
 #include "shader_common.h"
-#include "shader_component.h"
+#include "shader_resolve.h"
 
 static std::vector<char> readFile(const std::string &filename);
 
