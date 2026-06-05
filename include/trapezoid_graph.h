@@ -144,7 +144,7 @@ public:
                                              insert_segment.end_point);
     }
 
-    static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, half_edge_struct<vertex_xy> *hf, int half_edge_index) {
+    static trapezoid_ptr add_a_segment(trapezoid_ptr root_node, Half_edges<vertex_xy> *hf, int half_edge_index) {
         auto insert_segment = hf->get_segment(half_edge_index);
         int upper_face_index = 0;
         int lower_face_index = 0;

@@ -6,7 +6,7 @@
 #define TEST_DELAUNAY_TRIANGULATION_H
 #include <glm/fwd.hpp>
 #include "ear_clip.h"
-#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/Half_edges.h"
 #include "triangle_graph.h"
 
 namespace delaunay_triangulation {
@@ -96,7 +96,7 @@ namespace delaunay_triangulation {
     // 再之后需要做什么操作呢？
     // 检查边，查看是否需要flip
 
-    Triangle_node<Point_2> *make_Triangle_node(half_edge_struct<vertex_xy> *hf, int face_index) {
+    Triangle_node<Point_2> *make_Triangle_node(Half_edges<vertex_xy> *hf, int face_index) {
         auto temp_flag = hf->get_triangle_face_vertex(face_index);
         auto new_triangle_node = new Triangle_node<Point_2>(temp_flag.a, temp_flag.b, temp_flag.c, face_index);
         return new_triangle_node;
@@ -113,7 +113,7 @@ namespace delaunay_triangulation {
  * @param vertex_index
  * @return
  */
-    bool legalize_edge(half_edge_struct<vertex_xy> *hf, half_edge_index half_edge_index, vertex_index vertex_index,
+    bool legalize_edge(Half_edges<vertex_xy> *hf, half_edge_index half_edge_index, vertex_index vertex_index,
                        Triangle_node_tree<Point_2> *tree) {
         // 有了一个half_edge_index 能找到那个面
         // 有了 face_index ,能够找到 三个顶点
@@ -203,7 +203,7 @@ namespace delaunay_triangulation {
         auto point_a = box.max_point_ + (box.max_point_ - box.min_point_);
         Point_2 point_b = {box.max_point_.x, box.min_point_.y - (box.max_point_.y - box.min_point_.y)};
         Point_2 point_c = {box.min_point_.x - (box.max_point_.x - box.min_point_.x), box.max_point_.y};
-        auto hf = new half_edge_struct<vertex_xy>;
+        auto hf = new Half_edges<vertex_xy>;
         auto ab_index = hf->add_triangle(point_a, point_b, point_c);
         auto abc_face_index = hf->get_face_index(ab_index);
         auto root_node = new Triangle_node<Point_2>(point_a, point_b, point_c, abc_face_index);

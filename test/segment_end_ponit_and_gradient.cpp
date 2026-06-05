@@ -5,7 +5,7 @@
 
 
 ray_2d &ray_2d::get_ray_2d(
-    half_edge_struct<vertex_xy> &hf, int incident_half_edge) {
+    Half_edges<vertex_xy> &hf, int incident_half_edge) {
     ray_2d *temp = new ray_2d;
     Segment<Point_2> current_segment = hf.get_segment(incident_half_edge);
     temp->compare_x_position = current_segment.start_point.x;

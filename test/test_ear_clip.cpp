@@ -9,7 +9,7 @@
 #include "ear_clip.h"
 #include "labyrinth.h"
 #include "observer_manage.h"
-#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/Half_edges.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 #include "base_event.h"
@@ -58,7 +58,7 @@ T &init_expect_triangles(T &expect_triangles) {
 
 
 TEST(ear_clip, from_half_edge_create_loop_vertices) {
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
@@ -104,7 +104,7 @@ TEST(ear_clip, ear_clip) {
     //
 
 
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
@@ -162,7 +162,7 @@ TEST(ear_clip, ear_clip_half_edge) {
     //
 
 
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);
@@ -201,7 +201,7 @@ TEST(ear_clip, ear_clip_half_edge) {
 
 
 TEST(half_edge, test_flip_edge) {
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     hf = init_hf_2(hf);
     Face temp;
     hf.get_first_face(temp);
@@ -223,7 +223,7 @@ TEST(half_edge, test_flip_edge) {
 }
 
 TEST(half_edge, test_face_and_point) {
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     auto half_edge_index = hf.create_loop({7, 8}, {12, 8});
     auto first_half_edge = half_edge_index;
     half_edge_index      = hf.add_edge(half_edge_index, {10, 3});
@@ -233,7 +233,7 @@ TEST(half_edge, test_face_and_point) {
 }
 
 
-void test_point_location(half_edge_struct<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
+void test_point_location(Half_edges<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
                          Point_2 find_point) {
     face_index result_face_index = 0;
     half_edge_index edge_index   = 0;
@@ -253,7 +253,7 @@ void test_point_location(half_edge_struct<vertex_xy> &hf, trapezoid_graph_Node<i
 }
 
 TEST(ear_clip, test_point_location) {
-    half_edge_struct<vertex_xy> hf{};
+    Half_edges<vertex_xy> hf{};
     hf = init_hf(hf);
     Face temp;
     hf.get_first_face(temp);

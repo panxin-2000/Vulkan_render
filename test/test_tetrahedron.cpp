@@ -2,13 +2,13 @@
 // Created by 潘鑫 on 2025/10/24.
 //
 
-#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/Half_edges.h"
 #include <gtest/gtest.h>
 
 #include "base_geometry/half_edge/half_edge_vertex.h"
 
 TEST(tetrahedron, init_tetrahedron) {
-    half_edge_struct<vertex_xyz> hf;
+    Half_edges<vertex_xyz> hf;
     auto b_half_edge_index = hf.create_loop({-1, 1, 0}, {0, -1, 0});
     auto c_half_edge_index = hf.add_edge(b_half_edge_index, {0, 0, 2});
     auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)),

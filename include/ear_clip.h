@@ -8,7 +8,7 @@
 #include "base_geometry/intersect_function.h"
 
 #include "RB_tree_node.h"
-#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/Half_edges.h"
 #include "base_geometry/half_edge/half_edge_vertex.h"
 
 bool ear_clip_algorithm_no_efficient(std::vector<Triangle<Point_2> > &result_segments,
@@ -20,7 +20,7 @@ bool no_point_in_line_clockwise_direction_binary(Point_2 a, Point_2 c,
                                                  RB_Tree_Node<Point_2> &tree_vertices_root);
 
 template<typename T>
-bool ear_clip_algorithm_half_edge(half_edge_struct<vertex_xy> &hf,
+bool ear_clip_algorithm_half_edge(Half_edges<vertex_xy> &hf,
                                   T &new_segments,
                                   RB_Tree_Node<Point_2> &tree_vertices) {
     if (new_segments.size() < 3) {

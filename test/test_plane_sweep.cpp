@@ -6,7 +6,7 @@
 #include "binary_Tree_Node.h"
 #include "tree_function.h"
 #include "base_geometry/geometry_element/triangle.h"
-#include "base_geometry/half_edge/half_edge_struct.h"
+#include "base_geometry/half_edge/Half_edges.h"
 #include "index_binary_tree.h"
 #include "index_binary_tree_node.h"
 #include  "segment_end_ponit_and_gradient.h"
@@ -141,7 +141,7 @@ void add_intersect_event(Segment<Point_2> ab, int ab_incident_half_edge, Segment
 }
 
 
-void init_all_segments(half_edge_struct<vertex_xy> &hf) {
+void init_all_segments(Half_edges<vertex_xy> &hf) {
     hf.create_loop({1, 2}, {2, 5});
     hf.create_loop({1, 2}, {4, 2});
     hf.create_loop({2, 5}, {4, 2});
@@ -154,7 +154,7 @@ void init_all_segments(half_edge_struct<vertex_xy> &hf) {
 
 
 auto create_event_tree(
-    half_edge_struct<vertex_xy> &hf) {
+    Half_edges<vertex_xy> &hf) {
     auto tree = new Index_Binary_Tree<event_point>;
     for (auto half_edge: hf.half_edges) {
         Segment<Point_2> current_segment = hf.get_segment(half_edge.twin_half_edge);
@@ -176,7 +176,7 @@ auto create_event_tree(
 
 
 template<typename T, typename T1>
-bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vertex_xy> &hf, T1 event_points) {
+bool test_two_node_if_intersect(T left_node, T right_node, Half_edges<vertex_xy> &hf, T1 event_points) {
     if (left_node != nullptr && right_node != nullptr) {
         return test_two_node_if_intersect(left_node->data, right_node->data, hf, event_points);
     }
@@ -184,7 +184,7 @@ bool test_two_node_if_intersect(T left_node, T right_node, half_edge_struct<vert
 }
 
 template<typename T1>
-bool test_two_node_if_intersect(ray_2d &left_data, ray_2d &right_data, half_edge_struct<vertex_xy> &hf,
+bool test_two_node_if_intersect(ray_2d &left_data, ray_2d &right_data, Half_edges<vertex_xy> &hf,
                                 T1 event_tree) {
     auto temp = hf.get_opposite_edge_index(left_data.incident_half_edge);
     auto temp_2 = hf.get_vertices_index(temp);
@@ -235,7 +235,7 @@ binary_Tree_Node<ray_2d> *get_mini_node(std::vector<binary_Tree_Node<ray_2d> *> 
 }
 
 template<typename T1>
-void check_pre_and_success(binary_Tree_Node<ray_2d> *ray_root, half_edge_struct<vertex_xy> &hf, T1 event_tree,
+void check_pre_and_success(binary_Tree_Node<ray_2d> *ray_root, Half_edges<vertex_xy> &hf, T1 event_tree,
                            int re_insert_edge) {
     auto current_half_edge_node = tree_find_value(ray_root, ray_2d::get_ray_2d(hf, re_insert_edge));
     auto predecessor_half_edge_node = binary_Tree_Node<ray_2d>::tree_predecessor(current_half_edge_node);
@@ -245,7 +245,7 @@ void check_pre_and_success(binary_Tree_Node<ray_2d> *ray_root, half_edge_struct<
 }
 
 template<typename T1>
-void check_pre_and_success(Index_Binary_Tree<ray_2d> *ray_root, half_edge_struct<vertex_xy> &hf, T1 event_tree,
+void check_pre_and_success(Index_Binary_Tree<ray_2d> *ray_root, Half_edges<vertex_xy> &hf, T1 event_tree,
                            int re_insert_edge) {
     const auto data = ray_2d::get_ray_2d(hf, re_insert_edge);
     const auto current_index = ray_root->tree_find_index(data);
@@ -256,7 +256,7 @@ void check_pre_and_success(Index_Binary_Tree<ray_2d> *ray_root, half_edge_struct
     test_two_node_if_intersect(current_data, successor_data, hf, event_tree);
 }
 
-std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
+std::vector<event_point> get_intersect_point(Half_edges<vertex_xy> &hf) {
     auto event_tree = create_event_tree(hf);
 
     std::vector<event_point> result;
@@ -338,7 +338,7 @@ std::vector<event_point> get_intersect_point(half_edge_struct<vertex_xy> &hf) {
 
 
 TEST(test_edge, test_create_edge) {
-    half_edge_struct<vertex_xy> hf;
+    Half_edges<vertex_xy> hf;
     init_all_segments(hf);
     auto result = get_intersect_point(hf);
     int a = 0;
