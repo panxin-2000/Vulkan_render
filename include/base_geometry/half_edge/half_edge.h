@@ -5,16 +5,16 @@
 #ifndef HELLO_MAC_HALF_EDGE_H
 #define HELLO_MAC_HALF_EDGE_H
 
-using half_edge_index = int;
-using vertex_index    = int;
-using face_index      = int;
+using Half_edge_index = std::size_t;
+using Vertex_index    = std::size_t;
+using Face_index      = std::size_t;
 
 struct Half_edge {
-    vertex_index vertex_index;
-    half_edge_index twin_half_edge;
-    half_edge_index next_half_edge;
-    half_edge_index pre_half_edge;
-    face_index incident_face;
+    Vertex_index vertex_index;
+    Half_edge_index twin_half_edge;
+    Half_edge_index next_half_edge;
+    Half_edge_index pre_half_edge;
+    Face_index incident_face;
 };
 
 

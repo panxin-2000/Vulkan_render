@@ -18,7 +18,7 @@
 
 template<typename T>
 T &init_hf(T &hf) {
-    auto half_edge_index = hf.create_loop({0, 5}, {-2, 3});
+    auto half_edge_index = hf.add_edge({0, 5}, {-2, 3});
     auto first_half_edge = half_edge_index;
     half_edge_index      = hf.add_edge(half_edge_index, {0, 0});
     half_edge_index      = hf.insert_edge(half_edge_index, {3, 2});
@@ -35,7 +35,7 @@ T &init_hf(T &hf) {
 
 template<typename T>
 T &init_hf_2(T &hf) {
-    auto half_edge_index = hf.create_loop({3, 2}, {5, 1});
+    auto half_edge_index = hf.add_edge({3, 2}, {5, 1});
     auto first_half_edge = half_edge_index;
     half_edge_index      = hf.add_edge(half_edge_index, {7, 2});
     half_edge_index      = hf.insert_edge(half_edge_index, {5, 3});
@@ -60,7 +60,7 @@ T &init_expect_triangles(T &expect_triangles) {
 TEST(ear_clip, from_half_edge_create_loop_vertices) {
     Half_edges<vertex_xy> hf{};
     hf = init_hf(hf);
-    Face temp;
+    Face temp{};
     hf.get_first_face(temp);
     auto all_edge     = hf.get_all_edge_of_face(hf.get_pre_edge_index(temp.bounding_half_edge));
     auto new_segments = hf.get_vertices(all_edge);
@@ -224,19 +224,19 @@ TEST(half_edge, test_flip_edge) {
 
 TEST(half_edge, test_face_and_point) {
     Half_edges<vertex_xy> hf{};
-    auto half_edge_index = hf.create_loop({7, 8}, {12, 8});
-    auto first_half_edge = half_edge_index;
-    half_edge_index      = hf.add_edge(half_edge_index, {10, 3});
-    int vertex_index     = 0;
-    hf.face_add_new_point(1, {10, 6}, vertex_index);
+    auto half_edge_index      = hf.add_edge({7, 8}, {12, 8});
+    auto first_half_edge      = half_edge_index;
+    half_edge_index           = hf.add_edge(half_edge_index, {10, 3});
+    Vertex_index vertex_index = 0;
+    hf.face_add_inner_point(1, {10, 6}, vertex_index);
     int a = 90;
 }
 
 
 void test_point_location(Half_edges<vertex_xy> &hf, trapezoid_graph_Node<int> *root,
                          Point_2 find_point) {
-    face_index result_face_index = 0;
-    half_edge_index edge_index   = 0;
+    Face_index result_face_index = 0;
+    Half_edge_index edge_index   = 0;
     if (point_in_triangle_type::out_triangle ==
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, find_point)) {
         result_face_index = -1;
@@ -268,8 +268,8 @@ TEST(ear_clip, test_point_location) {
 
     if (ear_clip_algorithm_half_edge(hf, all_edge, *tree_vertices) == true) {
         // 这里是进行分解完之后，那么需要先确定每个三角形对应的面的索引，也就是在那个索引中
-        face_index result_face_index = 0;
-        half_edge_index edge_index   = 0;
+        Face_index result_face_index = 0;
+        Half_edge_index edge_index   = 0;
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {1, 1});
         EXPECT_EQ(9, result_face_index); // 原因是出现了 on_edge,但是没有看是否在线段范围内
         hf.get_vertex_in_which_face_for_test(result_face_index, edge_index, {5, 1.1});
@@ -303,7 +303,7 @@ TEST(ear_clip, test_point_location) {
 
         auto bounding_box = hf.calculate_aabb();
         auto root         = trapezoid_graph_Node<int>::init_root(bounding_box);
-        for (int i = 0; i < hf.half_edges.size(); ++i, ++i) {
+        for (int i = 0; i < hf.edges.size(); ++i, ++i) {
             root        = trapezoid_graph_Node<int>::add_a_segment(root, &hf, i);
             auto result = find_all_leaf_node(root);
             // std::cout << "result" << result->size() << std::endl;

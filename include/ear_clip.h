@@ -54,7 +54,7 @@ bool ear_clip_algorithm_half_edge(Half_edges<vertex_xy> &hf,
 }
 
 template<typename T>
-bool ear_clip_triangulations(T &hf, half_edge_index half_edge) {
+bool ear_clip_triangulations(T &hf, Half_edge_index half_edge) {
     auto all_edge = hf.get_all_edge_of_face(half_edge);
     auto new_segments = hf.get_vertices(all_edge);
     RB_Tree_Node<Point_2> *tree_vertices = nullptr;

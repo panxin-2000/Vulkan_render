@@ -9,7 +9,7 @@
 
 TEST(tetrahedron, init_tetrahedron) {
     Half_edges<vertex_xyz> hf;
-    auto b_half_edge_index = hf.create_loop({-1, 1, 0}, {0, -1, 0});
+    auto b_half_edge_index = hf.add_edge({-1, 1, 0}, {0, -1, 0});
     auto c_half_edge_index = hf.add_edge(b_half_edge_index, {0, 0, 2});
     auto d_half_edge_index = hf.add_edge(hf.get_opposite_edge_index(hf.get_pre_edge_index(c_half_edge_index)),
                                          {1, 1, 2});

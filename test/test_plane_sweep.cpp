@@ -142,12 +142,12 @@ void add_intersect_event(Segment<Point_2> ab, int ab_incident_half_edge, Segment
 
 
 void init_all_segments(Half_edges<vertex_xy> &hf) {
-    hf.create_loop({1, 2}, {2, 5});
-    hf.create_loop({1, 2}, {4, 2});
-    hf.create_loop({2, 5}, {4, 2});
-    hf.create_loop({2, 3}, {7, 5});
-    hf.create_loop({6, -1}, {7, 5});
-    hf.create_loop({2, 3}, {6, -1});
+    hf.add_edge({1, 2}, {2, 5});
+    hf.add_edge({1, 2}, {4, 2});
+    hf.add_edge({2, 5}, {4, 2});
+    hf.add_edge({2, 3}, {7, 5});
+    hf.add_edge({6, -1}, {7, 5});
+    hf.add_edge({2, 3}, {6, -1});
 }
 
 // 上面给出了来的左右点是对的，之后给出的话，两条边，小的不一定是起点。
@@ -156,7 +156,7 @@ void init_all_segments(Half_edges<vertex_xy> &hf) {
 auto create_event_tree(
     Half_edges<vertex_xy> &hf) {
     auto tree = new Index_Binary_Tree<event_point>;
-    for (auto half_edge: hf.half_edges) {
+    for (auto half_edge: hf.edges) {
         Segment<Point_2> current_segment = hf.get_segment(half_edge.twin_half_edge);
         auto temp_l_or_r = event_point::right;
         if (current_segment.start_point.x < current_segment.end_point.x) {

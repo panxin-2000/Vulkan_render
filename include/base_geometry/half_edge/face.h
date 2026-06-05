@@ -5,8 +5,9 @@
 #ifndef HELLO_MAC_FACE_H
 #define HELLO_MAC_FACE_H
 
-struct Face {
-    half_edge_index bounding_half_edge;
+class Face {
+public:
+    Half_edge_index bounding_half_edge;
 
     enum BOUNDARY_TYPE {
         bounding_face,
@@ -14,6 +15,11 @@ struct Face {
     };
 
     BOUNDARY_TYPE boundary_type;
+
+    Face() = default;
+
+    Face(const Half_edge_index edge_, const BOUNDARY_TYPE type) : bounding_half_edge(edge_), boundary_type(type) {
+    }
 };
 
 #endif //HELLO_MAC_FACE_H
