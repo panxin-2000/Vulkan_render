@@ -5,6 +5,9 @@
 #ifndef HELLO_MAC_HALF_EDGE_H
 #define HELLO_MAC_HALF_EDGE_H
 
+using half_edge_index = int;
+using vertex_index    = int;
+using face_index      = int;
 
 struct Half_edge {
     vertex_index vertex_index;
@@ -13,7 +16,6 @@ struct Half_edge {
     half_edge_index pre_half_edge;
     face_index incident_face;
 };
-
 
 
 #endif //HELLO_MAC_HALF_EDGE_H

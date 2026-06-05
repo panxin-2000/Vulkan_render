@@ -20,9 +20,7 @@
 
 
 
-using half_edge_index = int;
-using vertex_index = int;
-using face_index = int;
+
 // 索引还是比较啊随意的，问题是如何建立一条边？
 #include "base_geometry/half_edge/half_edge.h"
 #include "base_geometry/half_edge/face.h"
