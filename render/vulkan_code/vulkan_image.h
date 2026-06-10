@@ -18,11 +18,11 @@ class VKR_image : public NonCopyable {
     uint64_t timeline_        = 0;
 
 public:
-    VKR_image(const VkImage image_handle,
-              const VmaAllocation allocation,
-              const VkImageView image_view) : image_handle_(image_handle),
-                                              allocation_(allocation),
-                                              image_view_(image_view) {
+    VKR_image(const VkImage &image_handle,
+              const VmaAllocation &allocation,
+              const VkImageView &image_view) : image_handle_(image_handle),
+                                               allocation_(allocation),
+                                               image_view_(image_view) {
     }
 
     [[nodiscard]] VkImage get_image_handle(const uint64_t timeline = 0) {
@@ -50,9 +50,9 @@ public:
 
 class VKR_image_ptr {
 public:
-    VKR_image_ptr(const VkImage image_handle, const VmaAllocation allocation,
-                  const VkImageView image_view) : ptr(std::make_shared<VKR_image>(image_handle, allocation,
-                                                               image_view)) {
+    VKR_image_ptr(const VkImage &image_handle, const VmaAllocation &allocation,
+                  const VkImageView &image_view) : ptr(std::make_shared<VKR_image>(image_handle, allocation,
+                                                                image_view)) {
     }
 
     VKR_image_ptr() = default;
@@ -61,7 +61,7 @@ public:
         ptr = nullptr; //
     }
 
-    long use_count() {
+    [[nodiscard]] uint32_t use_count() const {
         return ptr.use_count();
     }
 
@@ -114,12 +114,12 @@ Texture_parameter create_skybox_texture_all(const std::string &picture_path);
 
 Texture_parameter create_2d_texture(const std::string &picture_path);
 
-Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, const uint8_t B);
+Texture_parameter create_single_color_texture(const uint8_t &R, const uint8_t &G, const uint8_t &B);
 
 Texture_parameter create_texture_from_image(uint8_t *image,
-                                            const int width,
-                                            const int height,
-                                            const int channels);
+                                            const int &width,
+                                            const int &height,
+                                            const int &channels);
 
 void discard_image_and_view_map_clean();
 #endif //HELLO_MAC_VULKAN_IMAGE_H

@@ -9,7 +9,7 @@
 
 VKR_buffer_pool_ptr &get_uniform_buffer();
 
-VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize size);
+VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size);
 
 template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {

@@ -4,6 +4,8 @@
 
 #include "vulkan_read_attribute.h"
 
+#include <iostream>
+
 std::vector<std::string> get_all_instance_extensions() {
     std::vector<std::string> supportedInstanceExtensions;
     uint32_t extCount = 0;

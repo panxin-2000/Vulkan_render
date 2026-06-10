@@ -32,7 +32,7 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, cons
  * @return
  */
 inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDeviceSize size,
-                                                 std::function<void(void *)> mem_copy_callback) {
+                                                 const std::function<void(void *)>& mem_copy_callback) {
     auto vBuffer = create_vertex_index_buffer(backend, size);
     if (vBuffer->empty())
         return {};

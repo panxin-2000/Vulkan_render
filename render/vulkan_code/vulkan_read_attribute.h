@@ -6,7 +6,7 @@
 #define HELLO_MAC_VULKAN_READ_ATTRIBUTE_H
 #include "vulkan_global_macro.h"
 #include "glfw/glfw3.h"
-
+#include <vector>
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -14,7 +14,7 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
-std::vector<std::string> get_all_instance_extensions(void);
+std::vector<std::string> get_all_instance_extensions();
 
 std::vector<VkPhysicalDevice> get_all_physical_devices(const VkInstance &instance);
 
@@ -24,7 +24,7 @@ std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysica
 
 VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &device);
 
-SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
+SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface,
                                           GLFWwindow *window);

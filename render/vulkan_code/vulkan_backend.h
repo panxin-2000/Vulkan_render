@@ -13,6 +13,7 @@
 #include "global_singleton.h"
 #include "GPU_backend.h"
 #include "vulkan_image.h"
+#include "vulkan_read_attribute.h"
 
 
 class VK_backend : public GPU_backend {

@@ -11,6 +11,7 @@
 #endif
 #include "vulkan_backend.h"
 #include "global_singleton.h"
+#include "vulkan_validation_layer.h"
 
 // 必须使用 atomic 保证多线程可见性与禁止指令重排
 static std::atomic<VK_backend *> backend_instance{nullptr};

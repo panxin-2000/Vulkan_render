@@ -9,6 +9,8 @@
 
 #include <fstream>
 
+#include "vulkan_read_attribute.h"
+
 
 /**
  *  VK_EXT_metal_surface

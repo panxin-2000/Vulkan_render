@@ -38,7 +38,7 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
     return buffer;
 }
 
- VKR_buffer_ptr create_SSBO_buffer(VkDeviceSize size) {
+VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);

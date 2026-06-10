@@ -7,10 +7,10 @@
 #include "vulkan_backend.h"
 
 
-VkImageView createImageView(const VkImage image,
-                            const VkFormat format,
-                            const VkImageAspectFlags aspectFlags,
-                            uint32_t mipLevels) {
+VkImageView createImageView(const VkImage &image,
+                            const VkFormat &format,
+                            const VkImageAspectFlags &aspectFlags,
+                            const uint32_t &mipLevels) {
     const auto &backend = VK_backend::instance();
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -30,10 +30,10 @@ VkImageView createImageView(const VkImage image,
     return imageView;
 }
 
-VkImageView create_sky_cube_ImageView(const VkImage image,
-                                      const VkFormat format,
-                                      const VkImageAspectFlags aspectFlags,
-                                      uint32_t mipLevels) {
+VkImageView create_sky_cube_ImageView(const VkImage &image,
+                                      const VkFormat &format,
+                                      const VkImageAspectFlags &aspectFlags,
+                                      const uint32_t &mipLevels) {
     const auto &backend = VK_backend::instance();
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

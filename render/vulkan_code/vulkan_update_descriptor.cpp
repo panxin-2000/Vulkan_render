@@ -3,7 +3,6 @@
 //
 
 #include "vulkan_update_descriptor.h"
-
 #include <volk.h>
 #include <memory_resource>
 #include <vector>

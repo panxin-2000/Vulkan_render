@@ -9,8 +9,7 @@
 
 VkDescriptorPool init_current_descriptor_pool();
 
-
-void destroy_descriptorPool(const VkDescriptorPool descriptorPool);
+void destroy_descriptorPool(const VkDescriptorPool &descriptorPool);
 
 #endif //HOWTOVULKAN_DESCRIPTOR_POOL_H
 

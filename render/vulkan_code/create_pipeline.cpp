@@ -230,3 +230,37 @@ void clean_all_pipeline(VK_backend &handle) {
     }
     pipeline_map.clear();
 }
+
+
+ VkPipeline CreateComputePipelines(VK_backend &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                         VkDescriptorSetLayout &descriptorSetLayout) {
+    if (shaderStages.empty() == true) {
+        return VK_NULL_HANDLE;
+    }
+
+
+    VkPipelineLayout pipelineLayout;
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
+    pipelineLayoutCreateInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    pipelineLayoutCreateInfo.pSetLayouts    = &descriptorSetLayout;
+
+    VK_CHECK_RESULT_NOT_EXIT(vkCreatePipelineLayout(handle.get_device(), &pipelineLayoutCreateInfo, nullptr, &
+                                 pipelineLayout));
+
+
+    VkPipeline compute_pipeline = VK_NULL_HANDLE;
+    VkComputePipelineCreateInfo computePipelineCreateInfo{};
+    computePipelineCreateInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    computePipelineCreateInfo.layout = pipelineLayout;
+    computePipelineCreateInfo.flags  = 0;
+    computePipelineCreateInfo.stage  = shaderStages[0];
+
+
+    VK_CHECK_RESULT_NOT_EXIT(vkCreateComputePipelines(handle.get_device(),
+                                 VK_NULL_HANDLE,
+                                 1, &computePipelineCreateInfo,
+                                 nullptr,
+                                 &compute_pipeline));
+    return compute_pipeline;
+}

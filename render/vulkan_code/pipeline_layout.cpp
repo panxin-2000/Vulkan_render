@@ -46,10 +46,10 @@ std::vector<VkPushConstantRange> merge_push_constant_offset(
     std::vector<VkPushConstantRange> merged_vector;
     all_offset_vector.reserve(push_constant_map.size());
 
-    for (int i = 0; i < all_offset_vector.size(); i++) {
-        if (all_offset_vector[i].size != 0 &&
-            all_offset_vector[i].stageFlags != 0) {
-            merged_vector.push_back(all_offset_vector[i]);
+    for (auto &i: all_offset_vector) {
+        if (i.size != 0 &&
+            i.stageFlags != 0) {
+            merged_vector.push_back(i);
         }
     }
     return merged_vector;

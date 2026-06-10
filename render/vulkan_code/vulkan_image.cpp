@@ -526,7 +526,7 @@ Texture_parameter create_2d_texture(const std::string &picture_path) {
 }
 
 
-Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, const uint8_t B) {
+Texture_parameter create_single_color_texture(const uint8_t &R, const uint8_t &G, const uint8_t &B) {
     Picture_parameters picture_parameters{};
     picture_parameters.height = 2;
     picture_parameters.width  = 2;
@@ -546,9 +546,9 @@ Texture_parameter create_single_color_texture(const uint8_t R, const uint8_t G, 
 
 
 Texture_parameter create_texture_from_image(uint8_t *image,
-                                            const int width,
-                                            const int height,
-                                            const int channels) {
+                                            const int &width,
+                                            const int &height,
+                                            const int &channels) {
     Picture_parameters picture_parameters{};
     picture_parameters.height     = height;
     picture_parameters.width      = width;
@@ -562,18 +562,18 @@ Texture_parameter create_texture_from_image(uint8_t *image,
 Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     auto &handle = VK_backend::instance();
     std::vector<std::string> paths;
-    paths.push_back("assets/skybox_right.jpg");
-    paths.push_back("assets/skybox_left.jpg");
-    paths.push_back("assets/skybox_top.jpg");
-    paths.push_back("assets/skybox_bottom.jpg");
-    paths.push_back("assets/skybox_front.jpg");
-    paths.push_back("assets/skybox_back.jpg");
+    paths.emplace_back("assets/skybox_right.jpg");
+    paths.emplace_back("assets/skybox_left.jpg");
+    paths.emplace_back("assets/skybox_top.jpg");
+    paths.emplace_back("assets/skybox_bottom.jpg");
+    paths.emplace_back("assets/skybox_front.jpg");
+    paths.emplace_back("assets/skybox_back.jpg");
 
     std::vector<Picture_parameters> picture_parameters_vector;
 
-    for (const auto &picture_path: paths) {
+    for (const auto &path: paths) {
         Picture_parameters picture_parameters{};
-        picture_parameters.image_data = stbi_load(picture_path.c_str(),
+        picture_parameters.image_data = stbi_load(path.c_str(),
                                                   &picture_parameters.width,
                                                   &picture_parameters.height,
                                                   &picture_parameters.channels, STBI_rgb_alpha);
@@ -582,10 +582,10 @@ Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     }
 
 
-    auto image_ptr = create_skybox_texture(picture_parameters_vector);
+    const auto image_ptr = create_skybox_texture(picture_parameters_vector);
 
 
-    auto textureSampler = create_skybox_Texture_Sampler();
+    const auto textureSampler = create_skybox_Texture_Sampler();
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView   = image_ptr->get_image_view();

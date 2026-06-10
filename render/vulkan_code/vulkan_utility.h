@@ -11,8 +11,6 @@
 #include <vector>
 
 #include "vulkan_global_macro.h"
-#include "vulkan_read_attribute.h"
-#include "vulkan_validation_layer.h"
 
 
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,

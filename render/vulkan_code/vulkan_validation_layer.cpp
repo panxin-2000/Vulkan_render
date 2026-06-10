@@ -5,6 +5,10 @@
 #include "vulkan_global_macro.h"
 #include "vulkan_validation_layer.h"
 
+#include <iostream>
+#include <ostream>
+
+#include "vulkan_read_attribute.h"
 #include "vulkan_utility.h"
 
 

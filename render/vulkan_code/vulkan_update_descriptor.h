@@ -8,10 +8,10 @@
 #include <volk.h>
 
 #include "descriptor.h"
+#include "shader_resolve.h"
 #include "transfer_texture_to_gpu.h"
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
-#include "../engine.h"
 #include "vulkan_backend.h"
 
 
