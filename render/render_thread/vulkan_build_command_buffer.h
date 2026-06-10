@@ -454,8 +454,8 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
     vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
 }
 
-
-inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
+inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, const uint64_t time_line,
+                                       VkPipelineBindPoint bind_point) {
     const auto cb            = Engine::instance().get_current_command_buffer();
     auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity);
     if (!vk_descriptor_sets.empty()) {
@@ -463,6 +463,7 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
         temp_descriptor_sets.resize(vk_descriptor_sets.size());
         for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
             temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
+            // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
         std::vector<uint32_t> dynamic_offsets;
         dynamic_offsets.resize(vk_descriptor_sets.size());
@@ -476,7 +477,7 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
                 return;
             }
         }
-        vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE,
+        vkCmdBindDescriptorSets(cb, bind_point,
                                 Render_entt().get<VkPipelineLayout>(entity),
                                 0,
                                 temp_descriptor_sets.size(),
@@ -484,8 +485,14 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
                                 dynamic_offsets.size(),
                                 dynamic_offsets.data());
     }
+}
+
+
+inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
+    const auto cb = Engine::instance().get_current_command_buffer();
     // 下面一行估计还是有问题
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, Render_entt().get<VkPipeline>(entity));
+    bind_Proxy_descriptor_sets(engine, entity, time_line, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
         vkCmdDispatch(cb, group_count->X, group_count->Y, group_count->Z);
@@ -541,35 +548,8 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     // float                                     minDepthBounds;
     // float                                     maxDepthBounds;
 
+    bind_Proxy_descriptor_sets(engine, entity, time_line, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity);
-    if (!vk_descriptor_sets.empty()) {
-        std::vector<VkDescriptorSet> temp_descriptor_sets;
-        temp_descriptor_sets.resize(vk_descriptor_sets.size());
-        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
-            temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
-            // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
-        }
-        std::vector<uint32_t> dynamic_offsets;
-        dynamic_offsets.resize(vk_descriptor_sets.size());
-        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
-            dynamic_offsets[i] = 0;
-        }
-        for (auto temp_descriptor_set: temp_descriptor_sets) {
-            if (temp_descriptor_set == VK_NULL_HANDLE) {
-                LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
-                         Render_entt().get_or_emplace<Name_component>(entity).name_);
-                return;
-            }
-        }
-        vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                Render_entt().get<VkPipelineLayout>(entity),
-                                0,
-                                temp_descriptor_sets.size(),
-                                temp_descriptor_sets.data(),
-                                dynamic_offsets.size(),
-                                dynamic_offsets.data());
-    }
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
