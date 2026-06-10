@@ -463,7 +463,11 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
         temp_descriptor_sets.resize(vk_descriptor_sets.size());
         for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
             temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
-            // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
+        }
+        std::vector<uint32_t> dynamic_offsets;
+        dynamic_offsets.resize(vk_descriptor_sets.size());
+        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
+            dynamic_offsets[i] = 0;
         }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
@@ -476,8 +480,9 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
                                 Render_entt().get<VkPipelineLayout>(entity),
                                 0,
                                 temp_descriptor_sets.size(),
-                                temp_descriptor_sets.data(), 0,
-                                nullptr);
+                                temp_descriptor_sets.data(),
+                                dynamic_offsets.size(),
+                                dynamic_offsets.data());
     }
     // 下面一行估计还是有问题
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, Render_entt().get<VkPipeline>(entity));
@@ -545,6 +550,11 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
             temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
             // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
+        std::vector<uint32_t> dynamic_offsets;
+        dynamic_offsets.resize(vk_descriptor_sets.size());
+        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
+            dynamic_offsets[i] = 0;
+        }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
                 LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
@@ -556,8 +566,9 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
                                 Render_entt().get<VkPipelineLayout>(entity),
                                 0,
                                 temp_descriptor_sets.size(),
-                                temp_descriptor_sets.data(), 0,
-                                nullptr);
+                                temp_descriptor_sets.data(),
+                                dynamic_offsets.size(),
+                                dynamic_offsets.data());
     }
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
