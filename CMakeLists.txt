@@ -480,6 +480,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_Tent_Filter.cpp
         test/test_ear_clip.cpp
         test/test_mutex.cpp
+        test/test_quadtree.cpp
         test/test_highway.cpp
         test/test_particle.cpp
         test/test_intersect.cpp
@@ -494,9 +495,9 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue GTest::gtest_main TBB::tbb Eigen3::Eigen)
+target_link_libraries(hello_test ccd hwy readerwriterqueue GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
-target_compile_options(hello_test PRIVATE -O3 -g)
+target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
 target_compile_options(hello_test PRIVATE -fno-omit-frame-pointer)
 #target_compile_options(hello_test PRIVATE -fsanitize=address,undefined)

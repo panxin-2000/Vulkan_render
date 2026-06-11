@@ -9,8 +9,14 @@
 #include <random>
 #include <nanovdb/NanoVDB.h>
 
+#include "entity_quadtree.h"
 #include "Quadtree.h"
 #include "gtest/gtest.h"
+
+namespace entt {
+    enum class entity : std::uint32_t;
+}
+
 using namespace quadtree;
 
 struct insert_data : public Box<float> {
@@ -83,7 +89,7 @@ TEST(box, quadtree) {
             quadtree.remove(node);
     }
     // Quadtree
-    auto intersections1 = std::vector<std::vector<insert_data > >(nodes.size());
+    auto intersections1 = std::vector<std::vector<insert_data> >(nodes.size());
     auto start2         = std::chrono::steady_clock::now();
     for (const auto &node: nodes) {
         if (!removed[node.id])
@@ -103,4 +109,16 @@ TEST(box, quadtree) {
     auto intersections3 = quadtree.findAllIntersections();
     std::cout << intersections3.size() << '\n';
     std::cout << intersections2.size() << '\n';
+}
+
+TEST(entt, quadtree) {
+    auto n   = 1000;
+    auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
+
+    auto quadtree = ECS::Quadtree(box);
+    for (auto i = 0; i < 10; ++i) {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<Box<float> >(entity, 0.76f, 0.76f, 0.06f, 0.06f);
+        quadtree.add_entity(entity);
+    }
 }

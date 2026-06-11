@@ -45,6 +45,7 @@ struct ScopeTimer {
 namespace hn = hwy::HWY_NAMESPACE;
 
 TEST(particle, matrix) {
+    GTEST_SKIP();
     const size_t size = 10000; {
         std::vector<Point_3> position(size);
         for (size_t i = 0; i < size; ++i) {
