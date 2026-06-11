@@ -55,6 +55,13 @@ namespace quadtree {
             return !(left >= box.getRight() || getRight() <= box.left ||
                      top >= box.getBottom() || getBottom() <= box.top);
         }
+
+        bool operator ==(const Box<T> &right) const {
+            if (left == right.left && top == right.top && width == right.width && height == right.height) {
+                return true;
+            }
+            return false;
+        }
     };
 }
 
