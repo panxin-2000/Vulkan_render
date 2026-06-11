@@ -11,6 +11,7 @@
 
 #include "Box.h"
 #include "global_singleton.h"
+#include "base_geometry/base.h"
 
 namespace ECS {
     template<typename T, std::size_t N>
@@ -40,18 +41,18 @@ namespace ECS {
 
     class Quadtree {
     public:
-        explicit Quadtree(const quadtree::Box<float> &box) : mRootBox_position_size(box) {
+        explicit Quadtree(const AABB_centroid<Point_2> &box) : mRootBox_position_size(box) {
             data.reserve(max_quadtree_node);
             data.emplace_back();
         }
 
         const uint32_t max_quadtree_node = 100; // 最多允许的四叉树 结点数量
         std::vector<Quadtree_node> data;
-        quadtree::Box<float> mRootBox_position_size;
+        AABB_centroid<Point_2> mRootBox_position_size;
         uint32_t mRoot = 0;
 
         bool add_entity(const entt::entity entity) {
-            auto &entity_box = Logic_entt().get<quadtree::Box<float> >(entity);
+            auto &entity_box = Logic_entt().get<AABB_centroid<Point_2> >(entity);
             return add_node(0, mRootBox_position_size, entity, entity_box);
         }
 
@@ -88,59 +89,57 @@ namespace ECS {
          * @param i 上下左右 四个 子包围盒的 索引
          * @return 子包围的大小与范围
          */
-        static quadtree::Box<float> compute_Box_position_size(const quadtree::Box<float> &box, const sub_AABB i) {
-            const auto origin    = box.getTopLeft();
-            const auto childSize = box.getSize() / static_cast<float>(2);
+        static AABB_centroid<Point_2> compute_Box_position_size(const AABB_centroid<Point_2> &box, const sub_AABB i) {
+            auto point_xy = Point_2{-1.0f * (static_cast<float>(i / 2) - 0.5f), static_cast<float>(i % 2) - 0.5f};
+            return {
+                box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f, false
+            };
             switch (i) {
                 case North_West:
-                    return {origin, childSize};
+                    return {
+                        box.centroid_point_ + box.direction_interval_ * Point_2{-0.5f, 0.5f},
+                        box.direction_interval_ * 0.5f
+                    };
                 case North_East:
-                    return quadtree::Box<float>(quadtree::Vector2<float>(origin.x + childSize.x, origin.y), childSize);
+                    return {
+                        box.centroid_point_ + box.direction_interval_ * Point_2{0.5f, 0.5f},
+                        box.direction_interval_ * 0.5f
+                    };
                 case South_West:
-                    return quadtree::Box<float>(quadtree::Vector2<float>(origin.x, origin.y + childSize.y), childSize);
+                    return {
+                        box.centroid_point_ + box.direction_interval_ * Point_2{-0.5f, -0.5f},
+                        box.direction_interval_ * 0.5f
+                    };
                 case South_East:
-                    return quadtree::Box<float>(origin + childSize, childSize);
+                    return {
+                        box.centroid_point_ + box.direction_interval_ * Point_2{0.5f, -0.5f},
+                        box.direction_interval_ * 0.5f
+                    };
                 default:
                     assert(false && "Invalid child index");
-                    return quadtree::Box<float>();
+                    return AABB_centroid<Point_2>();
             }
         }
 
         /**
         *
-        * @param nodeBox 被检索的包围盒
-        * @param valueBox 需要查找的包围
+        * @param entity_box 被检索的包围盒
+        * @param node_box 需要查找的包围
         * @return 在被检索的包围盒的 上下左右的哪个位置
         */
-        [[nodiscard]] sub_AABB getQuadrant(const quadtree::Box<float> &nodeBox, const quadtree::Box<float> &valueBox) const {
-            auto center = nodeBox.getCenter();
-            // West
-            if (valueBox.getRight() < center.x) {
-                // North West
-                if (valueBox.getBottom() < center.y)
-                    return North_West;
-                    // South West
-                else if (valueBox.top >= center.y)
+        [[nodiscard]] sub_AABB getQuadrant(const AABB_centroid<Point_2> &node_box,
+                                           const AABB_centroid<Point_2> &entity_box) const {
+            if (entity_box.centroid_point_.x < node_box.centroid_point_.x) {
+                if (entity_box.centroid_point_.y < node_box.centroid_point_.y)
                     return South_West;
-                    // Not contained in any quadrant
-                else
-                    return invalid;
-            }
-            // East
-            else if (valueBox.left >= center.x) {
-                // North East
-                if (valueBox.getBottom() < center.y)
-                    return North_East;
-                    // South East
-                else if (valueBox.top >= center.y)
+                else if (entity_box.centroid_point_.y >= node_box.centroid_point_.y)
+                    return North_West;
+            } else if (entity_box.centroid_point_.x >= node_box.centroid_point_.x) {
+                if (entity_box.centroid_point_.y < node_box.centroid_point_.y)
                     return South_East;
-                    // Not contained in any quadrant
-                else
-                    return invalid;
+                else if (entity_box.centroid_point_.y >= node_box.centroid_point_.y)
+                    return North_East;
             }
-            // Not contained in any quadrant
-            else
-                return invalid;
         }
 
     private:
@@ -149,8 +148,8 @@ namespace ECS {
             return data[node_index].add_entity(entity);
         }
 
-        bool add_node(const uint32_t node_index, const quadtree::Box<float> &node_box,
-                      const entt::entity entity, quadtree::Box<float> &entity_box) {
+        bool add_node(const uint32_t node_index, const AABB_centroid<Point_2> &node_box,
+                      const entt::entity entity, AABB_centroid<Point_2> &entity_box) {
             if (isLeaf(node_index)) {
                 if (add_entity(node_index, entity)) {
                     return true;
@@ -161,28 +160,23 @@ namespace ECS {
             } else {
                 const auto i = getQuadrant(node_box, entity_box);
                 // Add the value in a child if the value is entirely contained in it
-                if (i != invalid)
-                    return add_node(data[node_index].children_index[i],
-                                    compute_Box_position_size(node_box, i), entity, entity_box);
-                // Otherwise, we add the value in the current node
-                else {
-                    assert(false && "Invalid child index");
-                    return false;
-                }
+                return add_node(data[node_index].children_index[i],
+                                compute_Box_position_size(node_box, i), entity, entity_box);
             }
             return false;
         }
 
-        static quadtree::Box<float> &get_entity_box(const entt::entity entity) {
-            return Logic_entt().get<quadtree::Box<float> >(entity);;
+        static AABB_centroid<Point_2> &get_entity_box(const entt::entity entity) {
+            return Logic_entt().get<AABB_centroid<Point_2> >(entity);;
         }
 
 
-        void split(const uint32_t node_index, const quadtree::Box<float> &node_box) {
+        void split(const uint32_t node_index, const AABB_centroid<Point_2> &node_box) {
             assert(isLeaf(node_index) && "Only leaves can be split");
             // Create children
 
             for (auto &child: data[node_index].children_index) {
+                assert(data.size() < max_quadtree_node);
                 child = data.size();
                 data.emplace_back();
             }
@@ -190,12 +184,9 @@ namespace ECS {
             for (const auto &entity: data[node_index].entities) {
                 auto entity_box = get_entity_box(entity);
                 auto i          = getQuadrant(node_box, entity_box);
-                if (i != invalid) {
-                    // 这里确实是有问题需要考虑的， 如果多次集中在同一个小格子中
-                    // 那么之后添加还是会出现问题的
-                    add_entity(data[node_index].children_index[i], entity);
-                }
-                assert(false && "Invalid entity index");
+                // 这里确实是有问题需要考虑的， 如果多次集中在同一个小格子中
+                // 那么之后添加还是会出现问题的
+                add_entity(data[node_index].children_index[i], entity);
             }
             data[node_index].entities = make_filled_array<entt::entity, 8>(entt::null);
         }
