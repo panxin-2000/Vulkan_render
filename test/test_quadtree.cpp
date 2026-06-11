@@ -83,11 +83,11 @@ TEST(box, quadtree) {
             quadtree.remove(node);
     }
     // Quadtree
-    auto intersections1 = std::vector<std::vector<insert_data *> >(nodes.size());
+    auto intersections1 = std::vector<std::vector<insert_data > >(nodes.size());
     auto start2         = std::chrono::steady_clock::now();
     for (const auto &node: nodes) {
         if (!removed[node.id])
-            intersections1[node.id] = quadtree.query(node.box);
+            intersections1[node.id] = quadtree.query(node);
     }
     auto duration2 = std::chrono::steady_clock::now() - start2;
     auto duration1 = std::chrono::steady_clock::now() - start1;
