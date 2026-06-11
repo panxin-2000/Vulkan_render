@@ -89,12 +89,16 @@ public:
     }
 
 
-    static Point_2 min_two_point(const Point_2 &L, const Point_2 &R) {
+    static Point_2 min(const Point_2 &L, const Point_2 &R) {
         return {((R.x < L.x) ? R.x : L.x), ((R.y < L.y) ? R.y : L.y)};
     }
 
-    static Point_2 max_two_point(Point_2 &L, const Point_2 &R) {
+    static Point_2 max(Point_2 &L, const Point_2 &R) {
         return {((R.x > L.x) ? R.x : L.x), ((R.y > L.y) ? R.y : L.y)};
+    }
+
+    [[nodiscard]] float get_max_x_or_y() const {
+        return std::max<float>(this->x, this->y);
     }
 
     Point_2 operator+(const Point_2 &R) const {

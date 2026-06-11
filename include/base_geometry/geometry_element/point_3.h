@@ -88,14 +88,17 @@ public:
         return temp;
     }
 
-    static Point_3 min_two_point(const Point_3 &L, const Point_3 &R) {
+    static Point_3 min(const Point_3 &L, const Point_3 &R) {
         return {((R.x < L.x) ? R.x : L.x), ((R.y < L.y) ? R.y : L.y), ((R.z < L.z) ? R.z : L.z)};
     }
 
-    static Point_3 max_two_point(Point_3 &L, const Point_3 &R) {
+    static Point_3 max(Point_3 &L, const Point_3 &R) {
         return {((R.x > L.x) ? R.x : L.x), ((R.y > L.y) ? R.y : L.y), ((R.z > L.z) ? R.z : L.z)};
     }
 
+    [[nodiscard]] float get_max_x_or_y() const {
+        return std::max<float>(std::max<float>(this->x, this->y), this->z);
+    }
 
     Point_3 operator/(const float number) const {
         Point_3 temp{0, 0, 0};

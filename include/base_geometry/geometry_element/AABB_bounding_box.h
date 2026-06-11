@@ -32,8 +32,8 @@ public:
         min_point_ = T::init_max_limit();
         max_point_ = T::init_min_limit();
         for (auto vertex_point: points) {
-            min_point_ = T::min_two_point(min_point_, vertex_point);
-            max_point_ = T::max_two_point(max_point_, vertex_point);
+            min_point_ = T::min(min_point_, vertex_point);
+            max_point_ = T::max(max_point_, vertex_point);
         }
     }
 
@@ -41,21 +41,21 @@ public:
         min_point_ = T::init_max_limit();
         max_point_ = T::init_min_limit();
         for (auto vertex_point: points) {
-            min_point_ = T::min_two_point(min_point_, vertex_point);
-            max_point_ = T::max_two_point(max_point_, vertex_point);
+            min_point_ = T::min(min_point_, vertex_point);
+            max_point_ = T::max(max_point_, vertex_point);
         }
     }
 
     AABB_min_max(T a_points, T b_points) {
-        min_point_ = T::min_two_point(a_points, b_points);
-        max_point_ = T::max_two_point(a_points, b_points);
+        min_point_ = T::min(a_points, b_points);
+        max_point_ = T::max(a_points, b_points);
     }
 
     AABB_min_max(T a_points, T b_points, T c_points) {
-        min_point_ = T::min_two_point(a_points, b_points);
-        max_point_ = T::max_two_point(a_points, b_points);
-        min_point_ = T::min_two_point(min_point_, c_points);
-        max_point_ = T::max_two_point(max_point_, c_points);
+        min_point_ = T::min(a_points, b_points);
+        max_point_ = T::max(a_points, b_points);
+        min_point_ = T::min(min_point_, c_points);
+        max_point_ = T::max(max_point_, c_points);
     }
 
 
@@ -79,7 +79,7 @@ public:
         return centroid_point_;
     }
 
-    auto get_radius() {
+    auto get_radius() const {
         return direction_interval_;
     }
 

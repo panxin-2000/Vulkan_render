@@ -116,15 +116,13 @@ TEST(entt, quadtree_point2) {
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
 
     static entt::registry instance;
+#define Logic_entt() instance
 
-    auto Logic_entt = []() {
-        return std::move(instance);
-    };
 
-    auto get_AABB_centroid = [Logic_entt](const entt::entity entity) {
+    auto get_AABB_centroid = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid_point();
     };
-    auto get_AABB_radius = [Logic_entt](const entt::entity entity) {
+    auto get_AABB_radius = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
     };
 
@@ -172,6 +170,10 @@ TEST(entt, quadtree_point2) {
     entities.emplace_back(static_cast<entt::entity>(2));
     entities.emplace_back(static_cast<entt::entity>(3));
     entities.emplace_back(static_cast<entt::entity>(4));
+
+    std::sort(result.begin(), result.end());
+    std::sort(entities.begin(), entities.end());
+
     EXPECT_EQ(result, entities);
     Logic_entt().clear();
 }
@@ -179,17 +181,15 @@ TEST(entt, quadtree_point2) {
 TEST(entt, quadtree_point3) {
     // 添加实体测试时 如果可以的话，尽量每次重制实体。
     static entt::registry instance;
-    auto Logic_entt = []() {
-        return std::move(instance);
-    };
+#define Logic_entt() instance
 
     auto n   = 1000;
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
 
-    auto get_AABB_centroid = [Logic_entt](const entt::entity entity) {
+    auto get_AABB_centroid = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_centroid_point();
     };
-    auto get_AABB_radius = [Logic_entt](const entt::entity entity) {
+    auto get_AABB_radius = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_radius();
     };
 
@@ -237,6 +237,10 @@ TEST(entt, quadtree_point3) {
     entities.emplace_back(static_cast<entt::entity>(2));
     entities.emplace_back(static_cast<entt::entity>(3));
     entities.emplace_back(static_cast<entt::entity>(4));
+
+    std::sort(result.begin(), result.end());
+    std::sort(entities.begin(), entities.end());
+
     EXPECT_EQ(result, entities);
     Logic_entt().clear();
 }

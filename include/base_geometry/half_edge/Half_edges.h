@@ -471,8 +471,8 @@ public:
     AABB_min_max<vertex_base_type> calculate_aabb() {
         AABB_min_max<vertex_base_type> box;
         for (auto vertex_point: vertices) {
-            box.min_point_ = vertex_base_type::min_two_point(box.min_point_, vertex_point);
-            box.max_point_ = vertex_base_type::max_two_point(box.max_point_, vertex_point);
+            box.min_point_ = vertex_base_type::min(box.min_point_, vertex_point);
+            box.max_point_ = vertex_base_type::max(box.max_point_, vertex_point);
         }
         return box;
     }

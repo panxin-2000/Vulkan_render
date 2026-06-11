@@ -116,8 +116,8 @@ inline AABB_min_max<Point_3> find_min_max_point(const std::shared_ptr<std::vecto
     Point_3 min = Point_3::init_max_limit();
     Point_3 max = Point_3::init_min_limit();
     for (auto &vertex: *vertices) {
-        min = Point_3::min_two_point(vertex.pos, min);
-        max = Point_3::max_two_point(vertex.pos, max);
+        min = Point_3::min(vertex.pos, min);
+        max = Point_3::max(vertex.pos, max);
     }
     return {min, max};
 }
