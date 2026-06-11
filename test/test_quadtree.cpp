@@ -111,25 +111,132 @@ TEST(box, quadtree) {
     std::cout << intersections2.size() << '\n';
 }
 
-TEST(entt, quadtree) {
+TEST(entt, quadtree_point2) {
     auto n   = 1000;
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
 
-    auto get_AABB_centroid = [](const entt::entity entity) {
-        return Logic_entt().get<AABB_centroid<Point_2> >(entity).centroid_point_;
-    };
-    auto get_AABB_radius = [](const entt::entity entity) {
-        return Logic_entt().get<AABB_centroid<Point_2> >(entity).centroid_point_;
+    static entt::registry instance;
+
+    auto Logic_entt = []() {
+        return std::move(instance);
     };
 
-    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{{0.5, 0.5f}, {0.5f, 0.5f}},
+    auto get_AABB_centroid = [Logic_entt](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid_point();
+    };
+    auto get_AABB_radius = [Logic_entt](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
+    };
+
+    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{
+                                               {0.5, 0.5f}, {0.5f, 0.5f}
+                                           },
                                            get_AABB_centroid,
-                                           get_AABB_radius);
-    for (auto i = 0; i < 10; ++i) {
+                                           get_AABB_radius); {
         const entt::entity entity = Logic_entt().create();
         Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
-                                                          {0.76f, 0.76f}, {0.06f, 0.06f}
+                                                          {0.6f, 0.6f}, {0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
+                                                          {0.3f, 0.3f}, {0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
+                                                          {0.3f, 0.6f}, {0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
+                                                          {0.6f, 0.3f}, {0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
+                                                          {0.7f, 0.7f}, {0.2f, 0.2f}
                                                       });
         quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
     }
+    auto result = quadtree.query(AABB_centroid<Point_2>{
+                                     {0.5f, 0.5f}, {0.3f, 0.3f}
+                                 });
+    std::vector<entt::entity> entities;
+    entities.emplace_back(static_cast<entt::entity>(0));
+    entities.emplace_back(static_cast<entt::entity>(1));
+    entities.emplace_back(static_cast<entt::entity>(2));
+    entities.emplace_back(static_cast<entt::entity>(3));
+    entities.emplace_back(static_cast<entt::entity>(4));
+    EXPECT_EQ(result, entities);
+    Logic_entt().clear();
+}
+
+TEST(entt, quadtree_point3) {
+    // 添加实体测试时 如果可以的话，尽量每次重制实体。
+    static entt::registry instance;
+    auto Logic_entt = []() {
+        return std::move(instance);
+    };
+
+    auto n   = 1000;
+    auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
+
+    auto get_AABB_centroid = [Logic_entt](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_centroid_point();
+    };
+    auto get_AABB_radius = [Logic_entt](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_radius();
+    };
+
+    auto quadtree = ECS::Quadtree<Point_3>(AABB_centroid<Point_3>{
+                                               {0.5, 0.5f, 0.1f}, {0.5f, 0.5f, 0.1f}
+                                           },
+                                           get_AABB_centroid,
+                                           get_AABB_radius); {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
+                                                          {0.6f, 0.6f, 0.1f}, {0.1f, 0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_3> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
+                                                          {0.3f, 0.3f, 0.1f}, {0.1f, 0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_3> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
+                                                          {0.3f, 0.6f, 0.1f}, {0.1f, 0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_3> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
+                                                          {0.6f, 0.3f, 0.1f}, {0.1f, 0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_3> >(entity));
+    } {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
+                                                          {0.7f, 0.7f, 0.1f}, {0.2f, 0.2f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_3> >(entity));
+    }
+    auto result = quadtree.query(AABB_centroid<Point_3>{
+                                     {0.5f, 0.5f, 0.1f}, {0.3f, 0.3f, 0.1f}
+                                 });
+    std::vector<entt::entity> entities;
+    entities.emplace_back(static_cast<entt::entity>(0));
+    entities.emplace_back(static_cast<entt::entity>(1));
+    entities.emplace_back(static_cast<entt::entity>(2));
+    entities.emplace_back(static_cast<entt::entity>(3));
+    entities.emplace_back(static_cast<entt::entity>(4));
+    EXPECT_EQ(result, entities);
+    Logic_entt().clear();
 }

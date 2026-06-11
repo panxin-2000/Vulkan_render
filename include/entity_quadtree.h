@@ -143,6 +143,14 @@ namespace ECS {
             return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
         }
 
+        [[nodiscard]] sub_AABB getQuadrant(const AABB_centroid<Point_3> &node_box,
+                                           const AABB_centroid<Point_3> &entity_box) const {
+            auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
+            auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
+            auto bool_z = static_cast<uint32_t>(entity_box.centroid_point_.z < node_box.centroid_point_.z);
+            return static_cast<sub_AABB>(bool_x + bool_y * 2 + bool_z * 4);
+        }
+
         /**
         *
         * @param entity_box 被检索的包围盒
@@ -151,17 +159,9 @@ namespace ECS {
         */
         [[nodiscard]] sub_AABB getQuadrant(const AABB_centroid<Point_2> &node_box,
                                            const AABB_centroid<Point_2> &entity_box) const {
-            if (entity_box.centroid_point_.x < node_box.centroid_point_.x) {
-                if (entity_box.centroid_point_.y < node_box.centroid_point_.y)
-                    return South_West;
-                else if (entity_box.centroid_point_.y >= node_box.centroid_point_.y)
-                    return North_West;
-            } else if (entity_box.centroid_point_.x >= node_box.centroid_point_.x) {
-                if (entity_box.centroid_point_.y < node_box.centroid_point_.y)
-                    return South_East;
-                else if (entity_box.centroid_point_.y >= node_box.centroid_point_.y)
-                    return North_East;
-            }
+            const auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
+            const auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
+            return static_cast<sub_AABB>(bool_x + bool_y * 2);
         }
 
     private:
@@ -281,7 +281,7 @@ namespace ECS {
             if (!isLeaf(node_index)) {
                 for (auto i = 0; i < 4; ++i) {
                     const auto child_box = compute_Box_position_size(node_box, static_cast<sub_AABB>(i));
-                    if (intersects(check_box, child_box))
+                    if (intersect(check_box, child_box))
                         query(data[node_index].children_index[i], child_box, check_box, values);
                 }
             }

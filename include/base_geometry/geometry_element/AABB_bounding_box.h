@@ -75,11 +75,11 @@ public:
 
     AABB_centroid() = default;
 
-    auto get_centroid_point(AABB_centroid box) {
+    auto get_centroid_point() {
         return centroid_point_;
     }
 
-    auto get_direction_interval(AABB_centroid box) {
+    auto get_radius() {
         return direction_interval_;
     }
 
@@ -92,28 +92,6 @@ public:
         direction_interval_ = (box.max_point_ - box.min_point_) / 2;
     }
 
-
-    AABB_centroid(std::initializer_list<T> points) {
-        T min_point = T::init_max_limit();
-        T max_point = T::init_min_limit();
-        for (auto vertex_point: points) {
-            min_point = T::min_two_point(min_point, vertex_point);
-            max_point = T::max_two_point(max_point, vertex_point);
-        }
-        centroid_point_     = (min_point + max_point) / 2;
-        direction_interval_ = (max_point - min_point) / 2;
-    }
-
-    AABB_centroid(std::vector<T> &points) {
-        T min_point = T::init_max_limit();
-        T max_point = T::init_min_limit();
-        for (auto vertex_point: points) {
-            min_point = T::min_two_point(min_point, vertex_point);
-            max_point = T::max_two_point(max_point, vertex_point);
-        }
-        centroid_point_     = (min_point + max_point) / 2;
-        direction_interval_ = (max_point - min_point) / 2;
-    }
 
     /**
      *
