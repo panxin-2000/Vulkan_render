@@ -87,7 +87,7 @@ public:
         centroid_point_ = centroid_point_ + offset;
     }
 
-    AABB_centroid(AABB_min_max<T> box) {
+    explicit AABB_centroid(AABB_min_max<T> box) {
         centroid_point_     = (box.min_point_ + box.max_point_) / 2;
         direction_interval_ = (box.max_point_ - box.min_point_) / 2;
     }
@@ -119,19 +119,17 @@ public:
      *
      * @param l_points 直接给值时是中心点
      * @param r_points 直接给值时是每个方向的大小，(半径)
-     * @param value_or_need_calculate 直接给值(false) 还是需要计算(true)
      */
-    AABB_centroid(T l_points, T r_points, bool value_or_need_calculate = true) {
-        if (value_or_need_calculate == true) {
-            T min_point         = T::min_two_point(l_points, r_points);
-            T max_point         = T::max_two_point(l_points, r_points);
-            centroid_point_     = (min_point + max_point) / 2;
-            direction_interval_ = (max_point - min_point) / 2;
-        } else {
-            centroid_point_     = l_points;
-            direction_interval_ = r_points;
-            direction_interval_ = abs(direction_interval_);
-        }
+    AABB_centroid(T l_points, T r_points) {
+        centroid_point_     = l_points;
+        direction_interval_ = r_points;
+        direction_interval_ = abs(direction_interval_);
+    }
+
+    AABB_centroid<T> &operator =(AABB_min_max<T> box) {
+        centroid_point_     = (box.min_point_ + box.max_point_) / 2;
+        direction_interval_ = (box.max_point_ - box.min_point_) / 2;
+        return *this;
     }
 };
 

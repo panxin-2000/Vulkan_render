@@ -91,34 +91,7 @@ namespace ECS {
          */
         static AABB_centroid<Point_2> compute_Box_position_size(const AABB_centroid<Point_2> &box, const sub_AABB i) {
             auto point_xy = Point_2{-1.0f * (static_cast<float>(i / 2) - 0.5f), static_cast<float>(i % 2) - 0.5f};
-            return {
-                box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f, false
-            };
-            switch (i) {
-                case North_West:
-                    return {
-                        box.centroid_point_ + box.direction_interval_ * Point_2{-0.5f, 0.5f},
-                        box.direction_interval_ * 0.5f
-                    };
-                case North_East:
-                    return {
-                        box.centroid_point_ + box.direction_interval_ * Point_2{0.5f, 0.5f},
-                        box.direction_interval_ * 0.5f
-                    };
-                case South_West:
-                    return {
-                        box.centroid_point_ + box.direction_interval_ * Point_2{-0.5f, -0.5f},
-                        box.direction_interval_ * 0.5f
-                    };
-                case South_East:
-                    return {
-                        box.centroid_point_ + box.direction_interval_ * Point_2{0.5f, -0.5f},
-                        box.direction_interval_ * 0.5f
-                    };
-                default:
-                    assert(false && "Invalid child index");
-                    return AABB_centroid<Point_2>();
-            }
+            return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
         }
 
         /**

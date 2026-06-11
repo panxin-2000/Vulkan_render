@@ -47,7 +47,7 @@ public:
     }
 
     void set_bounding_box(const Point_2 min, const Point_2 max) {
-        bounding_box_ = AABB_centroid<Point_2>(min, max);
+        bounding_box_ = (AABB_min_max<Point_2>(min, max));
     }
 
     AABB_min_max<Point_2> get_bounding_box() {
