@@ -115,12 +115,21 @@ TEST(entt, quadtree) {
     auto n   = 1000;
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
 
-    auto quadtree = ECS::Quadtree(AABB_centroid<Point_2>{{0.5, 0.5f}, {0.5f, 0.5f}});
-    for (auto i = 0; i < 6; ++i) {
+    auto get_AABB_centroid = [](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).centroid_point_;
+    };
+    auto get_AABB_radius = [](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).centroid_point_;
+    };
+
+    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{{0.5, 0.5f}, {0.5f, 0.5f}},
+                                           get_AABB_centroid,
+                                           get_AABB_radius);
+    for (auto i = 0; i < 10; ++i) {
         const entt::entity entity = Logic_entt().create();
         Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
                                                           {0.76f, 0.76f}, {0.06f, 0.06f}
                                                       });
-        quadtree.add_entity(entity);
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
     }
 }
