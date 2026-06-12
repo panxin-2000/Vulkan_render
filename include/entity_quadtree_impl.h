@@ -11,11 +11,41 @@ namespace ECS {
     template<typename Point_type>
     bool Quadtree<Point_type>::get_all_entity(const uint32_t node_index, std::vector<entt::entity> &result) const {
         uint32_t node_index_current = node_index;
-        while (std::numeric_limits<uint32_t>::max() != data[node_index_current].next_entities_index) {
-            data[node_index_current].get_all_entity(result);
-            node_index_current = data[node_index_current].next_entities_index;
+        while (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
+            get_node(node_index_current).get_all_entity(result);
+            node_index_current = get_next_node_index(node_index_current);
         }
         return true;
+    }
+
+    template<typename Point_type>
+    [[nodiscard]] bool Quadtree<Point_type>::clean(const uint32_t node_index) {
+        uint32_t node_index_current = node_index;
+        while (get_node(node_index_current).empty() == true) {
+            if (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
+                auto need_clean    = node_index_current;
+                node_index_current = get_next_node_index(node_index_current);
+                get_node(need_clean).clean();
+                free_list.emplace_back(need_clean);
+                node_size_--;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template<typename Point_type>
+    [[nodiscard]] bool Quadtree<Point_type>::is_empty(const uint32_t node_index) const {
+        uint32_t node_index_current = node_index;
+        while (get_node(node_index_current).empty() == true) {
+            if (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
+                node_index_current = get_next_node_index(node_index_current);
+            } else {
+                return true;
+            }
+        }
+        return false;
     }
 
     template<typename Point_type>
@@ -26,12 +56,17 @@ namespace ECS {
         if (f_set_entity_node_index_ != nullptr) {
             f_set_entity_node_index_(entity, node_index);
         }
-        while (data[node_index_current].add_entity(entity) == false) {
-            if (std::numeric_limits<uint32_t>::max() == data[node_index_current].next_entities_index) {
-                data[node_index_current].next_entities_index = data.size();
-                data.emplace_back();
+        while (get_node(node_index_current).add_entity(entity) == false) {
+            if (std::numeric_limits<uint32_t>::max() == get_next_node_index(node_index_current)) {
+                if (!free_list.empty()) {
+                    set_next_node_index(node_index_current, free_list.back());
+                    free_list.pop_back();
+                } else {
+                    set_next_node_index(node_index_current, data.size());
+                    data.emplace_back();
+                }
             }
-            node_index_current = data[node_index_current].next_entities_index;
+            node_index_current = get_next_node_index(node_index_current);
         }
         return true;
     }
@@ -41,9 +76,9 @@ namespace ECS {
         // Find the value in node->values
         assert(node_index< data.size());
         uint32_t node_index_current = node_index;
-        while (data[node_index_current].remove_entity(entity) == false) {
-            if (std::numeric_limits<uint32_t>::max() != data[node_index_current].next_entities_index) {
-                node_index_current = data[node_index_current].next_entities_index;
+        while (get_node(node_index_current).remove_entity(entity) == false) {
+            if (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
+                node_index_current = get_next_node_index(node_index_current);
             } else {
                 return false;
             }
@@ -55,14 +90,24 @@ namespace ECS {
     bool Quadtree<Point_type>::remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                                            const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
                                            uint32_t current_depth, const uint32_t ideal_depth) {
+        assert(current_node_index != std::numeric_limits<uint32_t>::max());
         uint32_t current_node_index = node_index;
         auto current_node_box       = node_box;
+        std::stack<uint32_t> node_stack;
+        node_stack.push(current_node_index);
         while (ideal_depth > current_depth) {
             const auto i       = get_quadrant(current_node_box, entity_box);
             current_node_box   = compute_Box_position_size(current_node_box, i);
-            current_node_index = data[current_node_index].children_index[i];
-            current_depth      = current_depth + 1;
+            current_node_index = get_node_child_index(current_node_index, i);
+            assert(current_node_index != std::numeric_limits<uint32_t>::max());
+            current_depth = current_depth + 1;
+            node_stack.push(current_node_index);
         }
+        // while (!node_stack.empty()) {
+
+        // }
+
+
         if (current_node_index != std::numeric_limits<uint32_t>::max())
             return remove_entity(current_node_index, entity);
         return false;
@@ -78,16 +123,16 @@ namespace ECS {
         while (true) {
             if (ideal_depth == current_depth) {
                 return add_entity(current_node_index, entity);
-            } else if (ideal_depth > current_depth && isLeaf(current_node_index)) {
+            } else if (ideal_depth > current_depth && is_leaf(current_node_index)) {
                 split(current_node_index);
                 const auto i       = get_quadrant(current_node_box, entity_box);
                 current_node_box   = compute_Box_position_size(current_node_box, i);
-                current_node_index = data[current_node_index].children_index[i];
+                current_node_index = get_node_child_index(current_node_index, i);
                 current_depth      = current_depth + 1;
             } else {
                 const auto i       = get_quadrant(current_node_box, entity_box);
                 current_node_box   = compute_Box_position_size(current_node_box, i);
-                current_node_index = data[current_node_index].children_index[i];
+                current_node_index = get_node_child_index(current_node_index, i);
                 current_depth      = current_depth + 1;
             }
         }
@@ -97,10 +142,15 @@ namespace ECS {
     template<typename Point_type>
     void Quadtree<Point_type>::split(const uint32_t node_index) {
         assert(isLeaf(node_index) && "Only leaves can be split");
-        for (auto &child: data[node_index].children_index) {
+        for (auto &child: get_node(node_index).children_index) {
             assert(data.size() < max_quadtree_node);
-            child = data.size();
-            data.emplace_back();
+            if (!free_list.empty()) {
+                child = free_list.back();
+                free_list.pop_back();
+            } else {
+                child = data.size();
+                data.emplace_back();
+            }
             node_size_++;
         }
     }
@@ -110,7 +160,7 @@ namespace ECS {
     void Quadtree<Point_type>::query_one_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                                               const AABB_centroid<Point_type> &check_box,
                                               std::vector<entt::entity> &result) const {
-        for (const auto &value: data[node_index].entities) {
+        for (const auto &value: get_node(node_index).entities) {
             if (value != entt::null) {
                 const AABB_centroid<Point_type> entity_box{f_get_AABB_centroid_(value), f_get_AABB_radius_(value)};
                 if (is_intersect(entity_box, check_box))
@@ -126,8 +176,8 @@ namespace ECS {
         // 简单 当前 node_index
         query_one_node(node_index, node_box, check_box, result);
         // 检查 全部的 children node_index
-        for (auto i = 0; i < data[node_index].children_index.size(); ++i) {
-            auto child = data[node_index].children_index[i];
+        for (auto i = 0; i < get_node(node_index).children_index.size(); ++i) {
+            auto child = get_node_child_index(node_index, i);
             if (child != std::numeric_limits<uint32_t>::max()) {
                 const auto child_box          = compute_Box_position_size(node_box, static_cast<sub_AABB>(i));
                 const auto child_loose_bounds = AABB_centroid<Point_type>{

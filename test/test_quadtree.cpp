@@ -211,6 +211,10 @@ TEST(entt, quadtree_point2) {
     std::sort(entities.begin(), entities.end());
 
     EXPECT_EQ(result, entities);
+    for (const entt::entity entity: entities) {
+        EXPECT_EQ(true, quadtree.remove_entity(entity));
+    }
+
     Logic_entt().clear();
 }
 

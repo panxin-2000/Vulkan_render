@@ -56,11 +56,11 @@ namespace ECS {
         return arr;
     }
 
-    template<std::size_t N>
+    template<std::size_t N, std::size_t M>
     class Quadtree_node {
     public:
         std::array<uint32_t, N> children_index = make_filled_array<uint32_t, N>(std::numeric_limits<uint32_t>::max());
-        std::array<entt::entity, 8> entities   = make_filled_array<entt::entity, 8>(entt::null);
+        std::array<entt::entity, M> entities   = make_filled_array<entt::entity, M>(entt::null);
         // std::vector<entt::entity> vector_entities;
         uint32_t next_entities_index = std::numeric_limits<uint32_t>::max();
 
@@ -70,6 +70,16 @@ namespace ECS {
             return false;
         }
 
+
+        void clean() {
+            for (auto &entity_ref: entities) {
+                entity_ref = entt::null;
+            }
+            for (auto &child: children_index) {
+                child = std::numeric_limits<uint32_t>::max();
+            }
+            next_entities_index = std::numeric_limits<uint32_t>::max();
+        }
 
         bool add_entity(const entt::entity entity) {
             for (auto &entity_ref: entities) {
@@ -100,6 +110,23 @@ namespace ECS {
             }
             return false;
         }
+
+
+        [[nodiscard]] bool empty() const {
+            if (entities == make_filled_array<entt::entity, M>(entt::null))
+                return true;
+            return false;
+        }
+
+        [[nodiscard]] size_t size() const {
+            size_t result = 0;
+            for (auto &entity_ref: entities) {
+                if (entity_ref != entt::null) {
+                    result++;
+                }
+            }
+            return result;
+        }
     };
 
     /**
@@ -119,6 +146,7 @@ namespace ECS {
         upper_right_z,
         down_left_z,
         down_right_z,
+        invalid_max
     };
 
     /**
@@ -192,11 +220,6 @@ namespace ECS {
                                                                f_get_AABB_centroid_(get_AABB_centroid),
                                                                f_get_AABB_radius_(get_AABB_radius) {
             data.reserve(max_quadtree_node);
-            f_set_entity_node_index_ = [](entt::entity entity, uint32_t node_index) {
-            };
-            f_get_entity_node_index_ = [](entt::entity entity) -> uint32_t {
-                return std::numeric_limits<uint32_t>::max();
-            };
             data.emplace_back();
             node_size_ = 1;
         }
@@ -235,7 +258,19 @@ namespace ECS {
         }
 
         bool remove_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
-            return remove_node(0, mRootBox_position_size, entity, entity_box);
+            if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_2> &>) {
+                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
+                                                   entity_box.get_radius().get_max_x_or_y(),
+                                                   MaxDepth);
+                return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
+            } else if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_3> &>) {
+                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
+                                                   entity_box.get_radius().get_max_x_or_y(),
+                                                   MaxDepth);
+                return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
+            }
+            assert(false && "not implemented");
+            return false;
         }
 
 
@@ -254,10 +289,13 @@ namespace ECS {
 
     private:
         static constexpr auto BRANCH_COUNT = 1 << (sizeof(Point_type) / sizeof(float));
+        static constexpr auto ENTITY_COUNT = 1 << (sizeof(Point_type) / sizeof(float));
         const uint32_t max_quadtree_node   = 100; // 最多允许的四叉树 结点数量
-        std::vector<Quadtree_node<BRANCH_COUNT> > data;
+        std::vector<Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> > data;
+        std::vector<uint32_t> free_list;
         AABB_centroid<Point_type> mRootBox_position_size;
         uint32_t mRoot = 0;
+
 
         Get_centroid f_get_AABB_centroid_              = nullptr;
         Get_radius f_get_AABB_radius_                  = nullptr;
@@ -267,9 +305,40 @@ namespace ECS {
         size_t node_size_;
 
 
-        [[nodiscard]] bool isLeaf(const uint32_t node_index) const {
+        [[nodiscard]] bool is_leaf(const uint32_t node_index) const {
             return data[node_index].is_leaf();
         }
+
+        /**
+         * 终于知道为什么要有两个了，让函数按照需要选择，为了适配 函数的 const 符号
+         * @param node_index
+         * @return
+         */
+        Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) {
+            return data[node_index];
+        }
+
+        const Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) const {
+            return data[node_index];
+        }
+
+        [[nodiscard]] uint32_t get_next_node_index(const uint32_t node_index) const {
+            return get_node(node_index).next_entities_index;
+        }
+
+        [[nodiscard]] uint32_t get_node_child_index(const uint32_t node_index, uint32_t index) const {
+            assert(index >=0 && index < invalid_max);
+            return get_node(node_index).children_index[index];
+        }
+
+        void set_next_node_index(const uint32_t node_index, uint32_t value) {
+            get_node(node_index).next_entities_index = value;
+        }
+
+        [[nodiscard]] bool is_empty(uint32_t node_index) const;
+
+        [[nodiscard]] bool clean(uint32_t node_index);
+
 
         /**
          * 确定性的将 entity 添加到 node_index 中
