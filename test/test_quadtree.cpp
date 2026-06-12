@@ -116,7 +116,7 @@ TEST(entt, quadtree_same_point) {
 #define Logic_entt() instance
 
     auto get_AABB_centroid = [](const entt::entity entity) {
-        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid_point();
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid();
     };
     auto get_AABB_radius = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
@@ -156,7 +156,7 @@ TEST(entt, quadtree_point2) {
 
 
     auto get_AABB_centroid = [](const entt::entity entity) {
-        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid_point();
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid();
     };
     auto get_AABB_radius = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
@@ -227,7 +227,7 @@ TEST(entt, quadtree_point3) {
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
 
     auto get_AABB_centroid = [](const entt::entity entity) {
-        return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_centroid_point();
+        return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_centroid();
     };
     auto get_AABB_radius = [](const entt::entity entity) {
         return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_radius();

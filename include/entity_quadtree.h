@@ -45,90 +45,9 @@ inline uint32_t calculate_level(const float root_size,
 #include "entt/entt.hpp"
 #include "base_geometry/base.h"
 #include "base_geometry/intersect_function.h"
+#include "hierarchical_spatial_partitioning_trees.h"
 
 namespace ECS {
-    template<typename T, std::size_t N>
-    constexpr std::array<T, N> make_filled_array(const T &value) {
-        std::array<T, N> arr{};
-        for (std::size_t i = 0; i < N; ++i) {
-            arr[i] = value;
-        }
-        return arr;
-    }
-
-    template<std::size_t N, std::size_t M>
-    class Quadtree_node {
-    public:
-        std::array<uint32_t, N> children_index = make_filled_array<uint32_t, N>(std::numeric_limits<uint32_t>::max());
-        std::array<entt::entity, M> entities   = make_filled_array<entt::entity, M>(entt::null);
-        // std::vector<entt::entity> vector_entities;
-        uint32_t next_entities_index = std::numeric_limits<uint32_t>::max();
-
-        [[nodiscard]] bool is_leaf() const {
-            if (children_index == make_filled_array<uint32_t, N>(std::numeric_limits<uint32_t>::max()))
-                return true;
-            return false;
-        }
-
-
-        void clean() {
-            for (auto &entity_ref: entities) {
-                entity_ref = entt::null;
-            }
-            for (auto &child: children_index) {
-                child = std::numeric_limits<uint32_t>::max();
-            }
-            next_entities_index = std::numeric_limits<uint32_t>::max();
-        }
-
-        bool add_entity(const entt::entity entity) {
-            for (auto &entity_ref: entities) {
-                if (entity_ref == entt::null) {
-                    entity_ref = entity;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        bool get_all_entity(std::vector<entt::entity> &result) const {
-            for (auto &entity_ref: entities) {
-                if (entity_ref == entt::null) {
-                    result.emplace_back(entity_ref);
-                }
-            }
-            return true;
-        }
-
-        bool remove_entity(const entt::entity entity) {
-            for (size_t i = 0; i < entities.size(); ++i) {
-                if (entities[i] == entity) {
-                    entities[i]     = entities.back();
-                    entities.back() = entt::null;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-
-        [[nodiscard]] bool empty() const {
-            if (entities == make_filled_array<entt::entity, M>(entt::null))
-                return true;
-            return false;
-        }
-
-        [[nodiscard]] size_t size() const {
-            size_t result = 0;
-            for (auto &entity_ref: entities) {
-                if (entity_ref != entt::null) {
-                    result++;
-                }
-            }
-            return result;
-        }
-    };
-
     /**
       * 需要确定坐标轴
       * x轴向屏幕右边方向
@@ -185,10 +104,12 @@ namespace ECS {
     */
     static sub_AABB get_quadrant(const AABB_centroid<Point_2> &node_box,
                                  const AABB_centroid<Point_2> &entity_box) {
-        const auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
-        const auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
+        const auto bool_x = static_cast<uint32_t>(entity_box.get_centroid().x >= node_box.get_centroid().x);
+        const auto bool_y = static_cast<uint32_t>(entity_box.get_centroid().y < node_box.get_centroid().y);
         return static_cast<sub_AABB>(bool_x + bool_y * 2);
     }
+
+
 
 
     template<typename Point_type>
@@ -291,7 +212,7 @@ namespace ECS {
         static constexpr auto BRANCH_COUNT = 1 << (sizeof(Point_type) / sizeof(float));
         static constexpr auto ENTITY_COUNT = 1 << (sizeof(Point_type) / sizeof(float));
         const uint32_t max_quadtree_node   = 100; // 最多允许的四叉树 结点数量
-        std::vector<Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> > data;
+        std::vector<Spatial_Tree_Pool_Element<BRANCH_COUNT, ENTITY_COUNT> > data;
         std::vector<uint32_t> free_list;
         AABB_centroid<Point_type> mRootBox_position_size;
         uint32_t mRoot = 0;
@@ -314,11 +235,11 @@ namespace ECS {
          * @param node_index
          * @return
          */
-        Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) {
+        Spatial_Tree_Pool_Element<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) {
             return data[node_index];
         }
 
-        const Quadtree_node<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) const {
+        const Spatial_Tree_Pool_Element<BRANCH_COUNT, ENTITY_COUNT> &get_node(const uint32_t node_index) const {
             return data[node_index];
         }
 

@@ -181,7 +181,7 @@ namespace ECS {
             if (child != std::numeric_limits<uint32_t>::max()) {
                 const auto child_box          = compute_Box_position_size(node_box, static_cast<sub_AABB>(i));
                 const auto child_loose_bounds = AABB_centroid<Point_type>{
-                    child_box.get_centroid_point(), child_box.get_radius() * 2
+                    child_box.get_centroid(), child_box.get_radius() * 2
                 };
                 if (is_internal(check_box, child_loose_bounds)) {
                     // 如果在内部的话，那么直接全部添加
