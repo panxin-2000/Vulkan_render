@@ -75,13 +75,13 @@ inline bool find_axis_aligned_four_point(const AABB_min_max<Point_2> &L_box,
 
 
 template<typename T>
-inline bool intersect(const AABB_centroid<T> &L_box, const Segment<T> &segment) {
-    return intersect(AABB_min_max<Point_2>(L_box), segment);
+inline bool is_intersect(const AABB_centroid<T> &L_box, const Segment<T> &segment) {
+    return is_intersect(AABB_min_max<Point_2>(L_box), segment);
 }
 
-inline bool intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &segment) {
+inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Segment<Point_2> &segment) {
     // 判断两个包围盒是否存在相交
-    if (intersect(L_box, AABB_min_max<Point_2>(segment.start_point, segment.end_point))) {
+    if (is_intersect(L_box, AABB_min_max<Point_2>(segment.start_point, segment.end_point))) {
         Point_2 box_min_x_min_y = {L_box.min_point_.x, L_box.min_point_.y};
         Point_2 box_min_x_max_y = {L_box.min_point_.x, L_box.max_point_.y};
         Point_2 box_mam_x_min_y = {L_box.max_point_.x, L_box.min_point_.y};
@@ -109,7 +109,7 @@ bool intersect_with_closest_result(const AABB_min_max<T> &L_box, const Segment<T
 
 
 template<typename T>
-bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
+bool is_intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     Ray<T> ray_start(segment.start_point, segment.end_point - segment.start_point);
     auto center_to_segment_start = ray_start.point - sphere.center;
     auto c_start = (dot(center_to_segment_start, center_to_segment_start) - sphere.radius * sphere.radius);
@@ -140,7 +140,7 @@ bool intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
 }
 
 
-inline bool intersect(const Trapezoid &trapezoid, const Segment<Point_2> &segment) {
+inline bool is_intersect(const Trapezoid &trapezoid, const Segment<Point_2> &segment) {
     auto A_point = trapezoid.left_upper;
     auto B_point = trapezoid.right_upper;
     auto C_point = trapezoid.left_lower;
@@ -185,45 +185,45 @@ inline bool intersect_pass_AABB(const Segment<Point_2> &L_segment, const Segment
     }
     // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
     // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
-    else if (f1 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+    else if (f1 == 0 && is_intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
                                   segment.start_point))
         return true;
-    else if (f2 == 0 && intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
+    else if (f2 == 0 && is_intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
                                   segment.end_point))
         return true;
-    else if (f3 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
+    else if (f3 == 0 && is_intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
                                   L_segment.start_point))
         return true;
-    else if (f4 == 0 && intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
+    else if (f4 == 0 && is_intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
                                   L_segment.end_point))
         return true;
     return false;
 }
 
-inline bool intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
+inline bool is_intersect(const Segment<Point_2> &L_segment, const Segment<Point_2> &segment) {
     AABB_min_max<Point_2> L_AABB{L_segment.start_point, L_segment.end_point};
     AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
-    if (!intersect(L_AABB, R_AABB)) {
+    if (!is_intersect(L_AABB, R_AABB)) {
         return false;
     }
     return intersect_pass_AABB(L_segment, segment);
 }
 
 template<typename T>
-bool intersect(const Trapezoid &trapezoid, const Segment<T> &segment) {
+bool is_intersect(const Trapezoid &trapezoid, const Segment<T> &segment) {
     // 分为两个三角形
-    if (intersect(Triangle<Point_2>{trapezoid.right_upper, trapezoid.left_upper, trapezoid.left_lower}, segment))
+    if (is_intersect(Triangle<Point_2>{trapezoid.right_upper, trapezoid.left_upper, trapezoid.left_lower}, segment))
         return true;
-    if (intersect(Triangle<Point_2>{trapezoid.left_lower, trapezoid.right_lower, trapezoid.right_upper}, segment))
+    if (is_intersect(Triangle<Point_2>{trapezoid.left_lower, trapezoid.right_lower, trapezoid.right_upper}, segment))
         return true;
     return false;
 }
 
 template<typename T>
-bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
+bool is_intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
     const AABB_min_max<Point_2> L_AABB{triangle.a, triangle.b, triangle.c};
     const AABB_min_max<Point_2> R_AABB{segment.start_point, segment.end_point};
-    if (!intersect(L_AABB, R_AABB)) {
+    if (!is_intersect(L_AABB, R_AABB)) {
         return false;
     }
     // 先判断 AABB
@@ -243,7 +243,7 @@ bool intersect(const Triangle<T> &triangle, const Segment<T> &segment) {
 
 template<typename T>
 float distance(const Segment<T> &segment_L, const Segment<T> &segment_R) {
-    if (intersect(segment_L, segment_R)) {
+    if (is_intersect(segment_L, segment_R)) {
         return 0.0f;
     }
     // 比较暴力的一个方法

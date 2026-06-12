@@ -8,11 +8,11 @@
 
 
 template<typename T>
-inline bool intersect(const AABB_centroid<T> &L_box, const Straight_line<T> &line) {
-    return intersect(AABB_min_max<Point_2>(L_box), line);
+inline bool is_intersect(const AABB_centroid<T> &L_box, const Straight_line<T> &line) {
+    return is_intersect(AABB_min_max<Point_2>(L_box), line);
 }
 
-inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Point_2> &line) {
+inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Point_2> &line) {
     Point_2 box_min_x_min_y = {L_box.min_point_.x, L_box.min_point_.y};
     Point_2 box_min_x_max_y = {L_box.min_point_.x, L_box.max_point_.y};
     Point_2 box_mam_x_min_y = {L_box.max_point_.x, L_box.min_point_.y};
@@ -31,7 +31,7 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Straight_line<Po
 
 
 template<typename T>
-bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
+bool is_intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
     auto center_to_ray_start = line.point - sphere.center;
     auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
     if (c < 0) {
@@ -49,7 +49,7 @@ bool intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
 }
 
 template<typename T>
-bool intersect(const Triangle<Point_2> &triangle, const Straight_line<Point_2> &line) {
+bool is_intersect(const Triangle<Point_2> &triangle, const Straight_line<Point_2> &line) {
     const auto bool_1 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.a);
     const auto bool_2 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.b);
     const auto bool_3 = Point_2::is_anticlockwise(line.point, line.point + line.direction, triangle.c);

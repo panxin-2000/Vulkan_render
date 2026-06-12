@@ -8,7 +8,7 @@
 
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
+inline bool is_intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
     // 确实是很有想法的一个解法
     if constexpr (std::is_same_v<std::decay_t<T>, Point_2>) {
         return true;
@@ -23,7 +23,7 @@ inline bool intersect(const Plane<T> &plane, const AABB_min_max<T> &box) {
 }
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
+inline bool is_intersect(const Plane<T> &plane, const Segment<T> &segment) {
     // 一个点在平面一侧，另一个点在平面另一侧
     auto start_distance = plane.distance(segment.start_point);
     auto end_distance   = plane.distance(segment.end_point);
@@ -34,7 +34,7 @@ inline bool intersect(const Plane<T> &plane, const Segment<T> &segment) {
 }
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const Ray<T> &ray) {
+inline bool is_intersect(const Plane<T> &plane, const Ray<T> &ray) {
     // 直线的方向与法线 不垂直时 且 射线的方向是 指向平面的
     // 第二个条件可以被理解为，求出与平面的交点，并判断t的方向是正是负
     // 只是为了求出t,交点是可以假设而不求出的
@@ -71,7 +71,7 @@ float distance(const Plane<T> &plane, const T &test_point) {
 
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const Straight_line<T> &straight_line) {
+inline bool is_intersect(const Plane<T> &plane, const Straight_line<T> &straight_line) {
     // 直线怎么判断？ // 直线的方向与法线 不垂直时 永远相交
     if (abs(dot((straight_line.direction), (plane.normal))) < 0.0000001) {
         return false;
@@ -94,7 +94,7 @@ inline T intersect_result(const Plane<T> &plane, const Straight_line<T> &line) {
 
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
+inline bool is_intersect(const Plane<T> &plane, const Triangle<T> &triangle) {
     // 三角形中，任意一个点在平面一侧，另一个点在平面另一侧
     auto a_distance = plane.distance(triangle.a);
     auto b_distance = plane.distance(triangle.b);

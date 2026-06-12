@@ -452,7 +452,7 @@ public:
             if (get_vertex_in_the_edge_left(vertex_in, temp) == Point_2::anticlockwise::collinear) {
                 auto a = get_vertex(half_edge_indices);
                 auto b = get_vertex(get_opposite_edge_index(half_edge_indices));
-                if (intersect(AABB_min_max<Point_2>{a, b}, vertex_in)) {
+                if (is_intersect(AABB_min_max<Point_2>{a, b}, vertex_in)) {
                     return_half_edge_indices = half_edge_indices;
                     return point_in_triangle_type::on_edge;
                 } else return point_in_triangle_type::out_triangle;

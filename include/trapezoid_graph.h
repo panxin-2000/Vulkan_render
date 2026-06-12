@@ -78,7 +78,7 @@ public:
             switch (root_node->trapezoid_type) {
                 case graph_enum::leaf_node: {
                     // 需要判断是否在梯形内
-                    if (intersect(root_node->trapezoid_union_data.trapezoid, find_point)) {
+                    if (is_intersect(root_node->trapezoid_union_data.trapezoid, find_point)) {
                         return root_node;
                     } else {
                         return nullptr;

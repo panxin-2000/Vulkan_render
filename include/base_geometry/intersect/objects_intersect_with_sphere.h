@@ -9,16 +9,16 @@
 #include "objects_intersect_with_segment.h"
 
 template<typename T>
-bool intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
+bool is_intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
     // 有更优的方案，写起来稍微麻烦一点
     // 不对，如果球在三角形内部呢？
-    if (intersect(L_sphere, Segment<T>{triangle.a, triangle.b})) {
+    if (is_intersect(L_sphere, Segment<T>{triangle.a, triangle.b})) {
         return true;
     }
-    if (intersect(L_sphere, Segment<T>{triangle.b, triangle.c})) {
+    if (is_intersect(L_sphere, Segment<T>{triangle.b, triangle.c})) {
         return true;
     }
-    if (intersect(L_sphere, Segment<T>{triangle.c, triangle.a})) {
+    if (is_intersect(L_sphere, Segment<T>{triangle.c, triangle.a})) {
         return true;
     }
     return false;
@@ -32,7 +32,7 @@ bool intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
  * @return
  */
 template<typename T>
-bool intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
+bool is_intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
     auto distance        = L_sphere.center - R_sphere.center;
     auto distanceSquared = dot(distance, distance);
     if (distanceSquared <= L_sphere.radius * L_sphere.radius + R_sphere.radius * R_sphere.radius) {

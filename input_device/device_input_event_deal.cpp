@@ -229,7 +229,7 @@ entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
         auto position = view.get<Transform>(entity);
         auto box      = view.get<AABB_centroid<Point_3> >(entity);
         box.add_offset(position.get_position());
-        if (intersect(box, ray)) {
+        if (is_intersect(box, ray)) {
             auto &name = view.get<Name_component>(entity);
             LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
             return entity;

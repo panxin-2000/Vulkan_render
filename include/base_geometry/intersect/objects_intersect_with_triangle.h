@@ -71,7 +71,7 @@ inline void my_support(const void *obj, const ccd_vec3_t *dir, ccd_vec3_t *vec) 
 
 
 template<typename T>
-bool intersect(const Triangle<T> &L, const Triangle<T> &R) {
+bool is_intersect(const Triangle<T> &L, const Triangle<T> &R) {
     ccd_t ccd;
     CCD_INIT(&ccd);
 

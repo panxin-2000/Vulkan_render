@@ -97,7 +97,7 @@ namespace ECS {
         for (const auto &value: data[node_index].entities) {
             if (value != entt::null) {
                 const AABB_centroid<Point_type> entity_box{f_get_AABB_centroid_(value), f_get_AABB_radius_(value)};
-                if (intersect(entity_box, check_box))
+                if (is_intersect(entity_box, check_box))
                     result.push_back(value);
             }
         }

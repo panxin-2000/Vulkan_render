@@ -64,14 +64,14 @@ float distance(const Straight_line<T> &line, const T &test_point) {
 }
 
 template<typename T>
-bool intersect(const AABB_min_max<T> &box, const T &test_point) {
+bool is_intersect(const AABB_min_max<T> &box, const T &test_point) {
     if (box.min_point_ <= test_point && test_point <= box.max_point_)
         return true;
     return false;
 }
 
 template<typename T>
-bool intersect(const AABB_centroid<T> &box, const T &test_point) {
+bool is_intersect(const AABB_centroid<T> &box, const T &test_point) {
     if (box.centroid_point_ - box.direction_interval_ <= test_point &&
         test_point <= box.centroid_point_ + box.direction_interval_)
         return true;
@@ -92,7 +92,7 @@ inline float distance_of_box_center(const AABB_min_max<T> &box, const T &test_po
 
 
 template<typename T>
-inline bool intersect(const Plane<T> &plane, const T &test_point) {
+inline bool is_intersect(const Plane<T> &plane, const T &test_point) {
     if (abs(dot((test_point - plane.point), (plane.normal))) < 0.0000001) {
         return true;
     }
@@ -100,7 +100,7 @@ inline bool intersect(const Plane<T> &plane, const T &test_point) {
 }
 
 template<typename T>
-inline bool intersect(const Sphere<T> &sphere, const T &test_point) {
+inline bool is_intersect(const Sphere<T> &sphere, const T &test_point) {
     if (dot((test_point - sphere.center), (test_point - sphere.center)) <=
         (sphere.radius * sphere.radius)) {
         return true;
@@ -116,7 +116,7 @@ inline bool intersect(const Sphere<T> &sphere, const T &test_point) {
  * @return
  */
 template<typename T>
-inline bool intersect(const Trapezoid &trapezoid, const T &test_point) {
+inline bool is_intersect(const Trapezoid &trapezoid, const T &test_point) {
     auto A_point = trapezoid.left_upper;
     auto B_point = trapezoid.right_upper;
     auto C_point = trapezoid.left_lower;
@@ -140,7 +140,7 @@ inline bool intersect(const Trapezoid &trapezoid, const T &test_point) {
  * @return
  */
 template<typename T>
-bool intersect(const Triangle<T> &triangle, const T &test_point) {
+bool is_intersect(const Triangle<T> &triangle, const T &test_point) {
     auto temp1 = Point_2::is_anticlockwise(triangle.a, triangle.b, test_point);
     auto temp2 = Point_2::is_anticlockwise(triangle.b, triangle.c, test_point);
     auto temp3 = Point_2::is_anticlockwise(triangle.c, triangle.a, test_point);

@@ -5,7 +5,7 @@
 
 bool check_entity_intersect_point(const entt::entity entity, const Point_2 &current_position) {
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-        if (intersect(scene_node->get_bounding_box(), current_position)) {
+        if (is_intersect(scene_node->get_bounding_box(), current_position)) {
             return true;
         }
     }

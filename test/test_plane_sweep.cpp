@@ -200,7 +200,7 @@ bool test_two_node_if_intersect(ray_2d &left_data, ray_2d &right_data, Half_edge
     Segment<Point_2> ab = hf.get_segment(ab_incident_half_edge);
     Segment<Point_2> cd = hf.get_segment(cd_incident_half_edge);
 
-    if (intersect(ab, cd) == true) {
+    if (is_intersect(ab, cd) == true) {
         auto result = ab.get_intersect_result(cd);
         if (event_tree->tree_minimum_data()->x <= result.x) {
             add_intersect_event(ab, ab_incident_half_edge, cd, cd_incident_half_edge, result, event_tree);

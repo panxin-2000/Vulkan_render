@@ -34,7 +34,7 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
     return true; // 这里是 比较逻辑 导致了 nan 返回的结果为 true 很巧合的一点 但是某些地方会出错，可能
 }
 
-inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
+inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
     auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
     auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
     if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
@@ -64,7 +64,7 @@ inline bool intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ra
     return false;
 }
 
-inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
+inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
     auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
     auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
     if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
@@ -77,8 +77,8 @@ inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ra
         auto e = ray.point + ray.direction * t_min.z;
         auto f = ray.point + ray.direction * t_max.z;
         // 任何一个在就可以
-        if (intersect(L_box, a) || intersect(L_box, b) || intersect(L_box, c) || intersect(L_box, d) ||
-            intersect(L_box, e) || intersect(L_box, f)) {
+        if (is_intersect(L_box, a) || is_intersect(L_box, b) || is_intersect(L_box, c) || is_intersect(L_box, d) ||
+            is_intersect(L_box, e) || is_intersect(L_box, f)) {
             return true;
         }
         return false;
@@ -88,7 +88,7 @@ inline bool intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ra
 
 
 template<typename T>
-bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
+bool is_intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
     // 与球相交与判断结果之间是存在一个优化的办法的
     // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
     // 优化了一元二次方程
@@ -121,7 +121,7 @@ bool intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
 
 
 template<typename T>
-bool intersect(const Triangle<T> &triangle, const Ray<T> &ray) {
+bool is_intersect(const Triangle<T> &triangle, const Ray<T> &ray) {
     return false;
 }
 

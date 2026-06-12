@@ -55,14 +55,14 @@ public:
         auto result = root_triangle;
 
         if (temp_root_triangle != nullptr &&
-            intersect(temp_root_triangle->triangle, point)) {
+            is_intersect(temp_root_triangle->triangle, point)) {
             result = temp_root_triangle;
         }
         while (temp_root_triangle != nullptr) {
             int i = 0;
             for (auto check_triangle: temp_root_triangle->inner_triangle) {
                 if (check_triangle != nullptr &&
-                    intersect(check_triangle->triangle, point)) {
+                    is_intersect(check_triangle->triangle, point)) {
                     temp_root_triangle = check_triangle;
                     result = check_triangle;
                     break;

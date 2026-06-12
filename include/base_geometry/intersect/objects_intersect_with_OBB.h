@@ -7,7 +7,7 @@
 #include "base_geometry/base.h"
 
 template<typename T>
-inline bool intersect(const OBB_2D<T> &obb, const T &test_point) {
+inline bool is_intersect(const OBB_2D<T> &obb, const T &test_point) {
     const auto P_to_O = test_point - obb.centroid_;
     const auto u      = dot(P_to_O, obb.direction_1);
     const auto v      = dot(P_to_O, obb.direction_2);

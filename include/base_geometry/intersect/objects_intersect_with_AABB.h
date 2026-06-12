@@ -7,9 +7,9 @@
 #include "base_geometry/base.h"
 
 template<typename T>
-bool intersect(const AABB_min_max<T> &L_box, const AABB_min_max<T> &R_box) {
+bool is_intersect(const AABB_min_max<T> &L_box, const AABB_min_max<T> &R_box) {
     // 这里尽量还是转换之后再去判断会更好一点
-    if (intersect(AABB_centroid<T>(L_box), AABB_centroid<T>(R_box))) {
+    if (is_intersect(AABB_centroid<T>(L_box), AABB_centroid<T>(R_box))) {
         return true;
     }
     return false;
@@ -24,7 +24,7 @@ bool intersect(const AABB_min_max<T> &L_box, const AABB_min_max<T> &R_box) {
  * @return
  */
 template<typename T>
-inline bool intersect(const AABB_centroid<T> &L_box, const AABB_centroid<T> &R_box) {
+inline bool is_intersect(const AABB_centroid<T> &L_box, const AABB_centroid<T> &R_box) {
     if (abs((L_box.centroid_point_ - R_box.centroid_point_)) <=
         abs((L_box.direction_interval_ + R_box.direction_interval_)))
         return true;
