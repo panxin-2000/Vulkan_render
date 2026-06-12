@@ -9,7 +9,7 @@
 
 namespace ECS {
     template<typename Point_type>
-    bool Quadtree<Point_type>::get_all_entity(const uint32_t node_index, std::vector<entt::entity> &result) const {
+    bool Spatial_Tree_Pool<Point_type>::get_all_entity(const uint32_t node_index, std::vector<entt::entity> &result) const {
         uint32_t node_index_current = node_index;
         while (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
             get_node(node_index_current).get_all_entity(result);
@@ -19,7 +19,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    [[nodiscard]] bool Quadtree<Point_type>::clean(const uint32_t node_index) {
+    [[nodiscard]] bool Spatial_Tree_Pool<Point_type>::clean(const uint32_t node_index) {
         uint32_t node_index_current = node_index;
         while (get_node(node_index_current).empty() == true) {
             if (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
@@ -36,7 +36,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    [[nodiscard]] bool Quadtree<Point_type>::is_empty(const uint32_t node_index) const {
+    [[nodiscard]] bool Spatial_Tree_Pool<Point_type>::is_empty(const uint32_t node_index) const {
         uint32_t node_index_current = node_index;
         while (get_node(node_index_current).empty() == true) {
             if (std::numeric_limits<uint32_t>::max() != get_next_node_index(node_index_current)) {
@@ -49,7 +49,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    [[nodiscard]] bool Quadtree<Point_type>::add_entity(const uint32_t node_index, const entt::entity entity) {
+    [[nodiscard]] bool Spatial_Tree_Pool<Point_type>::add_entity(const uint32_t node_index, const entt::entity entity) {
         assert(node_index< data.size());
         bool flag                   = false;
         uint32_t node_index_current = node_index;
@@ -69,7 +69,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    [[nodiscard]] bool Quadtree<Point_type>::remove_entity(const uint32_t node_index, const entt::entity entity) {
+    [[nodiscard]] bool Spatial_Tree_Pool<Point_type>::remove_entity(const uint32_t node_index, const entt::entity entity) {
         // Find the value in node->values
         assert(node_index< data.size());
         uint32_t node_index_current = node_index;
@@ -84,7 +84,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    bool Quadtree<Point_type>::remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+    bool Spatial_Tree_Pool<Point_type>::remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                                            const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
                                            uint32_t current_depth, const uint32_t ideal_depth) {
         assert(current_node_index != std::numeric_limits<uint32_t>::max());
@@ -111,7 +111,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    bool Quadtree<Point_type>::add_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+    bool Spatial_Tree_Pool<Point_type>::add_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                                         const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
                                         uint32_t current_depth, const uint32_t ideal_depth) {
         // current_depth 为零
@@ -137,7 +137,7 @@ namespace ECS {
     }
 
     template<typename Point_type>
-    void Quadtree<Point_type>::split(const uint32_t node_index) {
+    void Spatial_Tree_Pool<Point_type>::split(const uint32_t node_index) {
         assert(isLeaf(node_index) && "Only leaves can be split");
         for (auto &child: get_node(node_index).children_index) {
             assert(data.size() < max_quadtree_node);

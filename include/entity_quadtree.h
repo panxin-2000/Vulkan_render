@@ -111,15 +111,9 @@ namespace ECS {
 
 
     template<typename Point_type>
-    class Quadtree {
+    class Spatial_Tree_Pool {
     public:
-        using Get_centroid          = std::function<Point_type(entt::entity entity)>;
-        using Get_radius            = std::function<Point_type(entt::entity entity)>;
-        using Set_entity_node_index = std::function<void(entt::entity entity, uint32_t node_index)>;
-        using Get_entity_node_index = std::function<uint32_t(entt::entity entity)>;
-
-
-        explicit Quadtree(const AABB_centroid<Point_type> &box) : mRootBox_position_size(box) {
+        explicit Spatial_Tree_Pool(const AABB_centroid<Point_type> &box) : mRootBox_position_size(box) {
             data.reserve(max_quadtree_node);
             data.emplace_back();
             node_size_ = 1;
@@ -227,6 +221,12 @@ namespace ECS {
                       uint32_t current_depth, uint32_t ideal_depth = 0);
 
         void split(uint32_t node_index);
+    };
+
+
+    class Spatial_Tree_Check {
+
+
     };
 }
 

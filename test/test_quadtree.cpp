@@ -122,7 +122,7 @@ TEST(entt, quadtree_same_point) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
     };
 
-    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{
+    auto quadtree = ECS::Spatial_Tree_Pool<Point_2>(AABB_centroid<Point_2>{
                                                {0.5, 0.5f}, {0.5f, 0.5f}
                                            });
     for (auto i = 0u; i < 10; ++i) {
@@ -160,7 +160,7 @@ TEST(entt, quadtree_point2) {
         return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
     };
 
-    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{
+    auto quadtree = ECS::Spatial_Tree_Pool<Point_2>(AABB_centroid<Point_2>{
                                                {0.5, 0.5f}, {0.5f, 0.5f}
                                            }); {
         const entt::entity entity = Logic_entt().create();
@@ -229,7 +229,7 @@ TEST(entt, quadtree_point3) {
         return Logic_entt().get<AABB_centroid<Point_3> >(entity).get_radius();
     };
 
-    auto quadtree = ECS::Quadtree<Point_3>(AABB_centroid<Point_3>{
+    auto quadtree = ECS::Spatial_Tree_Pool<Point_3>(AABB_centroid<Point_3>{
                                                {0.5, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}
                                            }); {
         const entt::entity entity = Logic_entt().create();
