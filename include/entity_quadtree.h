@@ -39,6 +39,7 @@ inline uint32_t calculate_level(const float root_size,
 
 #include <array>
 #include <cstddef>
+#include <utility>
 
 #include "Box.h"
 #include "entt/entt.hpp"
@@ -80,6 +81,15 @@ namespace ECS {
             return false;
         }
 
+        bool get_all_entity(std::vector<entt::entity> &result) const {
+            for (auto &entity_ref: entities) {
+                if (entity_ref == entt::null) {
+                    result.emplace_back(entity_ref);
+                }
+            }
+            return true;
+        }
+
         bool remove_entity(const entt::entity entity) {
             for (size_t i = 0; i < entities.size(); ++i) {
                 if (entities[i] == entity) {
@@ -92,19 +102,101 @@ namespace ECS {
         }
     };
 
+    /**
+      * 需要确定坐标轴
+      * x轴向屏幕右边方向
+      * y轴向屏幕上方方向
+      * z轴从屏幕指向眼睛
+      * 带z的表示负的z方向
+      */
+    enum sub_AABB {
+        invalid = -1,
+        upper_left,
+        upper_right,
+        down_left,
+        down_right,
+        upper_left_z,
+        upper_right_z,
+        down_left_z,
+        down_right_z,
+    };
+
+    /**
+    *
+    * @param box 大的包围盒
+    * @param i 上下左右 四个 子包围盒的 索引
+    * @return 子包围的大小与范围
+    */
+    static AABB_centroid<Point_2> compute_Box_position_size(const AABB_centroid<Point_2> &box, const sub_AABB i) {
+        const auto point_xy = Point_2{-1.0f * (static_cast<float>(i / 2) - 0.5f), static_cast<float>(i % 2) - 0.5f};
+        return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
+    }
+
+    static AABB_centroid<Point_3> compute_Box_position_size(const AABB_centroid<Point_3> &box, const sub_AABB i) {
+        const auto point_xy = Point_3{
+            -1.0f * (static_cast<float>(i / 2) - 0.5f),
+            +1.0f * (static_cast<float>(i % 2) - 0.5f),
+            -1.0f * (static_cast<float>(i / 4) - 0.5f)
+        };
+        return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
+    }
+
+    static sub_AABB get_quadrant(const AABB_centroid<Point_3> &node_box,
+                                 const AABB_centroid<Point_3> &entity_box) {
+        const auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
+        const auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
+        const auto bool_z = static_cast<uint32_t>(entity_box.centroid_point_.z < node_box.centroid_point_.z);
+        return static_cast<sub_AABB>(bool_x + bool_y * 2 + bool_z * 4);
+    }
+
+    /**
+    *
+    * @param entity_box 被检索的包围盒
+    * @param node_box 需要查找的包围
+    * @return 在被检索的包围盒的 上下左右的哪个位置
+    */
+    static sub_AABB get_quadrant(const AABB_centroid<Point_2> &node_box,
+                                 const AABB_centroid<Point_2> &entity_box) {
+        const auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
+        const auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
+        return static_cast<sub_AABB>(bool_x + bool_y * 2);
+    }
+
 
     template<typename Point_type>
     class Quadtree {
     public:
-        using Get_centroid = std::function<Point_type(entt::entity entity)>;
-        using get_radius   = std::function<Point_type(entt::entity entity)>;
+        using Get_centroid          = std::function<Point_type(entt::entity entity)>;
+        using Get_radius            = std::function<Point_type(entt::entity entity)>;
+        using Set_entity_node_index = std::function<void(entt::entity entity, uint32_t node_index)>;
+        using Get_entity_node_index = std::function<uint32_t(entt::entity entity)>;
+
 
         explicit Quadtree(const AABB_centroid<Point_type> &box,
                           const Get_centroid &get_AABB_centroid,
-                          const get_radius &get_AABB_radius) : mRootBox_position_size(box),
-                                                               get_AABB_centroid_(get_AABB_centroid),
-                                                               get_AABB_radius_(get_AABB_radius) {
+                          const Get_radius &get_AABB_radius,
+                          Set_entity_node_index set_entity_node_index,
+                          Get_entity_node_index get_entity_node_index) : mRootBox_position_size(box),
+                                                                         f_get_AABB_centroid_(get_AABB_centroid),
+                                                                         f_get_AABB_radius_(get_AABB_radius),
+                                                                         f_set_entity_node_index_(std::move(set_entity_node_index)),
+                                                                         f_get_entity_node_index_(std::move(get_entity_node_index)) {
             data.reserve(max_quadtree_node);
+            data.emplace_back();
+            node_size_ = 1;
+        }
+
+        explicit Quadtree(const AABB_centroid<Point_type> &box,
+                          const Get_centroid &get_AABB_centroid,
+                          const Get_radius &get_AABB_radius) : mRootBox_position_size(box),
+                                                               f_get_AABB_centroid_(get_AABB_centroid),
+                                                               f_get_AABB_radius_(get_AABB_radius) {
+            data.reserve(max_quadtree_node);
+            f_set_entity_node_index_ = [](entt::entity entity, uint32_t node_index) {
+            };
+            f_get_entity_node_index_ = [](entt::entity entity) -> uint32_t {
+                return std::numeric_limits<uint32_t>::max();
+            };
             data.emplace_back();
             node_size_ = 1;
         }
@@ -126,12 +218,21 @@ namespace ECS {
             return false;
         }
 
+
         std::vector<entt::entity> query(const AABB_centroid<Point_type> &check_box) {
             std::vector<entt::entity> result;
             query(0, mRootBox_position_size, check_box, result);
             return result;
         }
 
+        bool remove_entity(const entt::entity entity) {
+            if (f_get_entity_node_index_ != nullptr) {
+                const auto node_index = f_get_entity_node_index_(entity);
+                return remove_entity(node_index, entity);
+            }
+            AABB_centroid<Point_type> entity_box{f_get_AABB_centroid_(entity), f_get_AABB_radius_(entity)};
+            return remove_entity(entity, entity_box);
+        }
 
         bool remove_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
             return remove_node(0, mRootBox_position_size, entity, entity_box);
@@ -149,65 +250,6 @@ namespace ECS {
             return std::multimap<entt::entity, entt::entity>();
         }
 
-        /**
-         * 需要确定坐标轴
-         * x轴向屏幕右边方向
-         * y轴向屏幕上方方向
-         * z轴从屏幕指向眼睛
-         * 带z的表示负的z方向
-         */
-        enum sub_AABB {
-            invalid = -1,
-            upper_left,
-            upper_right,
-            down_left,
-            down_right,
-            upper_left_z,
-            upper_right_z,
-            down_left_z,
-            down_right_z,
-        };
-
-        /**
-         *
-         * @param box 大的包围盒
-         * @param i 上下左右 四个 子包围盒的 索引
-         * @return 子包围的大小与范围
-         */
-        static AABB_centroid<Point_2> compute_Box_position_size(const AABB_centroid<Point_2> &box, const sub_AABB i) {
-            auto point_xy = Point_2{-1.0f * (static_cast<float>(i / 2) - 0.5f), static_cast<float>(i % 2) - 0.5f};
-            return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
-        }
-
-        static AABB_centroid<Point_3> compute_Box_position_size(const AABB_centroid<Point_3> &box, const sub_AABB i) {
-            auto point_xy = Point_3{
-                -1.0f * (static_cast<float>(i / 2) - 0.5f),
-                +1.0f * (static_cast<float>(i % 2) - 0.5f),
-                -1.0f * (static_cast<float>(i / 4) - 0.5f)
-            };
-            return {box.centroid_point_ + box.direction_interval_ * point_xy, box.direction_interval_ * 0.5f};
-        }
-
-        [[nodiscard]] sub_AABB get_quadrant(const AABB_centroid<Point_3> &node_box,
-                                            const AABB_centroid<Point_3> &entity_box) const {
-            auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
-            auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
-            auto bool_z = static_cast<uint32_t>(entity_box.centroid_point_.z < node_box.centroid_point_.z);
-            return static_cast<sub_AABB>(bool_x + bool_y * 2 + bool_z * 4);
-        }
-
-        /**
-        *
-        * @param entity_box 被检索的包围盒
-        * @param node_box 需要查找的包围
-        * @return 在被检索的包围盒的 上下左右的哪个位置
-        */
-        [[nodiscard]] sub_AABB get_quadrant(const AABB_centroid<Point_2> &node_box,
-                                            const AABB_centroid<Point_2> &entity_box) const {
-            const auto bool_x = static_cast<uint32_t>(entity_box.centroid_point_.x >= node_box.centroid_point_.x);
-            const auto bool_y = static_cast<uint32_t>(entity_box.centroid_point_.y < node_box.centroid_point_.y);
-            return static_cast<sub_AABB>(bool_x + bool_y * 2);
-        }
 
         [[nodiscard]] size_t size() const {
             return node_size_;
@@ -220,9 +262,11 @@ namespace ECS {
         AABB_centroid<Point_type> mRootBox_position_size;
         uint32_t mRoot = 0;
 
-        Get_centroid get_AABB_centroid_;
-        get_radius get_AABB_radius_;
-        static constexpr auto MaxDepth = static_cast<std::size_t>(8);
+        Get_centroid f_get_AABB_centroid_              = nullptr;
+        Get_radius f_get_AABB_radius_                  = nullptr;
+        Set_entity_node_index f_set_entity_node_index_ = nullptr;
+        Get_entity_node_index f_get_entity_node_index_ = nullptr;
+        static constexpr auto MaxDepth                 = static_cast<std::size_t>(8);
         size_t node_size_;
 
 
@@ -232,19 +276,9 @@ namespace ECS {
          * @param entity
          * @return
          */
-        [[nodiscard]] bool add_entity(const uint32_t node_index, const entt::entity entity) {
-            assert(node_index< data.size());
-            bool flag                   = false;
-            uint32_t node_index_current = node_index;
-            while (data[node_index_current].add_entity(entity) == false) {
-                if (std::numeric_limits<uint32_t>::max() == data[node_index_current].next_entities_index) {
-                    data[node_index_current].next_entities_index = data.size();
-                    data.emplace_back();
-                }
-                node_index_current = data[node_index_current].next_entities_index;
-            }
-            return true;
-        }
+        [[nodiscard]] bool add_entity(uint32_t node_index, entt::entity entity);
+
+        bool get_all_entity(uint32_t node_index, std::vector<entt::entity> &result) const;
 
         /**
          * 确定性删除 entity 在 node_index 返回 true ，否则返回 false
@@ -252,19 +286,7 @@ namespace ECS {
          * @param entity
          * @return
          */
-        [[nodiscard]] bool remove_entity(const uint32_t node_index, const entt::entity entity) {
-            // Find the value in node->values
-            assert(node_index< data.size());
-            uint32_t node_index_current = node_index;
-            while (data[node_index_current].remove_entity(entity) == false) {
-                if (std::numeric_limits<uint32_t>::max() != data[node_index_current].next_entities_index) {
-                    node_index_current = data[node_index_current].next_entities_index;
-                } else {
-                    return false;
-                }
-            }
-            return true;
-        }
+        [[nodiscard]] bool remove_entity(uint32_t node_index, entt::entity entity);
 
 
         bool remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
@@ -277,72 +299,23 @@ namespace ECS {
                 return remove_node(data[node_index].children_index[i],
                                    compute_Box_position_size(node_box, i), entity, entity_box);
             }
-        }
-
-        bool add_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                      const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
-                      const uint32_t depth, const uint32_t ideal_depth = 0) {
-            // current_depth 为零
-            uint32_t current_node_index = node_index;
-            uint32_t current_depth      = depth;
-            auto current_node_box       = node_box;
-            while (true) {
-                if (ideal_depth == current_depth) {
-                    return add_entity(current_node_index, entity);
-                } else if (ideal_depth > current_depth && isLeaf(current_node_index)) {
-                    split(current_node_index, current_node_box);
-                    const auto i       = get_quadrant(current_node_box, entity_box);
-                    current_node_box   = compute_Box_position_size(current_node_box, i);
-                    current_node_index = data[current_node_index].children_index[i];
-                    current_depth      = current_depth + 1;
-                } else {
-                    const auto i       = get_quadrant(current_node_box, entity_box);
-                    current_node_box   = compute_Box_position_size(current_node_box, i);
-                    current_node_index = data[current_node_index].children_index[i];
-                    current_depth      = current_depth + 1;
-                }
-            }
             return false;
         }
 
+        bool add_node(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                      entt::entity entity, const AABB_centroid<Point_type> &entity_box,
+                      uint32_t depth, uint32_t ideal_depth = 0);
 
-        void split(const uint32_t node_index, const AABB_centroid<Point_type> &node_box) {
-            assert(isLeaf(node_index) && "Only leaves can be split");
-            for (auto &child: data[node_index].children_index) {
-                assert(data.size() < max_quadtree_node);
-                child = data.size();
-                data.emplace_back();
-                node_size_++;
-            }
-        }
+        void split(uint32_t node_index);
 
-        void query_detail(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                          const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const {
-            for (const auto &value: data[node_index].entities) {
-                if (value != entt::null) {
-                    const AABB_centroid<Point_type> entity_box{get_AABB_centroid_(value), get_AABB_radius_(value)};
-                    if (intersect(entity_box, check_box))
-                        result.push_back(value);
-                }
-            }
-        }
+        void query_one_node(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                            const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const;
 
-        void query(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                   const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const {
-            // 简单 当前 node_index
-            query_detail(node_index, node_box, check_box, result);
-
-            // 检查 全部的 children node_index
-            for (auto i = 0; i < data[node_index].children_index.size(); ++i) {
-                auto child = data[node_index].children_index[i];
-                if (child != std::numeric_limits<uint32_t>::max()) {
-                    const auto child_box = compute_Box_position_size(node_box, static_cast<sub_AABB>(i));
-                    query(child, node_box, check_box, result);
-                }
-            }
-        }
+        void query(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                   const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const;
     };
 }
 
+#include "entity_quadtree_impl.h"
 
 #endif //HELLO_MAC_ENTITY_QUADTREE_H

@@ -31,6 +31,14 @@ inline bool intersect(const AABB_centroid<T> &L_box, const AABB_centroid<T> &R_b
     return false;
 }
 
+template<typename T>
+inline bool is_internal(const AABB_centroid<T> &big_bound, const AABB_centroid<T> &small_bound) {
+    if (abs((big_bound.centroid_point_ - small_bound.centroid_point_)) <=
+        abs((big_bound.direction_interval_ - small_bound.direction_interval_)))
+        return true;
+    return false;
+}
+
 
 template<typename T>
 float distance(const AABB_min_max<T> &box, const T &test_point) {

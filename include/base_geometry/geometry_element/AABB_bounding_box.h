@@ -75,7 +75,7 @@ public:
 
     AABB_centroid() = default;
 
-    auto get_centroid_point() {
+    auto get_centroid_point() const {
         return centroid_point_;
     }
 
