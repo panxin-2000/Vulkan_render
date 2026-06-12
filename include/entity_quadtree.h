@@ -238,9 +238,6 @@ namespace ECS {
             return remove_node(0, mRootBox_position_size, entity, entity_box);
         }
 
-        [[nodiscard]] bool isLeaf(const uint32_t node_index) const {
-            return data[node_index].is_leaf();
-        }
 
         /**
          * 序号小的 entity 在前，序号大的在后，方便查找，允许重复
@@ -270,6 +267,10 @@ namespace ECS {
         size_t node_size_;
 
 
+        [[nodiscard]] bool isLeaf(const uint32_t node_index) const {
+            return data[node_index].is_leaf();
+        }
+
         /**
          * 确定性的将 entity 添加到 node_index 中
          * @param node_index
@@ -278,7 +279,6 @@ namespace ECS {
          */
         [[nodiscard]] bool add_entity(uint32_t node_index, entt::entity entity);
 
-        bool get_all_entity(uint32_t node_index, std::vector<entt::entity> &result) const;
 
         /**
          * 确定性删除 entity 在 node_index 返回 true ，否则返回 false
@@ -288,23 +288,22 @@ namespace ECS {
          */
         [[nodiscard]] bool remove_entity(uint32_t node_index, entt::entity entity);
 
+        /**
+         * 获取 node_index 中的全部 entity 到 result 中
+         * @param node_index
+         * @param result
+         * @return
+         */
+        bool get_all_entity(uint32_t node_index, std::vector<entt::entity> &result) const;
 
-        bool remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                         const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
-            if (!isLeaf(node_index)) {
-                // Remove the value from node
-                if (remove_entity(node_index, entity))
-                    return true;
-                const auto i = get_quadrant(node_box, entity_box);
-                return remove_node(data[node_index].children_index[i],
-                                   compute_Box_position_size(node_box, i), entity, entity_box);
-            }
-            return false;
-        }
+
+        bool remove_node(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                         entt::entity entity, const AABB_centroid<Point_type> &entity_box,
+                         uint32_t current_depth, uint32_t ideal_depth);
 
         bool add_node(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                       entt::entity entity, const AABB_centroid<Point_type> &entity_box,
-                      uint32_t depth, uint32_t ideal_depth = 0);
+                      uint32_t current_depth, uint32_t ideal_depth = 0);
 
         void split(uint32_t node_index);
 

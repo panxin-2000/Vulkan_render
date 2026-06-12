@@ -52,12 +52,28 @@ namespace ECS {
     }
 
     template<typename Point_type>
+    bool Quadtree<Point_type>::remove_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                                           const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
+                                           uint32_t current_depth, const uint32_t ideal_depth) {
+        uint32_t current_node_index = node_index;
+        auto current_node_box       = node_box;
+        while (ideal_depth > current_depth) {
+            const auto i       = get_quadrant(current_node_box, entity_box);
+            current_node_box   = compute_Box_position_size(current_node_box, i);
+            current_node_index = data[current_node_index].children_index[i];
+            current_depth      = current_depth + 1;
+        }
+        if (current_node_index != std::numeric_limits<uint32_t>::max())
+            return remove_entity(current_node_index, entity);
+        return false;
+    }
+
+    template<typename Point_type>
     bool Quadtree<Point_type>::add_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                                         const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
-                                        const uint32_t depth, const uint32_t ideal_depth) {
+                                        uint32_t current_depth, const uint32_t ideal_depth) {
         // current_depth 为零
         uint32_t current_node_index = node_index;
-        uint32_t current_depth      = depth;
         auto current_node_box       = node_box;
         while (true) {
             if (ideal_depth == current_depth) {
