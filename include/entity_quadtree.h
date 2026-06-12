@@ -23,12 +23,13 @@ inline uint32_t calculate_level(const float root_size,
     if (max_dim >= root_size / 2.0f) {
         return 0;
     }
+    // 0.5 0.25 0.125
 
     // 2. 数学公式：m = log2(root_size / max_dim) - 1
     // 现代高性能写法：利用位运算或 std::log2f
     // 这里使用标准的高效浮点数 log2 向上取整/向下取整
-    float target_level_f = std::log2f(root_size / max_dim) - 1.0f;
-    int target_level     = static_cast<int>(std::floor(target_level_f));
+    const float target_level_f = std::log2f(root_size / max_dim);
+    const int target_level     = static_cast<int>(std::floor(target_level_f));
 
     // 3. 边界限定：不能小于 0 层，也不能超过系统设定的最大深度
     if (target_level < 0) return 0;
@@ -54,12 +55,19 @@ namespace ECS {
         return arr;
     }
 
+    template<std::size_t N>
     class Quadtree_node {
     public:
-        std::array<uint32_t, 4> children_index = make_filled_array<uint32_t, 4>(std::numeric_limits<uint32_t>::max());
+        std::array<uint32_t, N> children_index = make_filled_array<uint32_t, N>(std::numeric_limits<uint32_t>::max());
         std::array<entt::entity, 8> entities   = make_filled_array<entt::entity, 8>(entt::null);
         // std::vector<entt::entity> vector_entities;
         uint32_t next_entities_index = std::numeric_limits<uint32_t>::max();
+
+        [[nodiscard]] bool is_leaf() const {
+            if (children_index == make_filled_array<uint32_t, N>(std::numeric_limits<uint32_t>::max()))
+                return true;
+            return false;
+        }
 
 
         bool add_entity(const entt::entity entity) {
@@ -84,8 +92,6 @@ namespace ECS {
         }
     };
 
-    Point_2 get_AABB_centroid(entt::entity entity) {
-    }
 
     template<typename Point_type>
     class Quadtree {
@@ -100,12 +106,9 @@ namespace ECS {
                                                                get_AABB_radius_(get_AABB_radius) {
             data.reserve(max_quadtree_node);
             data.emplace_back();
+            node_size_ = 1;
         }
 
-        const uint32_t max_quadtree_node = 100; // 最多允许的四叉树 结点数量
-        std::vector<Quadtree_node> data;
-        AABB_centroid<Point_type> mRootBox_position_size;
-        uint32_t mRoot = 0;
 
         bool add_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
             if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_2> &>) {
@@ -135,10 +138,7 @@ namespace ECS {
         }
 
         [[nodiscard]] bool isLeaf(const uint32_t node_index) const {
-            const auto node = data[node_index];
-            if (node.children_index == make_filled_array<uint32_t, 4>(std::numeric_limits<uint32_t>::max()))
-                return true;
-            return false;
+            return data[node_index].is_leaf();
         }
 
         /**
@@ -158,14 +158,14 @@ namespace ECS {
          */
         enum sub_AABB {
             invalid = -1,
-            North_West,
-            North_East,
-            South_West,
-            South_East,
-            North_West_z,
-            North_East_z,
-            South_West_z,
-            South_East_z,
+            upper_left,
+            upper_right,
+            down_left,
+            down_right,
+            upper_left_z,
+            upper_right_z,
+            down_left_z,
+            down_right_z,
         };
 
         /**
@@ -209,10 +209,21 @@ namespace ECS {
             return static_cast<sub_AABB>(bool_x + bool_y * 2);
         }
 
+        [[nodiscard]] size_t size() const {
+            return node_size_;
+        }
+
     private:
+        static constexpr auto BRANCH_COUNT = 1 << (sizeof(Point_type) / sizeof(float));
+        const uint32_t max_quadtree_node   = 100; // 最多允许的四叉树 结点数量
+        std::vector<Quadtree_node<BRANCH_COUNT> > data;
+        AABB_centroid<Point_type> mRootBox_position_size;
+        uint32_t mRoot = 0;
+
         Get_centroid get_AABB_centroid_;
         get_radius get_AABB_radius_;
         static constexpr auto MaxDepth = static_cast<std::size_t>(8);
+        size_t node_size_;
 
 
         /**
@@ -270,18 +281,26 @@ namespace ECS {
 
         bool add_node(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
                       const entt::entity entity, const AABB_centroid<Point_type> &entity_box,
-                      const uint32_t current_depth, const uint32_t ideal_depth = 0) {
-            if (ideal_depth == current_depth) {
-                return add_entity(node_index, entity);
-            } else if (isLeaf(node_index)) {
-                split(node_index, node_box);
-                return add_node(node_index, node_box, entity, entity_box, current_depth, ideal_depth);
-            } else {
-                const auto i = get_quadrant(node_box, entity_box);
-                return add_node(data[node_index].children_index[i],
-                                compute_Box_position_size(node_box, i),
-                                entity, entity_box,
-                                current_depth + 1, ideal_depth);
+                      const uint32_t depth, const uint32_t ideal_depth = 0) {
+            // current_depth 为零
+            uint32_t current_node_index = node_index;
+            uint32_t current_depth      = depth;
+            auto current_node_box       = node_box;
+            while (true) {
+                if (ideal_depth == current_depth) {
+                    return add_entity(current_node_index, entity);
+                } else if (ideal_depth > current_depth && isLeaf(current_node_index)) {
+                    split(current_node_index, current_node_box);
+                    const auto i       = get_quadrant(current_node_box, entity_box);
+                    current_node_box   = compute_Box_position_size(current_node_box, i);
+                    current_node_index = data[current_node_index].children_index[i];
+                    current_depth      = current_depth + 1;
+                } else {
+                    const auto i       = get_quadrant(current_node_box, entity_box);
+                    current_node_box   = compute_Box_position_size(current_node_box, i);
+                    current_node_index = data[current_node_index].children_index[i];
+                    current_depth      = current_depth + 1;
+                }
             }
             return false;
         }
@@ -293,24 +312,32 @@ namespace ECS {
                 assert(data.size() < max_quadtree_node);
                 child = data.size();
                 data.emplace_back();
+                node_size_++;
             }
         }
 
-
-        void query(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                   const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &values) const {
+        void query_detail(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                          const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const {
             for (const auto &value: data[node_index].entities) {
                 if (value != entt::null) {
                     const AABB_centroid<Point_type> entity_box{get_AABB_centroid_(value), get_AABB_radius_(value)};
                     if (intersect(entity_box, check_box))
-                        values.push_back(value);
+                        result.push_back(value);
                 }
             }
-            if (!isLeaf(node_index)) {
-                for (auto i = 0; i < 4; ++i) {
+        }
+
+        void query(const uint32_t node_index, const AABB_centroid<Point_type> &node_box,
+                   const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const {
+            // 简单 当前 node_index
+            query_detail(node_index, node_box, check_box, result);
+
+            // 检查 全部的 children node_index
+            for (auto i = 0; i < data[node_index].children_index.size(); ++i) {
+                auto child = data[node_index].children_index[i];
+                if (child != std::numeric_limits<uint32_t>::max()) {
                     const auto child_box = compute_Box_position_size(node_box, static_cast<sub_AABB>(i));
-                    if (intersect(check_box, child_box))
-                        query(data[node_index].children_index[i], child_box, check_box, values);
+                    query(child, node_box, check_box, result);
                 }
             }
         }

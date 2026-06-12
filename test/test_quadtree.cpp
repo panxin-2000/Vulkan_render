@@ -111,6 +111,42 @@ TEST(box, quadtree) {
     std::cout << intersections2.size() << '\n';
 }
 
+TEST(entt, quadtree_same_point) {
+    static entt::registry instance;
+#define Logic_entt() instance
+
+    auto get_AABB_centroid = [](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_centroid_point();
+    };
+    auto get_AABB_radius = [](const entt::entity entity) {
+        return Logic_entt().get<AABB_centroid<Point_2> >(entity).get_radius();
+    };
+
+    auto quadtree = ECS::Quadtree<Point_2>(AABB_centroid<Point_2>{
+                                               {0.5, 0.5f}, {0.5f, 0.5f}
+                                           },
+                                           get_AABB_centroid,
+                                           get_AABB_radius);
+    for (auto i = 0u; i < 10; ++i) {
+        const entt::entity entity = Logic_entt().create();
+        Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
+                                                          {0.6f, 0.6f}, {0.1f, 0.1f}
+                                                      });
+        quadtree.add_entity(entity, Logic_entt().get<AABB_centroid<Point_2> >(entity));
+    }
+    auto size = quadtree.size();
+    EXPECT_EQ(size, 9);
+}
+
+TEST(entt, calculate_level) {
+    EXPECT_EQ(calculate_level( 0.5,0.5 ,5), 0);
+    EXPECT_EQ(calculate_level( 0.5,0.5 ,5), 0);
+    EXPECT_EQ(calculate_level( 0.5,0.26 ,5), 0);
+    EXPECT_EQ(calculate_level( 0.5,0.25 ,5), 0);
+    EXPECT_EQ(calculate_level( 0.5,0.24 ,5), 1);
+    EXPECT_EQ(calculate_level( 0.5,0.124 ,5), 2);
+}
+
 TEST(entt, quadtree_point2) {
     auto n   = 1000;
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
@@ -194,7 +230,7 @@ TEST(entt, quadtree_point3) {
     };
 
     auto quadtree = ECS::Quadtree<Point_3>(AABB_centroid<Point_3>{
-                                               {0.5, 0.5f, 0.1f}, {0.5f, 0.5f, 0.1f}
+                                               {0.5, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}
                                            },
                                            get_AABB_centroid,
                                            get_AABB_radius); {
