@@ -97,7 +97,7 @@ public:
         return {((R.x > L.x) ? R.x : L.x), ((R.y > L.y) ? R.y : L.y)};
     }
 
-    [[nodiscard]] float get_max_x_or_y() const {
+    [[nodiscard]] float max_value() const {
         return std::max<float>(this->x, this->y);
     }
 

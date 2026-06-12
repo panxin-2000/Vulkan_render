@@ -119,30 +119,11 @@ namespace ECS {
         using Get_entity_node_index = std::function<uint32_t(entt::entity entity)>;
 
 
-        explicit Quadtree(const AABB_centroid<Point_type> &box,
-                          const Get_centroid &get_AABB_centroid,
-                          const Get_radius &get_AABB_radius,
-                          Set_entity_node_index set_entity_node_index,
-                          Get_entity_node_index get_entity_node_index) : mRootBox_position_size(box),
-                                                                         f_get_AABB_centroid_(get_AABB_centroid),
-                                                                         f_get_AABB_radius_(get_AABB_radius),
-                                                                         f_set_entity_node_index_(std::move(set_entity_node_index)),
-                                                                         f_get_entity_node_index_(std::move(get_entity_node_index)) {
+        explicit Quadtree(const AABB_centroid<Point_type> &box) : mRootBox_position_size(box) {
             data.reserve(max_quadtree_node);
             data.emplace_back();
             node_size_ = 1;
         }
-
-        explicit Quadtree(const AABB_centroid<Point_type> &box,
-                          const Get_centroid &get_AABB_centroid,
-                          const Get_radius &get_AABB_radius) : mRootBox_position_size(box),
-                                                               f_get_AABB_centroid_(get_AABB_centroid),
-                                                               f_get_AABB_radius_(get_AABB_radius) {
-            data.reserve(max_quadtree_node);
-            data.emplace_back();
-            node_size_ = 1;
-        }
-
 
         bool add_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
             auto ideal_level = calculate_level(mRootBox_position_size.get_radius().max_value(),
@@ -151,34 +132,10 @@ namespace ECS {
         }
 
 
-        std::vector<entt::entity> query(const AABB_centroid<Point_type> &check_box) {
-            std::vector<entt::entity> result;
-            query(0, mRootBox_position_size, check_box, result);
-            return result;
-        }
-
-        bool remove_entity(const entt::entity entity) {
-            if (f_get_entity_node_index_ != nullptr) {
-                const auto node_index = f_get_entity_node_index_(entity);
-                return remove_entity(node_index, entity);
-            }
-            AABB_centroid<Point_type> entity_box{f_get_AABB_centroid_(entity), f_get_AABB_radius_(entity)};
-            return remove_entity(entity, entity_box);
-        }
-
         bool remove_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
             auto ideal_level = calculate_level(mRootBox_position_size.get_radius().max_value(),
                                                entity_box.get_radius().max_value(), MaxDepth);
             return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
-        }
-
-
-        /**
-         * 序号小的 entity 在前，序号大的在后，方便查找，允许重复
-         * @return
-         */
-        std::multimap<entt::entity, entt::entity> find_all_intersections() {
-            return std::multimap<entt::entity, entt::entity>();
         }
 
 
@@ -196,11 +153,7 @@ namespace ECS {
         uint32_t mRoot = 0;
 
 
-        Get_centroid f_get_AABB_centroid_              = nullptr;
-        Get_radius f_get_AABB_radius_                  = nullptr;
-        Set_entity_node_index f_set_entity_node_index_ = nullptr;
-        Get_entity_node_index f_get_entity_node_index_ = nullptr;
-        static constexpr auto MaxDepth                 = static_cast<std::size_t>(8);
+        static constexpr auto MaxDepth = static_cast<std::size_t>(8);
         size_t node_size_;
 
 
@@ -274,12 +227,6 @@ namespace ECS {
                       uint32_t current_depth, uint32_t ideal_depth = 0);
 
         void split(uint32_t node_index);
-
-        void query_one_node(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                            const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const;
-
-        void query(uint32_t node_index, const AABB_centroid<Point_type> &node_box,
-                   const AABB_centroid<Point_type> &check_box, std::vector<entt::entity> &result) const;
     };
 }
 
