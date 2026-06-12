@@ -110,8 +110,6 @@ namespace ECS {
     }
 
 
-
-
     template<typename Point_type>
     class Quadtree {
     public:
@@ -147,19 +145,9 @@ namespace ECS {
 
 
         bool add_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
-            if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_2> &>) {
-                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
-                                                   entity_box.get_radius().get_max_x_or_y(),
-                                                   MaxDepth);
-                return add_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
-            } else if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_3> &>) {
-                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
-                                                   entity_box.get_radius().get_max_x_or_y(),
-                                                   MaxDepth);
-                return add_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
-            }
-            assert(false && "not implemented");
-            return false;
+            auto ideal_level = calculate_level(mRootBox_position_size.get_radius().max_value(),
+                                               entity_box.get_radius().max_value(), MaxDepth);
+            return add_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
         }
 
 
@@ -179,19 +167,9 @@ namespace ECS {
         }
 
         bool remove_entity(const entt::entity entity, const AABB_centroid<Point_type> &entity_box) {
-            if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_2> &>) {
-                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
-                                                   entity_box.get_radius().get_max_x_or_y(),
-                                                   MaxDepth);
-                return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
-            } else if constexpr (std::is_same_v<decltype(entity_box), const AABB_centroid<Point_3> &>) {
-                auto ideal_level = calculate_level(mRootBox_position_size.get_radius().get_max_x_or_y(),
-                                                   entity_box.get_radius().get_max_x_or_y(),
-                                                   MaxDepth);
-                return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
-            }
-            assert(false && "not implemented");
-            return false;
+            auto ideal_level = calculate_level(mRootBox_position_size.get_radius().max_value(),
+                                               entity_box.get_radius().max_value(), MaxDepth);
+            return remove_node(0, mRootBox_position_size, entity, entity_box, 0, ideal_level);
         }
 
 
