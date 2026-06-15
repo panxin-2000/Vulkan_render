@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 project(hello_mac)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
@@ -39,6 +39,23 @@ add_compile_options(-mno-omit-leaf-frame-pointer)
 
 ## 按照googletest官网文档添加了gtest
 include(FetchContent)
+
+FetchContent_Declare(
+        OrthoTree
+        GIT_REPOSITORY https://github.com/attcs/Octree.git
+        GIT_TAG v3.2.4 # Or use a specific commit hash
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+FetchContent_MakeAvailable(OrthoTree)
+
+FetchContent_Declare(
+        cereal
+        GIT_REPOSITORY https://github.com/USCiLab/cereal.git
+        GIT_TAG        v1.3.2 # 或者是 master
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+)
+
+FetchContent_MakeAvailable(cereal)
 
 ## 官网给的FetchContent_Declare如下，但是不方便直观的看明白版本
 #FetchContent_Declare(
@@ -495,7 +512,7 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy readerwriterqueue cereal::cereal OrthoTree::OrthoTree GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
@@ -578,6 +595,8 @@ set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURR
 
 target_link_libraries(learn_render PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
 
+target_link_libraries(learn_render PRIVATE cereal::cereal)
+target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)
 target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)

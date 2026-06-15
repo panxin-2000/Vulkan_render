@@ -123,8 +123,8 @@ TEST(entt, quadtree_same_point) {
     };
 
     auto quadtree = ECS::Spatial_Tree_Pool<Point_2>(AABB_centroid<Point_2>{
-                                               {0.5, 0.5f}, {0.5f, 0.5f}
-                                           });
+                                                        {0.5, 0.5f}, {0.5f, 0.5f}
+                                                    });
     for (auto i = 0u; i < 10; ++i) {
         const entt::entity entity = Logic_entt().create();
         Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
@@ -161,8 +161,8 @@ TEST(entt, quadtree_point2) {
     };
 
     auto quadtree = ECS::Spatial_Tree_Pool<Point_2>(AABB_centroid<Point_2>{
-                                               {0.5, 0.5f}, {0.5f, 0.5f}
-                                           }); {
+                                                        {0.5, 0.5f}, {0.5f, 0.5f}
+                                                    }); {
         const entt::entity entity = Logic_entt().create();
         Logic_entt().emplace<AABB_centroid<Point_2> >(entity, AABB_centroid<Point_2>{
                                                           {0.6f, 0.6f}, {0.1f, 0.1f}
@@ -230,8 +230,8 @@ TEST(entt, quadtree_point3) {
     };
 
     auto quadtree = ECS::Spatial_Tree_Pool<Point_3>(AABB_centroid<Point_3>{
-                                               {0.5, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}
-                                           }); {
+                                                        {0.5, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}
+                                                    }); {
         const entt::entity entity = Logic_entt().create();
         Logic_entt().emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>{
                                                           {0.6f, 0.6f, 0.1f}, {0.1f, 0.1f, 0.1f}
@@ -277,4 +277,27 @@ TEST(entt, quadtree_point3) {
 
     // EXPECT_EQ(result, entities);
     Logic_entt().clear();
+}
+
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/archives/binary.hpp>
+#include "orthotree/octree.h"
+// 可以
+
+TEST(df, dfg) {
+    using namespace OrthoTree;
+    // Example #1: Octree for points
+    {
+        auto constexpr points = std::array{Point3D{0, 0, 0}, Point3D{1, 1, 1}, Point3D{2, 2, 2}};
+        auto const octree     = OctreePointM(points, 3 /*max depth*/);
+
+        auto const searchBox = BoundingBox3D{{0.5, 0.5, 0.5}, {2.5, 2.5, 2.5}};
+        auto const pointIDs  = octree.RangeSearch(searchBox); //: { 1, 2 }
+
+        auto neighborNo    = 2;
+        auto pointIDsByKNN = octree.GetNearestNeighbors(Point3D{1.1, 1.1, 1.1}
+                                                      , neighborNo
+                                                       ); //: { 1, 2 }
+    }
 }
