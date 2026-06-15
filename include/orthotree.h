@@ -11620,15 +11620,15 @@ namespace OrthoTree
 
   // Tree aliases
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
   using OrthoTreePointND = OrthoTree::OrthoTreeBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     PointConfiguration<NODE_GEOMETRY_STORAGE>>;
 
-  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
+  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
   using OrthoTreeBoxND = OrthoTree::OrthoTreeBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE>>;
 
@@ -11644,15 +11644,15 @@ namespace OrthoTree
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE>>;
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
   using StaticOrthoTreePointND = OrthoTree::StaticOrthoTreeBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     PointConfiguration<NODE_GEOMETRY_STORAGE>>;
 
-  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
+  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
   using StaticOrthoTreeBoxND = OrthoTree::StaticOrthoTreeBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE>>;
 
@@ -11898,11 +11898,11 @@ namespace OrthoTree
 
   // Managed types
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
-  using OrthoTreePointManagedND = OrthoTreeManaged<OrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER>>;
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
+  using OrthoTreePointManagedND = OrthoTreeManaged<OrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER>>;
 
-  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
-  using OrthoTreeBoxManagedND = OrthoTreeManaged<OrthoTreeBoxND<DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIOGUOS_CONTAINER>>;
+  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
+  using OrthoTreeBoxManagedND = OrthoTreeManaged<OrthoTreeBoxND<DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIGUOUS_CONTAINER>>;
 
   template<dim_t DIMENSION_NO, typename TScalar, typename TEntityContainer>
   using OrthoTreePointManagedNDUD = OrthoTreeManaged<OrthoTreePointNDUD<DIMENSION_NO, TScalar, TEntityContainer>>;
@@ -11982,11 +11982,11 @@ namespace OrthoTree
 
   // Static Managed types
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
-  using StaticTreePointManagedND = OrthoTreeManaged<StaticOrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER>>;
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
+  using StaticTreePointManagedND = OrthoTreeManaged<StaticOrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER>>;
 
-  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
-  using StaticTreeBoxManagedND = OrthoTreeManaged<StaticOrthoTreeBoxND<DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIOGUOS_CONTAINER>>;
+  template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
+  using StaticTreeBoxManagedND = OrthoTreeManaged<StaticOrthoTreeBoxND<DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIGUOUS_CONTAINER>>;
 
 
   // Static Managed Dualtree for points
@@ -12685,15 +12685,15 @@ namespace OrthoTree
 
 namespace OrthoTree
 {
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM = 2>
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM = 2>
   using StaticBVHPointND = StaticBVHLinearBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     BVHConfiguration<CHILD_NUM>>;
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM = 2>
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM = 2>
   using StaticBVHBoxND = StaticBVHLinearBase<
-    std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
+    std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>, BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar>>>,
     GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
     BVHConfiguration<CHILD_NUM>>;
 
@@ -12731,11 +12731,11 @@ namespace OrthoTree
 
   // Managed types
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM = 2>
-  using StaticBVHPointManagedND = OrthoTreeManaged<StaticBVHPointND<DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER, CHILD_NUM>>;
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM = 2>
+  using StaticBVHPointManagedND = OrthoTreeManaged<StaticBVHPointND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER, CHILD_NUM>>;
 
-  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM = 2>
-  using StaticBVHBoxManagedND = OrthoTreeManaged<StaticBVHBoxND<DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER, CHILD_NUM>>;
+  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM = 2>
+  using StaticBVHBoxManagedND = OrthoTreeManaged<StaticBVHBoxND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER, CHILD_NUM>>;
 
   // BVH for points
   using StaticBVHPoint1DM = StaticBVHPointManagedND<1, BaseGeometryType>;
