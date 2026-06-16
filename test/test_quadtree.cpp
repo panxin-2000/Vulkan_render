@@ -279,25 +279,111 @@ TEST(entt, quadtree_point3) {
     Logic_entt().clear();
 }
 
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/memory.hpp>
-#include <cereal/archives/binary.hpp>
-#include "orthotree/octree.h"
-// 可以
-
-TEST(df, dfg) {
-    using namespace OrthoTree;
+TEST(template_octree, dfg) {
     // Example #1: Octree for points
-    {
-        auto constexpr points = std::array{Point3D{0, 0, 0}, Point3D{1, 1, 1}, Point3D{2, 2, 2}};
-        auto const octree     = OctreePointM(points, 3 /*max depth*/);
+    // Example #1: Octree for points
+    // {
+    //     auto constexpr points = std::array{ Point3D{0,0,0}, Point3D{1,1,1}, Point3D{2,2,2} };
+    //     auto const octree = OctreePointC(points, 3 /*max depth*/);
+    //
+    //     auto const searchBox = BoundingBox3D{ {0.5, 0.5, 0.5}, {2.5, 2.5, 2.5} };
+    //     auto const pointIDs = octree.RangeSearch(searchBox); //: { 1, 2 }
+    //
+    //     auto neighborNo = 2;
+    //     auto pointIDsByKNN = octree.GetNearestNeighbors(Point3D{ 1.1, 1.1, 1.1 }
+    //       , neighborNo
+    //     ); //: { 1, 2 }
+    // }    // Example #2: Quadtree for bounding boxes
+    // {
+    //     auto boxes = std::vector
+    //     {
+    //         BoundingBox2D{{0.0, 0.0}, {1.0, 1.0}},
+    //         BoundingBox2D{{1.0, 1.0}, {2.0, 2.0}},
+    //         BoundingBox2D{{2.0, 2.0}, {3.0, 3.0}},
+    //         BoundingBox2D{{3.0, 3.0}, {4.0, 4.0}},
+    //         BoundingBox2D{{1.2, 1.2}, {2.8, 2.8}}
+    //     };
+    //
+    //     auto quadtree = QuadtreeBoxM(boxes
+    //                                , 3            // max depth
+    //                                , std::nullopt // user-provided bounding Box for all
+    //                                , 1            // max element in a node
+    //                                 );
+    //
+    //     auto collidingIDPairs = quadtree.CollisionDetection(); //: { {1,4}, {2,4} }
+    //
+    //     auto searchBox = BoundingBox2D{{1.0, 1.0}, {3.1, 3.1}};
+    //
+    //     // Boxes within the range
+    //     auto insideBoxIDs = quadtree.RangeSearch(searchBox); //: { 1, 2, 4 }
+    //
+    //     // Overlapping Boxes with the range
+    //     auto overlappingBoxIDs = quadtree.RangeSearch(searchBox, RangeSearchMode::Overlap);
+    //     //: { 1, 2, 3, 4 }
+    //
+    //     // Picked boxes
+    //     auto pickPoint = Point2D{2.5, 2.5};
+    //     auto pickedIDs = quadtree.PickSearch(pickPoint); //: { 2, 4 }
+    // }
 
-        auto const searchBox = BoundingBox3D{{0.5, 0.5, 0.5}, {2.5, 2.5, 2.5}};
-        auto const pointIDs  = octree.RangeSearch(searchBox); //: { 1, 2 }
+    // OrthoTreeManaged 应该是最上层的 全部接口
+    // 包括以下的内容
+    //  RangeSearch
+    // PickSearch
+    // GetEntitiesBreadthFirst
+    // GetEntitiesDepthFirst
+    // TraverseEntitiesBreadthFirst
+    // TraverseEntitiesDepthFirst
+    // TraverseEntitiesByPriority
+    // PlanePositiveSegmentation
+    // FrustumCulling
+    // Query
+    //     ByWithin
+    //     ByOverlaps
+    //     ByInFrustum
+    //     ByIntersecting
+    //     BySatisfies
+    // GetNearestNeighbors
+    // CollisionDetection
+    // RayIntersectedAll
+    // RayIntersectedFirst
+    // PlaneSearch
+    // PlaneIntersection
 
-        auto neighborNo    = 2;
-        auto pointIDsByKNN = octree.GetNearestNeighbors(Point3D{1.1, 1.1, 1.1}
-                                                      , neighborNo
-                                                       ); //: { 1, 2 }
-    }
+    //
+    // template<typename TOrthoTreeCore>
+    // class OrthoTreeManaged
+
+    //  using OrthoTreePointManagedND = OrthoTreeManaged<OrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER>>;
+
+    //  OrthoTreePointND
+
+    //  template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
+    //  using OrthoTreePointND = OrthoTree::OrthoTreeBase<
+    //   std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar>>, PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar>>>,
+    //   GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
+    //   PointConfiguration<NODE_GEOMETRY_STORAGE>>;
+
+    //  template<typename TEntityAdapter, typename TGeometryAdapter, typename TConfiguration>
+    //  using OrthoTreeBase = DynamicOrthoTreeBase<TEntityAdapter, TGeometryAdapter, TConfiguration>;
+
+    // template<typename TEntityAdapter, typename TGeometryAdapter, typename TConfiguration>
+    // using DynamicOrthoTreeBase = OrthoTreeQueryBase<DynamicHashOrthoTreeCore<TEntityAdapter, TGeometryAdapter, TConfiguration>>;
+
+    // OrthoTreeQueryBase 应该是 提供了尽可能的查询办法
+    // DynamicHashOrthoTreeCore   又做了什么呢？
+
+    // template<typename TEntityAdapter, typename TGeometryAdapter, typename TConfiguration>
+    // class DynamicHashOrthoTreeCore : public OrthoTreeCoreBase<TEntityAdapter, TGeometryAdapter, TConfiguration>
+
+    // OrthoTreeCoreBase 已经是最底层的内容了
+
+    // OrthoTreeCoreBase
+    // DynamicHashOrthoTreeCore
+    // OrthoTreeQueryBase
+    // OrthoTreeManaged
+    // 这四层类结构揭示了 attcs/OrthoTree 库的核心架构设计。
+    // 它采用了非常标准的面向对象组合与继承模式，
+    // 将“底层几何运算”、“内存组织、索引管理”、“空间查询算法”以及“上层业务封装”彻底解耦。
+    // 为什么说是面向对象？
 }
