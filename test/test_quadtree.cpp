@@ -279,52 +279,61 @@ TEST(entt, quadtree_point3) {
     Logic_entt().clear();
 }
 
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/archives/binary.hpp>
+#include "orthotree.h"
+
+
 TEST(template_octree, dfg) {
+    using namespace OrthoTree;
+
     // Example #1: Octree for points
     // Example #1: Octree for points
-    // {
-    //     auto constexpr points = std::array{ Point3D{0,0,0}, Point3D{1,1,1}, Point3D{2,2,2} };
-    //     auto const octree = OctreePointC(points, 3 /*max depth*/);
-    //
-    //     auto const searchBox = BoundingBox3D{ {0.5, 0.5, 0.5}, {2.5, 2.5, 2.5} };
-    //     auto const pointIDs = octree.RangeSearch(searchBox); //: { 1, 2 }
-    //
-    //     auto neighborNo = 2;
-    //     auto pointIDsByKNN = octree.GetNearestNeighbors(Point3D{ 1.1, 1.1, 1.1 }
-    //       , neighborNo
-    //     ); //: { 1, 2 }
-    // }    // Example #2: Quadtree for bounding boxes
-    // {
-    //     auto boxes = std::vector
-    //     {
-    //         BoundingBox2D{{0.0, 0.0}, {1.0, 1.0}},
-    //         BoundingBox2D{{1.0, 1.0}, {2.0, 2.0}},
-    //         BoundingBox2D{{2.0, 2.0}, {3.0, 3.0}},
-    //         BoundingBox2D{{3.0, 3.0}, {4.0, 4.0}},
-    //         BoundingBox2D{{1.2, 1.2}, {2.8, 2.8}}
-    //     };
-    //
-    //     auto quadtree = QuadtreeBoxM(boxes
-    //                                , 3            // max depth
-    //                                , std::nullopt // user-provided bounding Box for all
-    //                                , 1            // max element in a node
-    //                                 );
-    //
-    //     auto collidingIDPairs = quadtree.CollisionDetection(); //: { {1,4}, {2,4} }
-    //
-    //     auto searchBox = BoundingBox2D{{1.0, 1.0}, {3.1, 3.1}};
-    //
-    //     // Boxes within the range
-    //     auto insideBoxIDs = quadtree.RangeSearch(searchBox); //: { 1, 2, 4 }
-    //
-    //     // Overlapping Boxes with the range
-    //     auto overlappingBoxIDs = quadtree.RangeSearch(searchBox, RangeSearchMode::Overlap);
-    //     //: { 1, 2, 3, 4 }
-    //
-    //     // Picked boxes
-    //     auto pickPoint = Point2D{2.5, 2.5};
-    //     auto pickedIDs = quadtree.PickSearch(pickPoint); //: { 2, 4 }
-    // }
+    {
+        auto constexpr points = std::array{Point3D{0, 0, 0}, Point3D{1, 1, 1}, Point3D{2, 2, 2}};
+        auto const octree     = OctreePointM(points, 3 /*max depth*/);
+
+        auto const searchBox = BoundingBox3D{{0.5, 0.5, 0.5}, {2.5, 2.5, 2.5}};
+        auto const pointIDs  = octree.RangeSearch(searchBox); //: { 1, 2 }
+
+        auto neighborNo    = 2;
+        auto pointIDsByKNN = octree.GetNearestNeighbors(Point3D{1.1, 1.1, 1.1}
+                                                      , neighborNo
+                                                       ); //: { 1, 2 }
+    }
+    // Example #2: Quadtree for bounding boxes
+    {
+        auto boxes = std::vector
+        {
+            BoundingBox2D{{0.0, 0.0}, {1.0, 1.0}},
+            BoundingBox2D{{1.0, 1.0}, {2.0, 2.0}},
+            BoundingBox2D{{2.0, 2.0}, {3.0, 3.0}},
+            BoundingBox2D{{3.0, 3.0}, {4.0, 4.0}},
+            BoundingBox2D{{1.2, 1.2}, {2.8, 2.8}}
+        };
+
+        auto quadtree = QuadtreeBoxM(boxes
+                                   , 3            // max depth
+                                   , std::nullopt // user-provided bounding Box for all
+                                   , 1            // max element in a node
+                                    );
+
+        auto collidingIDPairs = quadtree.CollisionDetection(); //: { {1,4}, {2,4} }
+
+        auto searchBox = BoundingBox2D{{1.0, 1.0}, {3.1, 3.1}};
+
+        // Boxes within the range
+        auto insideBoxIDs = quadtree.RangeSearch(searchBox); //: { 1, 2, 4 }
+
+        // Overlapping Boxes with the range
+        auto overlappingBoxIDs = quadtree.RangeSearch(searchBox, RangeSearchMode::Overlap);
+        //: { 1, 2, 3, 4 }
+
+        // Picked boxes
+        auto pickPoint = Point2D{2.5, 2.5};
+        auto pickedIDs = quadtree.PickSearch(pickPoint); //: { 2, 4 }
+    }
 
     // OrthoTreeManaged 应该是最上层的 全部接口
     // 包括以下的内容

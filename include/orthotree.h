@@ -93,24 +93,14 @@ namespace OrthoTree {
     using bitset_arithmetic = std::bitset<N>;
 
     template<std::size_t N>
-    constexpr auto operator<=
-    >
-    (bitset_arithmetic<N>
-    const
-    &
-    lhs
-   ,
-    bitset_arithmetic<N> const &rhs
-    )
-    noexcept
-  {
-    using R = std::strong_ordering;
-    for (std::size_t i = 0, id = N - 1; i < N; ++i, --id)
-      if (lhs[id] ^ rhs[id])
-        return lhs[id] ? R::greater : R::less;
+    constexpr auto operator<=>(bitset_arithmetic<N> const &lhs, bitset_arithmetic<N> const &rhs) noexcept {
+        using R = std::strong_ordering;
+        for (std::size_t i = 0, id = N - 1; i < N; ++i, --id)
+            if (lhs[id] ^ rhs[id])
+                return lhs[id] ? R::greater : R::less;
 
-    return R::equal;
-  }
+        return R::equal;
+    }
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -534,142 +524,99 @@ namespace OrthoTree {
              typename TScalar, typename TFloatScalar>
     concept BaseGeometryAdapterConcept =
             // --- required nested types ---
-            requires{
+            requires
+            {
                 typename TAdapter::Scalar;
                 typename TAdapter::FloatScalar;
                 typename TAdapter::Vector;
                 typename TAdapter::Box;
                 typename TAdapter::Ray;
                 typename TAdapter::Plane;
-
             }
 
-    // --- exact type bindings ---
-    &&
-    std::same_as<typename TAdapter::Scalar, TScalar> && std::same_as<typename TAdapter::FloatScalar, TFloatScalar> &&
-    std::same_as<typename TAdapter::Vector, TVector> && std::same_as<typename TAdapter::Box, TBox> && std::same_as<
-        typename TAdapter::Ray, TRay> &&
-    std::same_as<typename TAdapter::Plane, TPlane> &&
-    std::is_floating_point_v<typename TAdapter::FloatScalar>
+            // --- exact type bindings ---
+            && std::same_as<typename TAdapter::Scalar, TScalar> && std::same_as<
+                typename TAdapter::FloatScalar, TFloatScalar> &&
+            std::same_as<typename TAdapter::Vector, TVector> && std::same_as<typename TAdapter::Box, TBox> &&
+            std::same_as<typename TAdapter::Ray, TRay> &&
+            std::same_as<typename TAdapter::Plane, TPlane> &&
+            std::is_floating_point_v<typename TAdapter::FloatScalar>
 
-    // --- required static constexpr values ---
-    &&
-    requires { {
-            TAdapter::DIMENSION_NO
-        }
-        ->
-        std::convertible_to<dim_t>; {
-            TAdapter::BASE_TOLERANCE
-        }
-        ->
-        std::convertible_to<TFloatScalar>;
-    }
+            // --- required static constexpr values ---
+            &&
+            requires
+            {
+                { TAdapter::DIMENSION_NO } -> std::convertible_to<dim_t>;
+                { TAdapter::BASE_TOLERANCE } -> std::convertible_to<TFloatScalar>;
+            } &&
+            (TAdapter::DIMENSION_NO == DIMENSION_NO_)
 
-    &&
-    (TAdapter::DIMENSION_NO
-    ==
-    DIMENSION_NO_
-    )
+            // --- point access ---
+            &&
+            requires(TVector &p, TVector const &cp, dim_t d, TScalar v)
+            {
+                { TAdapter::GetPointC(cp, d) } -> std::convertible_to<TScalar>;
+                { TAdapter::SetPointC(p, d, v) } -> std::same_as<void>;
+            }
 
-    // --- point access ---
-    &&
-    requires(TVector &p, TVector const &cp, dim_t d, TScalar v) { {
-            TAdapter::GetPointC(cp, d)
-        }
-        ->
-        std::convertible_to<TScalar>; {
-            TAdapter::SetPointC(p, d, v)
-        }
-        ->
-        std::same_as<void>;
-    }
+            // --- box access ---
+            &&
+            requires(TBox &b, TBox const &cb, dim_t d, TScalar v)
+            {
+                { TAdapter::GetBoxMinC(cb, d) } -> std::convertible_to<TScalar>;
+                { TAdapter::GetBoxMaxC(cb, d) } -> std::convertible_to<TScalar>;
+                { TAdapter::SetBoxMinC(b, d, v) } -> std::same_as<void>;
+                { TAdapter::SetBoxMaxC(b, d, v) } -> std::same_as<void>;
+            }
 
-    // --- box access ---
-    &&
-    requires(TBox &b, TBox const &cb, dim_t d, TScalar v) { {
-            TAdapter::GetBoxMinC(cb, d)
-        }
-        ->
-        std::convertible_to<TScalar>; {
-            TAdapter::GetBoxMaxC(cb, d)
-        }
-        ->
-        std::convertible_to<TScalar>; {
-            TAdapter::SetBoxMinC(b, d, v)
-        }
-        ->
-        std::same_as<void>; {
-            TAdapter::SetBoxMaxC(b, d, v)
-        }
-        ->
-        std::same_as<void>;
-    }
+            // --- ray access ---
+            &&
+            requires(TRay const &r)
+            {
+                { TAdapter::GetRayOrigin(r) } -> std::convertible_to<TVector>;
+                { TAdapter::GetRayDirection(r) } -> std::convertible_to<TVector>;
+            }
 
-    // --- ray access ---
-    &&
-    requires(TRay const &r) { {
-            TAdapter::GetRayOrigin(r)
-        }
-        ->
-        std::convertible_to<TVector>; {
-            TAdapter::GetRayDirection(r)
-        }
-        ->
-        std::convertible_to<TVector>;
-    }
-
-    // --- plane access ---
-    &&
-    requires(TPlane const &p) { {
-            TAdapter::GetPlaneNormal(p)
-        }
-        ->
-        std::convertible_to<TVector>; {
-            TAdapter::GetPlaneOrigoDistance(p)
-        }
-        ->
-        std::convertible_to<TScalar>;
-    };
+            // --- plane access ---
+            && requires(TPlane const &p)
+            {
+                { TAdapter::GetPlaneNormal(p) } -> std::convertible_to<TVector>;
+                { TAdapter::GetPlaneOrigoDistance(p) } -> std::convertible_to<TScalar>;
+            };
 
 
     template<class TAdapter, dim_t DIMENSION_NO, typename TVector, typename TBox, typename TRay, typename TPlane,
              typename TScalar, typename TFloatScalar>
-    concept GeometryAdapterConcept = requires{
-    requires BaseGeometryAdapterConcept<TAdapter, DIMENSION_NO, TVector, TBox, TRay, TPlane, TScalar, TFloatScalar>;
-
-    }
-    &&
-    requires(TBox const &box, TVector const &point, TFloatScalar tolerance) { {
-            TAdapter::DoesBoxContainPoint(box, point, tolerance)
-        }
-        ->
-        std::convertible_to<bool>;
-    }
-
-    &&
-    requires(TBox const &e1, TBox const &e2, bool e1_must_contain_e2, bool fOverlapPtTouchAllowed,
-             TFloatScalar tolerance) { {
-            TAdapter::AreBoxesOverlapped(e1, e2, e1_must_contain_e2, fOverlapPtTouchAllowed, tolerance)
-        }
-        ->
-        std::convertible_to<bool>;
-    }
-
-    &&
-    requires(TBox const &e1, TBox const &e2, TFloatScalar tolerance) { {
-            TAdapter::AreBoxesOverlappedStrict(e1, e2, tolerance)
-        }
-        ->
-        std::convertible_to<bool>;
-    }
-
-    &&
-    requires(TVector const &box, TScalar distanceOfOrigo, TVector const &planeNormal, TFloatScalar tolerance) { {
-            TAdapter::GetPointPlaneRelation(box, distanceOfOrigo, planeNormal, tolerance)
-        }
-        ->
-        std::convertible_to<PlaneRelation>;
-    };
+    concept GeometryAdapterConcept = requires
+                                     {
+                                         requires BaseGeometryAdapterConcept<
+                                             TAdapter, DIMENSION_NO, TVector, TBox, TRay, TPlane, TScalar, TFloatScalar>
+                                         ;
+                                     } && requires(TBox const &box, TVector const &point, TFloatScalar tolerance)
+                                     {
+                                         {
+                                             TAdapter::DoesBoxContainPoint(box, point, tolerance)
+                                         } -> std::convertible_to<bool>;
+                                     } && requires(TBox const &e1, TBox const &e2, bool e1_must_contain_e2,
+                                                   bool fOverlapPtTouchAllowed, TFloatScalar tolerance)
+                                     {
+                                         {
+                                             TAdapter::AreBoxesOverlapped(e1, e2, e1_must_contain_e2,
+                                                                          fOverlapPtTouchAllowed, tolerance)
+                                         } -> std::convertible_to<bool>;
+                                     } && requires(TBox const &e1, TBox const &e2, TFloatScalar tolerance)
+                                     {
+                                         {
+                                             TAdapter::AreBoxesOverlappedStrict(e1, e2, tolerance)
+                                         } -> std::convertible_to<bool>;
+                                     } && requires(TVector const &box, TScalar distanceOfOrigo,
+                                                   TVector const &planeNormal, TFloatScalar tolerance)
+                                     {
+                                         {
+                                             TAdapter::GetPointPlaneRelation(box, distanceOfOrigo, planeNormal,
+                                                                             tolerance)
+                                         } -> std::convertible_to<PlaneRelation>;
+                                     };
 } // namespace OrthoTree
 
 
@@ -913,9 +860,9 @@ namespace OrthoTree {
         template<typename T>
         constexpr auto get_nvp_name(T const &nvp) noexcept {
             if constexpr (is_nvp_v<T>) {
-                if constexpr (requires{nvp.name(); })
+                if constexpr (requires { nvp.name(); })
                     return nvp.name();
-                else if constexpr (requires{nvp.name; })
+                else if constexpr (requires { nvp.name; })
                     return nvp.name;
             }
         }
@@ -923,9 +870,9 @@ namespace OrthoTree {
         template<typename T>
         constexpr decltype(auto) get_nvp_value(T &nvp) noexcept {
             if constexpr (is_nvp_v<T>) {
-                if constexpr (requires{nvp.value(); })
+                if constexpr (requires { nvp.value(); })
                     return nvp.value();
-                else if constexpr (requires{nvp.value; })
+                else if constexpr (requires { nvp.value; })
                     return (nvp.value);
             }
         }
@@ -985,9 +932,7 @@ namespace OrthoTree {
     // so we use !is_orthotree_archive_v which is equivalent (orthotree archives
     // have member operator& so they never need this bridge).
     template<typename TArchive, typename T>
-        requires(!is_orthotree_archive_v<TArchive> && requires(TArchive & ar, T & t)
-
-{ ar(t); })
+        requires(!is_orthotree_archive_v<TArchive> && requires(TArchive &ar, T &t) { ar(t); })
     TArchive &operator&(TArchive &ar, T &t) {
         ar(t);
         return ar;
@@ -1125,13 +1070,15 @@ namespace OrthoTree::detail {
     // Trait to check if TOrthoTreeCore::Create() has maxDepthID and boxSpace parameters
     template<typename TCore>
     concept HasCreateWithBoxSpace = requires(
-                                             TCore & tree,
-    typename TCore::EA::EntityContainerView entities,
-    std::optional<depth_t> maxDepthID,
-    std::optional < typename TCore::GA::Box > boxSpace,
-    std::size_t maxElementNoInNode,
-    SeqExec execMode)
- { TCore::Create(tree, entities, maxDepthID, boxSpace, maxElementNoInNode, execMode); };
+        TCore &tree,
+        typename TCore::EA::EntityContainerView entities,
+        std::optional<depth_t> maxDepthID,
+        std::optional<typename TCore::GA::Box> boxSpace,
+        std::size_t maxElementNoInNode,
+        SeqExec execMode)
+            {
+                TCore::Create(tree, entities, maxDepthID, boxSpace, maxElementNoInNode, execMode);
+            };
 
     template<typename TCore>
     inline constexpr bool HasCreateWithBoxSpaceV = HasCreateWithBoxSpace<TCore>;
@@ -1139,26 +1086,23 @@ namespace OrthoTree::detail {
 
     // Trait to check if TOrthoTreeCore::Create() has NO maxDepthID and boxSpace parameters (typical for BVH)
     template<typename TCore>
-    concept HasCreateSimple = requires(TCore & tree, typename TCore::EA::EntityContainerView entities,
+    concept HasCreateSimple = requires(TCore &tree, typename TCore::EA::EntityContainerView entities,
                                        std::size_t maxElementNoInNode, SeqExec execMode)
- {
-    TCore::Create(tree, entities, maxElementNoInNode, execMode);
-  };
+    {
+        TCore::Create(tree, entities, maxElementNoInNode, execMode);
+    };
 
     template<typename TCore>
     inline constexpr bool HasCreateSimpleV = HasCreateSimple<TCore>;
 
 
     template<typename TContainer, typename TKey>
-    concept HasAt = requires(TContainer container, TKey key)
- { container.at(key); };
+    concept HasAt = requires(TContainer container, TKey key) { container.at(key); };
 
     template<typename T>
-    concept HasFirst = requires(T value)
- { value.first; };
+    concept HasFirst = requires(T value) { value.first; };
     template<typename T>
-    concept HasSecond = requires(T value)
- { value.second; };
+    concept HasSecond = requires(T value) { value.second; };
 
     template<typename, typename key_type = std::void_t<> >
     struct container_key_type {
@@ -1201,7 +1145,7 @@ namespace OrthoTree::detail {
 
     template<typename TContainer>
     constexpr index_t getKeyPart(TContainer const &container, typename TContainer::value_type const &value) noexcept
-        requires(std::contiguous_iterator < typename TContainer::iterator >) {
+        requires(std::contiguous_iterator<typename TContainer::iterator>) {
         return index_t(std::distance(&container[0], &value));
     }
 
@@ -1257,9 +1201,9 @@ namespace OrthoTree::detail {
 
     template<typename TContainer, typename TValue>
     constexpr void insert(TContainer &container, TValue &&value) {
-        if constexpr (requires{container.push_back(std::forward<TValue>(value)); }) {
+        if constexpr (requires { container.push_back(std::forward<TValue>(value)); }) {
             container.push_back(std::forward<TValue>(value));
-        } else if constexpr (requires{container.insert(std::forward<TValue>(value)); }) {
+        } else if constexpr (requires { container.insert(std::forward<TValue>(value)); }) {
             container.insert(std::forward<TValue>(value));
         } else {
             static_assert(sizeof(TContainer) == 0, "Insert: unsupported container type");
@@ -1294,7 +1238,9 @@ namespace OrthoTree::detail {
 
     template<typename TContainer, typename... TElement>
     concept HasEmplaceBack = requires(TContainer container, TElement &&... elements)
- { container.emplace_back(std::forward<TElement>(elements)...); };
+    {
+        container.emplace_back(std::forward<TElement>(elements)...);
+    };
 
     template<HasEmplaceBack TContainer, typename... TElement>
     constexpr void emplace(TContainer &container, TElement &&... element) noexcept {
@@ -1303,7 +1249,9 @@ namespace OrthoTree::detail {
 
     template<typename TContainer, typename... TElement>
     concept HasEmplace = requires(TContainer container, TElement &&... elements)
- { container.emplace(std::forward<TElement>(elements)...); };
+    {
+        container.emplace(std::forward<TElement>(elements)...);
+    };
 
     template<HasEmplace TContainer, typename... TElement>
     constexpr void emplace(TContainer &container, TElement &&... element) noexcept {
@@ -1337,25 +1285,19 @@ namespace OrthoTree::detail {
     }
 
     template<typename TContainer, typename TKey>
-        requires(requires(TContainer & c, TKey const&k)
-
-{ c.erase(k); })
+        requires(requires(TContainer &c, TKey const &k) { c.erase(k); })
     constexpr auto erase(TContainer &container, TKey const &element) noexcept {
         return container.erase(element);
     }
 
     template<typename TContainer, typename TValue>
-        requires(!requires(TContainer & c, TValue const&v)
-
-{ c.extract(v); })
+        requires(!requires(TContainer &c, TValue const &v) { c.extract(v); })
     constexpr void decrementKeys(TContainer &container, TValue const &element) noexcept {
         detail::erase(container, element);
     }
 
     template<typename TContainer, typename TValue>
-        requires(requires(TContainer & c, TValue const&v)
-
-{ c.extract(v); })
+        requires(requires(TContainer &c, TValue const &v) { c.extract(v); })
     constexpr void decrementKeys(TContainer &container, TValue const &element) noexcept {
         auto reverseMap = std::move(container);
         for (auto it = reverseMap.begin(); it != reverseMap.end();) {
@@ -1368,45 +1310,26 @@ namespace OrthoTree::detail {
     // Indexable containers (std::array, std::vector, std::span)
     template<typename Container, typename Key>
         requires(
-            requires(Container & c, Key k)
-
-{ c[k]; } &&
-    !
-    requires(Container &c, Key k) { c.find(k); }
-    )
+            requires(Container &c, Key k) { c[k]; } && !requires(Container &c, Key k) { c.find(k); })
     constexpr decltype(auto) get(Container &container, Key id) noexcept {
         return container[id];
     }
 
     template<typename Container, typename Key>
         requires(
-            requires(const Container & c, Key k)
-
-{ c[k]; } &&
-    !
-    requires(const Container &c, Key k) { c.find(k); }
-    )
+            requires(const Container &c, Key k) { c[k]; } && !requires(const Container &c, Key k) { c.find(k); })
     constexpr decltype(auto) get(const Container &container, Key id) noexcept {
         return container[id];
     }
 
     template<typename Container, typename Key>
-        requires requires
-    (Container&c
-   ,
-    Key k
-    )
- { c.find(k); }
+        requires requires(Container &c, Key k) { c.find(k); }
     constexpr decltype(auto) get(Container &container, const Key &id) noexcept {
         return *container.find(id);
     }
 
     template<typename Container, typename Key>
-        requires requires
-    (
-    const Container &c, Key k
-    )
- { c.find(k); }
+        requires requires(const Container &c, Key k) { c.find(k); }
     constexpr decltype(auto) get(const Container &container, const Key &id) noexcept {
         return *container.find(id);
     }
@@ -1414,46 +1337,27 @@ namespace OrthoTree::detail {
 
     template<typename Container, typename Key>
         requires(
-            requires(Container & c, Key k)
-
-{ c[k]; } &&
-    !
-    requires(Container &c, Key k) { c.find(k); }
-    )
+            requires(Container &c, Key k) { c[k]; } && !requires(Container &c, Key k) { c.find(k); })
     constexpr decltype(auto) get_if(Container &container, Key id) noexcept {
         return std::size_t(id) < container.size() ? &container[id] : nullptr;
     }
 
     template<typename Container, typename Key>
         requires(
-            requires(const Container & c, Key k)
-
-{ c[k]; } &&
-    !
-    requires(const Container &c, Key k) { c.find(k); }
-    )
+            requires(const Container &c, Key k) { c[k]; } && !requires(const Container &c, Key k) { c.find(k); })
     constexpr decltype(auto) get_if(const Container &container, Key id) noexcept {
         return std::size_t(id) < container.size() ? &container[id] : nullptr;
     }
 
     template<typename Container, typename Key>
-        requires requires
-    (Container&c
-   ,
-    Key k
-    )
- { c.find(k); }
+        requires requires(Container &c, Key k) { c.find(k); }
     constexpr decltype(auto) get_if(Container &container, const Key &id) noexcept {
         auto it = container.find(id);
         return it != container.end() ? &it->second : nullptr;
     }
 
     template<typename Container, typename Key>
-        requires requires
-    (
-    const Container &c, Key k
-    )
- { c.find(k); }
+        requires requires(const Container &c, Key k) { c.find(k); }
     constexpr decltype(auto) get_if(const Container &container, const Key &id) noexcept {
         auto it = container.find(id);
         return it != container.end() ? &it->second : nullptr;
@@ -1475,8 +1379,7 @@ namespace OrthoTree::detail {
     }
 
     template<typename TContainer>
-    concept HasReserve = requires(TContainer container)
- { container.reserve(0); };
+    concept HasReserve = requires(TContainer container) { container.reserve(0); };
 
     template<HasReserve TContainer>
     constexpr void reserve(TContainer &c, std::size_t n) noexcept {
@@ -1488,8 +1391,7 @@ namespace OrthoTree::detail {
     };
 
     template<typename TContainer>
-    concept HasResize = requires(TContainer container)
- { container.resize(0); };
+    concept HasResize = requires(TContainer container) { container.resize(0); };
 
     template<HasResize TContainer>
     constexpr void resize(TContainer &c, std::size_t n) noexcept {
@@ -1501,7 +1403,7 @@ namespace OrthoTree::detail {
     };
 
     template<uint8_t e, typename TOut = std::size_t>
-  consteval TOut pow2_ce() {
+    consteval TOut pow2_ce() {
         constexpr auto bitSize = sizeof(TOut) * CHAR_BIT;
         static_assert(e >= 0 && e < bitSize);
         return TOut{1} << e;
@@ -3791,11 +3693,11 @@ namespace OrthoTree::detail {
 
         template<typename T>
         static constexpr NodeID GetNodeID(T &&location, depth_t maxDepthID) noexcept
-                    requires requires(T t){
-                    t.GetDepthID();
-                    t.GetLocationID();
-
-                } {
+            requires requires(T t)
+            {
+                t.GetDepthID();
+                t.GetLocationID();
+            } {
             auto depthID    = location.GetDepthID();
             auto locationID = location.GetLocationID();
             return (NodeID{1} << (depthID * DIMENSION_NO)) | (locationID >> ((maxDepthID - depthID) * DIMENSION_NO));
@@ -5983,16 +5885,15 @@ namespace OrthoTree {
                         using T = std::remove_cvref_t<decltype(item)>;
                         if constexpr (std::is_convertible_v<T, typename EA::Entity>) {
                             entityGeometries.try_emplace(EA::GetEntityID(item), EA::GetGeometry(item));
-                        } else if constexpr (requires(T v) {
+                        } else if constexpr (requires(T v)
+                        {
                             []<typename U>(U &&u) {
                                 auto [a, b] = u;
                             }(v);
-                        }
-                        ) {
+                        }) {
                             auto const &[entityID, entityGeometry] = item;
                             entityGeometries.try_emplace(static_cast<EntityID>(entityID), entityGeometry);
-                        }
-                        else {
+                        } else {
                             static_assert(false,
                                           "EntityID cannot be determined for non-keyed entities in a non-contiguous container.")
                                     ;
@@ -6005,17 +5906,16 @@ namespace OrthoTree {
 
                         if constexpr (std::is_convertible_v<T, typename EA::Geometry>) {
                             entityGeometries[detail::getKeyPart(newEntities, item)] = item;
-                        } else if constexpr (requires(T v) {
+                        } else if constexpr (requires(T v)
+                        {
                             []<typename U>(U &&u) {
                                 auto [a, b] = u;
                             }(v);
-                        }
-                        ) {
+                        }) {
                             auto const &[entityID, entityGeometry] = item;
                             assert(entityID >= existingEntityNum);
                             entityGeometries[entityID - existingEntityNum] = entityGeometry;
-                        }
-                        else {
+                        } else {
                             static_assert(false,
                                           "EntityID cannot be determined for non-keyed entities in a non-contiguous container.")
                                     ;
@@ -6107,331 +6007,306 @@ namespace OrthoTree {
             requires std::ranges::input_range<decltype(newEntities)> &&
                      (std::convertible_to<std::ranges::range_value_t<decltype(newEntities)>, typename EA::Geometry> ||
                       std::convertible_to<std::ranges::range_value_t<decltype(newEntities)>, typename EA::Entity> ||
-                      requires(std::ranges::range_value_t<decltype(newEntities)> v) {
-            v.first;
-            v.second;
-        }
+                      requires(std::ranges::range_value_t<decltype(newEntities)> v) { v.first; v.second; } ||
+                      requires(std::ranges::range_value_t<decltype(newEntities)> v)
+                      {
+                          // Structured binding check that is less likely to trigger hard errors on arrays
+                          []<typename U>(U &&u) { [[maybe_unused]] auto [a, b] = u; }(v);
+                      }) {
+            constexpr bool IS_ELEMENT_DEPTH_SPECIFIC = (EA::GEOMETRY_TYPE != GeometryType::Point);
+            constexpr dim_t DIMENSION_NO             = GA::DIMENSION_NO;
+            constexpr uint32_t kSortThreshold        = 256;
 
-        ||
-        requires(std::ranges::range_value_t<decltype(newEntities)> v) {
-            // Structured binding check that is less likely to trigger hard errors on arrays
-            []<typename U>(U &&u) { [[maybe_unused]] auto [a, b] = u; }(v);
-        }
+            using Location                       = typename SI::Location;
+            using LowestCommonAncestorCalculator = typename SI::template LowestCommonAncestorCalculator<
+                IS_ELEMENT_DEPTH_SPECIFIC>;
 
-        )
-    {
-      constexpr bool IS_ELEMENT_DEPTH_SPECIFIC = (EA::GEOMETRY_TYPE != GeometryType::Point);
-      constexpr dim_t DIMENSION_NO = GA::DIMENSION_NO;
-      constexpr uint32_t kSortThreshold = 256;
+            struct EntityData {
+                Location location;
+                EntityID id;
+            };
 
-      using Location = typename SI::Location;
-      using LowestCommonAncestorCalculator = typename SI::template LowestCommonAncestorCalculator<IS_ELEMENT_DEPTH_SPECIFIC>;
+            struct WorkItem {
+                uint32_t begin;
+                uint32_t end;
+                uint32_t bitsRemaining;
+                Location location;
+            };
 
-      struct EntityData
-      {
-        Location location;
-        EntityID id;
-      };
+            auto newEntityCount = newEntities.size();
+            if (newEntityCount == 0)
+                return true;
 
-      struct WorkItem
-      {
-        uint32_t begin;
-        uint32_t end;
-        uint32_t bitsRemaining;
-        Location location;
-      };
+            auto const maxDepthID        = Base::GetMaxDepthID();
+            auto const maxElementNo      = Base::GetMaxElementNum();
+            auto const existingEntityNum = EA::GetEntityCount(existingEntities);
 
-      auto newEntityCount = newEntities.size();
-      if (newEntityCount == 0)
-        return true;
+            // Morton code creation
+            auto buffer = std::vector<EntityData>(newEntityCount);
+            EXEC_POL_DEF(ept); // GCC 11.3
+            std::transform(EXEC_POL_ADD(ept) newEntities.begin(), newEntities.end(), buffer.begin(),
+                           [&](auto const &item) -> EntityData {
+                               using T = std::remove_cvref_t<decltype(item)>;
+                               if constexpr (EA::ENTITY_ID_STRATEGY == EntityIdStrategy::EntityKeyed &&
+                                             std::is_convertible_v<T, typename EA::Entity>) {
+                                   return {m_spaceIndexing.GetLocation(EA::GetGeometry(item)), EA::GetEntityID(item)};
+                               } else if constexpr (
+                                   std::is_convertible_v<T, typename EA::Geometry> && std::ranges::contiguous_range<
+                                       decltype(newEntities)>) {
+                                   auto const entityID = static_cast<EntityID>(
+                                       existingEntityNum + detail::getID(newEntities, item));
+                                   return {m_spaceIndexing.GetLocation(item), entityID};
+                               } else if constexpr (requires(T v)
+                               {
+                                   []<typename U>(U &&u) {
+                                       auto [a, b] = u;
+                                   }(v);
+                               }) {
+                                   auto const &[entityID, entityGeometry] = item;
+                                   return {
+                                       m_spaceIndexing.GetLocation(entityGeometry), static_cast<EntityID>(entityID)
+                                   };
+                               } else {
+                                   static_assert(false,
+                                                 "EntityID cannot be determined for non-keyed entities in a non-contiguous container.")
+                                           ;
+                               }
+                           });
 
-      auto const maxDepthID = Base::GetMaxDepthID();
-      auto const maxElementNo = Base::GetMaxElementNum();
-      auto const existingEntityNum = EA::GetEntityCount(existingEntities);
+            // Check if all entities are within the tree bounds
+            bool isAllEntitiesInserted = true;
+            if constexpr (!CONFIG::ALLOW_OUT_OF_SPACE_INSERTION) {
+                auto const endIt =
+                        std::partition(buffer.begin(), buffer.end(), [](auto const &element) {
+                            return element.location.GetDepthID() != INVALID_DEPTH;
+                        });
+                newEntityCount        = std::distance(buffer.begin(), endIt);
+                isAllEntitiesInserted = endIt == buffer.end();
 
-      // Morton code creation
-      auto buffer = std::vector<EntityData>(newEntityCount);
-      EXEC_POL_DEF(ept); // GCC 11.3
-      std::transform(EXEC_POL_ADD(ept) newEntities.begin(), newEntities.end(), buffer.begin(), [&](auto const& item) -> EntityData {
-        using T = std::remove_cvref_t<decltype(item)>;
-        if constexpr (EA::ENTITY_ID_STRATEGY == EntityIdStrategy::EntityKeyed && std::is_convertible_v<T, typename EA::Entity>)
-        {
-          return { m_spaceIndexing.GetLocation(EA::GetGeometry(item)), EA::GetEntityID(item) };
-        }
-        else if constexpr (std::is_convertible_v<T, typename EA::Geometry> && std::ranges::contiguous_range<decltype(newEntities)>)
-        {
-          auto const entityID = static_cast<EntityID>(existingEntityNum + detail::getID(newEntities, item));
-          return { m_spaceIndexing.GetLocation(item), entityID };
-        }
-        else if constexpr (requires(T v) {
-                             []<typename U>(U&& u) {
-                               auto [a, b] = u;
-                             }(v);
-                           })
-        {
-          auto const& [entityID, entityGeometry] = item;
-          return { m_spaceIndexing.GetLocation(entityGeometry), static_cast<EntityID>(entityID) };
-        }
-        else
-        {
-          static_assert(false, "EntityID cannot be determined for non-keyed entities in a non-contiguous container.");
-        }
-      });
-
-      // Check if all entities are within the tree bounds
-      bool isAllEntitiesInserted = true;
-      if constexpr (!CONFIG::ALLOW_OUT_OF_SPACE_INSERTION)
-      {
-        auto const endIt =
-          std::partition(buffer.begin(), buffer.end(), [](auto const& element) { return element.location.GetDepthID() != INVALID_DEPTH; });
-        newEntityCount = std::distance(buffer.begin(), endIt);
-        isAllEntitiesInserted = endIt == buffer.end();
-
-        if (!isAllEntitiesInserted && failedEntities)
-        {
-          failedEntities->reserve(std::distance(endIt, buffer.end()));
-          std::transform(endIt, buffer.end(), std::back_inserter(*failedEntities), [](auto const& element) { return element.id; });
-        }
-
-        if constexpr (EA::ENTITY_ID_STRATEGY != EntityIdStrategy::EntityKeyed)
-        {
-          if (!isAllEntitiesInserted)
-            return false;
-        }
-      }
-
-      if constexpr (CONFIG::USE_REVERSE_MAPPING)
-        detail::resize(m_reverseMap, existingEntityNum + newEntityCount);
-
-      // Configurable digit width
-      // Considering 32kB L1 cache with 64B width cache lines: 512 cache lines total is the limit.
-      // 3D: 6 bits/64 buckets with 2 cache lines per bucket: 128 cache lines. Other stack variabbles (e.g. histogram / offsets) are also cached.
-      constexpr uint32_t kRadixBits = DIMENSION_NO > 8 ? std::min<uint32_t>(12, DIMENSION_NO) : (9 / DIMENSION_NO) * DIMENSION_NO;
-      constexpr uint32_t kRadixMaxSize = 1u << kRadixBits;
-
-      auto const totalBits = static_cast<uint32_t>(maxDepthID * DIMENSION_NO);
-
-      // In-place partition of buffer[begin..end) using bits [shift, shift+numBits).
-      auto bucketSort = [&](auto& activeBuckets, auto& histogram, auto& offsets, auto& buffer, auto const& GetBucketID) {
-        auto leaderBucketIt = activeBuckets.begin();
-        uint32_t leaderBucketID = 0;
-        auto leaderBucketEndIdx = 0;
-        int fromIdx = 0;
-        for (;;)
-        {
-          if (fromIdx == leaderBucketEndIdx)
-          {
-            leaderBucketID = *leaderBucketIt;
-            ++leaderBucketIt;
-            if (leaderBucketIt == activeBuckets.end())
-              break;
-
-            if (histogram[leaderBucketID] == 0)
-              continue;
-
-            fromIdx = offsets[leaderBucketID];
-            leaderBucketEndIdx = fromIdx + histogram[leaderBucketID];
-            histogram[leaderBucketID] = 0;
-          }
-
-          auto bucketID = GetBucketID(buffer[fromIdx].location.GetLocationID());
-          if (leaderBucketID == bucketID)
-          {
-            ++fromIdx;
-          }
-          else
-          {
-            std::swap(buffer[fromIdx], buffer[offsets[bucketID]]);
-
-            ++offsets[bucketID];
-            --histogram[bucketID];
-          }
-        }
-      };
-
-      // Computes per-bucket LCA fold during histogram pass (zero extra scan).
-      auto const radixPartition = [&](uint32_t begin, uint32_t end, uint32_t bitsToTest, auto& workStack) {
-        uint32_t const numBits = std::min(kRadixBits, bitsToTest);
-        uint32_t const radixShift = bitsToTest - numBits;
-        uint32_t const radixMask = (1u << numBits) - 1;
-
-        auto const GetBucketID = [radixShift, radixMask](SI::LocationIDCR key) noexcept -> uint32_t {
-          return static_cast<uint32_t>(key >> radixShift) & radixMask;
-        };
-
-        // Histogram + active bucket tracking + per-bucket LCA fold
-        auto histogram = std::array<uint32_t, kRadixMaxSize>{};
-        auto activeBuckets = Partitioning::flagset<kRadixMaxSize>{};
-        auto bucketFolds = std::array<LowestCommonAncestorCalculator, kRadixMaxSize>{};
-
-        for (uint32_t i = begin; i < end; ++i)
-        {
-          auto const& loc = buffer[i].location;
-          auto const b = GetBucketID(loc.GetLocationID());
-          if (histogram[b] == 0)
-            bucketFolds[b] = LowestCommonAncestorCalculator(loc);
-          else
-            bucketFolds[b].Add(loc);
-
-          ++histogram[b];
-          activeBuckets.set(b);
-        }
-
-        // Prefix sum (only active buckets)
-        auto offsets = std::array<uint32_t, kRadixMaxSize>{};
-        uint32_t sum = begin;
-        for (auto b : activeBuckets)
-        {
-          offsets[b] = sum;
-          sum += histogram[b];
-
-          auto location = bucketFolds[b].GetLocation(Base::GetMaxDepthID());
-
-          auto const levelID = Base::GetMaxDepthID() - location.GetDepthID();
-          workStack.push_back({ offsets[b], sum, std::min(levelID * DIMENSION_NO, radixShift), location });
-        }
-
-        if (activeBuckets.size() == 1)
-          return;
-
-        bucketSort(activeBuckets, histogram, offsets, buffer, GetBucketID);
-      };
-
-      // Emit range as a single node using precomputed LCA fold. Zero scan.
-      auto orphanNodes = std::vector<NodeID>{};
-      auto changedNodes = std::vector<std::pair<Location, std::size_t>>{};
-
-      auto const emitCluster = [&](uint32_t begin, uint32_t end, Location const& location) {
-        auto const elementNum = end - begin;
-        if (elementNum == 0)
-          return;
-
-        auto nodeID = m_spaceIndexing.GetNodeID(location);
-        auto [it, isInserted] = m_nodes.try_emplace(nodeID);
-        auto& entitySegment = it->second.GetEntitySegment();
-        auto existingElementNum = entitySegment.segment.size();
-        changedNodes.emplace_back(location, existingElementNum);
-
-        if (isInserted)
-        {
-          orphanNodes.push_back(nodeID);
-          InitNodeGeometry(&*it);
-          entitySegment = m_memoryResource.Allocate(elementNum);
-        }
-        else
-          m_memoryResource.IncreaseSegment(entitySegment, elementNum);
-
-        for (uint32_t i = 0; i < elementNum; ++i)
-          entitySegment.segment[existingElementNum + i] = buffer[begin + i].id;
-
-        // Update reverse map
-        if constexpr (CONFIG::USE_REVERSE_MAPPING)
-        {
-          for (uint32_t i = 0; i < elementNum; ++i)
-            UpdateReverseMap(buffer[begin + i].id, nodeID);
-        }
-      };
-
-      // Linear walk over pre-sorted buffer[begin..end), emits tree nodes.
-      auto const emitSortedRange = [&](uint32_t begin, uint32_t end) {
-        uint32_t clusterBegin = begin;
-        while (clusterBegin < end)
-        {
-          auto lcah = LowestCommonAncestorCalculator(buffer[clusterBegin].location);
-
-          uint32_t clusterEnd = clusterBegin + 1;
-          while (clusterEnd < end)
-          {
-            auto newLcah = lcah;
-            newLcah.Add(buffer[clusterEnd].location);
-
-            auto const newDepthID = newLcah.GetLocation(maxDepthID).GetDepthID();
-            auto const clusterSize = clusterEnd - clusterBegin + 1;
-
-            if (clusterSize > maxElementNo && newDepthID < maxDepthID)
-            {
-              auto const curDepthID = lcah.GetLocation(maxDepthID).GetDepthID();
-              if (newDepthID < curDepthID)
-                break;
-            }
-
-            lcah = newLcah;
-            ++clusterEnd;
-          }
-          auto const clusterLocation = lcah.GetLocation(maxDepthID);
-
-          if constexpr (IS_ELEMENT_DEPTH_SPECIFIC)
-          {
-            auto const clusterDepthID = clusterLocation.GetDepthID();
-            auto const clusterSize = clusterEnd - clusterBegin;
-
-            if (clusterSize > maxElementNo && clusterDepthID < maxDepthID)
-            {
-              uint32_t stuckEnd = clusterBegin;
-              while (stuckEnd < clusterEnd && buffer[stuckEnd].location.GetDepthID() <= clusterDepthID)
-              {
-                ++stuckEnd;
-              }
-
-              if (stuckEnd < clusterEnd)
-              {
-                if (stuckEnd > clusterBegin)
-                {
-                  emitCluster(clusterBegin, stuckEnd, clusterLocation);
-                  clusterBegin = stuckEnd;
-                  continue;
+                if (!isAllEntitiesInserted && failedEntities) {
+                    failedEntities->reserve(std::distance(endIt, buffer.end()));
+                    std::transform(endIt, buffer.end(), std::back_inserter(*failedEntities),
+                                   [](auto const &element) { return element.id; });
                 }
-              }
+
+                if constexpr (EA::ENTITY_ID_STRATEGY != EntityIdStrategy::EntityKeyed) {
+                    if (!isAllEntitiesInserted)
+                        return false;
+                }
             }
-          }
 
-          emitCluster(clusterBegin, clusterEnd, clusterLocation);
-          clusterBegin = clusterEnd;
+            if constexpr (CONFIG::USE_REVERSE_MAPPING)
+                detail::resize(m_reverseMap, existingEntityNum + newEntityCount);
+
+            // Configurable digit width
+            // Considering 32kB L1 cache with 64B width cache lines: 512 cache lines total is the limit.
+            // 3D: 6 bits/64 buckets with 2 cache lines per bucket: 128 cache lines. Other stack variabbles (e.g. histogram / offsets) are also cached.
+            constexpr uint32_t kRadixBits = DIMENSION_NO > 8
+                                                ? std::min<uint32_t>(12, DIMENSION_NO)
+                                                : (9 / DIMENSION_NO) * DIMENSION_NO;
+            constexpr uint32_t kRadixMaxSize = 1u << kRadixBits;
+
+            auto const totalBits = static_cast<uint32_t>(maxDepthID * DIMENSION_NO);
+
+            // In-place partition of buffer[begin..end) using bits [shift, shift+numBits).
+            auto bucketSort = [&](auto &activeBuckets, auto &histogram, auto &offsets, auto &buffer,
+                                  auto const &GetBucketID) {
+                auto leaderBucketIt     = activeBuckets.begin();
+                uint32_t leaderBucketID = 0;
+                auto leaderBucketEndIdx = 0;
+                int fromIdx             = 0;
+                for (;;) {
+                    if (fromIdx == leaderBucketEndIdx) {
+                        leaderBucketID = *leaderBucketIt;
+                        ++leaderBucketIt;
+                        if (leaderBucketIt == activeBuckets.end())
+                            break;
+
+                        if (histogram[leaderBucketID] == 0)
+                            continue;
+
+                        fromIdx                   = offsets[leaderBucketID];
+                        leaderBucketEndIdx        = fromIdx + histogram[leaderBucketID];
+                        histogram[leaderBucketID] = 0;
+                    }
+
+                    auto bucketID = GetBucketID(buffer[fromIdx].location.GetLocationID());
+                    if (leaderBucketID == bucketID) {
+                        ++fromIdx;
+                    } else {
+                        std::swap(buffer[fromIdx], buffer[offsets[bucketID]]);
+
+                        ++offsets[bucketID];
+                        --histogram[bucketID];
+                    }
+                }
+            };
+
+            // Computes per-bucket LCA fold during histogram pass (zero extra scan).
+            auto const radixPartition = [&](uint32_t begin, uint32_t end, uint32_t bitsToTest, auto &workStack) {
+                uint32_t const numBits    = std::min(kRadixBits, bitsToTest);
+                uint32_t const radixShift = bitsToTest - numBits;
+                uint32_t const radixMask  = (1u << numBits) - 1;
+
+                auto const GetBucketID = [radixShift, radixMask](SI::LocationIDCR key) noexcept -> uint32_t {
+                    return static_cast<uint32_t>(key >> radixShift) & radixMask;
+                };
+
+                // Histogram + active bucket tracking + per-bucket LCA fold
+                auto histogram     = std::array<uint32_t, kRadixMaxSize>{};
+                auto activeBuckets = Partitioning::flagset<kRadixMaxSize>{};
+                auto bucketFolds   = std::array<LowestCommonAncestorCalculator, kRadixMaxSize>{};
+
+                for (uint32_t i = begin; i < end; ++i) {
+                    auto const &loc = buffer[i].location;
+                    auto const b    = GetBucketID(loc.GetLocationID());
+                    if (histogram[b] == 0)
+                        bucketFolds[b] = LowestCommonAncestorCalculator(loc);
+                    else
+                        bucketFolds[b].Add(loc);
+
+                    ++histogram[b];
+                    activeBuckets.set(b);
+                }
+
+                // Prefix sum (only active buckets)
+                auto offsets = std::array<uint32_t, kRadixMaxSize>{};
+                uint32_t sum = begin;
+                for (auto b: activeBuckets) {
+                    offsets[b] = sum;
+                    sum        += histogram[b];
+
+                    auto location = bucketFolds[b].GetLocation(Base::GetMaxDepthID());
+
+                    auto const levelID = Base::GetMaxDepthID() - location.GetDepthID();
+                    workStack.push_back({offsets[b], sum, std::min(levelID * DIMENSION_NO, radixShift), location});
+                }
+
+                if (activeBuckets.size() == 1)
+                    return;
+
+                bucketSort(activeBuckets, histogram, offsets, buffer, GetBucketID);
+            };
+
+            // Emit range as a single node using precomputed LCA fold. Zero scan.
+            auto orphanNodes  = std::vector<NodeID>{};
+            auto changedNodes = std::vector<std::pair<Location, std::size_t> >{};
+
+            auto const emitCluster = [&](uint32_t begin, uint32_t end, Location const &location) {
+                auto const elementNum = end - begin;
+                if (elementNum == 0)
+                    return;
+
+                auto nodeID             = m_spaceIndexing.GetNodeID(location);
+                auto [it, isInserted]   = m_nodes.try_emplace(nodeID);
+                auto &entitySegment     = it->second.GetEntitySegment();
+                auto existingElementNum = entitySegment.segment.size();
+                changedNodes.emplace_back(location, existingElementNum);
+
+                if (isInserted) {
+                    orphanNodes.push_back(nodeID);
+                    InitNodeGeometry(&*it);
+                    entitySegment = m_memoryResource.Allocate(elementNum);
+                } else
+                    m_memoryResource.IncreaseSegment(entitySegment, elementNum);
+
+                for (uint32_t i = 0; i < elementNum; ++i)
+                    entitySegment.segment[existingElementNum + i] = buffer[begin + i].id;
+
+                // Update reverse map
+                if constexpr (CONFIG::USE_REVERSE_MAPPING) {
+                    for (uint32_t i = 0; i < elementNum; ++i)
+                        UpdateReverseMap(buffer[begin + i].id, nodeID);
+                }
+            };
+
+            // Linear walk over pre-sorted buffer[begin..end), emits tree nodes.
+            auto const emitSortedRange = [&](uint32_t begin, uint32_t end) {
+                uint32_t clusterBegin = begin;
+                while (clusterBegin < end) {
+                    auto lcah = LowestCommonAncestorCalculator(buffer[clusterBegin].location);
+
+                    uint32_t clusterEnd = clusterBegin + 1;
+                    while (clusterEnd < end) {
+                        auto newLcah = lcah;
+                        newLcah.Add(buffer[clusterEnd].location);
+
+                        auto const newDepthID  = newLcah.GetLocation(maxDepthID).GetDepthID();
+                        auto const clusterSize = clusterEnd - clusterBegin + 1;
+
+                        if (clusterSize > maxElementNo && newDepthID < maxDepthID) {
+                            auto const curDepthID = lcah.GetLocation(maxDepthID).GetDepthID();
+                            if (newDepthID < curDepthID)
+                                break;
+                        }
+
+                        lcah = newLcah;
+                        ++clusterEnd;
+                    }
+                    auto const clusterLocation = lcah.GetLocation(maxDepthID);
+
+                    if constexpr (IS_ELEMENT_DEPTH_SPECIFIC) {
+                        auto const clusterDepthID = clusterLocation.GetDepthID();
+                        auto const clusterSize    = clusterEnd - clusterBegin;
+
+                        if (clusterSize > maxElementNo && clusterDepthID < maxDepthID) {
+                            uint32_t stuckEnd = clusterBegin;
+                            while (stuckEnd < clusterEnd && buffer[stuckEnd].location.GetDepthID() <= clusterDepthID) {
+                                ++stuckEnd;
+                            }
+
+                            if (stuckEnd < clusterEnd) {
+                                if (stuckEnd > clusterBegin) {
+                                    emitCluster(clusterBegin, stuckEnd, clusterLocation);
+                                    clusterBegin = stuckEnd;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+
+                    emitCluster(clusterBegin, clusterEnd, clusterLocation);
+                    clusterBegin = clusterEnd;
+                }
+            };
+
+
+            auto workStack = std::vector<WorkItem>{};
+            workStack.reserve(64);
+            workStack.push_back({0, static_cast<uint32_t>(newEntityCount), totalBits, SI::GetRootLocation()});
+
+            while (!workStack.empty()) {
+                auto const w = workStack.back();
+                workStack.pop_back();
+
+                auto const elementNum = w.end - w.begin;
+                if (elementNum == 0)
+                    continue;
+
+                // Terminal: fits in one node → emit directly using precomputed fold (zero scan)
+                if (elementNum <= maxElementNo) {
+                    emitCluster(w.begin, w.end, w.location);
+                    continue;
+                }
+
+                // Size-based strategy: sort+walk if fits cache, else radix partition.
+                // If bitsRemaining == 0, we can't partition further, so we MUST sort and walk.
+                if (elementNum <= kSortThreshold || w.bitsRemaining == 0) {
+                    std::sort(buffer.begin() + w.begin, buffer.begin() + w.end,
+                              [](EntityData const &a, EntityData const &b) {
+                                  return Location::template IsLess<IS_ELEMENT_DEPTH_SPECIFIC>(a.location, b.location);
+                              });
+                    emitSortedRange(w.begin, w.end);
+                } else {
+                    radixPartition(w.begin, w.end, w.bitsRemaining, workStack);
+                }
+            }
+
+            LinkOrphanNodes(std::move(orphanNodes));
+            UpdateNodeGeometry(changedNodes, newEntities, existingEntityNum, execMode);
+
+            return isAllEntitiesInserted;
         }
-      };
-
-
-      auto workStack = std::vector<WorkItem>{};
-      workStack.reserve(64);
-      workStack.push_back({ 0, static_cast<uint32_t>(newEntityCount), totalBits, SI::GetRootLocation() });
-
-      while (!workStack.empty())
-      {
-        auto const w = workStack.back();
-        workStack.pop_back();
-
-        auto const elementNum = w.end - w.begin;
-        if (elementNum == 0)
-          continue;
-
-        // Terminal: fits in one node → emit directly using precomputed fold (zero scan)
-        if (elementNum <= maxElementNo)
-        {
-          emitCluster(w.begin, w.end, w.location);
-          continue;
-        }
-
-        // Size-based strategy: sort+walk if fits cache, else radix partition.
-        // If bitsRemaining == 0, we can't partition further, so we MUST sort and walk.
-        if (elementNum <= kSortThreshold || w.bitsRemaining == 0)
-        {
-          std::sort(buffer.begin() + w.begin, buffer.begin() + w.end, [](EntityData const& a, EntityData const& b) {
-            return Location::template IsLess<IS_ELEMENT_DEPTH_SPECIFIC>(a.location, b.location);
-          });
-          emitSortedRange(w.begin, w.end);
-        }
-        else
-        {
-          radixPartition(w.begin, w.end, w.bitsRemaining, workStack);
-        }
-      }
-
-      LinkOrphanNodes(std::move(orphanNodes));
-      UpdateNodeGeometry(changedNodes, newEntities, existingEntityNum, execMode);
-
-      return isAllEntitiesInserted;
-    }
-
 
     private:
         auto AddNode(NodeIDCR nodeID) noexcept {
@@ -7832,44 +7707,37 @@ namespace OrthoTree {
     // OrthoTree: Non-owning Base container which spatially organize data ids in N dimension space into a hash-table by Morton Z order.
     template<typename T>
     concept OrthoTreeCoreView = requires(
+        const T ct,
+        typename T::NodeIDCR nodeID,
+        typename T::NodeValue nodeValue,
+        typename T::EA::Geometry const &geometry,
+        typename T::EA::EntityContainerView entities,
+        typename T::EntityID entityID)
+            {
+                typename T::NodeID;
+                typename T::NodeIDCR;
+                typename T::NodeValue;
+                typename T::EA;
+                typename T::GA;
+                typename T::CONFIG;
+                typename T::IGM;
 
-    const T ct,
+                { T::GetRootNodeID() } -> std::convertible_to<typename T::NodeID>;
+                { ct.GetRootNodeValue() } -> std::convertible_to<typename T::NodeValue>;
+                { ct.GetNodeValue(nodeID) } -> std::convertible_to<typename T::NodeValue>;
 
-    typename T::NodeIDCR nodeID,
+                { ct.GetNodeChildren(nodeValue) };
+                { ct.GetNodeEntities(nodeValue) };
 
-    typename T::NodeValue nodeValue,
+                { ct.GetNodeBox(nodeValue) };
+                { ct.GetNodeMinPoint(nodeValue) };
+                { ct.GetNodeSize(nodeValue) };
+                { ct.AreChildNodesOverlapping() } -> std::convertible_to<bool>;
 
-    typename T::EA::Geometry const &geometry,
+                { ct.IsNodeEntitiesEmpty(nodeValue) } -> std::convertible_to<bool>;
 
-    typename T::EA::EntityContainerView entities,
-
-    typename T::EntityID entityID
-    )
- {
-    typename T::NodeID;
-    typename T::NodeIDCR;
-    typename T::NodeValue;
-    typename T::EA;
-    typename T::GA;
-    typename T::CONFIG;
-    typename T::IGM;
-
-    { T::GetRootNodeID() } -> std::convertible_to<typename T::NodeID>;
-    { ct.GetRootNodeValue() } -> std::convertible_to<typename T::NodeValue>;
-    { ct.GetNodeValue(nodeID) } -> std::convertible_to<typename T::NodeValue>;
-
-    { ct.GetNodeChildren(nodeValue) };
-    { ct.GetNodeEntities(nodeValue) };
-
-    { ct.GetNodeBox(nodeValue) };
-    { ct.GetNodeMinPoint(nodeValue) };
-    { ct.GetNodeSize(nodeValue) };
-    { ct.AreChildNodesOverlapping() } -> std::convertible_to<bool>;
-
-    { ct.IsNodeEntitiesEmpty(nodeValue) } -> std::convertible_to<bool>;
-
-    { ct.GetNodeCount() } -> std::convertible_to<std::size_t>;
-  };
+                { ct.GetNodeCount() } -> std::convertible_to<std::size_t>;
+            };
 
     template<typename TOrthoTreeCore>
     class OrthoTreeQueryBase : public TOrthoTreeCore {
@@ -8017,16 +7885,9 @@ namespace OrthoTree {
                 NodeValue nodeValue;
                 TPriority priority;
 
-                constexpr auto operator<=
-                >
-                (PrioritizedNode
-                const
-                &
-                other
-                )
-                const
-                noexcept
- { return priority <=> other.priority; }
+                constexpr auto operator<=>(PrioritizedNode const &other) const noexcept {
+                    return priority <=> other.priority;
+                }
             };
 
             auto nodePriority = priorityCalculator(rootNodeValue);
@@ -8847,16 +8708,10 @@ namespace OrthoTree {
             EntityID entityID;
             TFloatScalar distance;
 
-            constexpr auto operator<=
-            >
-            (EntityDistance
-            const
-            &
-            other
-            )
-            const
-            noexcept
- { return distance <=> other.distance; }
+            constexpr auto operator<=>(EntityDistance const &other) const noexcept {
+                return distance <=> other.distance;
+            }
+
             constexpr bool operator==(EntityDistance const &other) const noexcept { return distance == other.distance; }
         };
 
@@ -9698,29 +9553,13 @@ namespace OrthoTree {
 
             struct ItemDistance {
                 IGM_Geometry distance;
-                auto operator<=
-                >
-                (ItemDistance
-                const
-                &
-                rhs
-                )
-                const
-                =
-                default;
+
+                auto operator<=>(ItemDistance const &rhs) const = default;
             };
 
             struct EntityDistance : ItemDistance {
                 EntityID entityID;
-                auto operator<=
-                >
-                (EntityDistance
-                const
-                &
-                rhs
-                )
-                const
- { return ItemDistance::operator<=>(rhs); }
+                auto operator<=>(EntityDistance const &rhs) const { return ItemDistance::operator<=>(rhs); }
             };
 
             using EntityDistanceContainer = std::conditional_t<
@@ -9814,16 +9653,9 @@ namespace OrthoTree {
                 EntityID entityID;
                 TFloatScalar enterDistance;
 
-                constexpr auto operator<=
-                >
-                (Candidate
-                const
-                &
-                other
-                )
-                const
-                noexcept
- { return enterDistance <=> other.enterDistance; }
+                constexpr auto operator<=>(Candidate const &other) const noexcept {
+                    return enterDistance <=> other.enterDistance;
+                }
             };
 
             const auto appliedTolerance = tolerance == 0 ? std::numeric_limits<TFloatScalar>::epsilon() : tolerance;
@@ -10794,41 +10626,34 @@ namespace OrthoTree {
         // - The tree will not be rebalanced after insertion.
         template<typename TEntityRange, typename TExecMode = SeqExec>
         constexpr bool Add(TEntityRange &&newEntities, TExecMode execMode = {}) noexcept
-                    requires(requires{newEntities.size(); } &&
-        !
-        std::is_same_v<std::remove_cvref_t<TEntityRange>, Entity>
-        )
-    {
-      if (newEntities.empty())
-        return true;
+            requires(requires { newEntities.size(); } && !std::is_same_v<std::remove_cvref_t<TEntityRange>, Entity>) {
+            if (newEntities.empty())
+                return true;
 
-      auto failedEntities = std::unordered_set<EntityID>{};
-      auto const isAllEntitiesInserted = m_tree.Insert(newEntities, m_entities, execMode, &failedEntities);
-      if constexpr (EA::ENTITY_ID_STRATEGY != EntityIdStrategy::EntityKeyed)
-      {
-        // For non-keyed entities, we MUST insert everything to keep indices sync with tree IDs
-        if (!isAllEntitiesInserted)
-          return false;
-      }
+            auto failedEntities              = std::unordered_set<EntityID>{};
+            auto const isAllEntitiesInserted = m_tree.Insert(newEntities, m_entities, execMode, &failedEntities);
+            if constexpr (EA::ENTITY_ID_STRATEGY != EntityIdStrategy::EntityKeyed) {
+                // For non-keyed entities, we MUST insert everything to keep indices sync with tree IDs
+                if (!isAllEntitiesInserted)
+                    return false;
+            }
 
-      // Now add to the physical container
-      if constexpr (requires { m_entities.reserve(0); })
-        m_entities.reserve(m_entities.size() + newEntities.size());
+            // Now add to the physical container
+            if constexpr (requires { m_entities.reserve(0); })
+                m_entities.reserve(m_entities.size() + newEntities.size());
 
-      for (auto&& entity : newEntities)
-      {
-        if constexpr (EA::ENTITY_ID_STRATEGY == EntityIdStrategy::EntityKeyed)
-        {
-          bool isFailed = std::erase(failedEntities, EA::GetEntityID(entity));
-          if (isFailed)
-            continue;
+            for (auto &&entity: newEntities) {
+                if constexpr (EA::ENTITY_ID_STRATEGY == EntityIdStrategy::EntityKeyed) {
+                    bool isFailed = std::erase(failedEntities, EA::GetEntityID(entity));
+                    if (isFailed)
+                        continue;
+                }
+
+                EA::Insert(m_entities, std::forward<decltype(entity)>(entity));
+            }
+
+            return isAllEntitiesInserted;
         }
-
-        EA::Insert(m_entities, std::forward<decltype(entity)>(entity));
-      }
-
-      return isAllEntitiesInserted;
-    }
 
         // Replace entity to the changedEntity
         template<typename TEntity = Entity>
@@ -11286,18 +11111,18 @@ namespace OrthoTree {
 
     // Tree aliases
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true,
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true,
              NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
     using OrthoTreePointND = OrthoTree::OrthoTreeBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
                            PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         PointConfiguration<NODE_GEOMETRY_STORAGE> >;
 
     template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool
-             IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
+             IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
     using OrthoTreeBoxND = OrthoTree::OrthoTreeBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
                            BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE> >;
@@ -11316,18 +11141,18 @@ namespace OrthoTree {
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE> >;
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true,
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true,
              NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MinPoint>
     using StaticOrthoTreePointND = OrthoTree::StaticOrthoTreeBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
                            PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         PointConfiguration<NODE_GEOMETRY_STORAGE> >;
 
     template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool
-             IS_CONTIGUOUS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
+             IS_CONTIOGUOS_CONTAINER = true, NodeGeometryStorage NODE_GEOMETRY_STORAGE = NodeGeometryStorage::MBR>
     using StaticOrthoTreeBoxND = OrthoTree::StaticOrthoTreeBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
                            BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         BoxConfiguration<IS_LOOSE_TREE, NODE_GEOMETRY_STORAGE> >;
@@ -11580,13 +11405,13 @@ namespace OrthoTree {
 
     // Managed types
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
-    using OrthoTreePointManagedND = OrthoTreeManaged<OrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER> >;
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
+    using OrthoTreePointManagedND = OrthoTreeManaged<OrthoTreePointND<DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER> >;
 
     template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool
-             IS_CONTIGUOUS_CONTAINER = true>
+             IS_CONTIOGUOS_CONTAINER = true>
     using OrthoTreeBoxManagedND = OrthoTreeManaged<OrthoTreeBoxND<
-        DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIGUOUS_CONTAINER> >;
+        DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIOGUOS_CONTAINER> >;
 
     template<dim_t DIMENSION_NO, typename TScalar, typename TEntityContainer>
     using OrthoTreePointManagedNDUD = OrthoTreeManaged<OrthoTreePointNDUD<DIMENSION_NO, TScalar, TEntityContainer> >;
@@ -11667,14 +11492,14 @@ namespace OrthoTree {
 
     // Static Managed types
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true>
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true>
     using StaticTreePointManagedND = OrthoTreeManaged<StaticOrthoTreePointND<
-        DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER> >;
+        DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER> >;
 
     template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE = true, typename TScalar = BaseGeometryType, bool
-             IS_CONTIGUOUS_CONTAINER = true>
+             IS_CONTIOGUOS_CONTAINER = true>
     using StaticTreeBoxManagedND = OrthoTreeManaged<StaticOrthoTreeBoxND<
-        DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIGUOUS_CONTAINER> >;
+        DIMENSION_NO, IS_LOOSE_TREE, TScalar, IS_CONTIOGUOS_CONTAINER> >;
 
 
     // Static Managed Dualtree for points
@@ -12352,18 +12177,18 @@ namespace OrthoTree {
 
 
 namespace OrthoTree {
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM
                      = 2>
     using StaticBVHPointND = StaticBVHLinearBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, PointEntitySpanAdapter<PointND<DIMENSION_NO, TScalar> >,
                            PointEntityMapAdapter<PointND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         BVHConfiguration<CHILD_NUM> >;
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM
                      = 2>
     using StaticBVHBoxND = StaticBVHLinearBase<
-        std::conditional_t<IS_CONTIGUOUS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
+        std::conditional_t<IS_CONTIOGUOS_CONTAINER, BoxEntitySpanAdapter<BoundingBoxND<DIMENSION_NO, TScalar> >,
                            BoxEntityMapAdapter<BoundingBoxND<DIMENSION_NO, TScalar> > >,
         GeneralGeometryAdapterND<DIMENSION_NO, TScalar>,
         BVHConfiguration<CHILD_NUM> >;
@@ -12402,15 +12227,15 @@ namespace OrthoTree {
 
     // Managed types
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM
                      = 2>
     using StaticBVHPointManagedND = OrthoTreeManaged<StaticBVHPointND<
-        DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER, CHILD_NUM> >;
+        DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER, CHILD_NUM> >;
 
-    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIGUOUS_CONTAINER = true, int CHILD_NUM
+    template<dim_t DIMENSION_NO, typename TScalar = BaseGeometryType, bool IS_CONTIOGUOS_CONTAINER = true, int CHILD_NUM
                      = 2>
     using StaticBVHBoxManagedND = OrthoTreeManaged<StaticBVHBoxND<
-        DIMENSION_NO, TScalar, IS_CONTIGUOUS_CONTAINER, CHILD_NUM> >;
+        DIMENSION_NO, TScalar, IS_CONTIOGUOS_CONTAINER, CHILD_NUM> >;
 
     // BVH for points
     using StaticBVHPoint1DM = StaticBVHPointManagedND<1, BaseGeometryType>;
@@ -13137,7 +12962,7 @@ namespace OrthoTree {
                     (*this)(size);
                     m_stream.write(val.data(), size);
                 }
-            } else if constexpr (requires{val.serialize(*this); }) {
+            } else if constexpr (requires { val.serialize(*this); }) {
                 val.serialize(*this);
             } else {
                 serialize(*this, val);
@@ -13162,7 +12987,7 @@ namespace OrthoTree {
                 serialized_size_t size = static_cast<serialized_size_t>(val.size());
                 (*this)(size);
                 m_stream.write(val.data(), size);
-            } else if constexpr (requires{val.serialize(*this); }) {
+            } else if constexpr (requires { val.serialize(*this); }) {
                 const_cast<T &>(val).serialize(*this);
             } else {
                 serialize(*this, const_cast<T &>(val));
@@ -13287,11 +13112,10 @@ namespace OrthoTree {
         // To stay consistent with JSON/XML, we'll use maps if it's a named object.
         template<typename TNVP>
             requires(requires(TNVP nvp)
-
-{
-        detail::get_nvp_name(nvp);
-        detail::get_nvp_value(nvp);
-      })
+            {
+                detail::get_nvp_name(nvp);
+                detail::get_nvp_value(nvp);
+            })
         MsgPackArchive &operator&(TNVP &&nvp) {
             // For simplicity in this bridge, we pack the value directly.
             // If full Map support is needed, we'd need to track scope.
@@ -13322,7 +13146,7 @@ namespace OrthoTree {
                 m_packer.pack_nil();
             } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
                 m_packer.pack_nil();
-            } else if constexpr (requires{val.serialize(*this); }) {
+            } else if constexpr (requires { val.serialize(*this); }) {
                 val.serialize(*this);
             } else if constexpr (is_stl_serialization_enabled_v<MsgPackArchive>) {
                 serialize(*this, val);
@@ -14083,15 +13907,8 @@ namespace OrthoTree {
         template<dim_t DIMENSION_NO, typename TScalar, typename TContainer = std::unordered_map<
                      index_t, glm::vec<DIMENSION_NO, TScalar> > >
         using GlmOrthoTreePointMap =
-        OrthoTreeBase<PointEntityMapAdapter < glm::vec < DIMENSION_NO, TScalar>
-       ,
-        TContainer
-        >
-       ,
-        GlmAdaptorGeneral<DIMENSION_NO, TScalar>
-       ,
-        PointConfiguration<>
-        >;
+        OrthoTreeBase<PointEntityMapAdapter<glm::vec<DIMENSION_NO, TScalar>, TContainer>, GlmAdaptorGeneral<
+                          DIMENSION_NO, TScalar>, PointConfiguration<> >;
 
         template<dim_t DIMENSION_NO, bool IS_LOOSE_TREE, typename TScalar, typename TContainer = std::unordered_map<
                      index_t, glm::boxNd_t<DIMENSION_NO, TScalar> > >
@@ -14687,7 +14504,7 @@ namespace OrthoTree {
 
         template<std::size_t I, typename TArchive, typename T, std::size_t D, typename CS>
         void serialize_point_dimension(TArchive &ar, boost::geometry::model::point<T, D, CS> &pt) {
-            T val = boost::geometry::get < I > (pt);
+            T val = boost::geometry::get<I>(pt);
 
             const char *name = "unknown";
             if constexpr (0 <= I && I < 64)
@@ -14696,7 +14513,7 @@ namespace OrthoTree {
             ar & make_nvp(name, val);
 
             if (OrthoTree::is_loading_archive(ar))
-                boost::geometry::set < I > (pt, val);
+                boost::geometry::set<I>(pt, val);
         }
 
         template<typename TArchive, typename T, std::size_t D, typename CS, std::size_t... Is>

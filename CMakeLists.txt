@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 project(hello_mac)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
@@ -40,13 +40,6 @@ add_compile_options(-mno-omit-leaf-frame-pointer)
 ## 按照googletest官网文档添加了gtest
 include(FetchContent)
 
-FetchContent_Declare(
-        OrthoTree
-        GIT_REPOSITORY https://github.com/attcs/Octree.git
-        GIT_TAG v2.5 # Or use a specific commit hash
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
-)
-FetchContent_MakeAvailable(OrthoTree)
 
 FetchContent_Declare(
         cereal
