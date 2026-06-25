@@ -214,6 +214,8 @@ namespace unibn {
         /** \brief remove all data inside the octree. **/
         void clear();
 
+        uint32_t get_next_vector_list(uint32_t idx) const;
+
         /** \brief radius neighbor queries where radius determines the maximal radius of reported indices of points in
          * resultIndices **/
         template<typename Distance>
@@ -321,7 +323,8 @@ namespace unibn {
         Octant *root_;
         const ContainerT *data_;
 
-        std::vector<uint32_t> successors_; // single connected list of next point indices...
+        std::vector<uint32_t> index_list;
+        // single connected list of next point indices...
 
         friend class ::OctreeTest;
     };
@@ -359,7 +362,7 @@ namespace unibn {
             data_ = &pts;
 
         const uint32_t N = pts.size();
-        successors_      = std::vector<uint32_t>(N);
+        index_list       = std::vector<uint32_t>(N);
 
         // determine axis-aligned bounding box.
         float min[3], max[3];
@@ -372,7 +375,9 @@ namespace unibn {
 
         for (uint32_t i = 0; i < N; ++i) {
             // initially each element links simply to the following element.
-            successors_[i] = i + 1;
+            index_list[i] = i + 1;
+            // 为什么这里总是偏移一个呢？
+            // 因为是一个链表，所以总是指向于下一个
 
             const PointT &p = pts[i];
 
@@ -384,17 +389,18 @@ namespace unibn {
             if (get<2>(p) > max[2]) max[2] = get<2>(p);
         }
 
-        float ctr[3] = {min[0], min[1], min[2]};
+        float centroid[3] = {min[0], min[1], min[2]};
 
-        float maxextent = 0.5f * (max[0] - min[0]);
-        ctr[0]          += maxextent;
+        float radius = 0.5f * (max[0] - min[0]);
+        centroid[0]  += radius;
         for (uint32_t i = 1; i < 3; ++i) {
-            float extent = 0.5f * (max[i] - min[i]);
-            ctr[i]       += extent;
-            if (extent > maxextent) maxextent = extent;
+            float max_radius = 0.5f * (max[i] - min[i]);
+            centroid[i]      += max_radius;
+            if (max_radius > radius) radius = max_radius;
         }
+        // radius 是一个 float 值，因为是需要均匀二分在三个轴上，所以需要以最大的轴来  进行二分
 
-        root_ = createOctant(ctr[0], ctr[1], ctr[2], maxextent, 0, N - 1, N);
+        root_ = createOctant(centroid[0], centroid[1], centroid[2], radius, 0, N - 1, N);
     }
 
     template<typename PointT, typename ContainerT>
@@ -409,7 +415,7 @@ namespace unibn {
             data_ = &pts;
 
         const uint32_t N = pts.size();
-        successors_      = std::vector<uint32_t>(N);
+        index_list       = std::vector<uint32_t>(N);
 
         if (indexes.size() == 0) return;
 
@@ -426,7 +432,7 @@ namespace unibn {
         for (uint32_t i = 1; i < indexes.size(); ++i) {
             uint32_t idx = indexes[i];
             // initially each element links simply to the following element.
-            successors_[lastIdx] = idx;
+            index_list[lastIdx] = idx;
 
             const PointT &p = pts[idx];
 
@@ -459,15 +465,25 @@ namespace unibn {
         if (params_.copyPoints) delete data_;
         root_ = 0;
         data_ = 0;
-        successors_.clear();
+        index_list.clear();
     }
 
     template<typename PointT, typename ContainerT>
-    typename Octree<PointT, ContainerT>::Octant *Octree<PointT, ContainerT>::createOctant(float x, float y, float z,
-        float extent, uint32_t startIdx,
-        uint32_t endIdx, uint32_t size) {
-        // For a leaf we don't have to change anything; points are already correctly linked or correctly reordered.
-        Octant *octant = new Octant;
+    uint32_t Octree<PointT, ContainerT>::get_next_vector_list(const uint32_t idx) const {
+        return index_list[idx];
+    }
+
+
+    template<typename PointT, typename ContainerT>
+    typename Octree<PointT, ContainerT>::Octant *
+    Octree<PointT, ContainerT>::createOctant(float x, float y, float z,
+                                             float extent,
+                                             uint32_t startIdx,
+                                             uint32_t endIdx,
+                                             uint32_t size) {
+        // For a leaf we don't have to change anything;
+        // points are already correctly linked or correctly reordered.
+        Octant *octant = new Octant; // 这里是进行 new ,如果可以的话，更改为其他的方式
 
         octant->isLeaf = true;
 
@@ -482,6 +498,7 @@ namespace unibn {
 
         static const float factor[] = {-0.5f, 0.5f};
 
+        // size > params_.bucketSize 顶点的数量 大于 32 默认值 ？？
         // subdivide subset of points and re-link points according to Morton codes
         if (size > params_.bucketSize && extent > 2 * params_.minExtent) {
             octant->isLeaf = false;
@@ -502,16 +519,21 @@ namespace unibn {
                 if (get<0>(p) > x) mortonCode |= 1;
                 if (get<1>(p) > y) mortonCode |= 2;
                 if (get<2>(p) > z) mortonCode |= 4;
+                // mortonCode 算出来应该是 八个分叉中的哪一个
 
                 // set child starts and update successors...
                 if (childSizes[mortonCode] == 0)
-                    childStarts[mortonCode] = idx;
+                    childStarts[mortonCode] = idx; // 这里确实记录了其实 ， 这里相当于list 的第一个
                 else
-                    successors_[childEnds[mortonCode]] = idx;
-                childSizes[mortonCode] += 1;
+                    index_list[childEnds[mortonCode]] = idx; // 找到上一个 list_node 的位置，并写入下一个的值
+                //  让上一本书的下一本 (successors_) 指向当前这本书 (idx) list
+                childSizes[mortonCode] += 1; // 这里表面的list 的数量
+                //  childEnds[mortonCode] 表示八叉树中每个子节点拥有的节点的数量
 
-                childEnds[mortonCode] = idx;
-                idx                   = successors_[idx];
+                // 看不懂上面的部分的内容想要做什么？ 总体的意思可能是理解的
+                childEnds[mortonCode] = idx; // 这里相当于 list 的最后一个 ， 并同步更新 最后一个
+                // childStarts 是 起始，   childEnds 是结束，存储了
+                idx = get_next_vector_list(idx);
             }
 
             // now, we can create the child nodes...
@@ -519,19 +541,23 @@ namespace unibn {
             bool firsttime        = true;
             uint32_t lastChildIdx = 0;
             for (uint32_t i = 0; i < 8; ++i) {
-                if (childSizes[i] == 0) continue;
+                //  childSizes[i] == 0 表示这个八叉树中的内容为空，不需要再进行 细分创建
+                if (childSizes[i] == 0) continue; // 表示八叉树中是否存在这个节点
+                // x y z 传递过来的是上一个包围盒的中心  extent 是上一个包围的半径 为0时
+                float childX = x + factor[(i & 1) > 0] * extent; //        中心减去半径的二分之一
+                float childY = y + factor[(i & 2) > 0] * extent; //        中心减去半径的二分之一
+                float childZ = z + factor[(i & 4) > 0] * extent; //        中心减去半径的二分之一
+                //
 
-                float childX = x + factor[(i & 1) > 0] * extent;
-                float childY = y + factor[(i & 2) > 0] * extent;
-                float childZ = z + factor[(i & 4) > 0] * extent;
-
-                octant->child[i] = createOctant(childX, childY, childZ, childExtent, childStarts[i], childEnds[i],
+                octant->child[i] = createOctant(childX, childY, childZ, childExtent,
+                                                childStarts[i],
+                                                childEnds[i],
                                                 childSizes[i]);
 
-                if (firsttime)
-                    octant->start = octant->child[i]->start;
+                if (firsttime)                               // 这里为什么要有 first time ?? 而且只执行一次，之后就不执行了
+                    octant->start = octant->child[i]->start; //
                 else
-                    successors_[octant->child[lastChildIdx]->end] =
+                    index_list[octant->child[lastChildIdx]->end] =
                             octant->child[i]->start;
                 // we have to ensure that also the child ends link to the next child start.
 
@@ -539,6 +565,7 @@ namespace unibn {
                 octant->end  = octant->child[i]->end;
                 firsttime    = false;
             }
+            //
         }
 
         return octant;
@@ -551,11 +578,12 @@ namespace unibn {
         const ContainerT &points = *data_;
 
         // if search ball S(q,r) contains octant, simply add point indexes.
+        // octant 完全在 ball S(q,r) contains 的范围内
         if (contains<Distance>(query, sqrRadius, octant)) {
             uint32_t idx = octant->start;
             for (uint32_t i = 0; i < octant->size; ++i) {
                 resultIndices.push_back(idx);
-                idx = successors_[idx];
+                idx = get_next_vector_list(idx);
             }
 
             return; // early pruning.
@@ -567,7 +595,7 @@ namespace unibn {
                 const PointT &p = points[idx];
                 float dist      = Distance::compute(query, p);
                 if (dist < sqrRadius) resultIndices.push_back(idx);
-                idx = successors_[idx];
+                idx = get_next_vector_list(idx);
             }
 
             return;
@@ -594,7 +622,7 @@ namespace unibn {
             for (uint32_t i = 0; i < octant->size; ++i) {
                 resultIndices.push_back(idx);
                 distances.push_back(Distance::compute(query, points[idx]));
-                idx = successors_[idx];
+                idx = get_next_vector_list(idx);
             }
 
             return; // early pruning.
@@ -609,7 +637,7 @@ namespace unibn {
                     resultIndices.push_back(idx);
                     distances.push_back(dist);
                 }
-                idx = successors_[idx];
+                idx = get_next_vector_list(idx);
             }
 
             return;
@@ -729,7 +757,7 @@ namespace unibn {
                     resultIndex    = idx;
                     sqrMaxDistance = dist;
                 }
-                idx = successors_[idx];
+                idx = index_list[idx];
             }
 
             maxDistance = Distance::sqrt(sqrMaxDistance);

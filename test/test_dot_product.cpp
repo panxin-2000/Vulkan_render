@@ -1,10 +1,10 @@
 //
 // Created by 潘鑫 on 2025/3/9.
 //
+#include "Eigen/Eigen"
 #include "gtest/gtest.h"
 #include <vector>
 
-#include "Eigen/Eigen"
 
 TEST(dot_product, dot) {
     // 这里做了那些测试

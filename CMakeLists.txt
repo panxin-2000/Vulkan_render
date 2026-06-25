@@ -44,7 +44,7 @@ include(FetchContent)
 FetchContent_Declare(
         cereal
         GIT_REPOSITORY https://github.com/USCiLab/cereal.git
-        GIT_TAG        v1.3.2 # 或者是 master
+        GIT_TAG v1.3.2 # 或者是 master
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
 
@@ -62,6 +62,10 @@ FetchContent_Declare(
         GIT_TAG v1.17.0
         GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
 )
+
+# 自动寻找 Google Benchmark 库 并且 如果需要更改库，只需要更改子文件夹下的内容
+find_package(benchmark REQUIRED)
+add_subdirectory(benchmark)
 
 #  开发者常私下将其解读为 Entity Templates
 FetchContent_Declare(
@@ -505,7 +509,7 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue cereal::cereal  GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy readerwriterqueue cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
