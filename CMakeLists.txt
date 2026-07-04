@@ -388,6 +388,7 @@ file(GLOB_RECURSE component
         "UI/bin_pack/SkylineBinPack.cpp"
         "UI/bin_pack/GuillotineBinPack.cpp"
         "UI/3d_model_display.cpp"
+        "UI/PLYLoader.cpp"
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"
         "component/transform_component.cpp"
@@ -628,7 +629,7 @@ foreach (SHADER_FILE ${SHADER_FILES})
     add_custom_command(
             TARGET learn_render
             PRE_BUILD
-            COMMAND glslc ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
+            COMMAND glslc --target-env=vulkan1.3 ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
             COMMAND echo "compiler " ${SHADER_SOURCE_DIR}/${SHADER_NAME}
     )
 endforeach ()
