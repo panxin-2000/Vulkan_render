@@ -148,6 +148,15 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(meshoptimizer)
 
+FetchContent_Declare(
+        cxxopts
+        GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
+        GIT_TAG v3.3.1
+        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+
+)
+FetchContent_MakeAvailable(cxxopts)
+
 
 FetchContent_Declare(
         readerwriterqueue
@@ -607,6 +616,7 @@ target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
+target_link_libraries(learn_render PRIVATE cxxopts::cxxopts)
 target_link_libraries(learn_render PRIVATE readerwriterqueue)
 target_link_libraries(learn_render PRIVATE meshoptimizer)
 target_link_libraries(learn_render PRIVATE ccd)
