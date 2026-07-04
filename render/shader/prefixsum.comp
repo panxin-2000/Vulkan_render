@@ -1,0 +1,48 @@
+#version 450
+
+layout(std430, set = 0, binding = 0) buffer BufferA {
+    uint buffer_a[];
+};
+
+layout(std430, set = 0, binding = 1) buffer BufferB {
+    uint buffer_b[];
+};
+
+layout(push_constant) uniform Constants {
+    uint step;
+    uint numElements;
+    uint readFromA;  // 1 = read from A, 0 = read from B
+
+// readFromA 最后一个是为
+};
+
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+void main() {
+    uint index = gl_GlobalInvocationID.x;
+
+    if (index >= numElements) {
+        return;
+    }
+
+    uint stride = 1u << step;
+    // 如果你输入一个数组：[1, 1, 1, 1, 1]
+    // 通过改变 step（stride 每次翻倍：1, 2, 4, 8...）
+    // 进行多轮迭代后，它最终会将数组转换为每个位置之前所有元素的累加和：
+    // [1, 2, 3, 4, 5]
+
+    uint value;
+    if (readFromA == 1) {
+        value = buffer_a[index];
+        if (index >= stride) {
+            value = buffer_a[index] + buffer_a[index - stride]; // 这样更改看起来更加直观
+        }
+        buffer_b[index] = value; // 总是将A的后半部分 与 前半部分相加，之后 在 保存在 对应的 B 的索引中
+    } else {
+        value = buffer_b[index];
+        if (index >= stride) {
+            value = buffer_b[index] + buffer_b[index - stride];
+        }
+        buffer_a[index] = value;
+    }
+}

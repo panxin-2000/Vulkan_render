@@ -1,0 +1,32 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+layout(binding = 0) uniform readonly sampler2D renderTarget; // 这里是输入的图像
+
+layout(binding = 1) uniform writeonly image2D swapchainImage;// 这里是输出的图像
+
+void main() {
+    // 一个很标准的 由小像素的 图片转换为大像素 的转换
+    // 这里没有办法实现将两种不同的 由大到小 或者 由小到大
+    // 
+
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy); // 每一个需要具体采样的像素位置
+    ivec2 outputSize = imageSize(swapchainImage);  // 拿到输出的图像大小
+
+    if (pixel.x >= outputSize.x || pixel.y >= outputSize.y) {
+        return;
+    }
+    // 超出图像大小时退出
+
+
+    vec2 uv = (vec2(pixel) + 0.5) / vec2(outputSize);   // 拿到需要采样的位置uv
+    vec4 color = texture(renderTarget, uv); // texture 函数内部做双线性插值
+
+    // Optional: Apply any post-processing
+    // color.rgb = pow(color.rgb, vec3(2.2)); // Gamma correction if needed
+    // color.rgb = color.rgb / (color.rgb + vec3(1.0)); // Tone mapping if needed
+
+    imageStore(swapchainImage, pixel, color); // 输出最后的结果
+}

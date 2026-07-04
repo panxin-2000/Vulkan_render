@@ -1,0 +1,132 @@
+#version 450
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+
+#define TILE_WIDTH 16
+#define TILE_HEIGHT 16
+
+layout (std430, set = 0, binding = 0) readonly buffer Ranges {
+    uvec2 ranges[];
+};
+
+layout (std430, set = 0, binding = 1) readonly buffer Values {
+    uint gaussianId[];
+};
+
+layout (std430, set = 0, binding = 2) readonly buffer Rgb {
+    vec3 color[];
+};
+
+layout (std430, set = 0, binding = 3) readonly buffer conicOpacity {
+    vec4 conic[];
+};
+
+layout (std430, set = 0, binding = 4) readonly buffer pointsXY {
+    vec2 pos2d[];
+};
+
+layout(set = 0, binding = 5) uniform writeonly image2D outputImage;
+
+layout(push_constant) uniform Constants {
+    uint width;
+    uint height;
+    uint wireframe;
+    float gaussScale;
+};
+
+layout (local_size_x = TILE_WIDTH, local_size_y = TILE_HEIGHT, local_size_z = 1) in;
+
+void main() {
+    uint tileX = gl_WorkGroupID.x;
+    uint tileY = gl_WorkGroupID.y;
+    uint localX = gl_LocalInvocationID.x;
+    uint localY = gl_LocalInvocationID.y;
+
+    uvec2 curr_pixel = uvec2(tileX * TILE_WIDTH + localX, tileY * TILE_HEIGHT + localY);
+
+    if (curr_pixel.x >= width || curr_pixel.y >= height) {
+        return;
+    }
+
+    uint tiles_width = (width + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint tile_id = tileX + tileY * tiles_width;
+
+    // Get range for this tile
+    uint start = ranges[tile_id].x;
+    uint end = ranges[tile_id].y;
+
+    // Initialize accumulation variables
+    float Transparency = 1.0f;  // 被理解占比 更合适，
+    vec3 Calculate_color = vec3(0.0f);
+
+    // Process all gaussians in this tile
+    for (uint i = start; i < end; i++) {
+        // Get gaussian index from sorted list
+        // 获得 高斯      索引   从  排序好的 list 中
+        uint gauss_idx = gaussianId[i];
+
+        // Get gaussian properties
+        vec2 xy = pos2d[gauss_idx];      // 拿到 高斯的位置
+        vec2 d = xy - vec2(curr_pixel);  // 获得 当前像素与中心点的偏差
+        vec4 con_o = conic[gauss_idx];   // conix 圆锥
+        float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y)
+                      - con_o.y * d.x * d.y;
+        float alpha = min(0.99f, con_o.w * exp(power));
+        // 上面五行需要去看完整的公式
+
+        if (wireframe == 1) {
+
+            if (length(d) < gaussScale) {
+                vec3 wireColor = color[gauss_idx];
+                float wireAlpha = 0.8 * alpha * (gaussScale / length(d));
+
+                Calculate_color = Calculate_color * (1.0 - wireAlpha) + wireColor * wireAlpha;
+                Transparency = max(0.0, Transparency - wireAlpha);
+
+            }
+            continue;
+        }
+
+        if (power > 0.0f) {
+            continue;
+        }
+        // Skip if too transparent  太过透明，直接忽略
+        if (alpha < 1.0f / 255.0f) {
+            continue;
+        }
+
+        // Check if we can terminate early 检测当前的透明度，能否退出
+        // final_color =  front_color * alpha + back_color * ( 1 - alpha)
+        // 完全不透明 alpha = 1 时 只有前景色
+        // 完全 透明  alpha = 0 时 只有后景色
+        float test_T = Transparency * (1.0f - alpha);
+        // test_T 是 代表光线穿过这 (n) 个椭圆（高斯点）后，还能剩下多少百分比的光强能够透传过去
+        // 不对，高斯泼溅 是从前向后算的，当 alpha 接近于 1 时 颜色就几乎完全确定了
+        if (test_T < 0.0001f) {
+            break;
+        }
+
+
+
+        // Accumulate color
+        vec3 col = color[gauss_idx];
+        Calculate_color += col * alpha * Transparency;
+        // 第 i 个高斯贡献的颜色 = 它原本的颜色 * 自身的不透明度 * 前面所有高斯留给它的透光率
+        // i 个 相加就能得到最后的结果
+        Transparency = test_T;
+    }
+
+    // Write final color
+    /*#ifdef APPLE
+    
+    imageStore(outputImage, ivec2(2*curr_pixel.x, 2*curr_pixel.y+1), vec4(C, 1.0f - T));
+    imageStore(outputImage, ivec2(2*curr_pixel.x+1, 2*curr_pixel.y), vec4(C, 1.0f - T));
+    imageStore(outputImage, ivec2(2*curr_pixel.x+1, 2*curr_pixel.y+1), vec4(C, 1.0f - T));
+    imageStore(outputImage, ivec2(2*curr_pixel.x, 2*curr_pixel.y), vec4(C, 1.0f - T));
+
+    #else
+    imageStore(outputImage, ivec2(curr_pixel), vec4(C.rgb, 1.0f - T));
+    #endif*/
+
+    imageStore(outputImage, ivec2(curr_pixel), vec4(Calculate_color.rgb, 1.0f - Transparency));
+
+}
