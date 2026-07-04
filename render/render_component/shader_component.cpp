@@ -78,8 +78,13 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
                 auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
-                // 先使用下面的直接引用，之后再看怎么获取父节点的全局索引
-                // auto &global_descriptor_sets = vk_s_d_s->global_descriptor_sets;
+                for (auto &bindless_descriptor_set: bindless_descriptor_sets) {
+                    bindless_descriptor_set = VK_NULL_HANDLE;
+                }
+                for (auto &global_descriptor_set: global_descriptor_sets) {
+                    global_descriptor_set = VK_NULL_HANDLE;
+                }
+                // 这里清理的原因是 不应该在这里写入
                 descriptor_sets.reserve(bindless_descriptor_sets.size() +
                                         global_descriptor_sets.size() +
                                         vk_s_d_s->object_descriptor_sets.size());
@@ -100,6 +105,33 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     return descriptor_sets;
 }
 
+Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
+    Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
+    if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
+        if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
+            if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
+                auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
+                auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
+                // 这里清理的原因是 不应该在这里写入
+                descriptor_sets.reserve(bindless_descriptor_sets.size() +
+                                        global_descriptor_sets.size() +
+                                        vk_s_d_s->object_descriptor_sets.size());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       bindless_descriptor_sets.begin(),
+                                       bindless_descriptor_sets.end());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       global_descriptor_sets.begin(),
+                                       global_descriptor_sets.end());
+                descriptor_sets.insert(descriptor_sets.end(),
+                                       vk_s_d_s->object_descriptor_sets.begin(),
+                                       vk_s_d_s->object_descriptor_sets.end());
+            } else {
+                return vk_s_d_s->object_descriptor_sets;
+            }
+        }
+    }
+    return descriptor_sets;
+}
 
 void add_shader(const entt::entity entity, const std::string &vertex_path,
                 const std::string &geometry_path,

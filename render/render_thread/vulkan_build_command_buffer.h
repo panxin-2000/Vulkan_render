@@ -456,8 +456,8 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 
 inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, const uint64_t time_line,
                                        VkPipelineBindPoint bind_point) {
-    const auto cb            = Engine::instance().get_current_command_buffer();
-    auto &vk_descriptor_sets = Render_entt().get<Proxy_descriptor_sets>(entity);
+    const auto cb                 = Engine::instance().get_current_command_buffer();
+    const auto vk_descriptor_sets = update_descriptor_sets(entity);
     if (!vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
         temp_descriptor_sets.resize(vk_descriptor_sets.size());

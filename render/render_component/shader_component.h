@@ -112,6 +112,8 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
 
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity);
 
+Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity);
+
 
 void descriptor_set_update_function();
 
