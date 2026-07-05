@@ -465,11 +465,11 @@ inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, 
             temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
             // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
-        std::vector<uint32_t> dynamic_offsets;
-        dynamic_offsets.resize(vk_descriptor_sets.size());
-        for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
-            dynamic_offsets[i] = 0;
-        }
+        std::vector<uint32_t> dynamic_offsets;  // dynamic  
+        // dynamic_offsets.resize(vk_descriptor_sets.size());
+        // for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
+            // dynamic_offsets[i] = 0;
+        // }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
                 LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",

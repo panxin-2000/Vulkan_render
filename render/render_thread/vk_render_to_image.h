@@ -70,6 +70,9 @@ class vk_render_GPU {
 public:
     void one_cycle(VK_backend &handle) { {
             std::unique_lock<std::mutex> lock(mtx);
+            // VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::instance().get_device()));
+            Engine::instance().update_global_parameter(); // 这里的好消息是 什么？ 这里可以申请；
+            // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
             vk_render_queue::instance().execute_update_lambda();
         } {
             const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是

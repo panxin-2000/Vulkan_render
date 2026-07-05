@@ -322,6 +322,7 @@ std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std
 }
 
 void Engine::update_global_parameter() {
+    global_descriptor_sets_   = allocate_global_descriptor_sets("");
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_projection_4x4", projection_matrix);

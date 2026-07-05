@@ -249,7 +249,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         tem.stageFlags                   = get_stageFlags(shaderStage); // todo: 有麻烦了，需要带有或逻辑的 stageFlag
         tem.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         if (res.name.find("global") != std::string::npos) {
-            tem.descriptorType                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+            tem.descriptorType                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
