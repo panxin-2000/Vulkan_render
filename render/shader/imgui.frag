@@ -10,5 +10,6 @@ layout (location = 0) in struct {
 
 void main()
 {
-    outFragColor_B8G8R8A8_SRGB = In.Color * texture(sTexture, In.UV.st);
+    vec4   temp = In.Color * texture(sTexture, In.UV.st);
+    outFragColor_B8G8R8A8_SRGB = vec4(pow(temp.rgb, vec3(2.2)), temp.w);
 }

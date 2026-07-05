@@ -144,7 +144,13 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
     BlendAttachments.resize(colorAttachmentFormat.size());
     for (size_t i = 0; i < colorAttachmentFormat.size(); ++i) {
         // 这里的参数很多，没有写入值
-        VkPipelineColorBlendAttachmentState blendAttachment{.colorWriteMask = 0xF};
+        VkPipelineColorBlendAttachmentState blendAttachment{
+            .blendEnable         = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp        = VK_BLEND_OP_ADD,
+            .colorWriteMask      = 0xF,
+        };
         BlendAttachments[i] = blendAttachment;
     }
     VkPipelineColorBlendStateCreateInfo colorBlendState{
@@ -232,8 +238,8 @@ void clean_all_pipeline(VK_backend &handle) {
 }
 
 
- VkPipeline CreateComputePipelines(VK_backend &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
-                                         VkDescriptorSetLayout &descriptorSetLayout) {
+VkPipeline CreateComputePipelines(VK_backend &handle, std::vector<VkPipelineShaderStageCreateInfo> &shaderStages,
+                                  VkDescriptorSetLayout &descriptorSetLayout) {
     if (shaderStages.empty() == true) {
         return VK_NULL_HANDLE;
     }
