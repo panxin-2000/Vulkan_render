@@ -16,14 +16,11 @@ void add_new_proxy_to_render() {
     for (const auto &it: view) {
         logic_update_proxy<Name_component>(it);
 
-        const auto mesh = get_VKR_mesh(it);
+        const auto [mesh, primitive] = get_VKR_mesh(it);
         logic_update_proxy(it, mesh);
+        logic_update_proxy(it, primitive);
 
 
-        const auto scissor = VK_backend::instance().get_scissor();
-        logic_update_proxy(it, scissor);
-        const auto viewport = VK_backend::instance().get_viewport();
-        logic_update_proxy(it, viewport);
 
 
         // logic_update_proxy<VkPipelineLayout>(it, pipeline_layout);

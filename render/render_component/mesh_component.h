@@ -12,17 +12,14 @@
 #include "Geometry_data.h"
 
 
-
 /**
  * 创建一个mesh,所有需要的数据都在 entity 的 Geometry_data 中
  * @param entity
  * @return
  */
-std::vector<VKR_Primitive> create_mesh(const entt::entity entity);
+std::pair<Mesh_data, std::vector<VKR_Primitive> > create_mesh(const entt::entity entity);
 
-std::vector<VKR_Primitive> get_VKR_mesh(const entt::entity entity);
-
-
+std::pair<Mesh_data, std::vector<VKR_Primitive> > get_VKR_mesh(const entt::entity entity);
 
 
 #endif //HELLO_MAC_MESH_COMPONENT_H

@@ -75,6 +75,11 @@ bool ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo *info) {
 
 
 void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
+    int fb_width  = (int) (draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+    int fb_height = (int) (draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+    if (fb_width <= 0 || fb_height <= 0)
+        return;
+
     // 还是有点小问题的，已修改
     const auto vertices = std::make_shared<std::vector<Vertex_imgui> >(); //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >();     //  2   * 6 = 12
@@ -93,10 +98,58 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             idx_dst += cmd_list->IdxBuffer.Size;
         }
         add_geometry_data(entity, vertices, indices);
-        const auto mesh = get_VKR_mesh(entity);
+        auto [mesh , primitives] = get_VKR_mesh(entity);
         logic_update_proxy(entity, mesh);
+        if (!primitives.empty()) {
+            VKR_Primitive vkr_primitive = primitives.at(0);
+            primitives.clear();
+            // index_count = 2136
+            // first_      = 12480
+            // Will project scissor/clipping rectangles into framebuffer space
+            ImVec2 clip_off   = draw_data->DisplayPos;       // (0,0) unless using multi-viewports
+            ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-        // 应该只是几何数据对了， imgui 还是分了好几个批次去绘制 不同的 内容，还有 不同的 裁剪窗口
+            int global_vtx_offset = 0;
+            int global_idx_offset = 0;
+            for (const ImDrawList *draw_list: draw_data->CmdLists) {
+                for (int cmd_i = 0; cmd_i < draw_list->CmdBuffer.Size; cmd_i++) {
+                    const ImDrawCmd *pcmd = &draw_list->CmdBuffer[cmd_i];
+                    if (pcmd->UserCallback != nullptr) {
+                        // User callback, registered via ImDrawList::AddCallback()
+                    } else {
+                        // Project scissor/clipping rectangles into framebuffer space
+                        ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x,
+                                        (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+                        ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x,
+                                        (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+
+                        // Clamp to viewport as vkCmdSetScissor() won't accept values that are off bounds
+                        if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+                        if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+                        if (clip_max.x > (float) fb_width) { clip_max.x = (float) fb_width; }
+                        if (clip_max.y > (float) fb_height) { clip_max.y = (float) fb_height; }
+                        if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+                            continue;
+                        // Apply scissor/clipping rectangle
+                        vkr_primitive.scissor.offset.x      = (int32_t) (clip_min.x);
+                        vkr_primitive.scissor.offset.y      = (int32_t) (clip_min.y);
+                        vkr_primitive.scissor.extent.width  = (uint32_t) (clip_max.x - clip_min.x);
+                        vkr_primitive.scissor.extent.height = (uint32_t) (clip_max.y - clip_min.y);
+                        vkr_primitive.indexed_command.indexCount    = pcmd->ElemCount;
+                        vkr_primitive.indexed_command.instanceCount = 1;
+                        vkr_primitive.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
+                        vkr_primitive.indexed_command.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
+                        vkr_primitive.indexed_command.firstInstance = 0;
+                        primitives.emplace_back(vkr_primitive);
+                    }
+                }
+                global_idx_offset += draw_list->IdxBuffer.Size;
+                global_vtx_offset += draw_list->VtxBuffer.Size;
+            }
+        }
+        logic_update_proxy(entity, primitives);
+        VkRect2D scissor = {{0, 0}, {(uint32_t) fb_width, (uint32_t) fb_height}};
+        // vkCmdSetScissor(command_buffer, 0, 1, &scissor);
     }
 }
 

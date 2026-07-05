@@ -465,10 +465,10 @@ inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, 
             temp_descriptor_sets[i] = vk_descriptor_sets[i]->get_descriptor_set(time_line);
             // LOG_INFO(g_log(), "temp_descriptor_sets[{}] = {}", i, (uint64_t)temp_descriptor_sets[i]);
         }
-        std::vector<uint32_t> dynamic_offsets;  // dynamic  
+        std::vector<uint32_t> dynamic_offsets; // dynamic
         // dynamic_offsets.resize(vk_descriptor_sets.size());
         // for (size_t i = 0; i < vk_descriptor_sets.size(); ++i) {
-            // dynamic_offsets[i] = 0;
+        // dynamic_offsets[i] = 0;
         // }
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
@@ -519,8 +519,6 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<VkPipeline>(entity));
 
-    vkCmdSetViewport(cb, 0, 1, &Render_entt().get<VkViewport>(entity));
-    vkCmdSetScissor(cb, 0, 1, &Render_entt().get<VkRect2D>(entity));
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
     vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
 
@@ -562,10 +560,13 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
                                parameter->push_constant_pool + value.offset);
         }
 
-    auto mesh = Render_entt().get<std::vector<VKR_Primitive> >(entity);
-    if (!mesh.empty()) {
-        for (int i = 0; i < mesh.size(); ++i) {
-            mesh[i].draw(cb, time_line);
+    auto mesh_data = Render_entt().get<Mesh_data>(entity);
+    auto primitive = Render_entt().get<std::vector<VKR_Primitive> >(entity);
+    if (!primitive.empty()) {
+        for (int i = 0; i < primitive.size(); ++i) {
+            vkCmdSetViewport(cb, 0, 1, &primitive[i].viewport);
+            vkCmdSetScissor(cb, 0, 1, &primitive[i].scissor);
+            primitive[i].draw(cb, mesh_data, time_line);
         }
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断

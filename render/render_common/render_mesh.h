@@ -7,15 +7,22 @@
 #include <volk.h>
 #include "vulkan_buffer.h"
 
+
+class Mesh_data {
+public:
+    VKR_buffer_ptr vertices = {};
+    VKR_buffer_ptr indices  = {};
+};
+
 class VKR_Primitive {
 public:
     // 不做
-    VKR_buffer_ptr vertices      = {};
-    VKR_buffer_ptr indices       = {};
     VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
     VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
     VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
     int material_index_          = 0;
+    VkViewport viewport;
+    VkRect2D scissor;
 
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};
@@ -24,12 +31,13 @@ public:
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
-    void draw(const VkCommandBuffer &cb, const uint64_t time_line) const {
-        if (vertices == nullptr || vertices->get_buffer_handle() == VK_NULL_HANDLE)
+    void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
+        if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
-        if (indices != nullptr && indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
+        vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
+        if (mesh_data.indices != nullptr && mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.
+            indexCount != 0) {
+            vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,
                              indexed_command.firstIndex,
@@ -50,8 +58,6 @@ public:
 class Draw_commands {
 public:
     // 不做
-    VKR_buffer_ptr vertices      = {};
-    VKR_buffer_ptr indices       = {};
     VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
     VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
 
@@ -68,10 +74,10 @@ public:
     VkIndexType index_type              = VK_INDEX_TYPE_UINT16;
 
 
-    void draw(const VkCommandBuffer &cb, const uint64_t time_line) const {
-        vkCmdBindVertexBuffers(cb, 0, 1, vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
-        if (indices->get_buffer_handle() != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer(cb, indices->get_buffer_handle(), indices_offset, index_type);
+    void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
+        vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
+        if (mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+            vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexedIndirect(cb,
                                      // draw_commands 相关内容
                                      draw_commands_buffer->get_buffer_handle(),
