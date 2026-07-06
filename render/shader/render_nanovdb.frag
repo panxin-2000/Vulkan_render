@@ -146,7 +146,7 @@ void main() {
     //    outFragColor_B8G8R8A8_SRGB = vec4(abs(rayDir), 1.0);
 
     if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 0);
+        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 1.0);
     } else {
         // 不相交的时候就忽略当前像素的颜色
         discard;

@@ -37,6 +37,7 @@ void add_nanovdb_to_gpu(entt::entity entity) {
     auto ptr = handle.data();
     auto size = handle.bufferSize();
     add_nanovdb_to_gpu(entity, ptr, size);
+    set_render_parameter(entity, "nanovdb_size", size);
 }
 
 void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name) {

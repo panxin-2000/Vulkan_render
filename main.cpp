@@ -83,11 +83,10 @@ inline entt::entity add_volume_pass(const std::string &name) {
     // };
     // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
     // set_render_parameter(entity, "light_buffer", temp_ptr);
-    uint32_t t = 1024;
-    set_render_parameter(entity, "nanovdb_size", t);
 
 
     world_root_add_child(entity);
+    logic_update_add_tag<volume_pass_tag>(entity);
 
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
@@ -360,7 +359,7 @@ int main(int argc, char *argv[]) {
 
     // add_simple_computer_buffer_write();
 
-    // add_volume_pass("nanovdb_volume");
+    add_volume_pass("nanovdb_volume");
     // 天空盒
 
 
@@ -370,7 +369,7 @@ int main(int argc, char *argv[]) {
     // {
     //     auto value           = get_max_descriptor_update_after_bind_samplers();
     //     const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-    //     auto texture         = create_textures_to_gpu(backend, "assets/suzanne0.ktx");
+    //     auto texture         = create_textures_to_gpu( "assets/suzanne0.ktx");
     //     const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
     //     set_baseColor_Texture_index(entity, index);
     //     logic_update_add_tag<opacity_tag>(entity);

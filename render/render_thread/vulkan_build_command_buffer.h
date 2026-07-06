@@ -473,7 +473,7 @@ inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, 
         for (auto temp_descriptor_set: temp_descriptor_sets) {
             if (temp_descriptor_set == VK_NULL_HANDLE) {
                 LOG_INFO(g_log(), "VKR_object_proxy {} descriptor_set == VK_NULL_HANDLE ",
-                         Render_entt().get_or_emplace<Name_component>(entity).name_);
+                         Render_entt().get<Name_component>(entity).name_);
                 return;
             }
         }
@@ -516,7 +516,7 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
 inline void build_command_buffer(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
     const auto cb = Engine::instance().get_current_command_buffer();
 
-
+    auto debug_name = Render_entt().get<Name_component>(entity).name_;
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<VkPipeline>(entity));
 
     vkCmdSetDepthTestEnable(cb, VK_TRUE);
