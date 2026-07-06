@@ -2847,7 +2847,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_hdda_read_density(
             total_dim = total_dim + dim;
             continue;
         }
-        if (!pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(hdda.voxel))) {
+        if (dim > 1 && !pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(hdda.voxel))) {
             return total_dim;
         }
     }
