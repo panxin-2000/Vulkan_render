@@ -85,16 +85,17 @@
 typedef struct pnanovdb_buf_t {
     uint32_t *data;
 #ifdef PNANOVDB_BUF_BOUNDS_CHECK
-uint64_t size_in_words;
+    uint64_t size_in_words;
 #endif
-}pnanovdb_buf_t;
+} pnanovdb_buf_t;
+
 PNANOVDB_BUF_FORCE_INLINE pnanovdb_buf_t pnanovdb_make_buf(uint32_t *data, uint64_t size_in_words) {
     pnanovdb_buf_t ret;
     ret.data = data;
 #ifdef PNANOVDB_BUF_BOUNDS_CHECK
-ret.size_in_words= size_in_words;
+    ret.size_in_words = size_in_words;
 #endif
-return ret;
+    return ret;
 }
 #if defined(PNANOVDB_ADDRESS_32)
 PNANOVDB_BUF_FORCE_INLINE uint32_t pnanovdb_buf_read_uint32(pnanovdb_buf_t buf, uint32_t byte_offset) {
@@ -120,19 +121,20 @@ PNANOVDB_BUF_FORCE_INLINE uint32_t pnanovdb_buf_read_uint32(pnanovdb_buf_t buf, 
     // 以 32 位为基础偏移的， 底层是以字节为单位寻地址的
     uint64_t wordaddress = (byte_offset >> 2u);
 #ifdef PNANOVDB_BUF_BOUNDS_CHECK
-return wordaddress<buf.size_in_words ? buf.data[wordaddress] : 0u;
+    return wordaddress < buf.size_in_words ? buf.data[wordaddress] : 0u;
 #else
-return buf.data [wordaddress];
+    return buf.data[wordaddress];
 #endif
 }
+
 PNANOVDB_BUF_FORCE_INLINE uint64_t pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint64_t byte_offset) {
     uint64_t *data64       = (uint64_t *) buf.data;
     uint64_t wordaddress64 = (byte_offset >> 3u);
 #ifdef PNANOVDB_BUF_BOUNDS_CHECK
-uint64_t size_in_words64 = buf.size_in_words >> 1u;
-	return wordaddress64<size_in_words64 ? data64[wordaddress64] : 0llu;
+    uint64_t size_in_words64 = buf.size_in_words >> 1u;
+    return wordaddress64 < size_in_words64 ? data64[wordaddress64] : 0llu;
 #else
-return data64 [wordaddress64];
+    return data64[wordaddress64];
 #endif
 }
 #endif
@@ -239,12 +241,15 @@ typedef int32_t pnanovdb_bool_t;
 #define PNANOVDB_TRUE 1
 typedef uint64_t pnanovdb_uint64_t;
 typedef int64_t pnanovdb_int64_t;
+
 typedef struct pnanovdb_coord_t {
     pnanovdb_int32_t x, y, z;
 } pnanovdb_coord_t;
+
 typedef struct pnanovdb_vec3_t {
     float x, y, z;
 } pnanovdb_vec3_t;
+
 PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_uint32_as_int32(pnanovdb_uint32_t v) { return (pnanovdb_int32_t) v; }
 PNANOVDB_FORCE_INLINE pnanovdb_int64_t pnanovdb_uint64_as_int64(pnanovdb_uint64_t v) { return (pnanovdb_int64_t) v; }
 PNANOVDB_FORCE_INLINE pnanovdb_uint64_t pnanovdb_int64_as_uint64(pnanovdb_int64_t v) { return (pnanovdb_uint64_t) v; }
@@ -254,24 +259,30 @@ PNANOVDB_FORCE_INLINE float pnanovdb_uint32_as_float(pnanovdb_uint32_t v) {
     pnanovdb_memcpy(&vf, &v, sizeof(vf));
     return vf;
 }
+
 PNANOVDB_FORCE_INLINE double pnanovdb_uint64_as_double(pnanovdb_uint64_t v) {
     double vf;
     pnanovdb_memcpy(&vf, &v, sizeof(vf));
     return vf;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_uint64_low(pnanovdb_uint64_t v) { return (pnanovdb_uint32_t) v; }
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_uint64_high(pnanovdb_uint64_t v) {
     return (pnanovdb_uint32_t) (v >> 32u);
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_uint64_t pnanovdb_uint32_as_uint64(pnanovdb_uint32_t x, pnanovdb_uint32_t y) {
     return ((pnanovdb_uint64_t) x) | (((pnanovdb_uint64_t) y) << 32u);
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_uint64_t pnanovdb_uint32_as_uint64_low(pnanovdb_uint32_t x) {
     return ((pnanovdb_uint64_t) x);
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_uint64_is_equal(pnanovdb_uint64_t a, pnanovdb_uint64_t b) {
     return a == b;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_int64_is_zero(pnanovdb_int64_t a) { return a == 0; }
 #ifdef PNANOVDB_CMATH
 PNANOVDB_FORCE_INLINE float pnanovdb_floor(float v) { return floorf(v); }
@@ -365,6 +376,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_uniform(float a) {
     v.z = a;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_add(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x + b.x;
@@ -372,6 +384,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_add(const pnanovdb_vec3_t a,
     v.z = a.z + b.z;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_sub(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x - b.x;
@@ -379,6 +392,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_sub(const pnanovdb_vec3_t a,
     v.z = a.z - b.z;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_mul(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x * b.x;
@@ -386,6 +400,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_mul(const pnanovdb_vec3_t a,
     v.z = a.z * b.z;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_div(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x / b.x;
@@ -393,6 +408,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_div(const pnanovdb_vec3_t a,
     v.z = a.z / b.z;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_min(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x < b.x ? a.x : b.x;
@@ -400,6 +416,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_min(const pnanovdb_vec3_t a,
     v.z = a.z < b.z ? a.z : b.z;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_vec3_max(const pnanovdb_vec3_t a, const pnanovdb_vec3_t b) {
     pnanovdb_vec3_t v;
     v.x = a.x > b.x ? a.x : b.x;
@@ -416,6 +433,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_coord_to_vec3(const pnanovdb_coor
     v.z = pnanovdb_int32_to_float(coord.z);
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_coord_uniform(const pnanovdb_int32_t a) {
     pnanovdb_coord_t v;
     v.x = a;
@@ -423,6 +441,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_coord_uniform(const pnanovdb_int
     v.z = a;
     return v;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_coord_t pnanovdb_coord_add(pnanovdb_coord_t a, pnanovdb_coord_t b) {
     pnanovdb_coord_t v;
     v.x = a.x + b.x;
@@ -514,6 +533,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_address_in_interval(pnanovdb_addr
 struct pnanovdb_address_t {
     pnanovdb_uint64_t byte_offset;
 };
+
 PNANOVDB_STRUCT_TYPEDEF(pnanovdb_address_t)
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_offset(pnanovdb_address_t address,
@@ -522,39 +542,47 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_offset(pnanovdb_addres
     ret.byte_offset        += byte_offset;
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_offset_neg(pnanovdb_address_t address,
                                                                      pnanovdb_uint32_t byte_offset) {
     pnanovdb_address_t ret = address;
     ret.byte_offset        -= byte_offset;
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_offset_product(
     pnanovdb_address_t address, pnanovdb_uint32_t byte_offset, pnanovdb_uint32_t multiplier) {
     pnanovdb_address_t ret = address;
     ret.byte_offset        += pnanovdb_uint32_as_uint64_low(byte_offset) * pnanovdb_uint32_as_uint64_low(multiplier);
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_offset64(pnanovdb_address_t address,
                                                                    pnanovdb_uint64_t byte_offset) {
     pnanovdb_address_t ret = address;
     ret.byte_offset        += byte_offset;
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_address_mask(pnanovdb_address_t address, pnanovdb_uint32_t mask) {
     return pnanovdb_uint64_low(address.byte_offset) & mask;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_mask_inv(pnanovdb_address_t address, pnanovdb_uint32_t mask) {
     pnanovdb_address_t ret = address;
     ret.byte_offset        &= (~pnanovdb_uint32_as_uint64_low(mask));
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_address_null() {
     pnanovdb_address_t ret = {0};
     return ret;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_address_is_null(pnanovdb_address_t address) {
     return address.byte_offset == 0llu;
 }
+
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_address_in_interval(pnanovdb_address_t address,
                                                                    pnanovdb_address_t min_address,
                                                                    pnanovdb_address_t max_address) {
@@ -704,7 +732,7 @@ struct pnanovdb_map_t {
     float matf[9];
     float invmatf[9];
     float vecf[3];
-    float taperf;  // Taper（锥形变换） 是一种非线性坐标映射（Non-linear Mapping）
+    float taperf; // Taper（锥形变换） 是一种非线性坐标映射（Non-linear Mapping）
     double matd[9];
     double invmatd[9];
     double vecd[3];
@@ -894,6 +922,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_version_get_minor(pnanovdb_uint
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_version_get_patch(pnanovdb_uint32_t version) {
     return version & ((1u << 10u) - 1u);
 }
+
 // 文件头的解析
 
 // 盲数据 对 NanoVDB 的核心树结构（Tree/Root/Node）是不可见的
@@ -1481,7 +1510,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint64_t pnanovdb_coord_to_key(PNANOVDB_IN(pnanov
 
 PNANOVDB_FORCE_INLINE pnanovdb_root_tile_handle_t pnanovdb_root_find_tile(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t tile_count     = pnanovdb_uint32_as_int32(pnanovdb_root_get_tile_count(buf, root));
     pnanovdb_root_tile_handle_t tile = pnanovdb_root_get_tile_zero(grid_type, root);
     pnanovdb_uint64_t key            = pnanovdb_coord_to_key(ijk);
@@ -1537,13 +1566,13 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_leaf_get_table_address(
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_leaf_get_value_address(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t n = pnanovdb_leaf_coord_to_offset(ijk);
     return pnanovdb_leaf_get_table_address(grid_type, buf, leaf, n);
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fp_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                        PNANOVDB_IN (pnanovdb_coord_t) ijk,
+                                                        PNANOVDB_IN(pnanovdb_coord_t) ijk,
                                                         pnanovdb_uint32_t value_log_bits) {
     // 	value_log_bits															//   2     3       4
     pnanovdb_uint32_t value_bits           = 1u << value_log_bits;              //   4     8      16
@@ -1561,22 +1590,22 @@ PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fp_read_float(pnanovdb_buf_t buf, pnan
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fp4_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     return pnanovdb_leaf_fp_read_float(buf, address, ijk, 2u);
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fp8_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     return pnanovdb_leaf_fp_read_float(buf, address, ijk, 3u);
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fp16_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                          PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                          PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     return pnanovdb_leaf_fp_read_float(buf, address, ijk, 4u);
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_leaf_fpn_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t bbox_dif_and_flags =
             pnanovdb_read_uint32(buf, pnanovdb_address_offset_neg(address,
                                                                   PNANOVDB_LEAF_TABLE_NEG_OFF_BBOX_DIF_AND_FLAGS));
@@ -1645,7 +1674,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_leaf_handle_t pnanovdb_lower_get_child(pnanovdb_g
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address_and_level(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_uint32_t n = pnanovdb_lower_coord_to_offset(ijk);
     pnanovdb_address_t value_address;
     if (pnanovdb_lower_get_child_mask(buf, lower, n)) {
@@ -1661,7 +1690,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address_and_le
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t level;
     return pnanovdb_lower_get_value_address_and_level(grid_type, buf, lower, ijk, PNANOVDB_REF(level));
 }
@@ -1727,7 +1756,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_lower_handle_t pnanovdb_upper_get_child(pnanovdb_
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address_and_level(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_uint32_t n = pnanovdb_upper_coord_to_offset(ijk);
     pnanovdb_address_t value_address;
     if (pnanovdb_upper_get_child_mask(buf, upper, n)) {
@@ -1742,7 +1771,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address_and_le
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t level;
     return pnanovdb_upper_get_value_address_and_level(grid_type, buf, upper, ijk, PNANOVDB_REF(level));
 }
@@ -1781,8 +1810,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_tile_get_value_address(
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_and_level(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN (pnanovdb_coord_t) ijk,
-    PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN(pnanovdb_coord_t) ijk,
+    PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_root_tile_handle_t tile = pnanovdb_root_find_tile(grid_type, buf, root, ijk);
     pnanovdb_address_t ret;
     if (pnanovdb_address_is_null(tile.address)) {
@@ -1800,14 +1829,14 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_and_lev
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t level;
     return pnanovdb_root_get_value_address_and_level(grid_type, buf, root, ijk, PNANOVDB_REF(level));
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_bit(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN (pnanovdb_coord_t) ijk,
-    PNANOVDB_INOUT (pnanovdb_uint32_t) bit_index) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN(pnanovdb_coord_t) ijk,
+    PNANOVDB_INOUT(pnanovdb_uint32_t) bit_index) {
     pnanovdb_uint32_t level;
     pnanovdb_address_t address = pnanovdb_root_get_value_address_and_level(grid_type, buf, root, ijk,
                                                                            PNANOVDB_REF(level));
@@ -1816,7 +1845,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_bit(
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_root_fp4_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
     float ret;
     if (level == 0) {
         ret = pnanovdb_leaf_fp4_read_float(buf, address, ijk);
@@ -1827,7 +1856,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_root_fp4_read_float(pnanovdb_buf_t buf, pna
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_root_fp8_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
     float ret;
     if (level == 0) {
         ret = pnanovdb_leaf_fp8_read_float(buf, address, ijk);
@@ -1838,7 +1867,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_root_fp8_read_float(pnanovdb_buf_t buf, pna
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_root_fp16_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                          PNANOVDB_IN (pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
+                                                          PNANOVDB_IN(pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
     float ret;
     if (level == 0) {
         ret = pnanovdb_leaf_fp16_read_float(buf, address, ijk);
@@ -1849,7 +1878,7 @@ PNANOVDB_FORCE_INLINE float pnanovdb_root_fp16_read_float(pnanovdb_buf_t buf, pn
 }
 
 PNANOVDB_FORCE_INLINE float pnanovdb_root_fpn_read_float(pnanovdb_buf_t buf, pnanovdb_address_t address,
-                                                         PNANOVDB_IN (pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
+                                                         PNANOVDB_IN(pnanovdb_coord_t) ijk, pnanovdb_uint32_t level) {
     float ret;
     if (level == 0) {
         ret = pnanovdb_leaf_fpn_read_float(buf, address, ijk);
@@ -1887,9 +1916,8 @@ PNANOVDB_FORCE_INLINE void pnanovdb_readaccessor_init(PNANOVDB_INOUT(pnanovdb_re
 // 不清楚下面的三个 is chached 是什么意思？ 是比较靠 底下的三个层吗？
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_iscached0(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
 
-int dirty
-)
- {
+                                                                      int dirty
+) {
     if (pnanovdb_address_is_null(PNANOVDB_DEREF(acc).leaf.address)) { return PNANOVDB_FALSE; }
     if ((dirty & ~((1u << 3) - 1u)) != 0) {
         PNANOVDB_DEREF(acc).leaf.address = pnanovdb_address_null();
@@ -1900,9 +1928,8 @@ int dirty
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_iscached1(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
 
-int dirty
-)
- {
+                                                                      int dirty
+) {
     if (pnanovdb_address_is_null(PNANOVDB_DEREF(acc).lower.address)) { return PNANOVDB_FALSE; }
     if ((dirty & ~((1u << 7) - 1u)) != 0) {
         PNANOVDB_DEREF(acc).lower.address = pnanovdb_address_null();
@@ -1913,9 +1940,8 @@ int dirty
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_iscached2(PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
 
-int dirty
-)
- {
+                                                                      int dirty
+) {
     if (pnanovdb_address_is_null(PNANOVDB_DEREF(acc).upper.address)) { return PNANOVDB_FALSE; }
     if ((dirty & ~((1u << 12) - 1u)) != 0) {
         PNANOVDB_DEREF(acc).upper.address = pnanovdb_address_null();
@@ -1932,16 +1958,16 @@ PNANOVDB_FORCE_INLINE int pnanovdb_readaccessor_computedirty(PNANOVDB_INOUT(pnan
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_leaf_get_value_address_and_cache(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf, PNANOVDB_IN (pnanovdb_coord_t) ijk,
-    PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf, PNANOVDB_IN(pnanovdb_coord_t) ijk,
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_leaf_coord_to_offset(ijk);
     return pnanovdb_leaf_get_table_address(grid_type, buf, leaf, n);
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address_and_level_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_uint32_t n = pnanovdb_lower_coord_to_offset(ijk);
     pnanovdb_address_t value_address;
     if (pnanovdb_lower_get_child_mask(buf, lower, n)) {
@@ -1959,15 +1985,15 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address_and_le
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_lower_get_value_address_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t level;
     return pnanovdb_lower_get_value_address_and_level_and_cache(grid_type, buf, lower, ijk, acc, PNANOVDB_REF(level));
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address_and_level_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_uint32_t n = pnanovdb_upper_coord_to_offset(ijk);
     pnanovdb_address_t value_address;
     if (pnanovdb_upper_get_child_mask(buf, upper, n)) {
@@ -1984,14 +2010,14 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address_and_le
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_upper_get_value_address_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t level;
     return pnanovdb_upper_get_value_address_and_level_and_cache(grid_type, buf, upper, ijk, acc, PNANOVDB_REF(level));
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_and_level_and_cache(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN (pnanovdb_coord_t) ijk,
-    PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc, PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN(pnanovdb_coord_t) ijk,
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc, PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     pnanovdb_root_tile_handle_t tile = pnanovdb_root_find_tile(grid_type, buf, root, ijk);
     pnanovdb_address_t ret;
     if (pnanovdb_address_is_null(tile.address)) {
@@ -2010,15 +2036,15 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_and_lev
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_root_get_value_address_and_cache(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN (pnanovdb_coord_t) ijk,
-    PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_root_handle_t root, PNANOVDB_IN(pnanovdb_coord_t) ijk,
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t level;
     return pnanovdb_root_get_value_address_and_level_and_cache(grid_type, buf, root, ijk, acc, PNANOVDB_REF(level));
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address_and_level(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_uint32_t) level) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_uint32_t) level) {
     int dirty = pnanovdb_readaccessor_computedirty(acc, ijk);
 
     pnanovdb_address_t value_address;
@@ -2039,16 +2065,16 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     pnanovdb_uint32_t level;
     return pnanovdb_readaccessor_get_value_address_and_level(grid_type, buf, acc, ijk, PNANOVDB_REF(level));
 }
 
 // 对应的状态位
 PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address_bit(
-    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_uint32_t) bit_index) {
+    pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_uint32_t) bit_index) {
     pnanovdb_uint32_t level;
     pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address_and_level(grid_type, buf, acc, ijk,
              PNANOVDB_REF(level));
@@ -2060,14 +2086,14 @@ PNANOVDB_FORCE_INLINE pnanovdb_address_t pnanovdb_readaccessor_get_value_address
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_leaf_get_dim_and_cache(pnanovdb_grid_type_t grid_type,
                                                                         pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf,
-                                                                        PNANOVDB_IN (pnanovdb_coord_t) ijk,
-                                                                        PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+                                                                        PNANOVDB_IN(pnanovdb_coord_t) ijk,
+                                                                        PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     return 1u;
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_lower_get_dim_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_lower_coord_to_offset(ijk);
     pnanovdb_uint32_t ret;
     if (pnanovdb_lower_get_child_mask(buf, lower, n)) {
@@ -2083,7 +2109,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_lower_get_dim_and_cache(
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_upper_get_dim_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_upper_coord_to_offset(ijk);
     pnanovdb_uint32_t ret;
     if (pnanovdb_upper_get_child_mask(buf, upper, n)) {
@@ -2099,8 +2125,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_upper_get_dim_and_cache(
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_root_get_dim_and_cache(pnanovdb_grid_type_t grid_type,
                                                                         pnanovdb_buf_t buf, pnanovdb_root_handle_t root,
-                                                                        PNANOVDB_IN (pnanovdb_coord_t) ijk,
-                                                                        PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+                                                                        PNANOVDB_IN(pnanovdb_coord_t) ijk,
+                                                                        PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_root_tile_handle_t tile = pnanovdb_root_find_tile(grid_type, buf, root, ijk);
     pnanovdb_uint32_t ret;
     if (pnanovdb_address_is_null(tile.address)) {
@@ -2118,8 +2144,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_root_get_dim_and_cache(pnanovdb
 
 PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_readaccessor_get_dim(pnanovdb_grid_type_t grid_type,
                                                                       pnanovdb_buf_t buf,
-                                                                      PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-                                                                      PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                                      PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+                                                                      PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     int dirty = pnanovdb_readaccessor_computedirty(acc, ijk);
 
     pnanovdb_uint32_t dim;
@@ -2143,15 +2169,15 @@ PNANOVDB_FORCE_INLINE pnanovdb_uint32_t pnanovdb_readaccessor_get_dim(pnanovdb_g
 // Leaf
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_leaf_is_active_and_cache(pnanovdb_grid_type_t grid_type,
                                                                         pnanovdb_buf_t buf, pnanovdb_leaf_handle_t leaf,
-                                                                        PNANOVDB_IN (pnanovdb_coord_t) ijk,
-                                                                        PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+                                                                        PNANOVDB_IN(pnanovdb_coord_t) ijk,
+                                                                        PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_leaf_coord_to_offset(ijk);
     return pnanovdb_leaf_get_value_mask(buf, leaf, n);
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_lower_is_active_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_lower_handle_t lower,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_lower_coord_to_offset(ijk);
     pnanovdb_bool_t is_active;
     if (pnanovdb_lower_get_child_mask(buf, lower, n)) {
@@ -2167,7 +2193,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_lower_is_active_and_cache(
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_upper_is_active_and_cache(
     pnanovdb_grid_type_t grid_type, pnanovdb_buf_t buf, pnanovdb_upper_handle_t upper,
-    PNANOVDB_IN (pnanovdb_coord_t) ijk, PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+    PNANOVDB_IN(pnanovdb_coord_t) ijk, PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_uint32_t n = pnanovdb_upper_coord_to_offset(ijk);
     pnanovdb_bool_t is_active;
     if (pnanovdb_upper_get_child_mask(buf, upper, n)) {
@@ -2183,8 +2209,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_upper_is_active_and_cache(
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_root_is_active_and_cache(pnanovdb_grid_type_t grid_type,
                                                                         pnanovdb_buf_t buf, pnanovdb_root_handle_t root,
-                                                                        PNANOVDB_IN (pnanovdb_coord_t) ijk,
-                                                                        PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc) {
+                                                                        PNANOVDB_IN(pnanovdb_coord_t) ijk,
+                                                                        PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc) {
     pnanovdb_root_tile_handle_t tile = pnanovdb_root_find_tile(grid_type, buf, root, ijk);
     pnanovdb_bool_t is_active;
     if (pnanovdb_address_is_null(tile.address)) {
@@ -2207,8 +2233,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_root_is_active_and_cache(pnanovdb
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_is_active(pnanovdb_grid_type_t grid_type,
                                                                       pnanovdb_buf_t buf,
-                                                                      PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-                                                                      PNANOVDB_IN (pnanovdb_coord_t) ijk) {
+                                                                      PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+                                                                      PNANOVDB_IN(pnanovdb_coord_t) ijk) {
     int dirty = pnanovdb_readaccessor_computedirty(acc, ijk);
 
     pnanovdb_bool_t is_active;
@@ -2227,7 +2253,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_readaccessor_is_active(pnanovdb_g
 // ------------------------------------------------ Map Transforms -----------------------------------------------------------
 
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply(pnanovdb_buf_t buf, pnanovdb_map_handle_t map,
-                                                         PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                         PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_vec3_t dst;
     float sx = PNANOVDB_DEREF(src).x;
     float sy = PNANOVDB_DEREF(src).y;
@@ -2242,7 +2268,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply(pnanovdb_buf_t buf, pna
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse(pnanovdb_buf_t buf, pnanovdb_map_handle_t map,
-                                                                 PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                 PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_vec3_t dst;
     float sx = PNANOVDB_DEREF(src).x - pnanovdb_map_get_vecf(buf, map, 0);
     float sy = PNANOVDB_DEREF(src).y - pnanovdb_map_get_vecf(buf, map, 1);
@@ -2257,7 +2283,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse(pnanovdb_buf_t 
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_jacobi(pnanovdb_buf_t buf, pnanovdb_map_handle_t map,
-                                                                PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_vec3_t dst;
     float sx = PNANOVDB_DEREF(src).x;
     float sy = PNANOVDB_DEREF(src).y;
@@ -2270,9 +2296,10 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_jacobi(pnanovdb_buf_t b
             pnanovdb_map_get_matf(buf, map, 8);
     return dst;
 }
+
 // Jacobian（雅可比矩阵）
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse_jacobi(pnanovdb_buf_t buf, pnanovdb_map_handle_t map,
-                                                                        PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                        PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_vec3_t dst;
     float sx = PNANOVDB_DEREF(src).x;
     float sy = PNANOVDB_DEREF(src).y;
@@ -2285,29 +2312,30 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_map_apply_inverse_jacobi(pnanovdb
             pnanovdb_map_get_invmatf(buf, map, 8);
     return dst;
 }
+
 // 由于 VDB 的网格可能有旋转、平移或缩放（Transform），你必须先将射线的世界坐标转为索引坐标，才能在 VDB 树中查找体素
 // 功能：将世界坐标（浮点数）转换为索引坐标（浮点数）。
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_world_to_indexf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
-                                                                    PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                    PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
     return pnanovdb_map_apply_inverse(buf, map, src);
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_index_to_worldf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
-                                                                    PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                    PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
     return pnanovdb_map_apply(buf, map, src);
 }
 
 // 将射线的方向从世界空间转到索引空间。
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_world_to_index_dirf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
-                                                                        PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                        PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
     return pnanovdb_map_apply_inverse_jacobi(buf, map, src);
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_grid_index_to_world_dirf(pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid,
-                                                                        PNANOVDB_IN (pnanovdb_vec3_t) src) {
+                                                                        PNANOVDB_IN(pnanovdb_vec3_t) src) {
     pnanovdb_map_handle_t map = pnanovdb_grid_get_map(buf, grid);
     return pnanovdb_map_apply_jacobi(buf, map, src);
 }
@@ -2487,6 +2515,7 @@ struct pnanovdb_hdda_t {
     pnanovdb_vec3_t delta;
     pnanovdb_vec3_t next;
 };
+
 PNANOVDB_STRUCT_TYPEDEF(pnanovdb_hdda_t)
 
 // 猜测一个这个函数是做什么的，将 float 的坐标 转换为了 三个 int 的坐标
@@ -2520,7 +2549,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_vec3_t pnanovdb_hdda_ray_start(PNANOVDB_IN(pnanov
 
 // 从函数的名字上看只是初始化的内容
 PNANOVDB_FORCE_INLINE void pnanovdb_hdda_init(PNANOVDB_INOUT(pnanovdb_hdda_t) hdda, PNANOVDB_IN(pnanovdb_vec3_t) origin,
-float tmin, PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax, int dim) {
+                                              float tmin, PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax, int dim) {
     PNANOVDB_DEREF(hdda).dim  = dim;
     PNANOVDB_DEREF(hdda).tmin = tmin;
     PNANOVDB_DEREF(hdda).tmax = tmax;
@@ -2625,55 +2654,51 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_step(PNANOVDB_INOUT(pnanovdb
     if (PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).next.y && PNANOVDB_DEREF(hdda).next.x < PNANOVDB_DEREF(hdda).
         next.z) {
 #ifdef PNANOVDB_ENFORCE_FORWARD_STEPPING
-if (PNANOVDB_DEREF(hdda).next.x<= PNANOVDB_DEREF (hdda).tmin)
-		{
-			PNANOVDB_DEREF(hdda).next.x += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.x + 1.0e-6f;
-		}
+        if (PNANOVDB_DEREF(hdda).next.x <= PNANOVDB_DEREF(hdda).tmin) {
+            PNANOVDB_DEREF(hdda).next.x += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.x +
+                    1.0e-6f;
+        }
 #endif
-PNANOVDB_DEREF (hdda).tmin= PNANOVDB_DEREF(hdda).next.x;
-PNANOVDB_DEREF (hdda).next.x+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).delta.x;
-PNANOVDB_DEREF (hdda).voxel.x+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).step.x;
-ret= PNANOVDB_DEREF(hdda).tmin<= PNANOVDB_DEREF (hdda).tmax;
-	}
-	else if (PNANOVDB_DEREF(hdda).next.y<PNANOVDB_DEREF(hdda).next.z)
-	{
+        PNANOVDB_DEREF(hdda).tmin    = PNANOVDB_DEREF(hdda).next.x;
+        PNANOVDB_DEREF(hdda).next.x  += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).delta.x;
+        PNANOVDB_DEREF(hdda).voxel.x += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).step.x;
+        ret                          = PNANOVDB_DEREF(hdda).tmin <= PNANOVDB_DEREF(hdda).tmax;
+    } else if (PNANOVDB_DEREF(hdda).next.y < PNANOVDB_DEREF(hdda).next.z) {
 #ifdef PNANOVDB_ENFORCE_FORWARD_STEPPING
-if (PNANOVDB_DEREF(hdda).next.y<= PNANOVDB_DEREF (hdda).tmin)
-		{
-			PNANOVDB_DEREF(hdda).next.y += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.y + 1.0e-6f;
-		}
+        if (PNANOVDB_DEREF(hdda).next.y <= PNANOVDB_DEREF(hdda).tmin) {
+            PNANOVDB_DEREF(hdda).next.y += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.y +
+                    1.0e-6f;
+        }
 #endif
-PNANOVDB_DEREF (hdda).tmin= PNANOVDB_DEREF(hdda).next.y;
-PNANOVDB_DEREF (hdda).next.y+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).delta.y;
-PNANOVDB_DEREF (hdda).voxel.y+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).step.y;
-ret= PNANOVDB_DEREF(hdda).tmin<= PNANOVDB_DEREF (hdda).tmax;
-	}
-	else
-	{
+        PNANOVDB_DEREF(hdda).tmin    = PNANOVDB_DEREF(hdda).next.y;
+        PNANOVDB_DEREF(hdda).next.y  += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).delta.y;
+        PNANOVDB_DEREF(hdda).voxel.y += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).step.y;
+        ret                          = PNANOVDB_DEREF(hdda).tmin <= PNANOVDB_DEREF(hdda).tmax;
+    } else {
 #ifdef PNANOVDB_ENFORCE_FORWARD_STEPPING
-if (PNANOVDB_DEREF(hdda).next.z<= PNANOVDB_DEREF (hdda).tmin)
-		{
-			PNANOVDB_DEREF(hdda).next.z += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.z + 1.0e-6f;
-		}
+        if (PNANOVDB_DEREF(hdda).next.z <= PNANOVDB_DEREF(hdda).tmin) {
+            PNANOVDB_DEREF(hdda).next.z += PNANOVDB_DEREF(hdda).tmin - 0.999999f * PNANOVDB_DEREF(hdda).next.z +
+                    1.0e-6f;
+        }
 #endif
-PNANOVDB_DEREF (hdda).tmin= PNANOVDB_DEREF(hdda).next.z;
-PNANOVDB_DEREF (hdda).next.z+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).delta.z;
-PNANOVDB_DEREF (hdda).voxel.z+= PNANOVDB_DEREF (hdda).dim *PNANOVDB_DEREF(hdda).step.z;
-ret= PNANOVDB_DEREF(hdda).tmin<= PNANOVDB_DEREF (hdda).tmax;
-	}
-	return ret;
+        PNANOVDB_DEREF(hdda).tmin    = PNANOVDB_DEREF(hdda).next.z;
+        PNANOVDB_DEREF(hdda).next.z  += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).delta.z;
+        PNANOVDB_DEREF(hdda).voxel.z += PNANOVDB_DEREF(hdda).dim * PNANOVDB_DEREF(hdda).step.z;
+        ret                          = PNANOVDB_DEREF(hdda).tmin <= PNANOVDB_DEREF(hdda).tmax;
+    }
+    return ret;
 }
 
 // pnanovdb_hdda_zero_crossing 中调用的一个函数
 // 用于判断光线是否与包围盒相交
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_ray_clip(
-                                                             PNANOVDB_IN(pnanovdb_vec3_t) bbox_min,
-                                                             PNANOVDB_IN(pnanovdb_vec3_t) bbox_max,
-                                                             PNANOVDB_IN(pnanovdb_vec3_t) origin,
-                                                             PNANOVDB_INOUT(float) tmin,
-                                                             PNANOVDB_IN(pnanovdb_vec3_t) direction,
-                                                             PNANOVDB_INOUT(float) tmax
-                                                            ) {
+    PNANOVDB_IN(pnanovdb_vec3_t) bbox_min,
+    PNANOVDB_IN(pnanovdb_vec3_t) bbox_max,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin,
+    PNANOVDB_INOUT(float) tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction,
+    PNANOVDB_INOUT(float) tmax
+) {
     pnanovdb_vec3_t dir_inv = pnanovdb_vec3_div(pnanovdb_vec3_uniform(1.f), PNANOVDB_DEREF(direction));
     pnanovdb_vec3_t t0      = pnanovdb_vec3_mul(pnanovdb_vec3_sub(PNANOVDB_DEREF(bbox_min), PNANOVDB_DEREF(origin)),
                                            dir_inv);
@@ -2690,14 +2715,13 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_ray_clip(
 }
 
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
-    pnanovdb_grid_type_t grid_type,                      // pnanovdb_grid_get_grid_type 获取
-    pnanovdb_buf_t buf,                                  //
-    PNANOVDB_INOUT (pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN (pnanovdb_vec3_t) origin, float tmin,
-    PNANOVDB_IN (pnanovdb_vec3_t) direction, float tmax,
-    PNANOVDB_INOUT (float) thit,
-    PNANOVDB_INOUT (float) v) {
-
+    pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
+    pnanovdb_buf_t buf,             //
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin, float tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax,
+    PNANOVDB_INOUT(float) t_hit,
+    PNANOVDB_INOUT(float) v) {
     // 3个 int 类型 的 最大值，最小值 坐标
     pnanovdb_coord_t bbox_min = pnanovdb_root_get_bbox_min(buf, PNANOVDB_DEREF(acc).root);
     pnanovdb_coord_t bbox_max = pnanovdb_root_get_bbox_max(buf, PNANOVDB_DEREF(acc).root);
@@ -2708,20 +2732,23 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
 
 
     // 这里其实也有一个加速，如果与包围盒碰撞，会返回 碰到到包围盒的 tmin 的值，并不完全从 view 的位置查找
-    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
-                                                 PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
+    const pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
+                                                       PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
     if (!hit || tmax > 1.0e20f) {
         // 不与包围盒相交，直接返回
         return PNANOVDB_FALSE;
     }
 
     // 拿到第一个相交的 世界坐标
-    pnanovdb_vec3_t pos  = pnanovdb_hdda_ray_start(origin, tmin, direction);
+    pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin, tmin, direction);
     // 转换坐标
     pnanovdb_coord_t ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos));
     // 拿到在 buffer 中的地址
-    pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT, buf, acc,
-                                                                         PNANOVDB_REF(ijk));
+    pnanovdb_address_t address =
+            pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                    buf,
+                                                    acc,
+                                                    PNANOVDB_REF(ijk));
     // 读取值
     float v0 = pnanovdb_read_float(buf, address);
 
@@ -2753,22 +2780,80 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
 
         // 首次碰到了非背景值的内容， 再步进一步
         // 为什么判断的是 hdda.voxel ，和之前的不同了呢？
-        while (pnanovdb_hdda_step(PNANOVDB_REF(hdda)) && pnanovdb_readaccessor_is_active(grid_type, buf, acc,
-                        PNANOVDB_REF(hdda.voxel))) {
+        while (pnanovdb_hdda_step(PNANOVDB_REF(hdda)) &&
+               pnanovdb_readaccessor_is_active(grid_type, buf, acc,PNANOVDB_REF(hdda.voxel))) {
             ijk                        = hdda.voxel;
-            pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT, buf, acc,
-                     PNANOVDB_REF(ijk));
+            pnanovdb_address_t address =
+                    pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                            buf,
+                                                            acc,
+                                                            PNANOVDB_REF(ijk));
             PNANOVDB_DEREF(v) = pnanovdb_read_float(buf, address);
             if (PNANOVDB_DEREF(v) * v0 < 0.f) {
                 // 为什么 要 小于的时候 才返回呢 ？ 不小于的时候继续步进，不，因为内部的时候才是负值 ？？
                 // 那么这个函数就只能用于 SDF 了，而不能用于 密度
-                PNANOVDB_DEREF(thit) = hdda.tmin; // t hit ，这样分开的理解才是对的。并且返回了 第一个击中的 位置，可以做其他操作
+                PNANOVDB_DEREF(t_hit) = hdda.tmin; // t hit ，这样分开的理解才是对的。并且返回了 第一个击中的 位置，可以做其他操作
                 return PNANOVDB_TRUE;
             }
         }
     }
     return PNANOVDB_FALSE;
 }
+
+
+PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_hdda_read_density(
+    pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
+    pnanovdb_buf_t buf,             //
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin, // 已经是第一个碰撞的位置了
+    float tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction,
+    float tmax
+) {
+    // 拿到第一个相交的 世界坐标
+    const pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin, tmin, direction);
+    // 转换坐标
+    pnanovdb_coord_t ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos));
+
+    pnanovdb_int32_t dim =
+            pnanovdb_uint32_as_int32(
+                                     pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
+                                                                   buf,
+                                                                   acc,
+                                                                   PNANOVDB_REF(ijk)));
+    pnanovdb_hdda_t hdda;
+    pnanovdb_int32_t total_dim = dim;
+
+    // 不是重新创建了一个，而是首次创建了一个  // 这里的dim 才是一个正确的创建方式
+    pnanovdb_hdda_init(PNANOVDB_REF(hdda), origin, tmin, direction, tmax, dim);
+    // 开始步进  结果会存储 在 hdda 中
+    while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
+        pnanovdb_vec3_t pos_start = pnanovdb_hdda_ray_start(origin, hdda.tmin + 1.0001f, direction);
+        ijk                       = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos_start));
+        dim                       = pnanovdb_uint32_as_int32(
+                                       pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
+                                                                     buf,
+                                                                     acc,
+                                                                     PNANOVDB_REF(ijk)));
+        // init 时不是已经设置过了吗？ 再次的的目的是？
+        ijk                        = hdda.voxel;
+        pnanovdb_address_t address =
+                pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                        buf,
+                                                        acc,
+                                                        PNANOVDB_REF(ijk));
+        pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin, direction, dim);
+        if (pnanovdb_read_float(buf, address) < 0.f) {
+            total_dim = total_dim + dim;
+            continue;
+        }
+        if (!pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(hdda.voxel))) {
+            return total_dim;
+        }
+    }
+    return 0;
+}
+
 
 #endif
 

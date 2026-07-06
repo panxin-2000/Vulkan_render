@@ -17,7 +17,7 @@ layout (set = 2, binding = 2) uniform nanovdb_model
 
 layout (set = 2, binding = 4) uniform nanovdb_size
 {
-    uint size;
+    uint vdb_size;
 };
 
 struct Light {
@@ -41,11 +41,14 @@ layout (location = 0) in vec2 in_UV;
 #include "PNanoVDB.h"
 
 
-bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
-        pnanovdb_vec3_t world_p,
-        pnanovdb_vec3_t world_d,
-        float tmin,
-        float tmax) {
+
+
+
+float trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
+        pnanovdb_vec3_t view_position,
+        pnanovdb_vec3_t view_direction,
+        float t_min,
+        float t_max) {
     pnanovdb_grid_handle_t Grid;
     pnanovdb_readaccessor_t Accessor;
     pnanovdb_root_handle_t Root;
@@ -61,7 +64,7 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
 
     // 只要你拿到了其中一个网格的地址，调用该函数都能得到整个缓冲区包含的网格总数
     pnanovdb_uint32_t grid_count = pnanovdb_grid_get_grid_count(nanovdb_buffer, Grid);
-    if (grid_count > 1) {
+    if (grid_count > pnanovdb_uint32_t(1)) {
         // 拿到第二个的
         pnanovdb_uint64_t next_size = pnanovdb_grid_get_grid_size(nanovdb_buffer, Grid);
         pnanovdb_grid_handle_t Grid_2;
@@ -73,13 +76,13 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
     // 1. 初始化 Buffer 和 Grid 地址
     // 注意：size_in_words 填入实际大小，或者如果是指针访问模式，填入一个足够大的占位值
     // 这里是创建一个 pnanovdb_buf_t 的方式， 给出地址和最大的大小，在需要检查边界时才最使用最大的大小
-    pnanovdb_buf_t buf;//= pnanovdb_make_buf(nanovdb_buffer.data, 0xFFFFFFFF);
+    pnanovdb_buf_t buf;// = pnanovdb_make_buf(nanovdb_buffer.data, nanovdb_size);
 
 
     // 3. 坐标转换：将世界空间射线转到索引空间
     // HDDA 必须在索引空间（Index Space）运行
-    pnanovdb_vec3_t index_p = pnanovdb_grid_world_to_indexf(buf, Grid, world_p);
-    pnanovdb_vec3_t index_d = pnanovdb_grid_world_to_index_dirf(buf, Grid, world_d);
+    pnanovdb_vec3_t origin_index = pnanovdb_grid_world_to_indexf(buf, Grid, view_position);
+    pnanovdb_vec3_t direction_index = pnanovdb_grid_world_to_index_dirf(buf, Grid, view_direction);
 
     // 5. 准备输出参数
     pnanovdb_vec3_t hit_ijk; // 撞击点所在的体素索引坐标
@@ -90,16 +93,32 @@ bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
     // 该函数会沿着射线步进，寻找符号变化（正负交替）的点
 
     float v = 0;
-    bool is_hit = pnanovdb_hdda_zero_crossing(grid_type, buf, Accessor, index_p, tmin, index_d, tmax, t_hit, v);
+    bool is_hit = pnanovdb_hdda_zero_crossing(grid_type,
+            buf,
+            Accessor,       // 用于加速的结构
+            origin_index,
+            t_min,
+            direction_index,
+            t_max,
+            t_hit,
+            v  // 击中时的 float 的值
+    );
 
     if (is_hit) {
-        // 如果需要世界空间下的交点：
-        // world_hit = world_p + world_d * (t_hit / length(index_d))
-        // 或者直接调用 pnanovdb_grid_index_to_worldf(buf, grid_addr, hit_ijk)
-        return true;
+        pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin_index, t_hit, direction_index);
+
+        int  density = pnanovdb_hdda_read_density(
+                grid_type,
+                buf,
+                Accessor,       // 用于加速的结构
+                pos,
+                t_min,
+                direction_index,
+                t_max);  // AABB 包围盒的对角线长度 ，单步的距离
+        return density;
     }
 
-    return false;
+    return 0.0;
 }
 
 // grid_class
@@ -151,10 +170,12 @@ void main() {
     float tmin = 0;
 
     //    outFragColor_B8G8R8A8_SRGB = vec4(abs(localRayDir), 1.0);
-
-    if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
-
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 1.0, 1.0, 0.2);
+    float distance = trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax);
+    if (distance > 0.0001) {
+        float sigma_a = 0.001;
+        float T = exp(-distance * sigma_a);
+        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 1.0, 1.0, 1 - T);
+        // 前景色 * alpha + 背景色 * (1 - alpha)
     } else {
         // 不相交的时候就忽略当前像素的颜色
         discard;
