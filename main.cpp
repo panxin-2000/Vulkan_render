@@ -63,11 +63,12 @@ inline entt::entity add_render_pass(const std::string &name) {
 
 void add_nanovdb_to_gpu(entt::entity entity);
 
-inline entt::entity add_volume_pass(const std::string &name) {
+inline entt::entity add_volume_pass(const std::string &name,
+                                    const Point_3 offset             = Point_3(1000, 200, 0),
+                                    const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
     entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
 
-    Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
     add_shader(entity,
                "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
@@ -75,19 +76,14 @@ inline entt::entity add_volume_pass(const std::string &name) {
                "", "");
 
     add_nanovdb_to_gpu(entity);
-
-    // auto temp_ptr          = create_SSBO_buffer(1024 * 5);
-    // float color[16]        = {1.0f, 0.0f, 0.0f, 1.0f};
-    // auto mem_copy_function = [color](void *dst) {
-    //     memcpy(dst, color, sizeof(color));
-    // };
-    // copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
-    // set_render_parameter(entity, "light_buffer", temp_ptr);
-
+    // 更新物体的模型矩阵
 
     world_root_add_child(entity);
     logic_update_add_tag<volume_pass_tag>(entity);
-
+    const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
+    const auto modelMatrix = get_model_matrix(transform);
+    set_render_parameter(entity, "nanovdb_model", modelMatrix);
+    Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
     return entity;

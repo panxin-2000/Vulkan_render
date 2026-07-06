@@ -10,7 +10,12 @@ layout (set = 2, std430, binding = 1) readonly buffer nanovdb_buffer {
     uint raw_data[];
 } vdb_ssbo;
 
-layout (set = 2, binding = 2) uniform nanovdb_size
+layout (set = 2, binding = 2) uniform nanovdb_model
+{
+    mat4 model;
+};
+
+layout (set = 2, binding = 4) uniform nanovdb_size
 {
     uint size;
 };
@@ -37,10 +42,10 @@ layout (location = 0) in vec2 in_UV;
 
 
 bool trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
-                            pnanovdb_vec3_t world_p,
-                            pnanovdb_vec3_t world_d,
-                            float tmin,
-                            float tmax) {
+        pnanovdb_vec3_t world_p,
+        pnanovdb_vec3_t world_d,
+        float tmin,
+        float tmax) {
     pnanovdb_grid_handle_t Grid;
     pnanovdb_readaccessor_t Accessor;
     pnanovdb_root_handle_t Root;
@@ -122,18 +127,20 @@ vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class
 
 void main() {
     vec2 ndc = in_UV * 2.0 - 1.0;
-
-    // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
-    //    vec4 viewTarget = invView * invProjection * vec4(1.0, 1.0, 0.2, 1.0);
-    //    上面有问题？？ 下面没有问题 ？？ // 确实有问题，确实过不了，不知道为什么
     vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
     vec3 far_point = viewTarget.xyz / viewTarget.w;
-
-    // 3. 转换到世界空间
-    // 这里 target.xyz / target.w 是世界空间的方向向量
     vec3 rayDir = normalize(far_point - viewPos);
 
-    vec3 rayOrigin = viewPos;
+    mat3 modelRot = mat3(model);
+    mat3 invModelRot = transpose(modelRot); // 若有不等比缩放则改用 inverse(modelRot)
+    vec3 localRayDir = invModelRot * rayDir;
+
+
+    vec3 model_world_pos = model[3].xyz;
+    //    vec3 rayOrigin = viewPos - model_world_pos.xyz;
+    vec3 rayOrigin = viewPos - model_world_pos;
+
+    vec3 localRayOrigin = invModelRot * rayOrigin;
 
     pnanovdb_buf_t buf; // = pnanovdb_make_buf(ptr, size / 4);
 
@@ -143,10 +150,11 @@ void main() {
     float tmax = 1000;
     float tmin = 0;
 
-    //    outFragColor_B8G8R8A8_SRGB = vec4(abs(rayDir), 1.0);
+    //    outFragColor_B8G8R8A8_SRGB = vec4(abs(localRayDir), 1.0);
 
     if (trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax) == true) {
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 0, 0, 1.0);
+
+        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 1.0, 1.0, 0.2);
     } else {
         // 不相交的时候就忽略当前像素的颜色
         discard;

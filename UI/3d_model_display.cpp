@@ -35,8 +35,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
     auto &AABB = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, aabb.value());
 
     // 更新物体的模型矩阵
-    Logic_entt().emplace<Transform>(entity, offset, rotate);
-    auto &transform = Logic_entt().get<Transform>(entity);
+    auto transform = Logic_entt().emplace<Transform>(entity, offset, rotate);
 
     const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
