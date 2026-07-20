@@ -11,6 +11,7 @@
 
 #include "entity_quadtree.h"
 #include "Quadtree.h"
+#include "time_measure.h"
 #include "gtest/gtest.h"
 
 namespace entt {
@@ -74,33 +75,32 @@ TEST(box, quadtree) {
     auto box   = Box(0.0f, 0.0f, 1.0f, 1.0f);
     auto nodes = generateRandomNodes(n);
     // Add nodes to quadtree
-    auto quadtree     = Quadtree<insert_data>(box);
-    const auto start1 = std::chrono::steady_clock::now();
-    for (auto &node: nodes)
-        quadtree.add(node);
-    // Randomly remove some nodes
-    auto generator         = std::default_random_engine();
-    auto deathDistribution = std::uniform_int_distribution(0, 1);
-    auto removed           = std::vector<bool>(nodes.size(), false);
-    std::generate(std::begin(removed), std::end(removed),
-                  [&generator, &deathDistribution]() { return deathDistribution(generator); });
-    for (auto &node: nodes) {
-        if (removed[node.id])
-            quadtree.remove(node);
+    std::vector<bool> removed;
+    std::vector<std::vector<insert_data> > intersections1;
+
+    auto quadtree = Quadtree<insert_data>(box); {
+        ScopedTimer timer("quadtree with creation"); {
+            ScopedTimer timer("quadtree");
+            for (auto &node: nodes)
+                quadtree.add(node);
+            // Randomly remove some nodes
+            auto generator         = std::default_random_engine();
+            auto deathDistribution = std::uniform_int_distribution(0, 1);
+            removed                = std::vector<bool>(nodes.size(), false);
+            std::generate(std::begin(removed), std::end(removed),
+                          [&generator, &deathDistribution]() { return deathDistribution(generator); });
+            for (auto &node: nodes) {
+                if (removed[node.id])
+                    quadtree.remove(node);
+            }
+        }
+        // Quadtree
+        intersections1 = std::vector<std::vector<insert_data> >(nodes.size());
     }
-    // Quadtree
-    auto intersections1 = std::vector<std::vector<insert_data> >(nodes.size());
-    auto start2         = std::chrono::steady_clock::now();
     for (const auto &node: nodes) {
         if (!removed[node.id])
             intersections1[node.id] = quadtree.query(node);
     }
-    auto duration2 = std::chrono::steady_clock::now() - start2;
-    auto duration1 = std::chrono::steady_clock::now() - start1;
-    std::cout << "quadtree: " << std::chrono::duration_cast<std::chrono::microseconds>(duration2).count() << "us" <<
-            '\n';
-    std::cout << "quadtree with creation: " << std::chrono::duration_cast<std::chrono::microseconds>(duration1).count()
-            << "us" << '\n';
     // Brute force
     auto intersections2 = computeIntersections(nodes, removed);
     // Check

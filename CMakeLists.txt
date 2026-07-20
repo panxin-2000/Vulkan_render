@@ -485,6 +485,7 @@ add_executable(cache_time
 
 add_executable(hello_test ${LABYRINTH}
         test/add_char_calculata.cpp
+        test/test_openvdb.cpp
         test/test_add_char_calculata.cpp
         test/the_centre_of_a_circle.cpp
         test/segment_end_ponit_and_gradient.cpp
@@ -519,7 +520,7 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy readerwriterqueue OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用

@@ -12,7 +12,7 @@ static void BM_VectorTraversal(benchmark::State &state) {
 
     bool is_valid = true;
 
-    // 核心循环：state 会自动控制迭代次数
+    // 核心循环：state 会自动控制迭代次数 内部的才会被测量时间，之前的都不会执行测量   
     for (auto _: state) {
         if (is_valid == false) {
         } else {
