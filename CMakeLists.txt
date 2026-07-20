@@ -459,6 +459,8 @@ set(LIBRARIES "Vulkan::Vulkan")
 
 #######################################vulkan#####################################
 
+find_package(realsense2 REQUIRED)
+
 
 ## 下面这行没有看懂什么意思，按照说明先复制过来了
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -520,7 +522,7 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy readerwriterqueue realsense2::realsense2 OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用

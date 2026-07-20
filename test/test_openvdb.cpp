@@ -88,12 +88,13 @@ TEST(openvdb, create_Sphere) {
 TEST(openvdb, realsence) {
     // 1. 初始化 OpenVDB 环境
     openvdb::initialize();
+    GTEST_SKIP();
 
     // 创建一个 FloatGrid 用来存储空间地图（此处以存储密度值/权重为例）
     openvdb::FloatGrid::Ptr vdbGrid = openvdb::FloatGrid::create(/*背景值=*/0.0f);
 
     vdbGrid->setGridClass(openvdb::GRID_FOG_VOLUME);
-    
+
     // 关键配置：设置体素大小（Voxel Size）。例如 0.02 代表每个体素边长为 2 厘米 (0.02米)
     // 体素越小，分辨率越高，但 3ms 内能处理的点数就越少。2cm~5cm 是实时避障的黄金尺寸
     float voxelSize = 0.02f;
@@ -135,16 +136,15 @@ TEST(openvdb, realsence) {
             openvdb::Vec3R worldPos(vertices[i].x, vertices[i].y, vertices[i].z);
 
             // 【核心步骤】利用 Transform 将物理坐标秒转为 VDB 的三维整数网格坐标
-            openvdb::Coord voxelCoord = vdbGrid->worldToIndex(worldPos);
+            auto voxelCoord = vdbGrid->worldToIndex(worldPos);
 
+            openvdb::Coord xyzCoord = openvdb::Coord::round(voxelCoord); // 这是需要 进行 四舍五入 因为想对齐格子的中心
             // 强行写入体素值。1.0f 代表当前空间有障碍物/被占据
             // 如果 RealSense 采集到多个点落入同一个 2cm 的方块内，它们会在这里重叠覆盖，实现天然的降噪
-            accessor.setValue(voxelCoord, 1.0f);
+            accessor.setValue(xyzCoord, 1.0f);
         }
 
         // 打印当前 VDB 地图里一共激活（占据）了多少个体素
         std::cout << "[VDB Map] Active Voxel Count: " << vdbGrid->activeVoxelCount() << std::endl;
     }
-
-    return 0;
 }
