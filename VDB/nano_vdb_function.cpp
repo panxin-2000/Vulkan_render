@@ -20,23 +20,62 @@
 
 void test(void *ptr, uint64_t size);
 
-void add_nanovdb_to_gpu(entt::entity entity, void *ptr, uint64_t size) {
+/**
+ * 这里是直接复制的函数，如果想做 多线程 上传的话，那么其实必须顶一个两个函数，
+ * 一个需要注意的地方是 原本资源想要放置在哪里必须确定好，最后放置在哪里也是需要确定好的
+ * 一个是负责具体复制的函数，
+ * 另一个是复制完成之后资源是否需要释放的函数
+ * @param entity
+ * @param src
+ * @param size
+ */
+void copy_nanovdb_data_to_gpu_memory(entt::entity entity, void *src, uint64_t size) {
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
-    auto mem_copy_function = [ptr,size](void *dst) {
-        memcpy(dst, ptr, size);
+    auto mem_copy_function = [src,size](void *dst) {
+        memcpy(dst, src, size);
     };
     copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
     set_render_parameter(entity, "nanovdb_buffer", temp_ptr);
 }
 
+void copy_nanovdb_data_to_gpu_memory(entt::entity entity, const std::stringstream &stream, uint64_t size) {
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+
+    auto temp_ptr = create_SSBO_buffer(ALIGN_1024(size));
+
+    auto mem_copy_function = [&stream,size](void *dst) {
+        const auto sbuf = stream.rdbuf();
+        sbuf->sgetn(static_cast<std::streambuf::char_type *>(dst), size);
+    };
+    copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
+    set_render_parameter(entity, "nanovdb_buffer", temp_ptr);
+}
+
+
 void add_nanovdb_to_gpu(entt::entity entity) {
     auto srcGrid = openvdb::tools::createLevelSetSphere<openvdb::FloatGrid>(100.0f, openvdb::Vec3f(0.0f), 1.0f);
     nanovdb::GridHandle handle = nanovdb::tools::createNanoGrid(*srcGrid);
-    auto ptr = handle.data();
-    auto size = handle.bufferSize();
-    add_nanovdb_to_gpu(entity, ptr, size);
+    const nanovdb::GridMetaData *meta = handle.gridMetaData();
+    if (meta) {
+        // 直接获取体素索引空间的包围盒 (nanovdb::BBox<nanovdb::Coord>)
+        auto indexBBox              = meta->indexBBox();
+        nanovdb::Coord minCoord     = indexBBox.min();
+        nanovdb::Coord maxCoord     = indexBBox.max();
+        nanovdb::Vec3d voxelSize    = meta->voxelSize();
+        const nanovdb::Map &gridMap = meta->map();
+        auto matrix_3x3             = gridMap.mMatF;
+        auto translation            = gridMap.mVecF;
+        // 能得到这里之后呢？ 之后 整合 为 一个旋转的矩阵
+        // 提取最小体素坐标和最大体素坐标
+        // 另一个问题是，单位是什么？ //
+        // 这里是按照体素来的
+        add_box_data(entity);
+    }
+    const auto ptr = handle.data();
+    auto size      = handle.bufferSize();
+    copy_nanovdb_data_to_gpu_memory(entity, ptr, size);
     set_render_parameter(entity, "nanovdb_size", size);
 }
 
@@ -84,23 +123,21 @@ void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name)
         // 将所有 Handle 一次性写入同一个 .nvdb 文件
         if (!handles.empty()) {
             // 1. 创建内存输出流
-            std::stringstream ms;
-
+            std::stringstream stream;
             // 2. 将所有 handles 写入流（这会在内存中生成完整的 .nvdb 文件格式）
-            nanovdb::io::writeGrids(ms, handles);
-
+            nanovdb::io::writeGrids(stream, handles);
             // 3. 获取内存中的连续数据
-            std::string data = ms.str();
-            void *rawData    = data.data();
-            size_t totalSize = data.size();
-            add_nanovdb_to_gpu(entity, rawData, totalSize);
+            stream.seekg(0, std::ios::end);
+            size_t totalSize = stream.tellp();
+            stream.seekg(0, std::ios::beg);
+            copy_nanovdb_data_to_gpu_memory(entity, stream, totalSize);
         }
     } else if (ext == ".nvdb") {
         auto handle = nanovdb::io::readGrid(file_name);
         if (handle.empty()) {
             const auto ptr  = handle.data();
             const auto size = handle.bufferSize();
-            add_nanovdb_to_gpu(entity, ptr, size);
+            copy_nanovdb_data_to_gpu_memory(entity, ptr, size);
         }
     }
 }
