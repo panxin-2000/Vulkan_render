@@ -57,8 +57,7 @@ void copy_nanovdb_data_to_gpu_memory(entt::entity entity, const std::stringstrea
 void add_nanovdb_to_gpu(entt::entity entity) {
     auto srcGrid = openvdb::tools::createLevelSetSphere<openvdb::FloatGrid>(100.0f, openvdb::Vec3f(0.0f), 1.0f);
     nanovdb::GridHandle handle = nanovdb::tools::createNanoGrid(*srcGrid);
-    const nanovdb::GridMetaData *meta = handle.gridMetaData();
-    if (meta) {
+    if (const nanovdb::GridMetaData *meta = handle.gridMetaData()) {
         // 直接获取体素索引空间的包围盒 (nanovdb::BBox<nanovdb::Coord>)
         auto indexBBox              = meta->indexBBox();
         nanovdb::Coord minCoord     = indexBBox.min();
@@ -71,7 +70,11 @@ void add_nanovdb_to_gpu(entt::entity entity) {
         // 提取最小体素坐标和最大体素坐标
         // 另一个问题是，单位是什么？ //
         // 这里是按照体素来的
-        add_box_data(entity);
+        // 可以先绘制一下看看结果是否是 和 大小是否是对的
+        add_box_data(entity,
+                     minCoord.x(), minCoord.y(), minCoord.z(),
+                     maxCoord.x(), maxCoord.y(), maxCoord.z());
+        // 这里的问题， 这里导致了 volume 的颜色增加
     }
     const auto ptr = handle.data();
     auto size      = handle.bufferSize();

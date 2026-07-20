@@ -12,27 +12,31 @@ struct Light {
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
+layout (set = 2, binding = 0) uniform model_4x4
+{
+    mat4 model;
+};
 
 layout (set = 2, std430, binding = 1) readonly buffer nanovdb_buffer {
     uint raw_data[];
 } vdb_ssbo;
 
-layout (set = 2, binding = 2) uniform nanovdb_model
-{
-    mat4 model;
-};
 
-layout (set = 2, std140, binding = 3) readonly buffer light_buffer {
+layout (set = 2, std140, binding = 2) readonly buffer light_buffer {
     Light lights[];
 };
 
-layout (set = 2, binding = 4) uniform nanovdb_size
+layout (set = 2, binding = 3) uniform nanovdb_size
 {
     uint vdb_size;
 };
 
-layout (location = 0) in vec2 in_UV;
-
+layout (location = 0) in vec3 inNormal;
+layout (location = 1) in vec2 inUV;
+layout (location = 2) in vec3 inLightVec;
+layout (location = 3) in vec3 inViewVec;
+layout (location = 4) in vec4 inShadowCoord;
+layout (location = 5) in vec3 inWorldPos;
 
 // 2. 核心：将库内部访问宏指向这个数组
 #define pnanovdb_buf_data vdb_ssbo.raw_data

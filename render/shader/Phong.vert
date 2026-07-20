@@ -42,6 +42,7 @@ layout (set = 2, binding = 0) uniform model_4x4
     mat4 model;
 };
 
+
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outLightVec;

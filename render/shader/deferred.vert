@@ -8,19 +8,6 @@
 layout (location = 0) out vec2 outUV;
 
 
-
-
-layout (set = 2, binding = 0) uniform model_4x4
-{
-    mat4 model;
-};
-
-layout (push_constant) uniform PushConstants {
-    vec2 scale;
-    vec2 translate;
-    vec2 dsdf;
-} pushConstants;
-
 void main()
 {
     outUV = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);

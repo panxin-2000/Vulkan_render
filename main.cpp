@@ -71,7 +71,7 @@ inline entt::entity add_volume_pass(const std::string &name,
 
 
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
                "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
                "", "");
 
@@ -82,7 +82,7 @@ inline entt::entity add_volume_pass(const std::string &name,
     logic_update_add_tag<volume_pass_tag>(entity);
     const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
     const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "nanovdb_model", modelMatrix);
+    set_render_parameter(entity, "model_4x4", modelMatrix);
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
 
     Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
@@ -355,10 +355,7 @@ int main(int argc, char *argv[]) {
 
     // add_simple_computer_buffer_write();
 
-    add_volume_pass("nanovdb_volume");
-
-
-    {
+    add_volume_pass("nanovdb_volume"); {
         // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     }
     // {

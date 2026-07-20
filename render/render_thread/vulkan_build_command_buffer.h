@@ -560,17 +560,17 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
                                parameter->push_constant_pool + value.offset);
         }
 
-    auto mesh_data = Render_entt().get<Mesh_data>(entity);
-    auto primitive = Render_entt().get<std::vector<VKR_Primitive> >(entity);
-    if (!primitive.empty()) {
-        for (int i = 0; i < primitive.size(); ++i) {
-            vkCmdSetViewport(cb, 0, 1, &primitive[i].viewport);
-            vkCmdSetScissor(cb, 0, 1, &primitive[i].scissor);
-            primitive[i].draw(cb, mesh_data, time_line);
+    const auto mesh_data  = Render_entt().get<Mesh_data>(entity);
+    const auto primitives = Render_entt().get<std::vector<VKR_Primitive> >(entity);
+    if (!primitives.empty()) {
+        for (auto &primitive: primitives) {
+            vkCmdSetViewport(cb, 0, 1, &primitive.viewport);
+            vkCmdSetScissor(cb, 0, 1, &primitive.scissor);
+            primitive.draw(cb, mesh_data, time_line);
         }
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断
-        if (Render_entt().any_of<deferred_pass_tag, volume_pass_tag>(entity))
+        if (Render_entt().any_of<deferred_pass_tag>(entity))
             vkCmdDraw(cb, 3, 1, 0, 0);
         if (Render_entt().any_of<UI_2D_tag>(entity))
             vkCmdDraw(cb, 4, 1, 0, 0);

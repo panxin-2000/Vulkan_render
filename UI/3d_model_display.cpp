@@ -106,8 +106,7 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
 
     // 更新物体的模型矩阵
-    Logic_entt().emplace<Transform>(entity, offset, rotate);
-    auto &transform = Logic_entt().get<Transform>(entity);
+    const auto transform = Logic_entt().emplace<Transform>(entity, offset, rotate);
 
     const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
