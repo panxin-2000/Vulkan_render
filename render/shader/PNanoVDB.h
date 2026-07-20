@@ -2801,58 +2801,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
 }
 
 
-PNANOVDB_FORCE_INLINE pnanovdb_int32_t pnanovdb_hdda_read_density(
-    pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
-    pnanovdb_buf_t buf,             //
-    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN(pnanovdb_vec3_t) origin, // 已经是第一个碰撞的位置了
-    float tmin,
-    PNANOVDB_IN(pnanovdb_vec3_t) direction,
-    float tmax
-) {
-    // 拿到第一个相交的 世界坐标
-    const pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin, tmin, direction);
-    // 转换坐标
-    pnanovdb_coord_t ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos));
 
-    pnanovdb_int32_t dim =
-            pnanovdb_uint32_as_int32(
-                                     pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
-                                                                   buf,
-                                                                   acc,
-                                                                   PNANOVDB_REF(ijk)));
-    pnanovdb_hdda_t hdda;
-    pnanovdb_int32_t total_dim = dim;
-
-    // 不是重新创建了一个，而是首次创建了一个  // 这里的dim 才是一个正确的创建方式
-    pnanovdb_hdda_init(PNANOVDB_REF(hdda), origin, tmin, direction, tmax, dim);
-    // 开始步进  结果会存储 在 hdda 中
-    while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
-        pnanovdb_vec3_t pos_start = pnanovdb_hdda_ray_start(origin, hdda.tmin + 1.0001f, direction);
-        ijk                       = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos_start));
-        dim                       = pnanovdb_uint32_as_int32(
-                                       pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
-                                                                     buf,
-                                                                     acc,
-                                                                     PNANOVDB_REF(ijk)));
-        // init 时不是已经设置过了吗？ 再次的的目的是？
-        ijk                        = hdda.voxel;
-        pnanovdb_address_t address =
-                pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
-                                                        buf,
-                                                        acc,
-                                                        PNANOVDB_REF(ijk));
-        pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin, direction, dim);
-        if (pnanovdb_read_float(buf, address) < 0.f) {
-            total_dim = total_dim + dim;
-            continue;
-        }
-        if (dim > 1 && !pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(hdda.voxel))) {
-            return total_dim;
-        }
-    }
-    return 0;
-}
 
 
 #endif

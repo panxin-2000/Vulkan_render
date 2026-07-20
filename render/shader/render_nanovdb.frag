@@ -39,16 +39,17 @@ layout (location = 0) in vec2 in_UV;
 #define PNANOVDB_GLSL
 #define PNANOVDB_ADDRESS_32
 #include "PNanoVDB.h"
+#include "PNanoVDB_distance.h"
 
 
 
 
 
 float trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
-        pnanovdb_vec3_t view_position,
-        pnanovdb_vec3_t view_direction,
-        float t_min,
-        float t_max) {
+                             pnanovdb_vec3_t view_position,
+                             pnanovdb_vec3_t view_direction,
+                             float t_min,
+                             float t_max) {
     pnanovdb_grid_handle_t Grid;
     pnanovdb_readaccessor_t Accessor;
     pnanovdb_root_handle_t Root;
@@ -94,28 +95,28 @@ float trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
 
     float v = 0;
     bool is_hit = pnanovdb_hdda_zero_crossing(grid_type,
-            buf,
-            Accessor,       // 用于加速的结构
-            origin_index,
-            t_min,
-            direction_index,
-            t_max,
-            t_hit,
-            v  // 击中时的 float 的值
+                                              buf,
+                                              Accessor, // 用于加速的结构
+                                              origin_index,
+                                              t_min,
+                                              direction_index,
+                                              t_max,
+                                              t_hit,
+                                              v  // 击中时的 float 的值
     );
 
     if (is_hit) {
         pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin_index, t_hit, direction_index);
 
-        int  density = pnanovdb_hdda_read_density(
-                grid_type,
-                buf,
-                Accessor,       // 用于加速的结构
-                pos,
-                t_min,
-                direction_index,
-                t_max);  // AABB 包围盒的对角线长度 ，单步的距离
-        return density;
+        float distance = pnanovdb_hdda_get_distance(
+            grid_type,
+            buf,
+            Accessor, // 用于加速的结构
+            pos,
+            t_min,
+            direction_index,
+            t_max);  // AABB 包围盒的对角线长度 ，单步的距离
+        return distance;
     }
 
     return 0.0;
@@ -174,7 +175,8 @@ void main() {
     if (distance > 0.0001) {
         float sigma_a = 0.001;
         float T = exp(-distance * sigma_a);
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 1.0, 1.0, 1 - T);
+        vec3 volume_color = vec3(1.0, 1.0, 1.0);
+        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
         // 前景色 * alpha + 背景色 * (1 - alpha)
     } else {
         // 不相交的时候就忽略当前像素的颜色
