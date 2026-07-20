@@ -55,10 +55,10 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, 0, 0}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, 1, 0});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, 1, 1}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, 0, 1});
+        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, {0, 0, 0}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, {0, 0, 0}, {1, 0}});
+        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, {0, 0, 0}, {1, 1}}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, {0, 0, 0}, {0, 1}});
     }
     add_geometry_data(entity, vertices, indices);
     return true;
@@ -85,10 +85,10 @@ bool add_round_box_geometry(entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, 0, 0, 0, min.x, min.y}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, 0, 0, 0, max.x, min.y});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, 0, 0, 0, max.x, max.y}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, 0, 0, 0, min.x, max.y});
+        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, {0, 0, 0}, {min.x, min.y}}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, {0, 0, 0}, {max.x, min.y}});
+        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, {0, 0, 0}, {max.x, max.y}}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, {0, 0, 0}, {min.x, max.y}});
     }
 
     add_geometry_data(entity, vertices, indices);
@@ -112,7 +112,14 @@ bool add_triangle_geometry(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
-bool add_sky_box_data(entt::entity entity) {
+
+bool add_box_data(entt::entity entity,
+                  const float x_min,
+                  const float y_min,
+                  const float z_min,
+                  const float x_max,
+                  const float y_max,
+                  const float z_max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     indices->push_back(vertices->size() + 0);
@@ -151,30 +158,46 @@ bool add_sky_box_data(entt::entity entity) {
     indices->push_back(vertices->size() + 23);
     indices->push_back(vertices->size() + 22);
     indices->push_back(vertices->size() + 21);
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 0, 1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, -1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, 0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, 0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 1, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, 0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, 0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {-1, 0, 0}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{-0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, -0.5, -0.5}, {0, 0, -1}, {0, 0}});
-    vertices->emplace_back(Vertex{{0.5, 0.5, -0.5}, {0, 0, -1}, {0, 0}});
+
+    Point_2 UV_min{0.0, 0.0};
+    Point_2 UV_max{1.0, 1.0};
+
+    // vulkan 右手坐标系  主要 是需要 注意 与 贴图 坐标系的 关联 
+    // 前面
+    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {0, 0, 1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {0, 0, 1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {0, 0, 1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {0, 0, 1}, {UV_max.x, UV_min.y}});
+
+    // 下面
+    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {0, -1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {0, -1, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {0, -1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {0, -1, 0}, {UV_max.x, UV_min.y}});
+
+    // 右面
+    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {1, 0, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {1, 0, 0}, {UV_max.x, UV_min.y}});
+
+    // 上面
+    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {0, 1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {0, 1, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {0, 1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {0, 1, 0}, {UV_max.x, UV_min.y}});
+
+    // 左面
+    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {-1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {-1, 0, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {-1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {-1, 0, 0}, {UV_max.x, UV_min.y}});
+
+    // 后面                                                                 UV
+    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {0, 0, -1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {0, 0, -1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {0, 0, -1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {0, 0, -1}, {UV_max.x, UV_min.y}});
     add_geometry_data(entity, vertices, indices);
     return true;
 }

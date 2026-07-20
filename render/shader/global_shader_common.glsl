@@ -36,6 +36,10 @@ layout (set = 1, binding = 7) uniform global_world_view_Pos
 {
     vec3 viewPos;
 };
+layout (set = 1, binding = 8) uniform global_screen_size
+{
+    vec2 screen_size;
+};
 
 vec2 octEncode(vec3 n) {
     // 1. L1 归一化：确保 |x| + |y| + |z| = 1

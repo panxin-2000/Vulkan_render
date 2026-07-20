@@ -356,7 +356,6 @@ int main(int argc, char *argv[]) {
     // add_simple_computer_buffer_write();
 
     add_volume_pass("nanovdb_volume");
-    // 天空盒
 
 
     {

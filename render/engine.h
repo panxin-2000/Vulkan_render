@@ -51,6 +51,7 @@ private:
     Eigen::Matrix4f invVP;
     Eigen::Vector3f world_camera_pos;
     Eigen::Vector3f world_light_pos;
+    Eigen::Vector2f screen_size;
 
     std::shared_ptr<vk_shader_data> shader_date;
 
@@ -126,6 +127,11 @@ public:
 
     bool set_world_light_pos(const Eigen::Vector3f &matrix) {
         world_light_pos = matrix;
+        return true;
+    }
+
+    bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
+        screen_size = screen_size_t;
         return true;
     }
 

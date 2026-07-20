@@ -322,7 +322,7 @@ std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std
 }
 
 void Engine::update_global_parameter() {
-    global_descriptor_sets_   = allocate_global_descriptor_sets("");
+    global_descriptor_sets_ = allocate_global_descriptor_sets("");
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_projection_4x4", projection_matrix);
@@ -338,6 +338,9 @@ void Engine::update_global_parameter() {
                          "global_world_view_Pos", world_camera_pos);
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_world_light_Pos", world_light_pos);
+    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                         "global_screen_size", screen_size);
+
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
     auto bindless_descriptor_sets = get_bindless_descriptor_set();
     auto global_descriptor_sets   = get_global_descriptor_set();

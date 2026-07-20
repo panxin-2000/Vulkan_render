@@ -207,9 +207,7 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
-    const auto camera_pos = Logic_entt().get_or_emplace<Transform>(entity, Point_3{
-                                                                       0, 0, 6
-                                                                   });
+    const auto camera_pos           = Logic_entt().get_or_emplace<Transform>(entity, Point_3{0, 0, 6});
     const auto view_matrix          = get_view_matrix(camera_pos);
     Point_3 world_camera_pos        = camera_pos.get_position();
     Eigen::Matrix4f inv_view_matrix = view_matrix.inverse();
@@ -224,10 +222,8 @@ void update_camera_parameter(const entt::entity entity) {
     Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
     Engine::instance().set_invVP(invVP);
     Engine::instance().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
-    // auto lambda = [ ]() {
-        // Engine::instance().update_global_parameter();
-    // };
-    // vk_render_queue::instance().render_update_entt(lambda);
+    const auto extent = VK_backend::instance().get_current_extent();
+    Engine::instance().set_screen_size({extent.width, extent.height});
 }
 
 

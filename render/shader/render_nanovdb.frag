@@ -3,6 +3,13 @@
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 
+
+struct Light {
+    vec3 color;
+    vec4 position;
+    float radius;
+};
+
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
@@ -15,19 +22,13 @@ layout (set = 2, binding = 2) uniform nanovdb_model
     mat4 model;
 };
 
+layout (set = 2, std140, binding = 3) readonly buffer light_buffer {
+    Light lights[];
+};
+
 layout (set = 2, binding = 4) uniform nanovdb_size
 {
     uint vdb_size;
-};
-
-struct Light {
-    vec3 color;
-    vec4 position;
-    float radius;
-};
-
-layout (set = 2, std140, binding = 3) readonly buffer light_buffer {
-    Light lights[];
 };
 
 layout (location = 0) in vec2 in_UV;
@@ -146,7 +147,8 @@ vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class
 }
 
 void main() {
-    vec2 ndc = in_UV * 2.0 - 1.0;
+    vec2 screen_UV =  gl_FragCoord.xy / screen_size ;//如何用这个来替代呢？ screen_UV 在0到1之间
+    vec2 ndc = screen_UV * 2.0 - 1.0;
     vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
     vec3 far_point = viewTarget.xyz / viewTarget.w;
     vec3 rayDir = normalize(far_point - viewPos);

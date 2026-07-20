@@ -132,7 +132,7 @@ entt::entity add_sky_box(const std::string &name) {
                "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.vert.spv",
                "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.frag.spv",
                "", "");
-    add_sky_box_data(entity);
+    add_box_data(entity);
 
     // 更新物体的模型矩阵
 
