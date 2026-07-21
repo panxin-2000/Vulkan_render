@@ -337,7 +337,7 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
         .clipped        = VK_TRUE,
         .oldSwapchain   = old_swap_chain,
     };
-    vkDeviceWaitIdle(device_);
+    VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(device_));
     VK_CHECK_RESULT(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
     // VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
