@@ -151,7 +151,7 @@ vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class
 }
 
 void main() {
-    vec2 screen_UV =  gl_FragCoord.xy / screen_size ;//如何用这个来替代呢？ screen_UV 在0到1之间
+    vec2 screen_UV =  gl_FragCoord.xy / screen_size.xy ;//如何用这个来替代呢？ screen_UV 在0到1之间
     vec2 ndc = screen_UV * 2.0 - 1.0;
     vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
     vec3 far_point = viewTarget.xyz / viewTarget.w;

@@ -49,9 +49,9 @@ private:
         Eigen::Matrix4f inv_view_matrix;
         Eigen::Matrix4f inv_projection_matrix;
         Eigen::Matrix4f invVP;
-        Eigen::Vector3f world_camera_pos;
-        Eigen::Vector3f lightPos;
-        Eigen::Vector2f screen_size;
+        Eigen::Vector4f world_camera_pos;
+        Eigen::Vector4f lightPos;
+        Eigen::Vector4f screen_size;
     };
 
     Global_parameters global_parameters_;
@@ -125,17 +125,17 @@ public:
     }
 
     bool set_world_camera_pos(const Eigen::Vector3f &matrix) {
-        global_parameters_.world_camera_pos = matrix;
+        global_parameters_.world_camera_pos = {matrix.x(), matrix.y(), matrix.z(), 0};
         return true;
     }
 
     bool set_world_light_pos(const Eigen::Vector3f &matrix) {
-        global_parameters_.lightPos = matrix;
+        global_parameters_.lightPos = {matrix.x(), matrix.y(), matrix.z(), 0};;
         return true;
     }
 
     bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
-        global_parameters_.screen_size = screen_size_t;
+        global_parameters_.screen_size = {screen_size_t.x(), screen_size_t.y(), 0, 0};;
         return true;
     }
 

@@ -13,7 +13,7 @@ layout (set = 1, binding = 0) uniform global_parameters
     mat4 inv_VP;
     vec3 viewPos;
     vec3 lightPos;
-    vec2 screen_size;
+    vec4 screen_size;
 };
 
 
