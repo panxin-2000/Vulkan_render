@@ -43,15 +43,19 @@ private:
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
+    struct Global_parameters {
+        Eigen::Matrix4f view_matrix;
+        Eigen::Matrix4f projection_matrix;
+        Eigen::Matrix4f inv_view_matrix;
+        Eigen::Matrix4f inv_projection_matrix;
+        Eigen::Matrix4f invVP;
+        Eigen::Vector3f world_camera_pos;
+        Eigen::Vector3f lightPos;
+        Eigen::Vector2f screen_size;
+    };
 
-    Eigen::Matrix4f projection_matrix;
-    Eigen::Matrix4f inv_projection_matrix;
-    Eigen::Matrix4f view_matrix;
-    Eigen::Matrix4f inv_view_matrix;
-    Eigen::Matrix4f invVP;
-    Eigen::Vector3f world_camera_pos;
-    Eigen::Vector3f world_light_pos;
-    Eigen::Vector2f screen_size;
+    Global_parameters global_parameters_;
+
 
     std::shared_ptr<vk_shader_data> shader_date;
 
@@ -96,42 +100,42 @@ public:
     }
 
     bool set_projection_matrix(const Eigen::Matrix4f &matrix) {
-        projection_matrix = matrix;
+        global_parameters_.projection_matrix = matrix;
         return true;
     }
 
     bool set_inv_projection_matrix(const Eigen::Matrix4f &matrix) {
-        inv_projection_matrix = matrix;
+        global_parameters_.inv_projection_matrix = matrix;
         return true;
     }
 
     bool set_view_matrix(const Eigen::Matrix4f &matrix) {
-        view_matrix = matrix;
+        global_parameters_.view_matrix = matrix;
         return true;
     }
 
     bool set_inv_view_matrix(const Eigen::Matrix4f &matrix) {
-        inv_view_matrix = matrix;
+        global_parameters_.inv_view_matrix = matrix;
         return true;
     }
 
     bool set_invVP(const Eigen::Matrix4f &matrix) {
-        invVP = matrix;
+        global_parameters_.invVP = matrix;
         return true;
     }
 
     bool set_world_camera_pos(const Eigen::Vector3f &matrix) {
-        world_camera_pos = matrix;
+        global_parameters_.world_camera_pos = matrix;
         return true;
     }
 
     bool set_world_light_pos(const Eigen::Vector3f &matrix) {
-        world_light_pos = matrix;
+        global_parameters_.lightPos = matrix;
         return true;
     }
 
     bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
-        screen_size = screen_size_t;
+        global_parameters_.screen_size = screen_size_t;
         return true;
     }
 

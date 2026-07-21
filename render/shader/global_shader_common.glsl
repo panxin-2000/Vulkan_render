@@ -4,42 +4,18 @@
 // 更新最缓慢
 layout (set = 0, binding = 0) uniform sampler2D bindless_samplerColorMap[];
 
-layout (set = 1, binding = 0) uniform global_view_4x4
+layout (set = 1, binding = 0) uniform global_parameters
 {
     mat4 view;
-};
-layout (set = 1, binding = 1) uniform global_projection_4x4
-{
     mat4 projection;
-};
-layout (set = 1, binding = 2) uniform global_ins_view_4x4
-{
     mat4 invView;
-};
-layout (set = 1, binding = 3) uniform global_inv_projection_4x4
-{
     mat4 invProjection;
-};
-layout (set = 1, binding = 4) uniform global_inv_VP
-{
     mat4 inv_VP;
-};
-layout (set = 1, binding = 5) uniform global_world_light
-{
-    mat4 lightSpace;
-};
-layout (set = 1, binding = 6) uniform global_world_light_Pos
-{
-    vec3 lightPos;
-};
-layout (set = 1, binding = 7) uniform global_world_view_Pos
-{
     vec3 viewPos;
-};
-layout (set = 1, binding = 8) uniform global_screen_size
-{
+    vec3 lightPos;
     vec2 screen_size;
 };
+
 
 vec2 octEncode(vec3 n) {
     // 1. L1 归一化：确保 |x| + |y| + |z| = 1
