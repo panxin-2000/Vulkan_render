@@ -45,7 +45,7 @@ void sync_render_data_to_render_thread() {
 
 
 
-    add_new_proxy_to_render();
+    vk_render_queue::instance().logic_add_finished();
 }
 
 

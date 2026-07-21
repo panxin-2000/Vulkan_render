@@ -125,36 +125,47 @@ bool add_box_data(entt::entity entity,
     indices->push_back(vertices->size() + 0);
     indices->push_back(vertices->size() + 1);
     indices->push_back(vertices->size() + 2);
+
     indices->push_back(vertices->size() + 3);
     indices->push_back(vertices->size() + 2);
     indices->push_back(vertices->size() + 1);
+
     indices->push_back(vertices->size() + 4);
     indices->push_back(vertices->size() + 5);
     indices->push_back(vertices->size() + 6);
+
     indices->push_back(vertices->size() + 7);
     indices->push_back(vertices->size() + 6);
     indices->push_back(vertices->size() + 5);
+
     indices->push_back(vertices->size() + 8);
     indices->push_back(vertices->size() + 9);
     indices->push_back(vertices->size() + 10);
+
     indices->push_back(vertices->size() + 11);
     indices->push_back(vertices->size() + 10);
     indices->push_back(vertices->size() + 9);
+
     indices->push_back(vertices->size() + 12);
     indices->push_back(vertices->size() + 13);
     indices->push_back(vertices->size() + 14);
+
     indices->push_back(vertices->size() + 15);
     indices->push_back(vertices->size() + 14);
     indices->push_back(vertices->size() + 13);
+
     indices->push_back(vertices->size() + 16);
     indices->push_back(vertices->size() + 17);
     indices->push_back(vertices->size() + 18);
+
     indices->push_back(vertices->size() + 19);
     indices->push_back(vertices->size() + 18);
     indices->push_back(vertices->size() + 17);
+
     indices->push_back(vertices->size() + 20);
     indices->push_back(vertices->size() + 21);
     indices->push_back(vertices->size() + 22);
+
     indices->push_back(vertices->size() + 23);
     indices->push_back(vertices->size() + 22);
     indices->push_back(vertices->size() + 21);
@@ -162,42 +173,85 @@ bool add_box_data(entt::entity entity,
     Point_2 UV_min{0.0, 0.0};
     Point_2 UV_max{1.0, 1.0};
 
-    // vulkan 右手坐标系  主要 是需要 注意 与 贴图 坐标系的 关联 
+    //                              * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    //                           *  | E                                                    *  | F
+    //                        *     |                                                  *      |
+    //                     *        |                                                *        |
+    //                  *           |                                             *           |
+    //               *              |                                          *              |
+    //            *                 |                                       *                 |
+    //         *                    |                                    *                    |
+    //      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *                       |
+    //      *   A                   |                             B   *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |                                 *                       |
+    //      *                       |  G                              *                       | H
+    //      *                       ~---------------------------------*------------------------
+    //      *                    ~                                    *                   ~
+    //      *                 ~                                       *                 ~
+    //      *              ~                                          *              ~
+    //      *           ~                                             *           ~
+    //      *        ~                                                *        ~
+    //      *     ~                                                   *     ~
+    //      *  ~                                                      *  ~
+    //      * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+    //      C                                                         D
+    //
+    //
+    Point_3 C{x_min, y_min, z_max};
+    Point_3 D{x_max, y_min, z_max};
+    Point_3 A{x_min, y_max, z_max};
+    Point_3 B{x_max, y_max, z_max};
+    Point_3 H{x_max, y_min, z_min};
+    Point_3 G{x_min, y_min, z_min};
+    Point_3 F{x_max, y_max, z_min};
+    Point_3 E{x_min, y_max, z_min};
+
+
+    // vulkan 右手坐标系  主要 是需要 注意 与 贴图 坐标系的 关联
     // 前面
-    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {0, 0, 1}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {0, 0, 1}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {0, 0, 1}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {0, 0, 1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{C, {0, 0, 1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{D, {0, 0, 1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{A, {0, 0, 1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{B, {0, 0, 1}, {UV_max.x, UV_min.y}});
 
     // 下面
-    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {0, -1, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {0, -1, 0}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {0, -1, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {0, -1, 0}, {UV_max.x, UV_min.y}});
-
-    // 右面
-    vertices->emplace_back(Vertex{{x_max, y_min, z_max}, {1, 0, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {1, 0, 0}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {1, 0, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {1, 0, 0}, {UV_max.x, UV_min.y}});
-
-    // 上面
-    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {0, 1, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_max}, {0, 1, 0}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {0, 1, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {0, 1, 0}, {UV_max.x, UV_min.y}});
-
-    // 左面
-    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {-1, 0, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_min, y_min, z_max}, {-1, 0, 0}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {-1, 0, 0}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_min, y_max, z_max}, {-1, 0, 0}, {UV_max.x, UV_min.y}});
-
-    // 后面                                                                 UV
-    vertices->emplace_back(Vertex{{x_max, y_min, z_min}, {0, 0, -1}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_min, y_min, z_min}, {0, 0, -1}, {UV_max.x, UV_min.y}});
-    vertices->emplace_back(Vertex{{x_max, y_max, z_min}, {0, 0, -1}, {UV_min.x, UV_max.y}});
-    vertices->emplace_back(Vertex{{x_min, y_max, z_min}, {0, 0, -1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{G, {0, -1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{H, {0, -1, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{C, {0, -1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{D, {0, -1, 0}, {UV_max.x, UV_min.y}});
+    //
+    // // 右面
+    vertices->emplace_back(Vertex{D, {1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{H, {1, 0, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{B, {1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{F, {1, 0, 0}, {UV_max.x, UV_min.y}});
+    //
+    // // 上面
+    vertices->emplace_back(Vertex{A, {0, 1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{B, {0, 1, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{E, {0, 1, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{F, {0, 1, 0}, {UV_max.x, UV_min.y}});
+    //
+    // // 左面
+    vertices->emplace_back(Vertex{G, {-1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{C, {-1, 0, 0}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{E, {-1, 0, 0}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{A, {-1, 0, 0}, {UV_max.x, UV_min.y}});
+    //
+    // // 后面                                                                 UV
+    vertices->emplace_back(Vertex{H, {0, 0, -1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{G, {0, 0, -1}, {UV_max.x, UV_min.y}});
+    vertices->emplace_back(Vertex{F, {0, 0, -1}, {UV_min.x, UV_max.y}});
+    vertices->emplace_back(Vertex{E, {0, 0, -1}, {UV_max.x, UV_min.y}});
     add_geometry_data(entity, vertices, indices);
     return true;
 }

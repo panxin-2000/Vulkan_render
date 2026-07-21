@@ -77,7 +77,7 @@ TEST(openvdb, create_Sphere) {
     }
 
 
-    openvdb::io::File("mygrids.vdb").write({grid_result});
+    openvdb::io::File("cmake-build-debug/mygrids.vdb").write({grid_result});
 }
 
 

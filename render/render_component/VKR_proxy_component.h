@@ -19,7 +19,6 @@ bool clean_VKR_object_proxy(const entt::entity entity);
 /**
  * 这个函数的逻辑应该是将固定区域内的内容，添加到渲染线程之中，
  */
-void add_new_proxy_to_render();
 
 
 inline entt::entity get_proxy_entity(const entt::entity logic_entity) {

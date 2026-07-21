@@ -108,7 +108,9 @@ entt::entity UI_button(const std::string &name,
     Round_box round_box = {min_x, min_y, max_x, max_y, 20, 10, 10, 10};
     set_render_parameter(entity, "round_box", round_box);
 
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<UI_2D_tag>(entity);
 
     float scale[2];

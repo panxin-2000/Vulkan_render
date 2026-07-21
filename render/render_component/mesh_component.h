@@ -17,9 +17,7 @@
  * @param entity
  * @return
  */
-std::pair<Mesh_data, std::vector<VKR_Primitive> > create_mesh(const entt::entity entity);
+Mesh_data get_VKR_mesh(entt::entity entity);
 
-std::pair<Mesh_data, std::vector<VKR_Primitive> > get_VKR_mesh(const entt::entity entity);
-
-
+std::vector<VKR_Primitive> create_primitives(entt::entity entity);
 #endif //HELLO_MAC_MESH_COMPONENT_H

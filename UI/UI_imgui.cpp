@@ -98,7 +98,8 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             idx_dst += cmd_list->IdxBuffer.Size;
         }
         add_geometry_data(entity, vertices, indices);
-        auto [mesh , primitives] = get_VKR_mesh(entity);
+        auto mesh       = get_VKR_mesh(entity);
+        auto primitives = create_primitives(entity);
         logic_update_proxy(entity, mesh);
         if (!primitives.empty()) {
             VKR_Primitive vkr_primitive = primitives.at(0);
@@ -131,10 +132,10 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                             continue;
                         // Apply scissor/clipping rectangle
-                        vkr_primitive.scissor.offset.x      = (int32_t) (clip_min.x);
-                        vkr_primitive.scissor.offset.y      = (int32_t) (clip_min.y);
-                        vkr_primitive.scissor.extent.width  = (uint32_t) (clip_max.x - clip_min.x);
-                        vkr_primitive.scissor.extent.height = (uint32_t) (clip_max.y - clip_min.y);
+                        vkr_primitive.scissor.offset.x              = (int32_t) (clip_min.x);
+                        vkr_primitive.scissor.offset.y              = (int32_t) (clip_min.y);
+                        vkr_primitive.scissor.extent.width          = (uint32_t) (clip_max.x - clip_min.x);
+                        vkr_primitive.scissor.extent.height         = (uint32_t) (clip_max.y - clip_min.y);
                         vkr_primitive.indexed_command.indexCount    = pcmd->ElemCount;
                         vkr_primitive.indexed_command.instanceCount = 1;
                         vkr_primitive.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
@@ -147,6 +148,11 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                 global_vtx_offset += draw_list->VtxBuffer.Size;
             }
         }
+        for (auto &primitive: primitives) {
+            primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+            primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+        }
+        logic_update_proxy(entity, mesh);
         logic_update_proxy(entity, primitives);
         VkRect2D scissor = {{0, 0}, {(uint32_t) fb_width, (uint32_t) fb_height}};
         // vkCmdSetScissor(command_buffer, 0, 1, &scissor);
@@ -184,7 +190,9 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
         add_geometry_data(entity, vertices, indices);
         // 应该只是几何数据对了， imgui 还是分了好几个批次去绘制 不同的 内容，还有 不同的 裁剪窗口
     }
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<imgui_draw>(entity);
     float scale[2];
     scale[0] = 2.0f / 1280.f;

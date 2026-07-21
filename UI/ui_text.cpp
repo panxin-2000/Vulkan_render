@@ -376,7 +376,9 @@ entt::entity UI_text(const std::string &name,
     set_push_constant_parameter(entity, "uTranslate", translate);
 
 
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<UI_2D_tag>(entity);
 
     scene_root_add_child(entity);

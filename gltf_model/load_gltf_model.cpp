@@ -331,7 +331,9 @@ entt::entity load_node_data(tinygltf::Model &model,
         get_mesh_from_gltf_model(entity, model, node.mesh);
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
-        Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+        logic_update_proxy<Name_component>(entity);
+        logic_update_proxy(entity, get_VKR_mesh(entity));
+        logic_update_proxy(entity, create_primitives(entity));
         logic_update_add_tag<opacity_tag>(entity);
     }
     if (node.camera >= 0) {

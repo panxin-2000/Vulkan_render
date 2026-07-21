@@ -56,7 +56,9 @@ inline entt::entity add_render_pass(const std::string &name) {
 
     world_root_add_child(entity);
 
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
     return entity;
 }
 
@@ -84,8 +86,14 @@ inline entt::entity add_volume_pass(const std::string &name,
     const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
-
-    Logic_entt().emplace_or_replace<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    auto primitives = create_primitives(entity);
+    for (auto &primitive: primitives) {
+        primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        primitive.set_VkCullModeFlags(VK_CULL_MODE_BACK_BIT);
+    }
+    logic_update_proxy(entity, primitives);
     return entity;
 }
 
@@ -243,7 +251,9 @@ void add_simple_computer_buffer_write() {
 
 
     logic_update_add_tag<compute_pass_tag>(entity);
-    logic_update_add_tag<add_to_render_tag>(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
     logic_update_proxy<compute_group_count>(entity);
 }
 

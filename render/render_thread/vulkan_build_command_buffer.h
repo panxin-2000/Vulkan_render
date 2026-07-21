@@ -531,9 +531,6 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
     vkCmdSetDepthBiasEnable(cb, VK_FALSE);
 
-    vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    vkCmdSetCullMode(cb, VK_CULL_MODE_NONE);
-
 
     // VkPipelineDepthStencilStateCreateFlags    flags;
     // VkBool32                                  depthTestEnable;
