@@ -49,4 +49,5 @@ VkDescriptorPool init_current_descriptor_pool() {
 void destroy_descriptorPool(const VkDescriptorPool &descriptorPool) {
     const auto &backend = VK_backend::instance();
     vkDestroyDescriptorPool(backend.get_device(), descriptorPool, nullptr);
+    // 这里只是删除了一个 DescriptorPool ，如果多起来的话，其实是需要多个池子的
 }

@@ -66,6 +66,9 @@ void allocate_descriptor_sets(const entt::entity entity, const std::string &one_
                                                                            (*shader_temp)->
                                                                            object_descriptor_sets_layout,
                                                                            {});
+                // 这里好像每次就把 全部的 都重新申请了 准确的说 是把 某个 set = 0，1，2 的 全部都申请了
+                // 另一边，我 只是把 相应的 需要 update 的 数据地址全部 填写到了每个 set 中
+                // 只需要解决 set 到问题就好
             }
         }
     }

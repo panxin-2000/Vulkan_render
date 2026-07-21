@@ -10,11 +10,13 @@
 
 class DescriptorSet_detail : public NonCopyable {
 public:
-    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
-    uint64_t timeline_              = 0;
+    VkDescriptorSet descriptor_set_          = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptor_layout_ = VK_NULL_HANDLE;
+    uint64_t timeline_                       = 0;
 
-    DescriptorSet_detail(const VkDescriptorSet descriptor_set) {
-        descriptor_set_ = descriptor_set;
+    DescriptorSet_detail(const VkDescriptorSet descriptor_set, const VkDescriptorSetLayout layout) {
+        descriptor_set_    = descriptor_set;
+        descriptor_layout_ = layout;
     }
 
     //  根据timeline 选择合适的时间释放
@@ -54,14 +56,14 @@ auto variable_descriptor(const uint32_t binding_less_size,
 /**
  * 申请描述符，原本输入的是 单个 descriptor_bindings
  * 需要变更为双缓冲或者多缓冲的结果
- * @param descriptor_set_layouts
- * @param descriptor_set_layout   由 glsl 文件描述的单个 set = 0
+ * @param descriptorPool
+ * @param descriptor_set_layouts 由 glsl 文件描述的单个 set = 0
  * @param binding_flags
  * @return
  */
 Proxy_descriptor_sets
 allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
-                         const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                         std::vector<VkDescriptorSetLayout> descriptor_set_layouts,
                          const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
 
 

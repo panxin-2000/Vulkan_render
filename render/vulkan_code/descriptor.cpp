@@ -30,7 +30,7 @@ std::mutex discard_descriptor_set_map_mutex;
 //                            writeDescSet.size(),
 //                            writeDescSet.data(), 0, nullptr);
 // }
-
+std::multimap<VkDescriptorSetLayout, VkDescriptorSet> layout_and_set_map;
 
 auto variable_descriptor(const uint32_t binding_less_size,
                          const std::vector<VkDescriptorBindingFlags> &binding_flags,
@@ -63,20 +63,37 @@ auto variable_descriptor(const uint32_t binding_less_size,
 
 
 Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
-                                               const std::vector<VkDescriptorSetLayout> &descriptor_set_layouts,
+                                               std::vector<VkDescriptorSetLayout> descriptor_set_layouts,
                                                const std::vector<VkDescriptorBindingFlags> &binding_flags) {
-    auto &backend                = VK_backend::instance();
-    const uint32_t resize_number = descriptor_set_layouts.size();
+    auto &backend = VK_backend::instance();
     Proxy_descriptor_sets return_value;
     std::vector<VkDescriptorSet> descriptor_sets;
     if (descriptor_set_layouts.empty())
         return return_value;
 
+    descriptor_sets.resize(descriptor_set_layouts.size(),VK_NULL_HANDLE);
+    return_value.resize(descriptor_set_layouts.size());
+
+    bool need_allocate = false;
+    for (int i = 0; i < descriptor_set_layouts.size(); i++) {
+        auto it = layout_and_set_map.find(descriptor_set_layouts.at(i));
+        if (it != layout_and_set_map.end()) {
+            descriptor_sets.at(i)        = it->second;
+            descriptor_set_layouts.at(i) = VK_NULL_HANDLE;
+            it                           = layout_and_set_map.erase(it);
+            return_value[i]              = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),
+                                                                     descriptor_set_layouts.at(i));
+            continue;
+        }
+        need_allocate = true;
+        break;
+    }
+    if (need_allocate == false) {
+        return return_value;
+        // 如果失败的话，return_value 中的值会被重新覆盖, share_ptr 会自己 析构
+        // 又重新会到了哪个问题，析构函数的 执行时机的问题 ，因为没有使用，所以没有问题
+    }
     std::vector<uint32_t> variableDescCount;
-    descriptor_sets.resize(resize_number,VK_NULL_HANDLE);
-    return_value.resize(resize_number);
-
-
     VkDescriptorSetAllocateInfo texDescSetAlloc{
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
         .pNext              = nullptr,
@@ -89,20 +106,18 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
         for (const auto flag: binding_flags) {
             if (flag != 0) {
                 const uint32_t binding_less_size = 1023; // 这里肯定还是有问题的
-
                 auto variableDescCountAI = variable_descriptor(binding_less_size, binding_flags, variableDescCount);
-                texDescSetAlloc.pNext    = &variableDescCountAI;
+                texDescSetAlloc.pNext = &variableDescCountAI;
             }
         }
     }
-    std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(backend.get_device(), &texDescSetAlloc,
                                  descriptor_sets.data()));
-
+    // 原来会黑屏不是内存的问题，是 vkAllocateDescriptorSets 申请不出来了
     for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
-        return_value[i] = std::make_shared<DescriptorSet_detail>(descriptor_sets[i]);
+        return_value[i] = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),
+                                                                 descriptor_set_layouts.at(i));
     }
-
     return return_value;
 }
 
@@ -110,8 +125,10 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
 DescriptorSet_detail::~DescriptorSet_detail() {
     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     discard_descriptor_set_map[descriptor_set_] = timeline_;
-    descriptor_set_                             = VK_NULL_HANDLE;
-    timeline_                                   = 0;
+    layout_and_set_map.insert({descriptor_layout_, descriptor_set_});
+    descriptor_set_    = VK_NULL_HANDLE;
+    descriptor_layout_ = VK_NULL_HANDLE;
+    timeline_          = 0;
 }
 
 
