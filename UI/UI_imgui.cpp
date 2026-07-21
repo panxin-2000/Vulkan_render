@@ -5,7 +5,7 @@
 #include "UI_imgui.h"
 
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 #include "name_component.h"
 #include "scene_component.h"
@@ -270,7 +270,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   ImVec4 &clear_color) {
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplVulkan_NewFrame(entity);
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)

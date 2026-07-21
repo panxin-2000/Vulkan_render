@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <mutex>
 #include <algorithm>
-#include <GLFW/glfw3.h>
 #include "../input_device/key_map_value.h"
 #include <entt/entt.hpp>
 
