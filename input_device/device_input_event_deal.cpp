@@ -1,4 +1,3 @@
-
 #include "transform_component.h"
 #include "../event/base_event.h"
 #include "name_component.h"
@@ -13,93 +12,84 @@
 
 entt::dispatcher dispatcher;
 
-void base_event_dealing(const base_event_with_stamp &event);
 
-
-
-
-
-
-static wmOperatorStatus world_root_on_Event(const entt::entity entity, const base_event_with_stamp &event) {
-    auto temp_type = event.event_type;
-
-    switch (temp_type) {
-        case MOUSE_ROTATE: {
-            auto temp = event.scroll;
-
+static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event *event) {
+    switch (event->type) {
+        case SDL_EVENT_MOUSE_MOTION: {
+        }
+        case SDL_EVENT_MOUSE_WHEEL: {
+        }
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+        }
+        case SDL_EVENT_TEXT_INPUT: {
+        }
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP: {
+            if (event->key.key == SDLK_W && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({0, 0, -1});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_S && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({0, 0, -1});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({1, 0, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_D && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({1, 0, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    if (event->key.mod & SDL_KMOD_SHIFT)
+                        position->add_offset({0, -1, 0});
+                    else
+                        position->add_offset({0, 1, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else {
+                return OPERATOR_PASS_THROUGH;
+            }
+        }
+        case SDL_EVENT_FINGER_MOTION: {
+            const Point_2 temp{event->tfinger.dx, event->tfinger.dy};
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
                 q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
                 position->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                return OPERATOR_FINISHED;
+            } else {
+                return OPERATOR_PASS_THROUGH;
             }
         }
-        case EVT_KEY_W:
-            // 删除当前鼠标位置的元素
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                        position->add_offset({0, 0, -1});
-                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                    }
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
-        case EVT_KEY_S: {
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                        position->add_offset({0, 0, 1});
-                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                    }
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
+        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+        }
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+        }
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST: {
+        }
+        case SDL_EVENT_GAMEPAD_ADDED:
+        case SDL_EVENT_GAMEPAD_REMOVED: {
+        }
+        default:
             break;
-        }
-        case EVT_KEY_A: {
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                        position->add_offset({-1, 0, 0});
-                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                    }
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
-            break;
-        }
-        case EVT_KEY_D: {
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                        position->add_offset({1, 0, 0});
-                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                    }
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
-            break;
-        }
-        case EVT_KEY_SPACE_KEY: {
-            if (event.event_code == KM_PRESS)
-                if (Logic_entt().valid(entity)) {
-                    if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                        if (event.modifier_flag & KM_SHIFT)
-                            position->add_offset({0, -1, 0});
-                        else
-                            position->add_offset({0, 1, 0});
-                        Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                    }
-                    return OPERATOR_FINISHED;
-                }
-            return OPERATOR_PASS_THROUGH;
-            break;
-        }
-        default: {
-        }
     }
+    return OPERATOR_PASS_THROUGH;
 }
 
 
@@ -122,13 +112,41 @@ entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
 }
 
 
-void base_event_dealing(const base_event_with_stamp &event) {
+void base_event_dealing(SDL_Event *event) {
     const auto view = Logic_entt().view<Name_component, Scene_Component, Input_Component>();
 
-
     static entt::entity current_select_entity = get_UI_scene_root();
-    const mouse_position current_position     = event.current_position;
     static wmOperatorStatus current_status    = OPERATOR_ZERO;
+    static Point_2 mouse_pos{-1, -1};
+
+    switch (event->type) {
+        case SDL_EVENT_MOUSE_MOTION: {
+            mouse_pos = {(float) event->motion.x, (float) event->motion.y};
+        }
+        case SDL_EVENT_MOUSE_WHEEL: {
+        }
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+        }
+        case SDL_EVENT_TEXT_INPUT: {
+        }
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP: {
+        }
+        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+        }
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+        }
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST: {
+        }
+        case SDL_EVENT_GAMEPAD_ADDED:
+        case SDL_EVENT_GAMEPAD_REMOVED: {
+        }
+        default:
+            break;
+    }
+
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
@@ -153,12 +171,12 @@ void base_event_dealing(const base_event_with_stamp &event) {
 
     // 找到当前区域的一个递归栈
 
-    auto ray = get_screen_ray(event.current_position);
+    auto ray = get_screen_ray(mouse_pos);
     LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
              ray.direction.x, ray.direction.y, ray.direction.z);
 
 
-    std::vector<entt::entity> UI_stack = UI_stack_intersect(current_position);
+    std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
     //     auto &name = view.get<Name_component>(*it);

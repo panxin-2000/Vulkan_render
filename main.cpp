@@ -34,8 +34,6 @@
 struct ImGui_ImplVulkan_Data;
 
 
-void deal_glfw_event();
-
 #include "spherical_harmonics.h"
 #include "spherical_SH.h"
 
@@ -325,6 +323,8 @@ void add_manifold_entity() { {
 
 entt::entity object_2d_model(const std::string &name, ImDrawData *draw_data);
 
+void base_event_dealing(SDL_Event *event);
+
 
 int main(int argc, char *argv[]) {
     // test_single_char();
@@ -440,6 +440,7 @@ int main(int argc, char *argv[]) {
         // [If using SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your SDL_AppEvent() function]
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            base_event_dealing(&event);
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
                 done = true;

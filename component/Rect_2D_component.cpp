@@ -27,11 +27,11 @@ bool get_intersect_entity(std::vector<entt::entity> &return_value,
 }
 
 
-bool deal_zoom(const entt::entity entity, const base_event_with_stamp &base_event) {
+bool deal_zoom(const entt::entity entity, const SDL_Event *event) {
     auto &transform = Logic_entt().get<Rect_2D_transform>(entity);
     transform.multiply_zoom({
-                                std::powf(1.5, base_event.scroll.x * 0.01),
-                                std::powf(1.5, base_event.scroll.y * 0.01)
+                                std::powf(1.5, event->wheel.x * 0.01),
+                                std::powf(1.5, event->wheel.y * 0.01)
                             });
     Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
     // if (auto *scene_node = g_entt().try_get<Scene_Component>(entity)) {
@@ -44,9 +44,9 @@ bool deal_zoom(const entt::entity entity, const base_event_with_stamp &base_even
     return true;
 }
 
-bool deal_position_offset(const entt::entity entity, const base_event_with_stamp &base_event) {
-    auto &transform     = Logic_entt().get<Rect_2D_transform>(entity);
-    const Point_2 move = base_event.current_position - base_event.last_position;
+bool deal_position_offset(const entt::entity entity, const SDL_Event *event) {
+    auto &transform = Logic_entt().get<Rect_2D_transform>(entity);
+    const Point_2 move{event->motion.xrel, event->motion.yrel};
     transform.add_offset(move);
     Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
     return true;

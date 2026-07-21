@@ -110,70 +110,113 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 }
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with_stamp &event) {
-    auto temp_type = event.event_type;
-    auto &status   = Logic_entt().get<Input_Component>(entity);
-
-    // 这里并没有 订阅事件 ，全部的时间都会来处理，不处理的话就返回 OPERATOR_PASS_THROUGH
-    switch (temp_type) {
-        case MOUSE_ROTATE: {
-            auto temp = event.scroll;
+wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event *event) {
+    auto &status = Logic_entt().get<Input_Component>(entity);
+    switch (event->type) {
+        case SDL_EVENT_MOUSE_WHEEL: {
+            Point_2 temp{event->wheel.x, event->wheel.y};
             // 绕 Z 轴旋转 45 度
-
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY())) * q_current;
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX())) * q_current;
-
                 position->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
             }
             return OPERATOR_RUNNING_MODAL;
         }
-        case EVT_KEY_X:
-            // 删除当前鼠标位置的元素
-            if (event.event_code == KM_PRESS)
+        case SDL_EVENT_MOUSE_BUTTON_DOWN: {
+            status.select_status_ = select_current;
+            return OPERATOR_RUNNING_MODAL;
+        }
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+            status.select_status_ = no_select_current;
+            return OPERATOR_FINISHED;
+        }
+        case SDL_EVENT_TEXT_INPUT: {
+        }
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP: {
+            if (event->key.key == SDLK_W && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({0, 0, -1});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_S && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({0, 0, -1});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({1, 0, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_D && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({1, 0, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_X && Logic_entt().valid(entity)) {
                 if (Logic_entt().valid(entity)) {
                     Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
-            return OPERATOR_PASS_THROUGH;
-            break;
-        case EVT_KEY_ESCAPE:
-            if (event.event_code == KM_PRESS) {
-                // std::cout << " button  EVT_KEY_ESCAPE KM_RELEASE" << std::endl;
-                // 需要增加模态的处理 返回结束模态 先用按下的状态，之后再更改
-                return OPERATOR_CANCELLED;
-            }
-            break;
-        case MOUSE_LEFT:
-            if (event.event_code == KM_PRESS) {
-                status.select_status_ = select_current;
-                // std::cout << " button  MOUSE_LEFT KM_PRESS" << std::endl;
-                // 需要增加模态的处理 返回锁定模态
-                return OPERATOR_RUNNING_MODAL;
-            }
-            if (event.event_code == KM_RELEASE) {
-                // std::cout << " button  MOUSE_LEFT KM_RELEASE" << std::endl;
-                // 需要增加模态的处理 返回结束模态
-                // auto block_entity = UI_button("新按钮", 10, 10, 220, 220);
-                status.select_status_ = no_select_current;
                 return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    if (event->key.mod & SDL_KMOD_SHIFT)
+                        position->add_offset({0, -1, 0});
+                    else
+                        position->add_offset({0, 1, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event->key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
+                return OPERATOR_CANCELLED;
+            } else {
+                return OPERATOR_PASS_THROUGH;
             }
-            break;
-        case MOUSE_RIGHT:
-            break;
-        case WHEEL_UP_MOUSE:
-            if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
+        }
+        case SDL_EVENT_FINGER_MOTION: {
+            const Point_2 temp{event->tfinger.dx, event->tfinger.dy};
+            if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                auto q_current = position->get_rotate();
+                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
+                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                position->set_rotate(q_current);
+                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                return OPERATOR_FINISHED;
+            } else {
+                return OPERATOR_PASS_THROUGH;
             }
-            break;
-        case MOUSE_MOVE:
+        }
+        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+        }
+        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+        }
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST: {
+        }
+        case SDL_EVENT_GAMEPAD_ADDED:
+        case SDL_EVENT_GAMEPAD_REMOVED: {
+        }
+
+        case SDL_EVENT_MOUSE_MOTION: {
             if (status.select_status_ == select_current) {
+                // TODO : 没有确定坐标或者说坐标的系数
+                Point_2 current_position{event->motion.x, event->motion.y};
+                Point_2 last_position{event->motion.x - event->motion.xrel, event->motion.yrel};
+
                 if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
                     const auto object_position = transform->get_position();
                     const auto world_entity    = get_world_root();
-                    const auto current_ray     = get_screen_ray(event.current_position);
-                    const auto last_ray        = get_screen_ray(event.last_position);
+                    const auto current_ray     = get_screen_ray(current_position);
+                    const auto last_ray        = get_screen_ray(last_position);
 
                     const auto camera_position = Logic_entt().try_get<Transform>(world_entity);
 
@@ -194,11 +237,12 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const base_event_with
                     return OPERATOR_RUNNING_MODAL;
                 }
             }
-            break;
-        default:
             return OPERATOR_PASS_THROUGH;
+        }
+        default:
+            break;
     }
-    return OPERATOR_HANDLED;
+    return OPERATOR_PASS_THROUGH;
 }
 
 void update_camera_parameter(const entt::entity entity) {
