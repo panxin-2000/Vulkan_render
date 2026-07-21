@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     // io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF("/Users/panxin/CLionProjects/hello_mac/imgui/misc/fonts/Cousine-Regular.ttf", 20.0f);
+    io.Fonts->AddFontFromFileTTF("/Users/panxin/CLionProjects/hello_mac/imgui/misc/fonts/Cousine-Regular.ttf", 13.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     io.Fonts->Build();
