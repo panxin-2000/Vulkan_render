@@ -9,11 +9,11 @@
 #include <string>
 #include <vector>
 #include <vk_mem_alloc.h>
-#include <GLFW/glfw3.h>
 #include "global_singleton.h"
 #include "GPU_backend.h"
 #include "vulkan_image.h"
 #include "vulkan_read_attribute.h"
+#include <SDL3/SDL.h>
 
 
 class VK_backend : public GPU_backend {
@@ -28,7 +28,7 @@ private:
     std::vector<const char *> instanceExtensions;
 
     // 需要给外部看到的变量，添加函数给出
-    GLFWwindow *window_               = nullptr;
+    SDL_Window *window_               = nullptr;
     VkInstance instance_              = VK_NULL_HANDLE;
     VkSurfaceKHR surface_             = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
@@ -189,7 +189,7 @@ public:
         return allocator_;
     }
 
-    [[nodiscard]] GLFWwindow *get_window() const {
+    [[nodiscard]] SDL_Window *get_window() const {
         return window_;
     }
 

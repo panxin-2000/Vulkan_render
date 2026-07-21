@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 
 #include <thread>
 #include "render_thread/backend.h"
@@ -15,7 +15,7 @@
 #include "global_singleton.h"
 #include "descriptor_pool.h"
 #include "earcut.h"
-#include "imgui_impl_glfw.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
 #include "PBR_component.h"
@@ -33,7 +33,6 @@
 
 struct ImGui_ImplVulkan_Data;
 
-void register_glfw(GLFWwindow *window);
 
 void deal_glfw_event();
 
@@ -385,8 +384,14 @@ int main(int argc, char *argv[]) {
     //     logic_update_add_tag<opacity_tag>(entity);
     // }
 
+    // Setup SDL
+    // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts would likely be your SDL_AppInit() function]
 
-    register_glfw(backend.get_window());
+    int w, h;
+    SDL_GetWindowSize(backend.get_window(), &w, &h);
+    SDL_SetWindowPosition(backend.get_window(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    SDL_ShowWindow(backend.get_window());
+
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -395,6 +400,9 @@ int main(int argc, char *argv[]) {
     (void) io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    ImGui_ImplSDL3_InitForVulkan(backend.get_window());
+
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -409,7 +417,7 @@ int main(int argc, char *argv[]) {
 
     // Setup Platform/Renderer backends
     // getSingleInstance() ···等申请的内容，都是是在 SetupVulkan  中做完的，之后绘制的时候绑定提交会调用init_info中的内容（或者说指向）
-    ImGui_ImplGlfw_InitForVulkan(backend.get_window(), true);
+    // ImGui_ImplGlfw_InitForVulkan(backend.get_window(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
     ImGui_ImplVulkan_Init(&init_info);
 
@@ -422,13 +430,24 @@ int main(int argc, char *argv[]) {
 
 
     // Render loop
-    while (!glfwWindowShouldClose(backend.get_window())) {
-        glfwWaitEvents();
-        if (GLFW_TRUE == glfwWindowShouldClose(backend.get_window())) {
-            break;
+    bool done = false;
+    while (!done) {
+        // Poll and handle events (inputs, window resize, etc.)
+        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
+        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+        // [If using SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your SDL_AppEvent() function]
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            ImGui_ImplSDL3_ProcessEvent(&event);
+            if (event.type == SDL_EVENT_QUIT)
+                done = true;
+            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID ==
+                SDL_GetWindowID(backend.get_window()))
+                done = true;
         }
-        glfwPollEvents();  // Event polling
-        deal_glfw_event(); // 统一分发执行
+
         Logic_entt().emplace_or_replace<Camera_transform_dirty>(get_world_root());
         imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color);
 
@@ -443,7 +462,7 @@ int main(int argc, char *argv[]) {
     // IM_ASSERT_USER_ERROR(g.IO.BackendRendererUserData == NULL, "Forgot to shutdown Renderer backend?");
     // 上面两个需要清理
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
     // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理

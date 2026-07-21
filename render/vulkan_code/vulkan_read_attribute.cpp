@@ -5,6 +5,7 @@
 #include "vulkan_read_attribute.h"
 
 #include <iostream>
+#include <SDL3/SDL_video.h>
 
 std::vector<std::string> get_all_instance_extensions() {
     std::vector<std::string> supportedInstanceExtensions;
@@ -86,14 +87,15 @@ SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, co
     return details;
 }
 
-VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface, GLFWwindow *window) {
+VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface,
+                                          SDL_Window *window) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &capabilities);
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     } else {
         int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
+        SDL_GetWindowSizeInPixels(window, &width, &height);
 
         VkExtent2D actualExtent = {
             static_cast<uint32_t>(width),

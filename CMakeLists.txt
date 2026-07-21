@@ -26,6 +26,7 @@ endif ()
 #    link_libraries(${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${Vulkan_LIBRARY} ${DIRECTFB_LIBRARIES} ${WAYLAND_CLIENT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 #ENDIF (WIN32)
 
+find_package(SDL3 CONFIG REQUIRED)
 
 find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
@@ -98,7 +99,7 @@ set(IMGUI_DIR ./imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 file(GLOB imgui_sources
-        ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+        ${IMGUI_DIR}/backends/imgui_impl_sdl3.cpp
         ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp
         ${IMGUI_DIR}/imgui.cpp
         ${IMGUI_DIR}/imgui_draw.cpp
@@ -286,7 +287,6 @@ if (WITH_VULKAN_BACKEND)
 
 
     file(GLOB_RECURSE vulkan_code
-            #        "vulkan_code/glfw_vulkan.cpp"
             "render/vulkan_code/vulkan_utility.cpp"
             "render/vulkan_code/vulkan_read_attribute.cpp"
             "render/vulkan_code/vulkan_validation_layer.cpp"
@@ -339,10 +339,7 @@ endif ()
 include_directories(utility)
 include_directories(render)
 include_directories(gltf_model)
-include_directories(/opt/homebrew/opt/glfw/include)
 
-link_directories(/opt/homebrew/opt/glfw/lib)
-link_directories(/opt/homebrew/opt/glew/lib)
 
 link_directories(/usr/local/lib/slang/lib)
 
@@ -359,13 +356,6 @@ find_package(spirv_cross_core REQUIRED)
 find_package(spirv_cross_glsl REQUIRED)
 find_package(spirv_cross_cpp REQUIRED)
 
-find_package(GLEW COMPONENTS
-        GLEW::glew
-        REQUIRED)
-if (GLEW_FOUND)
-    add_definitions(-DGLEW_FOUND)
-    include_directories(${GLEW_INCLUDE_DIRS})
-endif ()
 
 file(GLOB_RECURSE RENDER
 
@@ -603,14 +593,14 @@ target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
 set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(learn_render PRIVATE TBB::tbb GLEW Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(learn_render PRIVATE TBB::tbb  Eigen3::Eigen EnTT::EnTT quill::quill)
 
 target_link_libraries(learn_render PRIVATE cereal::cereal)
 #target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)
 target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
+target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
-target_link_libraries(learn_render PRIVATE GLFW)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE tinygltf)

@@ -10,6 +10,10 @@
 #include <volk.h>
 #endif
 #include "vulkan_backend.h"
+
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+
 #include "global_singleton.h"
 #include "vulkan_validation_layer.h"
 
@@ -95,25 +99,30 @@ void VK_backend::create_instance() {
     }
 }
 
-static void framebufferResizeCallback(GLFWwindow *window, int width, int height) {
-    auto app                = reinterpret_cast<VK_backend *>(glfwGetWindowUserPointer(window));
-    app->framebufferResized = true;
-}
 
 void VK_backend::create_surface() {
-    glfwInit();
-    if (GLFW_TRUE == glfwVulkanSupported()) {
-        // glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);    // 允许屏幕的缩放
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        window_ = glfwCreateWindow(1280, 720, "Vulkan", nullptr, nullptr);
-        if (window_ != nullptr) {
-            glfwSetWindowUserPointer(window_, this);
-            glfwSetFramebufferSizeCallback(window_, framebufferResizeCallback);
-            auto result = glfwCreateWindowSurface(instance_, window_, VK_ORIGINAL_Allocator, &surface_);
-            if (result != VK_SUCCESS) {
-                throw std::runtime_error("failed to create window surface!");
-            }
-        }
+    // Setup SDL
+    // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts would likely be your SDL_AppInit() function]
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+        printf("Error: SDL_Init(): %s\n", SDL_GetError());
+        return;
+    }
+
+    // Create window with Vulkan graphics context
+    float main_scale             = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+    SDL_WindowFlags window_flags =
+            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+    window_ = SDL_CreateWindow("Dear ImGui SDL3+Vulkan example", (int) (1280 * main_scale),
+                               (int) (800 * main_scale), window_flags);
+    if (window_ == nullptr) {
+        printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+        return;
+    }
+
+    // Create Window Surface
+    if (SDL_Vulkan_CreateSurface(window_, instance_, VK_ORIGINAL_Allocator, &surface_) == 0) {
+        printf("Failed to create Vulkan surface.\n");
+        return;
     }
 }
 
@@ -517,9 +526,8 @@ void VK_backend::destroy() {
         instance_ = VK_NULL_HANDLE;
     }
     if (window_ != VK_NULL_HANDLE) {
-        glfwDestroyWindow(window_);
-        window_ = nullptr;
-        glfwTerminate();
+        SDL_DestroyWindow(window_);
+        SDL_Quit();
     }
 }
 

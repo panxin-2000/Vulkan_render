@@ -5,8 +5,8 @@
 #ifndef HELLO_MAC_VULKAN_READ_ATTRIBUTE_H
 #define HELLO_MAC_VULKAN_READ_ATTRIBUTE_H
 #include "vulkan_global_macro.h"
-#include "glfw/glfw3.h"
 #include <vector>
+#include <SDL3/SDL_video.h>
 
 struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -27,7 +27,7 @@ VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &devic
 SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface,
-                                          GLFWwindow *window);
+                                          SDL_Window *window);
 
 uint32_t get_rational_image_count(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
