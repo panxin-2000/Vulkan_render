@@ -6,6 +6,7 @@
 #define HELLO_MAC_RENDER_MESH_H
 #include <volk.h>
 #include "vulkan_buffer.h"
+#include "vulkan_pipeline_dynamic_state.h"
 
 
 class Mesh_data {
@@ -23,10 +24,9 @@ public:
     int material_index_          = 0;
     VkViewport viewport;
     VkRect2D scissor;
-    VkCullModeFlags cullMode_ = VK_CULL_MODE_NONE; // 默认不cull,否则会导致有些默认显示不出来
-    VkFrontFace frontFace_    = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
-    bool vulkan_y_flip = false; // 默认在vulkan上的 对y轴进行了翻转 // 然后 最后的投影矩阵 其实又反转了一次
+    PipelineRasterizationState pipelineRasterizationState;
+    PipelineDynamicState pipelineDynamicState;
 
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};
@@ -38,7 +38,7 @@ public:
      * @param frontFace VK_FRONT_FACE_COUNTER_CLOCKWISE / VK_FRONT_FACE_CLOCKWISE
      */
     void set_front_face(const VkFrontFace frontFace) {
-        frontFace_ = frontFace;
+        pipelineRasterizationState.frontFace_ = frontFace;
     }
 
     /**
@@ -46,24 +46,17 @@ public:
      * @param cullMode VK_CULL_MODE_BACK_BIT / VK_CULL_MODE_FRONT_BIT / VK_CULL_MODE_FRONT_AND_BACK / VK_CULL_MODE_NONE
      */
     void set_VkCullModeFlags(const VkCullModeFlags cullMode) {
-        cullMode_ = cullMode;
+        pipelineRasterizationState.cullMode_ = cullMode;
     }
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
     void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
-        if (vulkan_y_flip == true) {
-            if (VK_FRONT_FACE_COUNTER_CLOCKWISE == frontFace_)
-                vkCmdSetFrontFace(cb, VK_FRONT_FACE_CLOCKWISE);
-            else if (VK_FRONT_FACE_CLOCKWISE == frontFace_)
-                vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        } else {
-            vkCmdSetFrontFace(cb, frontFace_);
-        }
-        vkCmdSetCullMode(cb, cullMode_);
-
         if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
+        pipelineDynamicState.write_commands(cb);
+        pipelineRasterizationState.write_commands(cb);
+
         vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
         if (mesh_data.indices != nullptr && mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.
             indexCount != 0) {

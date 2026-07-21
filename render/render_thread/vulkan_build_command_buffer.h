@@ -519,29 +519,6 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     auto debug_name = Render_entt().get<Name_component>(entity).name_;
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, Render_entt().get<VkPipeline>(entity));
 
-    vkCmdSetDepthTestEnable(cb, VK_TRUE);
-    vkCmdSetDepthCompareOp(cb, VK_COMPARE_OP_LESS_OR_EQUAL);
-
-    //
-    vkCmdSetDepthWriteEnable(cb, VK_TRUE);
-
-    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
-    vkCmdSetStencilTestEnable(cb, VK_FALSE);
-
-    vkCmdSetDepthBoundsTestEnable(cb, VK_FALSE);
-    vkCmdSetDepthBiasEnable(cb, VK_FALSE);
-
-
-    // VkPipelineDepthStencilStateCreateFlags    flags;
-    // VkBool32                                  depthTestEnable;
-    // VkBool32                                  depthWriteEnable;
-    // VkCompareOp                               depthCompareOp;
-    // VkBool32                                  depthBoundsTestEnable;
-    // VkBool32                                  stencilTestEnable;
-    // VkStencilOpState                          front;
-    // VkStencilOpState                          back;
-    // float                                     minDepthBounds;
-    // float                                     maxDepthBounds;
 
     bind_Proxy_descriptor_sets(engine, entity, time_line, VK_PIPELINE_BIND_POINT_GRAPHICS);
 

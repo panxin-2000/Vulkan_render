@@ -54,7 +54,7 @@ struct PipelineDynamicState {
     //                     并将 reference 设为 1。这样物体覆盖的区域模板值都会变成 1。
     // 第二步（绘制放大后的轮廓）：将 compareOp 设为 VK_COMPARE_OP_NOT_EQUAL，reference 保持 1。这样只有在物体之外的像素才会通过测试并绘制。
 
-    void cmd_and_to_buffer(const VkCommandBuffer cb) const {
+    void write_commands(const VkCommandBuffer cb) const {
         if (vkCmdSetDepthTestEnable(cb, depthTestEnable); depthTestEnable) {
             vkCmdSetDepthCompareOp(cb, depthCompareOp);
             vkCmdSetDepthWriteEnable(cb, depthWriteEnable);
@@ -84,18 +84,28 @@ struct PipelineDynamicState {
 
 
 struct PipelineRasterizationState {
-    VkCullModeFlags cullMode      = VK_CULL_MODE_NONE;               // VK_DYNAMIC_STATE_CULL_MODE
-    VkFrontFace frontFace         = VK_FRONT_FACE_COUNTER_CLOCKWISE; // VK_DYNAMIC_STATE_FRONT_FACE
+    VkCullModeFlags cullMode_     = VK_CULL_MODE_NONE;               // VK_DYNAMIC_STATE_CULL_MODE
+    VkFrontFace frontFace_        = VK_FRONT_FACE_COUNTER_CLOCKWISE; // VK_DYNAMIC_STATE_FRONT_FACE
     VkBool32 depthBiasEnable      = VK_FALSE;                        // VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE
     float depthBiasConstantFactor = 0.0f;                            // VK_DYNAMIC_STATE_DEPTH_BIAS
     float depthBiasClamp          = 0.0f;
     float depthBiasSlopeFactor    = 0.0f;
     // VkPolygonMode polygonMode     = VK_POLYGON_MODE_FILL; // 这里没有
+    bool vulkan_y_flip = false; // 默认在vulkan上的 对y轴进行了翻转 // 然后 最后的投影矩阵 其实又反转了一次
 
+    void write_commands(const VkCommandBuffer cb) const {
+        if (vulkan_y_flip == true) {
+            if (VK_FRONT_FACE_COUNTER_CLOCKWISE == frontFace_)
+                vkCmdSetFrontFace(cb, VK_FRONT_FACE_CLOCKWISE);
+            else if (VK_FRONT_FACE_CLOCKWISE == frontFace_)
+                vkCmdSetFrontFace(cb, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        } else {
+            vkCmdSetFrontFace(cb, frontFace_);
+        }
+        vkCmdSetCullMode(cb, cullMode_);
 
-    void set_command(const VkCommandBuffer cb) const {
-        vkCmdSetFrontFace(cb, frontFace);
-        vkCmdSetCullMode(cb, cullMode);
+        vkCmdSetFrontFace(cb, frontFace_);
+        vkCmdSetCullMode(cb, cullMode_);
         // vkCmdSetPolygonModeEXT(cb, polygonMode);
         if (vkCmdSetDepthBiasEnable(cb, depthBiasEnable); depthBiasEnable)
             vkCmdSetDepthBias(cb, depthBiasConstantFactor, depthBiasClamp, depthBiasSlopeFactor);
