@@ -132,6 +132,12 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                             continue;
                         // Apply scissor/clipping rectangle
+                        vkr_primitive.viewport.x                    = 0;
+                        vkr_primitive.viewport.y                    = 0;
+                        vkr_primitive.viewport.width                = fb_width;
+                        vkr_primitive.viewport.height               = fb_height;
+                        vkr_primitive.viewport.minDepth             = 0.0f;
+                        vkr_primitive.viewport.maxDepth             = 1.0f;
                         vkr_primitive.scissor.offset.x              = (int32_t) (clip_min.x);
                         vkr_primitive.scissor.offset.y              = (int32_t) (clip_min.y);
                         vkr_primitive.scissor.extent.width          = (uint32_t) (clip_max.x - clip_min.x);
@@ -148,14 +154,24 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                 global_vtx_offset += draw_list->VtxBuffer.Size;
             }
         }
+
+        float scale[2];
+        scale[0] = 2.0f / draw_data->DisplaySize.x; // Scale
+        scale[1] = 2.0f / draw_data->DisplaySize.y;
+        float translate[2];
+        translate[0] = -1.0f - draw_data->DisplayPos.x * scale[0]; // Translate
+        translate[1] = -1.0f - draw_data->DisplayPos.y * scale[1];
+
+        set_push_constant_parameter(entity, "uScale", scale);
+        set_push_constant_parameter(entity, "uTranslate", translate);
+
+
         for (auto &primitive: primitives) {
             primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
             primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
         }
         logic_update_proxy(entity, mesh);
         logic_update_proxy(entity, primitives);
-        VkRect2D scissor = {{0, 0}, {(uint32_t) fb_width, (uint32_t) fb_height}};
-        // vkCmdSetScissor(command_buffer, 0, 1, &scissor);
     }
 }
 
@@ -194,15 +210,6 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<imgui_draw>(entity);
-    float scale[2];
-    scale[0] = 2.0f / 1280.f;
-    scale[1] = 2.0f / 720;
-    float translate[2];
-    translate[0] = -1.0f - 0.0f * scale[0];
-    translate[1] = -1.0f - 0.0f * scale[1];
-
-    set_push_constant_parameter(entity, "uScale", scale);
-    set_push_constant_parameter(entity, "uTranslate", translate);
     scene_root_add_child(entity);
     return entity;
 
@@ -268,10 +275,12 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   bool &show_demo_window,
                                   bool &show_another_window,
                                   ImVec4 &clear_color) {
+    // Start the Dear ImGui frame
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplVulkan_NewFrame(entity);
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
+
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
@@ -299,6 +308,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         ImGui::End();
     }
+
     // 3. Show another simple window.
     if (show_another_window) {
         ImGui::Begin("Another Window", &show_another_window);
@@ -308,6 +318,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             show_another_window = false;
         ImGui::End();
     }
+
     // Rendering
     ImGui::Render();
 
