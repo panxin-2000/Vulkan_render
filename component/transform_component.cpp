@@ -71,15 +71,16 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     auto camera           = Logic_entt().try_get<camera_optical_component>(world_entity);
     const auto camera_pos = Logic_entt().try_get<Transform>(world_entity);
 
-    const auto &backend    = VK_backend::instance();
-    auto [width, height]   = backend.get_current_extent();
+    const auto &backend = VK_backend::instance();
+    int width, height;
+    SDL_GetWindowSize(backend.get_window(), &width, &height);
     const auto projection  = camera->get_projection_matrix();
     const auto view_matrix = get_view_matrix(*camera_pos);
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
     // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
-    float x = (4.0f * mouse_positon.x) / width - 1.0f;
-    float y = (4.0f * mouse_positon.y) / height - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
+    float x = (4.0f * mouse_positon.x) / static_cast<float>(width) - 1.0f;
+    float y = (4.0f * mouse_positon.y) / static_cast<float>(height) - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
 
     // 这里是什么空间？
     LOG_INFO(g_log(), "NDC x: {} y: {}", x, y);
@@ -183,17 +184,6 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event *even
             }
         }
         case SDL_EVENT_FINGER_MOTION: {
-            const Point_2 temp{event->tfinger.dx, event->tfinger.dy};
-            if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                auto q_current = position->get_rotate();
-                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
-                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                position->set_rotate(q_current);
-                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                return OPERATOR_FINISHED;
-            } else {
-                return OPERATOR_PASS_THROUGH;
-            }
         }
         case SDL_EVENT_WINDOW_MOUSE_ENTER: {
         }

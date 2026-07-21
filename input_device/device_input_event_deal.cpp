@@ -16,8 +16,20 @@ entt::dispatcher dispatcher;
 static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event *event) {
     switch (event->type) {
         case SDL_EVENT_MOUSE_MOTION: {
+            return OPERATOR_PASS_THROUGH;
         }
         case SDL_EVENT_MOUSE_WHEEL: {
+            const Point_2 temp{event->wheel.x, event->wheel.y};
+            if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                auto q_current = position->get_rotate();
+                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
+                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                position->set_rotate(q_current);
+                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                return OPERATOR_FINISHED;
+            } else {
+                return OPERATOR_PASS_THROUGH;
+            }
         }
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
         case SDL_EVENT_MOUSE_BUTTON_UP: {
@@ -40,7 +52,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
                 return OPERATOR_FINISHED;
             } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({1, 0, 0});
+                    position->add_offset({1, 0, 0}); // 这里不能再 是这个样子了，需要按照 相加的方向 走
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
@@ -64,17 +76,6 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
             }
         }
         case SDL_EVENT_FINGER_MOTION: {
-            const Point_2 temp{event->tfinger.dx, event->tfinger.dy};
-            if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                auto q_current = position->get_rotate();
-                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
-                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                position->set_rotate(q_current);
-                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                return OPERATOR_FINISHED;
-            } else {
-                return OPERATOR_PASS_THROUGH;
-            }
         }
         case SDL_EVENT_WINDOW_MOUSE_ENTER: {
         }
@@ -122,6 +123,8 @@ void base_event_dealing(SDL_Event *event) {
     switch (event->type) {
         case SDL_EVENT_MOUSE_MOTION: {
             mouse_pos = {(float) event->motion.x, (float) event->motion.y};
+            // 还是需要进行一个 计算 的 变换  什么时候完成归一化呢？ //
+            break;
         }
         case SDL_EVENT_MOUSE_WHEEL: {
         }

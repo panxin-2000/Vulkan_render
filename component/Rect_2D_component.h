@@ -39,7 +39,7 @@ public:
 
     Point_2 add_offset(const Point_2 &offset) {
         bounding_box_.add_offset(offset);
-        return offset_ = offset + offset_;
+        return offset_ = offset + offset_; // 这里确实还是按照像素来移动的
     }
 
     Point_2 multiply_zoom(const Point_2 &zoom) {
