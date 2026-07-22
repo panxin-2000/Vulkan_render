@@ -22,8 +22,10 @@ public:
     VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
     VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
     int material_index_          = 0;
-    VkViewport viewport;
-    VkRect2D scissor;
+
+
+    VkViewport viewport = {0, 0, 0, 0, 0, 0};
+    VkRect2D scissor    = {0, 0, 0, 0};
 
     PipelineRasterizationState pipelineRasterizationState;
     PipelineDynamicState pipelineDynamicState;

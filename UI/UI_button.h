@@ -6,7 +6,6 @@
 #define HELLO_MAC_UI_BUTTON_H
 
 
-#include "observer_manage.h"
 #include "span.hpp"
 #include "global_singleton.h"
 

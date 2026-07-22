@@ -116,7 +116,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    auto temp_extent = VK_backend::instance().get_current_extent();
+    auto temp_extent = VK_backend::instance().get_current_extent(); //
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = Engine::instance().get_current_depth_view(),
@@ -538,8 +538,21 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     const auto primitives = Render_entt().get<std::vector<VKR_Primitive> >(entity);
     if (!primitives.empty()) {
         for (auto &primitive: primitives) {
-            vkCmdSetViewport(cb, 0, 1, &primitive.viewport);
-            vkCmdSetScissor(cb, 0, 1, &primitive.scissor);
+            if (primitive.viewport.x == 0 && primitive.viewport.y == 0 &&
+                primitive.viewport.width == 0 && primitive.viewport.height == 0 &&
+                primitive.viewport.minDepth == 0 && primitive.viewport.maxDepth == 0) {
+                auto temp = VK_backend::instance().get_viewport();
+                vkCmdSetViewport(cb, 0, 1, &temp);
+            } else {
+                vkCmdSetViewport(cb, 0, 1, &primitive.viewport);
+            }
+            if (primitive.scissor.extent.width == 0 && primitive.scissor.extent.height == 0 &&
+                primitive.scissor.offset.x == 0 && primitive.scissor.offset.y == 0) {
+                auto temp = VK_backend::instance().get_scissor();
+                vkCmdSetScissor(cb, 0, 1, &temp);
+            } else {
+                vkCmdSetScissor(cb, 0, 1, &primitive.scissor);
+            }
             primitive.draw(cb, mesh_data, time_line);
         }
     } else {

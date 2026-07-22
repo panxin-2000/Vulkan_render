@@ -12,7 +12,6 @@
 
 #include "base_event.h"
 #include "imgui_impl_sdl3.h"
-#include "observer_manage.h"
 
 enum operator_select_status {
     no_select_current = 0,

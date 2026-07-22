@@ -7,18 +7,15 @@
 
 
 #include "input_component.h"
-#include "name_component.h"
-#include "observer_manage.h"
 #include "scene_component.h"
 #include "UI_button.h"
 
-entt::entity UI_block(const std::string &name,
-                      float min_x,
-                      float min_y,
-                      float max_x,
-                      float max_y) {
-    auto entity = UI_button(name, min_x, min_y, max_x, max_y);
-    // std::cout << "UI_block" << std::endl;
+inline entt::entity UI_block(const std::string &name,
+                             const float min_x,
+                             const float min_y,
+                             const float max_x,
+                             const float max_y) {
+    const auto entity = UI_button(name, min_x, min_y, max_x, max_y);
     return entity;
 }
 
@@ -32,12 +29,12 @@ entt::entity UI_block(const std::string &name,
  * @param max_y
  * @return 返回创建的button 的 entt::entity
  */
-entt::entity add_button(entt::entity entity, const std::string &name,
-                        int min_x,
-                        int min_y,
-                        int max_x,
-                        int max_y) {
-    auto UI_entity = UI_button(name, min_x, min_y, max_x, max_y);
+inline entt::entity add_button(const entt::entity entity, const std::string &name,
+                               const int min_x,
+                               const int min_y,
+                               const int max_x,
+                               const int max_y) {
+    const auto UI_entity = UI_button(name, min_x, min_y, max_x, max_y);
     clear_parent_relation(UI_entity);
     add_relation(entity, UI_entity);
     return UI_entity;

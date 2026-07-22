@@ -138,7 +138,6 @@ entt::entity UI_button(const std::string &name,
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
         scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
     }
-    Logic_entt().emplace<Drag_event>(entity);
     Logic_entt().emplace<Name_component>(entity, name);
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
 

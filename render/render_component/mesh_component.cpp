@@ -41,8 +41,6 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
         const share_block &indices  = data->get_indices();
         const VkDeviceSize vBufSize{vertices.total_size};
         VKR_Primitive primitive;
-        primitive.scissor  = VK_backend::instance().get_scissor();
-        primitive.viewport = VK_backend::instance().get_viewport();
 
         primitive.vertices_offset = 0;
         primitive.indices_offset  = vBufSize;

@@ -14,6 +14,7 @@
 
 #include "global_singleton.h"
 #include "descriptor_pool.h"
+#include "device_input_event_deal.h"
 #include "earcut.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
@@ -30,8 +31,7 @@
 #include "UI/3d_model_display.h"
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
-
-struct ImGui_ImplVulkan_Data;
+#include "imgui.h"
 
 
 #include "spherical_harmonics.h"
@@ -39,7 +39,7 @@ struct ImGui_ImplVulkan_Data;
 
 
 inline entt::entity add_render_pass(const std::string &name) {
-    entt::entity entity = Logic_entt().create();
+    const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
@@ -317,13 +317,6 @@ void add_manifold_entity() { {
         // logic_update_add_tag<opacity_tag>(entity);
     }
 }
-
-#include "imgui.h"
-
-
-entt::entity object_2d_model(const std::string &name, ImDrawData *draw_data);
-
-void base_event_dealing(SDL_Event *event);
 
 
 int main(int argc, char *argv[]) {

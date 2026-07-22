@@ -143,24 +143,23 @@ void Engine::get_image_to_render() {
     if (result == VK_SUCCESS) {
     } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                VK_backend::instance().is_frame_buffer_resize()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); {
-            recreate_swap_chain();
-            destroy_and_recreate_fence_and_semaphore();
-            VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true
-                                        ,
-                                         UINT64_MAX));
-            VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
-            result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
-                                           VK_backend::instance().get_swap_chain(),
-                                           UINT64_MAX,
-                                           get_current_presentSemaphores(),
-                                           VK_NULL_HANDLE,
-                                           &imageIndex);
-            if (result == VK_SUCCESS) {
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            // 有时候成功，有时候不能一次成功，不知道为什么
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        recreate_swap_chain();
+        destroy_and_recreate_fence_and_semaphore();
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true
+                                    ,
+                                     UINT64_MAX));
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
+        result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
+                                       VK_backend::instance().get_swap_chain(),
+                                       UINT64_MAX,
+                                       get_current_presentSemaphores(),
+                                       VK_NULL_HANDLE,
+                                       &imageIndex);
+        if (result == VK_SUCCESS) {
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // 有时候成功，有时候不能一次成功，不知道为什么
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         std::cout << "failed to acquire swap chain image!" << std::endl;
     }
