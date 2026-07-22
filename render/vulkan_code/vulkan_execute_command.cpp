@@ -39,14 +39,7 @@ temp_command_execute::~temp_command_execute() {
 
     vkEndCommandBuffer(commandBuffer);
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer; {
-        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
-    }
-    // command_submit submit(1, &commandBuffer);
+    command_submit submit(1, &commandBuffer);
 
     vkQueueWaitIdle(backend.get_queue());
     if (commandBuffer != VK_NULL_HANDLE)

@@ -88,30 +88,14 @@ void Engine::submit_render_queue(uint64_t time_line) {
         signal_semaphore_values
     };
 
-    VkSubmitInfo submitInfo{
-        .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext                = &timeline_semaphore_submit_info,
-        .waitSemaphoreCount   = 1,
-        .pWaitSemaphores      = &get_current_presentSemaphores(),
-        .pWaitDstStageMask    = &waitStages,
-        .commandBufferCount   = 1,
-        .pCommandBuffers      = &cb, // 这里可以是一个向量，记录多个线程写入的指令。
-        .signalSemaphoreCount = 2,
-        .pSignalSemaphores    = signal_semaphores, //  &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-    }; {
-        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VK_backend::instance().get_queue(), 1, &submitInfo, get_current_fences()
-                                 ));
-    }
-
-    // command_submit submit(1, &cb,
-    //                       get_current_fences(),
-    //                       &timeline_semaphore_submit_info,
-    //                       1,
-    //                       &get_current_presentSemaphores(),
-    //                       &waitStages,
-    //                       2,
-    //                       signal_semaphores);
+    command_submit submit(1, &cb,
+                          get_current_fences(),
+                          &timeline_semaphore_submit_info,
+                          1,
+                          &get_current_presentSemaphores(),
+                          &waitStages,
+                          2,
+                          signal_semaphores);
 }
 
 

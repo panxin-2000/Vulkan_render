@@ -140,13 +140,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
         vkCmdPipelineBarrier2(cbOneTime, &barrierTexInfo);
         VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cbOneTime));
-        VkSubmitInfo oneTimeSI{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &cbOneTime
-        }; {
-            std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-            VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(handle.get_queue(), 1, &oneTimeSI, fenceOneTime));
-        }
-        // command_submit submit(1, &cbOneTime);
+        command_submit submit(1, &cbOneTime, fenceOneTime);
         VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle.get_device(), 1, &fenceOneTime, VK_TRUE, UINT64_MAX));
         vkDestroyFence(handle.get_device(), fenceOneTime, nullptr);
         vmaUnmapMemory(handle.get_allocator(), imgSrcAllocation);
