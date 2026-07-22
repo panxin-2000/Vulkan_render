@@ -359,17 +359,17 @@ int main(int argc, char *argv[]) {
 
     add_volume_pass("nanovdb_volume"); {
         // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+    } {
+        auto value           = get_max_descriptor_update_after_bind_samplers();
+        const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture         = create_textures_to_gpu("assets/suzanne0.ktx");
+        const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        set_baseColor_Texture_index(entity, index);
+        logic_update_add_tag<opacity_tag>(entity);
     }
     // {
-    //     auto value           = get_max_descriptor_update_after_bind_samplers();
-    //     const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-    //     auto texture         = create_textures_to_gpu( "assets/suzanne0.ktx");
-    //     const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-    //     set_baseColor_Texture_index(entity, index);
-    //     logic_update_add_tag<opacity_tag>(entity);
-    // }
-    // {
-    //     const auto entity = load_gltf_model("DamagedHelmet", "assets/DamagedHelmet.gltf");
+    //     const auto entity = load_gltf_model("DamagedHelmet",
+    //                                         "~/Downloads/niagara_bistro-master/bistro.gltf");
     //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
     //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
     //     // index        = 0;

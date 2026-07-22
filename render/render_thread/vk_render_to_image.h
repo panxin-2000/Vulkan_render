@@ -166,8 +166,9 @@ public:
         auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line); {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                auto view_opacity = Render_entt().view<opacity_tag>();
+                auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
                 for (const auto it: view_opacity) {
+                    auto name = Render_entt().get<Name_component>(it);
                     build_command_buffer(handle, it, time_line);
                 }
             }
@@ -186,14 +187,15 @@ public:
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, opacity_tag>();
+        } {// 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, opacity_tag, Name_component>();
             for (const auto it: view) {
+                auto name = Render_entt().get<Name_component>(it);
                 build_command_buffer(handle, it, time_line);
             }
         } {

@@ -174,8 +174,8 @@ void base_event_dealing(SDL_Event *event) {
     // 找到当前区域的一个递归栈
 
     auto ray = get_screen_ray(mouse_pos);
-    LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
-             ray.direction.x, ray.direction.y, ray.direction.z);
+    // LOG_INFO(g_log(), "ray {}  {}  {}   direction {} {} {}  ", ray.point.x, ray.point.y, ray.point.z,
+    //          ray.direction.x, ray.direction.y, ray.direction.z);
 
 
     std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
