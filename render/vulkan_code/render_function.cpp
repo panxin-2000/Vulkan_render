@@ -6,6 +6,7 @@
 
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
+#include "vulkan_execute_command.h"
 
 const VkImage &Engine::get_current_swap_chain_image(uint index) const {
     return get_swap_chain_images()[get_imageIndex()]->get_image_handle();
@@ -102,6 +103,15 @@ void Engine::submit_render_queue(uint64_t time_line) {
         VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(VK_backend::instance().get_queue(), 1, &submitInfo, get_current_fences()
                                  ));
     }
+
+    // command_submit submit(1, &cb,
+    //                       get_current_fences(),
+    //                       &timeline_semaphore_submit_info,
+    //                       1,
+    //                       &get_current_presentSemaphores(),
+    //                       &waitStages,
+    //                       2,
+    //                       signal_semaphores);
 }
 
 

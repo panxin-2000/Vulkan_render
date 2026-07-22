@@ -11,6 +11,25 @@
 #include "APP_utility_mixins.h"
 
 
+class command_submit {
+    static std::mutex submitMutex;
+
+public:
+    command_submit() = delete;
+
+    command_submit(uint32_t commandBufferCount,
+                   const VkCommandBuffer *pCommandBuffers,
+                   VkFence fence                                 = VK_NULL_HANDLE,
+                   const void *pNext                             = nullptr,
+                   uint32_t waitSemaphoreCount                   = 0,
+                   const VkSemaphore *pWaitSemaphores            = nullptr,
+                   const VkPipelineStageFlags *pWaitDstStageMask = nullptr,
+                   uint32_t signalSemaphoreCount                 = 0,
+                   const VkSemaphore *pSignalSemaphores          = nullptr
+    );
+};
+
+
 class temp_command_execute {
     VkCommandPool pool            = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;

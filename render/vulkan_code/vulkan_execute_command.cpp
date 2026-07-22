@@ -3,8 +3,35 @@
 //
 
 #include "vulkan_execute_command.h"
-#include "../engine.h"
 #include "vulkan_backend.h"
+#include "vulkan_buffer.h"
+
+std::mutex command_submit::submitMutex;
+
+command_submit::command_submit(const uint32_t commandBufferCount,
+                               const VkCommandBuffer *pCommandBuffers,
+                               const VkFence fence,
+                               const void *pNext,
+                               const uint32_t waitSemaphoreCount,
+                               const VkSemaphore *pWaitSemaphores,
+                               const VkPipelineStageFlags *pWaitDstStageMask,
+                               const uint32_t signalSemaphoreCount,
+                               const VkSemaphore *pSignalSemaphores) {
+    const auto &backend = VK_backend::instance();
+    const VkSubmitInfo submitInfo{
+        .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext                = pNext,
+        .waitSemaphoreCount   = waitSemaphoreCount,
+        .pWaitSemaphores      = pWaitSemaphores,
+        .pWaitDstStageMask    = pWaitDstStageMask,
+        .commandBufferCount   = commandBufferCount,
+        .pCommandBuffers      = pCommandBuffers,
+        .signalSemaphoreCount = signalSemaphoreCount,
+        .pSignalSemaphores    = pSignalSemaphores,
+    };
+    std::lock_guard<std::mutex> lock(submitMutex);
+    VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(backend.get_queue(), 1, &submitInfo, fence));
+}
 
 
 temp_command_execute::~temp_command_execute() {
@@ -19,8 +46,13 @@ temp_command_execute::~temp_command_execute() {
         std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
         vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
     }
+    // command_submit submit(1, &commandBuffer);
+
     vkQueueWaitIdle(backend.get_queue());
-    vkFreeCommandBuffers(backend.get_device(), Engine::instance().get_command_pool(), 1, &commandBuffer);
+    if (commandBuffer != VK_NULL_HANDLE)
+        vkFreeCommandBuffers(backend.get_device(), pool, 1, &commandBuffer);
+    if (pool != VK_NULL_HANDLE)
+        vkDestroyCommandPool(backend.get_device(), pool, nullptr);
 }
 
 
@@ -32,12 +64,19 @@ void temp_command_execute::add_execute_function(
 temp_command_execute::temp_command_execute() {
     const auto &backend = VK_backend::instance();
     // pool // 是需要申请的
+
+    const VkCommandPoolCreateInfo commandPoolCI{
+        .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext            = nullptr,
+        .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = backend.get_queue_Family()
+    };
+    VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, &pool));
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = Engine::instance().get_command_pool(); // 那么确实是，这里不应该包含一个engine池的
+    allocInfo.commandPool        = pool;
     allocInfo.commandBufferCount = 1;
-
     //  todo : vkAllocateCommandBuffers 必须加锁
     vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
 
