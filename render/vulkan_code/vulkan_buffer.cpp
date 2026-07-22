@@ -6,6 +6,7 @@
 
 #include "../engine.h"
 #include "vulkan_backend.h"
+#include "vulkan_execute_command.h"
 
 static std::mutex buffer_block_mutex;
 
@@ -103,14 +104,16 @@ bool VKR_buffer::need_flush() const {
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
                                   const VKR_buffer_ptr &dstBuffer, VkDeviceSize size) {
-    const VkCommandBuffer command_buffer = begin_one_command_buffer();
-    VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = 0;
-    copyRegion.dstOffset = 0;
-    copyRegion.size      = size;
-    vkCmdCopyBuffer(command_buffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
+    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
+        copyRegion.size      = size;
+        vkCmdCopyBuffer(commandBuffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
+    };
 
-    end_and_submit_one_command_buffer(command_buffer);
+    const temp_command_execute execute;
+    execute.add_execute_function(execute_function);
 }
 
 static std::mutex queueMutex;
@@ -119,44 +122,6 @@ std::mutex &get_vkQueueSubmit_mutex() {
     return queueMutex;
 }
 
-void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer) {
-    const auto &backend = VK_backend::instance();
-
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers    = &commandBuffer; {
-        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        vkQueueSubmit(backend.get_queue(), 1, &submitInfo, VK_NULL_HANDLE);
-    }
-    vkQueueWaitIdle(backend.get_queue());
-
-    vkFreeCommandBuffers(backend.get_device(), Engine::instance().get_command_pool(), 1, &commandBuffer);
-}
-
-
-VkCommandBuffer begin_one_command_buffer() {
-    const auto &backend = VK_backend::instance();
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool        = Engine::instance().get_command_pool();
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    //  todo : vkAllocateCommandBuffers 必须加锁
-    vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    return commandBuffer;
-}
 
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,
@@ -233,7 +198,8 @@ void discard_buffer_map_clean() {
     discard_buffer_block_map_clean();
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(), timeline);
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(),
+                  timeline);
         if (Engine::instance().get_finished_timeline() >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
             vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);

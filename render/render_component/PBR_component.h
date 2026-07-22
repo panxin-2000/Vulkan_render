@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_PBR_COMPONENT_H
 #define HELLO_MAC_PBR_COMPONENT_H
 #include "global_singleton.h"
+#include "vulkan_image.h"
 
 
 struct Color {
@@ -60,6 +61,12 @@ public:
     // 值为 0.0 表示完全遮蔽（无间接光），值为 1.0 表示完全无遮蔽（接收全部间接光）
 };
 
+struct PBR_component_ptr {
+    Texture_parameter baseColorTexture;
+    Texture_parameter normalTexture;
+    Texture_parameter emissiveTexture;
+    Texture_parameter ORM_Texture;
+};
 
 void set_PBR_base_color(const entt::entity entity, Color baseColorFactor = {1.0f, 1.0f, 1.0f, 1.0f});
 
@@ -71,11 +78,11 @@ void set_PBR_metallic_roughness_occlusion(const entt::entity entity,
                                           float roughness = 1.0f,
                                           float occlusion = 1.0f);
 
-void set_baseColor_Texture_index(const entt::entity entity, uint32_t index = 0);
+void set_baseColor_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture);
 
-void set_normal_Texture_index(const entt::entity entity, uint32_t index = 1);
+void set_normal_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture);
 
-void set_emissive_Texture_index(const entt::entity entity, uint32_t index = 0);
+void set_emissive_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture);
 
-void set_ORM_Texture_index(const entt::entity entity, uint32_t index = 0);
+void set_ORM_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture);
 #endif //HELLO_MAC_PBR_COMPONENT_H

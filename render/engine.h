@@ -58,6 +58,7 @@ private:
 
 
     std::shared_ptr<vk_shader_data> shader_date;
+    std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets;
 
 public:
     static Engine &instance();
@@ -269,6 +270,10 @@ public:
     void destroy();
 
     void destroy_and_recreate_fence_and_semaphore();
+
+    void add_bindless_texture(const std::optional<Texture_parameter> &texture);
+
+    void update_bindless_descriptor_sets_function();
 };
 
 

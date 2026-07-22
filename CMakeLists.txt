@@ -295,6 +295,7 @@ if (WITH_VULKAN_BACKEND)
             "render/vulkan_code/vulkan_image_and_view_discard.cpp"
             "render/vulkan_code/vulkan_sample.cpp"
             "render/vulkan_code/vulkan_buffer.cpp"
+            "render/vulkan_code/vulkan_execute_command.cpp"
             "render/vulkan_code/vulkan_buffer_block.cpp"
             "render/vulkan_code/vulkan_backend.cpp"
             "render/vulkan_code/transfer_texture_to_gpu.cpp"
@@ -593,7 +594,7 @@ target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
 set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(learn_render PRIVATE TBB::tbb  Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 
 target_link_libraries(learn_render PRIVATE cereal::cereal)
 #target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)

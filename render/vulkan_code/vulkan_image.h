@@ -10,12 +10,12 @@
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
 
-
 class VKR_image : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     VkImageView image_view_   = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
+    uint32_t index_           = 0; //
 
 public:
     VKR_image(const VkImage &image_handle,
@@ -23,6 +23,12 @@ public:
               const VkImageView &image_view) : image_handle_(image_handle),
                                                allocation_(allocation),
                                                image_view_(image_view) {
+        // 这里开始构建的 时候就需要 添加 index 了
+        index_ = get_one_bindless_index();
+    }
+
+    [[nodiscard]] uint32_t get_index() const {
+        return index_;
     }
 
     [[nodiscard]] VkImage get_image_handle(const uint64_t timeline = 0) {
@@ -45,6 +51,26 @@ public:
         if (timeline > timeline_) timeline_ = timeline;
         return image_view_;
     }
+
+private:
+    static std::queue<uint32_t> free_index;
+    static uint32_t max_index;
+
+    static uint32_t get_one_bindless_index() {
+        if (!free_index.empty()) {
+            const auto value = free_index.front();
+            free_index.pop();
+            return value;
+        }
+        const auto return_value = max_index;
+        ++max_index;
+        return return_value;
+    }
+
+    static bool add_to_free_index(const uint32_t &index) {
+        free_index.push(index);
+        return true;
+    }
 };
 
 
@@ -64,6 +90,11 @@ public:
     [[nodiscard]] uint32_t use_count() const {
         return ptr.use_count();
     }
+
+    [[nodiscard]] uint32_t get_index() const {
+        return ptr->get_index();
+    }
+
 
     explicit operator bool() const noexcept {
         return ptr != nullptr;

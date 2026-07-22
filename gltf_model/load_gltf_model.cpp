@@ -417,8 +417,11 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            uint32_t index                        = add_bindless_uniform_sampler2D("baseColor", temp);
-            pbr_material.baseColorTexture         = index;
+            pbr_material.baseColorTexture         = temp.value().image.get_index();
+            auto &engine                          = Engine::instance();
+            engine.add_bindless_texture(texture);
+            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.baseColorTexture = temp.value();
         }
         if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
             const auto texture_index              = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -426,8 +429,11 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            uint32_t index                        = add_bindless_uniform_sampler2D("metallicRoughness", temp);
-            pbr_material.ORM_Texture              = index;
+            pbr_material.ORM_Texture              = temp.value().image.get_index();
+            auto &engine                          = Engine::instance();
+            engine.add_bindless_texture(texture);
+            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.baseColorTexture = temp.value();
         }
         if (material.normalTexture.index >= 0) {
             const auto texture_index              = material.normalTexture.index;
@@ -435,9 +441,11 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            set_render_parameter(entity, "normal", temp);
-            uint32_t index             = add_bindless_uniform_sampler2D("normal", temp);
-            pbr_material.normalTexture = index;
+            pbr_material.normalTexture            = temp.value().image.get_index();
+            auto &engine                          = Engine::instance();
+            engine.add_bindless_texture(texture);
+            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.baseColorTexture = temp.value();
         }
         if (material.occlusionTexture.index >= 0) {
             const auto texture_index              = material.occlusionTexture.index;
@@ -445,9 +453,13 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            uint32_t index                        = add_bindless_uniform_sampler2D("occlusion", temp);
+            uint32_t index                        = temp.value().image.get_index();
             // pbr_material.ORM_Texture              = index;
             // todo: ORM_Texture 需要合并两张贴图 问题是在这里应该如何合并
+            auto &engine = Engine::instance();
+            engine.add_bindless_texture(texture);
+            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.baseColorTexture = temp.value();
         }
         if (material.emissiveTexture.index >= 0) {
             const auto texture_index              = material.emissiveTexture.index;
@@ -455,8 +467,11 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             auto &image                           = model.images[image_index];
             auto texture                          = load_image(image);
             std::optional<Texture_parameter> temp = texture;
-            uint32_t index                        = add_bindless_uniform_sampler2D("emissive", temp);
-            pbr_material.emissiveTexture          = index;
+            pbr_material.emissiveTexture          = temp.value().image.get_index();
+            auto &engine                          = Engine::instance();
+            engine.add_bindless_texture(texture);
+            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.baseColorTexture = temp.value();
         }
         set_render_parameter(entity, "object_material", pbr_material);
     }

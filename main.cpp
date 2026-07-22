@@ -355,16 +355,17 @@ int main(int argc, char *argv[]) {
     add_skybox_entity();
     // add_manifold_entity();
 
-    // add_simple_computer_buffer_write();
+    add_simple_computer_buffer_write();
 
     add_volume_pass("nanovdb_volume"); {
         // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     } {
-        auto value           = get_max_descriptor_update_after_bind_samplers();
-        const auto entity    = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture         = create_textures_to_gpu("assets/suzanne0.ktx");
-        const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
-        set_baseColor_Texture_index(entity, index);
+        auto value        = get_max_descriptor_update_after_bind_samplers();
+        const auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
+        auto texture      = create_textures_to_gpu("assets/suzanne0.ktx");
+        // const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
+        // 这一步没有做导致出问题了,也就是模型显示为黑色的
+        set_baseColor_Texture_index(entity, texture);
         logic_update_add_tag<opacity_tag>(entity);
     }
     // {

@@ -187,7 +187,8 @@ public:
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
             }
-        } {// 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
+        } {
+            // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
             auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);
@@ -279,30 +280,13 @@ public:
         need_render             = not_start;
     }
 
-    void add_pbr_default_textures() {
-        // 添加一张纯白的背景图片
-        {
-            std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
-            uint32_t index = add_bindless_uniform_sampler2D("default_base_Color_texture", texture);
-            assert(index == 0);
-        } // 添加一张纯白的背景图片
-        {
-            std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
-            uint32_t index = add_bindless_uniform_sampler2D("default_normal_texture", texture);
-            // assert(index == 1);
-        } {
-            // std::optional<Texture_parameter> texture = create_texture_from_image( );
-            // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
-            // assert(index == 1);
-        }
-    }
+
 
     void render_thread(VK_backend &handle) {
         if (need_render == running) {
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
-        add_pbr_default_textures();
 
 
         while (need_render == running) {

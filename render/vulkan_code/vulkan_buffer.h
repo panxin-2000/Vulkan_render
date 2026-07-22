@@ -163,7 +163,7 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buf
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 
-VkCommandBuffer begin_one_command_buffer();
+
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer, const std::function<void(void *)> &mem_copy_callback);
 
