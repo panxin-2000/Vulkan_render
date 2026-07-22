@@ -107,7 +107,6 @@ public:
         create_device();
         create_VMA();
         create_swap_chain(VK_NULL_HANDLE);
-        create_swap_chain_image_and_view();
     }
 
     void destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
