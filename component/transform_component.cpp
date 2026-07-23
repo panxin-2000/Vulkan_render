@@ -79,11 +79,11 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
     // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
-    float x = (4.0f * mouse_positon.x) / static_cast<float>(width) - 1.0f;
-    float y = (4.0f * mouse_positon.y) / static_cast<float>(height) - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
-
+    float x = (2.0f * mouse_positon.x) / static_cast<float>(width) - 1.0f;
+    float y = (2.0f * mouse_positon.y) / static_cast<float>(height) - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
+    // 应该更改为 2 因为上面的  SDL_GetWindowSize 的大小改变了， 是屏幕的逻辑大小，而不是具体的像素大小
     // 这里是什么空间？
-    LOG_INFO(g_log(), "NDC x: {} y: {}", x, y);
+    // LOG_INFO(g_log(), "NDC x: {} y: {}", x, y);
     // 2. 构造近裁剪面和远裁剪面的点 (在裁剪空间)
     // Vulkan 的近平面通常是 z=0.0，远平面是 z=1.0
     Eigen::Vector4f ray_start_clip(x, y, 0.0f, 1.0f);
@@ -111,11 +111,11 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 }
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event *event) {
+wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &event) {
     auto &status = Logic_entt().get<Input_Component>(entity);
-    switch (event->type) {
+    switch (event.type) {
         case SDL_EVENT_MOUSE_WHEEL: {
-            Point_2 temp{event->wheel.x, event->wheel.y};
+            const Point_2 temp{event.wheel.x, event.wheel.y};
             // 绕 Z 轴旋转 45 度
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
@@ -135,72 +135,84 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event *even
             return OPERATOR_FINISHED;
         }
         case SDL_EVENT_TEXT_INPUT: {
+            break;
         }
-        case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP: {
-            if (event->key.key == SDLK_W && Logic_entt().valid(entity)) {
+            break;
+        }
+        case SDL_EVENT_KEY_DOWN: {
+            break;
+            if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, -1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_S && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, -1});
+                    position->add_offset({0, 0, 1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
+                if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                    position->add_offset({-1, 0, 0});
+                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                }
+                return OPERATOR_FINISHED;
+            } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({1, 0, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_D && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_X && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
                 if (Logic_entt().valid(entity)) {
                     Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    if (event->key.mod & SDL_KMOD_SHIFT)
+                    if (event.key.mod & SDL_KMOD_SHIFT)
                         position->add_offset({0, -1, 0});
                     else
                         position->add_offset({0, 1, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
                 return OPERATOR_CANCELLED;
             } else {
                 return OPERATOR_PASS_THROUGH;
             }
         }
         case SDL_EVENT_FINGER_MOTION: {
+            break;
         }
         case SDL_EVENT_WINDOW_MOUSE_ENTER: {
+            break;
         }
         case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
+            break;
         }
         case SDL_EVENT_WINDOW_FOCUS_GAINED:
         case SDL_EVENT_WINDOW_FOCUS_LOST: {
+            break;
         }
         case SDL_EVENT_GAMEPAD_ADDED:
         case SDL_EVENT_GAMEPAD_REMOVED: {
+            break;
         }
 
         case SDL_EVENT_MOUSE_MOTION: {
             if (status.select_status_ == select_current) {
                 // TODO : 没有确定坐标或者说坐标的系数
-                Point_2 current_position{event->motion.x, event->motion.y};
-                Point_2 last_position{event->motion.x - event->motion.xrel, event->motion.yrel};
+                Point_2 current_position{event.motion.x, event.motion.y};
+                Point_2 last_position{
+                    event.motion.x - event.motion.xrel,
+                    event.motion.y - event.motion.yrel
+                };
 
                 if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
                     const auto object_position = transform->get_position();
@@ -287,11 +299,6 @@ void init_world_scene_root(entt::entity entity) {
 
     // allocate_descriptor_sets(entity, "bindless"); // todo : 需要确定放在哪里？
 }
-
-
-
-
-
 
 
 void update_camera_transform() {

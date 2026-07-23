@@ -12,13 +12,13 @@
 entt::dispatcher dispatcher;
 
 
-static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event *event) {
-    switch (event->type) {
+static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event) {
+    switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
             return OPERATOR_PASS_THROUGH;
         }
         case SDL_EVENT_MOUSE_WHEEL: {
-            const Point_2 temp{event->wheel.x, event->wheel.y};
+            const Point_2 temp{event.wheel.x, event.wheel.y};
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
@@ -35,35 +35,36 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
         }
         case SDL_EVENT_TEXT_INPUT: {
         }
-        case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP: {
-            if (event->key.key == SDLK_W && Logic_entt().valid(entity)) {
+        }
+        case SDL_EVENT_KEY_DOWN: {
+            if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, -1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_S && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, -1});
+                    position->add_offset({0, 0, 1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({1, 0, 0}); // 这里不能再 是这个样子了，需要按照 相加的方向 走
+                    position->add_offset({-1, 0, 0}); // 这里不能再 是这个样子了，需要按照 相加的方向 走
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_D && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({1, 0, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    if (event->key.mod & SDL_KMOD_SHIFT)
+                    if (event.key.mod & SDL_KMOD_SHIFT)
                         position->add_offset({0, -1, 0});
                     else
                         position->add_offset({0, 1, 0});
@@ -96,8 +97,10 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
 #include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
+    // ray.direction   = {0.0001, 0.0001, -1};
     const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, Transform>();
     for (auto &entity: view) {
+        auto &name    = view.get<Name_component>(entity);
         auto position = view.get<Transform>(entity);
         auto box      = view.get<AABB_centroid<Point_3> >(entity);
         box.add_offset(position.get_position());
@@ -112,16 +115,16 @@ entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
 }
 
 
-void base_event_dealing(SDL_Event *event) {
+void base_event_dealing(const SDL_Event &event) {
     const auto view = Logic_entt().view<Name_component, Scene_Component, Input_Component>();
 
     static entt::entity current_select_entity = get_UI_scene_root();
     static wmOperatorStatus current_status    = OPERATOR_ZERO;
     static Point_2 mouse_pos{-1, -1};
 
-    switch (event->type) {
+    switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
-            mouse_pos = {(float) event->motion.x, (float) event->motion.y};
+            mouse_pos = {(float) event.motion.x, (float) event.motion.y};
             // 还是需要进行一个 计算 的 变换  什么时候完成归一化呢？ //
             break;
         }
@@ -179,15 +182,16 @@ void base_event_dealing(SDL_Event *event) {
 
 
     std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
-    // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
-    // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
-    //     auto &name = view.get<Name_component>(*it);
-    //     std::cout << "name: " << name.name << std::endl;
-    // }
 
     if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
         UI_stack.push_back(insert_entity);
     }
+    // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
+    // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
+    //     auto &name = view.get<Name_component>(*it);
+    //     std::cout << "name: " << name.name_ << std::endl;
+    // }
+
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = Logic_entt().try_get<Input_Component>(*it)) {
             if (input->on_Event != nullptr) {
@@ -205,9 +209,8 @@ void base_event_dealing(SDL_Event *event) {
             }
         }
     }
-    world_root_on_Event(get_world_root(), event);
-
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {
+        world_root_on_Event(get_world_root(), event);
     }
 }

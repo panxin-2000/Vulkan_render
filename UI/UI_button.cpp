@@ -9,9 +9,9 @@
 #include "name_component.h"
 #include "Rect_2D_component.h"
 
-static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event *event) {
+static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &event) {
     auto &status = Logic_entt().get<Input_Component>(entity);
-    switch (event->type) {
+    switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
             if (status.select_status_ == select_current)
                 if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
@@ -38,53 +38,53 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event *eve
         }
         case SDL_EVENT_KEY_DOWN:
         case SDL_EVENT_KEY_UP: {
-            if (event->key.key == SDLK_W && Logic_entt().valid(entity)) {
+            if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, -1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_S && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, -1});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_A && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({1, 0, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_D && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({1, 0, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_X && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
                 if (Logic_entt().valid(entity)) {
                     Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    if (event->key.mod & SDL_KMOD_SHIFT)
+                    if (event.key.mod & SDL_KMOD_SHIFT)
                         position->add_offset({0, -1, 0});
                     else
                         position->add_offset({0, 1, 0});
                     Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
-            } else if (event->key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
+            } else if (event.key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
                 return OPERATOR_CANCELLED;
             } else {
                 return OPERATOR_PASS_THROUGH;
             }
         }
         case SDL_EVENT_FINGER_MOTION: {
-            const Point_2 temp{event->tfinger.dx, event->tfinger.dy};
+            const Point_2 temp{event.tfinger.dx, event.tfinger.dy};
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
                 auto q_current = position->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);

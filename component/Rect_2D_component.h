@@ -55,9 +55,9 @@ public:
     }
 };
 
-bool deal_zoom(const entt::entity entity, const SDL_Event *event);
+bool deal_zoom(const entt::entity entity, const SDL_Event &event);
 
-bool deal_position_offset(const entt::entity entity, const SDL_Event *event);
+bool deal_position_offset(const entt::entity entity, const SDL_Event &event);
 
 bool check_entity_intersect_point(const entt::entity entity, const Point_2 &current_position);
 

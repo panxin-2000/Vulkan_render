@@ -24,13 +24,13 @@ public:
 
     Input_Component(
         const std::function<wmOperatorStatus
-            (entt::entity, const SDL_Event *)> &function) : on_Event(function) {
+            (entt::entity, const SDL_Event &)> &function) : on_Event(function) {
     }
 
     ~Input_Component() {
     }
 
-    std::function<wmOperatorStatus (entt::entity, const SDL_Event *event)> on_Event;
+    std::function<wmOperatorStatus (entt::entity, const SDL_Event &event)> on_Event;
 };
 
 

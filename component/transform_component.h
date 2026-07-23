@@ -107,7 +107,7 @@ inline entt::entity &get_world_root() {
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon);
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event *event);
+wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &event);
 
 
 uint32_t free_bindless_uniform_sampler2D(const std::string &name);
