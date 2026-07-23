@@ -112,7 +112,7 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
         vkCmdCopyBuffer(commandBuffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
     };
 
-    const temp_command_execute execute;
+    temp_command_execute execute;
     execute.add_execute_function(execute_function);
 }
 
@@ -121,7 +121,6 @@ static std::mutex queueMutex;
 std::mutex &get_vkQueueSubmit_mutex() {
     return queueMutex;
 }
-
 
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,

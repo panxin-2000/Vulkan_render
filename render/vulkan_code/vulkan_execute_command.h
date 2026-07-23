@@ -33,11 +33,13 @@ public:
 class temp_command_execute {
     VkCommandPool pool            = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VkFence fence_                = VK_NULL_HANDLE;
 
 public:
     temp_command_execute();
 
-    void add_execute_function(const std::function<void(VkCommandBuffer commandBuffer)> &callback) const;
+    void add_execute_function(const std::function<void(VkCommandBuffer commandBuffer)> &callback,
+                              VkFence fence = VK_NULL_HANDLE);
 
     ~temp_command_execute();
 };

@@ -18,58 +18,34 @@
 #include "vulkan_render_manage.h"
 
 
-void update_bindings_to_descriptor_sets(const entt::entity entity, const std::string &b_or_g_or_o) {
-    // 以 binding 为一个最小数量
-    auto &handle = VK_backend::instance();
-    // if (static_cast<uint>(entity) == 1 || static_cast<uint>(entity) == 5) {
-    //     return;
-    // }
-
+void update_bindings_to_descriptor_sets(const entt::entity entity) {
     auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-    // if (b_or_g_or_o == "bindless") {
-    //     vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(get_world_root());
-    //     // allocate_descriptor_sets(instance, "bindless");  // 只放在初次
-    //     const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-    //     update_descriptor_sets(vk_s_d_s.update_bindless_descriptor_sets, descriptor_sets);
-    // } else if (b_or_g_or_o == "global") {
-    //     if (vk_s_d_s.update_global_descriptor_sets.empty()) {
-    //         return;
-    //     }
-    //     allocate_descriptor_sets(entity, "global");
-    //     const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-    //     update_descriptor_sets(vk_s_d_s.update_global_descriptor_sets, descriptor_sets);
-    // } else
-
-    if (b_or_g_or_o == "object") {
-        if (vk_s_d_s.update_object_descriptor_sets.empty()) {
-            return;
-        }
-        allocate_descriptor_sets(entity, "object");
-        const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
-        update_descriptor_sets(vk_s_d_s.update_object_descriptor_sets, descriptor_sets);
+    if (vk_s_d_s.update_object_descriptor_sets.empty()) {
+        return;
     }
+    allocate_descriptor_sets(entity);
+    const Proxy_descriptor_sets &descriptor_sets = get_descriptor_sets(entity);
+    update_descriptor_sets(vk_s_d_s.update_object_descriptor_sets, descriptor_sets);
 }
 
 
-void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name) {
+void allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_backend::instance();
     if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-        if (one_binding_name.find("object") != std::string::npos) {
-            if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
-                auto sets_flags = create_descriptor_sets_flags(handle,
-                                                               (*shader_temp)->object_sets_bindings);
-                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
-                                                                           (*shader_temp)->
-                                                                           object_descriptor_sets_layout,
-                                                                           {});
-                // 这里好像每次就把 全部的 都重新申请了 准确的说 是把 某个 set = 0，1，2 的 全部都申请了
-                // 另一边，我 只是把 相应的 需要 update 的 数据地址全部 填写到了每个 set 中
-                // 只需要解决 set 到问题就好
-            }
+        if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
+            auto sets_flags = create_descriptor_sets_flags(handle,
+                                                           (*shader_temp)->object_sets_bindings);
+            vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
+                                                                       (*shader_temp)->
+                                                                       object_descriptor_sets_layout,
+                                                                       {});
+            // 这里好像每次就把 全部的 都重新申请了 准确的说 是把 某个 set = 0，1，2 的 全部都申请了
+            // 另一边，我 只是把 相应的 需要 update 的 数据地址全部 填写到了每个 set 中
+            // 只需要解决 set 到问题就好
         }
     }
 }
@@ -157,7 +133,7 @@ void global_uniform_buffer_update_function() {
     // global 相关的内容尽量只能偏移，
     const auto view = Render_entt().view<global_uniform_buffer_update>();
     for (const auto &it: view) {
-        update_bindings_to_descriptor_sets(it, "global");
+        update_bindings_to_descriptor_sets(it);
         Render_entt().emplace_or_replace<descriptor_set_update>(it);
         auto lambda = [](const entt::entity entity) {
             if (Render_entt().all_of<Scene_Component>(entity))
@@ -177,16 +153,16 @@ void add_bindless_update_tag() {
 void bindless_uniform_sampler2D_update_function() {
     const auto view = Render_entt().view<bindless_set_update_detail>();
     for (const auto &it: view) {
-        update_bindings_to_descriptor_sets(it, "bindless");
+        update_bindings_to_descriptor_sets(it);
         Render_entt().emplace_or_replace<descriptor_set_update>(it); // 不需要，因为 只是增加了内容，不改变 set
         Render_entt().remove<bindless_set_update_detail>(it);
     }
 }
 
-void uniform_buffer_update_function() {
+void object_parameter_update() {
     const auto view = Render_entt().view<uniform_buffer_update>();
     for (const auto &it: view) {
-        update_bindings_to_descriptor_sets(it, "object");
+        update_bindings_to_descriptor_sets(it);
         Render_entt().emplace_or_replace<descriptor_set_update>(it);
         Render_entt().remove<uniform_buffer_update>(it);
     }
@@ -209,7 +185,6 @@ void push_constant_update_function() {
     for (const auto it: view) {
         auto parameter = Render_entt().get_or_emplace<shader_need_parameter>(it);
         Render_entt().emplace_or_replace<decltype(parameter)>(it, parameter);
-
         Render_entt().remove<push_constant_update>(it);
     }
 }

@@ -108,7 +108,7 @@ VKR_buffer_block_ptr set_render_push_constant_parameter(const entt::entity entit
     return buffer_block;
 }
 
-void allocate_descriptor_sets(const entt::entity entity, const std::string &one_binding_name);
+void allocate_descriptor_sets(const entt::entity entity);
 
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity);
 
@@ -117,7 +117,7 @@ Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity);
 
 void descriptor_set_update_function();
 
-void uniform_buffer_update_function();
+void object_parameter_update();
 
 void global_uniform_buffer_update_function();
 

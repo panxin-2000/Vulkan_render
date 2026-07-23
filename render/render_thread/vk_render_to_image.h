@@ -68,9 +68,10 @@ class vk_render_GPU {
 
 
 public:
-    void one_cycle(VK_backend &handle) { {
+    void one_cycle(VK_backend &handle) {
+        auto &engine = Engine::instance(); {
             std::unique_lock<std::mutex> lock(mtx);
-            Engine::instance().update_global_parameter(); // 这里的好消息是 什么？ 这里可以申请；
+            engine.update_global_parameter(); // 这里的好消息是 什么？ 这里可以申请；
             // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
             vk_render_queue::instance().execute_update_lambda();
         } {
@@ -84,9 +85,10 @@ public:
                 Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
             }
         }
-        bindless_uniform_sampler2D_update_function();
-        global_uniform_buffer_update_function();
-        uniform_buffer_update_function();
+        // bindless_uniform_sampler2D_update_function();
+        // global_uniform_buffer_update_function();
+        Engine::instance().update_bindless_descriptor_sets_function();
+        object_parameter_update();
         descriptor_set_update_function();
         push_constant_update_function(); {
             const auto view = Render_entt().view<Render_destroy_tag>();
@@ -226,8 +228,8 @@ public:
 
         end_command_buffer(handle, queryPool, time_line);
 
-        Engine::instance().submit_render_queue(time_line);
-        Engine::instance().copy_image_to_screen();
+        engine.submit_render_queue(time_line);
+        engine.copy_image_to_screen();
 
 
         // render_object_function();
@@ -279,7 +281,6 @@ public:
         have_object_need_update = false;
         need_render             = not_start;
     }
-
 
 
     void render_thread(VK_backend &handle) {

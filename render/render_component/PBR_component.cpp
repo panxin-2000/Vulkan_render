@@ -34,7 +34,8 @@ void set_baseColor_Texture_index(const entt::entity entity, const std::optional<
     auto &material            = Logic_entt().get_or_emplace<PBR_component>(entity);
     auto &ptr                 = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
     ptr.baseColorTexture      = texture.value();
-    material.baseColorTexture = texture.value().image.get_index(); // 具体的 index 在这里的时候已经被更新
+    material.baseColorTexture = texture.value().image.get_index();
+    // 具体的 index 在这里的时候已经被更新 // 这里的颜色不对 应该是 ktx 的问题
     set_render_parameter(entity, "object_material", material);
 }
 

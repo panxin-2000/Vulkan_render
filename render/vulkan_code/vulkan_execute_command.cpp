@@ -39,7 +39,7 @@ temp_command_execute::~temp_command_execute() {
 
     vkEndCommandBuffer(commandBuffer);
 
-    command_submit submit(1, &commandBuffer);
+    command_submit submit(1, &commandBuffer, fence_);
 
     vkQueueWaitIdle(backend.get_queue());
     if (commandBuffer != VK_NULL_HANDLE)
@@ -50,8 +50,9 @@ temp_command_execute::~temp_command_execute() {
 
 
 void temp_command_execute::add_execute_function(
-    const std::function<void(VkCommandBuffer commandBuffer)> &callback) const {
+    const std::function<void(VkCommandBuffer commandBuffer)> &callback, VkFence fence) {
     callback(commandBuffer);
+    fence_ = fence;
 }
 
 temp_command_execute::temp_command_execute() {

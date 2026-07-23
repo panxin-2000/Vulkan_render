@@ -41,6 +41,8 @@ private:
     std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
     std::vector<VKR_image_ptr> depth_images_;
 
+    std::optional<Texture_parameter> texture_default_color_;
+    std::optional<Texture_parameter> texture_default_normal_;
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
     struct Global_parameters {
@@ -58,7 +60,7 @@ private:
 
 
     std::shared_ptr<vk_shader_data> shader_date;
-    std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets;
+    std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
 
 public:
     static Engine &instance();
@@ -217,6 +219,9 @@ public:
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
     void update_global_parameter();
+
+    void update_bindless_parameter();
+
 
     VkDescriptorPool get_descriptor_pool(const uint index = 0) const {
         return descriptor_pools.at(index);

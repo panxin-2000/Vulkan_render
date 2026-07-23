@@ -362,21 +362,22 @@ int main(int argc, char *argv[]) {
     } {
         auto value        = get_max_descriptor_update_after_bind_samplers();
         const auto entity = object_3d_model("blender Suzanne -3", "assets/suzanne.obj", {-3.0f, 0.0f, 0.0f});
-        auto texture      = create_textures_to_gpu("assets/suzanne0.ktx");
+        // auto texture      = create_textures_to_gpu("assets/suzanne0.ktx");
         // const uint32_t index = add_bindless_uniform_sampler2D("assets/suzanne0.ktx", texture);
         // 这一步没有做导致出问题了,也就是模型显示为黑色的
-        set_baseColor_Texture_index(entity, texture);
+        // set_baseColor_Texture_index(entity, texture);
+
+        logic_update_add_tag<opacity_tag>(entity);
+    } {
+        const auto entity = load_gltf_model("DamagedHelmet",
+                                            "assets/DamagedHelmet.gltf");
+                                            // "~/Downloads/niagara_bistro-master/bistro.gltf");
+        //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
+        //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
+        //     // index        = 0;
+        //     // set_render_parameter(entity, "samplerColor", index);
         logic_update_add_tag<opacity_tag>(entity);
     }
-    // {
-    //     const auto entity = load_gltf_model("DamagedHelmet",
-    //                                         "~/Downloads/niagara_bistro-master/bistro.gltf");
-    //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
-    //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
-    //     // index        = 0;
-    //     // set_render_parameter(entity, "samplerColor", index);
-    //     logic_update_add_tag<opacity_tag>(entity);
-    // }
 
     // Setup SDL
     // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts would likely be your SDL_AppInit() function]

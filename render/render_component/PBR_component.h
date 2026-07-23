@@ -43,6 +43,7 @@ public:
     // 需要一个为全为一的贴图，也就是纯白的贴图
     uint32_t baseColorTexture = 0; // 基础颜色 贴图
     uint32_t normalTexture    = 1; //
+
     uint32_t emissiveTexture  = 0; // 自发光 贴图
     uint32_t ORM_Texture      = 0; // Occlusion, Roughness, Metallic
     // 视差贴图 位移贴图

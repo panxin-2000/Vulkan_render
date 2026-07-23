@@ -432,8 +432,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             pbr_material.ORM_Texture              = temp.value().image.get_index();
             auto &engine                          = Engine::instance();
             engine.add_bindless_texture(texture);
-            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.baseColorTexture = temp.value();
+            auto &ptr       = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.ORM_Texture = temp.value();
         }
         if (material.normalTexture.index >= 0) {
             const auto texture_index              = material.normalTexture.index;
@@ -444,8 +444,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             pbr_material.normalTexture            = temp.value().image.get_index();
             auto &engine                          = Engine::instance();
             engine.add_bindless_texture(texture);
-            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.baseColorTexture = temp.value();
+            auto &ptr         = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.normalTexture = temp.value();
         }
         if (material.occlusionTexture.index >= 0) {
             const auto texture_index              = material.occlusionTexture.index;
@@ -458,8 +458,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             // todo: ORM_Texture 需要合并两张贴图 问题是在这里应该如何合并
             auto &engine = Engine::instance();
             engine.add_bindless_texture(texture);
-            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.baseColorTexture = temp.value();
+            // auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            // ptr.baseColorTexture = temp.value();
         }
         if (material.emissiveTexture.index >= 0) {
             const auto texture_index              = material.emissiveTexture.index;
@@ -470,8 +470,8 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
             pbr_material.emissiveTexture          = temp.value().image.get_index();
             auto &engine                          = Engine::instance();
             engine.add_bindless_texture(texture);
-            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.baseColorTexture = temp.value();
+            auto &ptr           = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+            ptr.emissiveTexture = temp.value();
         }
         set_render_parameter(entity, "object_material", pbr_material);
     }

@@ -208,7 +208,7 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
                          VK_PIPELINE_STAGE_TRANSFER_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     };
-    const temp_command_execute execute;
+    temp_command_execute execute;
     execute.add_execute_function(execute_function);
 }
 
@@ -321,7 +321,7 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
                               );
     };
 
-    const temp_command_execute execute;
+    temp_command_execute execute;
     execute.add_execute_function(execute_function);
 }
 
@@ -381,7 +381,7 @@ inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
         // 暂时不动它了，
     };
 
-    const temp_command_execute execute;
+    temp_command_execute execute;
     execute.add_execute_function(execute_function);
 }
 
@@ -441,7 +441,7 @@ inline void transitionImageLayout_box(VkImage image, VkFormat format, VkImageLay
     };
 
 
-    const temp_command_execute execute;
+    temp_command_execute execute;
     execute.add_execute_function(execute_function);
 }
 

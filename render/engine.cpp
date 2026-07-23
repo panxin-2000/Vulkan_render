@@ -241,13 +241,15 @@ void Engine::create() {
     // 或者说，到这里之后才能够进行上传
 
     {
-        // std::optional<Texture_parameter> texture = create_single_color_texture(0xff, 0xff, 0xff);
-        // add_bindless_texture(texture);
-    } // 添加一张纯白的背景图片
+        // 添加一张纯白的背景图片
+        texture_default_color_ = create_single_color_texture(0xff, 0xff, 0xff);
+        add_bindless_texture(texture_default_color_);
+    } {
+        // 默认 指向于 z 轴的 法线
+        texture_default_normal_ = create_single_color_texture(128, 128, 255);
+        add_bindless_texture(texture_default_normal_);
+    }
     // {
-    //     std::optional<Texture_parameter> texture = create_single_color_texture(128, 128, 255);
-    //     add_bindless_texture(texture);
-    // } {
     //     // std::optional<Texture_parameter> texture = create_texture_from_image( );
     //     // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
     //     // assert(index == 1);
@@ -270,21 +272,21 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
     for (auto const &[set_value, bindings_map]: shader_date->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_samplerColorMap") {
-                auto index                                             = texture.value().image.get_index();
-                Update_descriptor_binding temp                         = {};
-                temp.binding_name                                      = "bindless_samplerColorMap";
-                temp.resource_type                                     = "uniform sampler2D";
-                temp.dstSet                                            = set_value;
-                temp.descriptor_write_binding.sType                    = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                temp.descriptor_write_binding.dstBinding               = binding_value;
-                temp.descriptor_write_binding.dstArrayElement          = index;
-                temp.descriptor_write_binding.descriptorCount          = 1;
-                temp.descriptor_write_binding.pBufferInfo              = nullptr;
-                temp.descriptor_write_binding.pImageInfo               = nullptr;
-                temp.descriptor_write_binding.pTexelBufferView         = nullptr;
-                temp.descriptor_write_binding.descriptorType           = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                temp.texture_info                                      = {true, texture.value()};
-                update_bindless_descriptor_sets[std::to_string(index)] = temp;
+                auto index                                              = texture.value().image.get_index();
+                Update_descriptor_binding temp                          = {};
+                temp.binding_name                                       = "bindless_samplerColorMap";
+                temp.resource_type                                      = "uniform sampler2D";
+                temp.dstSet                                             = set_value;
+                temp.descriptor_write_binding.sType                     = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                temp.descriptor_write_binding.dstBinding                = binding_value;
+                temp.descriptor_write_binding.dstArrayElement           = index;
+                temp.descriptor_write_binding.descriptorCount           = 1;
+                temp.descriptor_write_binding.pBufferInfo               = nullptr;
+                temp.descriptor_write_binding.pImageInfo                = nullptr;
+                temp.descriptor_write_binding.pTexelBufferView          = nullptr;
+                temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                temp.texture_info                                       = {true, texture.value()};
+                update_bindless_descriptor_sets_[std::to_string(index)] = temp;
                 // 这个时候需要做什么呢？ 添加一个更新的函数，这是记录了需要更新的内容，还没有真正更新
                 // bindless.bindings[name] = {return_value, temp}; // 这句应该是暂时没有用了
             }
@@ -293,7 +295,8 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
 }
 
 void Engine::update_bindless_descriptor_sets_function() {
-    update_descriptor_sets(update_bindless_descriptor_sets, bindless_descriptor_sets_);
+    update_descriptor_sets(update_bindless_descriptor_sets_, bindless_descriptor_sets_);
+    update_bindless_descriptor_sets_.clear();
 }
 
 
@@ -307,7 +310,9 @@ void Engine::recreate_swap_chain() {
 }
 
 void Engine::destroy() {
-    update_bindless_descriptor_sets.clear();
+    texture_default_color_  = {};
+    texture_default_normal_ = {};
+    update_bindless_descriptor_sets_.clear();
     const auto &backend = VK_backend::instance();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
 
@@ -390,6 +395,12 @@ void Engine::update_global_parameter() {
                            global_descriptor_sets.begin(),
                            global_descriptor_sets.end());
     update_descriptor_sets(update_global_descriptor_sets, descriptor_sets);
+}
+
+void Engine::update_bindless_parameter() {
+    update_descriptor_sets(update_bindless_descriptor_sets_, bindless_descriptor_sets_);
+    // 看起来确实很简单，只有这一个函数
+    // 某些内容写过一次之后是不需要去重新再去写的
 }
 
 
