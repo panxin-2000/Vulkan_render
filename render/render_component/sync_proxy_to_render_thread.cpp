@@ -17,22 +17,21 @@ inline void update_object_transform_function() { {
         for (const auto it: view) {
             auto pos    = view.get<Rect_2D_transform>(it);
             auto offset = pos.get_offset();
-            matrix_4x4 view;
-            UI_matrix_4x4(&view, {1, 1}, pos.get_offset());
-            set_render_parameter(it, "model_4x4", view); // 这里直接设置有问题，到渲染线程之后再设置
+            matrix_4x4 model_matrix;
+            UI_matrix_4x4(&model_matrix, {1, 1}, pos.get_offset());
+            set_render_parameter(it, "model_4x4", model_matrix); // 这里直接设置有问题，到渲染线程之后再设置
             Logic_entt().remove<UI_transform_dirty>(it);
         }
     } {
         const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Transform>();
         for (const auto it: view) {
-            auto &transform  = view.get<Transform>(it);
-            auto modelMatrix = get_model_matrix(transform);
-            set_render_parameter(it, "model_4x4", modelMatrix);
+            const auto &transform = view.get<Transform>(it);
+            auto model_matrix     = get_model_matrix(transform);
+            set_render_parameter(it, "model_4x4", model_matrix);
             Logic_entt().remove<UI_transform_dirty>(it);
         }
     }
 }
-
 
 
 void sync_render_data_to_render_thread() {
@@ -42,7 +41,6 @@ void sync_render_data_to_render_thread() {
     update_object_transform_function();
 
     // 中间这部分需要移动
-
 
 
     vk_render_queue::instance().logic_add_finished();

@@ -28,7 +28,7 @@
 #include "ccd/ccd.h"
 #include "manifold/cross_section.h"
 #include "manifold/manifold.h"
-#include "UI/3d_model_display.h"
+#include "gltf_model/3d_model_display.h"
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
 #include "imgui.h"

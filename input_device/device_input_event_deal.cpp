@@ -98,13 +98,14 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
 
 entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
     // ray.direction   = {0.0001, 0.0001, -1};
-    const auto view = Logic_entt().view<Name_component, AABB_centroid<Point_3>, Transform>();
+    const auto view = Logic_entt().view<Name_component, AABB_min_max<Point_3>, Transform>();
     for (auto &entity: view) {
         auto &name    = view.get<Name_component>(entity);
         auto position = view.get<Transform>(entity);
-        auto box      = view.get<AABB_centroid<Point_3> >(entity);
-        box.add_offset(position.get_position());
-        if (is_intersect(box, ray)) {
+        auto box      = view.get<AABB_min_max<Point_3> >(entity);
+        // 这里有问题, 目前只做好了偏移，没有做好旋转
+        auto new_box = box.add_offset(position.get_position());
+        if (is_intersect(new_box, ray)) {
             auto &name = view.get<Name_component>(entity);
             LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
             return entity;

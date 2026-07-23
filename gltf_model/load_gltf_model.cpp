@@ -3,14 +3,12 @@
 //
 
 #include "load_gltf_model.h"
-
 #include "input_component.h"
 #include "transform_component.h"
 #include "name_component.h"
 #include "PBR_component.h"
 #include "tiny_gltf.h"
-#include "vulkan_texture_bindless.h"
-
+#include "3d_model_display.h"
 
 std::optional<tinygltf::Model> get_gltf_model(const std::string &path) {
     std::filesystem::path filePath = path;
@@ -268,8 +266,8 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
         copy_vertices_data(sp_vertices, model, primitive);
         // 这里只是全部放到相应的位置上了，可能需要的偏移其实没有搞定
     }
-    auto [min, max] = find_min_max_point(sp_vertices);
-    auto &AABB      = Logic_entt().get_or_emplace<AABB_centroid<Point_3> >(entity, AABB_centroid<Point_3>(min, max));
+    auto bound_box = find_min_max_point(sp_vertices);
+    auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
     add_geometry_data(entity, sp_vertices, sp_indices);
 }
 
@@ -309,11 +307,10 @@ entt::entity load_node_data(tinygltf::Model &model,
                             const int current_node_index,
                             const int parent_node_index           = -1,
                             const entt::entity parent_node_entity = entt::null) {
-    entt::entity entity                    = entt::null;
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
 
-    entity = Logic_entt().create();
+    entt::entity entity = Logic_entt().create();
 
     // 改的太多，我都忘记下面一行是需要添加的了
     logic_create_proxy(entity);
@@ -385,6 +382,7 @@ Texture_parameter load_image(tinygltf::Image &image) {
 }
 
 void load_material(const entt::entity entity, tinygltf::Model &model) {
+    // 这里函数不太对，需要修改
     for (const auto &material: model.materials) {
         auto pbr_material = Logic_entt().get_or_emplace<PBR_component>(entity);
 
@@ -478,7 +476,10 @@ void load_material(const entt::entity entity, tinygltf::Model &model) {
 }
 
 
-entt::entity load_gltf_model(const std::string &name, const std::string &path) {
+entt::entity load_gltf_model(const std::string &name, const std::string &path,
+                             const Point_3 offset,
+                             const Eigen::Quaternionf &rotate,
+                             const Point_3 zoom) {
     entt::entity entity = entt::null;
     auto optional_model = get_gltf_model(path);
     if (optional_model.has_value()) {
@@ -490,7 +491,6 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path) {
         for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
             // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
             entity = load_node_data(model, nodes_have_deal, i, -1, entt::null);
-            load_material(entity, model);
         }
     }
     return entity;

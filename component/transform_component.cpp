@@ -104,12 +104,15 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
     auto &status = Logic_entt().get<Input_Component>(entity);
     switch (event.type) {
         case SDL_EVENT_MOUSE_WHEEL: {
-            const Point_2 temp{event.wheel.x, event.wheel.y};
-            // 绕 Z 轴旋转 45 度
+            const Point_2 temp{-event.wheel.x, event.wheel.y};
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
+                auto bound_box = Logic_entt().try_get<AABB_min_max<Point_3> >(entity);
+                // position-> get_transform_matrix() *
                 auto q_current = position->get_rotate();
-                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY())) * q_current;
-                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX())) * q_current;
+                Eigen::Quaternionf q_local_y(Eigen::AngleAxisf(temp.x / 100.0f, Eigen::Vector3f::UnitY()));
+                Eigen::Quaternionf q_local_x(Eigen::AngleAxisf(temp.y / 100.0f, Eigen::Vector3f::UnitX()));
+                q_current = q_current * (q_local_y * q_local_x);
+                q_current.normalize();
                 position->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
             }

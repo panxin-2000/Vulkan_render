@@ -30,6 +30,10 @@ public:
         max_point_ = T::init_min_limit();
     }
 
+    AABB_min_max<T> add_offset(T offset) {
+        return {min_point_ + offset, max_point_ + offset};
+    }
+
     AABB_min_max(std::initializer_list<T> points) {
         min_point_ = T::init_max_limit();
         max_point_ = T::init_min_limit();
@@ -60,15 +64,20 @@ public:
         max_point_ = T::max(max_point_, c_points);
     }
 
-    void multiply_matrix(const Eigen::Matrix4f &matrix) {
+    AABB_min_max<T> multiply_matrix(const Eigen::Matrix4f &matrix) {
         if constexpr (std::is_same_v<T, Point_3>) {
             const Eigen::Vector4f min_point(min_point_.x, min_point_.y, min_point_.z, 0);
             const Eigen::Vector4f max_point(max_point_.x, max_point_.y, max_point_.z, 0);
             Eigen::Vector4f new_min = matrix * min_point;
             Eigen::Vector4f new_max = matrix * max_point;
-            min_point_              = {new_min.x(), new_min.y(), new_min.z()};
-            max_point_              = {new_max.x(), new_max.y(), new_max.z()};
+            AABB_min_max<T> result  = AABB_min_max<T>{
+                {new_min.x(), new_min.y(), new_min.z()},
+                {new_max.x(), new_max.y(), new_max.z()}
+            };
+            return result;
         } else if constexpr (std::is_same_v<T, Point_2>) {
+            AABB_min_max<T> result{{0, 0, 0}, {0, 0, 0}};
+            return result;
         }
     }
 
