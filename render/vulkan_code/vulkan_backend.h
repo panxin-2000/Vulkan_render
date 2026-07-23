@@ -125,16 +125,29 @@ public:
         return extent;
     }
 
-    [[nodiscard]] VkViewport get_viewport() const {
+    [[nodiscard]] VkViewport get_viewport(bool flip_y_axis = false) const {
         auto temp_extent = get_current_extent();
-
-        VkViewport viewport{
-            .width    = static_cast<float>(temp_extent.width),
-            .height   = static_cast<float>(temp_extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-        return viewport;
+        if (flip_y_axis == true) {
+            const VkViewport viewport{
+                .x        = 0,
+                .y        = static_cast<float>(temp_extent.height),
+                .width    = static_cast<float>(temp_extent.width),
+                .height   = -static_cast<float>(temp_extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
+            };
+            return viewport;
+        } else {
+            VkViewport viewport{
+                .x        = 0,
+                .y        = 0,
+                .width    = static_cast<float>(temp_extent.width),
+                .height   = static_cast<float>(temp_extent.height),
+                .minDepth = 0.0f,
+                .maxDepth = 1.0f
+            };
+            return viewport;
+        }
     }
 
     [[nodiscard]] VkRect2D get_scissor() const {

@@ -56,7 +56,9 @@ entt::entity object_ply_model(const std::string &name, const std::string &file_p
     return entity;
 }
 
-entt::entity object_3d_model(const std::string &name, const std::string &mesh_path, const Point_3 offset,
+entt::entity object_3d_model(const std::string &name,
+                             const std::string &mesh_path,
+                             const Point_3 offset,
                              const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
@@ -84,11 +86,7 @@ entt::entity object_3d_model(const std::string &name, const std::string &mesh_pa
 
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
-    auto primitives = create_primitives(entity);
-    for ( auto &primitive : primitives) {
-        primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        primitive.set_VkCullModeFlags( VK_CULL_MODE_NONE );
-    }
+    const auto primitives = create_primitives(entity);
     logic_update_proxy(entity, primitives);
     return entity;
 }

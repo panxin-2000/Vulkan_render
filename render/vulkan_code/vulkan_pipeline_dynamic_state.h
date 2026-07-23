@@ -20,8 +20,8 @@ struct PipelineDynamicState {
     // VK_DYNAMIC_STATE_STENCIL_REFERENCE
 
 
-    VkBool32 depthTestEnable   = VK_FALSE;                    // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
-    VkBool32 depthWriteEnable  = VK_FALSE;                    // VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE
+    VkBool32 depthTestEnable   = VK_TRUE;                     // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
+    VkBool32 depthWriteEnable  = VK_TRUE;                     // VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE
     VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL; // VK_DYNAMIC_STATE_DEPTH_COMPARE_OP
 
     VkBool32 depthBoundsTestEnable = VK_FALSE; // VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE
@@ -84,7 +84,7 @@ struct PipelineDynamicState {
 
 
 struct PipelineRasterizationState {
-    VkCullModeFlags cullMode_     = VK_CULL_MODE_NONE;               // VK_DYNAMIC_STATE_CULL_MODE
+    VkCullModeFlags cullMode_     = VK_CULL_MODE_BACK_BIT;           // VK_DYNAMIC_STATE_CULL_MODE
     VkFrontFace frontFace_        = VK_FRONT_FACE_COUNTER_CLOCKWISE; // VK_DYNAMIC_STATE_FRONT_FACE
     VkBool32 depthBiasEnable      = VK_FALSE;                        // VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE
     float depthBiasConstantFactor = 0.0f;                            // VK_DYNAMIC_STATE_DEPTH_BIAS

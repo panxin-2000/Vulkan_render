@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 
-#include <Eigen/Eigen>
+#include <Eigen3/Eigen/Eigen>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -23,19 +23,19 @@
  * @return
  */
 Eigen::Matrix4f lookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &center, const Eigen::Vector3f &up) {
-    Eigen::Vector3f eye_normalized = eye.normalized();
-    Eigen::Vector3f center_normalized = center.normalized();
+    Eigen::Vector3f eye_normalized          = eye.normalized();
+    Eigen::Vector3f center_normalized       = center.normalized();
     Eigen::Vector3f camera_direction_normal = (eye - center).normalized();
-    Eigen::Vector3f up_normalized = up.normalized();
+    Eigen::Vector3f up_normalized           = up.normalized();
     // 下面两行的叉乘 不能够更换顺序  可能是跟 坐标系有关吧
     Eigen::Vector3f left_direction_normal = up_normalized.cross(camera_direction_normal).normalized();
-    up_normalized = camera_direction_normal.cross(left_direction_normal).normalized();
+    up_normalized                         = camera_direction_normal.cross(left_direction_normal).normalized();
     // 有必要再更新这一下吗？ 为什么有必要
     Eigen::Matrix4f transform_position = Eigen::Matrix4f::Identity();
-    transform_position(0, 3) = -eye[0];
-    transform_position(1, 3) = -eye[1];
-    transform_position(2, 3) = -eye[2];
-    Eigen::Matrix4f rotate_position = Eigen::Matrix4f::Identity();
+    transform_position(0, 3)           = -eye[0];
+    transform_position(1, 3)           = -eye[1];
+    transform_position(2, 3)           = -eye[2];
+    Eigen::Matrix4f rotate_position    = Eigen::Matrix4f::Identity();
     // 为什么 是 left 在最开始， 与 xyz 三个坐标轴的顺序有关吗？
     rotate_position(0, 0) = left_direction_normal[0];
     rotate_position(0, 1) = left_direction_normal[1];
@@ -85,17 +85,17 @@ Eigen::Matrix4f lookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &center
 
 Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
     // 简单的一点都做法就是填值就好了
-    float u = tan(fovy / 2.0f) * zNear;
-    float d = -u;
-    float r = aspect * u;
-    float l = -r;
+    float u                   = tan(fovy / 2.0f) * zNear;
+    float d                   = -u;
+    float r                   = aspect * u;
+    float l                   = -r;
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-    transform(0, 0) = zNear / r; // 1.0f / (aspect * (tan(fovy / 2.0f));      // 问题是 zNear 为什么被强制设置为1了
-    transform(1, 1) = zNear / u; // 为什么算法会不一样  = 1.0f / (tan(fovy / 2.0f))  // 原因是什么？
-    transform(2, 2) = -(zFar + zNear) / (zFar - zNear);
-    transform(2, 3) = -2 * zFar * zNear / (zFar - zNear);
-    transform(3, 2) = -1;
-    transform(3, 3) = 0;
+    transform(0, 0)           = zNear / r; // 1.0f / (aspect * (tan(fovy / 2.0f));      // 问题是 zNear 为什么被强制设置为1了
+    transform(1, 1)           = zNear / u; // 为什么算法会不一样  = 1.0f / (tan(fovy / 2.0f))  // 原因是什么？
+    transform(2, 2)           = -(zFar + zNear) / (zFar - zNear);
+    transform(2, 3)           = -2 * zFar * zNear / (zFar - zNear);
+    transform(3, 2)           = -1;
+    transform(3, 3)           = 0;
     return transform;
 }
 
@@ -103,15 +103,15 @@ Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
 // 正交抄出来了，但是没有继续做测试
 Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, float zFar) {
     // 简单的一点都做法就是填值就好了
-    float u = tan(fovy / 2.0f) * zNear;
-    float d = -u;
-    float r = aspect * u;
-    float l = -r;
+    float u                   = tan(fovy / 2.0f) * zNear;
+    float d                   = -u;
+    float r                   = aspect * u;
+    float l                   = -r;
     Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-    transform(0, 0) = 1 / r; // 问题是 zNear 为什么被强制设置为1了
-    transform(1, 1) = 1 / u;
-    transform(2, 2) = -2.0f / (zFar - zNear);
-    transform(2, 3) = -1 * (zFar + zNear) / (zFar - zNear);
+    transform(0, 0)           = 1 / r; // 问题是 zNear 为什么被强制设置为1了
+    transform(1, 1)           = 1 / u;
+    transform(2, 2)           = -2.0f / (zFar - zNear);
+    transform(2, 3)           = -1 * (zFar + zNear) / (zFar - zNear);
     return transform;
 }
 
@@ -123,7 +123,7 @@ Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, f
 void test_two_matrix(glm::mat4 &matrix, Eigen::Matrix4f matrix_3) {
     Eigen::Matrix<float, 4, 4, Eigen::RowMajor> matrix_2 = matrix_3; // 这里的意义是在存储上更换方向
     for (int i = 0; i < 16; i++) {
-        float *tem = (float *) &matrix;
+        float *tem   = (float *) &matrix;
         float *tem_2 = (float *) &matrix_2;
         EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
     }
@@ -175,13 +175,13 @@ TEST(matrix, view) { {
 
 
     glm::mat4 projection = glm::perspective(
-        glm::radians(145.0f),
-        (float) 239 / (float) 400,
-        1.0f,
-        10000.0f);
+                                            glm::radians(145.0f),
+                                            (float) 239 / (float) 400,
+                                            1.0f,
+                                            10000.0f);
     print_matrix(projection);
 
-    glm::mat4 ortho = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
+    glm::mat4 ortho  = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f, 1.0f, 1000.0f);
     glm::mat4 ortho2 = glm::ortho(0.0f, 100.0f, 0.0f, -1.0f); // 省略掉的两个参数的值是多少？
     //  glm::ortho 有两个版本的参数，一个是四个参数，另一个是六个参数的，估计少的是最后两个参数 ， 设置为零和无穷
 
@@ -199,7 +199,7 @@ TEST(vector, test_equal) {
     glm::vec4 vector1 = glm::vec4(1, 2, 3, 4);
     Eigen::Vector4f adcd{1, 2, 3, 4};
     for (int i = 0; i < 4; i++) {
-        float *tem = (float *) &vector1;
+        float *tem   = (float *) &vector1;
         float *tem_2 = (float *) &adcd;
         EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
     }
@@ -209,7 +209,7 @@ TEST(RowVector4f, test_equal) {
     glm::vec4 vector1 = glm::vec4(1, 2, 3, 4);
     Eigen::RowVector4f adcd{1, 2, 3, 4};
     for (int i = 0; i < 4; i++) {
-        float *tem = (float *) &vector1;
+        float *tem   = (float *) &vector1;
         float *tem_2 = (float *) &adcd;
         EXPECT_EQ(*(tem + i), *(tem_2 + i)) << "failed " << i << std::endl;
     }
