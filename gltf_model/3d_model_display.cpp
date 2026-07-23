@@ -212,9 +212,6 @@ entt::entity object_3d_model(const std::string &name,
                "", "");
     add_box_data(entity, bounding_box);
     auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bounding_box);
-    // 现在的问题是 没有 跟随着 变动
-
-    // 更新物体的模型矩阵
     auto transform         = Logic_entt().emplace<Transform>(entity, offset, rotate);
     const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);

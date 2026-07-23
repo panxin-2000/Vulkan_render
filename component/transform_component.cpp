@@ -46,6 +46,16 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return transform.get_transform_matrix();
 }
 
+[[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform) {
+    Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
+    const auto center         = bound_box.get_centroid();
+    model_4x4.translate(Eigen::Vector3f(center.x, center.y, center.z));
+    Eigen::Affine3f model_4x4_2 = Eigen::Affine3f::Identity();
+    model_4x4_2.translate(Eigen::Vector3f(-center.x, -center.y, -center.z));
+    Eigen::Matrix4f result = model_4x4.matrix() * transform.get_transform_matrix() * model_4x4_2.matrix();
+    return result;
+}
+
 
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     static Point_2 last_mouse_position = {0, 0};
@@ -104,16 +114,16 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
     auto &status = Logic_entt().get<Input_Component>(entity);
     switch (event.type) {
         case SDL_EVENT_MOUSE_WHEEL: {
-            const Point_2 temp{-event.wheel.x, event.wheel.y};
+            Point_2 temp;
+            if (std::abs(event.wheel.x) > std::abs(event.wheel.y))
+                temp = {-event.wheel.x, 0};
+            else
+                temp = {0, event.wheel.y};
             if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                auto bound_box = Logic_entt().try_get<AABB_min_max<Point_3> >(entity);
-                // position-> get_transform_matrix() *
                 auto q_current = position->get_rotate();
-                Eigen::Quaternionf q_local_y(Eigen::AngleAxisf(temp.x / 100.0f, Eigen::Vector3f::UnitY()));
-                Eigen::Quaternionf q_local_x(Eigen::AngleAxisf(temp.y / 100.0f, Eigen::Vector3f::UnitX()));
-                q_current = q_current * (q_local_y * q_local_x);
-                q_current.normalize();
-                position->set_rotate(q_current);
+                auto delta_y   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()));
+                auto delta_x   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                position->set_rotate(delta_x * delta_y * q_current);
                 Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
             }
             return OPERATOR_RUNNING_MODAL;

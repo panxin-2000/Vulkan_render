@@ -25,6 +25,10 @@ public:
         max_point_ = box.centroid_point_ + box.direction_interval_;
     }
 
+    T get_centroid() const {
+        return (min_point_ + max_point_) / 2;
+    }
+
     AABB_min_max() {
         min_point_ = T::init_max_limit();
         max_point_ = T::init_min_limit();

@@ -55,9 +55,10 @@ struct PipelineDynamicState {
     // 第二步（绘制放大后的轮廓）：将 compareOp 设为 VK_COMPARE_OP_NOT_EQUAL，reference 保持 1。这样只有在物体之外的像素才会通过测试并绘制。
 
     void write_commands(const VkCommandBuffer cb) const {
-        if (vkCmdSetDepthTestEnable(cb, depthTestEnable); depthTestEnable) {
-            vkCmdSetDepthCompareOp(cb, depthCompareOp);
+        if (vkCmdSetDepthTestEnable(cb, depthTestEnable),
             vkCmdSetDepthWriteEnable(cb, depthWriteEnable);
+            depthTestEnable) {
+            vkCmdSetDepthCompareOp(cb, depthCompareOp);
             if (vkCmdSetDepthBoundsTestEnable(cb, depthBoundsTestEnable); depthBoundsTestEnable)
                 vkCmdSetDepthBounds(cb, minDepthBounds, maxDepthBounds);
         }

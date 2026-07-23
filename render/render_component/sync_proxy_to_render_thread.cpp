@@ -23,12 +23,14 @@ inline void update_object_transform_function() { {
             Logic_entt().remove<UI_transform_dirty>(it);
         }
     } {
-        const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Transform>();
-        for (const auto it: view) {
-            const auto &transform = view.get<Transform>(it);
-            auto model_matrix     = get_model_matrix(transform);
-            set_render_parameter(it, "model_4x4", model_matrix);
-            Logic_entt().remove<UI_transform_dirty>(it);
+        const auto view = Logic_entt().view<AABB_min_max<Point_3>, UI_transform_dirty, Proxy_entity, Transform>();
+        for (const auto entity: view) {
+            const auto &transform = view.get<Transform>(entity);
+            auto box              = view.get<AABB_min_max<Point_3> >(entity);
+            // 这里有问题, 目前只做好了偏移，没有做好旋转
+            auto model_matrix = get_model_matrix(box, transform);
+            set_render_parameter(entity, "model_4x4", model_matrix);
+            Logic_entt().remove<UI_transform_dirty>(entity);
         }
     }
 }
