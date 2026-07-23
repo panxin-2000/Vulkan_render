@@ -70,7 +70,9 @@ public:
     }
 
     friend bool operator<=(const Point_3 &L, const Point_3 &R) {
-        if (L.x <= R.x && L.y <= R.y && L.z <= R.z) {
+        if (L.x - R.x <= 0.00001 &&
+            L.y - R.y <= 0.00001 &&
+            L.z - R.z <= 0.00001) {
             return true;
         }
         return false;
