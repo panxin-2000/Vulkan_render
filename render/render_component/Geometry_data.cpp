@@ -112,6 +112,15 @@ bool add_triangle_geometry(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
+bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
+    return add_box_data(entity,
+                        bounding_box.min_point_.x,
+                        bounding_box.min_point_.y,
+                        bounding_box.min_point_.z,
+                        bounding_box.max_point_.x,
+                        bounding_box.max_point_.y,
+                        bounding_box.max_point_.z);
+}
 
 bool add_box_data(entt::entity entity,
                   const float x_min,

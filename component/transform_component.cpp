@@ -43,18 +43,7 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
 }
 
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform) {
-    // 定义一个仿射变换（4x4 矩阵）
-    Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
-    // 1. 平移 (Translation)
-    model_4x4.translate(Eigen::Vector3f(transform.get_position().x, transform.get_position().y,
-                                        transform.get_position().z));
-    // 2. 旋转 (Rotation) - 使用四元数
-    model_4x4.rotate(transform.get_rotate());
-    // 3. 缩放 (Scaling)
-    model_4x4.scale(Eigen::Vector3f(transform.get_zoom().x, transform.get_zoom().y, transform.get_zoom().z));
-    // 获取最终传给 Vulkan 的 4x4 矩阵
-    Eigen::Matrix4f modelMatrix = model_4x4.matrix();
-    return modelMatrix;
+    return transform.get_transform_matrix();
 }
 
 

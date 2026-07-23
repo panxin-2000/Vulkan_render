@@ -110,13 +110,16 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
+
+bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
+
 bool add_box_data(entt::entity entity,
-                      float x_min = -0.5,
-                      float y_min = -0.5,
-                      float z_min = -0.5,
-                      float x_max = 0.5,
-                      float y_max = 0.5,
-                      float z_max = 0.5);
+                  float x_min = -0.5,
+                  float y_min = -0.5,
+                  float z_min = -0.5,
+                  float x_max = 0.5,
+                  float y_max = 0.5,
+                  float z_max = 0.5);
 
 inline AABB_min_max<Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
     Point_3 min = Point_3::init_max_limit();

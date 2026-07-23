@@ -45,10 +45,15 @@ TEST(AABB_bounding_box, segment) {
     } {
         Segment<Point_2> temp{{6, 2}, {7, 3}};
         EXPECT_EQ(is_intersect(box, temp), false);
-    }
-
-    //
-    {
+    } {
+        const AABB_min_max<Point_3> L_box{
+            {-1.07830572, 5.3555727, -0.684233069}, {1.07830572, 7.20805072, 0.684233069}
+        };
+        const Ray<Point_3> ray{{0, 6, 6}, {0.0386429355, 0.0563697442, -0.997661828}};
+        const Ray<Point_3> new_ray{{0, 6, 6}, {0, 0, -1}};
+        EXPECT_EQ(is_intersect(L_box, ray), true);
+        // EXPECT_EQ(is_intersect(L_box, new_ray), true);
+    } {
         Segment<Point_2> temp{{1, 3}, {4, 2}};
         EXPECT_EQ(is_intersect(box, temp), false);
     } {

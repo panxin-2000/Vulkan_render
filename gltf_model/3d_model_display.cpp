@@ -16,7 +16,7 @@
 
 #include "parse_geometry_file.h"
 #include "PBR_component.h"
-#include "PLYLoader.h"
+#include "../UI/PLYLoader.h"
 
 
 entt::entity object_ply_model(const std::string &name, const std::string &file_path, const Point_3 offset,
@@ -194,5 +194,31 @@ entt::entity add_sky_box(const std::string &name) {
 
     logic_update_proxy<Name_component>(entity);
 
+    return entity;
+}
+
+
+entt::entity object_3d_model(const std::string &name,
+                             const AABB_min_max<Point_3> &bounding_box,
+                             const Point_3 offset,
+                             const Eigen::Quaternionf &rotate) {
+    const entt::entity entity = Logic_entt().create();
+    logic_create_proxy(entity);
+    Logic_entt().emplace<Name_component>(entity, name);
+    add_shader(entity,
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+               "", "");
+    add_box_data(entity, bounding_box);
+
+    // 更新物体的模型矩阵
+    auto transform         = Logic_entt().emplace<Transform>(entity, offset, rotate);
+    const auto modelMatrix = get_model_matrix(transform);
+    set_render_parameter(entity, "model_4x4", modelMatrix);
+    world_root_add_child(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
+    logic_update_add_tag<opacity_tag>(entity);
     return entity;
 }

@@ -8,12 +8,10 @@
 #include "base_geometry/geometry_element/triangle.h"
 #include "ear_clip.h"
 #include "labyrinth.h"
-#include "observer_manage.h"
 #include "base_geometry/half_edge/Half_edges.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
 #include "base_event.h"
-#include "base_observer.h"
 
 
 template<typename T>

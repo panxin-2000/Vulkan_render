@@ -378,7 +378,7 @@ file(GLOB_RECURSE component
         "UI/bin_pack/ShelfBinPack.cpp"
         "UI/bin_pack/SkylineBinPack.cpp"
         "UI/bin_pack/GuillotineBinPack.cpp"
-        "UI/3d_model_display.cpp"
+        "gltf_model/3d_model_display.cpp"
         "UI/PLYLoader.cpp"
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"

@@ -10,7 +10,8 @@
 #include "transform_component.h"
 #include "manifold/manifold.h"
 
-entt::entity object_3d_model(const std::string &name, const std::string &mesh_path,
+entt::entity object_3d_model(const std::string &name,
+                             const AABB_min_max<Point_3> &bounding_box,
                              const Point_3 offset             = Point_3(0, 0, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 

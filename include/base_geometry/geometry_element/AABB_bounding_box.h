@@ -4,6 +4,8 @@
 
 #ifndef BOUNDING_BOX_H
 #define BOUNDING_BOX_H
+#include <Eigen/Eigen>
+
 #include "iostream"
 
 template<typename T>
@@ -58,6 +60,18 @@ public:
         max_point_ = T::max(max_point_, c_points);
     }
 
+    void multiply_matrix(const Eigen::Matrix4f &matrix) {
+        if constexpr (std::is_same_v<T, Point_3>) {
+            const Eigen::Vector4f min_point(min_point_.x, min_point_.y, min_point_.z, 0);
+            const Eigen::Vector4f max_point(max_point_.x, max_point_.y, max_point_.z, 0);
+            Eigen::Vector4f new_min = matrix * min_point;
+            Eigen::Vector4f new_max = matrix * max_point;
+            min_point_              = {new_min.x(), new_min.y(), new_min.z()};
+            max_point_              = {new_max.x(), new_max.y(), new_max.z()};
+        } else if constexpr (std::is_same_v<T, Point_2>) {
+        }
+    }
+
 
     /**
      * 在包围盒的内部和边缘的线上都 返回 true
@@ -92,21 +106,38 @@ public:
         direction_interval_ = (box.max_point_ - box.min_point_) / 2;
     }
 
+    void multiply_matrix(const Eigen::Matrix4f &matrix) {
+        if constexpr (std::is_same_v<T, Point_3>) {
+            AABB_min_max<T> box = AABB_centroid<T>{centroid_point_, direction_interval_};
+            const Eigen::Vector4f min_point(box.min_point_.x, box.min_point_.y, box.min_point_.z, 0);
+            const Eigen::Vector4f max_point(box.max_point_.x, box.max_point_.y, box.max_point_.z, 0);
+            Eigen::Vector4f new_min = matrix * min_point;
+            Eigen::Vector4f new_max = matrix * max_point;
+            AABB_min_max<T> result  = AABB_min_max<T>{
+                {new_min.x(), new_min.y(), new_min.z()},
+                {new_max.x(), new_max.y(), new_max.z()}
+            };
+            centroid_point_     = (result.min_point_ + result.max_point_) / 2;
+            direction_interval_ = abs(result.max_point_ - result.min_point_) / 2;
+        } else if constexpr (std::is_same_v<T, Point_2>) {
+        }
+    }
+
 
     /**
      *
-     * @param l_points 直接给值时是中心点
-     * @param r_points 直接给值时是每个方向的大小，(半径)
+     * @param centroid_point 直接给值时是中心点
+     * @param direction_interval 直接给值时是每个方向的大小，(半径)
      */
-    AABB_centroid(T l_points, T r_points) {
-        centroid_point_     = l_points;
-        direction_interval_ = r_points;
+    AABB_centroid(T centroid_point, T direction_interval) {
+        centroid_point_     = centroid_point;
+        direction_interval_ = direction_interval;
         direction_interval_ = abs(direction_interval_);
     }
 
     AABB_centroid<T> &operator =(AABB_min_max<T> box) {
         centroid_point_     = (box.min_point_ + box.max_point_) / 2;
-        direction_interval_ = (box.max_point_ - box.min_point_) / 2;
+        direction_interval_ = abs(box.max_point_ - box.min_point_) / 2;
         return *this;
     }
 };
