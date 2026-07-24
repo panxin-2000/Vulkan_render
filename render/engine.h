@@ -15,6 +15,7 @@
 #include <Eigen/Eigen>
 
 #include "PBR_component.h"
+#include "pbr_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
 #include "vulkan_code/vulkan_backend.h"
@@ -42,8 +43,6 @@ private:
     std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
     std::vector<VKR_image_ptr> depth_images_;
 
-    std::optional<Texture_parameter> texture_default_color_;
-    std::optional<Texture_parameter> texture_default_normal_;
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
     struct Global_parameters {
@@ -57,8 +56,11 @@ private:
         Eigen::Vector4f screen_size;
     };
 
-    std::vector<PBR_component> pbr_components_;
+
+    PBR_manager pbr_manager_;
     VKR_buffer_ptr pbr_components_buffer_;
+
+
     Global_parameters global_parameters_;
 
     shader_data gltf_shader_data_;
@@ -80,8 +82,8 @@ public:
         return current_timeline;
     }
 
-    std::vector<PBR_component> &get_pbr_vector() {
-        return pbr_components_;
+    PBR_manager &get_pbr_manager() {
+        return pbr_manager_;
     }
 
 

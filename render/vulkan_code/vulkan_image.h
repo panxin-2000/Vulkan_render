@@ -10,6 +10,8 @@
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
 
+#include <readerwriterqueue.h>
+
 class VKR_image : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
@@ -53,22 +55,23 @@ public:
     }
 
 private:
-    static std::queue<uint32_t> free_index;
-    static uint32_t max_index;
+    static moodycamel::BlockingReaderWriterQueue<uint32_t> free_index;
+    static std::atomic<uint32_t> max_index;
+    // 单入单出， 逻辑线程 和 渲染线程 同时 只会有一个 线程 写入或者释放
+    // 其实应该做到 单入 多出 ，这个 才是比较理想的一个状态
 
     static uint32_t get_one_bindless_index() {
-        if (!free_index.empty()) {
-            const auto value = free_index.front();
-            free_index.pop();
+        uint32_t value;
+        if (free_index.try_dequeue(value) == true) {
             return value;
         }
-        const auto return_value = max_index;
+        const auto return_value = max_index.load();
         ++max_index;
         return return_value;
     }
 
     static bool add_to_free_index(const uint32_t &index) {
-        free_index.push(index);
+        free_index.enqueue(index);
         return true;
     }
 };

@@ -258,7 +258,7 @@ auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Pri
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
-std::pair<PBR_component, PBR_component_ptr> load_material(tinygltf::Model &model, int material_index);
+std::pair<PBR_component, PBR_Texture_ptr> load_material(tinygltf::Model &model, int material_index);
 
 void get_material_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
     const auto mesh = model.meshes[mesh_index];
@@ -267,15 +267,9 @@ void get_material_from_gltf_model(entt::entity entity, tinygltf::Model &model, c
     //  然后再给每个 primitive 一个单独的索引
     // 能够去 pbr 的 vector 里面找到具体的 pbr
     // 这里的问题变成了是 单独开一个呢？ 还是 global 一下，全部慢慢索引呢？
-    for (const auto &primitive: mesh.primitives) {
-        if (primitive.material > -1) {
-            auto result = load_material(model, primitive.material);
-        }
-    }
 }
 
-void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index,
-                              const int material_base_index) {
+void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
     // std::vector<VKR_Primitive> // 如果可以的话，尽可能在这里搞定，之后只需要复制一下就好
     const auto mesh          = model.meshes[mesh_index];
     int indices_memory_size  = 0;
@@ -303,14 +297,35 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
         auto result = copy_vertices_data(vertices_memory_size, model, primitive);
         Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
-
+    std::vector<uint32_t> material_index;
+    for (const auto &primitive: mesh.primitives) {
+        if (primitive.material > -1) {
+            const auto result = load_material(model, primitive.material);
+            auto &manager     = Engine::instance().get_pbr_manager();
+            auto index        = manager.push(result.first, result.second);
+            material_index.push_back(index);
+            // index 给出了那么应该写到哪里呢？
+        }
+    }
 
     // auto bound_box = find_min_max_point(sp_vertices);
     // auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
-
+    // 这里呢？ 也是应该怎么做的问题
 
     logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity)); //  这里还是能改一些内容的
+    auto primitives = create_primitives(entity);
+    if (primitives.size() == material_index.size()) {
+        int i = 0;
+        for (auto &primitive: primitives) {
+            if (primitive.index_type == VK_INDEX_TYPE_MAX_ENUM) {
+                primitive.vertex_command.firstInstance = material_index.at(i);
+            } else
+                primitive.indexed_command.firstInstance = material_index.at(i);
+            ++i;
+        }
+    }
+
+    logic_update_proxy(entity, primitives); //  这里还是能改一些内容的
     logic_update_add_tag<opacity_tag>(entity);
 }
 
@@ -334,7 +349,7 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
     Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
     const auto &transform     = Logic_entt().emplace_or_replace<Transform>(entity, offset, rotate, zoom);
     const auto modelMatrix    = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", temp_matrix);
+    set_render_parameter(entity, "model_4x4", modelMatrix);
 }
 
 /**
@@ -343,15 +358,13 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
  * @param current_node_index
  * @param parent_node_index   好像确实没有什么用
  * @param parent_node_entity
- * @param material_base_index
  * @return
  */
 entt::entity load_node_data(tinygltf::Model &model,
                             std::vector<bool> &nodes_have_deal,
                             const int current_node_index,
                             const int parent_node_index           = -1,
-                            const entt::entity parent_node_entity = entt::null,
-                            const int material_base_index         = 0) {
+                            const entt::entity parent_node_entity = entt::null) {
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
     if (node.mesh >= 0) {
@@ -365,7 +378,7 @@ entt::entity load_node_data(tinygltf::Model &model,
         set_model_matrix(entity, model, current_node_index);
 
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
-        get_mesh_from_gltf_model(entity, model, node.mesh, material_base_index);
+        get_mesh_from_gltf_model(entity, model, node.mesh);
 
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
@@ -377,7 +390,7 @@ entt::entity load_node_data(tinygltf::Model &model,
             add_relation(parent_node_entity, entity);
         }
         for (const int i: node.children) {
-            load_node_data(model, nodes_have_deal, i, current_node_index, entity, material_base_index);
+            load_node_data(model, nodes_have_deal, i, current_node_index, entity);
         }
     }
     if (node.camera >= 0) {
@@ -418,11 +431,11 @@ Texture_parameter load_image(tinygltf::Image &image) {
     return {};
 }
 
-std::pair<PBR_component, PBR_component_ptr> load_material(tinygltf::Model &model, const int material_index) {
+std::pair<PBR_component, PBR_Texture_ptr> load_material(tinygltf::Model &model, const int material_index) {
     // 这里函数不太对，需要修改
     const auto &material = model.materials.at(material_index);
     PBR_component pbr_material;
-    PBR_component_ptr ptr;
+    PBR_Texture_ptr ptr;
     pbr_material.metallicFactor_  = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
     pbr_material.roughnessFactor_ = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
     if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
@@ -500,15 +513,9 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path,
         const auto nodes_num = model.nodes.size();
         std::vector<bool> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, false);
-        auto material_size            = model.materials.size();
-        auto pbr_vector               = Engine::instance().get_pbr_vector();
-        const int material_base_index = pbr_vector.size();
-        pbr_vector.resize(material_base_index + material_size);
-        // load_material(entity, model);  // 这里 然后就是 带锁的  部分的内容
-
         for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
             // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
-            load_node_data(model, nodes_have_deal, i, -1, entt::null, material_base_index);
+            load_node_data(model, nodes_have_deal, i, -1, entt::null);
         }
     }
     return entity;

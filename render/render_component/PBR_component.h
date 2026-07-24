@@ -62,7 +62,7 @@ public:
     // 值为 0.0 表示完全遮蔽（无间接光），值为 1.0 表示完全无遮蔽（接收全部间接光）
 };
 
-struct PBR_component_ptr {
+struct PBR_Texture_ptr {
     Texture_parameter baseColorTexture;
     Texture_parameter normalTexture;
     Texture_parameter emissiveTexture;

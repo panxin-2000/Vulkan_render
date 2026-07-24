@@ -226,8 +226,6 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
-    pbr_components_.resize(10);
-
     descriptor_pools.resize(1,VK_NULL_HANDLE);
     descriptor_pools.at(0) = init_current_descriptor_pool();
 
@@ -241,15 +239,20 @@ void Engine::create() {
     bindless_descriptor_sets_ = allocate_bindless_descriptor_sets("");
     // 需要在这里创建一些内容
     // 或者说，到这里之后才能够进行上传
-
     {
         // 添加一张纯白的背景图片
-        texture_default_color_ = create_single_color_texture(0xff, 0xff, 0xff);
+        auto texture_default_color_ = create_single_color_texture(0xff, 0xff, 0xff);
         add_bindless_texture(texture_default_color_);
-    } {
         // 默认 指向于 z 轴的 法线
-        texture_default_normal_ = create_single_color_texture(128, 128, 255);
+        auto texture_default_normal_ = create_single_color_texture(128, 128, 255);
         add_bindless_texture(texture_default_normal_);
+        PBR_Texture_ptr ptr = {
+            texture_default_color_,
+            texture_default_normal_,
+            {},
+            {}
+        };
+        pbr_manager_.push({}, ptr);
     }
     // {
     //     // std::optional<Texture_parameter> texture = create_texture_from_image( );
@@ -312,8 +315,7 @@ void Engine::recreate_swap_chain() {
 }
 
 void Engine::destroy() {
-    texture_default_color_  = {};
-    texture_default_normal_ = {};
+    pbr_manager_.destroy();
     if (pbr_components_buffer_ != nullptr) {
         pbr_components_buffer_ = {};
     }
@@ -382,9 +384,9 @@ std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std
 
 void Engine::update_global_pbr_parameter(
     std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets) {
-    auto size = pbr_components_.size() * sizeof(PBR_component);
+    auto size = pbr_manager_.size() * sizeof(PBR_component);
     if (size > 0) {
-        auto src = pbr_components_.data();
+        auto src = pbr_manager_.data();
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
         if (pbr_components_buffer_ == nullptr) {

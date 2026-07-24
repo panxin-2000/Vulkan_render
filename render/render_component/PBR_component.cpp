@@ -32,7 +32,7 @@ void set_baseColor_Texture_index(const entt::entity entity, const std::optional<
     auto &engine = Engine::instance();
     engine.add_bindless_texture(texture);
     auto &material            = Logic_entt().get_or_emplace<PBR_component>(entity);
-    auto &ptr                 = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+    auto &ptr                 = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.baseColorTexture      = texture.value();
     material.baseColorTexture = texture.value().image.get_index();
     // 具体的 index 在这里的时候已经被更新 // 这里的颜色不对 应该是 ktx 的问题
@@ -43,7 +43,7 @@ void set_normal_Texture_index(const entt::entity entity, const std::optional<Tex
     auto &engine = Engine::instance();
     engine.add_bindless_texture(texture);
     auto &material         = Logic_entt().get_or_emplace<PBR_component>(entity);
-    auto &ptr              = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+    auto &ptr              = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.normalTexture      = texture.value();
     material.normalTexture = texture.value().image.get_index();
     set_render_parameter(entity, "object_material", material);
@@ -53,7 +53,7 @@ void set_emissive_Texture_index(const entt::entity entity, const std::optional<T
     auto &engine = Engine::instance();
     engine.add_bindless_texture(texture);
     auto &material           = Logic_entt().get_or_emplace<PBR_component>(entity);
-    auto &ptr                = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+    auto &ptr                = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.emissiveTexture      = texture.value();
     material.emissiveTexture = texture.value().image.get_index();;
     set_render_parameter(entity, "object_material", material);
@@ -63,7 +63,7 @@ void set_ORM_Texture_index(const entt::entity entity, const std::optional<Textur
     auto &engine = Engine::instance();
     engine.add_bindless_texture(texture);
     auto &material       = Logic_entt().get_or_emplace<PBR_component>(entity);
-    auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
+    auto &ptr            = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.ORM_Texture      = texture.value();
     material.ORM_Texture = texture.value().image.get_index();
     set_render_parameter(entity, "object_material", material);

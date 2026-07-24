@@ -107,6 +107,9 @@ Mesh_data get_VKR_mesh(const entt::entity entity) {
     const auto &backend = VK_backend::instance();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         // todo : 这里的逻辑还是有问题的
+        const auto &values = data->get_vertices();
+        auto bound_box     = find_min_max_point(values);
+        auto &AABB         = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
         return create_mesh_data(backend, data->get_vertices(), data->get_indices());
     }
     return {};

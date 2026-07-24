@@ -55,6 +55,19 @@ void increment_unique_auto_unlock() {
 
 
 TEST(test_mutex, just_mutex) {
+    std::map<uint32_t, uint32_t> map;
+    map.insert(std::pair<uint32_t, uint32_t>(1, 1));
+    map.insert(std::pair<uint32_t, uint32_t>(2, 2));
+    map.insert(std::pair<uint32_t, uint32_t>(3, 3));
+    map.insert(std::pair<uint32_t, uint32_t>(4, 4));
+    map.insert(std::pair<uint32_t, uint32_t>(5, 5));
+    auto it = map.find(3);
+    if (it != map.end()) {
+        map.erase(it);
+    }
+    // 简单的测试了map ,不能 作为我想要的解决方案
+
+
     std::thread t1(increment);
     std::thread t2(increment);
     t1.join();
@@ -93,5 +106,4 @@ TEST(test_mutex, just_mutex) {
     t9.join();
     t10.join();
     EXPECT_EQ(shared_resource, 20000);
-
 }

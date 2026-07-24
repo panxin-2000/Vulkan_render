@@ -140,4 +140,18 @@ inline AABB_min_max<Point_3> find_min_max_point(const std::shared_ptr<std::vecto
     return {min, max};
 }
 
+inline AABB_min_max<Point_3> find_min_max_point(const std::vector<share_block> &vertices) {
+    Point_3 min = Point_3::init_max_limit();
+    Point_3 max = Point_3::init_min_limit();
+    for (auto vertex: vertices) {
+        for (int i = 0; i < vertex.count; i++) {
+            // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
+            auto pos = reinterpret_cast<Point_3 *>(static_cast<char *>(vertex.data) + vertex.single_size * i);
+            min      = Point_3::min(*pos, min);
+            max      = Point_3::max(*pos, max);
+        }
+    }
+    return {min, max};
+}
+
 #endif //HELLO_MAC_GEOMETRY_DATA_H

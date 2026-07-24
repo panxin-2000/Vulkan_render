@@ -15,8 +15,8 @@
 
 std::vector<bool> image_index;
 
-uint32_t VKR_image::max_index              = 0;
-std::queue<uint32_t> VKR_image::free_index = {};
+std::atomic<uint32_t> VKR_image::max_index = 0;
+moodycamel::BlockingReaderWriterQueue<uint32_t> VKR_image::free_index;
 
 std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_backend &handle,
                                                         uint32_t width,

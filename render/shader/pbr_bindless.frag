@@ -19,6 +19,8 @@ layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec4 inShadowCoord;
 layout (location = 5) in vec3 inWorldPos;
+layout (location = 6) flat in uint  material_index;
+layout (location = 7) flat in uint  instance_index;
 
 // 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
 
@@ -174,18 +176,15 @@ vec3 get_normal(ShaderMaterial material,vec3 world_pos, vec3 inNormal, vec2 inUV
 
 }
 
-layout (push_constant) uniform uPushConstant {
-    int pbr_index;
-};
 
 void main()
 {
 
 
-    float roughness = get_Roughness(material[pbr_index], inUV);
-    float metallic = get_Metallic(material[pbr_index], inUV);
-    vec3 base_color = get_base_color(material[pbr_index], inUV).rgb;
-    vec3 finalEmissive = get_emissive_color(material[pbr_index], inUV).rgb;
+    float roughness = get_Roughness(material[material_index], inUV);
+    float metallic = get_Metallic(material[material_index], inUV);
+    vec3 base_color = get_base_color(material[material_index], inUV).rgb;
+    vec3 finalEmissive = get_emissive_color(material[material_index], inUV).rgb;
     // 是否先获取无所谓，编译器会优化
 
     // 2. 通过 SH 函数计算当前法线方向受到的环境光辐射
@@ -202,7 +201,7 @@ void main()
 
     // 3. Lambert 漫反射计算
 
-    vec3 N = get_normal( material[pbr_index], inWorldPos, inNormal, inUV);
+    vec3 N = get_normal( material[material_index], inWorldPos, inNormal, inUV);
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
     vec3 H = normalize(V + L);

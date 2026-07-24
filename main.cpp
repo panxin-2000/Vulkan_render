@@ -318,6 +318,13 @@ void add_manifold_entity() { {
     }
 }
 
+Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval) {
+    const char *message = (const char *) userdata;
+    printf("定时器触发! 消息: %s, 间隔: %u ms\n", message, interval);
+
+    // 返回 interval 表示持续循环触发；返回 0 表示单次触发后销毁
+    return interval;
+}
 
 int main(int argc, char *argv[]) {
     // test_single_char();
@@ -359,20 +366,8 @@ int main(int argc, char *argv[]) {
 
     add_volume_pass("nanovdb_volume"); {
         // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-    } {
-        const auto entity = load_gltf_model("Suzanne",
-                                            "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Suzanne/glTF/Suzanne.gltf");
-        logic_update_add_tag<opacity_tag>(entity);
-    } {
-        const auto entity = load_gltf_model("DamagedHelmet",
-                                            "assets/DamagedHelmet.gltf");
-        // "~/Downloads/niagara_bistro-master/bistro.gltf");
-        //     // auto texture = create_textures_to_gpu(backend, "assets/suzanne1.ktx");
-        //     // auto index   = add_bindless_uniform_sampler2D("assets/suzanne1.ktx", texture);
-        //     // index        = 0;
-        //     // set_render_parameter(entity, "samplerColor", index);
-        logic_update_add_tag<opacity_tag>(entity);
     }
+    object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
 
     // Setup SDL
     // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts would likely be your SDL_AppInit() function]
@@ -415,8 +410,7 @@ int main(int argc, char *argv[]) {
     bool show_demo_window    = true;
     bool show_another_window = false;
     ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    auto imgui_entity = create_imgui_entity("imgui", nullptr);
+    auto imgui_entity        = create_imgui_entity("imgui", nullptr);
 
 
     // Render loop
@@ -428,6 +422,8 @@ int main(int argc, char *argv[]) {
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
         // [If using SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your SDL_AppEvent() function]
+        const Uint64 TARGET_FRAME_TIME_MS = 1000 / 60; // 设置每秒60帧
+        Uint64 frame_start_time           = SDL_GetTicks();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             base_event_dealing(event);
@@ -451,9 +447,15 @@ int main(int argc, char *argv[]) {
         clean_render_entity();
         sync_render_data_to_render_thread();
         // vk_render_GPU::instance().one_cycle(backend);
+        // const char *data    = "Hello SDL3 Timer!";
+        // SDL_TimerID timerID = SDL_AddTimer(1000, MyTimerCallback, (void *) data);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        Uint64 frame_duration = SDL_GetTicks() - frame_start_time;
+        if (frame_duration < TARGET_FRAME_TIME_MS) {
+            SDL_Delay(static_cast<Uint32>(TARGET_FRAME_TIME_MS - frame_duration));
+        }
     }
+
 
     // IM_ASSERT_USER_ERROR(g.IO.BackendPlatformUserData == NULL, "Forgot to shutdown Platform backend?");
     // IM_ASSERT_USER_ERROR(g.IO.BackendRendererUserData == NULL, "Forgot to shutdown Renderer backend?");

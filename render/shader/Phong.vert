@@ -6,6 +6,8 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive: enable
+#extension GL_ARB_shader_draw_parameters : enable
+
 #include "global_shader_common.glsl"
 
 #extension GL_EXT_scalar_block_layout: require
@@ -49,6 +51,8 @@ layout (location = 2) out vec3 outLightVec;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec4 outShadowCoord;
 layout (location = 5) out vec3 outWorldPos;
+layout (location = 6) flat out  uint outMaterial_index;
+layout (location = 7) flat out  uint outInstance_index;
 
 
 const mat4 biasMat = mat4(
@@ -60,10 +64,12 @@ const mat4 biasMat = mat4(
 
 void main()
 {
-    vec4 pos = model * vec4(inPos.xyz, 1.0);
-    outWorldPos = pos.xyz;
-    gl_Position = projection * view * pos;
-    outNormal = inNormal;
+    outMaterial_index = gl_BaseInstanceARB;
+    outInstance_index = gl_InstanceIndex;
+    vec4 pos       = model * vec4(inPos.xyz, 1.0);
+    outWorldPos    = pos.xyz;
+    gl_Position    = projection * view * pos;
+    outNormal      = inNormal;
     outUV = inUV;
     // 世界空间
     outNormal = mat3(model) * inNormal;
