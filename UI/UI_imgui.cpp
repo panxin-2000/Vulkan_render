@@ -98,9 +98,9 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             idx_dst += cmd_list->IdxBuffer.Size;
         }
         add_geometry_data(entity, vertices, indices);
-        auto mesh       = get_VKR_mesh(entity);
-        auto primitives = create_primitives(entity);
+        auto mesh = get_VKR_mesh(entity);
         logic_update_proxy(entity, mesh);
+        auto primitives = create_primitives(entity);
         if (!primitives.empty()) {
             VKR_Primitive vkr_primitive = primitives.at(0);
             primitives.clear();
@@ -170,7 +170,6 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
             primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
         }
-        logic_update_proxy(entity, mesh);
         logic_update_proxy(entity, primitives);
     }
 }

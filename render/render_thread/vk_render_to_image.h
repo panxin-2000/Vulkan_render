@@ -238,6 +238,8 @@ public:
     }
 
     void exit_and_clean(VK_backend &handle) {
+        vk_render_queue::instance().destroy();
+
         // 需要管理的资源以及删除的顺序
         // blender 中 descriptor_sets_layout 很有意思，在全局的最后才销毁 （中间申请的似乎从不销毁）
         // 一个原因是它关联了三个 内容，另一个原因是整体来说，它的布局很少改变，不会指数增长

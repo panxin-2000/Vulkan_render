@@ -54,6 +54,14 @@ public:
         logic_add_function.emplace(callback);
     }
 
+    void destroy() {
+        std::function<void(void)> callback;
+        while (logic_add_function.try_dequeue(callback)) {
+        }
+        while (render_execute_function.try_dequeue(callback)) {
+        }
+    };
+
 private:
     vk_render_queue() {
     }
