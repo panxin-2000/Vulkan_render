@@ -36,9 +36,11 @@ Mesh_data create_mesh_data(const VK_backend &backend,
     const auto vertices_buffer =
             create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
     // vertices_buffer 还需要动，firstIndex 在之后也是需要更改的
-    Mesh_data mesh_data{vertices_buffer, vertices_buffer};
-    // 下面这样做更容易被理解
-    return mesh_data;
+    if (!indices.empty())
+        return Mesh_data{vertices_buffer, vertices_buffer};
+    else {
+        return Mesh_data{vertices_buffer,};
+    }
 }
 
 
@@ -49,36 +51,51 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
         const std::vector<share_block> &vertices = data->get_vertices();
         const std::vector<share_block> &indices  = data->get_indices();
         VkDeviceSize vBufSize                    = 0;
-        auto total_single_size                   = 0;
         for (const auto vertex: vertices) {
             vBufSize += vertex.total_size;
         }
-        for (const auto index: indices) {
-            VKR_Primitive primitive;
-            total_single_size         += index.single_size;
-            primitive.vertices_offset = 0;
-            primitive.indices_offset  = vBufSize;
-            vBufSize                  += index.total_size;
-
-            // mesh.indices_offset = vBufSize;
-            // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
-            // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
-            primitive.indexed_command.indexCount = index.count; // 是可以这么替换的
-            if (index.single_size == 2) {
-                primitive.index_type = VK_INDEX_TYPE_UINT16;
-                // primitive.indexed_command.firstIndex = vBufSize / 2;
-                //  // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
-            } else if (index.single_size == 4) {
-                primitive.index_type = VK_INDEX_TYPE_UINT32;
-                // primitive.indexed_command.firstIndex = vBufSize / 4;
-            } else {
-                // assert(false && "Unknown index type");
+        if (!indices.empty()) {
+            auto total_single_size = 0;
+            for (const auto index: indices) {
+                VKR_Primitive primitive;
+                total_single_size         += index.single_size;
+                primitive.vertices_offset = 0; // 这里似乎不是很对？ 感觉不太对
+                primitive.indices_offset  = vBufSize;
+                vBufSize                  += index.total_size;
+                // mesh.indices_offset = vBufSize;
+                // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
+                // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
+                primitive.indexed_command.indexCount = index.count; // 是可以这么替换的
+                if (index.single_size == 2) {
+                    primitive.index_type = VK_INDEX_TYPE_UINT16;
+                    // primitive.indexed_command.firstIndex = vBufSize / 2;
+                    //  // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
+                } else if (index.single_size == 4) {
+                    primitive.index_type = VK_INDEX_TYPE_UINT32;
+                    // primitive.indexed_command.firstIndex = vBufSize / 4;
+                } else {
+                    // assert(false && "Unknown index type");
+                }
+                //确实是可以通过计算偏移的
+                primitive.indexed_command.vertexOffset  = 0;
+                primitive.indexed_command.instanceCount = 1;
+                primitive.indexed_command.firstInstance = 0;
+                primitives.push_back(primitive);
             }
-            //确实是可以通过计算偏移的
-            primitive.indexed_command.vertexOffset  = 0;
-            primitive.indexed_command.instanceCount = 1;
-            primitive.indexed_command.firstInstance = 0;
-            primitives.push_back(primitive);
+        } else {
+            VkDeviceSize single_BufSize = 0;
+            for (const auto vertex: vertices) {
+                VKR_Primitive primitive;
+                primitive.vertices_offset              = single_BufSize;
+                single_BufSize                         += vertex.total_size;
+                primitive.indices_offset               = 0;
+                primitive.index_type                   = VK_INDEX_TYPE_MAX_ENUM;
+                primitive.vertex_command.firstInstance = 0;
+                primitive.vertex_command.firstVertex   = 0; // 这里无用，上面的偏移 vertices_offset 起作用
+                primitive.vertex_command.instanceCount = 1;
+                primitive.vertex_command.vertexCount   = vertex.count;
+                primitives.push_back(primitive);
+            }
         }
         // assert(total_single_size/indices.size() == indices.at(0).single_size);
         // 不知道上面这个检查有没有用

@@ -60,8 +60,9 @@ public:
         pipelineRasterizationState.write_commands(cb);
 
         vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
-        if (mesh_data.indices != nullptr && mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE && indexed_command.
-            indexCount != 0) {
+        if (mesh_data.indices != nullptr &&
+            mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE &&
+            indexed_command.indexCount != 0) {
             vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
             vkCmdDrawIndexed(cb, indexed_command.indexCount,
                              indexed_command.instanceCount,

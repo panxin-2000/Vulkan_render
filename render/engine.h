@@ -61,6 +61,7 @@ private:
     VKR_buffer_ptr pbr_components_buffer_;
     Global_parameters global_parameters_;
 
+    shader_data gltf_shader_data_;
 
     std::shared_ptr<vk_shader_data> shader_date;
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
@@ -276,9 +277,15 @@ public:
         return depth_images_;
     }
 
+    std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
+        return shader_date;
+    }
+
+
     void destroy_render_image();
 
     void create();
+
 
     void recreate_swap_chain();
 

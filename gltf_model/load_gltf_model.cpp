@@ -217,8 +217,6 @@ auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Pri
     Attribute position   = {"position", nullptr, 12, 0};
     Attribute normal     = {"normal", nullptr, 12, 0};
     Attribute texcoord_0 = {"texcoord_0", nullptr, 8, 0};
-    Attribute joints_0   = {"joints_0", nullptr, 8, 0};
-    Attribute weights_0  = {"weights_0", nullptr, 8, 0};
 
 
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
@@ -245,8 +243,8 @@ auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Pri
     attributes.push_back(texcoord_0);
 
     std::vector<std::string> find_strings;
-    find_strings.push_back("JOINTS_0");
-    find_strings.push_back("WEIGHTS_0");
+    // find_strings.push_back("JOINTS_0");
+    // find_strings.push_back("WEIGHTS_0");
     for (auto find_string: find_strings) {
         auto it = primitive.attributes.find(find_string);
         if (it != primitive.attributes.end()) {
@@ -359,10 +357,8 @@ entt::entity load_node_data(tinygltf::Model &model,
     if (node.mesh >= 0) {
         const entt::entity entity = Logic_entt().create();
         logic_create_proxy(entity);
-        add_shader(entity,
-                   "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-                   "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-                   "", "");
+        Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
+        logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
         // set_render_parameter(entity, "object_material", material);
         Logic_entt().emplace<Name_component>(entity, node.name);

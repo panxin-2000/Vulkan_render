@@ -232,8 +232,8 @@ void Engine::create() {
     descriptor_pools.at(0) = init_current_descriptor_pool();
 
     VKR_shader_paths shader_paths{
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.vert.spv",
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+        "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
         "", ""
     };
     shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
