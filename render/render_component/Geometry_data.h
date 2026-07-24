@@ -27,25 +27,8 @@ public:
 
     ~Geometry_data() = default;
 
-    void set_vertices(const share_block &temp) {
-        vertices_ = temp;
-    }
-
-    void set_indices(const share_block &indices) {
-        indices_ = indices;
-    }
-
-    [[nodiscard]] share_block get_vertices() const {
-        return vertices_;
-    };
-
-    [[nodiscard]] share_block get_indices() const {
-        return indices_;
-    };
-
-    template<typename vertex_t, typename index_t>
-    void set(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
-             const std::shared_ptr<std::vector<index_t> > &sp_indices) {
+    template<typename vertex_t>
+    void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices) {
         if (sp_vertices != nullptr) {
             const share_block vertices_buffer = {
                 sp_vertices,
@@ -54,9 +37,16 @@ public:
                 sp_vertices->size(),
                 sizeof(vertex_t)
             };
-            vertices_ = vertices_buffer;
+            vertices_.push_back(vertices_buffer);
         }
+    }
 
+    void push_vertices(const share_block &vertices_buffer) {
+        vertices_.push_back(vertices_buffer);
+    }
+
+    template<typename index_t>
+    void push_indices(const std::shared_ptr<std::vector<index_t> > &sp_indices) {
         if (sp_indices != nullptr) {
             const share_block indices_buffer = {
                 sp_indices,
@@ -65,13 +55,32 @@ public:
                 sp_indices->size(),
                 sizeof(index_t)
             };
-            indices_ = indices_buffer;
+            indices_.push_back(indices_buffer);
         }
     }
 
+    void push_indices(const share_block &indices_buffer) {
+        indices_.push_back(indices_buffer);
+    }
+
+    [[nodiscard]] std::vector<share_block> get_vertices() const {
+        return vertices_;
+    };
+
+    [[nodiscard]] std::vector<share_block> get_indices() const {
+        return indices_;
+    };
+
+    template<typename vertex_t, typename index_t>
+    void push(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
+              const std::shared_ptr<std::vector<index_t> > &sp_indices) {
+        push_vertices(sp_vertices);
+        push_indices(sp_indices);
+    }
+
 private:
-    share_block vertices_;
-    share_block indices_;
+    std::vector<share_block> vertices_;
+    std::vector<share_block> indices_;
 };
 
 template<typename vertex_t, typename index_t>
@@ -85,7 +94,7 @@ void add_geometry_data(const entt::entity entity,
 
     auto &geometry = Logic_entt().get<Geometry_data>(entity);
 
-    geometry.set(sp_vertices, sp_indices);
+    geometry.push(sp_vertices, sp_indices);
 }
 
 bool add_2D_bound_box_geometry(const entt::entity entity,

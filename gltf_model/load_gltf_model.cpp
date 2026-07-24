@@ -134,22 +134,27 @@ int get_element_size(tinygltf::Accessor &current_accessor) {
     return elementSize;
 }
 
-void copy_indices_data(const std::shared_ptr<std::vector<uint16_t> > &sp_indices, tinygltf::Model &model,
-                       const tinygltf::Primitive &primitive) {
-    auto current_accessor = model.accessors[primitive.indices]; // 复制的函数需要处理
-    auto &bufferView      = model.bufferViews[current_accessor.bufferView];
+auto copy_indices_data(tinygltf::Model &model, const tinygltf::Primitive &primitive) {
+    auto current_accessor  = model.accessors[primitive.indices]; // 复制的函数需要处理
+    const auto &bufferView = model.bufferViews[current_accessor.bufferView];
     // 数据真实起始地址 = Buffer基址 + BufferView偏移 + Accessor偏移
-    const unsigned char *dataPtr = get_accessor_start_address(model, current_accessor);
-    int stride                   = current_accessor.ByteStride(bufferView);
-    auto data_type               = current_accessor.componentType;
-    int data_single_size         = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
+    const unsigned char *src   = get_accessor_start_address(model, current_accessor);
+    const int stride           = current_accessor.ByteStride(bufferView);
+    auto data_type             = current_accessor.componentType;
+    const int data_single_size = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
+    share_block result;
+    // auto address       = malloc(current_accessor.count * data_single_size);
+    result.ptr         = std::make_shared<char[]>(current_accessor.count * data_single_size);
+    result.count       = current_accessor.count;
+    result.single_size = data_single_size;
+    result.total_size  = current_accessor.count * data_single_size;
+    result.data        = result.ptr.get();
     if (data_single_size == stride && current_accessor.type == TINYGLTF_TYPE_SCALAR) {
-        const auto sp_indices_current_size = sp_indices->size();
-        sp_indices->resize(sp_indices_current_size + current_accessor.count);
-        memcpy(sp_indices->data() + sp_indices_current_size, dataPtr, bufferView.byteLength);
+        memcpy(result.data, src, result.total_size);
     } else {
         // 有间隔，需要做一些其他处理
     }
+    return result;
 }
 
 int get_stride(const tinygltf::Model &model, const int accessor_index) {
@@ -186,32 +191,39 @@ void read_attribute(tinygltf::Model &model, tinygltf::Accessor &accessor, Attrib
     attribute.element_count  = accessor.count;
 }
 
-unsigned char *memcopy_all_attributes(const std::shared_ptr<std::vector<Vertex> > &sp_vertices,
-                                      const Attribute &position,
-                                      const Attribute &normal,
-                                      const Attribute &texcoord) {
-    const uint32_t count                = position.element_count;
-    const auto sp_vertices_current_size = sp_vertices->size();
-    sp_vertices->resize(sp_vertices_current_size + count);
-    auto dst_address = reinterpret_cast<unsigned char *>(sp_vertices->data() + sp_vertices_current_size);
+auto mem_copy_all_attributes(const Attribute &position,
+                             const Attribute &normal,
+                             const Attribute &texcoord) {
+    const uint32_t count = position.element_count;
+    share_block result;
+    result.ptr         = std::make_shared<char[]>(count * (12 + 12 + 8));
+    result.count       = count;
+    result.single_size = 12 + 12 + 8;
+    result.total_size  = result.count * result.single_size;
+    result.data        = result.ptr.get();
+    auto dst_address   = static_cast<unsigned char *>(result.data);
     for (size_t i = 0; i < count; ++i) {
         dst_address = memcpy_attribute(dst_address, position, i);
         dst_address = memcpy_attribute(dst_address, normal, i);
         dst_address = memcpy_attribute(dst_address, texcoord, i);
     }
+    return result;
 }
 
 
-void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices, tinygltf::Model &model,
-                        const tinygltf::Primitive &primitive) {
-    Attribute position = {nullptr, 12, 0};
-    Attribute normal   = {nullptr, 12, 0};
-    Attribute texcoord = {nullptr, 8, 0};
+auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Primitive &primitive) {
+    Attribute position   = {nullptr, 12, 0};
+    Attribute normal     = {nullptr, 12, 0};
+    Attribute texcoord_0 = {nullptr, 8, 0};
+    Attribute joints_0   = {nullptr, 8, 0};
+    Attribute weights_0_ = {nullptr, 8, 0};
 
     // todo: 这三个可以看看应该怎么删除了，下一步要做的
-    std::optional<tinygltf::Accessor> position_accessor = {};
-    std::optional<tinygltf::Accessor> normal_accessor   = {};
-    std::optional<tinygltf::Accessor> texcoord_accessor = {};
+    std::optional<tinygltf::Accessor> position_accessor   = {};
+    std::optional<tinygltf::Accessor> normal_accessor     = {};
+    std::optional<tinygltf::Accessor> texcoord_0_accessor = {};
+    std::optional<tinygltf::Accessor> joints_0_accessor   = {};
+    std::optional<tinygltf::Accessor> weights_0_accessor  = {};
 
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
@@ -229,17 +241,29 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
     } {
         auto it = primitive.attributes.find("TEXCOORD_0");
         if (it != primitive.attributes.end()) {
-            texcoord_accessor = model.accessors[it->second];
-            read_attribute(model, model.accessors[it->second], texcoord);
+            texcoord_0_accessor = model.accessors[it->second];
+            read_attribute(model, model.accessors[it->second], texcoord_0);
+        }
+    } {
+        auto it = primitive.attributes.find("JOINTS_0");
+        if (it != primitive.attributes.end()) {
+            joints_0_accessor = model.accessors[it->second];
+            read_attribute(model, model.accessors[it->second], joints_0);
+        }
+    } {
+        auto it = primitive.attributes.find("WEIGHTS_0");
+        if (it != primitive.attributes.end()) {
+            weights_0_accessor = model.accessors[it->second];
+            read_attribute(model, model.accessors[it->second], weights_0_);
         }
     }
-    memcopy_all_attributes(sp_vertices, position, normal, texcoord);
+    return mem_copy_all_attributes(position, normal, texcoord_0);
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
 std::pair<PBR_component, PBR_component_ptr> load_material(tinygltf::Model &model, int material_index);
 
-void get_matrial_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
+void get_material_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
     const auto mesh = model.meshes[mesh_index];
     // 现在的问题的是 一个 mesh 里面有多个 primitives
     //  PBR 需要 一个 vector
@@ -255,37 +279,37 @@ void get_matrial_from_gltf_model(entt::entity entity, tinygltf::Model &model, co
 
 void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index,
                               const int material_base_index) {
-    const auto sp_vertices = std::make_shared<std::vector<Vertex> >();
-    const auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
-
     // std::vector<VKR_Primitive> // 如果可以的话，尽可能在这里搞定，之后只需要复制一下就好
-    const auto mesh    = model.meshes[mesh_index];
-    int indices_count  = 0;
-    int vertices_count = 0;
+    const auto mesh          = model.meshes[mesh_index];
+    int indices_memory_size  = 0;
+    int vertices_memory_size = 0;
     for (const auto &primitive: mesh.primitives) {
         // 最开始需要能够确定数量
         if (primitive.indices > -1) {
             const auto current_accessor = model.accessors[primitive.indices]; // 复制的函数需要处理
-            indices_count               = indices_count + current_accessor.count;
+            const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
+            indices_memory_size         += current_accessor.count * data_single_size;
         }
         for (const auto &attribute: primitive.attributes) {
             const auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
-            vertices_count              += current_accessor.count;
+            const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
+            vertices_memory_size        += current_accessor.count * data_single_size;
         }
     }
-    sp_vertices->reserve(vertices_count);
-    sp_indices->reserve(indices_count);
 
     for (const auto &primitive: mesh.primitives) {
         if (primitive.indices > -1) {
-            copy_indices_data(sp_indices, model, primitive);
+            auto result = copy_indices_data(model, primitive);
+            Logic_entt().get_or_emplace<Geometry_data>(entity).push_indices(result);
         }
-        copy_vertices_data(sp_vertices, model, primitive);
-        // 这里只是全部放到相应的位置上了，可能需要的偏移其实没有搞定
+        auto result = copy_vertices_data(vertices_memory_size, model, primitive);
+        Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
-    auto bound_box = find_min_max_point(sp_vertices);
-    auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
-    add_geometry_data(entity, sp_vertices, sp_indices);
+
+
+    // auto bound_box = find_min_max_point(sp_vertices);
+    // auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
+
 
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity)); //  这里还是能改一些内容的
@@ -294,8 +318,8 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
 
 
 void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, const int current_node_index) {
-    Eigen::Matrix4f temp_matrix;
-    auto temp = get_matrix_from_model(model, current_node_index);
+    Eigen::Matrix4f temp_matrix = Eigen::Matrix4f::Identity();
+    auto temp                   = get_matrix_from_model(model, current_node_index);
     if (!temp.empty()) {
         for (int i = 0; i < temp.size(); ++i) {
             auto *p_float = reinterpret_cast<float *>(&temp_matrix);
@@ -312,7 +336,7 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
     Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
     const auto &transform     = Logic_entt().emplace_or_replace<Transform>(entity, offset, rotate, zoom);
     const auto modelMatrix    = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
+    set_render_parameter(entity, "model_4x4", temp_matrix);
 }
 
 /**
@@ -332,27 +356,33 @@ entt::entity load_node_data(tinygltf::Model &model,
                             const int material_base_index         = 0) {
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
-
-    entt::entity entity = Logic_entt().create();
-
-    // 改的太多，我都忘记下面一行是需要添加的了
-    logic_create_proxy(entity);
-    add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-               "", "");
-    auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
-    set_render_parameter(entity, "object_material", material);
-    Logic_entt().emplace<Name_component>(entity, node.name);
-    set_model_matrix(entity, model, current_node_index);
-
     if (node.mesh >= 0) {
+        const entt::entity entity = Logic_entt().create();
+        logic_create_proxy(entity);
+        add_shader(entity,
+                   "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+                   "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+                   "", "");
+        auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
+        // set_render_parameter(entity, "object_material", material);
+        Logic_entt().emplace<Name_component>(entity, node.name);
+        set_model_matrix(entity, model, current_node_index);
+
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
         get_mesh_from_gltf_model(entity, model, node.mesh, material_base_index);
 
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
         logic_update_proxy<Name_component>(entity);
+
+        if (parent_node_entity == entt::null) {
+            world_root_add_child(entity);
+        } else {
+            add_relation(parent_node_entity, entity);
+        }
+        for (const int i: node.children) {
+            load_node_data(model, nodes_have_deal, i, current_node_index, entity, material_base_index);
+        }
     }
     if (node.camera >= 0) {
         LOG_INFO(g_log(), "need deal node  camera ");
@@ -366,16 +396,6 @@ entt::entity load_node_data(tinygltf::Model &model,
     if (node.emitter >= 0) {
         LOG_INFO(g_log(), "need deal node  emitter ");
     }
-
-    if (parent_node_entity == entt::null) {
-        world_root_add_child(entity);
-    } else {
-        add_relation(parent_node_entity, entity);
-    }
-    for (const int i: node.children) {
-        load_node_data(model, nodes_have_deal, i, current_node_index, entity, material_base_index);
-    }
-    return entity;
 }
 
 
