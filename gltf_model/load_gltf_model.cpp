@@ -171,6 +171,7 @@ int get_stride(const tinygltf::Model &model, const tinygltf::Accessor &current_a
 }
 
 struct Attribute {
+    std::string name;
     const unsigned char *data_ptr = nullptr;
     size_t element_size           = 0;
     size_t element_count          = 0;
@@ -191,73 +192,71 @@ void read_attribute(tinygltf::Model &model, tinygltf::Accessor &accessor, Attrib
     attribute.element_count  = accessor.count;
 }
 
-auto mem_copy_all_attributes(const Attribute &position,
-                             const Attribute &normal,
-                             const Attribute &texcoord) {
-    const uint32_t count = position.element_count;
+auto mem_copy_all_attributes(const uint32_t count, std::vector<Attribute> attributes) {
     share_block result;
-    result.ptr         = std::make_shared<char[]>(count * (12 + 12 + 8));
+    auto single_size = 0;
+    for (auto attribute: attributes) {
+        single_size += attribute.element_size;
+    }
+    result.ptr         = std::make_shared<char[]>(count * single_size);
     result.count       = count;
-    result.single_size = 12 + 12 + 8;
+    result.single_size = single_size;
     result.total_size  = result.count * result.single_size;
     result.data        = result.ptr.get();
     auto dst_address   = static_cast<unsigned char *>(result.data);
     for (size_t i = 0; i < count; ++i) {
-        dst_address = memcpy_attribute(dst_address, position, i);
-        dst_address = memcpy_attribute(dst_address, normal, i);
-        dst_address = memcpy_attribute(dst_address, texcoord, i);
+        for (auto attribute: attributes) {
+            dst_address = memcpy_attribute(dst_address, attribute, i);
+        }
     }
     return result;
 }
 
 
 auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Primitive &primitive) {
-    Attribute position   = {nullptr, 12, 0};
-    Attribute normal     = {nullptr, 12, 0};
-    Attribute texcoord_0 = {nullptr, 8, 0};
-    Attribute joints_0   = {nullptr, 8, 0};
-    Attribute weights_0_ = {nullptr, 8, 0};
+    Attribute position   = {"position", nullptr, 12, 0};
+    Attribute normal     = {"normal", nullptr, 12, 0};
+    Attribute texcoord_0 = {"texcoord_0", nullptr, 8, 0};
+    Attribute joints_0   = {"joints_0", nullptr, 8, 0};
+    Attribute weights_0  = {"weights_0", nullptr, 8, 0};
 
-    // todo: 这三个可以看看应该怎么删除了，下一步要做的
-    std::optional<tinygltf::Accessor> position_accessor   = {};
-    std::optional<tinygltf::Accessor> normal_accessor     = {};
-    std::optional<tinygltf::Accessor> texcoord_0_accessor = {};
-    std::optional<tinygltf::Accessor> joints_0_accessor   = {};
-    std::optional<tinygltf::Accessor> weights_0_accessor  = {};
 
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
         auto it = primitive.attributes.find("POSITION");
         if (it != primitive.attributes.end()) {
-            position_accessor = model.accessors[it->second];
             read_attribute(model, model.accessors[it->second], position);
         }
     } {
         auto it = primitive.attributes.find("NORMAL");
         if (it != primitive.attributes.end()) {
-            normal_accessor = model.accessors[it->second];
             read_attribute(model, model.accessors[it->second], normal);
         }
     } {
         auto it = primitive.attributes.find("TEXCOORD_0");
         if (it != primitive.attributes.end()) {
-            texcoord_0_accessor = model.accessors[it->second];
             read_attribute(model, model.accessors[it->second], texcoord_0);
         }
-    } {
-        auto it = primitive.attributes.find("JOINTS_0");
+    }
+
+    std::vector<Attribute> attributes;
+    attributes.push_back(position);
+    attributes.push_back(normal);
+    attributes.push_back(texcoord_0);
+
+    std::vector<std::string> find_strings;
+    find_strings.push_back("JOINTS_0");
+    find_strings.push_back("WEIGHTS_0");
+    for (auto find_string: find_strings) {
+        auto it = primitive.attributes.find(find_string);
         if (it != primitive.attributes.end()) {
-            joints_0_accessor = model.accessors[it->second];
-            read_attribute(model, model.accessors[it->second], joints_0);
-        }
-    } {
-        auto it = primitive.attributes.find("WEIGHTS_0");
-        if (it != primitive.attributes.end()) {
-            weights_0_accessor = model.accessors[it->second];
-            read_attribute(model, model.accessors[it->second], weights_0_);
+            Attribute attribute_temp;
+            attribute_temp.name = find_string;
+            read_attribute(model, model.accessors[it->second], attribute_temp);
+            attributes.push_back(attribute_temp);
         }
     }
-    return mem_copy_all_attributes(position, normal, texcoord_0);
+    return mem_copy_all_attributes(position.element_count, attributes);
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
@@ -290,6 +289,7 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
             const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
             indices_memory_size         += current_accessor.count * data_single_size;
         }
+
         for (const auto &attribute: primitive.attributes) {
             const auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
             const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
