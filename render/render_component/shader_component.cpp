@@ -113,10 +113,10 @@ Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
 }
 
 void add_shader(const entt::entity entity, const std::string &vertex_path,
-                const std::string &geometry_path,
                 const std::string &fragment_path,
+                const std::string &geometry_path,
                 const std::string &computer_path) {
-    Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, geometry_path, fragment_path, computer_path);
+    Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, fragment_path, geometry_path, computer_path);
     auto &shader_temp = Logic_entt().get<VKR_shader_paths>(entity);
     Logic_entt().emplace<shader_data>(entity, VKR_shader_init(shader_temp));
     logic_update_proxy<shader_data>(entity); // 这步越来越重要了

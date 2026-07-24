@@ -24,8 +24,8 @@
 
 void add_shader(const entt::entity entity,
                 const std::string &vertex_path,
-                const std::string &geometry_path,
                 const std::string &fragment_path,
+                const std::string &geometry_path,
                 const std::string &computer_path);
 
 const std::vector<InputAttributeDescription> &get_attribute_description(const entt::entity entity);
