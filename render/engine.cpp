@@ -226,6 +226,8 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
+    pbr_components_.resize(10);
+
     descriptor_pools.resize(1,VK_NULL_HANDLE);
     descriptor_pools.at(0) = init_current_descriptor_pool();
 
@@ -312,6 +314,9 @@ void Engine::recreate_swap_chain() {
 void Engine::destroy() {
     texture_default_color_  = {};
     texture_default_normal_ = {};
+    if (pbr_components_buffer_ != nullptr) {
+        pbr_components_buffer_ = {};
+    }
     update_bindless_descriptor_sets_.clear();
     const auto &backend = VK_backend::instance();
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
@@ -375,12 +380,37 @@ std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std
     return bindless_descriptor_sets;
 }
 
+void Engine::update_global_pbr_parameter(
+    std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets) {
+    auto size = pbr_components_.size() * sizeof(PBR_component);
+    if (size > 0) {
+        auto src = pbr_components_.data();
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+
+        if (pbr_components_buffer_ == nullptr) {
+            pbr_components_buffer_ = create_SSBO_buffer(ALIGN_1024(size * 2));
+        }
+        if (pbr_components_buffer_.get()->complete_size() < size) {
+            pbr_components_buffer_ = create_SSBO_buffer(ALIGN_1024(size * 2));
+        }
+        auto mem_copy_function = [src,size](void *dst) {
+            memcpy(dst, src, size);
+        };
+
+
+        copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
+        set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+                             "global_PBR_parameters", pbr_components_buffer_);
+    }
+}
+
 void Engine::update_global_parameter() {
     global_descriptor_sets_ = allocate_global_descriptor_sets("");
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
 
+    update_global_pbr_parameter(update_global_descriptor_sets);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
     auto bindless_descriptor_sets = get_bindless_descriptor_set();
     auto global_descriptor_sets   = get_global_descriptor_set();

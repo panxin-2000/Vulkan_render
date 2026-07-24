@@ -280,7 +280,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         if (res.name.find("global") != std::string::npos) {
-            tem.descriptorType                = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+            tem.descriptorType                = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
             tem.stageFlags                    = tem.stageFlags | stageFlag;
             global_bindings_set[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0};

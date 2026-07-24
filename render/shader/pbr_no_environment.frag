@@ -20,7 +20,7 @@ layout (push_constant) uniform PushConsts {
     layout (offset = 20) float r;
     layout (offset = 24) float g;
     layout (offset = 28) float b;
-} material;
+} material_no;
 
 // vkCmdPushConstants 上面的好像是每个都push 一次
 // 其实顶点中的也是每个push 一次
@@ -31,7 +31,7 @@ const float PI = 3.14159265359;
 
 vec3 materialcolor()
 {
-    return vec3(material.r, material.g, material.b);
+    return vec3(material_no.r, material_no.g, material_no.b);
 }
 
 // Normal Distribution function --------------------------------------
@@ -56,7 +56,7 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 // Fresnel function ----------------------------------------------------
 vec3 F_Schlick(float cosTheta, float metallic)
 {
-    vec3 F0 = mix(vec3(0.04), materialcolor(), metallic); // * material.specular
+    vec3 F0 = mix(vec3(0.04), materialcolor(), metallic); // * material_no.specular
     vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
     return F;
 }
@@ -101,7 +101,7 @@ void main()
     vec3 N = normalize(inNormal);
     vec3 V = normalize(viewPos - inWorldPos);
 
-    float roughness = material.roughness;
+    float roughness = material_no.roughness;
 
     // Add striped pattern to roughness based on vertex position
     #ifdef ROUGHNESS_PATTERN
@@ -112,7 +112,7 @@ void main()
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < uboParams.lights.length(); i++) {
         vec3 L = normalize(uboParams.lights[i].xyz - inWorldPos);
-        Lo += BRDF(L, V, N, material.metallic, roughness);
+        Lo += BRDF(L, V, N, material_no.metallic, roughness);
     };
 
     // Combine with ambient

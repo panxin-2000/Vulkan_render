@@ -237,7 +237,24 @@ void copy_vertices_data(const std::shared_ptr<std::vector<Vertex> > &sp_vertices
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
-void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
+std::pair<PBR_component, PBR_component_ptr> load_material(tinygltf::Model &model, int material_index);
+
+void get_matrial_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
+    const auto mesh = model.meshes[mesh_index];
+    // 现在的问题的是 一个 mesh 里面有多个 primitives
+    //  PBR 需要 一个 vector
+    //  然后再给每个 primitive 一个单独的索引
+    // 能够去 pbr 的 vector 里面找到具体的 pbr
+    // 这里的问题变成了是 单独开一个呢？ 还是 global 一下，全部慢慢索引呢？
+    for (const auto &primitive: mesh.primitives) {
+        if (primitive.material > -1) {
+            auto result = load_material(model, primitive.material);
+        }
+    }
+}
+
+void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index,
+                              const int material_base_index) {
     const auto sp_vertices = std::make_shared<std::vector<Vertex> >();
     const auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
 
@@ -269,6 +286,10 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
     auto bound_box = find_min_max_point(sp_vertices);
     auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
     add_geometry_data(entity, sp_vertices, sp_indices);
+
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity)); //  这里还是能改一些内容的
+    logic_update_add_tag<opacity_tag>(entity);
 }
 
 
@@ -300,13 +321,15 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
  * @param current_node_index
  * @param parent_node_index   好像确实没有什么用
  * @param parent_node_entity
+ * @param material_base_index
  * @return
  */
 entt::entity load_node_data(tinygltf::Model &model,
                             std::vector<bool> &nodes_have_deal,
                             const int current_node_index,
                             const int parent_node_index           = -1,
-                            const entt::entity parent_node_entity = entt::null) {
+                            const entt::entity parent_node_entity = entt::null,
+                            const int material_base_index         = 0) {
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
 
@@ -325,13 +348,11 @@ entt::entity load_node_data(tinygltf::Model &model,
 
     if (node.mesh >= 0) {
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
-        get_mesh_from_gltf_model(entity, model, node.mesh);
+        get_mesh_from_gltf_model(entity, model, node.mesh, material_base_index);
+
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
         logic_update_proxy<Name_component>(entity);
-        logic_update_proxy(entity, get_VKR_mesh(entity));
-        logic_update_proxy(entity, create_primitives(entity));
-        logic_update_add_tag<opacity_tag>(entity);
     }
     if (node.camera >= 0) {
         LOG_INFO(g_log(), "need deal node  camera ");
@@ -351,8 +372,8 @@ entt::entity load_node_data(tinygltf::Model &model,
     } else {
         add_relation(parent_node_entity, entity);
     }
-    for (int i = 0; i < node.children.size(); ++i) {
-        load_node_data(model, nodes_have_deal, node.children[i], current_node_index, entity);
+    for (const int i: node.children) {
+        load_node_data(model, nodes_have_deal, i, current_node_index, entity, material_base_index);
     }
     return entity;
 }
@@ -381,98 +402,74 @@ Texture_parameter load_image(tinygltf::Image &image) {
     return {};
 }
 
-void load_material(const entt::entity entity, tinygltf::Model &model) {
+std::pair<PBR_component, PBR_component_ptr> load_material(tinygltf::Model &model, const int material_index) {
     // 这里函数不太对，需要修改
-    for (const auto &material: model.materials) {
-        auto pbr_material = Logic_entt().get_or_emplace<PBR_component>(entity);
-
-        pbr_material.metallicFactor_  = material.pbrMetallicRoughness.metallicFactor;
-        pbr_material.roughnessFactor_ = material.pbrMetallicRoughness.roughnessFactor;
-        if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
-            pbr_material.baseColorFactor_ = {
-                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
-                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
-                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
-                static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]),
-            };
-        } else {
-            pbr_material.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-        }
-        if (material.emissiveFactor.size() == 3) {
-            pbr_material.emissiveFactor_ = {
-                static_cast<float>(material.emissiveFactor[0]),
-                static_cast<float>(material.emissiveFactor[1]),
-                static_cast<float>(material.emissiveFactor[2]),
-                1.0f,
-            };
-        } else {
-            pbr_material.emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f};
-        }
-        pbr_material.occlusion_strength_ = static_cast<float>(material.occlusionTexture.strength);
-        if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
-            const auto texture_index              = material.pbrMetallicRoughness.baseColorTexture.index;
-            const auto image_index                = model.textures[texture_index].source;
-            auto &image                           = model.images[image_index];
-            auto texture                          = load_image(image);
-            std::optional<Texture_parameter> temp = texture;
-            pbr_material.baseColorTexture         = temp.value().image.get_index();
-            auto &engine                          = Engine::instance();
-            engine.add_bindless_texture(texture);
-            auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.baseColorTexture = temp.value();
-        }
-        if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
-            const auto texture_index              = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-            const auto image_index                = model.textures[texture_index].source;
-            auto &image                           = model.images[image_index];
-            auto texture                          = load_image(image);
-            std::optional<Texture_parameter> temp = texture;
-            pbr_material.ORM_Texture              = temp.value().image.get_index();
-            auto &engine                          = Engine::instance();
-            engine.add_bindless_texture(texture);
-            auto &ptr       = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.ORM_Texture = temp.value();
-        }
-        if (material.normalTexture.index >= 0) {
-            const auto texture_index              = material.normalTexture.index;
-            const auto image_index                = model.textures[texture_index].source;
-            auto &image                           = model.images[image_index];
-            auto texture                          = load_image(image);
-            std::optional<Texture_parameter> temp = texture;
-            pbr_material.normalTexture            = temp.value().image.get_index();
-            auto &engine                          = Engine::instance();
-            engine.add_bindless_texture(texture);
-            auto &ptr         = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.normalTexture = temp.value();
-        }
-        if (material.occlusionTexture.index >= 0) {
-            const auto texture_index              = material.occlusionTexture.index;
-            const auto image_index                = model.textures[texture_index].source;
-            auto &image                           = model.images[image_index];
-            auto texture                          = load_image(image);
-            std::optional<Texture_parameter> temp = texture;
-            uint32_t index                        = temp.value().image.get_index();
-            // pbr_material.ORM_Texture              = index;
-            // todo: ORM_Texture 需要合并两张贴图 问题是在这里应该如何合并
-            auto &engine = Engine::instance();
-            engine.add_bindless_texture(texture);
-            // auto &ptr            = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            // ptr.baseColorTexture = temp.value();
-        }
-        if (material.emissiveTexture.index >= 0) {
-            const auto texture_index              = material.emissiveTexture.index;
-            const auto image_index                = model.textures[texture_index].source;
-            auto &image                           = model.images[image_index];
-            auto texture                          = load_image(image);
-            std::optional<Texture_parameter> temp = texture;
-            pbr_material.emissiveTexture          = temp.value().image.get_index();
-            auto &engine                          = Engine::instance();
-            engine.add_bindless_texture(texture);
-            auto &ptr           = Logic_entt().get_or_emplace<PBR_component_ptr>(entity);
-            ptr.emissiveTexture = temp.value();
-        }
-        set_render_parameter(entity, "object_material", pbr_material);
+    const auto &material = model.materials.at(material_index);
+    PBR_component pbr_material;
+    PBR_component_ptr ptr;
+    pbr_material.metallicFactor_  = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
+    pbr_material.roughnessFactor_ = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
+    if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
+        pbr_material.baseColorFactor_ = {
+            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
+            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
+            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
+            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]),
+        };
+    } else {
+        pbr_material.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
     }
+    if (material.emissiveFactor.size() == 3) {
+        pbr_material.emissiveFactor_ = {
+            static_cast<float>(material.emissiveFactor[0]),
+            static_cast<float>(material.emissiveFactor[1]),
+            static_cast<float>(material.emissiveFactor[2]),
+            1.0f,
+        };
+    } else {
+        pbr_material.emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f};
+    }
+    pbr_material.occlusion_strength_ = static_cast<float>(material.occlusionTexture.strength);
+
+    auto ORM_function = [&](uint32_t &write_index, Texture_parameter &write_Texture, const auto texture_index) {
+        const auto image_index = model.textures[texture_index].source;
+        auto &image            = model.images[image_index];
+        auto texture           = load_image(image);
+        uint32_t index         = texture.image.get_index();
+        write_index            = index;
+        auto &engine           = Engine::instance();
+        engine.add_bindless_texture(texture);
+        write_Texture = texture;
+    };
+
+    if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
+        const auto texture_index = material.pbrMetallicRoughness.baseColorTexture.index;
+        ORM_function(pbr_material.baseColorTexture, ptr.baseColorTexture, texture_index);
+    }
+
+    if (material.normalTexture.index >= 0) {
+        const auto texture_index = material.normalTexture.index;
+        ORM_function(pbr_material.normalTexture, ptr.normalTexture, texture_index);
+    }
+
+    if (material.emissiveTexture.index >= 0) {
+        const auto texture_index = material.emissiveTexture.index;
+        ORM_function(pbr_material.emissiveTexture, ptr.emissiveTexture, texture_index);
+    }
+
+    if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 && material.occlusionTexture.index >= 0) {
+        if (material.pbrMetallicRoughness.metallicRoughnessTexture.index == material.occlusionTexture.index) {
+            const auto texture_index = material.occlusionTexture.index;
+            ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
+        }
+    } else if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
+        const auto texture_index = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
+        ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
+    } else if (material.occlusionTexture.index >= 0) {
+        const auto texture_index = material.occlusionTexture.index;
+        ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
+    }
+    return {pbr_material, ptr};
 }
 
 
@@ -487,10 +484,15 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path,
         const auto nodes_num = model.nodes.size();
         std::vector<bool> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, false);
+        auto material_size            = model.materials.size();
+        auto pbr_vector               = Engine::instance().get_pbr_vector();
+        const int material_base_index = pbr_vector.size();
+        pbr_vector.resize(material_base_index + material_size);
+        // load_material(entity, model);  // 这里 然后就是 带锁的  部分的内容
 
         for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
             // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
-            entity = load_node_data(model, nodes_have_deal, i, -1, entt::null);
+            load_node_data(model, nodes_have_deal, i, -1, entt::null, material_base_index);
         }
     }
     return entity;

@@ -96,5 +96,5 @@ void main()
 
 
 
-    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4(fgColor, 1.0 - fillMask);
 }

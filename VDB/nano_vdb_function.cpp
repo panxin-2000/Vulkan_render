@@ -29,7 +29,7 @@ void test(void *ptr, uint64_t size);
  * @param src
  * @param size
  */
-void copy_nanovdb_data_to_gpu_memory(entt::entity entity, void *src, uint64_t size) {
+void copy_data_to_gpu_memory(entt::entity entity, void *src, uint64_t size) {
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
     auto mem_copy_function = [src,size](void *dst) {
@@ -78,7 +78,7 @@ void add_nanovdb_to_gpu(entt::entity entity) {
     }
     const auto ptr = handle.data();
     auto size      = handle.bufferSize();
-    copy_nanovdb_data_to_gpu_memory(entity, ptr, size);
+    copy_data_to_gpu_memory(entity, ptr, size);
     set_render_parameter(entity, "nanovdb_size", size);
 }
 
@@ -140,7 +140,7 @@ void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name)
         if (handle.empty()) {
             const auto ptr  = handle.data();
             const auto size = handle.bufferSize();
-            copy_nanovdb_data_to_gpu_memory(entity, ptr, size);
+            copy_data_to_gpu_memory(entity, ptr, size);
         }
     }
 }

@@ -25,9 +25,7 @@ layout (location = 5) in vec3 inWorldPos;
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-layout (set = 2, binding = 1) uniform object_material {
-    ShaderMaterial material;
-};
+
 
 float get_roughness(ShaderMaterial material) {
     return material.roughnessFactor;
@@ -162,7 +160,7 @@ ComputeTBNMatrix(vec3 P, vec3 N, vec2 st)
 }
 
 
-vec3 get_normal(vec3 world_pos, vec3 inNormal, vec2 inUV) {
+vec3 get_normal(ShaderMaterial material,vec3 world_pos, vec3 inNormal, vec2 inUV) {
     // 1. 从贴图采样（得到 0.0 到 1.0 之间的值）
     vec3 normalSample = texture(bindless_samplerColorMap[material.normalTexture], inUV).rgb;
     // 2. 解码到 [-1, 1] 范围
@@ -176,12 +174,19 @@ vec3 get_normal(vec3 world_pos, vec3 inNormal, vec2 inUV) {
 
 }
 
+layout (push_constant) uniform uPushConstant {
+    int pbr_index;
+};
+
 void main()
 {
 
-    float roughness = get_Roughness(material, inUV);
-    float metallic = get_Metallic(material, inUV);
-    vec3 base_color = get_base_color(material, inUV).rgb;
+
+    float roughness = get_Roughness(material[pbr_index], inUV);
+    float metallic = get_Metallic(material[pbr_index], inUV);
+    vec3 base_color = get_base_color(material[pbr_index], inUV).rgb;
+    vec3 finalEmissive = get_emissive_color(material[pbr_index], inUV).rgb;
+    // 是否先获取无所谓，编译器会优化
 
     // 2. 通过 SH 函数计算当前法线方向受到的环境光辐射
     // 这个函数返回的是该方向上的预集成光照
@@ -197,7 +202,7 @@ void main()
 
     // 3. Lambert 漫反射计算
 
-    vec3 N = get_normal(inWorldPos, inNormal, inUV);
+    vec3 N = get_normal( material[pbr_index], inWorldPos, inNormal, inUV);
     vec3 L = normalize(inLightVec);
     vec3 V = normalize(inViewVec);
     vec3 H = normalize(V + L);
@@ -224,7 +229,6 @@ void main()
     // 这里其实并没有把遮挡算进去
     vec3 finalSpecular = get_BRDF(dotNV, dotNL, dotLH, dotNH, D, G, F);
 
-    vec3 finalEmissive = get_emissive_color(material, inUV).rgb;
     vec3 out_color = finalEmissive + indirectDiffuse + finalSpecular;
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);

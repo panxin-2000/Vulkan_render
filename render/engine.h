@@ -14,6 +14,7 @@
 #include "vulkan_code/descriptor_pool.h"
 #include <Eigen/Eigen>
 
+#include "PBR_component.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
 #include "vulkan_code/vulkan_backend.h"
@@ -56,6 +57,8 @@ private:
         Eigen::Vector4f screen_size;
     };
 
+    std::vector<PBR_component> pbr_components_;
+    VKR_buffer_ptr pbr_components_buffer_;
     Global_parameters global_parameters_;
 
 
@@ -75,6 +78,11 @@ public:
         assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
         return current_timeline;
     }
+
+    std::vector<PBR_component> &get_pbr_vector() {
+        return pbr_components_;
+    }
+
 
     void submit_render_queue(uint64_t time_line);
 
@@ -219,6 +227,8 @@ public:
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
     void update_global_parameter();
+
+    void update_global_pbr_parameter(std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets);
 
     void update_bindless_parameter();
 
