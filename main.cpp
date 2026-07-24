@@ -432,6 +432,12 @@ int main(int argc, char *argv[]) {
         while (SDL_PollEvent(&event)) {
             base_event_dealing(event);
             ImGui_ImplSDL3_ProcessEvent(&event);
+            if (event.type == SDL_EVENT_DROP_FILE) {
+                SDL_Log("File: %s", event.drop.data); // 获取路径
+                // SDL_free(event.drop.data); // 务必释放内存
+                std::filesystem::path filePath = event.drop.data;
+                const auto entity              = load_gltf_model(filePath.stem().string(), filePath);
+            }
             if (event.type == SDL_EVENT_QUIT)
                 done = true;
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID ==
