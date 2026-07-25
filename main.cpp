@@ -369,13 +369,6 @@ int main(int argc, char *argv[]) {
     }
     object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
 
-    // Setup SDL
-    // [If using SDL_MAIN_USE_CALLBACKS: all code below until the main loop starts would likely be your SDL_AppInit() function]
-
-    int w, h;
-    SDL_GetWindowSize(backend.get_window(), &w, &h);
-    SDL_SetWindowPosition(backend.get_window(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    SDL_ShowWindow(backend.get_window());
 
 
     // Setup Dear ImGui context

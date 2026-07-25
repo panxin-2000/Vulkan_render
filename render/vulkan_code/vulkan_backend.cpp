@@ -108,15 +108,32 @@ void VK_backend::create_surface() {
         return;
     }
 
-    // Create window with Vulkan graphics context
-    float main_scale             = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
-    SDL_WindowFlags window_flags =
-            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
-    window_ = SDL_CreateWindow("Dear ImGui SDL3+Vulkan example", (int) (1280 * main_scale),
-                               (int) (800 * main_scale), window_flags);
-    if (window_ == nullptr) {
-        printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
-        return;
+    int display_count = 0;
+    // 1. 获取当前所有连接的显示器 ID 数组（SDL3 推荐写法）
+    SDL_DisplayID *displays = SDL_GetDisplays(&display_count);
+
+    if (displays && display_count > 0) {
+        // 2. 获取主显示器（数组第一个元素）的当前显示模式
+        const SDL_DisplayMode *mode = SDL_GetCurrentDisplayMode(displays[0]);
+        if (mode) {
+            int screen_w = mode->w; // 屏幕逻辑宽度
+            int screen_h = mode->h; // 屏幕逻辑高度
+
+            // Create window with Vulkan graphics context
+            float main_scale             = SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay());
+            SDL_WindowFlags window_flags =
+                    SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+            window_ = SDL_CreateWindow("Dear ImGui SDL3+Vulkan example", (int) (screen_w * main_scale * 0.667),
+                                       (int) (screen_h * main_scale), window_flags);
+            if (window_ == nullptr) {
+                printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
+                return;
+            }
+            SDL_SetWindowPosition(window_, screen_w * main_scale * 0.333, SDL_WINDOWPOS_CENTERED);
+            SDL_ShowWindow(window_);
+        }
+        // 4. 必须手动释放 SDL3 分配的显示器数组内存
+        SDL_free(displays);
     }
 
     // Create Window Surface
