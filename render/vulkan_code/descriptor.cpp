@@ -78,11 +78,11 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
     for (int i = 0; i < descriptor_set_layouts.size(); i++) {
         auto it = layout_and_set_map.find(descriptor_set_layouts.at(i));
         if (it != layout_and_set_map.end()) {
-            descriptor_sets.at(i)        = it->second;
+            descriptor_sets.at(i) = it->second;
+            return_value[i]       = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),
+                                                                     descriptor_set_layouts.at(i));
             descriptor_set_layouts.at(i) = VK_NULL_HANDLE;
             it                           = layout_and_set_map.erase(it);
-            return_value[i]              = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),
-                                                                     descriptor_set_layouts.at(i));
             continue;
         }
         need_allocate = true;
