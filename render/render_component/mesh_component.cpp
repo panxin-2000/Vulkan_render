@@ -54,14 +54,18 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
         for (const auto vertex: vertices) {
             vBufSize += vertex.total_size;
         }
-        if (!indices.empty()) {
-            auto total_single_size = 0;
+        if (!indices.empty() && indices.size() == vertices.size()) {
+            auto total_single_size       = 0;
+            int vector_index             = 0;
+            VkDeviceSize vertices_offset = 0;
             for (const auto index: indices) {
                 VKR_Primitive primitive;
                 total_single_size         += index.single_size;
-                primitive.vertices_offset = 0; // 这里似乎不是很对？ 感觉不太对
+                primitive.vertices_offset = vertices_offset; // 这里似乎不是很对？ 感觉不太对
                 primitive.indices_offset  = vBufSize;
                 vBufSize                  += index.total_size;
+                vertices_offset           += vertices.at(vector_index).total_size;
+                ++vector_index;
                 // mesh.indices_offset = vBufSize;
                 // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
                 // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
