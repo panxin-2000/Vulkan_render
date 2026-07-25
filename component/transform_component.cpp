@@ -32,31 +32,6 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
 }
 
 
-[[nodiscard]] Eigen::Matrix4f get_view_matrix(const Transform transform) {
-    const auto view = view_matrix({
-                                      transform.get_position().x,
-                                      transform.get_position().y,
-                                      transform.get_position().z
-                                  },
-                                  transform.get_rotate());
-    return view;
-}
-
-[[nodiscard]] Point_3 get_view_direction(const Transform &transform) {
-    auto matrix                    = get_view_matrix(transform).transpose();
-    Eigen::Vector3f look_direction = matrix.block<3, 1>(0, 2);
-    look_direction.normalize();
-    return {look_direction.x(), look_direction.y(), look_direction.z()};
-}
-
-[[nodiscard]] Point_3 get_view_right_direction(const Transform &transform) {
-    auto matrix                     = get_view_matrix(transform).transpose();
-    Eigen::Vector3f right_direction = matrix.block<3, 1>(0, 0);
-    right_direction.normalize();
-    return {right_direction.x(), right_direction.y(), right_direction.z()};
-}
-
-
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform) {
     return transform.get_transform_matrix();
 }
@@ -81,15 +56,14 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     last_mouse_position = mouse_positon;
     // 上面是一个简短记忆上一次的代码
 
-    auto world_entity     = get_world_root();
-    auto camera           = Logic_entt().try_get<camera_optical_component>(world_entity);
-    const auto camera_pos = Logic_entt().try_get<Transform>(world_entity);
+    auto world_entity = get_world_root();
+    auto camera       = Logic_entt().try_get<camera_optical_component>(world_entity);
 
     const auto &backend = VK_backend::instance();
     int width, height;
     SDL_GetWindowSize(backend.get_window(), &width, &height);
     const auto projection  = camera->get_projection_matrix();
-    const auto view_matrix = get_view_matrix(*camera_pos);
+    const auto view_matrix = camera->get_view_matrix();
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
     // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
@@ -113,7 +87,7 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     // 5. 透视除法 (W 分量归一化)
     world_start /= world_start.w();
     world_end   /= world_end.w();
-    auto offset = camera_pos->get_position(); // 这里给出的相机的位置
+    auto offset = camera->get_position(); // 这里给出的相机的位置
     // 6. 确定射线
     Eigen::Vector3f ray_origin    = world_start.head<3>();
     Eigen::Vector3f ray_direction = (world_end.head<3>() - ray_origin).normalized();
@@ -162,25 +136,25 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
             if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, -1});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
             } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({0, 0, 1});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
             } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({-1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
             } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
                 if (auto position = Logic_entt().try_get<Transform>(entity)) {
                     position->add_offset({1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
             } else if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
@@ -195,7 +169,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
                         position->add_offset({0, -1, 0});
                     else
                         position->add_offset({0, 1, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 }
                 return OPERATOR_FINISHED;
             } else if (event.key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
@@ -270,9 +244,8 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f inv_projection_matrix = projection.inverse();
     const Point_3 world_light_pos{0, 10, 6};
 
-    const auto camera_pos           = Logic_entt().get_or_emplace<Transform>(entity, Point_3{0, 0, 6});
-    const auto view_matrix          = get_view_matrix(camera_pos);
-    Point_3 world_camera_pos        = camera_pos.get_position();
+    const auto view_matrix          = camera.get_view_matrix();
+    Point_3 world_camera_pos        = camera.get_position();
     Eigen::Matrix4f inv_view_matrix = view_matrix.inverse();
 
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
@@ -317,9 +290,9 @@ void init_world_scene_root(entt::entity entity) {
 
 
 void update_camera_transform() {
-    const auto view = Logic_entt().view<Camera_transform_dirty, Name_component, Transform>();
+    const auto view = Logic_entt().view<Camera_dirty, Name_component,camera_optical_component>();
     for (const auto it: view) {
-        auto &camera_pos = view.get<Transform>(it);
+        auto &camera = view.get<camera_optical_component>(it);
         auto &name       = view.get<Name_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
             update_camera_parameter(it);
@@ -329,6 +302,6 @@ void update_camera_transform() {
             };
             add_recursion_function_to_children(it, lambda);
         }
-        Logic_entt().remove<Camera_transform_dirty>(it);
+        Logic_entt().remove<Camera_dirty>(it);
     }
 }

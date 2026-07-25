@@ -1,3 +1,4 @@
+#include "camera_optical_component.h"
 #include "transform_component.h"
 #include "../event/base_event.h"
 #include "name_component.h"
@@ -19,46 +20,45 @@ entt::dispatcher dispatcher;
  * @return
  */
 static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event, uint64_t time_stamp_err) {
-    std::cout << "time_stamp_err " << time_stamp_err << std::endl;
     float ms      = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;
-    float speed   = 1.5;
+    float speed   = 150;
     float pos_err = speed * ms;
 
     if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
-        if (auto position = Logic_entt().try_get<Transform>(entity)) {
-            auto offset = get_view_direction(*position) * pos_err;
-            position->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+            auto offset = camera->get_view_direction() * pos_err;
+            camera->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
         return OPERATOR_FINISHED;
     } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
-        if (auto position = Logic_entt().try_get<Transform>(entity)) {
-            auto offset = get_view_direction(*position) * -pos_err;
-            position->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+            auto offset = camera->get_view_direction() * -pos_err;
+            camera->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
         return OPERATOR_FINISHED;
     } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
-        if (auto position = Logic_entt().try_get<Transform>(entity)) {
-            auto offset = get_view_right_direction(*position) * -pos_err;
-            position->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+            auto offset = camera->get_view_right_direction() * -pos_err;
+            camera->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
         return OPERATOR_FINISHED;
     } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
-        if (auto position = Logic_entt().try_get<Transform>(entity)) {
-            auto offset = get_view_right_direction(*position) * pos_err;
-            position->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+            auto offset = camera->get_view_right_direction() * pos_err;
+            camera->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
         return OPERATOR_FINISHED;
     } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
-        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             if (event.key.mod & SDL_KMOD_SHIFT)
-                position->add_offset({0, -1, 0});
+                camera->add_offset({0, -1, 0});
             else
-                position->add_offset({0, 1, 0});
-            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                camera->add_offset({0, 1, 0});
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
         return OPERATOR_FINISHED;
     } else {
@@ -74,12 +74,12 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
         }
         case SDL_EVENT_MOUSE_WHEEL: {
             const Point_2 temp{event.wheel.x, event.wheel.y};
-            if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                auto q_current = position->get_rotate();
+            if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+                auto q_current = camera->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
                 q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                position->set_rotate(q_current);
-                Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+                camera->set_rotate(q_current);
+                Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 return OPERATOR_FINISHED;
             } else {
                 return OPERATOR_PASS_THROUGH;
@@ -213,9 +213,9 @@ void base_event_dealing(const SDL_Event &event) {
 
     std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
 
-    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
-        UI_stack.push_back(insert_entity);
-    }
+    // if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
+    // UI_stack.push_back(insert_entity);
+    // }
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
     //     auto &name = view.get<Name_component>(*it);

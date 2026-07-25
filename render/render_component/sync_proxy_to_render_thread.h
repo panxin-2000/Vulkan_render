@@ -13,7 +13,7 @@ struct UI_transform_dirty {
 struct Object_transform_dirty {
 };
 
-struct Camera_transform_dirty {
+struct Camera_dirty {
 };
 
 struct Camera_optical_specifications_dirty {

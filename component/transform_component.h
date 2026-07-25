@@ -72,15 +72,10 @@ public:
     }
 };
 
-[[nodiscard]] Point_3 get_view_direction(const Transform &transform);
-
-[[nodiscard]] Point_3 get_view_right_direction(const Transform &transform);
 
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform);
 
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform);
-
-[[nodiscard]] Eigen::Matrix4f get_view_matrix(const Transform transform);
 
 void update_camera_transform();
 

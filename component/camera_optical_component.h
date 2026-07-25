@@ -53,19 +53,34 @@ T to_radians(T degrees) {
     return degrees * (EIGEN_PI / T(180));
 }
 
+Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q);
 
 class camera_optical_component {
 private:
-    float fovy_radians_ = 45.0f;
-    float aspect_;
-    float zNear_ = 0.1f;
-    float zFar_  = 1000.0f;
+    float fovy_radians_        = 45.0f;
+    float aspect_              = 1.0f;
+    float zNear_               = 0.1f;
+    float zFar_                = 1000.0f;
+    Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
+    Point_3 position_          = {0, 0, 6};
 
 public:
     camera_optical_component() {
         const auto &backend  = VK_backend::instance();
         auto [width, height] = backend.get_current_extent();
         aspect_              = static_cast<float>(width) / static_cast<float>(height);
+    }
+
+    Point_3 add_offset(const Point_3 offset) {
+        return position_ = position_ + offset;
+    }
+
+    Eigen::Quaternionf set_rotate(const Eigen::Quaternionf &quaternion) {
+        return rotate_ = quaternion;
+    }
+
+    [[nodiscard]] Eigen::Quaternionf get_rotate() const {
+        return rotate_;
     }
 
     Eigen::Matrix4f get_projection_matrix() {
@@ -77,6 +92,31 @@ public:
                                                   zNear_,
                                                   zFar_);
         return projection;
+    }
+
+
+    [[nodiscard]] Eigen::Matrix4f get_view_matrix() {
+        const auto view = view_matrix({position_.x, position_.y, position_.z}, rotate_);
+        return view;
+    }
+
+    [[nodiscard]] Point_3 get_position() const {
+        return position_;
+    }
+
+
+    [[nodiscard]] Point_3 get_view_direction() {
+        auto matrix                    = get_view_matrix().transpose();
+        Eigen::Vector3f look_direction = matrix.block<3, 1>(0, 2);
+        look_direction.normalize();
+        return {look_direction.x(), look_direction.y(), look_direction.z()};
+    }
+
+    [[nodiscard]] Point_3 get_view_right_direction() {
+        auto matrix                     = get_view_matrix().transpose();
+        Eigen::Vector3f right_direction = matrix.block<3, 1>(0, 0);
+        right_direction.normalize();
+        return {right_direction.x(), right_direction.y(), right_direction.z()};
     }
 };
 
