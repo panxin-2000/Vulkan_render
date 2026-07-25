@@ -8,6 +8,12 @@
 
 std::mutex command_submit::submitMutex;
 
+command_submit::command_submit(const VkPresentInfoKHR &presentInfo) {
+    const auto &backend = VK_backend::instance();
+    std::lock_guard<std::mutex> lock(submitMutex);
+    result_ = vkQueuePresentKHR(backend.get_queue(), &presentInfo);
+}
+
 command_submit::command_submit(const uint32_t commandBufferCount,
                                const VkCommandBuffer *pCommandBuffers,
                                const VkFence fence,
@@ -30,7 +36,8 @@ command_submit::command_submit(const uint32_t commandBufferCount,
         .pSignalSemaphores    = pSignalSemaphores,
     };
     std::lock_guard<std::mutex> lock(submitMutex);
-    VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(backend.get_queue(), 1, &submitInfo, fence));
+    result_ = vkQueueSubmit(backend.get_queue(), 1, &submitInfo, fence);
+    VK_CHECK_RESULT_NOT_EXIT(result_);
 }
 
 

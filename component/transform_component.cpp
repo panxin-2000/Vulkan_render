@@ -285,8 +285,6 @@ void update_camera_parameter(const entt::entity entity) {
     Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
     Engine::instance().set_invVP(invVP);
     Engine::instance().set_world_light_pos({world_light_pos.x, world_light_pos.y, world_light_pos.z});
-    const auto extent = VK_backend::instance().get_current_extent();
-    Engine::instance().set_screen_size({extent.width, extent.height});
 }
 
 

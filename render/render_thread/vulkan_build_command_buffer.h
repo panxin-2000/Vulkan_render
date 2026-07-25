@@ -116,7 +116,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    auto temp_extent = VK_backend::instance().get_current_extent(); //
+    auto temp_extent = VK_backend::instance().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = Engine::instance().get_current_depth_view(),

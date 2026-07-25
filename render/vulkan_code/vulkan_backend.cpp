@@ -389,6 +389,8 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     images.resize(imageCount);
     image_views.resize(imageCount);
 
+    // 这里的问题导致的，
+    update_current_extent(); // 两个函数足够近，应该能避免很多问题
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, images.data()));
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{

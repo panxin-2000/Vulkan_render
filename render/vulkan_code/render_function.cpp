@@ -110,7 +110,9 @@ void Engine::copy_image_to_screen() {
         .pImageIndices      = &imageIndex
     }; {
         std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
-        auto result = vkQueuePresentKHR(VK_backend::instance().get_queue(), &presentInfo);
+
+        const command_submit submit(presentInfo);
+        const auto result = submit.get_result();
         if (result == VK_SUCCESS) {
         } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                    VK_backend::instance().is_frame_buffer_resize()) {

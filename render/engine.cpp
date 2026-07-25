@@ -409,6 +409,8 @@ void Engine::update_global_pbr_parameter(
 void Engine::update_global_parameter() {
     global_descriptor_sets_ = allocate_global_descriptor_sets("");
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
+    const auto extent              = VK_backend::instance().get_current_extent();
+    global_parameters_.screen_size = {static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0};
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
 

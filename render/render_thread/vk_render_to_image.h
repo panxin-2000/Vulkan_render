@@ -69,6 +69,7 @@ class vk_render_GPU {
 
 public:
     void one_cycle(VK_backend &handle) {
+        VK_backend::instance().update_current_extent();
         auto &engine = Engine::instance(); {
             std::unique_lock<std::mutex> lock(mtx);
             engine.update_global_parameter(); // 这里的好消息是 什么？ 这里可以申请；
@@ -96,7 +97,7 @@ public:
         }
         const VkQueryPool queryPool = VK_NULL_HANDLE;
 
-        Engine::instance().get_image_to_render();
+        Engine::instance().get_image_to_render();   // 这里已经有完整的
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);

@@ -39,7 +39,7 @@ private:
     VkQueue compute_queue_            = VK_NULL_HANDLE;
     VkSwapchainKHR swap_chain_        = VK_NULL_HANDLE;
     VmaAllocator allocator_           = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-
+    VkExtent2D extent_;
 
     /**
      * frameIndex 正在渲染的一帧图像
@@ -106,6 +106,7 @@ public:
         choose_one_physical_device();
         create_device();
         create_VMA();
+        update_current_extent();
         create_swap_chain(VK_NULL_HANDLE);
     }
 
@@ -120,9 +121,12 @@ public:
 
     void destroy();
 
+    void update_current_extent() {
+        extent_ = get_swap_image_rational_extent(physical_device_, surface_, window_);
+    }
+
     [[nodiscard]] VkExtent2D get_current_extent() const {
-        const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
-        return extent;
+        return extent_;
     }
 
     [[nodiscard]] VkViewport get_viewport(bool flip_y_axis = false) const {

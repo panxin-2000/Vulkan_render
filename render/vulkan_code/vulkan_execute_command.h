@@ -14,6 +14,8 @@
 class command_submit {
     static std::mutex submitMutex;
 
+    VkResult result_;
+
 public:
     command_submit() = delete;
 
@@ -27,6 +29,13 @@ public:
                    uint32_t signalSemaphoreCount                 = 0,
                    const VkSemaphore *pSignalSemaphores          = nullptr
     );
+
+    VkResult get_result() const {
+        return result_;
+    }
+
+
+    command_submit(const VkPresentInfoKHR &presentInfo);
 };
 
 
