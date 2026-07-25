@@ -11,8 +11,63 @@
 
 entt::dispatcher dispatcher;
 
+/**
+ *
+ * @param entity
+ * @param event
+ * @param time_stamp_err 这里的单位应该是ms
+ * @return
+ */
+static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event, uint64_t time_stamp_err) {
+    std::cout << "time_stamp_err " << time_stamp_err << std::endl;
+    float ms      = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;
+    float speed   = 1.5;
+    float pos_err = speed * ms;
+
+    if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
+        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+            auto offset = get_view_direction(*position) * pos_err;
+            position->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        }
+        return OPERATOR_FINISHED;
+    } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
+        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+            auto offset = get_view_direction(*position) * -pos_err;
+            position->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        }
+        return OPERATOR_FINISHED;
+    } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
+        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+            auto offset = get_view_right_direction(*position) * -pos_err;
+            position->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        }
+        return OPERATOR_FINISHED;
+    } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
+        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+            auto offset = get_view_right_direction(*position) * pos_err;
+            position->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        }
+        return OPERATOR_FINISHED;
+    } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+        if (auto position = Logic_entt().try_get<Transform>(entity)) {
+            if (event.key.mod & SDL_KMOD_SHIFT)
+                position->add_offset({0, -1, 0});
+            else
+                position->add_offset({0, 1, 0});
+            Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
+        }
+        return OPERATOR_FINISHED;
+    } else {
+        return OPERATOR_PASS_THROUGH;
+    }
+}
 
 static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event) {
+    static int64_t last_timestamp = 0;
     switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
             return OPERATOR_PASS_THROUGH;
@@ -36,44 +91,16 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
         case SDL_EVENT_TEXT_INPUT: {
         }
         case SDL_EVENT_KEY_UP: {
+            auto result    = world_root_move(entity, event, event.key.timestamp - last_timestamp);
+            last_timestamp = 0;
+            return result;
         }
         case SDL_EVENT_KEY_DOWN: {
-            if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, -1});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, 1});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({-1, 0, 0}); // 这里不能再 是这个样子了，需要按照 相加的方向 走
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    if (event.key.mod & SDL_KMOD_SHIFT)
-                        position->add_offset({0, -1, 0});
-                    else
-                        position->add_offset({0, 1, 0});
-                    Logic_entt().emplace_or_replace<Camera_transform_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else {
-                return OPERATOR_PASS_THROUGH;
-            }
+            if (last_timestamp == 0)
+                last_timestamp = event.key.timestamp;
+            auto result    = world_root_move(entity, event, event.key.timestamp - last_timestamp);
+            last_timestamp = event.key.timestamp;
+            return result;
         }
         case SDL_EVENT_FINGER_MOTION: {
         }

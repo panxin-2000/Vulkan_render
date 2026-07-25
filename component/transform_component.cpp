@@ -42,6 +42,21 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return view;
 }
 
+[[nodiscard]] Point_3 get_view_direction(const Transform &transform) {
+    auto matrix                    = get_view_matrix(transform).transpose();
+    Eigen::Vector3f look_direction = matrix.block<3, 1>(0, 2);
+    look_direction.normalize();
+    return {look_direction.x(), look_direction.y(), look_direction.z()};
+}
+
+[[nodiscard]] Point_3 get_view_right_direction(const Transform &transform) {
+    auto matrix                     = get_view_matrix(transform).transpose();
+    Eigen::Vector3f right_direction = matrix.block<3, 1>(0, 0);
+    right_direction.normalize();
+    return {right_direction.x(), right_direction.y(), right_direction.z()};
+}
+
+
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform) {
     return transform.get_transform_matrix();
 }
