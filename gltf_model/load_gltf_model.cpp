@@ -7,141 +7,88 @@
 #include "transform_component.h"
 #include "name_component.h"
 #include "PBR_component.h"
-#include "tiny_gltf.h"
+#include <fastgltf/core.hpp>
+#include <fastgltf/types.hpp>
+#include <fastgltf/tools.hpp>
 #include "3d_model_display.h"
 
-std::optional<tinygltf::Model> get_gltf_model(const std::string &path) {
-    std::filesystem::path filePath = path;
-    std::string ext                = filePath.extension().string();
+std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
+    fastgltf::Asset model;
+    static constexpr auto supportedExtensions =
+            fastgltf::Extensions::KHR_mesh_quantization |
+            fastgltf::Extensions::KHR_texture_transform |
+            fastgltf::Extensions::MSFT_texture_dds |
+            fastgltf::Extensions::KHR_materials_variants;
+    fastgltf::Parser parser(supportedExtensions);
+    constexpr auto gltfOptions =
+            fastgltf::Options::DontRequireValidAssetMember |
+            fastgltf::Options::AllowDouble |
+            fastgltf::Options::LoadExternalBuffers |
+            // fastgltf::Options::LoadExternalImages |  // 需要注释掉这里，因为有的 image 是可选的，所以不存在
+            fastgltf::Options::GenerateMeshIndices;
 
-    if (ext == ".gltf" || ext == ".glb") {
-        tinygltf::Model model;
-        tinygltf::TinyGLTF loader;
-        std::string err, warn;
-        bool res = false;
-        // 加载 glTF/glb 文件
-        if (ext == ".glb") {
-            res = loader.LoadBinaryFromFile(&model, &err, &warn, path);
-        } else {
-            res = loader.LoadASCIIFromFile(&model, &err, &warn, path);
-        }
-        if (!warn.empty()) {
-            LOG_INFO(g_log(), "load gltf file : {} warn {}", path, warn);
-        }
-        if (!err.empty()) {
-            LOG_INFO(g_log(), "load gltf file : {} error {}", path, err);
-        }
-        if (res == false) {
-            return {};
-        }
-        return model;
+    auto gltfFile = fastgltf::MappedGltfFile::FromPath(path);
+    if (!bool(gltfFile)) {
+        std::cerr << "Failed to open glTF file: " << fastgltf::getErrorMessage(gltfFile.error()) << '\n';
+        return {};
     }
-    return {};
+    auto asset = parser.loadGltf(gltfFile.get(), path.parent_path(), gltfOptions);
+    if (asset.error() != fastgltf::Error::None) {
+        std::cerr << "Failed to load glTF: " << fastgltf::getErrorMessage(asset.error()) << '\n';
+        return {};
+    }
+
+    return std::move(asset.get());
 }
 
-Point_3 get_offset_from_model(const tinygltf::Model &model, const int node_index) {
-    Point_3 offset{0, 0, 0};
-    int nodes_num = model.nodes.size();
-    if (node_index > nodes_num) {
-        return {0, 0, 0};
-    } else {
-        auto node = model.nodes[node_index];
-        if (node.translation.empty()) {
-            return {0, 0, 0};
-        } else if (node.translation.size() == 3) {
-            offset.x = node.translation[0];
-            offset.y = node.translation[1];
-            offset.z = node.translation[2];
-            return offset;
-        }
-    }
-    return {0, 0, 0};
-}
-
-std::vector<double> get_matrix_from_model(const tinygltf::Model &model, const int node_index) {
-    std::vector<double> translation;
-    int nodes_num = model.nodes.size();
-    if (node_index > nodes_num) {
-        return translation;
-    } else {
-        auto node = model.nodes[node_index];
-        if (node.translation.empty()) {
-            return translation;
-        } else if (node.translation.size() == 3) {
-            return node.matrix;
-        }
-    }
-    return translation;
-}
-
-Point_3 get_zoom_from_model(const tinygltf::Model &model, const int node_index) {
-    Point_3 zoom{1, 1, 1};
-    int nodes_num = model.nodes.size();
-    if (node_index > nodes_num) {
-        return {1, 1, 1};
-    } else {
-        auto node = model.nodes[node_index];
-        if (node.scale.empty()) {
-            return {1, 1, 1};
-        } else if (node.scale.size() == 3) {
-            zoom.x = node.scale[0];
-            zoom.y = node.scale[1];
-            zoom.z = node.scale[2];
-            return zoom;
-        }
-    }
-    return {1, 1, 1};
-}
-
-
-Eigen::Quaternionf get_rotate_from_model(const tinygltf::Model &model, const int node_index) {
-    int nodes_num = model.nodes.size();
-    if (node_index > nodes_num) {
-        return Eigen::Quaternionf::Identity();
-    } else {
-        auto node = model.nodes[node_index];
-        if (node.translation.size() == 0) {
-            return Eigen::Quaternionf::Identity();
-        } else if (node.translation.size() == 4) {
-            Eigen::Quaternionf rotate{
-                static_cast<float>(node.translation[3]),
-                static_cast<float>(node.translation[0]),
-                static_cast<float>(node.translation[1]),
-                static_cast<float>(node.translation[2])
-            };
-            return rotate;
-        }
-    }
-    return Eigen::Quaternionf::Identity();
-}
-
-
-const unsigned char *get_accessor_start_address(tinygltf::Model &model, tinygltf::Accessor &current_accessor) {
-    const tinygltf::BufferView &bufferView = model.bufferViews[current_accessor.bufferView];
-    const tinygltf::Buffer &buffer         = model.buffers[bufferView.buffer];
+const unsigned char *get_accessor_start_address(fastgltf::Asset &model, fastgltf::Accessor &current_accessor) {
+    const fastgltf::BufferView &bufferView = model.bufferViews[current_accessor.bufferViewIndex.value()];
+    const fastgltf::Buffer &buffer         = model.buffers[bufferView.bufferIndex];
     // 数据真实起始地址 = Buffer基址 + BufferView偏移 + Accessor偏移
-    const unsigned char *dataPtr = &(buffer.data[bufferView.byteOffset + current_accessor.byteOffset]);
-    return dataPtr;
+    unsigned char *dataPtr = nullptr;
+    if (std::holds_alternative<fastgltf::sources::Vector>(buffer.data)) {
+        // 100% 确定里面是 Vector
+        auto &vec = std::get<fastgltf::sources::Vector>(buffer.data);
+        dataPtr   = (unsigned char *) (vec.bytes.data());
+    } else if (std::holds_alternative<fastgltf::sources::Array>(buffer.data)) {
+        auto &arr = std::get<fastgltf::sources::Array>(buffer.data);
+        dataPtr   = (unsigned char *) arr.bytes.data();
+    } else if (std::holds_alternative<fastgltf::sources::URI>(buffer.data)) {
+        // 100% 确定是外部路径
+        auto &uri = std::get<fastgltf::sources::URI>(buffer.data);
+        // std::string path = uri.uri.path().c_str(); // ⚠️记得 c_str() 抹平 pmr::string 冲突！
+    }
+    return dataPtr + bufferView.byteOffset + current_accessor.byteOffset;
 }
 
+std::size_t get_stride(fastgltf::Asset &model, const fastgltf::Accessor &accessor) {
+    // 1. 检查 glTF JSON 文本中是否明确指定了不为 0 的有效步长（交错排列 AoS 结构）
 
-int get_element_size(tinygltf::Accessor &current_accessor) {
-    int numComponents = tinygltf::GetNumComponentsInType(current_accessor.type);
-    // 获取组件的字节大小（如 FLOAT 返回 4）
-    int componentSize = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
-    // 计算单个元素的总字节数
-    int elementSize = numComponents * componentSize;
-    return elementSize;
+    const auto &bufferView = model.bufferViews[accessor.bufferViewIndex.value()];
+
+    if (bufferView.byteStride.has_value() && bufferView.byteStride.value() > 0) {
+        return bufferView.byteStride.value();
+    }
+    // 2. 如果没有值，或者是魔法数字 0（紧凑排列 SoA 结构）
+    // 采用官方工具函数自动计算当前属性自身的物理大小，完成最安全的兜底！
+    // 比如：Vec3 + Float 自动返回 4 * 3 = 12 字节
+    return fastgltf::getElementByteSize(accessor.type, accessor.componentType);
 }
 
-auto copy_indices_data(tinygltf::Model &model, const tinygltf::Primitive &primitive) {
-    auto current_accessor  = model.accessors[primitive.indices]; // 复制的函数需要处理
-    const auto &bufferView = model.bufferViews[current_accessor.bufferView];
+std::size_t get_stride(fastgltf::Asset &model, const int accessor_index) {
+    const auto &current_accessor = model.accessors[accessor_index]; // 复制的函数需要处理
+    return get_stride(model, current_accessor);
+}
+
+auto copy_indices_data(fastgltf::Asset &model, const fastgltf::Primitive &primitive) {
+    auto current_accessor  = model.accessors[primitive.indicesAccessor.value()]; // 复制的函数需要处理
+    const auto &bufferView = model.bufferViews[current_accessor.bufferViewIndex.value()];
     // 数据真实起始地址 = Buffer基址 + BufferView偏移 + Accessor偏移
-    const unsigned char *src   = get_accessor_start_address(model, current_accessor);
-    const int stride           = current_accessor.ByteStride(bufferView);
-    auto data_type             = current_accessor.componentType;
-    const int data_single_size = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
+    const unsigned char *src = get_accessor_start_address(model, current_accessor);
+
+    std::size_t stride           = get_stride(model, current_accessor);
+    std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
+                                                                current_accessor.componentType);
     share_block result;
     // auto address       = malloc(current_accessor.count * data_single_size);
     result.ptr         = std::make_shared<char[]>(current_accessor.count * data_single_size);
@@ -149,26 +96,14 @@ auto copy_indices_data(tinygltf::Model &model, const tinygltf::Primitive &primit
     result.single_size = data_single_size;
     result.total_size  = current_accessor.count * data_single_size;
     result.data        = result.ptr.get();
-    if (data_single_size == stride && current_accessor.type == TINYGLTF_TYPE_SCALAR) {
-        memcpy(result.data, src, result.total_size);
+    if (data_single_size == stride) {
+        memcpy(result.data, src, result.total_size); // todo
     } else {
         // 有间隔，需要做一些其他处理
     }
     return result;
 }
 
-int get_stride(const tinygltf::Model &model, const int accessor_index) {
-    const auto &current_accessor = model.accessors[accessor_index]; // 复制的函数需要处理
-    const auto &bufferView       = model.bufferViews[current_accessor.bufferView];
-    const int stride             = current_accessor.ByteStride(bufferView);
-    return stride;
-}
-
-int get_stride(const tinygltf::Model &model, const tinygltf::Accessor &current_accessor) {
-    const auto &bufferView = model.bufferViews[current_accessor.bufferView];
-    const int stride       = current_accessor.ByteStride(bufferView);
-    return stride;
-}
 
 struct Attribute {
     std::string name;
@@ -180,22 +115,22 @@ struct Attribute {
 
 unsigned char *memcpy_attribute(unsigned char *dst_address, Attribute attribute, const uint32_t index) {
     if (attribute.data_ptr != nullptr)
-        memcpy(dst_address, attribute.data_ptr + index * attribute.element_size, attribute.element_size);
+        memcpy(dst_address, attribute.data_ptr + index * attribute.element_stride, attribute.element_size);
     dst_address += attribute.element_size;
     return dst_address;
 }
 
-void read_attribute(tinygltf::Model &model, tinygltf::Accessor &accessor, Attribute &attribute) {
+void read_attribute(fastgltf::Asset &model, fastgltf::Accessor &accessor, Attribute &attribute) {
     attribute.data_ptr       = get_accessor_start_address(model, accessor);
-    attribute.element_size   = get_element_size(accessor);
+    attribute.element_size   = fastgltf::getElementByteSize(accessor.type, accessor.componentType);
     attribute.element_stride = get_stride(model, accessor);
     attribute.element_count  = accessor.count;
 }
 
-auto mem_copy_all_attributes(const uint32_t count, std::vector<Attribute> attributes) {
+auto mem_copy_all_attributes(const uint32_t count, const std::vector<Attribute> &attributes) {
     share_block result;
     auto single_size = 0;
-    for (auto attribute: attributes) {
+    for (const auto &attribute: attributes) {
         single_size += attribute.element_size;
     }
     result.ptr         = std::make_shared<char[]>(count * single_size);
@@ -205,7 +140,7 @@ auto mem_copy_all_attributes(const uint32_t count, std::vector<Attribute> attrib
     result.data        = result.ptr.get();
     auto dst_address   = static_cast<unsigned char *>(result.data);
     for (size_t i = 0; i < count; ++i) {
-        for (auto attribute: attributes) {
+        for (const auto &attribute: attributes) {
             dst_address = memcpy_attribute(dst_address, attribute, i);
         }
     }
@@ -213,7 +148,7 @@ auto mem_copy_all_attributes(const uint32_t count, std::vector<Attribute> attrib
 }
 
 
-auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Primitive &primitive) {
+auto copy_vertices_data(size_t size, fastgltf::Asset &model, const fastgltf::Primitive &primitive) {
     Attribute position   = {"position", nullptr, 12, 0};
     Attribute normal     = {"normal", nullptr, 12, 0};
     Attribute texcoord_0 = {"texcoord_0", nullptr, 8, 0};
@@ -221,19 +156,22 @@ auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Pri
 
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
-        auto it = primitive.attributes.find("POSITION");
-        if (it != primitive.attributes.end()) {
-            read_attribute(model, model.accessors[it->second], position);
+        for (const auto &attribute: primitive.attributes) {
+            if (attribute.name == "POSITION") {
+                read_attribute(model, model.accessors[attribute.accessorIndex], position);
+            }
         }
     } {
-        auto it = primitive.attributes.find("NORMAL");
-        if (it != primitive.attributes.end()) {
-            read_attribute(model, model.accessors[it->second], normal);
+        for (const auto &attribute: primitive.attributes) {
+            if (attribute.name == "NORMAL") {
+                read_attribute(model, model.accessors[attribute.accessorIndex], normal);
+            }
         }
     } {
-        auto it = primitive.attributes.find("TEXCOORD_0");
-        if (it != primitive.attributes.end()) {
-            read_attribute(model, model.accessors[it->second], texcoord_0);
+        for (const auto &attribute: primitive.attributes) {
+            if (attribute.name == "TEXCOORD_0") {
+                read_attribute(model, model.accessors[attribute.accessorIndex], texcoord_0);
+            }
         }
     }
 
@@ -245,68 +183,61 @@ auto copy_vertices_data(size_t size, tinygltf::Model &model, const tinygltf::Pri
     std::vector<std::string> find_strings;
     // find_strings.push_back("JOINTS_0");
     // find_strings.push_back("WEIGHTS_0");
-    for (auto find_string: find_strings) {
-        auto it = primitive.attributes.find(find_string);
-        if (it != primitive.attributes.end()) {
-            Attribute attribute_temp;
-            attribute_temp.name = find_string;
-            read_attribute(model, model.accessors[it->second], attribute_temp);
-            attributes.push_back(attribute_temp);
-        }
-    }
+    // for (auto find_string: find_strings) {
+    //     auto it = primitive.attributes.find(find_string);
+    //     if (it != primitive.attributes.end()) {
+    //         Attribute attribute_temp;
+    //         attribute_temp.name = find_string;
+    //         read_attribute(model, model.accessors[it->second], attribute_temp);
+    //         attributes.push_back(attribute_temp);
+    //     }
+    // }
     return mem_copy_all_attributes(position.element_count, attributes);
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
-std::pair<PBR_component, PBR_Texture_ptr> load_material(tinygltf::Model &model, int material_index);
 
-void get_material_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
-    const auto mesh = model.meshes[mesh_index];
-    // 现在的问题的是 一个 mesh 里面有多个 primitives
-    //  PBR 需要 一个 vector
-    //  然后再给每个 primitive 一个单独的索引
-    // 能够去 pbr 的 vector 里面找到具体的 pbr
-    // 这里的问题变成了是 单独开一个呢？ 还是 global 一下，全部慢慢索引呢？
-}
-
-void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const int mesh_index) {
+void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const std::size_t mesh_index) {
     // std::vector<VKR_Primitive> // 如果可以的话，尽可能在这里搞定，之后只需要复制一下就好
-    const auto mesh          = model.meshes[mesh_index];
-    int indices_memory_size  = 0;
-    int vertices_memory_size = 0;
+    const auto mesh             = model.meshes[mesh_index];
+    size_t indices_memory_size  = 0;
+    size_t vertices_memory_size = 0;
     for (const auto &primitive: mesh.primitives) {
         // 最开始需要能够确定数量
-        if (primitive.indices > -1) {
-            const auto current_accessor = model.accessors[primitive.indices]; // 复制的函数需要处理
-            const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
-            indices_memory_size         += current_accessor.count * data_single_size;
+        if (primitive.indicesAccessor.has_value()) {
+            const auto current_accessor  = model.accessors[primitive.indicesAccessor.value()]; // 复制的函数需要处理
+            std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
+                                                                        current_accessor.componentType);
+            indices_memory_size += current_accessor.count * data_single_size;
         }
 
         for (const auto &attribute: primitive.attributes) {
-            const auto current_accessor = model.accessors[attribute.second]; // 复制的函数需要处理
-            const int data_single_size  = tinygltf::GetComponentSizeInBytes(current_accessor.componentType);
-            vertices_memory_size        += current_accessor.count * data_single_size;
+            const auto current_accessor        = model.accessors[attribute.accessorIndex]; // 复制的函数需要处理
+            const std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
+                                                                              current_accessor.componentType);
+            vertices_memory_size += current_accessor.count * data_single_size;
         }
     }
 
     for (const auto &primitive: mesh.primitives) {
-        if (primitive.indices > -1) {
+        if (primitive.indicesAccessor.has_value()) {
             auto result = copy_indices_data(model, primitive);
             Logic_entt().get_or_emplace<Geometry_data>(entity).push_indices(result);
         }
         auto result = copy_vertices_data(vertices_memory_size, model, primitive);
         Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
-    std::vector<uint32_t> material_index;
-    for (const auto &primitive: mesh.primitives) {
-        if (primitive.material > -1) {
-            const auto result = load_material(model, primitive.material);
-            auto &manager     = Engine::instance().get_pbr_manager();
-            auto index        = manager.push(result.first, result.second);
-            material_index.push_back(index);
-            // index 给出了那么应该写到哪里呢？
-        }
-    }
+    // std::vector<uint32_t> material_index;
+    // for (const auto &primitive: mesh.primitives) {
+    //     if (primitive.material > -1) {
+    //         const auto result = load_material(model, primitive.material);
+    //         auto &manager     = Engine::instance().get_pbr_manager();
+    //         auto index        = manager.push(result.first, result.second);
+    //         material_index.push_back(index);
+    //         // index 给出了那么应该写到哪里呢？
+    //     }
+    //     break;
+    // }
 
     // auto bound_box = find_min_max_point(sp_vertices);
     // auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
@@ -314,41 +245,26 @@ void get_mesh_from_gltf_model(entt::entity entity, tinygltf::Model &model, const
 
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
-    if (primitives.size() == material_index.size()) {
-        int i = 0;
-        for (auto &primitive: primitives) {
-            if (primitive.index_type == VK_INDEX_TYPE_MAX_ENUM) {
-                primitive.vertex_command.firstInstance = material_index.at(i);
-            } else
-                primitive.indexed_command.firstInstance = material_index.at(i);
-            ++i;
-        }
-    }
+    // if (primitives.size() == material_index.size()) {
+    //     int i = 0;
+    //     for (auto &primitive: primitives) {
+    //         if (primitive.index_type == VK_INDEX_TYPE_MAX_ENUM) {
+    //             primitive.vertex_command.firstInstance = material_index.at(i);
+    //         } else
+    //             primitive.indexed_command.firstInstance = material_index.at(i);
+    //         ++i;
+    //         break;
+    //     }
+    // }
 
     logic_update_proxy(entity, primitives); //  这里还是能改一些内容的
     logic_update_add_tag<opacity_tag>(entity);
 }
 
 
-void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, const int current_node_index) {
-    Eigen::Matrix4f temp_matrix = Eigen::Matrix4f::Identity();
-    auto temp                   = get_matrix_from_model(model, current_node_index);
-    if (!temp.empty()) {
-        for (int i = 0; i < temp.size(); ++i) {
-            auto *p_float = reinterpret_cast<float *>(&temp_matrix);
-            p_float[i]    = static_cast<float>(temp.at(i));
-        }
-        const auto &transform = Logic_entt().emplace_or_replace<Transform>(entity, temp_matrix);
-        set_render_parameter(entity, "model_4x4", temp_matrix);
-        return;
-    }
-    // matrix 与之前的内容互斥 搞定互斥的部分
-
-    Point_3 offset            = get_offset_from_model(model, current_node_index);
-    Point_3 zoom              = get_zoom_from_model(model, current_node_index);
-    Eigen::Quaternionf rotate = get_rotate_from_model(model, current_node_index);
-    const auto &transform     = Logic_entt().emplace_or_replace<Transform>(entity, offset, rotate, zoom);
-    const auto modelMatrix    = get_model_matrix(transform);
+void set_model_matrix(const entt::entity entity, const fastgltf::Asset &model, const int current_node_index) {
+    fastgltf::math::fmat4x4 gltf_mat  = fastgltf::getTransformMatrix(model.nodes.at(current_node_index));
+    const Eigen::Matrix4f modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>(gltf_mat.data());
     set_render_parameter(entity, "model_4x4", modelMatrix);
 }
 
@@ -360,25 +276,31 @@ void set_model_matrix(const entt::entity entity, const tinygltf::Model &model, c
  * @param parent_node_entity
  * @return
  */
-entt::entity load_node_data(tinygltf::Model &model,
+entt::entity load_node_data(fastgltf::Asset &model,
                             std::vector<bool> &nodes_have_deal,
                             const int current_node_index,
                             const int parent_node_index           = -1,
                             const entt::entity parent_node_entity = entt::null) {
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
-    if (node.mesh >= 0) {
+    if (node.meshIndex.has_value()) {
         const entt::entity entity = Logic_entt().create();
         logic_create_proxy(entity);
         Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
         logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
         // set_render_parameter(entity, "object_material", material);
-        Logic_entt().emplace<Name_component>(entity, node.name);
+        Logic_entt().emplace<Name_component>(entity, node.name.c_str());
         set_model_matrix(entity, model, current_node_index);
 
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
-        get_mesh_from_gltf_model(entity, model, node.mesh);
+        get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
+        auto &AABB = Logic_entt().get<AABB_min_max<Point_3> >(entity);
+
+        // -1920.94592  -126.442497  -1182.80713       1799.90808  1429.43323  1105.42603
+        // 最低点不是很低吗？ 怎么还是到天上了
+        // object_3d_model("box", AABB);
+        // object_3d_model("box", {AABB.min_point_, AABB.min_point_ + Point_3{30, 30, 30}});
 
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
@@ -389,120 +311,32 @@ entt::entity load_node_data(tinygltf::Model &model,
         } else {
             add_relation(parent_node_entity, entity);
         }
-        for (const int i: node.children) {
+        for (const auto i: node.children) {
             load_node_data(model, nodes_have_deal, i, current_node_index, entity);
         }
     }
-    if (node.camera >= 0) {
+    if (node.cameraIndex.has_value()) {
         LOG_INFO(g_log(), "need deal node  camera ");
     }
-    if (node.light >= 0) {
+    if (node.lightIndex.has_value()) {
         LOG_INFO(g_log(), "need deal node  light ");
     }
-    if (node.skin >= 0) {
+    if (node.skinIndex.has_value()) {
         LOG_INFO(g_log(), "need deal node  skin ");
     }
-    if (node.emitter >= 0) {
-        LOG_INFO(g_log(), "need deal node  emitter ");
-    }
+    // if (node.skinIndex.has_value()) {
+    //     LOG_INFO(g_log(), "need deal node  emitter ");
+    // }
+    return entt::null;
 }
 
 
-Texture_parameter load_image(tinygltf::Image &image) {
-    if (image.width * image.height * image.component * image.bits / 8 == image.image.size()) {
-        if (image.component == 4) {
-            Picture_parameters picture_parameters{
-                image.width,
-                image.height,
-                image.component,
-                image.image.data(),
-            };
-            auto texture = create_2d_texture(picture_parameters);
-            return texture;
-            // 确定了可以直接上传 RGBA
-        }
-    }
-
-    if (image.mimeType == "image/jpeg") {
-    } else if (image.mimeType == "image/png") {
-    } else if (image.mimeType == "image/bmp") {
-    } else if (image.mimeType == "image/gif") {
-    }
+Texture_parameter load_image(fastgltf::Image &image) {
     return {};
 }
 
-std::pair<PBR_component, PBR_Texture_ptr> load_material(tinygltf::Model &model, const int material_index) {
-    // 这里函数不太对，需要修改
-    const auto &material = model.materials.at(material_index);
-    PBR_component pbr_material;
-    PBR_Texture_ptr ptr;
-    pbr_material.metallicFactor_  = static_cast<float>(material.pbrMetallicRoughness.metallicFactor);
-    pbr_material.roughnessFactor_ = static_cast<float>(material.pbrMetallicRoughness.roughnessFactor);
-    if (material.pbrMetallicRoughness.baseColorFactor.size() == 4) {
-        pbr_material.baseColorFactor_ = {
-            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[0]),
-            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[1]),
-            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[2]),
-            static_cast<float>(material.pbrMetallicRoughness.baseColorFactor[3]),
-        };
-    } else {
-        pbr_material.baseColorFactor_ = {1.0f, 1.0f, 1.0f, 1.0f};
-    }
-    if (material.emissiveFactor.size() == 3) {
-        pbr_material.emissiveFactor_ = {
-            static_cast<float>(material.emissiveFactor[0]),
-            static_cast<float>(material.emissiveFactor[1]),
-            static_cast<float>(material.emissiveFactor[2]),
-            1.0f,
-        };
-    } else {
-        pbr_material.emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f};
-    }
-    pbr_material.occlusion_strength_ = static_cast<float>(material.occlusionTexture.strength);
 
-    auto ORM_function = [&](uint32_t &write_index, Texture_parameter &write_Texture, const auto texture_index) {
-        const auto image_index = model.textures[texture_index].source;
-        auto &image            = model.images[image_index];
-        auto texture           = load_image(image);
-        uint32_t index         = texture.image.get_index();
-        write_index            = index;
-        auto &engine           = Engine::instance();
-        engine.add_bindless_texture(texture);
-        write_Texture = texture;
-    };
-
-    if (material.pbrMetallicRoughness.baseColorTexture.index >= 0) {
-        const auto texture_index = material.pbrMetallicRoughness.baseColorTexture.index;
-        ORM_function(pbr_material.baseColorTexture, ptr.baseColorTexture, texture_index);
-    }
-
-    if (material.normalTexture.index >= 0) {
-        const auto texture_index = material.normalTexture.index;
-        ORM_function(pbr_material.normalTexture, ptr.normalTexture, texture_index);
-    }
-
-    if (material.emissiveTexture.index >= 0) {
-        const auto texture_index = material.emissiveTexture.index;
-        ORM_function(pbr_material.emissiveTexture, ptr.emissiveTexture, texture_index);
-    }
-
-    if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0 && material.occlusionTexture.index >= 0) {
-        if (material.pbrMetallicRoughness.metallicRoughnessTexture.index == material.occlusionTexture.index) {
-            const auto texture_index = material.occlusionTexture.index;
-            ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
-        }
-    } else if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
-        const auto texture_index = material.pbrMetallicRoughness.metallicRoughnessTexture.index;
-        ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
-    } else if (material.occlusionTexture.index >= 0) {
-        const auto texture_index = material.occlusionTexture.index;
-        ORM_function(pbr_material.ORM_Texture, ptr.ORM_Texture, texture_index);
-    }
-    return {pbr_material, ptr};
-}
-
-
-entt::entity load_gltf_model(const std::string &name, const std::string &path,
+entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Point_3 offset,
                              const Eigen::Quaternionf &rotate,
                              const Point_3 zoom) {
@@ -521,17 +355,17 @@ entt::entity load_gltf_model(const std::string &name, const std::string &path,
     return entity;
 }
 
-VkPrimitiveTopology get_primitive_topology(const tinygltf::Primitive &primitive) {
-    switch (primitive.mode) {
-        case TINYGLTF_MODE_POINTS:
+VkPrimitiveTopology get_primitive_topology(const fastgltf::Primitive &primitive) {
+    switch (primitive.type) {
+        case fastgltf::PrimitiveType::Points:
             return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-        case TINYGLTF_MODE_LINE:
+        case fastgltf::PrimitiveType::Lines:
             return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-        case TINYGLTF_MODE_LINE_STRIP:
+        case fastgltf::PrimitiveType::LineLoop:
             return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-        case TINYGLTF_MODE_TRIANGLES:
+        case fastgltf::PrimitiveType::Triangles:
             return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case TINYGLTF_MODE_TRIANGLE_STRIP:
+        case fastgltf::PrimitiveType::TriangleStrip:
             return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         default:
             // 默认的值有点问题

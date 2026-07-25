@@ -46,7 +46,7 @@ FetchContent_Declare(
         cereal
         GIT_REPOSITORY https://github.com/USCiLab/cereal.git
         GIT_TAG v1.3.2 # 或者是 master
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(cereal)
@@ -61,7 +61,7 @@ FetchContent_Declare(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest.git
         GIT_TAG v1.17.0
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 
 # 自动寻找 Google Benchmark 库 并且 如果需要更改库，只需要更改子文件夹下的内容
@@ -73,14 +73,14 @@ FetchContent_Declare(
         entt
         GIT_REPOSITORY https://github.com/skypjack/entt.git
         GIT_TAG v3.16.0
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 
 FetchContent_Declare(
         quill
         GIT_REPOSITORY https://github.com/odygrd/quill.git
         GIT_TAG v11.0.2  # 明确指向某个标签
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(quill)
 
@@ -89,7 +89,7 @@ FetchContent_Declare(
         json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
         GIT_TAG v3.12.0
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
         GIT_SUBMODULES ""   # 不下载任何子模块
 )
 FetchContent_MakeAvailable(json)
@@ -108,14 +108,22 @@ file(GLOB imgui_sources
         ${IMGUI_DIR}/imgui_widgets.cpp)
 
 
-# tinygltf  中有一些选择，需要看自己的需求打开，重要的是一个禁止异常的选项
 FetchContent_Declare(
-        tinygltf
-        GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
-        GIT_TAG v2.9.7
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        simdjson
+        GIT_REPOSITORY https://github.com/simdjson/simdjson.git
+        GIT_TAG v4.6.4
+        GIT_SHALLOW TRUE
 )
-FetchContent_MakeAvailable(tinygltf)
+FetchContent_MakeAvailable(simdjson)
+
+FetchContent_Declare(
+        fastgltf
+        GIT_REPOSITORY https://github.com/spnda/fastgltf.git
+        GIT_TAG v0.8.0 # 建议锁定一个稳定的发布版本，也可以用 main
+        GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(fastgltf)
+
 
 set(MSDFGEN_USE_VCPKG OFF)
 set(MSDFGEN_USE_SKIA OFF)
@@ -124,7 +132,7 @@ FetchContent_Declare(
         manifold
         GIT_REPOSITORY https://github.com/elalish/manifold.git
         GIT_TAG v3.3.2
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(manifold)
 
@@ -136,7 +144,7 @@ FetchContent_Declare(
         msdfgen
         GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
         GIT_TAG v1.13
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(msdfgen)
 
@@ -144,7 +152,7 @@ FetchContent_Declare(
         meshoptimizer
         GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
         GIT_TAG v1.1
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(meshoptimizer)
@@ -153,7 +161,7 @@ FetchContent_Declare(
         cxxopts
         GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
         GIT_TAG v3.3.1
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 
 )
 FetchContent_MakeAvailable(cxxopts)
@@ -163,7 +171,7 @@ FetchContent_Declare(
         readerwriterqueue
         GIT_REPOSITORY https://github.com/cameron314/readerwriterqueue
         GIT_TAG master
-        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+        GIT_SHALLOW TRUE
 )
 
 FetchContent_MakeAvailable(readerwriterqueue)
@@ -179,7 +187,7 @@ else ()
             highway
             GIT_REPOSITORY https://github.com/google/highway.git
             GIT_TAG 1.2.0 #
-            GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+            GIT_SHALLOW TRUE
     )
     set(HWY_ENABLE_TESTS OFF CACHE INTERNAL "")
     set(HWY_ENABLE_EXAMPLES OFF CACHE INTERNAL "")
@@ -199,7 +207,7 @@ find_package(OpenVDB REQUIRED)
 #        directxmath
 #        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
 #        GIT_TAG apr2025
-#        GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+#        GIT_SHALLOW TRUE     
 #)
 #FetchContent_MakeAvailable(directxmath)
 
@@ -264,7 +272,7 @@ if (WITH_VULKAN_BACKEND)
             VulkanMemoryAllocator
             GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
             GIT_TAG v3.1.0  # 建议指定一个稳定的发布版本
-            GIT_SHALLOW TRUE    # 只下载该标签对应的代码，不下载历史
+            GIT_SHALLOW TRUE
             SYSTEM
     )
     FetchContent_MakeAvailable(VulkanMemoryAllocator)
@@ -604,7 +612,7 @@ target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
-target_link_libraries(learn_render PRIVATE tinygltf)
+target_link_libraries(learn_render PRIVATE fastgltf::fastgltf)
 target_link_libraries(learn_render PRIVATE nlohmann_json::nlohmann_json) # 纯头文件，链接不链接无所谓
 target_link_libraries(learn_render PRIVATE Freetype)
 target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
