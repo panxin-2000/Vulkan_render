@@ -19,8 +19,7 @@ void scene_root_add_child(const entt::entity entity) {
 
 
 bool add_relation(const entt::entity parent_entity, const entt::entity children_entity) {
-    assert(Logic_entt().all_of<Scene_Component>(parent_entity) ||
-           ( std::puts (get_entity_name(parent_entity).c_str()),false));
+    assert(Logic_entt().all_of<Scene_Component>(parent_entity));
     auto &parent_entity_scene = Logic_entt().get<Scene_Component>(parent_entity);
     parent_entity_scene.add_child_relation(children_entity);
     auto &children_entity_scene = Logic_entt().get_or_emplace<Scene_Component>(children_entity);

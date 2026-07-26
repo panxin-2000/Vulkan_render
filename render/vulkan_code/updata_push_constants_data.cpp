@@ -16,7 +16,7 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
 
         VkBufferCreateInfo uBufferCI{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size  = 128 * 1024, // 128K
+            .size  = 1024 * 1024, // 1M 需要申请1M 之前的时候应该是 128K 就能够存储完成的
             .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
         };
         VmaAllocationCreateInfo uBufferAllocCI{

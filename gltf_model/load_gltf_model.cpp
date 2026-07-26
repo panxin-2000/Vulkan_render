@@ -313,16 +313,14 @@ entt::entity load_node_data(fastgltf::Asset &model,
     nodes_have_deal.at(current_node_index) = true;
     const entt::entity entity              = Logic_entt().create();
     Logic_entt().emplace<Name_component>(entity, node.name.c_str());
-    if (parent_entity == entt::null) {
-        world_root_add_child(entity);
-    } else {
-        add_relation(parent_entity, entity);
-    }
+    if (parent_entity == entt::null) world_root_add_child(entity);
+    else add_relation(parent_entity, entity);
+
 
     add_Transform_parameter(entity, node);
 
     if (node.meshIndex.has_value()) {
-        logic_create_proxy(entity);
+        logic_create_proxy(entity); // 有几何的时候才创造吗？
         Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
         logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
@@ -343,7 +341,6 @@ entt::entity load_node_data(fastgltf::Asset &model,
     // if (node.skinIndex.has_value()) {
     //     LOG_INFO(g_log(), "need deal node  emitter ");
     // }
-    get_model_matrix(entity, model, current_node_index);
 
     for (const auto i: node.children) {
         load_node_data(model, nodes_have_deal, i, current_node_index, entity);

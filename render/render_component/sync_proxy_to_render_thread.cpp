@@ -23,15 +23,25 @@ inline void update_object_transform_function() { {
             Logic_entt().remove<UI_transform_dirty>(it);
         }
     } {
-        const auto view = Logic_entt().view<AABB_min_max<Point_3>, UI_transform_dirty, Proxy_entity, Transform>();
-        for (const auto entity: view) {
-            const auto &transform = view.get<Transform>(entity);
-            auto box              = view.get<AABB_min_max<Point_3> >(entity);
-            // 这里有问题, 目前只做好了偏移，没有做好旋转
-            auto model_matrix = get_model_matrix(box, transform);
-            set_render_parameter(entity, "model_4x4", model_matrix);
-            Logic_entt().remove<UI_transform_dirty>(entity);
-        }
+        auto root = get_world_root();
+        // 逻辑大概是这个样子，但是实际的细节，还是有优化的地方的
+        // 第一个是 没有 Transform 的时候，其实应该默认 给出单位矩阵
+        // 如果中间存在一个没有的时候，需要添加一个判断，是否需要向下传递，
+        auto function = [](const entt::entity entity) {
+            if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
+                // 满足条件：两个组件都有
+                auto parent_entity           = get_parent(entity);
+                auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_matrix>(parent_entity);
+                const auto &transform        = Logic_entt().get<Transform>(entity);
+                Eigen::Matrix4f result       = parent_transform_matrix.get() * transform.get_transform_matrix();
+                Logic_entt().emplace_or_replace<Transform_matrix>(entity, result);
+                if (Logic_entt().all_of<Proxy_entity, Transform_matrix>(entity)) {
+                    set_render_parameter(entity, "model_4x4", result);
+                }
+            }
+        };
+        // 目前是从零开始把全部的节点都遍历了一遍
+        add_recursion_function_to_children(root, function);
     }
 }
 

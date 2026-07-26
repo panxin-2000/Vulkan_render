@@ -24,6 +24,10 @@ public:
         model_Matrix_ = modelMatrix;
     }
 
+    Eigen::Matrix4f &get() {
+        return model_Matrix_;
+    }
+
 private:
     Eigen::Matrix4f model_Matrix_;
 };
