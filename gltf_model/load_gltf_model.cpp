@@ -262,12 +262,38 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
 }
 
 
-void get_model_matrix(const entt::entity entity, const fastgltf::Asset &model, const int current_node_index) {
-    fastgltf::math::fmat4x4 gltf_mat  = fastgltf::getTransformMatrix(model.nodes.at(current_node_index));
-    const Eigen::Matrix4f modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>(gltf_mat.data());
-    Logic_entt().emplace<Transform_matrix>(entity, modelMatrix);
+void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &node) {
+    if (std::holds_alternative<fastgltf::TRS>(node.transform)) {
+        auto &trs = std::get<fastgltf::TRS>(node.transform);
+        Logic_entt().emplace<Transform>(entity,
+                                        Point_3{
+                                            trs.translation.x(), trs.translation.y(), trs.translation.z()
+                                        },
+                                        Eigen::Quaternionf{
+                                            trs.rotation.w(), trs.rotation.x(), trs.rotation.y(),
+                                            trs.rotation.z()
+                                        },
+                                        Point_3{trs.scale.x(), trs.scale.y(), trs.scale.z()});
+    } else if (std::holds_alternative<fastgltf::math::fmat4x4>(node.transform)) {
+        auto &trs = std::get<fastgltf::math::fmat4x4>(node.transform);
+        // 列存储
+        const auto modelMatrix          = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>(trs.data());
+        Eigen::Matrix3f rotation_matrix = modelMatrix.block<3, 3>(0, 0);
+        Eigen::Quaternionf rotation     = Eigen::Quaternionf(rotation_matrix);;
+        Logic_entt().emplace<Transform>(entity,
+                                        Point_3{
+                                            modelMatrix(0, 3),
+                                            modelMatrix(1, 3),
+                                            modelMatrix(2, 3)
+                                        },
+                                        rotation,
+                                        Point_3{
+                                            modelMatrix.col(0).head<3>().norm(),
+                                            modelMatrix.col(1).head<3>().norm(),
+                                            modelMatrix.col(2).head<3>().norm(),
+                                        });
+    }
     Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
-    // 这里的主要的问题是 感觉 解析的并不是很对，也有可能是 其他的问题  应该不是解析错误了应该是 父子 节点之间的问题
 }
 
 /**
@@ -292,29 +318,17 @@ entt::entity load_node_data(fastgltf::Asset &model,
     } else {
         add_relation(parent_entity, entity);
     }
+
+    add_Transform_parameter(entity, node);
+
     if (node.meshIndex.has_value()) {
         logic_create_proxy(entity);
         Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
         logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
         // set_render_parameter(entity, "object_material", material);
-
-        fastgltf::math::fmat4x4 gltf_mat  = fastgltf::getTransformMatrix(model.nodes.at(current_node_index));
-        const Eigen::Matrix4f modelMatrix = Eigen::Map<const Eigen::Matrix<
-            float, 4, 4, Eigen::ColMajor>>(gltf_mat.data());
-        set_render_parameter(entity, "model_4x4", modelMatrix); // 先随便给出，之后再注释
-
-        // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
         get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
-        auto &AABB = Logic_entt().get<AABB_min_max<Point_3> >(entity);
-
-        // -1920.94592  -126.442497  -1182.80713       1799.90808  1429.43323  1105.42603
-        // 最低点不是很低吗？ 怎么还是到天上了
-        // object_3d_model("box", AABB);
-        // object_3d_model("box", {AABB.min_point_, AABB.min_point_ + Point_3{30, 30, 30}});
-
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
-        world_root_add_child(entity);
         logic_update_proxy<Name_component>(entity);
     }
     if (node.cameraIndex.has_value()) {
