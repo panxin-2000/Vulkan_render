@@ -38,6 +38,13 @@ inline void update_object_transform_function() { {
                 if (Logic_entt().all_of<Proxy_entity, Transform_matrix>(entity)) {
                     set_render_parameter(entity, "model_4x4", result);
                 }
+                if (Logic_entt().all_of<Proxy_entity, AABB_min_max<Point_3> >(entity)) {
+                    const auto &aabb = Logic_entt().get<AABB_min_max<Point_3> >(entity);
+                    const AABB_centroid<Point_3> aabb_centroid(aabb);
+                    const AABB_min_max<Point_3> new_aabb = aabb_centroid.multiply_matrix(result);
+                    logic_update_proxy(entity, new_aabb); //
+                }
+                Logic_entt().remove<Transform_matrix_dirty>(entity);
             }
         };
         // 目前是从零开始把全部的节点都遍历了一遍

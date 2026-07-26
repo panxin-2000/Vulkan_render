@@ -238,9 +238,10 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
     //     }
     //     break;
     // }
-
-    // auto bound_box = find_min_max_point(sp_vertices);
-    // auto &AABB     = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bound_box);
+    const auto &data                         = Logic_entt().get_or_emplace<Geometry_data>(entity);
+    const std::vector<share_block> &vertices = data.get_vertices();
+    auto bound_box                           = find_min_max_point(vertices);
+    Logic_entt().emplace_or_replace<AABB_min_max<Point_3> >(entity, bound_box);
     // 这里呢？ 也是应该怎么做的问题
 
     logic_update_proxy(entity, get_VKR_mesh(entity));

@@ -119,20 +119,20 @@ public:
         direction_interval_ = (box.max_point_ - box.min_point_) / 2;
     }
 
-    void multiply_matrix(const Eigen::Matrix4f &matrix) {
+    AABB_centroid<T> multiply_matrix(const Eigen::Matrix4f &matrix) const {
         if constexpr (std::is_same_v<T, Point_3>) {
-            AABB_min_max<T> box = AABB_centroid<T>{centroid_point_, direction_interval_};
-            const Eigen::Vector4f min_point(box.min_point_.x, box.min_point_.y, box.min_point_.z, 0);
-            const Eigen::Vector4f max_point(box.max_point_.x, box.max_point_.y, box.max_point_.z, 0);
-            Eigen::Vector4f new_min = matrix * min_point;
-            Eigen::Vector4f new_max = matrix * max_point;
-            AABB_min_max<T> result  = AABB_min_max<T>{
-                {new_min.x(), new_min.y(), new_min.z()},
-                {new_max.x(), new_max.y(), new_max.z()}
+            const Eigen::Vector4f centroid(centroid_point_.x, centroid_point_.y, centroid_point_.z, 0);
+            const Eigen::Vector4f direction(direction_interval_.x, direction_interval_.y, direction_interval_.z, 0);
+            Eigen::Vector4f new_centroid  = matrix * centroid;
+            Eigen::Vector4f new_direction = matrix * direction;
+            AABB_centroid<T> result{
+                {new_centroid.x(), new_centroid.y(), new_centroid.z()},
+                {new_direction.x(), new_direction.y(), new_direction.z()}
             };
-            centroid_point_     = (result.min_point_ + result.max_point_) / 2;
-            direction_interval_ = abs(result.max_point_ - result.min_point_) / 2;
+            return result;
         } else if constexpr (std::is_same_v<T, Point_2>) {
+            AABB_centroid<T> result{{0, 0}, {0, 0}};
+            return result;
         }
     }
 
