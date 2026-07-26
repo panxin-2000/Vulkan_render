@@ -13,6 +13,8 @@
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
+#include <json_fwd.hpp> // 正确：只引入前置声明，文件极小，编译极快 , 只是声明
+
 
 struct Atlas {
     std::string type;

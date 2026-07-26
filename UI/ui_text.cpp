@@ -6,7 +6,7 @@
 #include <hb.h>
 
 #include "utf8.h"
-#include "json.hpp"
+#include "json.hpp"  // 仅在需要处理具体业务的 .cpp 文件中引入完整实现
 #include <fstream>
 
 #include "model_matrix.h"
