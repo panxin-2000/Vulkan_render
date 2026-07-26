@@ -15,6 +15,19 @@
 #include <Eigen/Eigen>
 
 
+struct Transform_matrix_dirty {
+};
+
+class alignas(16) Transform_matrix {
+public:
+    explicit Transform_matrix(const Eigen::Matrix4f &modelMatrix = Eigen::Matrix4f::Identity()) {
+        model_Matrix_ = modelMatrix;
+    }
+
+private:
+    Eigen::Matrix4f model_Matrix_;
+};
+
 class alignas(16) Transform {
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 zoom_              = {1, 1, 1};

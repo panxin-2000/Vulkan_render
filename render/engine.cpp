@@ -233,7 +233,8 @@ void Engine::create() {
         "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
         "", ""
     };
-    shader_date               = VKR_shader_init(shader_paths);
+    shader_date = VKR_shader_init(shader_paths);
+    descriptor_pool_manager_.set_shader_data(shader_date);
     bindless_descriptor_sets_ =
             descriptor_pool_manager_.allocate_bindless_descriptor_sets(
                                                                        shader_date->bindless_sets_bindings,

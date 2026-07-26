@@ -68,9 +68,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
     auto &backend = VK_backend::instance();
     Proxy_descriptor_sets return_value;
     std::vector<VkDescriptorSet> descriptor_sets;
-    if (descriptor_set_layouts.empty())
-        return return_value;
-
+    assert(!descriptor_set_layouts.empty()); // 因为不想多加一个判断的参数，强制 descriptor_set_layouts 不能为空
     descriptor_sets.resize(descriptor_set_layouts.size(),VK_NULL_HANDLE);
     return_value.resize(descriptor_set_layouts.size());
 
@@ -111,8 +109,11 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
             }
         }
     }
-    VK_CHECK_RESULT_NOT_EXIT(vkAllocateDescriptorSets(backend.get_device(), &texDescSetAlloc,
-                                 descriptor_sets.data()));
+    auto result = vkAllocateDescriptorSets(backend.get_device(), &texDescSetAlloc,
+                                           descriptor_sets.data());
+    if (result != VK_SUCCESS) {
+        return {};
+    }
     // 原来会黑屏不是内存的问题，是 vkAllocateDescriptorSets 申请不出来了
     for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
         return_value[i] = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),

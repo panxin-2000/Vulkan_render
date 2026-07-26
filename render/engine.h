@@ -33,8 +33,9 @@ private:
     std::array<VkQueryPool, maxFramesInFlight> query_pools          = {};
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
-    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_        = {};
-    std::vector<DescriptorSet_ptr> global_descriptor_sets_          = {};
+
+    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_ = {};
+    std::vector<DescriptorSet_ptr> global_descriptor_sets_   = {};
 
 
     std::vector<VKR_image_ptr> swap_chain_images_;
@@ -234,8 +235,12 @@ public:
     void update_bindless_parameter();
 
 
-    VkDescriptorPool get_descriptor_pool(const uint index = 0) const {
+    VkDescriptorPool get_descriptor_pool() const {
         return descriptor_pool_manager_.get_descriptor_pool_for_alloc();
+    }
+
+    void allocate_descriptor_pool() {
+        descriptor_pool_manager_.allocate_descriptor_pool();
     }
 
     void create_render_image();
@@ -285,7 +290,6 @@ public:
     void destroy_render_image();
 
     void create();
-
 
     void recreate_swap_chain();
 

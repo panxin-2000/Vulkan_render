@@ -33,19 +33,23 @@ void allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_backend::instance();
-    if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
+    if (const auto shader_ptr = Render_entt().try_get<shader_data>(entity)) {
+        auto shader_ref = *shader_ptr;
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-        if (!(*shader_temp)->object_descriptor_sets_layout.empty()) {
+        if (!shader_ref->object_descriptor_sets_layout.empty()) {
             auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           (*shader_temp)->object_sets_bindings);
+                                                           shader_ref->object_sets_bindings);
             vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
-                                                                       (*shader_temp)->
-                                                                       object_descriptor_sets_layout,
+                                                                       shader_ref->object_descriptor_sets_layout,
                                                                        {});
-            // 这里好像每次就把 全部的 都重新申请了 准确的说 是把 某个 set = 0，1，2 的 全部都申请了
-            // 另一边，我 只是把 相应的 需要 update 的 数据地址全部 填写到了每个 set 中
-            // 只需要解决 set 到问题就好
+            if (vk_s_d_s.object_descriptor_sets.empty()) {
+                Engine::instance().allocate_descriptor_pool();
+                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
+                                                                           shader_ref->object_descriptor_sets_layout,
+                                                                           {});
+            }
+            assert(!vk_s_d_s.object_descriptor_sets.empty());// 然后怎么打印实体的名称呢？
         }
     }
 }

@@ -14,14 +14,27 @@ private:
     std::vector<VkDescriptorPool> descriptor_pools = {};
     VkDescriptorPool bindless_descriptor_pools     = VK_NULL_HANDLE;
 
+    std::shared_ptr<vk_shader_data> shader_date_;
+
 public:
     void create() {
         descriptor_pools.resize(1,VK_NULL_HANDLE);
         descriptor_pools.at(0) = init_current_descriptor_pool();
     }
 
+    bool set_shader_data(const std::shared_ptr<vk_shader_data> &shader_date) {
+        shader_date_ = shader_date;
+        return true;
+    }
+
     [[nodiscard]] VkDescriptorPool get_descriptor_pool_for_alloc() const {
         return descriptor_pools.at(descriptor_pools.size() - 1);
+    }
+
+    void allocate_descriptor_pool() {
+        const auto size = descriptor_pools.size();
+        descriptor_pools.resize(size + 1,VK_NULL_HANDLE);
+        descriptor_pools.at(size) = init_current_descriptor_pool();
     }
 
     std::vector<DescriptorSet_ptr> allocate_bindless_descriptor_sets(

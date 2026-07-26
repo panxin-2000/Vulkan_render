@@ -9,7 +9,7 @@
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
 #include "manifold/linalg.h"
-
+#include "move_speed.h"
 
 /**
  * 使用位置和四元数构建 View 矩阵
@@ -264,7 +264,7 @@ void update_camera_parameter(const entt::entity entity) {
 void init_world_scene_root(entt::entity entity) {
     Logic_entt().emplace<Scene_Component>(entity);
     Logic_entt().emplace<Name_component>(entity, "world_scene_root");
-
+    Logic_entt().emplace<Move_speed>(entity);
 
     update_camera_parameter(entity);
     // // vec2 ndc = in_UV * 2.0 - 1.0;
@@ -290,10 +290,10 @@ void init_world_scene_root(entt::entity entity) {
 
 
 void update_camera_transform() {
-    const auto view = Logic_entt().view<Camera_dirty, Name_component,camera_optical_component>();
+    const auto view = Logic_entt().view<Camera_dirty, Name_component, camera_optical_component>();
     for (const auto it: view) {
         auto &camera = view.get<camera_optical_component>(it);
-        auto &name       = view.get<Name_component>(it);
+        auto &name   = view.get<Name_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
             update_camera_parameter(it);
             auto lambda = [](const entt::entity entity) {

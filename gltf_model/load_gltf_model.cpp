@@ -262,10 +262,12 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
 }
 
 
-void set_model_matrix(const entt::entity entity, const fastgltf::Asset &model, const int current_node_index) {
+void get_model_matrix(const entt::entity entity, const fastgltf::Asset &model, const int current_node_index) {
     fastgltf::math::fmat4x4 gltf_mat  = fastgltf::getTransformMatrix(model.nodes.at(current_node_index));
     const Eigen::Matrix4f modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>(gltf_mat.data());
-    set_render_parameter(entity, "model_4x4", modelMatrix);
+    Logic_entt().emplace<Transform_matrix>(entity, modelMatrix);
+    Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
+    // 这里的主要的问题是 感觉 解析的并不是很对，也有可能是 其他的问题  应该不是解析错误了应该是 父子 节点之间的问题
 }
 
 /**
@@ -273,25 +275,34 @@ void set_model_matrix(const entt::entity entity, const fastgltf::Asset &model, c
  * @param model
  * @param current_node_index
  * @param parent_node_index   好像确实没有什么用
- * @param parent_node_entity
+ * @param parent_entity
  * @return
  */
 entt::entity load_node_data(fastgltf::Asset &model,
                             std::vector<bool> &nodes_have_deal,
                             const int current_node_index,
-                            const int parent_node_index           = -1,
-                            const entt::entity parent_node_entity = entt::null) {
+                            const int parent_node_index      = -1,
+                            const entt::entity parent_entity = entt::null) {
     auto node                              = model.nodes[current_node_index];
     nodes_have_deal.at(current_node_index) = true;
+    const entt::entity entity              = Logic_entt().create();
+    Logic_entt().emplace<Name_component>(entity, node.name.c_str());
+    if (parent_entity == entt::null) {
+        world_root_add_child(entity);
+    } else {
+        add_relation(parent_entity, entity);
+    }
     if (node.meshIndex.has_value()) {
-        const entt::entity entity = Logic_entt().create();
         logic_create_proxy(entity);
         Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
         logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
         // set_render_parameter(entity, "object_material", material);
-        Logic_entt().emplace<Name_component>(entity, node.name.c_str());
-        set_model_matrix(entity, model, current_node_index);
+
+        fastgltf::math::fmat4x4 gltf_mat  = fastgltf::getTransformMatrix(model.nodes.at(current_node_index));
+        const Eigen::Matrix4f modelMatrix = Eigen::Map<const Eigen::Matrix<
+            float, 4, 4, Eigen::ColMajor>>(gltf_mat.data());
+        set_render_parameter(entity, "model_4x4", modelMatrix); // 先随便给出，之后再注释
 
         // mesh 中可以有多个 Primitive, 但是其中每个 Primitive 都是必须要绘制的，而不是可选的
         get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
@@ -305,15 +316,6 @@ entt::entity load_node_data(fastgltf::Asset &model,
         Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
         world_root_add_child(entity);
         logic_update_proxy<Name_component>(entity);
-
-        if (parent_node_entity == entt::null) {
-            world_root_add_child(entity);
-        } else {
-            add_relation(parent_node_entity, entity);
-        }
-        for (const auto i: node.children) {
-            load_node_data(model, nodes_have_deal, i, current_node_index, entity);
-        }
     }
     if (node.cameraIndex.has_value()) {
         LOG_INFO(g_log(), "need deal node  camera ");
@@ -327,6 +329,12 @@ entt::entity load_node_data(fastgltf::Asset &model,
     // if (node.skinIndex.has_value()) {
     //     LOG_INFO(g_log(), "need deal node  emitter ");
     // }
+    get_model_matrix(entity, model, current_node_index);
+
+    for (const auto i: node.children) {
+        load_node_data(model, nodes_have_deal, i, current_node_index, entity);
+    }
+
     return entt::null;
 }
 
@@ -340,19 +348,38 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                              const Point_3 offset,
                              const Eigen::Quaternionf &rotate,
                              const Point_3 zoom) {
-    entt::entity entity = entt::null;
     auto optional_model = get_gltf_model(path);
     if (optional_model.has_value()) {
+        const entt::entity model_entity = Logic_entt().create();
+        Logic_entt().emplace<Name_component>(model_entity, name);
+        world_root_add_child(model_entity);
         auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
         std::vector<bool> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, false);
+        size_t has_mesh = 0;
         for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
-            // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
-            load_node_data(model, nodes_have_deal, i, -1, entt::null);
+            auto node = model.nodes[i];
+            if (node.meshIndex.has_value()) {
+                has_mesh++;
+            }
         }
+        for (auto scene: model.scenes) {
+            const entt::entity entity = Logic_entt().create();
+            Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
+            add_relation(model_entity, entity);
+            for (const auto node_index: scene.nodeIndices) {
+                load_node_data(model, nodes_have_deal, node_index, -1, entity);
+            }
+        }
+        return model_entity;
+
+        // for (auto i = 0; i < nodes_num && i < 1000 && nodes_have_deal.at(i) == false; ++i) {
+        //     // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
+        //     load_node_data(model, nodes_have_deal, i, -1, entt::null);
+        // }
     }
-    return entity;
+    return entt::null;
 }
 
 VkPrimitiveTopology get_primitive_topology(const fastgltf::Primitive &primitive) {

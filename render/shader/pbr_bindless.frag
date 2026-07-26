@@ -228,7 +228,7 @@ void main()
     // 这里其实并没有把遮挡算进去
     vec3 finalSpecular = get_BRDF(dotNV, dotNL, dotLH, dotNH, D, G, F);
 
-    vec3 out_color = finalEmissive + indirectDiffuse + finalSpecular;
+    vec3 out_color = finalEmissive + indirectDiffuse + finalSpecular + vec3(0.3,0.3,0.3);
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快

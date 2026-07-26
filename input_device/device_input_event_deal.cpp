@@ -4,6 +4,7 @@
 #include "name_component.h"
 #include "global_singleton.h"
 #include "input_component.h"
+#include "move_speed.h"
 #include "scene_component.h"
 #include "Rect_2D_component.h"
 #include "UI_manager.h"
@@ -20,8 +21,11 @@ entt::dispatcher dispatcher;
  * @return
  */
 static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event, uint64_t time_stamp_err) {
-    float ms      = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;
-    float speed   = 150;
+    float ms    = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;
+    float speed = 1.0f;
+    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
+        speed = move_speed->speed;
+    }
     float pos_err = speed * ms;
 
     if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
@@ -78,6 +82,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
                 auto q_current = camera->get_rotate();
                 q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
                 q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                q_current.normalize();
                 camera->set_rotate(q_current);
                 Logic_entt().emplace_or_replace<Camera_dirty>(entity);
                 return OPERATOR_FINISHED;

@@ -16,7 +16,7 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
 
         VkBufferCreateInfo uBufferCI{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size  = 32 * 1024, // 32K
+            .size  = 128 * 1024, // 128K
             .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
         };
         VmaAllocationCreateInfo uBufferAllocCI{

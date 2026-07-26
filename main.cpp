@@ -434,7 +434,7 @@ int main(int argc, char *argv[]) {
                 done = true;
         }
 
-        Logic_entt().emplace_or_replace<Camera_transform_dirty>(get_world_root());
+        Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
         imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color);
 
         clean_render_entity();
