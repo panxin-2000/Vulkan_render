@@ -23,6 +23,7 @@
 
 
 #include "descriptor_pool.h"
+#include "framerate_measure.h"
 #include "pipeline_layout.h"
 #include "pipeline_layout_component.h"
 #include "pipeline_component.h"
@@ -97,7 +98,7 @@ public:
         }
         const VkQueryPool queryPool = VK_NULL_HANDLE;
 
-        Engine::instance().get_image_to_render();   // 这里已经有完整的
+        Engine::instance().get_image_to_render(); // 这里已经有完整的
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
@@ -292,11 +293,12 @@ public:
         }
         need_render = running; // 设置为运行中
 
-
+        FrameRate_measure framerate_measure(VK_backend::instance().get_refresh_rate());
         while (need_render == running) {
+            framerate_measure.begin_frame();
+            Engine::instance().set_framerate(framerate_measure.get_frame_rate());
             one_cycle(handle);
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
-            // LOG_INFO(g_log(), "current finished timeline {}", handle.get_finished_timeline());
+            framerate_measure.end_frame();
         }
         exit_and_clean(handle);
     }

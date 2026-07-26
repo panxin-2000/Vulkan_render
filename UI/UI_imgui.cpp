@@ -7,9 +7,12 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
+#include "move_speed.h"
 #include "name_component.h"
 #include "scene_component.h"
 #include "shader_component.h"
+#include "transform_component.h"
+#include "UI_manager.h"
 
 
 struct ImGui_ImplVulkan_FrameRenderBuffers {
@@ -270,6 +273,43 @@ void ImGui_ImplVulkan_NewFrame(const entt::entity entity) {
     }
 }
 
+void display_tree(entt::entity entity) {
+    static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DrawLinesFull;
+    auto name                            = Logic_entt().get<Name_component>(entity);
+    if (ImGui::TreeNodeEx(name.name_.c_str(), base_flags)) {
+        ImGui::Text("display");
+        ImGui::SameLine();
+        if (ImGui::SmallButton("button")) {
+        }
+
+        if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
+            ImGui::DragFloat("speed", &move_speed->speed);
+        }
+
+        if (auto transform = Logic_entt().try_get<Transform>(entity)) {
+            if (ImGui::DragFloat3("position", (float *) transform + 4 + 3)) {
+                std::cout << "transform change" << std::endl; // 这里确实没错，之后呢？
+            }
+            // Edit 1 float using a slider from 0.0f to 1.0f
+        }
+
+        // if (ImGui::Checkbox("mesh", &show_another_window)) {
+        // }
+        // if (ImGui::Checkbox("material", &show_another_window)) {
+        // }
+        auto &scene_component = Logic_entt().get<Scene_Component>(entity);
+        for (uint32_t i = 0; i < scene_component.children_.size(); i++) {
+            if (i == 0)
+                ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+            ImGui::PushID(i);
+            display_tree(scene_component.children_[i]);
+            ImGui::PopID();
+            ++i;
+        }
+        ImGui::TreePop();
+    }
+}
+
 entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   bool &show_demo_window,
                                   bool &show_another_window,
@@ -286,10 +326,13 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
 
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
-        static float f     = 0.0f;
-        static int counter = 0;
-
-        ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
+        static float f                = 0.0f;
+        static int counter            = 0;
+        ImGuiWindowFlags window_flags = 0;
+        window_flags                  |= ImGuiWindowFlags_NoMove;
+        bool open                     = true;
+        ImGui::Begin("Hello, world!", &open, window_flags);
+        // Create a window called "Hello, world!" and append into it.
 
         ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
@@ -304,7 +347,14 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::SameLine();
         ImGui::Text("counter = %d", counter);
 
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::Text("Logic  thread average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        auto value = Engine::instance().get_framerate();
+        ImGui::Text("Render thread average %.3f ms/frame (%d FPS)", 1000.0f / value, value);
+
+
+        display_tree(get_UI_scene_root());
+        display_tree(get_world_root());
+
         ImGui::End();
     }
 

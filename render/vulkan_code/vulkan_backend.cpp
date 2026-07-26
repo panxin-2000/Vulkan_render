@@ -129,6 +129,7 @@ void VK_backend::create_surface() {
                 printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
                 return;
             }
+            refresh_rate_ = mode->refresh_rate;
             SDL_SetWindowPosition(window_, screen_w * main_scale * 0.333, SDL_WINDOWPOS_CENTERED);
             SDL_ShowWindow(window_);
         }

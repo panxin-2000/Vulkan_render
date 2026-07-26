@@ -45,6 +45,7 @@ private:
     std::vector<VKR_image_ptr> depth_images_;
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
+    std::atomic<uint64_t> framerate_   = 0;
 
     struct Global_parameters {
         Eigen::Matrix4f view_matrix;
@@ -86,6 +87,14 @@ public:
 
     PBR_manager &get_pbr_manager() {
         return pbr_manager_;
+    }
+
+    void set_framerate(const uint64_t framerate) {
+        framerate_ = framerate;
+    }
+
+    uint64_t get_framerate() {
+        return framerate_;
     }
 
 

@@ -28,6 +28,7 @@ private:
     std::vector<const char *> instanceExtensions;
 
     // 需要给外部看到的变量，添加函数给出
+    float refresh_rate_               = 30.0f;
     SDL_Window *window_               = nullptr;
     VkInstance instance_              = VK_NULL_HANDLE;
     VkSurfaceKHR surface_             = VK_NULL_HANDLE;
@@ -74,6 +75,10 @@ public:
     [[nodiscard]] bool is_frame_buffer_resize() const {
         return framebufferResized;
     };
+
+    float get_refresh_rate() const {
+        return refresh_rate_;
+    }
 
     uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
