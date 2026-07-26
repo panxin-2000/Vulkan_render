@@ -226,17 +226,18 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
-    descriptor_pools.resize(1,VK_NULL_HANDLE);
-    descriptor_pools.at(0) = init_current_descriptor_pool();
+    descriptor_pool_manager_.create();
 
     VKR_shader_paths shader_paths{
         "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
         "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
         "", ""
     };
-    shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
     shader_date               = VKR_shader_init(shader_paths);
-    bindless_descriptor_sets_ = allocate_bindless_descriptor_sets("");
+    bindless_descriptor_sets_ =
+            descriptor_pool_manager_.allocate_bindless_descriptor_sets(
+                                                                       shader_date->bindless_sets_bindings,
+                                                                       shader_date->bindless_set_layout);
     // 需要在这里创建一些内容
     // 或者说，到这里之后才能够进行上传
     {
@@ -267,9 +268,6 @@ void Engine::create() {
     create_present_Semaphores();
     create_renderSemaphores();
     create_timeline_Semaphores();
-
-
-    global_descriptor_sets_ = allocate_global_descriptor_sets("");
 }
 
 
@@ -341,10 +339,7 @@ void Engine::destroy() {
     destroy_renderSemaphores();
     destroy_command_buffer();
     destroy_command_pool();
-    for (auto descriptor_pool: descriptor_pools) {
-        if (descriptor_pool != VK_NULL_HANDLE)
-            destroy_descriptorPool(descriptor_pool);
-    }
+    descriptor_pool_manager_.destroy();
 }
 
 void Engine::destroy_command_pool() {
@@ -369,18 +364,6 @@ void Engine::create_command_pool() {
     command_pools_.push_back(commandPool);
 }
 
-std::vector<DescriptorSet_ptr> Engine::allocate_global_descriptor_sets(const std::string &one_binding_name) {
-    auto &handle    = VK_backend::instance();
-    auto sets_flags = create_descriptor_sets_flags(handle,
-                                                   shader_date->global_sets_bindings);
-    auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(),
-                                                             shader_date->global_descriptor_sets_layout,
-                                                             sets_flags);
-    // 这里申请完 descriptor_sets 了
-    // 那么之后需要上传参数了
-    // 那么应该就算搞定了
-    return bindless_descriptor_sets;
-}
 
 void Engine::update_global_pbr_parameter(
     std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets) {
@@ -407,7 +390,10 @@ void Engine::update_global_pbr_parameter(
 }
 
 void Engine::update_global_parameter() {
-    global_descriptor_sets_ = allocate_global_descriptor_sets("");
+    global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
+         shader_date->global_sets_bindings,
+         shader_date->global_descriptor_sets_layout
+        );
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     const auto extent              = VK_backend::instance().get_current_extent();
     global_parameters_.screen_size = {static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0};
@@ -435,17 +421,6 @@ void Engine::update_bindless_parameter() {
     update_descriptor_sets(update_bindless_descriptor_sets_, bindless_descriptor_sets_);
     // 看起来确实很简单，只有这一个函数
     // 某些内容写过一次之后是不需要去重新再去写的
-}
-
-
-std::vector<DescriptorSet_ptr> Engine::allocate_bindless_descriptor_sets(const std::string &one_binding_name) {
-    auto &handle    = VK_backend::instance();
-    auto sets_flags = create_descriptor_sets_flags(handle,
-                                                   shader_date->bindless_sets_bindings);
-    auto bindless_descriptor_sets = allocate_descriptor_sets(get_descriptor_pool(), shader_date->bindless_set_layout,
-                                                             sets_flags);
-
-    return bindless_descriptor_sets;
 }
 
 

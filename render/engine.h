@@ -14,6 +14,7 @@
 #include "vulkan_code/descriptor_pool.h"
 #include <Eigen/Eigen>
 
+#include "Descriptor_pool_manager.h"
 #include "PBR_component.h"
 #include "pbr_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
@@ -34,7 +35,6 @@ private:
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_        = {};
     std::vector<DescriptorSet_ptr> global_descriptor_sets_          = {};
-    std::vector<VkDescriptorPool> descriptor_pools                  = {};
 
 
     std::vector<VKR_image_ptr> swap_chain_images_;
@@ -57,6 +57,7 @@ private:
     };
 
 
+    Descriptor_pool_manager descriptor_pool_manager_;
     PBR_manager pbr_manager_;
     VKR_buffer_ptr pbr_components_buffer_;
 
@@ -221,9 +222,6 @@ public:
 
     void destroy_command_pool();
 
-    std::vector<DescriptorSet_ptr> allocate_global_descriptor_sets(const std::string &one_binding_name);
-
-    std::vector<DescriptorSet_ptr> allocate_bindless_descriptor_sets(const std::string &one_binding_name);
 
     std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const uint index = 0);
 
@@ -237,7 +235,7 @@ public:
 
 
     VkDescriptorPool get_descriptor_pool(const uint index = 0) const {
-        return descriptor_pools.at(index);
+        return descriptor_pool_manager_.get_descriptor_pool_for_alloc();
     }
 
     void create_render_image();

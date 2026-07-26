@@ -142,6 +142,8 @@ void discard_descriptor_set_map_clean(uint64_t current_timeline) {
     //     if (current_timeline >= timeline) {
     //         std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
     //         vkFreeDescriptorSets(backend.get_device(), Engine::get().get_descriptor_pool(), 1, &descriptor_set);
+    //         原本这里 free 的时候是需要 descriptor_pool 这个参数的，但是呢？
+    //         已经不需要 free 了，那么就可以不用这个参数了
     //         // vkDestroyDescriptorPool(handle.get_device(), descriptor_pool, nullptr);
     //         it = discard_descriptor_set_map.erase(it);
     //     } else {
