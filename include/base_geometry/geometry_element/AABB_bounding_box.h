@@ -121,10 +121,11 @@ public:
 
     AABB_centroid<T> multiply_matrix(const Eigen::Matrix4f &matrix) const {
         if constexpr (std::is_same_v<T, Point_3>) {
-            const Eigen::Vector4f centroid(centroid_point_.x, centroid_point_.y, centroid_point_.z, 0);
-            const Eigen::Vector4f direction(direction_interval_.x, direction_interval_.y, direction_interval_.z, 0);
+            const Eigen::Vector4f centroid(centroid_point_.x, centroid_point_.y, centroid_point_.z, 1.0f);
+            const Eigen::Vector3f direction(direction_interval_.x, direction_interval_.y, direction_interval_.z);
             Eigen::Vector4f new_centroid  = matrix * centroid;
-            Eigen::Vector4f new_direction = matrix * direction;
+            Eigen::Matrix3f R = matrix.block<3, 3>(0, 0);
+            Eigen::Vector3f new_direction = R.cwiseAbs() * direction;
             AABB_centroid<T> result{
                 {new_centroid.x(), new_centroid.y(), new_centroid.z()},
                 {new_direction.x(), new_direction.y(), new_direction.z()}
