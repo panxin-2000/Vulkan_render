@@ -13,6 +13,26 @@
 
 entt::dispatcher dispatcher;
 
+
+#define begin_time_err \
+static int64_t last_timestamp = 0;\
+uint64_t time_stamp_err       = 0;\
+if (last_timestamp == 0) {\
+    last_timestamp = event.key.timestamp;\
+    time_stamp_err = 1.0 * 1000.0f * 1000.0f * 1000.0f;\
+} else {\
+time_stamp_err = event.key.timestamp - last_timestamp ;\
+}\
+float ms      = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;\
+float pos_err = speed * ms;
+
+#define end_time_err \
+if (event.type == SDL_EVENT_KEY_DOWN) {\
+    last_timestamp = event.key.timestamp;\
+} else if (event.type == SDL_EVENT_KEY_UP) { \
+    last_timestamp = 0;\
+}
+
 /**
  *
  * @param entity
@@ -20,43 +40,52 @@ entt::dispatcher dispatcher;
  * @param time_stamp_err 这里的单位应该是ms
  * @return
  */
-static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event, uint64_t time_stamp_err) {
-    float ms    = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;
+static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event) {
     float speed = 1.0f;
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
-    float pos_err = speed * ms;
 
     if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            auto offset = camera->get_view_direction() * pos_err;
-            camera->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        return OPERATOR_FINISHED;
-    } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
+        begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             auto offset = camera->get_view_direction() * -pos_err;
             camera->add_offset(offset);
             Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
+        end_time_err;
         return OPERATOR_FINISHED;
-    } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
+    }  if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
+        begin_time_err;
+        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+            auto offset = camera->get_view_direction() * pos_err;
+            camera->add_offset(offset);
+            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
+        }
+        end_time_err;
+        return OPERATOR_FINISHED;
+    }  if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
+        begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             auto offset = camera->get_view_right_direction() * -pos_err;
             camera->add_offset(offset);
             Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
+        end_time_err;
+
         return OPERATOR_FINISHED;
     } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
+        begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             auto offset = camera->get_view_right_direction() * pos_err;
             camera->add_offset(offset);
             Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
+        end_time_err;
+
         return OPERATOR_FINISHED;
-    } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+    }  if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+        begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             if (event.key.mod & SDL_KMOD_SHIFT)
                 camera->add_offset({0, -1, 0});
@@ -64,6 +93,7 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
                 camera->add_offset({0, 1, 0});
             Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         }
+        end_time_err;
         return OPERATOR_FINISHED;
     } else {
         return OPERATOR_PASS_THROUGH;
@@ -71,7 +101,6 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
 }
 
 static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event) {
-    static int64_t last_timestamp = 0;
     switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
             return OPERATOR_PASS_THROUGH;
@@ -96,16 +125,10 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
         case SDL_EVENT_TEXT_INPUT: {
         }
         case SDL_EVENT_KEY_UP: {
-            auto result    = world_root_move(entity, event, event.key.timestamp - last_timestamp);
-            last_timestamp = 0;
-            return result;
+            return world_root_move(entity, event);
         }
         case SDL_EVENT_KEY_DOWN: {
-            if (last_timestamp == 0)
-                last_timestamp = event.key.timestamp;
-            auto result    = world_root_move(entity, event, event.key.timestamp - last_timestamp);
-            last_timestamp = event.key.timestamp;
-            return result;
+            return world_root_move(entity, event);
         }
         case SDL_EVENT_FINGER_MOTION: {
         }
