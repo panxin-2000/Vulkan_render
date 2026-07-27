@@ -27,53 +27,6 @@ layout (location = 7) flat in uint  instance_index;
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-struct Light{
-    vec4 pos;
-    vec4 rotate;
-    vec4 color;
-    float intensity;
-    float range;
-    float angle_scale;
-    float angle_offset;
-};
-
-vec3 Directional( Light light, float distance){
-    return light.color.rgb * light.intensity  /  (distance * distance);
-}
-
-vec3 Spot_light(Light light, float distance){
-    float distanceSq   = distance * distance;
-    float rangeSq      = light.range * light.range;
-    float factor       = distanceSq / rangeSq;
-    float smoothFactor = clamp(1.0f - factor * factor, 0.0f, 1.0f);
-    float result =   (smoothFactor * smoothFactor) / max(distanceSq, 0.0001f);
-    return  light.color.rgb * light.intensity * result;
-
-}
-
-// NdotL 可以替换 为其他的吗？
-//  float cd 灯光夹角余弦
-vec3 Point_light(Light light, float distance,  float cd, float NdotL){
-    float distanceSq   = distance * distance;
-    float rangeSq      = light.range * light.range;
-    float factor       = distanceSq / rangeSq;
-    float smoothFactor = clamp(1.0f - factor * factor, 0.0f, 1.0f);
-    float result =   (smoothFactor * smoothFactor) / max(distanceSq, 0.0001f);
-    float attenuation = clamp(cd * light.angle_scale + light.angle_offset, 0.0, 1.0);
-    return  light.color.rgb * light.intensity * result * attenuation * NdotL;
-}
-
-// 在 GLSL 中使用四元数旋转默认的 -Z 轴向量
-vec3 qtransform(vec4 q, vec3 v) {
-    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
-}
-
-
-
-
-
-
-
 
 
 

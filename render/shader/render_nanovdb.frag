@@ -4,11 +4,6 @@
 #include "global_shader_common.glsl"
 
 
-struct Light {
-    vec3 color;
-    vec4 position;
-    float radius;
-};
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 

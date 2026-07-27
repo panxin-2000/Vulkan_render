@@ -11,6 +11,7 @@ layout (set = 1, binding = 0) uniform global_parameters
     mat4 invView;
     mat4 invProjection;
     mat4 inv_VP;
+    vec4 frustum_planes[6];
     vec3 viewPos;
     vec3 lightPos;
     vec4 screen_size;
@@ -129,3 +130,56 @@ mat4 calculate_matrix(vec3 instancePos, vec3 instanceDir) {
 // 解决方案：
 // Padding（填充）：在生成 2D 八面体贴图时，在每个边缘外扩展 1-2 个像素，并根据翻折逻辑将对应的颜色填进去。
 // 坐标修正：在 Shader 采样前，对 UV 进行极其微小的缩放，使其避开最外层的像素边缘。
+
+
+
+struct Light {
+    vec4 pos;
+    vec4 rotate;
+    vec4 color;
+    float intensity;
+    float range;
+    float angle_scale;
+    float angle_offset;
+};
+
+
+vec3 Directional(Light light, vec3 world_pos) {
+    vec3 pos_err = light.pos.xyz - world_pos;
+    float distanceSq = dot(pos_err, pos_err);
+    return light.color.rgb * light.intensity / distanceSq;
+}
+
+vec3 Spot_light(Light light, vec3 world_pos) {
+    vec3 pos_err = light.pos.xyz - world_pos;
+    float distanceSq = dot(pos_err, pos_err);
+    float rangeSq = light.range * light.range;
+    float factor = distanceSq / rangeSq;
+    float smoothFactor = clamp(1.0f - factor * factor, 0.0f, 1.0f);
+    float result = (smoothFactor * smoothFactor) / max(distanceSq, 0.0001f);
+    return light.color.rgb * light.intensity * result;
+
+}
+
+// 在 GLSL 中使用四元数旋转默认的 -Z 轴向量
+vec3 quaternion_transform(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// NdotL 可以替换 为其他的吗？
+//  float cd 灯光夹角余弦
+vec3 Point_light(Light light, vec3 world_pos, out vec3 L) {
+    vec3 pos_err = world_pos - light.pos.xyz;
+    L = -normalize(pos_err);
+    float distanceSq = dot(pos_err, pos_err);
+    vec3 defaultDir = vec3(0.0, 0.0, -1.0);
+    vec3 light_direction = normalize(quaternion_transform(light.rotate, defaultDir));
+    float cd = dot(light_direction, -L);
+    float rangeSq = light.range * light.range;
+    float factor = distanceSq / rangeSq;
+    float smoothFactor = clamp(1.0f - factor * factor, 0.0f, 1.0f);
+    float result = (smoothFactor * smoothFactor) / max(distanceSq, 0.0001f);
+    float attenuation = clamp(cd * light.angle_scale + light.angle_offset, 0.0, 1.0);
+    return light.color.rgb * light.intensity * result * attenuation;
+}
+

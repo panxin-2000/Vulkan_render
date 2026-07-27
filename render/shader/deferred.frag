@@ -12,12 +12,6 @@ layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-struct Light {
-    vec3 color;
-    vec4 position;
-    float radius;
-};
-
 
 layout (set = 2, std140, binding = 4) readonly buffer light_buffer {
     Light lights[];

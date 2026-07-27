@@ -85,6 +85,7 @@ bool IsAABBInFrustum(vec3 minBounds, vec3 maxBounds)
 
 bool frustum_cull(vec3 lo, vec3 hi)
 {
+    // 根据 视锥裁切平面 法向量 ， 找到 包围盒 中 距离 平面最近的点， 判断 是否在视锥范围内
     bool ret = true;
     // 遍历视锥体的 6 个裁剪平面（前、后、左、右、上、下）
     for (int i = 0; i < 6 && ret; i++)
@@ -95,6 +96,7 @@ bool frustum_cull(vec3 lo, vec3 hi)
         // 关键优化 1：生成一个布尔型三维掩码（bvec3）
         // 检查平面法向量的 x, y, z 分量是否大于 0
         bvec3 high_mask = greaterThan(p.xyz, vec3(0.0));
+        // “平面方程约定”为“法线指向视锥体内部”时才正确
 
         // 关键优化 2：利用硬件的 mix（混合选择）特性，完全避免了 CPU 级别的 if-else 分支
         // 如果法向量分量为正 (true)，最远点就选择 AABB 的最大边界 hi
@@ -103,8 +105,14 @@ bool frustum_cull(vec3 lo, vec3 hi)
 
         // 核心数学计算：计算最远点到平面的带符号距离（Signed Distance）
         // dot(vec4(max_coord, 1.0), p) 展开后等同于：dot(max_coord, p.xyz) + p.w
-        if (dot(vec4(max_coord, 1.0), p) < 0.0)
-        ret = false; // 如果连最远的点都在该平面外面（距离 < 0），说明整个 AABB 都在视锥体外，剔除
+
+        float distance = dot(vec4(max_coord, 1.0), p);
+        // 4. 【修正 Bug 2】使用 break 显式熔断。
+        // 如果该点在平面外 (distance < 0.0)，说明整体在视锥体外
+        if (distance < 0.0) {
+            ret = false;
+            break;
+        }
     }
 
 

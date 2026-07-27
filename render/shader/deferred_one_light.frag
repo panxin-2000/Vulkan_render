@@ -12,11 +12,6 @@ layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out vec4 outFragcolor_B8G8R8A8_SRGB;
 
-struct Light {
-    vec4 position;
-    vec3 color;
-    float radius;
-};
 
 
 void main()
