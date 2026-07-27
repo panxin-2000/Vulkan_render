@@ -61,6 +61,10 @@ private:
     float aspect_              = 1.0f;
     float zNear_               = 0.1f;
     float zFar_                = 1000.0f;
+    float xmag_                = 1.0f;
+    float ymag_                = 1.0f;
+    bool perspective_          = true;
+    bool orthographic_         = false;
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
     Point_3 position_          = {0, 0, 6};
 
@@ -69,6 +73,14 @@ public:
         const auto &backend  = VK_backend::instance();
         auto [width, height] = backend.get_current_extent();
         aspect_              = static_cast<float>(width) / static_cast<float>(height);
+    }
+
+    camera_optical_component(const float fovy_radians, const float zNear,
+                             const float aspect = 1.0f, const float zFar = 1000.0f) {
+        fovy_radians_ = fovy_radians;
+        zNear_        = zNear;
+        zFar_         = zFar;
+        aspect_       = aspect;
     }
 
     Point_3 add_offset(const Point_3 offset) {

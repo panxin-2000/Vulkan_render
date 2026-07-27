@@ -11,6 +11,7 @@
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 #include "3d_model_display.h"
+#include "camera_optical_component.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -331,9 +332,40 @@ entt::entity load_node_data(fastgltf::Asset &model,
         logic_update_proxy<Name_component>(entity);
     }
     if (node.cameraIndex.has_value()) {
+        auto &camera = model.cameras[node.cameraIndex.value()];
+        if (std::holds_alternative<fastgltf::Camera::Orthographic>(camera.camera)) {
+        } else if (std::holds_alternative<fastgltf::Camera::Perspective>(camera.camera)) {
+            auto &data        = std::get<fastgltf::Camera::Perspective>(camera.camera);
+            float aspectRatio = 1.0f;
+            float zfar        = 1000.0f;
+            if (data.aspectRatio.has_value()) {
+                aspectRatio = data.aspectRatio.value();
+            } else if (data.zfar.has_value()) {
+                zfar = data.zfar.value();
+            }
+            Logic_entt().emplace<camera_optical_component>(entity,
+                                                           data.yfov,
+                                                           data.znear,
+                                                           aspectRatio,
+                                                           zfar);
+        }
+
         LOG_INFO(g_log(), "need deal node  camera ");
     }
     if (node.lightIndex.has_value()) {
+        auto light_data   = model.lights[node.lightIndex.value()];
+        auto &logic_light = Logic_entt().emplace<Light>(entity);
+        logic_light.set_color(light_data.color.x(), light_data.color.y(), light_data.color.z());
+        logic_light.ser_color_type(float(light_data.type));
+        logic_light.set_intensity(light_data.intensity);
+        if (light_data.range.has_value())
+            logic_light.set_range(light_data.range.value());
+        if (light_data.innerConeAngle.has_value())
+            logic_light.set_innerConeAngle(light_data.innerConeAngle.value());
+        if (light_data.outerConeAngle.has_value())
+            logic_light.set_outerConeAngle(light_data.outerConeAngle.value());
+
+
         LOG_INFO(g_log(), "need deal node  light ");
     }
     if (node.skinIndex.has_value()) {
