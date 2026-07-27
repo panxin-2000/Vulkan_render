@@ -40,15 +40,9 @@ struct FrustumCorners {
     float4 corners[8];
 };
 
-struct FrustumPlanes {
-    /* [0] left
-     * [1] right
-     * [2] bottom
-     * [3] top
-     * [4] near
-     * [5] far */
-    float4 planes[6];
-};
+bool frustum_cull(const FrustumPlanes &frustum_planes,
+                  const AABB_min_max<Point_3> &bounds,
+                  const Eigen::Vector4f &camera_pos);
 
 struct ViewCullingData {
     /** \note float3 array padded to float4. */
@@ -103,7 +97,8 @@ public:
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
 
-
+        auto frustum_planes = Engine::instance().get_frustum_planes();
+        auto camera_pos     = Engine::instance().get_world_camera_pos();
         std::array<VkBufferMemoryBarrier2, 1> write_buffer{
             VkBufferMemoryBarrier2{
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -198,10 +193,15 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, opacity_tag, Name_component>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                           AABB_min_max<Point_3>,
+                                           opacity_tag,
+                                           Name_component>();
             for (const auto it: view) {
                 auto name = Render_entt().get<Name_component>(it);
-                build_command_buffer(handle, it, time_line);
+                auto aabb = Render_entt().get<AABB_min_max<Point_3> >(it);
+                if (frustum_cull(frustum_planes, aabb, camera_pos)) // 判断 包围盒 是否在 平头截体在
+                    build_command_buffer(handle, it, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();

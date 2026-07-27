@@ -23,6 +23,10 @@
 
 #include "shader_resolve.h"
 
+struct FrustumPlanes {
+    std::array<Eigen::Vector4f, 6> planes = {};
+};
+
 
 struct Engine {
 private:
@@ -47,12 +51,14 @@ private:
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
     std::atomic<uint64_t> framerate_   = 0;
 
+
     struct Global_parameters {
         Eigen::Matrix4f view_matrix;
         Eigen::Matrix4f projection_matrix;
         Eigen::Matrix4f inv_view_matrix;
         Eigen::Matrix4f inv_projection_matrix;
         Eigen::Matrix4f invVP;
+        FrustumPlanes frustum_planes;
         Eigen::Vector4f world_camera_pos;
         Eigen::Vector4f lightPos;
         Eigen::Vector4f screen_size;
@@ -238,6 +244,14 @@ public:
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
     void update_global_parameter();
+
+    FrustumPlanes get_frustum_planes() const {
+        return global_parameters_.frustum_planes;
+    }
+
+    Eigen::Vector4f get_world_camera_pos() const {
+        return global_parameters_.world_camera_pos;
+    }
 
     void update_global_pbr_parameter(std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets);
 
