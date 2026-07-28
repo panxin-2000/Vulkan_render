@@ -27,6 +27,9 @@ struct FrustumPlanes {
     std::array<Eigen::Vector4f, 6> planes = {};
 };
 
+struct Frustum_cull_flag {
+};
+
 
 struct Engine {
 private:

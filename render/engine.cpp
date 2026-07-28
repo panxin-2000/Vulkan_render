@@ -5,6 +5,7 @@
 
 #include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
+#include "transform_component.h"
 #include "vulkan_code/vulkan_backend.h"
 #include "vulkan_code/vulkan_sample.h"
 
@@ -462,46 +463,26 @@ bool frustum_cull(const FrustumPlanes &frustum_planes,
 }
 
 bool frustum_cull_2(const FrustumPlanes &frustum_planes,
-                    const AABB_min_max<Point_3> &bounds,
+                    const Render_AABB &bounds,
                     const Eigen::Vector4f &camera_pos) {
-    // 根据 视锥裁切平面 法向量 ， 找到 包围盒 中 距离 平面最近的点， 判断 是否在视锥范围内
-    Eigen::Vector3f maxBounds{bounds.max_point_.x, bounds.max_point_.y, bounds.max_point_.z};
-    Eigen::Vector3f minBounds{bounds.min_point_.x, bounds.min_point_.y, bounds.min_point_.z};
-
-
-    // 1. 计算中心点（Center）与半径（Extent）扩展向量
-    Eigen::Vector3f center = (maxBounds + minBounds) * 0.5f;
-    Eigen::Vector3f extent = (maxBounds - minBounds) * 0.5f;
-
+    // 包围盒的
+    // bounds.centroid_points      最后一个分量为1
+    // bounds.direction_intervals  最后一个分量为0
     bool all_planes_inside = true;
 
     // 强制编译器展开循环，消除循环开销
 #pragma unroll
     for (int i = 0; i < 6; ++i) {
         const Eigen::Vector4f &p = frustum_planes.planes[i];
-
-        // 提取 3 维法向量 [A, B, C]
-        Eigen::Vector3f planeNormal = p.head<3>();
-        float planeD                = p.w();
-
         // 2. 【核心优化】计算 AABB 沿平面法线的最大正向投影半径
         // .cwiseAbs() 会对法向量的每个分量取绝对值
         // .dot() 执行极致的 SIMD 乘加运算，彻底代替了原本的 mix 掩码操作
-        float projectedRadius = extent.dot(planeNormal.cwiseAbs());
-
+        float projectedRadius = bounds.direction_intervals.dot(p.cwiseAbs());
         // 3. 计算中心点到平面的带符号物理距离
-        float distanceToCenter = center.dot(planeNormal) + planeD;
-
-        // 4. 【无分支优化 friendly】一票否决测试
-        // 引入 -0.0001f 边缘浮点数保护，防止模型压在视锥边缘时闪烁
+        const float distanceToCenter = bounds.centroid_points.dot(p);
         if (distanceToCenter < -projectedRadius - 0.0001f) {
             return false; // 整个盒体完全在平面外侧，安全剔除
         }
-
-        // // 5. 判断是否属于“完全在内”
-        // if (distanceToCenter < projectedRadius + 0.0001f) {
-        //     all_planes_inside = false; // 意味着盒子跨越了当前平面（处于相交状态）
-        // }
     }
     // 如果 6 个平面都认为盒子完全在内侧，返回 1，否则返回 2（相交）
     return true;

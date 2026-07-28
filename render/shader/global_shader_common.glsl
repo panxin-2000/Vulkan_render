@@ -49,8 +49,26 @@ struct ShaderMaterial {
 };
 
 layout (set = 1, binding = 1) readonly buffer global_PBR_parameters {
-    ShaderMaterial material[1024];
+    ShaderMaterial material[];
 };
+
+layout (set = 1, binding = 2) readonly buffer global_model_matrix_parameters {
+    mat4 model_vector[];
+};
+
+layout (set = 1, binding = 3) readonly buffer global_PBR_indices {
+    uint pbr_index[];
+};
+
+struct AABB_box {
+    vec4 centroid_points;
+    vec4 direction_intervals;
+};
+
+layout (set = 1, binding = 3) readonly buffer global_AABB_box {
+    AABB_box aabb_box[];
+};
+
 
 vec2 octEncode(vec3 n) {
     // 1. L1 归一化：确保 |x| + |y| + |z| = 1
@@ -130,7 +148,6 @@ mat4 calculate_matrix(vec3 instancePos, vec3 instanceDir) {
 // 解决方案：
 // Padding（填充）：在生成 2D 八面体贴图时，在每个边缘外扩展 1-2 个像素，并根据翻折逻辑将对应的颜色填进去。
 // 坐标修正：在 Shader 采样前，对 UV 进行极其微小的缩放，使其避开最外层的像素边缘。
-
 
 
 struct Light {

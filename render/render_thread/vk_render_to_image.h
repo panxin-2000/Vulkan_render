@@ -30,6 +30,7 @@
 #include "name_component.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
+#include "time_measure.h"
 #include "transform_component.h"
 
 struct float4 {
@@ -43,6 +44,10 @@ struct FrustumCorners {
 bool frustum_cull(const FrustumPlanes &frustum_planes,
                   const AABB_min_max<Point_3> &bounds,
                   const Eigen::Vector4f &camera_pos);
+
+bool frustum_cull_2(const FrustumPlanes &frustum_planes,
+                    const Render_AABB &bounds,
+                    const Eigen::Vector4f &camera_pos);
 
 struct ViewCullingData {
     /** \note float3 array padded to float4. */
@@ -98,7 +103,23 @@ public:
         reset_current_command_buffer(handle, queryPool, time_line);
 
         auto frustum_planes = Engine::instance().get_frustum_planes();
-        auto camera_pos     = Engine::instance().get_world_camera_pos();
+        auto camera_pos     = Engine::instance().get_world_camera_pos(); {
+            ScopedTimer timer(" AABB frustum_cull");
+            //  frustum_cull   18ms 左右 3000个 需要计算
+            //  frustum_cull_2  7ms 左右 3000个 需要计算
+            //  frustum_cull_2 优化指令计算之后大概是 4 ms
+            //  整个模型绘制 大概就是15 帧左右的水平了
+            auto view = Render_entt().view<Render_AABB>();
+            for (const auto it: view) {
+                auto aabb   = Render_entt().get<Render_AABB>(it);
+                auto result = frustum_cull_2(frustum_planes, aabb, camera_pos); // 判断 包围盒 是否在 平头截体在
+                Render_entt().emplace_or_replace<Frustum_cull_flag>(it);
+                if (result == false) {
+                    Render_entt().remove<Frustum_cull_flag>(it);
+                }
+            }
+        }
+
         std::array<VkBufferMemoryBarrier2, 1> write_buffer{
             VkBufferMemoryBarrier2{
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -194,14 +215,12 @@ public:
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                           AABB_min_max<Point_3>,
+                                           Frustum_cull_flag,
                                            opacity_tag,
                                            Name_component>();
             for (const auto it: view) {
                 auto name = Render_entt().get<Name_component>(it);
-                auto aabb = Render_entt().get<AABB_min_max<Point_3> >(it);
-                if (frustum_cull(frustum_planes, aabb, camera_pos)) // 判断 包围盒 是否在 平头截体在
-                    build_command_buffer(handle, it, time_line);
+                build_command_buffer(handle, it, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
@@ -292,7 +311,7 @@ public:
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
-        Render_entt().group<PBR_component, Transform_matrix, AABB_centroid<Point_3>, Draw_command>();
+        Render_entt().group<PBR_material_index, Transform_matrix, Render_AABB, Draw_command>();
         // 这四个 我目前感觉是需要
         // 然后需要怎么做呢? VKR_Primitive 是基本的命令的合集
         // 想要一起绘制呢? 首先需要 把顶点 全部都绑定 到一起,之后  firstIndex 和  vertexOffset 需要 重新计算
