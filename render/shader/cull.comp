@@ -56,32 +56,6 @@ bool check_is_visible(mat4 mat, vec3 origin, float radius)
 }
 
 // AABB 与 视锥体平面 核心判定函数
-bool IsAABBInFrustum(vec3 minBounds, vec3 maxBounds)
-{
-    // 1. 转换为中心点与半径表达形式
-    vec3 center = (maxBounds + minBounds) * 0.5;
-    vec3 extent = (maxBounds - minBounds) * 0.5;
-
-    for (int i = 0; i < 6; ++i)
-    {
-        vec3 planeNormal = ubo.frustumPlanes[i].xyz;
-        float planeD = ubo.frustumPlanes[i].w;
-
-        // 2. 将 AABB 沿平面的最大正向投影投影半径计算出来
-        // 使用 abs(planeNormal) 可以完美保证 projectedRadius 永远为正最大值
-        float projectedRadius = dot(extent, abs(planeNormal));
-
-        // 3. 计算中心点到平面的有向物理距离
-        float distanceToCenter = dot(center, planeNormal) + planeD;
-
-        // 如果中心点在平面外侧，且其外侧垂直距离超过了盒子的投影外延半径
-        if (distanceToCenter < -projectedRadius)
-        {
-            return false; // 说明整个 AABB 盒体与此平面完全分离（不可见）
-        }
-    }
-    return true; // 与视锥体相交或完全包裹在内
-}
 
 bool frustum_cull(vec3 lo, vec3 hi)
 {

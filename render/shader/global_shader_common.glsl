@@ -70,6 +70,22 @@ layout (set = 1, binding = 3) readonly buffer global_AABB_box {
 };
 
 
+bool IsAABBInFrustum(vec4 frustum_planes[6], AABB_box box)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        float projectedRadius = dot(box.direction_intervals, abs(frustum_planes[i]));
+        float distanceToCenter = dot(box.centroid_points, frustum_planes[i]);
+        if (distanceToCenter < -projectedRadius)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+
 vec2 octEncode(vec3 n) {
     // 1. L1 归一化：确保 |x| + |y| + |z| = 1
     float l1norm = abs(n.x) + abs(n.y) + abs(n.z);
