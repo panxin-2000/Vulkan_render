@@ -63,8 +63,12 @@ struct shader_need_parameter {
     // std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets;
     // std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
+};
+
+struct shader_constant_parameter {
     std::byte push_constant_pool[128];
 };
+
 
 using bindings_map = std::map<uint32_t, binding_resource>;
 using sets_map     = std::map<uint32_t, bindings_map>;

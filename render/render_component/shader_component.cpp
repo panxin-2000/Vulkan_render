@@ -16,6 +16,7 @@
 #include "VKR_proxy_component.h"
 #include "vulkan_backend.h"
 #include "vulkan_render_manage.h"
+#include "world_scene_root.h"
 
 
 void update_bindings_to_descriptor_sets(const entt::entity entity) {
@@ -49,7 +50,7 @@ void allocate_descriptor_sets(const entt::entity entity) {
                                                                            shader_ref->object_descriptor_sets_layout,
                                                                            {});
             }
-            assert(!vk_s_d_s.object_descriptor_sets.empty());// 然后怎么打印实体的名称呢？
+            assert(!vk_s_d_s.object_descriptor_sets.empty()); // 然后怎么打印实体的名称呢？
         }
     }
 }
@@ -184,10 +185,11 @@ void descriptor_set_update_function() {
 }
 
 void push_constant_update_function() {
+    //  TODO：这个函数是有问题的
     const auto view = Render_entt().view<push_constant_update>();
     // 位置发生了更新，需要讲更新传递出去
     for (const auto it: view) {
-        auto parameter = Render_entt().get_or_emplace<shader_need_parameter>(it);
+        auto parameter = Render_entt().get_or_emplace<shader_constant_parameter>(it);
         Render_entt().emplace_or_replace<decltype(parameter)>(it, parameter);
         Render_entt().remove<push_constant_update>(it);
     }

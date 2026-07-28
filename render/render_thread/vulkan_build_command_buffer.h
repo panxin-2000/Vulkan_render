@@ -527,8 +527,9 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
 
     //  shader_data 还没有传送过来
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
-    if (const auto parameter = Render_entt().try_get<shader_need_parameter>(entity))
+    if (const auto parameter = Render_entt().try_get<shader_constant_parameter>(entity))
         for (auto &[name,value]: shader_data_ref->push_constant_map) {
+            // 我的建议是 每次 直接全部复制 128 字节，哪怕全部都是空的占位符 也是 如此
             vkCmdPushConstants(cb, Render_entt().get<VkPipelineLayout>(entity),
                                value.stageFlags, value.offset, value.size,
                                parameter->push_constant_pool + value.offset);

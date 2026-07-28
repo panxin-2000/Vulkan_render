@@ -7,12 +7,14 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
+#include "load_gltf_model.h"
 #include "move_speed.h"
 #include "name_component.h"
 #include "scene_component.h"
 #include "shader_component.h"
 #include "transform_component.h"
 #include "UI_manager.h"
+#include "world_scene_root.h"
 
 
 struct ImGui_ImplVulkan_FrameRenderBuffers {
@@ -135,21 +137,21 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                             continue;
                         // Apply scissor/clipping rectangle
-                        vkr_primitive.viewport.x                    = 0;
-                        vkr_primitive.viewport.y                    = 0;
-                        vkr_primitive.viewport.width                = fb_width;
-                        vkr_primitive.viewport.height               = fb_height;
-                        vkr_primitive.viewport.minDepth             = 0.0f;
-                        vkr_primitive.viewport.maxDepth             = 1.0f;
-                        vkr_primitive.scissor.offset.x              = (int32_t) (clip_min.x);
-                        vkr_primitive.scissor.offset.y              = (int32_t) (clip_min.y);
-                        vkr_primitive.scissor.extent.width          = (uint32_t) (clip_max.x - clip_min.x);
-                        vkr_primitive.scissor.extent.height         = (uint32_t) (clip_max.y - clip_min.y);
-                        vkr_primitive.indexed_command.indexCount    = pcmd->ElemCount;
-                        vkr_primitive.indexed_command.instanceCount = 1;
-                        vkr_primitive.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
-                        vkr_primitive.indexed_command.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
-                        vkr_primitive.indexed_command.firstInstance = 0;
+                        vkr_primitive.viewport.x                                 = 0;
+                        vkr_primitive.viewport.y                                 = 0;
+                        vkr_primitive.viewport.width                             = fb_width;
+                        vkr_primitive.viewport.height                            = fb_height;
+                        vkr_primitive.viewport.minDepth                          = 0.0f;
+                        vkr_primitive.viewport.maxDepth                          = 1.0f;
+                        vkr_primitive.scissor.offset.x                           = (int32_t) (clip_min.x);
+                        vkr_primitive.scissor.offset.y                           = (int32_t) (clip_min.y);
+                        vkr_primitive.scissor.extent.width                       = (uint32_t) (clip_max.x - clip_min.x);
+                        vkr_primitive.scissor.extent.height                      = (uint32_t) (clip_max.y - clip_min.y);
+                        vkr_primitive.draw_command.indexed_command.indexCount    = pcmd->ElemCount;
+                        vkr_primitive.draw_command.indexed_command.instanceCount = 1;
+                        vkr_primitive.draw_command.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
+                        vkr_primitive.draw_command.indexed_command.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
+                        vkr_primitive.draw_command.indexed_command.firstInstance = 0;
                         primitives.emplace_back(vkr_primitive);
                     }
                 }

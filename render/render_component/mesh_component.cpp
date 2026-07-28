@@ -69,7 +69,7 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
                 // mesh.indices_offset = vBufSize;
                 // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
                 // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
-                primitive.indexed_command.indexCount = index.count; // 是可以这么替换的
+                primitive.draw_command.indexed_command.indexCount = index.count; // 是可以这么替换的
                 if (index.single_size == 2) {
                     primitive.index_type = VK_INDEX_TYPE_UINT16;
                     // primitive.indexed_command.firstIndex = vBufSize / 2;
@@ -81,23 +81,23 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
                     // assert(false && "Unknown index type");
                 }
                 //确实是可以通过计算偏移的
-                primitive.indexed_command.vertexOffset  = 0;
-                primitive.indexed_command.instanceCount = 1;
-                primitive.indexed_command.firstInstance = 0;
+                primitive.draw_command.indexed_command.vertexOffset  = 0;
+                primitive.draw_command.indexed_command.instanceCount = 1;
+                primitive.draw_command.indexed_command.firstInstance = 0;
                 primitives.push_back(primitive);
             }
         } else {
             VkDeviceSize single_BufSize = 0;
             for (const auto vertex: vertices) {
                 VKR_Primitive primitive;
-                primitive.vertices_offset              = single_BufSize;
-                single_BufSize                         += vertex.total_size;
-                primitive.indices_offset               = 0;
-                primitive.index_type                   = VK_INDEX_TYPE_MAX_ENUM;
-                primitive.vertex_command.firstInstance = 0;
-                primitive.vertex_command.firstVertex   = 0; // 这里无用，上面的偏移 vertices_offset 起作用
-                primitive.vertex_command.instanceCount = 1;
-                primitive.vertex_command.vertexCount   = vertex.count;
+                primitive.vertices_offset                           = single_BufSize;
+                single_BufSize                                      += vertex.total_size;
+                primitive.indices_offset                            = 0;
+                primitive.index_type                                = VK_INDEX_TYPE_MAX_ENUM;
+                primitive.draw_command.vertex_command.firstInstance = 0;
+                primitive.draw_command.vertex_command.firstVertex   = 0; // 这里无用，上面的偏移 vertices_offset 起作用
+                primitive.draw_command.vertex_command.instanceCount = 1;
+                primitive.draw_command.vertex_command.vertexCount   = vertex.count;
                 primitives.push_back(primitive);
             }
         }

@@ -10,6 +10,7 @@
 #include "base_geometry/intersect_function.h"
 #include "manifold/linalg.h"
 #include "move_speed.h"
+#include "world_scene_root.h"
 
 /**
  * 使用位置和四元数构建 View 矩阵
@@ -36,15 +37,15 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return transform.get_transform_matrix();
 }
 
-[[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform) {
-    Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
-    const auto center         = bound_box.get_centroid();
-    model_4x4.translate(Eigen::Vector3f(center.x, center.y, center.z));
-    Eigen::Affine3f model_4x4_2 = Eigen::Affine3f::Identity();
-    model_4x4_2.translate(Eigen::Vector3f(-center.x, -center.y, -center.z));
-    Eigen::Matrix4f result = model_4x4.matrix() * transform.get_transform_matrix() * model_4x4_2.matrix();
-    return result;
-}
+// [[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform) {
+//     Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
+//     const auto center         = bound_box.get_centroid();
+//     model_4x4.translate(Eigen::Vector3f(center.x, center.y, center.z));
+//     Eigen::Affine3f model_4x4_2 = Eigen::Affine3f::Identity();
+//     model_4x4_2.translate(Eigen::Vector3f(-center.x, -center.y, -center.z));
+//     Eigen::Matrix4f result = model_4x4.matrix() * transform.get_transform_matrix() * model_4x4_2.matrix();
+//     return result;
+// }
 
 
 Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {

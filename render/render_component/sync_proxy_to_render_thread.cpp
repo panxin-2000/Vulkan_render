@@ -9,6 +9,7 @@
 #include "shader_component.h"
 #include "VKR_proxy_component.h"
 #include "vulkan_render_manage.h"
+#include "world_scene_root.h"
 
 
 inline void update_object_transform_function() { {

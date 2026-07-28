@@ -8,6 +8,7 @@
 #include "scene_component.h"
 #include "Rect_2D_component.h"
 #include "UI_manager.h"
+#include "world_scene_root.h"
 #include "base_geometry/base.h"
 
 

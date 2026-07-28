@@ -15,6 +15,19 @@ public:
     VKR_buffer_ptr indices  = {};
 };
 
+struct Draw_command {
+    union {
+        VkDrawIndexedIndirectCommand indexed_command = {};
+        VkDrawIndirectCommand vertex_command;
+        // 想实现 一个 绘制的命令，代价似乎有点大
+        // 怎么大呢？ firstInstance  instanceCount
+        // 只有这两个参数
+        // 那么 意味 着什么呢？AABB  model pbr_material vertices indices 等等都需要排列 到一个 buffer 上
+        // 其实问题不只是 排列到 各自到 buffer 上，而是需要 按照顺序来排列
+        //
+    };
+};
+
 class VKR_Primitive {
 public:
     // 不做
@@ -29,11 +42,7 @@ public:
 
     PipelineRasterizationState pipelineRasterizationState;
     PipelineDynamicState pipelineDynamicState;
-
-    union {
-        VkDrawIndexedIndirectCommand indexed_command = {};
-        VkDrawIndirectCommand vertex_command;
-    };
+    Draw_command draw_command;
 
     /**
      *
@@ -58,22 +67,23 @@ public:
             return;
         pipelineDynamicState.write_commands(cb);
         pipelineRasterizationState.write_commands(cb);
-
+        // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
+        // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
         vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
         if (mesh_data.indices != nullptr &&
             mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE &&
-            indexed_command.indexCount != 0) {
+            draw_command.indexed_command.indexCount != 0) {
             vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
-            vkCmdDrawIndexed(cb, indexed_command.indexCount,
-                             indexed_command.instanceCount,
-                             indexed_command.firstIndex,
-                             indexed_command.vertexOffset,
-                             indexed_command.firstInstance);
-        } else if (vertex_command.vertexCount != 0) {
-            vkCmdDraw(cb, vertex_command.vertexCount,
-                      vertex_command.instanceCount,
-                      vertex_command.firstVertex,
-                      vertex_command.firstInstance);
+            vkCmdDrawIndexed(cb, draw_command.indexed_command.indexCount,
+                             draw_command.indexed_command.instanceCount,
+                             draw_command.indexed_command.firstIndex,
+                             draw_command.indexed_command.vertexOffset,
+                             draw_command.indexed_command.firstInstance);
+        } else if (draw_command.vertex_command.vertexCount != 0) {
+            vkCmdDraw(cb, draw_command.vertex_command.vertexCount,
+                      draw_command.vertex_command.instanceCount,
+                      draw_command.vertex_command.firstVertex,
+                      draw_command.vertex_command.firstInstance);
         }
         // gl_InstanceIndex 只与 instanceCount 和 firstInstance 有关，不会和前一个 VkDrawIndirectCommand 有关的
     }

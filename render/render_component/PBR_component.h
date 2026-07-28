@@ -15,6 +15,9 @@ struct Color {
     float LightType; // 最后一个不用，但是需要占位对齐
 };
 
+struct PBR_material_index {
+    uint32_t index;
+};
 
 class alignas(16) PBR_component {
 public:
@@ -175,5 +178,6 @@ public:
         outerConeAngle_ = outerConeAngle;
     }
 };
+
 
 #endif //HELLO_MAC_PBR_COMPONENT_H

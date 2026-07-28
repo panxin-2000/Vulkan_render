@@ -79,7 +79,7 @@ bool set_render_parameter(const entt::entity entity, const std::string &binding_
 template<typename T1>
 bool render_push_constant_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
-    auto &parameter             = Render_entt().get_or_emplace<shader_need_parameter>(entity);
+    auto &parameter             = Render_entt().get_or_emplace<shader_constant_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));

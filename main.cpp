@@ -36,6 +36,7 @@
 
 #include "spherical_harmonics.h"
 #include "spherical_SH.h"
+#include "world_scene_root.h"
 
 
 inline entt::entity add_render_pass(const std::string &name) {
@@ -400,7 +401,7 @@ int main(int argc, char *argv[]) {
     ImGui_ImplVulkan_Init(&init_info);
 
 
-    bool show_demo_window    = true;
+    bool show_demo_window    = false;
     bool show_another_window = false;
     ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     auto imgui_entity        = create_imgui_entity("imgui", nullptr);

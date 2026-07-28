@@ -12,6 +12,8 @@
 #include <fastgltf/tools.hpp>
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
+#include "scene_component.h"
+#include "world_scene_root.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -252,6 +254,7 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
     //     for (auto &primitive: primitives) {
     //         if (primitive.index_type == VK_INDEX_TYPE_MAX_ENUM) {
     //             primitive.vertex_command.firstInstance = material_index.at(i);
+    //             那么这里其实也就是是已经没用了
     //         } else
     //             primitive.indexed_command.firstInstance = material_index.at(i);
     //         ++i;
@@ -370,7 +373,16 @@ entt::entity load_node_data(fastgltf::Asset &model,
     }
     if (node.skinIndex.has_value()) {
         LOG_INFO(g_log(), "need deal node  skin ");
+        auto skin_data = model.skins[node.skinIndex.value()];
     }
+    // Animation
+    // Sampler
+    //
+    // Material
+    // Texture
+    // Sampler
+    // Image
+
     // if (node.skinIndex.has_value()) {
     //     LOG_INFO(g_log(), "need deal node  emitter ");
     // }

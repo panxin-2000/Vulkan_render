@@ -16,6 +16,7 @@
 
 #include "parse_geometry_file.h"
 #include "PBR_component.h"
+#include "world_scene_root.h"
 #include "../UI/PLYLoader.h"
 
 
@@ -211,10 +212,8 @@ entt::entity object_3d_model(const std::string &name,
                "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                "", "");
     add_box_data(entity, bounding_box);
-    auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, bounding_box);
-    auto transform         = Logic_entt().emplace<Transform>(entity, offset, rotate);
-    const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
+    Logic_entt().emplace<Transform>(entity, offset, rotate);
+    Logic_entt().emplace<Transform_matrix_dirty>(entity);
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));

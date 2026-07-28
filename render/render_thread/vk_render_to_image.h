@@ -30,7 +30,7 @@
 #include "name_component.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
-
+#include "transform_component.h"
 
 struct float4 {
     float x, y, z, w;
@@ -292,6 +292,17 @@ public:
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
+        Render_entt().group<PBR_component, Transform_matrix, AABB_centroid<Point_3>, Draw_command>();
+        // 这四个 我目前感觉是需要
+        // 然后需要怎么做呢? VKR_Primitive 是基本的命令的合集
+        // 想要一起绘制呢? 首先需要 把顶点 全部都绑定 到一起,之后  firstIndex 和  vertexOffset 需要 重新计算
+        // index_type 也需要配合到一起,看看怎么工作 ,想简单一点,可以全部都变成 32位的索引
+        // 然后其实还有一个实例化的问题,同一个渲染多次,那么创建多个 entity 吧
+        // 能排列的在一起的话,就一起渲染,不能的话,那么久分析
+        // Draw_command 提供 firstInstance  instanceCount
+        // 单个绘制过程中不能更换 shader 那么最开始 设置的 material_index  需要替换掉 PBR_component
+        // 也就是不能通过 firstInstance 直接得到需要的 material_index 的索引值,需要 查找一次
+        // firstInstance  instanceCount 这两个其实就 只有第一个参数有用
 
         FrameRate_measure framerate_measure(VK_backend::instance().get_refresh_rate());
         while (need_render == running) {
