@@ -69,33 +69,21 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
             auto index  = indices[i];
             auto vertex = vertices[i];
             VKR_Primitive primitive;
-            primitive.draw_command.indexed_command.vertexOffset = vertices_offset; // 应该是这里的问题
-            vertices_offset                                     += vertex.count;
-            primitive.draw_command.indexed_command.firstIndex   = first_index;
-            first_index                                         += index.count;
+            primitive.vertexOffset = vertices_offset; // 应该是这里的问题
+            vertices_offset        += vertex.count;
+            primitive.firstIndex   = first_index;
+            first_index            += index.count;
 
             // 这里应该是没有什么问题的
-            primitive.draw_command.indexed_command.indexCount = index.count;
+            primitive.indexCount = index.count;
             //确实是可以通过计算偏移的
-            primitive.draw_command.indexed_command.instanceCount = 1; // 也就是这两个是需要去手动进行计算的
-            primitive.draw_command.indexed_command.firstInstance = 0; // 这里主要是为了进行bindless 相关的填充
+            primitive.instanceCount = 1; // 也就是这两个是需要去手动进行计算的
+            primitive.firstInstance = 0; // 这里主要是为了进行bindless 相关的填充
             primitives.push_back(primitive);
         }
     } else {
-        VkDeviceSize firstVertex = 0;
-        for (const auto vertex: vertices) {
-            VKR_Primitive primitive;
-            primitive.draw_command.vertex_command.firstInstance = 0;
-            primitive.draw_command.vertex_command.firstVertex   = firstVertex;
-            firstVertex                                         += vertex.count;
-
-            primitive.draw_command.vertex_command.instanceCount = 1;
-            primitive.draw_command.vertex_command.vertexCount   = vertex.count;
-            primitives.push_back(primitive);
-        }
+        assert( false && " not deal indices empty");
     }
-    // assert(total_single_size/indices.size() == indices.at(0).single_size);
-    // 不知道上面这个检查有没有用
     return primitives;
 }
 

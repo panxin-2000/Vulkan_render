@@ -225,12 +225,35 @@ auto copy_vertices_data(size_t size, fastgltf::Asset &model, const fastgltf::Pri
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
 
+/**
+ *  创建连续的索引  0 1 2 ..... number
+ * @param number_of_indices
+ * @return
+ */
+auto create_continue_indices(size_t number_of_indices) {
+    if (number_of_indices % 3 != 0) {
+        number_of_indices = number_of_indices - number_of_indices % 3;
+    }
+    share_block result;
+    result.count       = number_of_indices;
+    result.single_size = 4;
+    result.total_size  = result.count * result.single_size;
+    result.ptr         = std::make_shared<char[]>(result.total_size);
+    result.data        = result.ptr.get();
+    uint32_t *dst      = (uint32_t *) result.data;
+    for (uint32_t i = 0; i < result.count; i++) {
+        *dst = i;
+        dst++;
+    }
+    return result;
+}
 
 void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const std::size_t mesh_index) {
     // std::vector<VKR_Primitive> // 如果可以的话，尽可能在这里搞定，之后只需要复制一下就好
     const auto mesh             = model.meshes[mesh_index];
     size_t indices_memory_size  = 0;
     size_t vertices_memory_size = 0;
+    size_t number_of_vertices   = 0;
     for (const auto &primitive: mesh.primitives) {
         // 最开始需要能够确定数量
         if (primitive.indicesAccessor.has_value()) {
@@ -245,13 +268,15 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
             const std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
                                                                               current_accessor.componentType);
             vertices_memory_size += current_accessor.count * data_single_size;
+            number_of_vertices   = current_accessor.count;
         }
     }
-
     for (const auto &primitive: mesh.primitives) {
         if (primitive.indicesAccessor.has_value()) {
             auto result = copy_indices_data(model, primitive);
             Logic_entt().get_or_emplace<Geometry_data>(entity).push_indices(result);
+        } else {
+            auto result = create_continue_indices(number_of_vertices);
         }
         auto result = copy_vertices_data(vertices_memory_size, model, primitive);
         Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
@@ -466,7 +491,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             auto mesh       = create_mesh_data(bindless_Geometry_data);
             auto primitives = create_primitives(bindless_Geometry_data);
             for (uint32_t i = 0; i < primitives.size(); ++i) {
-                primitives.at(i).draw_command.indexed_command.firstInstance = i;
+                primitives.at(i).firstInstance = i;
                 // std::cout << "vertexOffset :" << i << std::endl;
                 // std::cout << "vertexOffset :" << primitives.at(i).draw_command.indexed_command.vertexOffset << std::endl;
                 // std::cout << "firstIndex   :" << primitives.at(i).draw_command.indexed_command.firstIndex << std::endl;

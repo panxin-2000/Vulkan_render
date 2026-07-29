@@ -542,25 +542,14 @@ inline void draw(const VkCommandBuffer &cb,
             auto primitive = primitives.at(i);
             // vertexOffset 只会影响最终传给顶点属性读取的顶点索引（即 Index + vertexOffset），
             // 它不会改变你用 vkCmdBindVertexBuffers 绑定的顶点缓冲区的内存起始地址
-            vkCmdDrawIndexed(cb, primitive.draw_command.indexed_command.indexCount,
-                             primitive.draw_command.indexed_command.instanceCount,
-                             primitive.draw_command.indexed_command.firstIndex,
-                             primitive.draw_command.indexed_command.vertexOffset,
-                             primitive.draw_command.indexed_command.firstInstance);
+            vkCmdDrawIndexed(cb, primitive.indexCount,
+                             primitive.instanceCount,
+                             primitive.firstIndex,
+                             primitive.vertexOffset,
+                             primitive.firstInstance);
         }
     } else if (mesh_data.index_type == VK_INDEX_TYPE_MAX_ENUM) {
-        for (int i = 0; i < primitives.size(); ++i) {
-            if (render_states != nullptr && primitives.size() == render_states->size()) {
-                auto render_state = render_states->at(i);
-                render_state.set_render_state_command(cb, VK_backend::instance().get_viewport(),
-                                                      VK_backend::instance().get_scissor());
-            }
-            auto primitive = primitives.at(i);
-            vkCmdDraw(cb, primitive.draw_command.vertex_command.vertexCount,
-                      primitive.draw_command.vertex_command.instanceCount,
-                      primitive.draw_command.vertex_command.firstVertex,
-                      primitive.draw_command.vertex_command.firstInstance);
-        }
+        assert(false && " not deal indices empty");
     }
 }
 

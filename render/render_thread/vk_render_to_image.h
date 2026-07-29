@@ -121,9 +121,9 @@ public:
                 for (uint32_t i = 0; i < aabb_boxes->size(); i++) {
                     auto result = frustum_cull_2(frustum_planes, aabb_boxes->at(i), camera_pos); // 判断 包围盒 是否在 平头截体在
                     if (result == true)
-                        primitives.at(i).draw_command.indexed_command.instanceCount = 1;
+                        primitives.at(i).instanceCount = 1;
                     else
-                        primitives.at(i).draw_command.indexed_command.instanceCount = 0;
+                        primitives.at(i).instanceCount = 0;
                 }
                 uint32_t i = 0;
             }
@@ -230,7 +230,7 @@ public:
                 // 这里需要做什么呢? 创建计算着色器
                 // 计算AABB 包围盒 将新的 command 写入需要更改的 位置中
                 // 添加 屏障
-                // 绘制调用新的绘制命令 
+                // 绘制调用新的绘制命令
                 auto name = Render_entt().get<Name_component>(it);
                 build_command_buffer(handle, it, time_line);
             }

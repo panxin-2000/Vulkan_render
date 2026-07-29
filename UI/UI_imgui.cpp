@@ -153,11 +153,11 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
                         render_state.set_VkCullModeFlags(VK_CULL_MODE_NONE);
 
-                        vkr_primitive.draw_command.indexed_command.indexCount    = pcmd->ElemCount;
-                        vkr_primitive.draw_command.indexed_command.instanceCount = 1;
-                        vkr_primitive.draw_command.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
-                        vkr_primitive.draw_command.indexed_command.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
-                        vkr_primitive.draw_command.indexed_command.firstInstance = 0;
+                        vkr_primitive.indexCount    = pcmd->ElemCount;
+                        vkr_primitive.instanceCount = 1;
+                        vkr_primitive.firstIndex    = pcmd->IdxOffset + global_idx_offset;
+                        vkr_primitive.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
+                        vkr_primitive.firstInstance = 0;
                         primitives.emplace_back(vkr_primitive);
                         render_states.push_back(render_state);
                     }

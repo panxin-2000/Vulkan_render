@@ -31,17 +31,13 @@ struct Draw_command {
 
 class VKR_Primitive {
 public:
-    // 不做
-    Draw_command draw_command;
-    int material_index_ = 0;
-
-
-    // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
-
-
-    // gl_InstanceIndex 只与 instanceCount 和 firstInstance 有关，不会和前一个 VkDrawIndirectCommand 有关的
+    uint32_t indexCount      = 0;
+    uint32_t instanceCount   = 0;
+    uint32_t firstIndex      = 0;
+    int32_t vertexOffset     = 0;
+    uint32_t firstInstance   = 0;
+    uint32_t material_index_ = 0;
 };
-
 
 
 //
