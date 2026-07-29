@@ -481,7 +481,7 @@ bool frustum_cull_2(const FrustumPlanes &frustum_planes,
         // 3. 计算中心点到平面的带符号物理距离
         const float distanceToCenter = bounds.centroid_points.dot(p);
         if (distanceToCenter < -projectedRadius - 0.0001f) {
-            return false; // 整个盒体完全在平面外侧，安全剔除
+            return false; // 整个盒体完全在平面外侧，安全剔除  // 有时很快,有时很慢, 是因为这里有快捷返回
         }
     }
     // 如果 6 个平面都认为盒子完全在内侧，返回 1，否则返回 2（相交）

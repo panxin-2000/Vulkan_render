@@ -93,17 +93,43 @@ auto copy_indices_data(fastgltf::Asset &model, const fastgltf::Primitive &primit
     std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
                                                                 current_accessor.componentType);
     share_block result;
-    // auto address       = malloc(current_accessor.count * data_single_size);
-    result.ptr         = std::make_shared<char[]>(current_accessor.count * data_single_size);
-    result.count       = current_accessor.count;
-    result.single_size = data_single_size;
-    result.total_size  = current_accessor.count * data_single_size;
-    result.data        = result.ptr.get();
-    if (data_single_size == stride) {
-        memcpy(result.data, src, result.total_size); // todo
-    } else {
-        // 有间隔，需要做一些其他处理
+    if (data_single_size == 2) {
+        result.ptr         = std::make_shared<char[]>(current_accessor.count * data_single_size * 2);
+        result.count       = current_accessor.count;
+        result.single_size = data_single_size * 2;
+        result.total_size  = current_accessor.count * data_single_size * 2;
+        result.data        = result.ptr.get();
+        if (data_single_size == stride) {
+            memcpy(result.data, src, result.total_size);
+        }
+        if (data_single_size == stride) {
+            uint32_t *dst          = (uint32_t *) result.data;
+            uint16_t *uint16_t_src = (uint16_t *) src;
+            for (uint32_t i = 0; i < current_accessor.count; i++) {
+                *dst = *uint16_t_src;
+                dst++;
+                uint16_t_src++;
+                // 完全更改为了 uint32_t
+            }
+        } else {
+            // 有间隔，需要做一些其他处理
+        }
+    } else if (data_single_size == 4) {
+        result.ptr         = std::make_shared<char[]>(current_accessor.count * data_single_size);
+        result.count       = current_accessor.count;
+        result.single_size = data_single_size;
+        result.total_size  = current_accessor.count * data_single_size;
+        result.data        = result.ptr.get();
+        if (data_single_size == stride) {
+            memcpy(result.data, src, result.total_size);
+        }
+        if (data_single_size == stride) {
+            memcpy(result.data, src, result.total_size);
+        } else {
+            // 有间隔，需要做一些其他处理
+        }
     }
+
     return result;
 }
 
@@ -433,6 +459,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 }
                 Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
+
             // 那么另外一件事 包围盒 应该也是需要去重新计算了
             // 得到全部了,那么需要做什么呢? 上传到一个 buffer 中 生成 一个 std::vector<VKR_Primitive>
             // 多个primitive 连续 才能合并,最后如果可以的话,是可以调用一个 命令来完成的
@@ -440,7 +467,13 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             auto primitives = create_primitives(bindless_Geometry_data);
             for (uint32_t i = 0; i < primitives.size(); ++i) {
                 primitives.at(i).draw_command.indexed_command.firstInstance = i;
+                // std::cout << "vertexOffset :" << i << std::endl;
+                // std::cout << "vertexOffset :" << primitives.at(i).draw_command.indexed_command.vertexOffset << std::endl;
+                // std::cout << "firstIndex   :" << primitives.at(i).draw_command.indexed_command.firstIndex << std::endl;
             }
+            // for (uint32_t i = 2000; i < primitives.size(); ++i) {
+            //     primitives.at(i) = primitives.at(i - 1000);
+            // }
             logic_update_proxy(model_entity, primitives);
             logic_update_proxy(model_entity, boxes);
             logic_update_proxy(model_entity, mesh);
