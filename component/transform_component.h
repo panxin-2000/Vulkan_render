@@ -7,11 +7,11 @@
 
 #include "base_geometry/base.h"
 #include <Eigen/Eigen>
+#include "global_singleton.h"
 
 
 struct Transform_matrix_dirty {
 };
-
 
 
 class alignas(16) Transform_matrix {
@@ -91,6 +91,8 @@ public:
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform);
 
 void update_camera_transform();
+
+void update_transform_matrix(const entt::entity entity);
 
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H

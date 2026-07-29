@@ -7,7 +7,6 @@
 #include <volk.h>
 #include "vulkan_buffer.h"
 
-
 class Mesh_data {
 public:
     VKR_buffer_ptr vertices      = {};
@@ -33,41 +32,16 @@ struct Draw_command {
 class VKR_Primitive {
 public:
     // 不做
-    int material_index_ = 0;
     Draw_command draw_command;
+    int material_index_ = 0;
 
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
-    void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
-        if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
-            return;
-        // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
-        // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
-        vkCmdBindVertexBuffers(cb, 0, 1,
-                               mesh_data.vertices->get_buffer_handle_ptr(time_line),
-                               &mesh_data.vertices_offset);
-        if (mesh_data.indices != nullptr &&
-            mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE &&
-            draw_command.indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb,
-                                 mesh_data.indices->get_buffer_handle(),
-                                 mesh_data.indices_offset,
-                                 mesh_data.index_type);
-            vkCmdDrawIndexed(cb, draw_command.indexed_command.indexCount,
-                             draw_command.indexed_command.instanceCount,
-                             draw_command.indexed_command.firstIndex,
-                             draw_command.indexed_command.vertexOffset,
-                             draw_command.indexed_command.firstInstance);
-        } else if (draw_command.vertex_command.vertexCount != 0) {
-            vkCmdDraw(cb, draw_command.vertex_command.vertexCount,
-                      draw_command.vertex_command.instanceCount,
-                      draw_command.vertex_command.firstVertex,
-                      draw_command.vertex_command.firstInstance);
-        }
-        // gl_InstanceIndex 只与 instanceCount 和 firstInstance 有关，不会和前一个 VkDrawIndirectCommand 有关的
-    }
+
+    // gl_InstanceIndex 只与 instanceCount 和 firstInstance 有关，不会和前一个 VkDrawIndirectCommand 有关的
 };
+
 
 
 //

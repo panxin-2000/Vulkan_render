@@ -37,6 +37,19 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return transform.get_transform_matrix();
 }
 
+
+void update_transform_matrix(const entt::entity entity) {
+    if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
+        // 满足条件：两个组件都有
+        auto parent_entity           = get_parent(entity);
+        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_matrix>(parent_entity);
+        const auto &transform        = Logic_entt().get<Transform>(entity);
+        Eigen::Matrix4f result       = parent_transform_matrix.get() * transform.get_transform_matrix();
+        Logic_entt().emplace_or_replace<Transform_matrix>(entity, result);
+        Logic_entt().remove<Transform_matrix_dirty>(entity);
+    }
+};
+
 // [[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform) {
 //     Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
 //     const auto center         = bound_box.get_centroid();

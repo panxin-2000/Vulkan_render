@@ -514,6 +514,54 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
     // }
 }
 
+inline void draw(const VkCommandBuffer &cb,
+                 const Mesh_data &mesh_data,
+                 const std::vector<VKR_Primitive> &primitives,
+                 const std::vector<VKR_Render_state> *render_states,
+                 const uint64_t time_line) {
+    if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
+        return;
+    // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
+    // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
+    vkCmdBindVertexBuffers(cb, 0, 1,
+                           mesh_data.vertices->get_buffer_handle_ptr(time_line),
+                           &mesh_data.vertices_offset);
+    if (mesh_data.indices != nullptr &&
+        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+        vkCmdBindIndexBuffer(cb,
+                             mesh_data.indices->get_buffer_handle(),
+                             mesh_data.indices_offset,
+                             mesh_data.index_type);
+
+        for (int i = 0; i < primitives.size(); ++i) {
+            if (render_states != nullptr && primitives.size() == render_states->size()) {
+                auto render_state = render_states->at(i);
+                render_state.set_render_state_command(cb, VK_backend::instance().get_viewport(),
+                                                      VK_backend::instance().get_scissor());
+            }
+            auto primitive = primitives.at(i);
+            vkCmdDrawIndexed(cb, primitive.draw_command.indexed_command.indexCount,
+                             primitive.draw_command.indexed_command.instanceCount,
+                             primitive.draw_command.indexed_command.firstIndex,
+                             primitive.draw_command.indexed_command.vertexOffset,
+                             primitive.draw_command.indexed_command.firstInstance);
+        }
+    } else if (mesh_data.index_type == VK_INDEX_TYPE_MAX_ENUM) {
+        for (int i = 0; i < primitives.size(); ++i) {
+            if (render_states != nullptr && primitives.size() == render_states->size()) {
+                auto render_state = render_states->at(i);
+                render_state.set_render_state_command(cb, VK_backend::instance().get_viewport(),
+                                                      VK_backend::instance().get_scissor());
+            }
+            auto primitive = primitives.at(i);
+            vkCmdDraw(cb, primitive.draw_command.vertex_command.vertexCount,
+                      primitive.draw_command.vertex_command.instanceCount,
+                      primitive.draw_command.vertex_command.firstVertex,
+                      primitive.draw_command.vertex_command.firstInstance);
+        }
+    }
+}
+
 inline void build_command_buffer(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
     const auto cb = Engine::instance().get_current_command_buffer();
 
@@ -539,22 +587,13 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
     const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
     const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);
     const auto render_states = Render_entt().try_get<std::vector<VKR_Render_state> >(entity);
-    if (render_states != nullptr && !render_states->empty() && primitives.size() == render_states->size()) {
-        for (int i = 0; i < render_states->size(); ++i) {
-            auto render_state = render_states->at(i);
-            auto primitive    = primitives.at(i);
-            render_state.set_render_state_command(cb, VK_backend::instance().get_viewport(),
-                                                  VK_backend::instance().get_scissor());
-            primitive.draw(cb, mesh_data, time_line);
-        }
-    } else {
+
+    if (!primitives.empty() && render_states != nullptr && !render_states->empty()) {
+        draw(cb, mesh_data, primitives, render_states, time_line);
+    } else if (!primitives.empty() && render_states == nullptr) {
         VKR_Render_state temp;
         temp.set_render_state_command(cb, VK_backend::instance().get_viewport(), VK_backend::instance().get_scissor());
-    }
-    if (!primitives.empty()) {
-        for (auto &primitive: primitives) {
-            primitive.draw(cb, mesh_data, time_line);
-        }
+        draw(cb, mesh_data, primitives, render_states, time_line);
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断
         if (Render_entt().any_of<deferred_pass_tag>(entity))
