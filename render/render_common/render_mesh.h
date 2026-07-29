@@ -31,12 +31,12 @@ struct Draw_command {
 
 class VKR_Primitive {
 public:
-    uint32_t indexCount      = 0;
-    uint32_t instanceCount   = 0;
-    uint32_t firstIndex      = 0;
-    int32_t vertexOffset     = 0;
-    uint32_t firstInstance   = 0;
-    uint32_t material_index_ = 0;
+    uint32_t indexCount    = 0;
+    uint32_t instanceCount = 0;
+    uint32_t firstIndex    = 0;
+    int32_t vertexOffset   = 0;
+    uint32_t firstInstance = 0;
+    // uint32_t material_index_ = 0;
 };
 
 

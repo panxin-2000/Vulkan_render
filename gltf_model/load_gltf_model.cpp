@@ -12,6 +12,7 @@
 #include <fastgltf/tools.hpp>
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
+#include "Command_calculate.h"
 #include "scene_component.h"
 #include "world_scene_root.h"
 
@@ -504,11 +505,31 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             logic_update_proxy(model_entity, mesh);
             logic_update_proxy(model_entity, matrices);
             // 现在已经把 model_matrix 全部上传了
-            const auto ptr = matrices->data();
-            auto size      = matrices->size() * sizeof(Transform_matrix);
-            auto buffer    = copy_data_to_gpu_memory(ptr, size);
-            set_render_parameter(model_entity, "model_matrix_parameters", buffer);
-            //
+            Command_calculate command_calculate;
+            command_calculate.command_size = primitives.size(); {
+                const auto matrix_ptr = matrices->data();
+                auto matrix_size      = matrices->size() * sizeof(Transform_matrix);
+                auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
+                set_render_parameter(model_entity, "model_matrix_parameters", matrix_buffer);
+            } {
+                const auto boxes_ptr                = boxes->data();
+                auto boxes_size                     = boxes->size() * sizeof(Render_AABB);
+                auto boxes_buffer                   = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
+                command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
+                command_calculate.AABB_boxes_buffer = boxes_buffer;
+            } {
+                const auto primitives_ptr                 = primitives.data();
+                auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
+                auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
+                command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
+                command_calculate.command_buffer          = primitives_buffer;
+            }
+            logic_update_proxy(model_entity, command_calculate);
+
+
+            // 改上传的参数我都已经准备好了 , 只是还没有完全移交到 engine 中
+
+
             // 另一个紧接着的问题是  之后呢?
             // entity 的顺序 和上面的顺序是相同的吗? 有必要相同吗?
             // 这里是单个 还是可以的,但是多个的时候呢?

@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
+#include "Command_calculate.h"
 #include "../vulkan_code/descriptor.h"
 #include "../engine.h"
 #include "render_proxy.h"
@@ -553,7 +554,7 @@ inline void draw(const VkCommandBuffer &cb,
     }
 }
 
-inline void build_command_buffer(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
+inline void bind_pipeline_update_parameter(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
     const auto cb = Engine::instance().get_current_command_buffer();
 
     auto debug_name = Render_entt().get<Name_component>(entity).name_;
@@ -574,6 +575,30 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
                                value.stageFlags, value.offset, value.size,
                                parameter->push_constant_pool + value.offset);
         }
+}
+
+
+inline void DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
+                                Command_calculate command_calculate,
+                                const uint64_t time_line) {
+    const auto cb        = Engine::instance().get_current_command_buffer();
+    const auto mesh_data = Render_entt().get<Mesh_data>(entity);
+    vkCmdBindVertexBuffers(cb, 0, 1,
+                           mesh_data.vertices->get_buffer_handle_ptr(time_line),
+                           &mesh_data.vertices_offset);
+    if (mesh_data.indices != nullptr &&
+        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+        vkCmdDrawIndexedIndirect(cb,
+                                 command_calculate.command_buffer->get_buffer_handle(time_line),
+                                 0,
+                                 command_calculate.command_size,
+                                 sizeof(VkDrawIndexedIndirectCommand));
+    }
+}
+
+inline void build_command_buffer(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
+    bind_pipeline_update_parameter(engine, entity, time_line);
+    const auto cb = Engine::instance().get_current_command_buffer();
 
     const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
     const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);

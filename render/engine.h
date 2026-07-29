@@ -15,6 +15,7 @@
 #include <Eigen/Eigen>
 
 #include "Descriptor_pool_manager.h"
+#include "frustum.h"
 #include "PBR_component.h"
 #include "pbr_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
@@ -22,13 +23,6 @@
 #include "vulkan_code/vulkan_backend.h"
 
 #include "shader_resolve.h"
-
-struct FrustumPlanes {
-    std::array<Eigen::Vector4f, 6> planes = {};
-};
-
-struct Frustum_cull_flag {
-};
 
 
 struct Engine {
@@ -313,6 +307,10 @@ public:
 
     std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
         return shader_date;
+    }
+
+    std::shared_ptr<vk_shader_data> get_command_calculate_shader_data() {
+        return command_calculate;
     }
 
 

@@ -4,6 +4,7 @@
 
 #include "shader_resolve.h"
 
+#include "create_pipeline.h"
 #include "descriptor_organized_sets_and_bindings.h"
 #include "pipeline_layout.h"
 #include "sets_and_bindings_layout.h"
@@ -59,6 +60,8 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
 
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
                                                                      temp, shader_data_handle->push_constant_map);
+
+        shader_data_handle->pipeline_t = find_pipeline(handle, shader_data_handle);
     }
     return shader_data_handle;
 }

@@ -89,6 +89,7 @@ struct vk_shader_data {
     std::vector<VkDescriptorSetLayout> object_descriptor_sets_layout;
 
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    VkPipeline pipeline_t            = VK_NULL_HANDLE;
     std::vector<InputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     Fragment_output_map fragment_output_map;
