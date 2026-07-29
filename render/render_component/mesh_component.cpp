@@ -13,13 +13,24 @@ Mesh_data create_mesh_data(const VK_backend &backend,
                            const std::vector<share_block> &vertices,
                            const std::vector<share_block> &indices) {
     VkDeviceSize vBufSize = 0;
+    Mesh_data mesh_data;
+
     for (const auto vertex: vertices) {
         vBufSize += vertex.total_size;
     }
     VkDeviceSize iBufSize = 0;
     for (const auto index: indices) {
         iBufSize += index.total_size;
+        if (index.single_size == 2) {
+            mesh_data.index_type = VK_INDEX_TYPE_UINT16;
+        } else if (index.single_size == 4) {
+            mesh_data.index_type = VK_INDEX_TYPE_UINT32;
+        }
     }
+    mesh_data.vertices_offset = 0;
+    mesh_data.indices_offset  = vBufSize;
+
+
     // 具体的复制函数
     auto mem_copy_function = [vertices,indices](void *dst) {
         auto calculation_dst = static_cast<char *>(dst);
@@ -35,11 +46,14 @@ Mesh_data create_mesh_data(const VK_backend &backend,
 
     const auto vertices_buffer =
             create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
-    // vertices_buffer 还需要动，firstIndex 在之后也是需要更改的
-    if (!indices.empty())
-        return Mesh_data{vertices_buffer, vertices_buffer};
-    else {
-        return Mesh_data{vertices_buffer,};
+    if (!indices.empty()) {
+        mesh_data.vertices = vertices_buffer;
+        mesh_data.indices  = vertices_buffer;
+        return mesh_data;
+    } else {
+        mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
+        mesh_data.vertices   = vertices_buffer;
+        return mesh_data;
     }
 }
 
@@ -60,18 +74,14 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
         for (const auto index: indices) {
             VKR_Primitive primitive;
             total_single_size                                   += index.single_size;
-            primitive.vertices_offset                           = 0;
-            primitive.indices_offset                            = vBufSize;
             primitive.draw_command.indexed_command.vertexOffset = vertices_offset;
             // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
             // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
             primitive.draw_command.indexed_command.indexCount = index.count; // 是可以这么替换的
             if (index.single_size == 2) {
-                primitive.index_type                              = VK_INDEX_TYPE_UINT16;
                 primitive.draw_command.indexed_command.firstIndex = first_index;
                 //  // 索引缓冲区的起始偏移（以索引 VK_INDEX_TYPE_UINT16 或 VK_INDEX_TYPE_UINT32  为单位）
             } else if (index.single_size == 4) {
-                primitive.index_type                              = VK_INDEX_TYPE_UINT32;
                 primitive.draw_command.indexed_command.firstIndex = first_index;
             } else {
                 // assert(false && "Unknown index type");
@@ -84,15 +94,12 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
             primitives.push_back(primitive);
         }
     } else {
-        VkDeviceSize single_BufSize = 0;
+        VkDeviceSize firstVertex = 0;
         for (const auto vertex: vertices) {
             VKR_Primitive primitive;
-            primitive.vertices_offset                           = single_BufSize;
-            single_BufSize                                      += vertex.total_size;
-            primitive.indices_offset                            = 0;
-            primitive.index_type                                = VK_INDEX_TYPE_MAX_ENUM;
             primitive.draw_command.vertex_command.firstInstance = 0;
             primitive.draw_command.vertex_command.firstVertex   = 0; // 这里无用，上面的偏移 vertices_offset 起作用
+            firstVertex                                         += vertex.count;
             primitive.draw_command.vertex_command.instanceCount = 1;
             primitive.draw_command.vertex_command.vertexCount   = vertex.count;
             primitives.push_back(primitive);

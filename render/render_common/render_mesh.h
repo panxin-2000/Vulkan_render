@@ -10,8 +10,11 @@
 
 class Mesh_data {
 public:
-    VKR_buffer_ptr vertices = {};
-    VKR_buffer_ptr indices  = {};
+    VKR_buffer_ptr vertices      = {};
+    VKR_buffer_ptr indices       = {};
+    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
+    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
+    VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
 };
 
 struct Draw_command {
@@ -30,12 +33,7 @@ struct Draw_command {
 class VKR_Primitive {
 public:
     // 不做
-    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
-    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
-    VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
-    int material_index_          = 0;
-
-
+    int material_index_ = 0;
     Draw_command draw_command;
 
 
@@ -46,11 +44,16 @@ public:
             return;
         // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
         // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
-        vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
+        vkCmdBindVertexBuffers(cb, 0, 1,
+                               mesh_data.vertices->get_buffer_handle_ptr(time_line),
+                               &mesh_data.vertices_offset);
         if (mesh_data.indices != nullptr &&
             mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE &&
             draw_command.indexed_command.indexCount != 0) {
-            vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
+            vkCmdBindIndexBuffer(cb,
+                                 mesh_data.indices->get_buffer_handle(),
+                                 mesh_data.indices_offset,
+                                 mesh_data.index_type);
             vkCmdDrawIndexed(cb, draw_command.indexed_command.indexCount,
                              draw_command.indexed_command.instanceCount,
                              draw_command.indexed_command.firstIndex,
