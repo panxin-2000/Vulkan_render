@@ -28,7 +28,7 @@ Mesh_data create_mesh_data(const VK_backend &backend,
         }
     }
     mesh_data.vertices_offset = 0;
-    mesh_data.indices_offset  = vBufSize;
+    mesh_data.indices_offset  = 0;
 
 
     // 具体的复制函数
@@ -44,13 +44,27 @@ Mesh_data create_mesh_data(const VK_backend &backend,
         }
     };
 
-    const auto vertices_buffer =
-            create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
+    // 这里的好处是 解耦了 很多内容 ,可以分开 写,不影响 太多的内容
+    auto mem_copy_function_index = [vertices,indices](void *dst) {
+        auto calculation_dst = static_cast<char *>(dst);
+        for (const auto index: indices) {
+            memcpy(calculation_dst, index.data, index.total_size);
+            calculation_dst += index.total_size;
+        }
+    };
     if (!indices.empty()) {
-        mesh_data.vertices = vertices_buffer;
-        mesh_data.indices  = vertices_buffer;
+        const auto vertices_buffer =
+                create_vertex_index_buffer(backend, vBufSize, mem_copy_function);
+        const auto indices_buffer =
+                create_vertex_index_buffer(backend, iBufSize, mem_copy_function_index);
+        mesh_data.vertices_offset = 0;
+        mesh_data.indices_offset  = 0;
+        mesh_data.vertices        = vertices_buffer;
+        mesh_data.indices         = indices_buffer;
         return mesh_data;
     } else {
+        const auto vertices_buffer =
+                create_vertex_index_buffer(backend, vBufSize, mem_copy_function);
         mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
         mesh_data.vertices   = vertices_buffer;
         return mesh_data;
@@ -69,13 +83,13 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
             auto index  = indices[i];
             auto vertex = vertices[i];
             VKR_Primitive primitive;
-            primitive.draw_command.indexed_command.vertexOffset = 0; // 应该是这里的问题
-            vertices_offset                                     += vertex.total_size;
-            // 当你使用 vkCmdBindIndexBuffer 绑定索引数据时，传入的 offset（偏移量）必须是该索引类型大小的整数倍。
-            // 如果使用 uint32 索引，offset 必须能被 4 整除。如果使用 uint16 索引，offset 必须能被 2 整除。
-            primitive.draw_command.indexed_command.indexCount = index.count; // 是可以这么替换的
-            primitive.draw_command.indexed_command.firstIndex = first_index;
-            first_index                                       += index.count;
+            primitive.draw_command.indexed_command.vertexOffset = vertices_offset; // 应该是这里的问题
+            vertices_offset                                     += vertex.count;
+            primitive.draw_command.indexed_command.firstIndex   = first_index;
+            first_index                                         += index.count;
+
+            // 这里应该是没有什么问题的
+            primitive.draw_command.indexed_command.indexCount = index.count;
             //确实是可以通过计算偏移的
             primitive.draw_command.indexed_command.instanceCount = 1; // 也就是这两个是需要去手动进行计算的
             primitive.draw_command.indexed_command.firstInstance = 0; // 这里主要是为了进行bindless 相关的填充
@@ -86,8 +100,9 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
         for (const auto vertex: vertices) {
             VKR_Primitive primitive;
             primitive.draw_command.vertex_command.firstInstance = 0;
-            primitive.draw_command.vertex_command.firstVertex   = 0; // 这里无用，上面的偏移 vertices_offset 起作用
+            primitive.draw_command.vertex_command.firstVertex   = firstVertex;
             firstVertex                                         += vertex.count;
+
             primitive.draw_command.vertex_command.instanceCount = 1;
             primitive.draw_command.vertex_command.vertexCount   = vertex.count;
             primitives.push_back(primitive);

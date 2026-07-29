@@ -540,6 +540,8 @@ inline void draw(const VkCommandBuffer &cb,
                                                       VK_backend::instance().get_scissor());
             }
             auto primitive = primitives.at(i);
+            // vertexOffset 只会影响最终传给顶点属性读取的顶点索引（即 Index + vertexOffset），
+            // 它不会改变你用 vkCmdBindVertexBuffers 绑定的顶点缓冲区的内存起始地址
             vkCmdDrawIndexed(cb, primitive.draw_command.indexed_command.indexCount,
                              primitive.draw_command.indexed_command.instanceCount,
                              primitive.draw_command.indexed_command.firstIndex,

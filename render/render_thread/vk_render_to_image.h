@@ -114,9 +114,8 @@ public:
             //  整个模型绘制 大概就是15 帧左右的水平了
             auto view = Render_entt().view<std::shared_ptr<std::vector<Render_AABB> >, std::vector<VKR_Primitive> >();
             for (const auto it: view) {
-                auto aabb_boxes = Render_entt().get<std::shared_ptr<std::vector<Render_AABB> > >(it);
-                auto primitives = Render_entt().get<std::vector<VKR_Primitive> >(it);
-                // auto aabb_boxes = aabb.;
+                auto aabb_boxes  = Render_entt().get<std::shared_ptr<std::vector<Render_AABB> > >(it);
+                auto &primitives = Render_entt().get<std::vector<VKR_Primitive> >(it);
                 assert(primitives.size() == aabb_boxes->size());
                 // 包围盒应该是有问题的,但是不是最大的那个 auto primitives 还是需要更改的
                 for (uint32_t i = 0; i < aabb_boxes->size(); i++) {
