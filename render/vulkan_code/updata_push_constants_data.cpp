@@ -54,7 +54,6 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
  * @param size
  */
 VKR_buffer_ptr copy_data_to_gpu_memory(void *src, uint64_t size) {
-#define ALIGN_1024(size) (((size) + 1023) & ~1023)
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
     auto mem_copy_function = [src,size](void *dst) {
         memcpy(dst, src, size);

@@ -46,4 +46,14 @@ inline uint32_t get_max_frames_in_flight() {
     }							            		\
 }
 
+#define ALIGN_8(size) (((size) + 7) & ~7)
+#define ALIGN_16(size) (((size) + 15) & ~15)
+#define ALIGN_32(size) (((size) + 31) & ~31)
+#define ALIGN_64(size) (((size) + 64) & ~63)
+#define ALIGN_128(size) (((size) + 127) & ~127)
+#define ALIGN_256(size) (((size) + 255) & ~255)
+#define ALIGN_512(size) (((size) + 511) & ~511)
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+
+
 #endif //HELLO_MAC_VULKAN_GLOBAL_MACRO_H

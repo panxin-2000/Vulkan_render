@@ -23,7 +23,6 @@ void test(void *ptr, uint64_t size);
 
 
 void copy_nanovdb_data_to_gpu_memory(entt::entity entity, const std::stringstream &stream, uint64_t size) {
-#define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
     auto temp_ptr = create_SSBO_buffer(ALIGN_1024(size));
 

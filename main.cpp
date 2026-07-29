@@ -229,7 +229,6 @@ void add_simple_computer_buffer_write() {
               );
 
 
-#define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
     Logic_entt().emplace<compute_group_count>(entity, 10, 10, 10);
     const auto group_count = Logic_entt().get<compute_group_count>(entity);

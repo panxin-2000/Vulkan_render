@@ -380,7 +380,6 @@ void Engine::update_global_pbr_parameter(
     auto size = pbr_manager_.size() * sizeof(PBR_component);
     if (size > 0) {
         auto src = pbr_manager_.data();
-#define ALIGN_1024(size) (((size) + 1023) & ~1023)
 
         if (pbr_components_buffer_ == nullptr) {
             pbr_components_buffer_ = create_SSBO_buffer(ALIGN_1024(size * 2));
