@@ -28,7 +28,7 @@ Mesh_data create_mesh_data(const VK_backend &backend,
         }
     }
     mesh_data.vertices_offset = 0;
-    mesh_data.indices_offset  = 0;
+    mesh_data.indices_offset  = vBufSize;
 
 
     // 具体的复制函数
@@ -44,27 +44,13 @@ Mesh_data create_mesh_data(const VK_backend &backend,
         }
     };
 
-    // 这里的好处是 解耦了 很多内容 ,可以分开 写,不影响 太多的内容
-    auto mem_copy_function_index = [vertices,indices](void *dst) {
-        auto calculation_dst = static_cast<char *>(dst);
-        for (const auto index: indices) {
-            memcpy(calculation_dst, index.data, index.total_size);
-            calculation_dst += index.total_size;
-        }
-    };
+    const auto vertices_buffer =
+            create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
     if (!indices.empty()) {
-        const auto vertices_buffer =
-                create_vertex_index_buffer(backend, vBufSize, mem_copy_function);
-        const auto indices_buffer =
-                create_vertex_index_buffer(backend, iBufSize, mem_copy_function_index);
-        mesh_data.vertices_offset = 0;
-        mesh_data.indices_offset  = 0;
-        mesh_data.vertices        = vertices_buffer;
-        mesh_data.indices         = indices_buffer;
+        mesh_data.vertices = vertices_buffer;
+        mesh_data.indices  = vertices_buffer;
         return mesh_data;
     } else {
-        const auto vertices_buffer =
-                create_vertex_index_buffer(backend, vBufSize, mem_copy_function);
         mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
         mesh_data.vertices   = vertices_buffer;
         return mesh_data;
