@@ -20,25 +20,7 @@
 
 void test(void *ptr, uint64_t size);
 
-/**
- * 这里是直接复制的函数，如果想做 多线程 上传的话，那么其实必须顶一个两个函数，
- * 一个需要注意的地方是 原本资源想要放置在哪里必须确定好，最后放置在哪里也是需要确定好的
- * 一个是负责具体复制的函数，
- * 另一个是复制完成之后资源是否需要释放的函数
- * @param entity
- * @param src
- * @param size
- */
-void copy_data_to_gpu_memory(entt::entity entity, void *src, uint64_t size) {
-#define ALIGN_1024(size) (((size) + 1023) & ~1023)
-    auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
-    auto mem_copy_function = [src,size](void *dst) {
-        memcpy(dst, src, size);
-    };
-    copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
 
-    set_render_parameter(entity, "nanovdb_buffer", temp_ptr);
-}
 
 void copy_nanovdb_data_to_gpu_memory(entt::entity entity, const std::stringstream &stream, uint64_t size) {
 #define ALIGN_1024(size) (((size) + 1023) & ~1023)
@@ -78,7 +60,9 @@ void add_nanovdb_to_gpu(entt::entity entity) {
     }
     const auto ptr = handle.data();
     auto size      = handle.bufferSize();
-    copy_data_to_gpu_memory(entity, ptr, size);
+   auto buffer =  copy_data_to_gpu_memory( ptr, size);
+    set_render_parameter(entity, "nanovdb_buffer", buffer);
+
     set_render_parameter(entity, "nanovdb_size", size);
 }
 
@@ -140,7 +124,9 @@ void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name)
         if (handle.empty()) {
             const auto ptr  = handle.data();
             const auto size = handle.bufferSize();
-            copy_data_to_gpu_memory(entity, ptr, size);
+           auto buffer =  copy_data_to_gpu_memory( ptr, size);
+            set_render_parameter(entity, "nanovdb_buffer", buffer);
+
         }
     }
 }

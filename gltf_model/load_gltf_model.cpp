@@ -230,40 +230,13 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
         auto result = copy_vertices_data(vertices_memory_size, model, primitive);
         Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
-    // std::vector<uint32_t> material_index;
-    // for (const auto &primitive: mesh.primitives) {
-    //     if (primitive.material > -1) {
-    //         const auto result = load_material(model, primitive.material);
-    //         auto &manager     = Engine::instance().get_pbr_manager();
-    //         auto index        = manager.push(result.first, result.second);
-    //         material_index.push_back(index);
-    //         // index 给出了那么应该写到哪里呢？
-    //     }
-    //     break;
-    // }
     const auto &data                         = Logic_entt().get_or_emplace<Geometry_data>(entity);
     const std::vector<share_block> &vertices = data.get_vertices();
     auto bound_box                           = find_min_max_point(vertices);
     Logic_entt().emplace_or_replace<AABB_min_max<Point_3> >(entity, bound_box);
-    // 这里呢？ 也是应该怎么做的问题
 
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    auto primitives = create_primitives(entity);
-    // if (primitives.size() == material_index.size()) {
-    //     int i = 0;
-    //     for (auto &primitive: primitives) {
-    //         if (primitive.index_type == VK_INDEX_TYPE_MAX_ENUM) {
-    //             primitive.vertex_command.firstInstance = material_index.at(i);
-    //             那么这里其实也就是是已经没用了
-    //         } else
-    //             primitive.indexed_command.firstInstance = material_index.at(i);
-    //         ++i;
-    //         break;
-    //     }
-    // }
-
-    logic_update_proxy(entity, primitives); //  这里还是能改一些内容的
-    logic_update_add_tag<opacity_tag>(entity);
+    Logic_entt().emplace_or_replace<Geometry_data_need_copy_tag>(entity);
+    Logic_entt().emplace_or_replace<opacity_tag>(entity);
 }
 
 
@@ -320,19 +293,12 @@ entt::entity load_node_data(fastgltf::Asset &model,
     Logic_entt().emplace<Name_component>(entity, node.name.c_str());
     if (parent_entity == entt::null) world_root_add_child(entity);
     else add_relation(parent_entity, entity);
-
-
     add_Transform_parameter(entity, node);
-
     if (node.meshIndex.has_value()) {
-        logic_create_proxy(entity); // 有几何的时候才创造吗？
-        Logic_entt().emplace<shader_data>(entity, Engine::instance().get_gltf_shader_data());
-        logic_update_proxy<shader_data>(entity);
         auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
         // set_render_parameter(entity, "object_material", material);
         get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
-        Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
-        logic_update_proxy<Name_component>(entity);
+        // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     }
     if (node.cameraIndex.has_value()) {
         auto &camera = model.cameras[node.cameraIndex.value()];
@@ -409,6 +375,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const entt::entity model_entity = Logic_entt().create();
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
+        logic_create_proxy(model_entity); // 有几何的时候才创造吗？
+        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
+        logic_update_proxy<shader_data>(model_entity);
+        logic_update_proxy<Name_component>(model_entity);
+        logic_update_add_tag<opacity_tag>(model_entity);
+
         auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
         std::vector<bool> nodes_have_deal;
@@ -428,12 +400,68 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 load_node_data(model, nodes_have_deal, node_index, -1, entity);
             }
         }
-        return model_entity;
+        // 之后呢? 其实完全是可以在这里操作的
+        //
+        add_recursion_function_to_children(model_entity, update_transform_matrix);
 
-        // for (auto i = 0; i < nodes_num && i < 1000 && nodes_have_deal.at(i) == false; ++i) {
-        //     // 这里也稍微有点问题 一个节点在 children 数组中只能被引用一次（即每个节点只能有一个父亲）
-        //     load_node_data(model, nodes_have_deal, i, -1, entt::null);
-        // }
+        // 单线程的情况下,下面这个函数是对的
+        {
+            auto boxes    = std::make_shared<std::vector<Render_AABB> >();
+            auto matrices = std::make_shared<std::vector<Transform_matrix> >();
+            Geometry_data bindless_Geometry_data;
+            auto view = Logic_entt().view<Geometry_data_need_copy_tag, Geometry_data, Transform_matrix>();
+            for (const auto entity: view) {
+                auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+                auto vertices      = geometry_data.get_vertices();
+                auto indices       = geometry_data.get_indices();
+                // 这里其实有一个假设是 vertices.size() == indices.size()
+                auto &model_matrix = Logic_entt().get<Transform_matrix>(entity);
+                for (auto &vertex: vertices) {
+                    bindless_Geometry_data.push_vertices(vertex);
+                    const auto bound_box          = find_min_max_point(vertex);
+                    Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
+                    Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
+                    Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
+                    boxes->push_back({
+                                         {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
+                                         {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
+                                     });
+                    matrices->push_back(model_matrix); // 暂时不想太复杂,暂时先放在这里
+                }
+                for (auto &index: indices) {
+                    bindless_Geometry_data.push_indices(index);
+                }
+                Render_entt().remove<Geometry_data_need_copy_tag>(entity);
+            }
+            // 那么另外一件事 包围盒 应该也是需要去重新计算了
+            // 得到全部了,那么需要做什么呢? 上传到一个 buffer 中 生成 一个 std::vector<VKR_Primitive>
+            // 多个primitive 连续 才能合并,最后如果可以的话,是可以调用一个 命令来完成的
+            auto mesh       = create_mesh_data(bindless_Geometry_data);
+            auto primitives = create_primitives(bindless_Geometry_data);
+            for (uint32_t i = 0; i < primitives.size(); ++i) {
+                primitives.at(i).draw_command.indexed_command.firstInstance = i;
+            }
+            logic_update_proxy(model_entity, primitives);
+            logic_update_proxy(model_entity, boxes);
+            logic_update_proxy(model_entity, mesh);
+            logic_update_proxy(model_entity, matrices);
+            // 现在已经把 model_matrix 全部上传了
+            const auto ptr = matrices->data();
+            auto size      = matrices->size() * sizeof(Transform_matrix);
+            auto buffer    = copy_data_to_gpu_memory(ptr, size);
+            set_render_parameter(model_entity, "model_matrix_parameters", buffer);
+            //
+            // 另一个紧接着的问题是  之后呢?
+            // entity 的顺序 和上面的顺序是相同的吗? 有必要相同吗?
+            // 这里是单个 还是可以的,但是多个的时候呢?
+            // 该算的应该已经算的差不多了,之后就是如何上传的问题了
+            // 之后就是应该怎么做呢?
+            // boxes 还是需要上传的, primitives 需要选择一个方式然后上传
+            // 之后就应该交由 渲染线程 来进行 更新结果了 然后看看怎么用一个参数完成调用  material  还是需要 选一个位置的
+            // 然后这里才是合并为一个 entity 看看是否需要去 传递给 render_thread , 当然,这里也还只是暂时的,
+        }
+
+        return model_entity;
     }
     return entt::null;
 }

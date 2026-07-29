@@ -93,7 +93,7 @@ public:
         descriptor_set_update_function();
         push_constant_update_function();
         //
-         {
+        {
             const auto view = Render_entt().view<Render_destroy_tag>();
             Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
@@ -112,14 +112,21 @@ public:
             //  frustum_cull_2  7ms 左右 3000个 需要计算
             //  frustum_cull_2 优化指令计算之后大概是 4 ms
             //  整个模型绘制 大概就是15 帧左右的水平了
-            auto view = Render_entt().view<Render_AABB>();
+            auto view = Render_entt().view<std::shared_ptr<std::vector<Render_AABB> >, std::vector<VKR_Primitive> >();
             for (const auto it: view) {
-                auto aabb   = Render_entt().get<Render_AABB>(it);
-                auto result = frustum_cull_2(frustum_planes, aabb, camera_pos); // 判断 包围盒 是否在 平头截体在
-                Render_entt().emplace_or_replace<Frustum_cull_flag>(it);
-                if (result == false) {
-                    Render_entt().remove<Frustum_cull_flag>(it);
+                auto aabb_boxes = Render_entt().get<std::shared_ptr<std::vector<Render_AABB> > >(it);
+                auto primitives = Render_entt().get<std::vector<VKR_Primitive> >(it);
+                // auto aabb_boxes = aabb.;
+                assert(primitives.size() == aabb_boxes->size());
+                // 包围盒应该是有问题的,但是不是最大的那个 auto primitives 还是需要更改的
+                for (uint32_t i = 0; i < aabb_boxes->size(); i++) {
+                    auto result = frustum_cull_2(frustum_planes, aabb_boxes->at(i), camera_pos); // 判断 包围盒 是否在 平头截体在
+                    if (result == true)
+                        primitives.at(i).draw_command.indexed_command.instanceCount = 1;
+                    else
+                        primitives.at(i).draw_command.indexed_command.instanceCount = 0;
                 }
+                uint32_t i = 0;
             }
         }
 
@@ -218,11 +225,8 @@ public:
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                           std::vector<VKR_Render_state>,
-                                           Frustum_cull_flag,
                                            opacity_tag,
                                            Name_component>();
-            //
             for (const auto it: view) {
                 auto name = Render_entt().get<Name_component>(it);
                 build_command_buffer(handle, it, time_line);

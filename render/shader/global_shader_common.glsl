@@ -52,11 +52,8 @@ layout (set = 1, binding = 1) readonly buffer global_PBR_parameters {
     ShaderMaterial material[];
 };
 
-layout (set = 1, binding = 2) readonly buffer global_model_matrix_parameters {
-    mat4 model_vector[];
-};
 
-layout (set = 1, binding = 3) readonly buffer global_PBR_indices {
+layout (set = 1, binding = 2) readonly buffer global_PBR_indices {
     uint pbr_index[];
 };
 

@@ -43,3 +43,23 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 }
+
+/**
+ * 这里是直接复制的函数，如果想做 多线程 上传的话，那么其实必须顶一个两个函数，
+ * 一个需要注意的地方是 原本资源想要放置在哪里必须确定好，最后放置在哪里也是需要确定好的
+ * 一个是负责具体复制的函数，
+ * 另一个是复制完成之后资源是否需要释放的函数
+ * @param entity
+ * @param src
+ * @param size
+ */
+VKR_buffer_ptr copy_data_to_gpu_memory(void *src, uint64_t size) {
+#define ALIGN_1024(size) (((size) + 1023) & ~1023)
+    auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
+    auto mem_copy_function = [src,size](void *dst) {
+        memcpy(dst, src, size);
+    };
+    copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
+
+    return temp_ptr;
+}
