@@ -1,0 +1,45 @@
+#version 450
+
+#define PNANOVDB_GLSL
+
+#extension GL_GOOGLE_include_directive: enable
+#extension GL_EXT_buffer_reference: require
+#extension GL_EXT_scalar_block_layout: require
+#extension GL_ARB_gpu_shader_int64: require
+
+#include "global_shader_common.glsl"
+
+layout (buffer_reference, scalar) readonly buffer AABB_boxes {
+    AABB_box aabb_box[];
+};
+
+layout (buffer_reference, scalar) buffer IndirectCommands {
+    VkDrawIndexedIndirectCommand command[];
+};
+
+
+layout (push_constant) uniform PushConstant {
+    Frustum frustum;
+    uint64_t AABB_boxesAddress;
+    uint64_t IndirectCommandsAddress;
+    uint command_size;
+} push_constant;
+
+
+layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+void main()
+{
+    uint idx = gl_GlobalInvocationID.x;
+    if (idx >= push_constant.command_size) {
+        return;
+    }
+    AABB_boxes AABB_boxes_buffer = AABB_boxes(push_constant.AABB_boxesAddress);
+    IndirectCommands command_buffer = IndirectCommands(push_constant.IndirectCommandsAddress);
+    bool result = IsAABBInFrustum(push_constant.frustum, AABB_boxes_buffer.aabb_box[idx]);
+    if (result == true) {
+        command_buffer.command[idx].instanceCount = 1;
+    } else {
+        command_buffer.command[idx].instanceCount = 0;
+    }
+}
