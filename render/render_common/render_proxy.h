@@ -67,6 +67,9 @@ struct translate_tag {
 struct opacity_tag {
 };
 
+struct bindless_tag {
+};
+
 struct Render_destroy_tag {
 };
 

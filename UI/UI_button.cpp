@@ -112,10 +112,10 @@ entt::entity UI_button(const std::string &name,
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
     for (auto &primitive: primitives) {
-        primitive.pipelineDynamicState.depthTestEnable  = VK_FALSE;
-        primitive.pipelineDynamicState.depthWriteEnable = VK_FALSE;
-        primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+        // primitive.pipelineDynamicState.depthTestEnable  = VK_FALSE;  // TODP :暂时不用,先不做修改
+        // primitive.pipelineDynamicState.depthWriteEnable = VK_FALSE;
+        // primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        // primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
         // 也就是 UI 部分的 代码，其实 有时候是没有办法去管理三角形的 大小的
     }
     logic_update_proxy(entity, primitives);

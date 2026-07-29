@@ -152,26 +152,26 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
 
 #include "base_geometry/intersect_function.h"
 
-entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
-    // ray.direction   = {0.0001, 0.0001, -1};
-    const auto view = Logic_entt().view<Name_component, AABB_min_max<Point_3>, Transform>();
-    for (auto &entity: view) {
-        auto &name            = view.get<Name_component>(entity);
-        const auto &transform = view.get<Transform>(entity);
-        auto box              = view.get<AABB_min_max<Point_3> >(entity);
-        // 这里有问题, 目前只做好了偏移，没有做好旋转
-        // 单独的一个的话，是需要在 物体的局部空间中 选择 ray 的方式来实现的
-        auto model_matrix = get_model_matrix(box, transform);
-        auto new_box      = box.multiply_matrix(model_matrix);
-        if (is_intersect(new_box, ray)) {
-            auto &name = view.get<Name_component>(entity);
-            LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
-            return entity;
-        }
-    }
-
-    return entt::null;
-}
+// entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
+//     // ray.direction   = {0.0001, 0.0001, -1};
+//     const auto view = Logic_entt().view<Name_component, AABB_min_max<Point_3>, Transform>();
+//     for (auto &entity: view) {
+//         auto &name            = view.get<Name_component>(entity);
+//         const auto &transform = view.get<Transform>(entity);
+//         auto box              = view.get<AABB_min_max<Point_3> >(entity);
+//         // 这里有问题, 目前只做好了偏移，没有做好旋转
+//         // 单独的一个的话，是需要在 物体的局部空间中 选择 ray 的方式来实现的
+//         // auto model_matrix = get_model_matrix(box, transform);
+//         auto new_box      = box.multiply_matrix(model_matrix);
+//         if (is_intersect(new_box, ray)) {
+//             auto &name = view.get<Name_component>(entity);
+//             LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
+//             return entity;
+//         }
+//     }
+//
+//     return entt::null;
+// }
 
 
 void base_event_dealing(const SDL_Event &event) {

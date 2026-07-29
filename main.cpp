@@ -80,17 +80,12 @@ inline entt::entity add_volume_pass(const std::string &name,
 
     world_root_add_child(entity);
     logic_update_add_tag<volume_pass_tag>(entity);
-    const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
-    const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
+    Logic_entt().emplace<Transform>(entity, offset, rotate);
+    Logic_entt().emplace<Transform_matrix_dirty>(entity);
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
-    for (auto &primitive: primitives) {
-        primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        primitive.set_VkCullModeFlags(VK_CULL_MODE_BACK_BIT);
-    }
     logic_update_proxy(entity, primitives);
     return entity;
 }
@@ -355,21 +350,22 @@ int main(int argc, char *argv[]) {
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    UI_block("按钮1", 0, 0, 60, 60);
-    UI_block("功能块", 0, 0, 50, 200);
-    UI_block("按钮2", 0, 0, 145, 130);
-
+    // UI_block("按钮1", 0, 0, 60, 60);
+    // UI_block("功能块", 0, 0, 50, 200);
+    // UI_block("按钮2", 0, 0, 145, 130);
+    //
 
     add_skybox_entity();
     // add_manifold_entity();
 
-    add_simple_computer_buffer_write();
-
-    add_volume_pass("nanovdb_volume"); {
-        // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-    }
-    object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
-
+    // add_simple_computer_buffer_write();
+    // add_volume_pass("nanovdb_volume"); {
+    // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+    // }
+    // object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
+    // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
+    // auto entity = load_gltf_model("Sponza",
+    //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
 
     // Setup Dear ImGui context

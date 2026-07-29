@@ -227,14 +227,22 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
-    descriptor_pool_manager_.create();
-
-    VKR_shader_paths shader_paths{
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-        "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-        "", ""
-    };
-    shader_date = VKR_shader_init(shader_paths);
+    descriptor_pool_manager_.create(); {
+        VKR_shader_paths shader_paths{
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+            "", ""
+        };
+        shader_date = VKR_shader_init(shader_paths);
+    } {
+        VKR_shader_paths shader_paths{
+            "",
+            "",
+            "",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/command_calculate.comp.spv"
+        };
+        command_calculate = VKR_shader_init(shader_paths);
+    }
     descriptor_pool_manager_.set_shader_data(shader_date);
     bindless_descriptor_sets_ =
             descriptor_pool_manager_.allocate_bindless_descriptor_sets(

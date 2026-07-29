@@ -78,6 +78,9 @@ private:
     shader_data gltf_shader_data_;
 
     std::shared_ptr<vk_shader_data> shader_date;
+    std::shared_ptr<vk_shader_data> command_calculate;
+    std::shared_ptr<vk_shader_data> bindless_shader_date;
+
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
 
 public:

@@ -224,6 +224,18 @@ public:
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                           opacity_tag, bindless_tag,
+                                           Name_component>();
+            for (const auto it: view) {
+                // 这里需要做什么呢? 创建计算着色器
+                // 计算AABB 包围盒 将新的 command 写入需要更改的 位置中
+                // 添加 屏障
+                // 绘制调用新的绘制命令 
+                auto name = Render_entt().get<Name_component>(it);
+                build_command_buffer(handle, it, time_line);
+            }
+        } {
+            auto view = Render_entt().view<std::vector<VKR_Primitive>,
                                            opacity_tag,
                                            Name_component>();
             for (const auto it: view) {
