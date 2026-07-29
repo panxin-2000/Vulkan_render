@@ -20,4 +20,8 @@
 Mesh_data get_VKR_mesh(entt::entity entity);
 
 std::vector<VKR_Primitive> create_primitives(entt::entity entity);
+
+std::vector<VKR_Primitive> create_primitives(const Geometry_data &data);
+
+Mesh_data create_mesh_data(const Geometry_data &data);
 #endif //HELLO_MAC_MESH_COMPONENT_H

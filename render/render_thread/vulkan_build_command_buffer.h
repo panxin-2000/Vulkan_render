@@ -9,6 +9,7 @@
 #include "render_proxy.h"
 #include "../vulkan_code/vertex_and_buffer_index.h"
 #include "name_component.h"
+#include "render_state.h"
 
 struct scoped_debug_label {
     VkCommandBuffer cmd;
@@ -535,25 +536,23 @@ inline void build_command_buffer(VK_backend &engine, entt::entity entity, const 
                                parameter->push_constant_pool + value.offset);
         }
 
-    const auto mesh_data  = Render_entt().get<Mesh_data>(entity);
-    const auto primitives = Render_entt().get<std::vector<VKR_Primitive> >(entity);
+    const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
+    const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);
+    const auto render_states = Render_entt().try_get<std::vector<VKR_Render_state> >(entity);
+    if (render_states != nullptr && !render_states->empty() && primitives.size() == render_states->size()) {
+        for (int i = 0; i < render_states->size(); ++i) {
+            auto render_state = render_states->at(i);
+            auto primitive    = primitives.at(i);
+            render_state.set_render_state_command(cb, VK_backend::instance().get_viewport(),
+                                                  VK_backend::instance().get_scissor());
+            primitive.draw(cb, mesh_data, time_line);
+        }
+    } else {
+        VKR_Render_state temp;
+        temp.set_render_state_command(cb, VK_backend::instance().get_viewport(), VK_backend::instance().get_scissor());
+    }
     if (!primitives.empty()) {
         for (auto &primitive: primitives) {
-            if (primitive.viewport.x == 0 && primitive.viewport.y == 0 &&
-                primitive.viewport.width == 0 && primitive.viewport.height == 0 &&
-                primitive.viewport.minDepth == 0 && primitive.viewport.maxDepth == 0) {
-                auto temp = VK_backend::instance().get_viewport();
-                vkCmdSetViewport(cb, 0, 1, &temp);
-            } else {
-                vkCmdSetViewport(cb, 0, 1, &primitive.viewport);
-            }
-            if (primitive.scissor.extent.width == 0 && primitive.scissor.extent.height == 0 &&
-                primitive.scissor.offset.x == 0 && primitive.scissor.offset.y == 0) {
-                auto temp = VK_backend::instance().get_scissor();
-                vkCmdSetScissor(cb, 0, 1, &temp);
-            } else {
-                vkCmdSetScissor(cb, 0, 1, &primitive.scissor);
-            }
             primitive.draw(cb, mesh_data, time_line);
         }
     } else {

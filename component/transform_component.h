@@ -13,10 +13,6 @@ struct Transform_matrix_dirty {
 };
 
 
-struct alignas(16) Render_AABB {
-    Eigen::Vector4f centroid_points;
-    Eigen::Vector4f direction_intervals;
-};
 
 class alignas(16) Transform_matrix {
 public:

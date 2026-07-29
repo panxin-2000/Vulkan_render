@@ -6,7 +6,6 @@
 #define HELLO_MAC_RENDER_MESH_H
 #include <volk.h>
 #include "vulkan_buffer.h"
-#include "vulkan_pipeline_dynamic_state.h"
 
 
 class Mesh_data {
@@ -37,36 +36,14 @@ public:
     int material_index_          = 0;
 
 
-    VkViewport viewport = {0, 0, 0, 0, 0, 0};
-    VkRect2D scissor    = {0, 0, 0, 0};
-
-    PipelineRasterizationState pipelineRasterizationState;
-    PipelineDynamicState pipelineDynamicState;
     Draw_command draw_command;
 
-    /**
-     *
-     * @param frontFace VK_FRONT_FACE_COUNTER_CLOCKWISE / VK_FRONT_FACE_CLOCKWISE
-     */
-    void set_front_face(const VkFrontFace frontFace) {
-        pipelineRasterizationState.frontFace_ = frontFace;
-    }
-
-    /**
-     *
-     * @param cullMode VK_CULL_MODE_BACK_BIT / VK_CULL_MODE_FRONT_BIT / VK_CULL_MODE_FRONT_AND_BACK / VK_CULL_MODE_NONE
-     */
-    void set_VkCullModeFlags(const VkCullModeFlags cullMode) {
-        pipelineRasterizationState.cullMode_ = cullMode;
-    }
 
     // 多的话上面的两个内容是需要更改为 vector 的，可能还需要 material 的指针
 
     void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
         if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
             return;
-        pipelineDynamicState.write_commands(cb);
-        pipelineRasterizationState.write_commands(cb);
         // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
         // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
         vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
@@ -99,13 +76,7 @@ public:
 
     // 其实还是要去分区的，看看那些内容在变化，哪些内容没有变化
     // 为什么2d的内容可以 变化时 覆盖原有内容，而 3d 不行呢 ？
-
-    union draw_command {
-        VkDrawIndexedIndirectCommand indexed_command = {};
-        VkDrawIndirectCommand vertex_command;
-    };
-
-    std::vector<draw_command> draw_commands; // 需要 传输到 GPU ，没有做
+    std::vector<Draw_command> draw_commands; // 需要 传输到 GPU ，没有做
     VKR_buffer_ptr draw_commands_buffer = {};
     VkIndexType index_type              = VK_INDEX_TYPE_UINT16;
 
@@ -119,14 +90,14 @@ public:
                                      draw_commands_buffer->get_buffer_handle(),
                                      0,
                                      draw_commands.size(),
-                                     sizeof(draw_command));
+                                     sizeof(Draw_command));
         } else {
             vkCmdDrawIndirect(cb,
                               // draw_commands 相关内容
                               draw_commands_buffer->get_buffer_handle(),
                               0,
                               draw_commands.size(),
-                              sizeof(draw_command)
+                              sizeof(Draw_command)
                              );
         }
     }

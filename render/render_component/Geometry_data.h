@@ -18,10 +18,14 @@ struct share_block {
     // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
 };
 
+
+struct Geometry_data_need_copy_tag {
+};
+
 /**
  * 目的是两个各种各样格式的数据 放置到 vertex 和 index 两个 共享指针的内存区中
  */
-class Geometry_data : public NonCopyable {
+class Geometry_data {
 public:
     Geometry_data() = default;
 
@@ -152,6 +156,42 @@ inline AABB_min_max<Point_3> find_min_max_point(const std::vector<share_block> &
         }
     }
     return {min, max};
+}
+
+// inline AABB_min_max<Point_3> find_min_max_point(const share_block &vertex) {
+//     Point_3 min = Point_3::init_max_limit();
+//     Point_3 max = Point_3::init_min_limit();
+//     for (int i = 0; i < vertex.count; i++) {
+//         // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
+//         auto pos = reinterpret_cast<Point_3 *>(static_cast<char *>(vertex.data) + vertex.single_size * i);
+//         min      = Point_3::min(*pos, min);
+//         max      = Point_3::max(*pos, max);
+//     }
+//     return {min, max};
+// }
+
+struct alignas(16) Render_AABB {
+    Eigen::Vector4f centroid_points;
+    Eigen::Vector4f direction_intervals;
+};
+
+
+inline Render_AABB find_min_max_point(const share_block &vertex) {
+    Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());;
+    Eigen::Vector3f max = Eigen::Vector3f::Constant(-std::numeric_limits<float>::infinity());
+    for (int i = 0; i < vertex.count; i++) {
+        // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
+        Eigen::Map<Eigen::Vector3f> pos(reinterpret_cast<float *>(
+                                            static_cast<char *>(vertex.data) + vertex.single_size * i));
+        min = min.cwiseMin(pos);
+        max = max.cwiseMax(pos);
+    }
+    Render_AABB bounding_box;
+    auto temp                        = (min + max) / 2;
+    auto temp_2                      = (max - min) / 2;
+    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.y(), 1.0f};
+    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.y(), 0.0f};
+    return bounding_box;
 }
 
 #endif //HELLO_MAC_GEOMETRY_DATA_H

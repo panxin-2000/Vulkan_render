@@ -10,6 +10,7 @@
 #include "load_gltf_model.h"
 #include "move_speed.h"
 #include "name_component.h"
+#include "render_state.h"
 #include "scene_component.h"
 #include "shader_component.h"
 #include "transform_component.h"
@@ -106,8 +107,10 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
         auto mesh = get_VKR_mesh(entity);
         logic_update_proxy(entity, mesh);
         auto primitives = create_primitives(entity);
+        std::vector<VKR_Render_state> render_states;
         if (!primitives.empty()) {
             VKR_Primitive vkr_primitive = primitives.at(0);
+            VKR_Render_state render_state;
             primitives.clear();
             // index_count = 2136
             // first_      = 12480
@@ -137,22 +140,26 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                             continue;
                         // Apply scissor/clipping rectangle
-                        vkr_primitive.viewport.x                                 = 0;
-                        vkr_primitive.viewport.y                                 = 0;
-                        vkr_primitive.viewport.width                             = fb_width;
-                        vkr_primitive.viewport.height                            = fb_height;
-                        vkr_primitive.viewport.minDepth                          = 0.0f;
-                        vkr_primitive.viewport.maxDepth                          = 1.0f;
-                        vkr_primitive.scissor.offset.x                           = (int32_t) (clip_min.x);
-                        vkr_primitive.scissor.offset.y                           = (int32_t) (clip_min.y);
-                        vkr_primitive.scissor.extent.width                       = (uint32_t) (clip_max.x - clip_min.x);
-                        vkr_primitive.scissor.extent.height                      = (uint32_t) (clip_max.y - clip_min.y);
+                        render_state.viewport.x            = 0;
+                        render_state.viewport.y            = 0;
+                        render_state.viewport.width        = fb_width;
+                        render_state.viewport.height       = fb_height;
+                        render_state.viewport.minDepth     = 0.0f;
+                        render_state.viewport.maxDepth     = 1.0f;
+                        render_state.scissor.offset.x      = (int32_t) (clip_min.x);
+                        render_state.scissor.offset.y      = (int32_t) (clip_min.y);
+                        render_state.scissor.extent.width  = (uint32_t) (clip_max.x - clip_min.x);
+                        render_state.scissor.extent.height = (uint32_t) (clip_max.y - clip_min.y);
+                        render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+                        render_state.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+
                         vkr_primitive.draw_command.indexed_command.indexCount    = pcmd->ElemCount;
                         vkr_primitive.draw_command.indexed_command.instanceCount = 1;
                         vkr_primitive.draw_command.indexed_command.firstIndex    = pcmd->IdxOffset + global_idx_offset;
                         vkr_primitive.draw_command.indexed_command.vertexOffset  = pcmd->VtxOffset + global_vtx_offset;
                         vkr_primitive.draw_command.indexed_command.firstInstance = 0;
                         primitives.emplace_back(vkr_primitive);
+                        render_states.push_back(render_state);
                     }
                 }
                 global_idx_offset += draw_list->IdxBuffer.Size;
@@ -170,12 +177,8 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
         set_push_constant_parameter(entity, "uScale", scale);
         set_push_constant_parameter(entity, "uTranslate", translate);
 
-
-        for (auto &primitive: primitives) {
-            primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-            primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
-        }
         logic_update_proxy(entity, primitives);
+        logic_update_proxy(entity, render_states);
     }
 }
 
@@ -343,11 +346,15 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
 
-        if (ImGui::Button("Button"))
-            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
+        {
+            bool bistro = false;
+            if (ImGui::Checkbox("bistro.gltf", &bistro)) {
+                if (bistro == true) {
+                    load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/niagara_bistro-master/bistro2.gltf");
+                }
+            }
+        }
+
 
         ImGui::Text("Logic  thread average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
         auto value = Engine::instance().get_framerate();

@@ -91,7 +91,9 @@ public:
         Engine::instance().update_bindless_descriptor_sets_function();
         object_parameter_update();
         descriptor_set_update_function();
-        push_constant_update_function(); {
+        push_constant_update_function();
+        //
+         {
             const auto view = Render_entt().view<Render_destroy_tag>();
             Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
@@ -101,6 +103,7 @@ public:
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
         reset_current_command_buffer(handle, queryPool, time_line);
+
 
         auto frustum_planes = Engine::instance().get_frustum_planes();
         auto camera_pos     = Engine::instance().get_world_camera_pos(); {
@@ -215,9 +218,11 @@ public:
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                           std::vector<VKR_Render_state>,
                                            Frustum_cull_flag,
                                            opacity_tag,
                                            Name_component>();
+            //
             for (const auto it: view) {
                 auto name = Render_entt().get<Name_component>(it);
                 build_command_buffer(handle, it, time_line);

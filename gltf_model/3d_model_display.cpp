@@ -16,6 +16,7 @@
 
 #include "parse_geometry_file.h"
 #include "PBR_component.h"
+#include "render_state.h"
 #include "world_scene_root.h"
 #include "../UI/PLYLoader.h"
 
@@ -181,12 +182,15 @@ entt::entity add_sky_box(const std::string &name) {
 
     const auto mesh = get_VKR_mesh(entity);
     auto primitives = create_primitives(entity);
-    for (auto &primitive: primitives) {
-        primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        primitive.set_VkCullModeFlags(VK_CULL_MODE_FRONT_BIT);
+    std::vector<VKR_Render_state> render_states;
+    render_states.resize(primitives.size());
+    for (auto &render_state: render_states) {
+        render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        render_state.set_VkCullModeFlags(VK_CULL_MODE_FRONT_BIT);
     }
     logic_update_proxy(entity, mesh);
     logic_update_proxy(entity, primitives);
+    logic_update_proxy(entity, render_states);
 
 
     // 更新物体的模型矩阵
