@@ -113,6 +113,21 @@ public:
         create_VMA();
         update_current_extent();
         create_swap_chain(VK_NULL_HANDLE);
+        create_depth_format();
+    }
+
+
+    void create_depth_format() {
+        std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
+        for (VkFormat &format: depthFormatList) {
+            VkFormatProperties2 formatProperties{.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+            vkGetPhysicalDeviceFormatProperties2(physical_device_, format, &formatProperties);
+            if (formatProperties.formatProperties.optimalTilingFeatures &
+                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                depth_format_ = format;
+                break;
+            }
+        }
     }
 
     void destroy_swap_chain(VkSwapchainKHR old_swap_chain) {

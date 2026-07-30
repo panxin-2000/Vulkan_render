@@ -39,12 +39,12 @@ layout (location = 2) in vec2 inUV;
 //    buffer_references r_buffer;
 //};
 
-layout (set = 2, binding = 0) uniform model_4x4
-{
-    mat4 model;
-};
+//layout (set = 2, binding = 0) uniform model_4x4
+//{
+//    mat4 model;
+//};
 
-layout (set = 2, binding = 1) readonly buffer model_matrix_parameters {
+layout (set = 2, binding = 0) readonly buffer model_matrix_parameters {
     mat4 model_vector[];
 };
 

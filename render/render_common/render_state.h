@@ -10,7 +10,7 @@
 
 class VKR_Render_state {
 public:
-    VkViewport viewport = {0, 0, 0, 0, 0, 0};
+    VkViewport viewport = {0, 0, 0, 0, 0, 1.0f};
     VkRect2D scissor    = {0, 0, 0, 0};
     PipelineRasterizationState pipelineRasterizationState;
     PipelineDynamicState pipelineDynamicState;
@@ -36,7 +36,7 @@ public:
                                   VkRect2D global_scissor) const {
         if (viewport.x == 0 && viewport.y == 0 &&
             viewport.width == 0 && viewport.height == 0 &&
-            viewport.minDepth == 0 && viewport.maxDepth == 0) {
+            viewport.minDepth == 0 && viewport.maxDepth == 1.0f) {
             vkCmdSetViewport(cb, 0, 1, &global_viewport);
         } else {
             vkCmdSetViewport(cb, 0, 1, &viewport);

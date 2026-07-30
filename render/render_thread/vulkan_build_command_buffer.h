@@ -588,6 +588,12 @@ inline void DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
                            &mesh_data.vertices_offset);
     if (mesh_data.indices != nullptr &&
         mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+        VKR_Render_state temp;
+        temp.set_render_state_command(cb, VK_backend::instance().get_viewport(), VK_backend::instance().get_scissor());
+        vkCmdBindIndexBuffer(cb,
+                             mesh_data.indices->get_buffer_handle(),
+                             mesh_data.indices_offset,
+                             mesh_data.index_type);
         vkCmdDrawIndexedIndirect(cb,
                                  command_calculate.command_buffer->get_buffer_handle(time_line),
                                  0,
