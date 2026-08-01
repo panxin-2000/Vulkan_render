@@ -25,7 +25,6 @@ layout (push_constant) uniform PushConsts {
 // vkCmdPushConstants 上面的好像是每个都push 一次
 // 其实顶点中的也是每个push 一次
 
-const float PI = 3.14159265359;
 
 //#define ROUGHNESS_PATTERN 1
 
@@ -34,32 +33,8 @@ vec3 materialcolor()
     return vec3(material_no.r, material_no.g, material_no.b);
 }
 
-// Normal Distribution function --------------------------------------
-float D_GGX(float dotNH, float roughness)
-{
-    float alpha = roughness * roughness;
-    float alpha2 = alpha * alpha;
-    float denom = dotNH * dotNH * (alpha2 - 1.0) + 1.0;
-    return (alpha2) / (PI * denom * denom);
-}
 
-// Geometric Shadowing function --------------------------------------
-float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
-{
-    float r = (roughness + 1.0);
-    float k = (r * r) / 8.0;
-    float GL = dotNL / (dotNL * (1.0 - k) + k);
-    float GV = dotNV / (dotNV * (1.0 - k) + k);
-    return GL * GV;
-}
 
-// Fresnel function ----------------------------------------------------
-vec3 F_Schlick(float cosTheta, float metallic)
-{
-    vec3 F0 = mix(vec3(0.04), materialcolor(), metallic); // * material_no.specular
-    vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-    return F;
-}
 
 // Specular BRDF composition --------------------------------------------
 
@@ -85,7 +60,7 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, float metallic, float roughness)
         // G = Geometric shadowing term (Microfacets shadowing)
         float G = G_SchlicksmithGGX(dotNL, dotNV, rroughness);
         // F = Fresnel factor (Reflectance depending on angle of incidence)
-        vec3 F = F_Schlick(dotNV, metallic);
+        vec3 F = F_Schlick(dotNV, vec3(1.0), metallic);
 
         vec3 spec = D * F * G / (4.0 * dotNL * dotNV);
 

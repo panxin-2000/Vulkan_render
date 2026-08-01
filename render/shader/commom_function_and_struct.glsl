@@ -7,11 +7,19 @@ struct VkDrawIndexedIndirectCommand {
     int vertexOffset;
     uint firstInstance;
 };
+const float PI = 3.14159265359;
 
 
 struct Frustum {
     vec4 frustum_planes[6];
 };
+
+#ifdef TARGET_MOBILE
+#define PREVENT_DIV0(n, d, magic)   ((n) / max(d, magic))
+#else
+#define PREVENT_DIV0(n, d, magic)   ((n) / (d))
+#endif
+
 
 
 // 需要 与 PBR_component 布局相同
@@ -213,4 +221,176 @@ float hash(int xy) {
     x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
     x = (x >> 16u) ^ x;
     return float(x) / 4294967295.0;
+}
+
+
+// Normal Distribution function --------------------------------------
+// 在当前材质粗糙度下，有多少比例的“微表面”刚好把光线反射到你的眼睛里
+// 本质的结果是一个 概率 的近似
+float D_GGX(float dotNH, float roughness)
+{
+    float alpha = roughness * roughness;
+    float alpha2 = alpha * alpha;
+    float denom = dotNH * dotNH * (alpha2 - 1.0) + 1.0;
+    return (alpha2) / (PI * denom * denom);
+}
+
+
+// Geometric Shadowing function --------------------------------------
+// Epic Games 在 2013 年发表 UE4 PBR  为了绝对追求计算速度而做的一种近似截断
+// 在当前粗糙度下，因为微表面自身的“凹凸不平”，有多少光线会被旁边的微小结构给“遮挡”住
+// 微观的情况下 , 宏观的 还需要重新计算
+float G_SchlicksmithGGX(float roughness, float dotNV, float dotNL)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    float GL = dotNL / (dotNL * (1.0 - k) + k);
+    float GV = dotNV / (dotNV * (1.0 - k) + k);
+    return GL * GV;
+}
+
+/**
+* 上面的 G_SchlicksmithGGX 和 下面 G 不是来自于 一个 几何遮蔽模型
+* 上面的 是 Smith-Schlick 模型
+* 下面的 是 Smith-GGX（Height-Correlated，高度相关） 模型
+*
+**/
+
+
+/**
+* Correlated 相关联
+* 追求更精确的物理表现
+* Eric Heitz 在 2014 年指出：微表面是有高度的，遮蔽和掩膜高度相关
+* 包含 Λ 的高度耦合分式（带根号） 的 结果
+**/
+float V_SmithGGXCorrelated(float roughness, float dotNV, float dotNL) {
+    // Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"
+    float a2 = roughness * roughness;
+    // TODO: lambdaV can be pre-computed for all the lights, it should be moved out of this function
+    float lambdaV = dotNL * sqrt((dotNV - a2 * dotNV) * dotNV + a2);
+    float lambdaL = dotNV * sqrt((dotNL - a2 * dotNL) * dotNL + a2);
+    // 0.0000077 = nextafter(0.5 / MEDIUMP_FLT_MAX, 1.0) in fp16, so we don't overflow
+    float v = PREVENT_DIV0(0.5, lambdaV + lambdaL, 0.0000077);
+    // #define PREVENT_DIV0(n, d, magic)   ((n) / max(d, magic))
+    // a2=0 => v = 1 / 4*NoL*NoV   => min=1/4, max=+inf
+    // a2=1 => v = 1 / 2*(NoL+NoV) => min=1/4, max=+inf
+    return v;
+}
+
+float V_SmithGGXCorrelated_Fast(float roughness, float NoV, float NoL) {
+    // Hammon 2017, "PBR Diffuse Lighting for GGX+Smith Microsurfaces"
+    // 0.0000077 = nextafter(0.5 / MEDIUMP_FLT_MAX, 1.0) in fp16, so we don't overflow
+    float v = PREVENT_DIV0(0.5, mix(2.0 * NoL * NoV, NoL + NoV, roughness), 0.0000077);
+    return v;
+}
+
+
+
+// Fresnel function ----------------------------------------------------
+// 光线在两种不同介质的交界面上，有多少比例的光被【镜面反射】（Specular）回去了
+// 在真实世界中，一个物体的反射率并不是固定的，而是随着你的观察角度（视角）变化而变化：
+//     垂直看（反射弱）：当你垂直看着一汪清水或一块玻璃时（入射角为 0°），
+//                    你能轻易看清甚至穿透它们，此时镜面反射最弱（水面只有约 2% 的光被反射）。
+//     斜着看（反射强）：当你几乎平行于水面或侧面看玻璃边缘时（掠射角，入射角接近 90°），
+//                    水面或玻璃会变成一面完美的镜子，此时镜面反射率暴增到 100%。
+// Fresnel-Schlick 公式计算的，正是这种“越往边缘看，镜面反射越强烈”的动态比例。
+vec3 F_Schlick(float cosTheta, vec3 baseColor, float metallic)
+{
+    vec3 F0 = mix(vec3(0.04), baseColor, metallic); //  基础反射率
+    vec3 F = F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0, 1), 5.0);
+    return F;
+}
+
+
+struct PixelParams {
+    vec3 diffuseColor;
+    float perceptualRoughness;
+    float perceptualRoughnessUnclamped;
+    vec3 f0;
+    #if defined(MATERIAL_HAS_SPECULAR_COLOR_FACTOR) || defined(MATERIAL_HAS_SPECULAR_FACTOR)
+    float f90;
+    float specular;
+    vec3 specularColor;
+    #endif
+    float roughness;
+    vec3 dfg;
+    vec3 energyCompensation;
+
+    #if defined(MATERIAL_HAS_CLEAR_COAT)
+    float clearCoat;
+    float clearCoatPerceptualRoughness;
+    float clearCoatRoughness;
+    #endif
+
+    #if defined(MATERIAL_HAS_SHEEN_COLOR)
+    vec3 sheenColor;
+    #if !defined(SHADING_MODEL_CLOTH)
+    float sheenRoughness;
+    float sheenPerceptualRoughness;
+    float sheenScaling;
+    float sheenDFG;
+    #endif
+#endif
+
+    #if defined(MATERIAL_HAS_ANISOTROPY)
+    vec3 anisotropicT;
+    vec3 anisotropicB;
+    float anisotropy;
+    #endif
+
+    #if defined(SHADING_MODEL_SUBSURFACE) || defined(MATERIAL_HAS_REFRACTION)
+    float thickness;
+    #endif
+#if defined(SHADING_MODEL_SUBSURFACE)
+    vec3 subsurfaceColor;
+    float subsurfacePower;
+    #endif
+
+    #if defined(SHADING_MODEL_CLOTH) && defined(MATERIAL_HAS_SUBSURFACE_COLOR)
+    vec3 subsurfaceColor;
+    #endif
+
+    #if defined(MATERIAL_HAS_REFRACTION)
+    float etaRI;
+    float etaIR;
+    #if defined(MATERIAL_HAS_DISPERSION) && (REFRACTION_TYPE == REFRACTION_TYPE_SOLID)
+    float dispersion;
+    #endif
+    float transmission;
+    float uThickness;
+    vec3 absorption;
+    #endif
+};
+
+
+
+vec3 function_specular(float dotNV, float dotNL, float D, float G, vec3 F) {
+    return D * F * G / (4.0 * dotNL * dotNV);
+    // F  给出了 光滑的 情况下 反射到这个方向的能量
+    // D 给出 F 之后 因为粗糙度 还有多少到 需要的方向
+    // G 给出了 因为 微观 遮挡 还剩余多少
+
+    // 光源的投影拉伸
+    // dotNL 朗伯余弦定律（Lambert's Cosine Law）
+    // 当一束手电筒的光垂直打在墙上时，光斑很小很亮；当手电筒斜着打在墙上时，光斑会被拉长、面积变大，导致单位面积内的光子数量（光照强度）变稀疏了
+    // 分母上的 dotNL 作为一个修正项，就是为了抵消光线斜射时所带来的宏观表面积增大、光线被稀释的几何效应
+    //
+    // 视角的立体角变换
+    // 当你从宏观去看一个表面时，你眼睛（或者相机像素）所看到的，实际上是一个宏观的平坦区域。
+    // 但在这个区域内部，微表面是高低起伏的，它们的真实总面积其实比宏观面积大得多。
+    // 微表面理论里的 D 计算的是微观空间下的微表面面积密度（相对于微观总面积的比例）。但是，我们最终是要把它画在屏幕的宏观像素上
+    // 从你的眼睛（视角 V ）看过去，宏观表面和微观表面之间存在一个空间立体角（Solid Angle）的几何投影转换。
+    // dotNV 就是用来完成这个“微观空间 --> 宏观视角”转换的缩放因子。
+
+    // 法线与半程向量非常接近时会出现高光                 形成一个极亮、极小的高光点（类似太阳在镜子里的倒影）
+    // dotNL  dotNV 都接近 90度时，也就是值都接近于零时   在物体轮廓边缘产生一道极亮的“银边”
+}
+
+
+
+
+vec3 get_diffuse_contribution(vec3 base_color, float metallic) {
+    vec3 c_diffuse = base_color.rgb * (vec3(1.0) - 0.04) * (1.0 - metallic);
+    vec3 diffuse_contribution = c_diffuse / 3.14159265359; // 基础 Lambert 漫反射
+    return diffuse_contribution;
 }
