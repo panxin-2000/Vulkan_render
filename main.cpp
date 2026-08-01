@@ -80,8 +80,9 @@ inline entt::entity add_volume_pass(const std::string &name,
 
     world_root_add_child(entity);
     logic_update_add_tag<volume_pass_tag>(entity);
-    Logic_entt().emplace<Transform>(entity, offset, rotate);
-    Logic_entt().emplace<Transform_matrix_dirty>(entity);
+    const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
+    const auto modelMatrix = get_model_matrix(transform);
+    set_render_parameter(entity, "model_4x4", modelMatrix);
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
@@ -358,7 +359,8 @@ int main(int argc, char *argv[]) {
     // add_manifold_entity();
 
     // add_simple_computer_buffer_write();
-    // add_volume_pass("nanovdb_volume"); {
+    add_volume_pass("nanovdb_volume");
+    // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
     // object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
