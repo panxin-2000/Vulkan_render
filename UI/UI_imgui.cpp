@@ -353,6 +353,14 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                     load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/niagara_bistro-master/bistro2.gltf");
                 }
             }
+        } {
+            bool bistro = false;
+            if (ImGui::Checkbox("DamagedHelmet.gltf", &bistro)) {
+                if (bistro == true) {
+                    load_gltf_model("DamagedHelmet.gltf",
+                                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+                }
+            }
         }
 
 

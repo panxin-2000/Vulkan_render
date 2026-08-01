@@ -284,8 +284,9 @@ void VK_backend::create_device() {
     deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     const VkPhysicalDeviceFeatures enabledVk10Features{
-        .multiDrawIndirect = VK_TRUE,
-        .samplerAnisotropy = VK_TRUE,
+        .multiDrawIndirect                      = VK_TRUE,
+        .samplerAnisotropy                      = VK_TRUE,
+        .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
     };
     VkDeviceCreateInfo deviceCI{
         .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

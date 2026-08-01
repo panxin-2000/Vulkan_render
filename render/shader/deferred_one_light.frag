@@ -22,7 +22,7 @@ void main()
     vec4 Base_color = texture(samplerAlbedo, inUV);
 
 
-    vec3 inLightVec = lightPos.xyz - world_pos.xyz;
+    vec3 inLightVec = light.pos.xyz - world_pos.xyz;
     vec3 inViewVec = viewPos.xyz - world_pos.xyz;
 
     vec3 N = normalize(normal);

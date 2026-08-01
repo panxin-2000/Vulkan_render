@@ -16,13 +16,6 @@ layout (location = 3) in vec3 inViewVec;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-float hash(int xy) {
-    uint x = uint(xy);
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = (x >> 16u) ^ x;
-    return float(x) / 4294967295.0;
-}
 
 void main()
 {

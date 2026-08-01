@@ -29,13 +29,6 @@ layout (set = 2, binding = 1) uniform texture_index
 };
 
 
-float hash(int xy) {
-    uint x = uint(xy);
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = (x >> 16u) ^ x;
-    return float(x) / 4294967295.0;
-}
 
 void main()
 {

@@ -229,7 +229,7 @@ void Engine::create_render_image() {
 void Engine::create() {
     descriptor_pool_manager_.create(); {
         VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.vert.spv",
             "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
             "", ""
         };
@@ -270,6 +270,7 @@ void Engine::create() {
     //     // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
     //     // assert(index == 1);
     // }
+
 
     create_render_image();
     create_command_pool();

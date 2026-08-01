@@ -46,7 +46,7 @@ void main()
     vec3 normal = texture(samplerNormal, inUV).rgb;
     vec4 Base_color = texture(samplerBaseColor, inUV);
 
-    vec3 LightVec = lightPos.xyz - world_pos.xyz;
+    vec3 LightVec = light.pos.xyz - world_pos.xyz;
     vec3 ViewVec = viewPos.xyz - world_pos.xyz;
 
     vec3 N = normalize(normal);

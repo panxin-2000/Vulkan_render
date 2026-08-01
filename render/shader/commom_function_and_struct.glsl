@@ -163,15 +163,21 @@ struct Light {
     float angle_offset;
 };
 
-
-vec3 Directional(Light light, vec3 world_pos) {
-    vec3 pos_err = light.pos.xyz - world_pos;
-    float distanceSq = dot(pos_err, pos_err);
-    return light.color.rgb * light.intensity / distanceSq;
+// 在 GLSL 中使用四元数旋转默认的 -Z 轴向量
+vec3 quaternion_transform(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
-vec3 Spot_light(Light light, vec3 world_pos) {
+
+
+vec3 Directional_light(Light light, vec3 world_pos, out vec3 L) {
+    L = -normalize(light.rotate.xyz);
+    return light.color.rgb * light.intensity;
+}
+
+vec3 Spot_light(Light light, vec3 world_pos, out vec3 L) {
     vec3 pos_err = light.pos.xyz - world_pos;
+    L = -normalize(pos_err);
     float distanceSq = dot(pos_err, pos_err);
     float rangeSq = light.range * light.range;
     float factor = distanceSq / rangeSq;
@@ -179,11 +185,6 @@ vec3 Spot_light(Light light, vec3 world_pos) {
     float result = (smoothFactor * smoothFactor) / max(distanceSq, 0.0001f);
     return light.color.rgb * light.intensity * result;
 
-}
-
-// 在 GLSL 中使用四元数旋转默认的 -Z 轴向量
-vec3 quaternion_transform(vec4 q, vec3 v) {
-    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
 }
 
 
@@ -195,7 +196,7 @@ vec3 Point_light(Light light, vec3 world_pos, out vec3 L) {
     L = -normalize(pos_err);
     float distanceSq = dot(pos_err, pos_err);
     vec3 defaultDir = vec3(0.0, 0.0, -1.0);
-    vec3 light_direction = normalize(quaternion_transform(light.rotate, defaultDir));
+    vec3 light_direction = normalize(light.rotate.xyz);
     float cd = dot(light_direction, -L);
     float rangeSq = light.range * light.range;
     float factor = distanceSq / rangeSq;
@@ -205,3 +206,11 @@ vec3 Point_light(Light light, vec3 world_pos, out vec3 L) {
     return light.color.rgb * light.intensity * result * attenuation;
 }
 
+
+float hash(int xy) {
+    uint x = uint(xy);
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = (x >> 16u) ^ x;
+    return float(x) / 4294967295.0;
+}

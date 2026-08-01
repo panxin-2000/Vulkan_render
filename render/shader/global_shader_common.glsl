@@ -18,7 +18,7 @@ layout (set = 1, binding = 0) uniform global_parameters
     mat4 inv_VP;
     vec4 frustum_planes[6];
     vec3 viewPos;
-    vec3 lightPos;
+    Light light;
     vec4 screen_size;
 };
 

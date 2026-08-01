@@ -57,7 +57,7 @@ private:
         Eigen::Matrix4f invVP;
         FrustumPlanes frustum_planes;
         Eigen::Vector4f world_camera_pos;
-        Eigen::Vector4f lightPos;
+        Light light;
         Eigen::Vector4f screen_size;
     };
 
@@ -160,8 +160,10 @@ public:
         return true;
     }
 
-    bool set_world_light_pos(const Eigen::Vector3f &matrix) {
-        global_parameters_.lightPos = {matrix.x(), matrix.y(), matrix.z(), 0};;
+    bool set_sun_light(const Eigen::Vector3f &matrix) {
+        global_parameters_.light.set_color(1.0f, 0.98f, 0.95f);
+        global_parameters_.light.set_intensity(5.0f);
+        global_parameters_.light.set_rotate({0.43f, -0.85f, 0.26f, 0.0f});
         return true;
     }
 

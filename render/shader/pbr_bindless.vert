@@ -18,11 +18,9 @@ layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inUV;
 
 
-layout (set = 2, binding = 0) uniform model_4x4
-{
-    mat4 model;
+layout (set = 2, binding = 0) readonly buffer model_matrix_parameters {
+    mat4 model_vector[];
 };
-
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -46,13 +44,14 @@ void main()
     //    outMaterial_index = gl_BaseInstanceARB;
     outMaterial_index = 0;
     outInstance_index = gl_InstanceIndex;
-    vec4 pos = model * vec4(inPos.xyz, 1.0);
+    vec4 pos = model_vector[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
     gl_Position = projection * view * pos;
     outNormal = inNormal;
     outUV = inUV;
     // 世界空间
-    outNormal = mat3(model) * inNormal;
+    outNormal = mat3(model_vector[gl_InstanceIndex]) * inNormal;
+    outLightVec = light.pos.xyz - pos.xyz;
     outViewVec = viewPos.xyz - pos.xyz;
 
     // 多个光源时 输出世界空间下的顶点位置 outWorldPos，让片元着色器去遍历光源。

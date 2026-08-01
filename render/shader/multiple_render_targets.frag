@@ -16,13 +16,6 @@ layout (location = 0) out vec4 outPosition_R16G16B16A16_SFLOAT;
 layout (location = 1) out vec4 outNormal_R16G16B16A16_SFLOAT;
 layout (location = 2) out vec4 outBaseColor_R8G8B8A8_UNORM;
 
-float hash(int xy) {
-    uint x = uint(xy);
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
-    x = (x >> 16u) ^ x;
-    return float(x) / 4294967295.0;
-}
 
 // Multiple Render Targets
 void main()

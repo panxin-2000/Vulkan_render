@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_PBR_COMPONENT_H
 #define HELLO_MAC_PBR_COMPONENT_H
 #include "global_singleton.h"
+#include "transform_component.h"
 #include "vulkan_image.h"
 
 
@@ -93,12 +94,13 @@ void set_ORM_Texture_index(const entt::entity entity, const std::optional<Textur
 //
 
 class Light {
+    Eigen::Vector4f position_;
+    Eigen::Vector4f rotate_ = {0, 1, 0, 0};
     Color color_;
     float intensity_;
     float range_ = std::numeric_limits<float>::infinity();
     float innerConeAngle_;
     float outerConeAngle_;
-
     // color_.LightType 应该是 这样的 三个值
     //   -1.0f  0.0f  1.0f
     //                夹角
@@ -135,6 +137,19 @@ public:
         color_.G = G;
         color_.B = B;
     }
+
+    void set_position(const float x, const float y, const float z) {
+        position_ = {x, y, z, 1.0f};
+    }
+
+    void set_position(const Eigen::Vector4f &position) {
+        position_ = position;
+    }
+
+    void set_rotate(const Eigen::Vector4f &rotate) {
+        rotate_ = rotate;
+    }
+
 
     /**
      *
