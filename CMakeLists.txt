@@ -485,6 +485,7 @@ add_executable(cache_time
 )
 
 add_executable(hello_test ${LABYRINTH}
+#        spherical_harmonics/spherical_harmonics_test.cpp
         test/add_char_calculata.cpp
         test/test_openvdb.cpp
         test/test_add_char_calculata.cpp
@@ -499,6 +500,7 @@ add_executable(hello_test ${LABYRINTH}
         test/cut_rod.cpp
         test/test_tree_node.cpp
         test/test_class.cpp
+        test/test_SH.cpp
         test/knapsack.cpp
         test/test_template.cpp
         test/test_plane_sweep.cpp

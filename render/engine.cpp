@@ -509,6 +509,33 @@ void Engine::update_global_parameter() {
     ExtractVulkanFrustumPlanes(global_parameters_.projection_matrix,
                                global_parameters_.view_matrix,
                                global_parameters_.frustum_planes);
+
+    std::array<Eigen::Array4f, 9> &shCoefficients = global_parameters_.shCoefficients;
+    // 值是一个差不多结果,不是很精准,因为 输出的 时候只保存了两位小数
+    shCoefficients[0]                             = {1.73, 1.73, 1.73, 0.0f};
+    shCoefficients[1]                             = {-0.05, -0.05, -0.05, 0.0f};
+    shCoefficients[2]                             = {-0.16, -0.16, -0.16, 0.0f};
+    shCoefficients[3]                             = {0.01, 0.01, 0.01, 0.0f};
+    shCoefficients[4]                             = {-0.0, -0.0, -0.0, 0.0f};
+    shCoefficients[5]                             = {0.02, 0.02, 0.02, 0.0f};
+    shCoefficients[6]                             = {0.03, 0.03, 0.03, 0.0f};
+    shCoefficients[7]                             = {-0.01, -0.01, -0.01, 0.0f};
+    shCoefficients[8]                             = {0.01, 0.01, 0.01, 0.0f};
+
+    shCoefficients[0] *= 0.282095f;
+    // 对应 l=1
+    shCoefficients[1] *= -0.488603f;
+    shCoefficients[2] *= 0.488603f;
+    shCoefficients[3] *= -0.488603f;
+
+    // 对应 l=2
+    shCoefficients[4] *= 1.092548f;
+    shCoefficients[5] *= -1.092548f;
+    shCoefficients[6] *= 0.315392f;
+    shCoefficients[7] *= -1.092548f;
+    shCoefficients[8] *= 0.546274f;
+
+
     set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
 

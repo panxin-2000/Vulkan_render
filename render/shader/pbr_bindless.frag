@@ -162,11 +162,14 @@ void main()
     vec3 N = get_normal(material[material_index], inWorldPos, inNormal, inUV);
     vec3 V = normalize(inViewVec);
     float dotNV = clamp(dot(N, V), 0.0001, 1.0); // 会作为分母，需要一个偏移
+    vec3 c_diffusen = get_c_diffusen(base_color, metallic);
     vec3 diffuse_contribution = get_diffuse_contribution(base_color, metallic);
     vec3 F = F_Schlick(dotNV, base_color, metallic); // 高光项的乘数
 
     vec3 direct_light = vec3(0.0f);
     vec3 indirect_light = vec3(0.0f);
+    vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
+    indirect_light = indirect_light_dufuse * c_diffusen;
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;

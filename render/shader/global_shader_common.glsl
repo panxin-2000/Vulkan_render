@@ -20,6 +20,7 @@ layout (set = 1, binding = 0) uniform global_parameters
     vec3 viewPos;
     Light light;
     vec4 screen_size;
+    SphericalHarmonics SH;
 };
 
 

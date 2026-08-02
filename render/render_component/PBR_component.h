@@ -30,7 +30,7 @@ public:
     Color emissiveFactor_ = {0.0f, 0.0f, 0.0f, 1.0f}; // 自发光
 
     //   渲染方程中的 材料属性输入
-    float metallicFactor_ = 1.0f; // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。
+    float metallicFactor_ = 0.5f; // 纯白 (1.0) 代表金属，纯黑 (0.0) 代表非金属。
     //                         中间值极少使用，仅用于锈迹或灰尘等过渡效果
     // 把 Metallic 调为 1 时，系统会自动提取 Base Color 的颜色作为反射光颜色
     float roughnessFactor_ = 1.0f; // 粗糙度

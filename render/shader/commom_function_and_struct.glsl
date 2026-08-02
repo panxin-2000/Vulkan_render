@@ -389,8 +389,35 @@ vec3 function_specular(float dotNV, float dotNL, float D, float G, vec3 F) {
 
 
 
-vec3 get_diffuse_contribution(vec3 base_color, float metallic) {
+vec3 get_c_diffusen(vec3 base_color, float metallic) {
     vec3 c_diffuse = base_color.rgb * (vec3(1.0) - 0.04) * (1.0 - metallic);
+    return c_diffuse;
+}
+vec3 get_diffuse_contribution(vec3 base_color, float metallic) {
+    vec3 c_diffuse = get_c_diffusen(base_color, metallic);
     vec3 diffuse_contribution = c_diffuse / 3.14159265359; // 基础 Lambert 漫反射
     return diffuse_contribution;
+}
+struct SphericalHarmonics {
+    vec3 data[9];
+};
+
+vec3 Irradiance_SphericalHarmonics(const vec3 n, SphericalHarmonics SH) {
+    vec3 sphericalHarmonics = SH.data[0];
+
+    sphericalHarmonics +=
+    SH.data[1] * (n.y)
+    + SH.data[2] * (n.z)
+    + SH.data[3] * (n.x);
+
+
+    sphericalHarmonics +=
+    SH.data[4] * (n.y * n.x)
+    + SH.data[5] * (n.y * n.z)
+    + SH.data[6] * (3.0 * n.z * n.z - 1.0)
+    + SH.data[7] * (n.z * n.x)
+    + SH.data[8] * (n.x * n.x - n.y * n.y);
+
+
+    return max(sphericalHarmonics, 0.0);
 }

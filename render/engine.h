@@ -59,6 +59,7 @@ private:
         Eigen::Vector4f world_camera_pos;
         Light light;
         Eigen::Vector4f screen_size;
+        std::array<Eigen::Array4f, 9> shCoefficients;
     };
 
 
