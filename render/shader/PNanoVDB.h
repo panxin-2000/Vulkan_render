@@ -2730,6 +2730,7 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
     pnanovdb_vec3_t bbox_minf = pnanovdb_coord_to_vec3(bbox_min);
     pnanovdb_vec3_t bbox_maxf = pnanovdb_coord_to_vec3(pnanovdb_coord_add(bbox_max, pnanovdb_coord_uniform(1)));
 
+    // 有两种不同类型的坐标,一种是 pnanovdb_vec3_t  另一种是 pnanovdb_coord_t
 
     // 这里其实也有一个加速，如果与包围盒碰撞，会返回 碰到到包围盒的 tmin 的值，并不完全从 view 的位置查找
     const pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,

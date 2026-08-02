@@ -64,10 +64,11 @@ inline entt::entity add_render_pass(const std::string &name) {
 void add_nanovdb_to_gpu(entt::entity entity);
 
 inline entt::entity add_volume_pass(const std::string &name,
-                                    const Point_3 offset             = Point_3(1000, 200, 0),
+                                    const Point_3 offset             = Point_3(500, 200, 0),
                                     const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
     entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
+
 
 
     add_shader(entity,

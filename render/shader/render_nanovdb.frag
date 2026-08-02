@@ -39,17 +39,17 @@ layout (location = 5) in vec3 inWorldPos;
 #define PNANOVDB_GLSL
 #define PNANOVDB_ADDRESS_32
 #include "PNanoVDB.h"
-#include "PNanoVDB_distance.h"
+#include "PNanoVDB_distance.glsl"
 
 
 
 
 
-float trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
-                             pnanovdb_vec3_t view_position,
-                             pnanovdb_vec3_t view_direction,
-                             float t_min,
-                             float t_max) {
+float trace_vdb_distance(pnanovdb_buf_t nanovdb_buffer,
+                         pnanovdb_vec3_t view_position,
+                         pnanovdb_vec3_t view_direction,
+                         float t_min,
+                         float t_max) {
     pnanovdb_grid_handle_t Grid;
     pnanovdb_readaccessor_t Accessor;
     pnanovdb_root_handle_t Root;
@@ -106,17 +106,16 @@ float trace_nanovdb_levelset(pnanovdb_buf_t nanovdb_buffer,
     );
 
     if (is_hit) {
-        pnanovdb_vec3_t pos = pnanovdb_hdda_ray_start(origin_index, t_hit, direction_index);
+        pnanovdb_vec3_t hit_pos_index = pnanovdb_hdda_ray_start(origin_index, t_hit, direction_index);
 
-        float distance = pnanovdb_hdda_get_distance(
+        return vdb_get_out_distance(
             grid_type,
             buf,
             Accessor, // 用于加速的结构
-            pos,
+            hit_pos_index,
             t_min,
             direction_index,
             t_max);  // AABB 包围盒的对角线长度 ，单步的距离
-        return distance;
     }
 
     return 0.0;
@@ -146,7 +145,7 @@ vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class
 }
 
 void main() {
-    vec2 screen_UV =  gl_FragCoord.xy / screen_size.xy ;//如何用这个来替代呢？ screen_UV 在0到1之间
+    vec2 screen_UV = gl_FragCoord.xy / screen_size.xy;//如何用这个来替代呢？ screen_UV 在0到1之间
     vec2 ndc = screen_UV * 2.0 - 1.0;
     vec4 viewTarget = inv_VP * vec4(ndc, 0.2, 1.0);
     vec3 far_point = viewTarget.xyz / viewTarget.w;
@@ -172,7 +171,7 @@ void main() {
     float tmin = 0;
 
     //    outFragColor_B8G8R8A8_SRGB = vec4(abs(localRayDir), 1.0);
-    float distance = trace_nanovdb_levelset(buf, world_p, world_d, tmin, tmax);
+    float distance = trace_vdb_distance(buf, world_p, world_d, tmin, tmax);
     if (distance > 0.0001) {
         float sigma_a = 0.001;
         float T = exp(-distance * sigma_a);
