@@ -2802,7 +2802,71 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
 }
 
 
+// Almost same method, but modified to accept all types of format, and returns hit ijk
+// 具体还有一个稍微 improved 的版本
+PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing_improved(
+    pnanovdb_grid_type_t grid_type,
+    pnanovdb_buf_t buf,
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin, float tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax,
+    PNANOVDB_INOUT(float) thit,
+    PNANOVDB_INOUT(float) v,
+    PNANOVDB_INOUT(pnanovdb_coord_t) ijkhit
+) {
+    pnanovdb_coord_t bbox_min = pnanovdb_root_get_bbox_min(buf, PNANOVDB_DEREF(acc).root);
+    pnanovdb_coord_t bbox_max = pnanovdb_root_get_bbox_max(buf, PNANOVDB_DEREF(acc).root);
+    pnanovdb_vec3_t bbox_minf = pnanovdb_coord_to_vec3(bbox_min);
+    pnanovdb_vec3_t bbox_maxf = pnanovdb_coord_to_vec3(pnanovdb_coord_add(bbox_max, pnanovdb_coord_uniform(1)));
 
+    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
+                                                 PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
+    if (!hit || tmax > 1.0e20f) {
+        return PNANOVDB_FALSE;
+    }
+
+    pnanovdb_vec3_t pos  = pnanovdb_hdda_ray_start(origin, tmin, direction);
+    pnanovdb_coord_t ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos));
+
+    pnanovdb_address_t address =
+            pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                    buf,
+                                                    acc,
+                                                    PNANOVDB_REF(ijk));
+    float v0 = pnanovdb_read_float(buf, address);
+
+    pnanovdb_int32_t dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(grid_type, buf, acc,
+                                                             PNANOVDB_REF(ijk)));
+    pnanovdb_hdda_t hdda;
+    pnanovdb_hdda_init(PNANOVDB_REF(hdda), origin, tmin, direction, tmax, dim);
+    while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
+        pnanovdb_vec3_t pos_start = pnanovdb_hdda_ray_start(origin, hdda.tmin + 1.0001f, direction);
+        ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(pos_start));
+        dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(grid_type, buf, acc, PNANOVDB_REF(ijk)));
+        pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin, direction, dim);
+        if (hdda.dim > 1 || !pnanovdb_readaccessor_is_active(grid_type, buf, acc, PNANOVDB_REF(ijk))) {
+            continue;
+        }
+        while (pnanovdb_hdda_step(PNANOVDB_REF(hdda)) && pnanovdb_readaccessor_is_active(grid_type, buf, acc,
+                        PNANOVDB_REF(hdda.voxel))) {
+            ijk = hdda.voxel;
+
+            pnanovdb_address_t address =
+                    pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                            buf,
+                                                            acc,
+                                                            PNANOVDB_REF(ijk));
+            PNANOVDB_DEREF(v) = pnanovdb_read_float(buf, address);
+
+            if (PNANOVDB_DEREF(v) * v0 < 0.f) {
+                PNANOVDB_DEREF(thit)   = hdda.tmin;
+                PNANOVDB_DEREF(ijkhit) = ijk;
+                return PNANOVDB_TRUE;
+            }
+        }
+    }
+    return PNANOVDB_FALSE;
+}
 
 
 #endif

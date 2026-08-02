@@ -28,7 +28,7 @@
 *  tmax 光线最远能走多远
 **/
 PNANOVDB_FORCE_INLINE float vdb_get_out_distance(pnanovdb_grid_type_t grid_type,
-                                                 pnanovdb_buf_t buf, PNANOVDB_INOUT(pnanovdb_readaccessor_t)                                      acc,
+                                                 pnanovdb_buf_t buf, PNANOVDB_INOUT(pnanovdb_readaccessor_t)                                       acc,
                                                  PNANOVDB_IN(pnanovdb_vec3_t) origin_position, float tmin,
                                                  PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax) {
     // 拿到光线的 能够到大的第一个位置 ,大部分情况下 就是 origin_position 没有任何改变

@@ -167,74 +167,74 @@ bool CheckBounds(inout VdbRay Ray, pnanovdb_vec3_t bbox_min, pnanovdb_vec3_t bbo
     return pnanovdb_hdda_ray_clip(bbox_min, bbox_max, Ray.Origin, Ray.TMin, Ray.Direction, Ray.TMax);
 }
 
-vec3 WorldToIndexDirection(vec3 WorldDirection, float4x4 WorldToLocal, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
+vec3 WorldToIndexDirection(vec3 WorldDirection, mat4 WorldToLocal, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
 {
-    vec3 Dir = mul(float4(WorldDirection, 0.0), WorldToLocal).xyz;
+    vec3 Dir = (WorldToLocal * vec4(WorldDirection, 0.0)).xyz;
     return normalize(pnanovdb_grid_world_to_index_dirf(buf, grid, Dir));
 }
 
-vec3 WorldToIndexPosition(vec3 WorldPos, float4x4 WorldToLocal, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
+vec3 WorldToIndexPosition(vec3 WorldPos, mat4 WorldToLocal, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
 {
-    vec3 Pos = mul(float4(WorldPos, 1.0), WorldToLocal).xyz;
+    vec3 Pos = (WorldToLocal * vec4(WorldPos, 1.0)).xyz;
     return pnanovdb_grid_world_to_indexf(buf, grid, Pos);
 }
 
-vec3 IndexToWorldDirection(vec3 IndexDirection, float4x4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
+vec3 IndexToWorldDirection(vec3 IndexDirection, mat4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
 {
     vec3 LocalDir = pnanovdb_grid_index_to_world_dirf(buf, grid, IndexDirection);
-    vec3 WorldDir = mul(float4(LocalDir, 0.0), LocalToWorld).xyz;
+    vec3 WorldDir = (LocalToWorld * vec4(LocalDir, 0.0)).xyz;
     return normalize(WorldDir);
 }
 
-float3 IndexToWorldPosition(float3 IndexPos, float4x4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
+vec3 IndexToWorldPosition(vec3 IndexPos, mat4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
 {
-    float3 LocalPos = pnanovdb_grid_index_to_worldf(buf, grid, IndexPos);
-    return mul(float4(LocalPos, 1.0), LocalToWorld).xyz;
+    vec3 LocalPos = pnanovdb_grid_index_to_worldf(buf, grid, IndexPos);
+    return (LocalToWorld * vec4(LocalPos, 1.0)).xyz;
 }
 
-float IndexToWorldDistance(float3 IndexVec, float4x4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
+float IndexToWorldDistance(vec3 IndexVec, mat4 LocalToWorld, pnanovdb_buf_t buf, pnanovdb_grid_handle_t grid)
 {
-    float3 LocalVec = pnanovdb_grid_index_to_world_dirf(buf, grid, IndexVec);
-    float3 WorldVec = mul(float4(LocalVec, 0.0), LocalToWorld).xyz;
+    vec3 LocalVec = pnanovdb_grid_index_to_world_dirf(buf, grid, IndexVec);
+    vec3 WorldVec = (LocalToWorld * vec4(LocalVec, 0.0)).xyz;
     return length(WorldVec);
 }
 
-Segment getRayFromPixelCoord(uint2 ScreenPosition, uint2 ScreenDimensions, float2 Jitter, float DeviceZ)
-{
-    float2 ScreenPositionNorm = (ScreenPosition + 0.5f + Jitter) / float2(ScreenDimensions);
-    float2 ClipPosition = (ScreenPositionNorm - View.ScreenPositionScaleBias.wz) / View.ScreenPositionScaleBias.xy;
+//Segment getRayFromPixelCoord(uint2 ScreenPosition, uint2 ScreenDimensions, float2 Jitter, float DeviceZ)
+//{
+//    float2 ScreenPositionNorm = (ScreenPosition + 0.5f + Jitter) / float2(ScreenDimensions);
+//    float2 ClipPosition = (ScreenPositionNorm - View.ScreenPositionScaleBias.wz) / View.ScreenPositionScaleBias.xy;
+//
+//    DeviceZ = max(DeviceZ, 0.000000000000001); // either no Z value, or too far to even consider
+//    float4 Near = mul(float4(ClipPosition, 1, 1), View.ClipToTranslatedWorld); // near (world space)
+//    float4 Far = mul(float4(ClipPosition, DeviceZ, 1), View.ClipToTranslatedWorld); // scene gbuffer (world space)
+//
+//    Segment Seg;
+//    Seg.Start = Near.xyz / Near.w; // Translated World
+//    Seg.Start -= LWCHackToFloat(PrimaryView.PreViewTranslation); // World
+//    Seg.End = Far.xyz / Far.w; // Translated World
+//    Seg.End -= LWCHackToFloat(PrimaryView.PreViewTranslation); // World
+//    return Seg;
+//}
 
-    DeviceZ = max(DeviceZ, 0.000000000000001); // either no Z value, or too far to even consider
-    float4 Near = mul(float4(ClipPosition, 1, 1), View.ClipToTranslatedWorld); // near (world space)
-    float4 Far = mul(float4(ClipPosition, DeviceZ, 1), View.ClipToTranslatedWorld); // scene gbuffer (world space)
-
-    Segment Seg;
-    Seg.Start = Near.xyz / Near.w; // Translated World
-    Seg.Start -= LWCHackToFloat(PrimaryView.PreViewTranslation); // World
-    Seg.End = Far.xyz / Far.w; // Translated World
-    Seg.End -= LWCHackToFloat(PrimaryView.PreViewTranslation); // World
-    return Seg;
-}
-
-VdbRay PrepareRayFromPixel(pnanovdb_buf_t grid_buf, pnanovdb_grid_handle_t grid, uint2 ScreenPosition, uint2 ScreenDimension, float2 Jitter, float DeviceZ, float4x4 WorldToLocal)
-{
-    // World space
-    Segment Seg = getRayFromPixelCoord(ScreenPosition.xy, ScreenDimension.xy, Jitter, DeviceZ);
-
-    // Index space
-    float3 Origin = WorldToIndexPosition(Seg.Start, WorldToLocal, grid_buf, grid);
-    float3 End = WorldToIndexPosition(Seg.End, WorldToLocal, grid_buf, grid);
-
-    float Dist = length(End - Origin);
-
-    VdbRay Ray;
-    Ray.Origin = Origin;
-    Ray.Direction = (End - Origin) / Dist;
-    Ray.TMin = 0.0001f;
-    Ray.TMax = DeviceZ == 0.0 ? POSITIVE_INFINITY : Dist;
-
-    return Ray;
-}
+//VdbRay PrepareRayFromPixel(pnanovdb_buf_t grid_buf, pnanovdb_grid_handle_t grid, uint2 ScreenPosition, uint2 ScreenDimension, float2 Jitter, float DeviceZ, float4x4 WorldToLocal)
+//{
+//    // World space
+//    Segment Seg = getRayFromPixelCoord(ScreenPosition.xy, ScreenDimension.xy, Jitter, DeviceZ);
+//
+//    // Index space
+//    float3 Origin = WorldToIndexPosition(Seg.Start, WorldToLocal, grid_buf, grid);
+//    float3 End = WorldToIndexPosition(Seg.End, WorldToLocal, grid_buf, grid);
+//
+//    float Dist = length(End - Origin);
+//
+//    VdbRay Ray;
+//    Ray.Origin = Origin;
+//    Ray.Direction = (End - Origin) / Dist;
+//    Ray.TMin = 0.0001f;
+//    Ray.TMax = DeviceZ == 0.0 ? POSITIVE_INFINITY : Dist;
+//
+//    return Ray;
+//}
 
 //-----------------------------------------------------------------------------------------------------------
 // Level Set specific
@@ -278,19 +278,19 @@ in out ZeroCrossingHit HitResults)
 // Fog Volume specific
 //-----------------------------------------------------------------------------------------------------------
 
-float DeltaTracking(in VdbRay Ray, pnanovdb_buf_t buf, pnanovdb_uint32_t grid_type, pnanovdb_readaccessor_t acc, HeterogenousMedium medium, inout RandomSequence RandSequence)
-{
-    float densityMaxInv = 1.0f / medium.densityMax;
-    float t = Ray.TMin;
-    pnanovdb_vec3_t pos;
-
-    do {
-        t += -log(RandomSequence_GenerateSample1D(RandSequence)) * densityMaxInv;
-        pos = pnanovdb_hdda_ray_start(Ray.Origin, t, Ray.Direction);
-    } while (t < Ray.TMax && ReadValue(pos, buf, grid_type, acc) * medium.densityScale * densityMaxInv < RandomSequence_GenerateSample1D(RandSequence));
-
-    return t;
-}
+//float DeltaTracking(in VdbRay Ray, pnanovdb_buf_t buf, pnanovdb_uint32_t grid_type, pnanovdb_readaccessor_t acc, HeterogenousMedium medium, inout RandomSequence RandSequence)
+//{
+//    float densityMaxInv = 1.0f / medium.densityMax;
+//    float t = Ray.TMin;
+//    pnanovdb_vec3_t pos;
+//
+//    do {
+//        t += -log(RandomSequence_GenerateSample1D(RandSequence)) * densityMaxInv;
+//        pos = pnanovdb_hdda_ray_start(Ray.Origin, t, Ray.Direction);
+//    } while (t < Ray.TMax && ReadValue(pos, buf, grid_type, acc) * medium.densityScale * densityMaxInv < RandomSequence_GenerateSample1D(RandSequence));
+//
+//    return t;
+//}
 
 pnanovdb_vec3_t sampleHG(float g, float e1, float e2)
 {
@@ -320,45 +320,45 @@ float PhaseHG(float CosTheta, float g)
 }
 
 // From NanoVDB samples
-float GetTransmittance(
-    pnanovdb_vec3_t bbox_min,
-    pnanovdb_vec3_t bbox_max,
-    VdbRay ray,
-    pnanovdb_buf_t buf,
-    pnanovdb_uint32_t grid_type,
-    pnanovdb_readaccessor_t acc,
-    HeterogenousMedium medium,
-    float StepMultiplier,
-in out RandomSequence RandSequence)
-{
-    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(bbox_min, bbox_max, ray.Origin, ray.TMin, ray.Direction, ray.TMax);
-    if (!hit)
-    return 1.0f;
-
-    float densityMaxInv = 1.0f / medium.densityMax;
-    float densityMaxInvMultStep = densityMaxInv * StepMultiplier;
-    float transmittance = 1.f;
-    float t = ray.TMin;
-    while (true)
-    {
-        t += densityMaxInvMultStep * (RandomSequence_GenerateSample1D(RandSequence) + 0.5);
-        if (t >= ray.TMax)
-        break;
-
-        float density = ReadValue(t, ray, buf, grid_type, acc) * medium.densityScale;
-
-        transmittance *= 1.0f - density * densityMaxInv;
-        if (transmittance < 0.1f)
-        return 0.f;
-    }
-    return transmittance;
-}
+//float GetTransmittance(
+//    pnanovdb_vec3_t bbox_min,
+//    pnanovdb_vec3_t bbox_max,
+//    VdbRay ray,
+//    pnanovdb_buf_t buf,
+//    pnanovdb_uint32_t grid_type,
+//    pnanovdb_readaccessor_t acc,
+//    HeterogenousMedium medium,
+//    float StepMultiplier,
+//in out RandomSequence RandSequence)
+//{
+//    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(bbox_min, bbox_max, ray.Origin, ray.TMin, ray.Direction, ray.TMax);
+//    if (!hit)
+//    return 1.0f;
+//
+//    float densityMaxInv = 1.0f / medium.densityMax;
+//    float densityMaxInvMultStep = densityMaxInv * StepMultiplier;
+//    float transmittance = 1.f;
+//    float t = ray.TMin;
+//    while (true)
+//    {
+//        t += densityMaxInvMultStep * (RandomSequence_GenerateSample1D(RandSequence) + 0.5);
+//        if (t >= ray.TMax)
+//        break;
+//
+//        float density = ReadValue(t, ray, buf, grid_type, acc) * medium.densityScale;
+//
+//        transmittance *= 1.0f - density * densityMaxInv;
+//        if (transmittance < 0.1f)
+//        return 0.f;
+//    }
+//    return transmittance;
+//}
 
 // Cf FLinearColor::MakeFromColorTemperature
-float3 ColorTemperatureToRGB(float Temp)
+vec3 ColorTemperatureToRGB(float Temp)
 {
     if (Temp < 1000.0f)
-    return float3(0.0f, 0.0f, 0.0f);
+    return vec3(0.0f, 0.0f, 0.0f);
 
     Temp = clamp(Temp, 1000.0f, 15000.0f);
 
@@ -379,10 +379,10 @@ float3 ColorTemperatureToRGB(float Temp)
     float G = -0.9692660f * X + 1.8760108f * Y + 0.0415560f * Z;
     float B = 0.0556434f * X + -0.2040259f * Y + 1.0572252f * Z;
 
-    return float3(R, G, B);
+    return vec3(R, G, B);
 }
 
-float Average(float3 Value)
+float Average(vec3 Value)
 {
-    return dot(Value, 1.0 / 3.0);
+    return dot(Value, vec3(1.0 / 3.0));
 }
