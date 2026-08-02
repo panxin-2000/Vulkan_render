@@ -3,6 +3,10 @@
 #include "PNanoVDB.h"
 
 
+#ifndef NANOVDB_VDB_COMMON_H_HAS_BEEN_INCLUDED
+#define NANOVDB_VDB_COMMON_H_HAS_BEEN_INCLUDED
+
+
 struct Segment
 {
     pnanovdb_vec3_t Start;
@@ -386,3 +390,6 @@ float Average(vec3 Value)
 {
     return dot(Value, vec3(1.0 / 3.0));
 }
+
+
+#endif // NANOVDB_VDB_COMMON_H_HAS_BEEN_INCLUDED

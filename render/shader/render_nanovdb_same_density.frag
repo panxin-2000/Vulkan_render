@@ -40,14 +40,13 @@ layout (location = 5) in vec3 inWorldPos;
 #define PNANOVDB_ADDRESS_32
 #include "PNanoVDB.h"
 #include "PNanoVDB_distance.glsl"
-#include "VdbCommon.glsl"
 
 
 
 
 bool trace_vdb_is_hit(VdbSampler vdb_sampler,
-                      pnanovdb_vec3_t view_position,
-                      pnanovdb_vec3_t view_direction, inout float t_min, inout float t_max) {
+                      pnanovdb_vec3_t origin_index,
+                      pnanovdb_vec3_t direction_index, out float t_min, inout float t_max, inout float t_hit) {
 
     // 只要你拿到了其中一个网格的地址，调用该函数都能得到整个缓冲区包含的网格总数
     //    pnanovdb_uint32_t grid_count = pnanovdb_grid_get_grid_count(nanovdb_buffer, Grid);
@@ -66,12 +65,8 @@ bool trace_vdb_is_hit(VdbSampler vdb_sampler,
     // pnanovdb_buf_t buf;// = pnanovdb_make_buf(nanovdb_buffer.data, nanovdb_size);
 
     // 3. 坐标转换：将世界空间射线转到索引空间
-    // HDDA 必须在索引空间（Index Space）运行
-    pnanovdb_vec3_t origin_index = pnanovdb_grid_world_to_indexf(vdb_sampler.GridBuffer, vdb_sampler.Grid, view_position);
-    pnanovdb_vec3_t direction_index = pnanovdb_grid_world_to_index_dirf(vdb_sampler.GridBuffer, vdb_sampler.Grid, view_direction);
 
     float hit_value; // 撞击点处的值（通常接近 0）
-    float t_hit = 0.0f; // 输出：撞击时的 t 值（相对于 index_p）
     bool is_hit = pnanovdb_hdda_zero_crossing(vdb_sampler.GridType,
                                               vdb_sampler.GridBuffer,
                                               vdb_sampler.Accessor, // 用于加速的结构
@@ -151,38 +146,32 @@ void main() {
     pnanovdb_buf_t buf; // = pnanovdb_make_buf(ptr, size / 4);
 
     // 射线的方向可以 由 观察点 和 UV 坐标计算得出
-    pnanovdb_vec3_t world_p = pnanovdb_vec3_t(rayOrigin);
-    pnanovdb_vec3_t world_d = pnanovdb_vec3_t(rayDir);
-    float tmax = 1000;
-    float tmin = 0;
     VdbSampler VdbSampler = InitVdbSampler(buf);
+    pnanovdb_vec3_t view_position = pnanovdb_vec3_t(rayOrigin);
+    pnanovdb_vec3_t view_direction = pnanovdb_vec3_t(rayDir);
+    float t_max = 1000;
+    float t_min = 0;
+    float t_hit = 0;
 
+    // HDDA 必须在索引空间（Index Space）运行
+    pnanovdb_vec3_t origin_index = pnanovdb_grid_world_to_indexf(VdbSampler.GridBuffer, VdbSampler.Grid, view_position);
+    pnanovdb_vec3_t direction_index = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid, view_direction);
 
-
-    bool is_hit = trace_vdb_is_hit(VdbSampler, world_p, world_d, tmin, tmax);
+    bool is_hit = trace_vdb_is_hit(VdbSampler, origin_index, direction_index, t_min, t_max, t_hit);
     if (is_hit == true) {
-        //        float sigma_a = 0.001;
-        //        float density = 1;
-        //
-        //        float distance_value = vdb_get_out_distance_same_density(grid_type,
-        //                                                                 buf,
-        //                                                                 Accessor, // 用于加速的结构
-        //                                                                 hit_pos_index,
-        //                                                                 t_min,
-        //                                                                 direction_index,
-        //                                                                 t_max);  // AABB 包围盒的对角线长度 ，单步的距离
-        //        //        float T = exp(-distance_value * sigma_a);
-        //
-        //
-        //        float T = trace_vdb_transmission(buf, world_p, world_d, tmin, tmax, sigma_a, density);
-        //        vec3 volume_color = vec3(1.0, 1.0, 1.0);
-        //        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
-        //
-        //        float sigma_a = 0.001;
-        //        float T = exp(-distance * sigma_a);
+        pnanovdb_vec3_t hit_pos_index = pnanovdb_hdda_ray_start(origin_index, t_hit, direction_index);
 
-        outFragColor_B8G8R8A8_SRGB = vec4(1.0, 1.0, 1.0, 1.0);
-        // 前景色 * alpha + 背景色 * (1 - alpha)
+        float sigma_a = 0.001;
+        float density = 1;
+        //
+        float distance_value = vdb_get_out_distance(VdbSampler,
+                                                    hit_pos_index,
+                                                    0,
+                                                    direction_index,
+                                                    t_max - t_hit);  // AABB 包围盒的对角线长度 ，单步的距离
+        float T = exp(-distance_value * sigma_a);
+        vec3 volume_color = vec3(1.0, 1.0, 1.0);
+        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
     } else {
         discard;
         // 不相交的时候就忽略当前像素的颜色

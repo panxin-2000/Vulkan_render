@@ -207,6 +207,7 @@ uvec2 pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint byte_offset) {
 #define PNANOVDB_STRUCT_TYPEDEF(X) typedef struct X X;
 #define PNANOVDB_STATIC_CONST static const
 #define PNANOVDB_INOUT(X) X*
+#define PNANOVDB_OUT(X) X
 #define PNANOVDB_IN(X) const X*
 #define PNANOVDB_DEREF(X) (*X)
 #define PNANOVDB_REF(X) &X
@@ -214,6 +215,7 @@ uvec2 pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint byte_offset) {
 #define PNANOVDB_STRUCT_TYPEDEF(X)
 #define PNANOVDB_STATIC_CONST static const
 #define PNANOVDB_INOUT(X) inout X
+#define PNANOVDB_OUT(X) X
 #define PNANOVDB_IN(X) X
 #define PNANOVDB_DEREF(X) X
 #define PNANOVDB_REF(X) X
@@ -221,6 +223,7 @@ uvec2 pnanovdb_buf_read_uint64(pnanovdb_buf_t buf, uint byte_offset) {
 #define PNANOVDB_STRUCT_TYPEDEF(X)
 #define PNANOVDB_STATIC_CONST const
 #define PNANOVDB_INOUT(X) inout X
+#define PNANOVDB_OUT(X) out X
 #define PNANOVDB_IN(X) X
 #define PNANOVDB_DEREF(X) X
 #define PNANOVDB_REF(X) X
@@ -2718,8 +2721,8 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
     pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
     pnanovdb_buf_t buf,             //
     PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
-    PNANOVDB_IN(pnanovdb_vec3_t) origin, float tmin,
-    PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin, PNANOVDB_OUT(float) tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction, PNANOVDB_OUT(float) tmax,
     PNANOVDB_INOUT(float) t_hit,
     PNANOVDB_INOUT(float) v) {
     // 3个 int 类型 的 最大值，最小值 坐标
