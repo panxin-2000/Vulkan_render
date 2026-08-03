@@ -56,7 +56,7 @@ inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> 
     return hit;
 }
 
-inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray, Point_3 &t_min, Point_3 &t_max) {
+inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray, float &t_min, float &t_max) {
     // pnanovdb_vec3_t dir_inv = pnanovdb_vec3_div(pnanovdb_vec3_uniform(1.f), PNANOVDB_DEREF(direction));
     // pnanovdb_vec3_t t0      = pnanovdb_vec3_mul(pnanovdb_vec3_sub(PNANOVDB_DEREF(bbox_min), PNANOVDB_DEREF(origin)),
     //                                        dir_inv);
@@ -78,8 +78,8 @@ inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> 
     const float t_near = std::max(tmin3.x, std::max(tmin3.y, tmin3.z));
     const float t_far  = std::min(tmax3.x, std::min(tmax3.y, tmax3.z));
     const bool hit     = t_near <= t_far;
-    t_min              = std::max(tmin3, Point_3(t_near, t_near, t_near));
-    t_max              = std::min(tmax3, Point_3(t_far, t_far, t_far));
+    t_min              = std::max(t_min, t_near);
+    t_max              = std::min(t_max, t_far);
     return hit;
 }
 
