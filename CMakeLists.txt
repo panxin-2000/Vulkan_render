@@ -374,7 +374,11 @@ file(GLOB_RECURSE RENDER
 file(GLOB_RECURSE object_model
         "object_model/load_gltf_model.cpp"
         "object_model/nano_vdb_model.cpp"
-
+        "object_model/deferred_pass.cpp"
+        "object_model/manifold_model.cpp"
+        "object_model/simple_computer_buffer.cpp"
+        "object_model/single_char.cpp"
+        "object_model/skybox.cpp"
 )
 
 
