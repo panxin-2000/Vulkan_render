@@ -107,15 +107,12 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
     while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
         pnanovdb_vec3_t light_reach_position = pnanovdb_hdda_ray_start(origin_position, hdda.tmin, direction);
         float step_length = hdda.tmin - t_prev;
-        //        bool is_active = pnanovdb_readaccessor_is_active(vdb_sampler.GridType, vdb_sampler.GridBuffer,
-        //                                                         vdb_sampler.Accessor, PNANOVDB_REF(hdda.voxel));
         ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(light_reach_position));
         dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
                                                                      vdb_sampler.GridBuffer,
                                                                      vdb_sampler.Accessor,
                                                                      PNANOVDB_REF(ijk)));
         pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin_position, direction, dim);
-        //        if (is_active) {
         pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
                                                                              vdb_sampler.GridBuffer,
                                                                              vdb_sampler.Accessor,
@@ -123,7 +120,6 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
         float density = pnanovdb_read_float(vdb_sampler.GridBuffer, address);
         // 这里是怎么算呢? 5 4 3
         total_density += step_length * density;
-        //        }
         t_prev = hdda.tmin;
     }
     return total_density;
