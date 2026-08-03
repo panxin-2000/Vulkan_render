@@ -19,6 +19,7 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
+#include "nano_vdb_model.h"
 #include "PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "UI_manager.h"
@@ -28,7 +29,7 @@
 #include "ccd/ccd.h"
 #include "manifold/cross_section.h"
 #include "manifold/manifold.h"
-#include "gltf_model/3d_model_display.h"
+#include "object_model/3d_model_display.h"
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
 #include "imgui.h"
@@ -59,7 +60,6 @@ inline entt::entity add_render_pass(const std::string &name) {
     logic_update_proxy(entity, create_primitives(entity));
     return entity;
 }
-
 
 
 using Point       = std::array<double, 2>;
@@ -199,7 +199,6 @@ void add_simple_computer_buffer_write() {
                "",
                "/Users/panxin/CLionProjects/hello_mac/render/shader/simple_write_buffer.comp.spv"
               );
-
 
 
     Logic_entt().emplace<compute_group_count>(entity, 10, 10, 10);

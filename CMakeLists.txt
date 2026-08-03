@@ -347,7 +347,7 @@ endif ()
 
 include_directories(utility)
 include_directories(render)
-include_directories(gltf_model)
+include_directories(object_model)
 
 
 link_directories(/usr/local/lib/slang/lib)
@@ -371,8 +371,10 @@ file(GLOB_RECURSE RENDER
         "render/render_common/stb_image.cpp"
 )
 
-file(GLOB_RECURSE gltf_model
-        "gltf_model/load_gltf_model.cpp"
+file(GLOB_RECURSE object_model
+        "object_model/load_gltf_model.cpp"
+        "object_model/nano_vdb_model.cpp"
+
 )
 
 
@@ -386,7 +388,7 @@ file(GLOB_RECURSE component
         "UI/bin_pack/ShelfBinPack.cpp"
         "UI/bin_pack/SkylineBinPack.cpp"
         "UI/bin_pack/GuillotineBinPack.cpp"
-        "gltf_model/3d_model_display.cpp"
+        "object_model/3d_model_display.cpp"
         "UI/PLYLoader.cpp"
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"
@@ -485,7 +487,7 @@ add_executable(cache_time
 )
 
 add_executable(hello_test ${LABYRINTH}
-#        spherical_harmonics/spherical_harmonics_test.cpp
+        #        spherical_harmonics/spherical_harmonics_test.cpp
         test/add_char_calculata.cpp
         test/test_openvdb.cpp
         test/test_add_char_calculata.cpp
@@ -581,15 +583,13 @@ find_package(harfbuzz REQUIRED)
 
 
 add_executable(learn_render main.cpp
-        VDB/nano_vdb_function.cpp
-        VDB/nanovdb_c.cpp
 
         external/tinyobj/tiny_obj_loader.cc
         assets/shader.slang
         ${SHADER_FILES}
         ${component}
         ${RENDER}
-        ${gltf_model}
+        ${object_model}
         ${INPUT_DEVICE}
         ${LABYRINTH}
         ${WINDOW}
