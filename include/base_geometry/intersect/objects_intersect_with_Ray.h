@@ -35,55 +35,52 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
 }
 
 inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
-    auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
-    auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
-    if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
-        (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_max.y))) {
-        // 上面的判断是一个半平面的判断
-
-        // 一个射线在 可能的x轴或y轴上 有四个交点，任何一个在包围盒中就是正确的
-        // const auto a = ray.point + ray.direction * t_min.x;
-        // const auto b = ray.point + ray.direction * t_max.x;
-        // const auto c = ray.point + ray.direction * t_min.y;
-        // const auto d = ray.point + ray.direction * t_max.y;
-        // if (intersect(L_box, a) || intersect(L_box, b) || intersect(L_box, c) || intersect(L_box, d)) {
-        //     return true;
-        // }
-        // return false;
-
-        std::swap(t_min.x, t_min.y); // 为什么要交换？
-        std::swap(t_max.x, t_max.y);
-        const auto v_1    = ray.point + t_min * ray.direction;
-        const auto v_2    = ray.point + t_max * ray.direction;
-        const auto bool_1 = have_intersect_axis(v_1.y, v_2.y, L_box.min_point_.y, L_box.max_point_.y);
-        const auto bool_2 = have_intersect_axis(v_1.x, v_2.x, L_box.min_point_.x, L_box.max_point_.x);
-        if (bool_1 && bool_2) {
-            return true;
-        }
-    }
-    return false;
+    const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
+    const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
+    const auto tmin3   = std::min(t0, t1);
+    const auto tmax3   = std::max(t0, t1);
+    const float t_near = std::max(tmin3.x, tmin3.y);
+    const float t_far  = std::min(tmax3.x, tmax3.y);
+    const bool hit     = t_near <= t_far;
+    return hit;
 }
 
 inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
-    auto t_min = (L_box.min_point_ - ray.point) / ray.direction;
-    auto t_max = (L_box.max_point_ - ray.point) / ray.direction;
-    if ((t_min.x >= 0 || t_max.x >= 0 || std::isnan(t_min.x) || std::isnan(t_min.x)) &&
-        (t_min.y >= 0 || t_max.y >= 0 || std::isnan(t_min.y) || std::isnan(t_min.y)) &&
-        (t_min.z >= 0 || t_max.z >= 0 || std::isnan(t_min.z) || std::isnan(t_max.z))) {
-        auto a = ray.point + ray.direction * t_min.x;
-        auto b = ray.point + ray.direction * t_max.x;
-        auto c = ray.point + ray.direction * t_min.y;
-        auto d = ray.point + ray.direction * t_max.y;
-        auto e = ray.point + ray.direction * t_min.z;
-        auto f = ray.point + ray.direction * t_max.z;
-        // 任何一个在就可以
-        if (is_intersect(L_box, a) || is_intersect(L_box, b) || is_intersect(L_box, c) || is_intersect(L_box, d) ||
-            is_intersect(L_box, e) || is_intersect(L_box, f)) {
-            return true;
-        }
-        return false;
-    }
-    return false;
+    const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
+    const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
+    const auto tmin3   = std::min(t0, t1);
+    const auto tmax3   = std::max(t0, t1);
+    const float t_near = std::max(tmin3.x, std::max(tmin3.y, tmin3.z));
+    const float t_far  = std::min(tmax3.x, std::min(tmax3.y, tmax3.z));
+    const bool hit     = t_near <= t_far;
+    return hit;
+}
+
+inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray, Point_3 &t_min, Point_3 &t_max) {
+    // pnanovdb_vec3_t dir_inv = pnanovdb_vec3_div(pnanovdb_vec3_uniform(1.f), PNANOVDB_DEREF(direction));
+    // pnanovdb_vec3_t t0      = pnanovdb_vec3_mul(pnanovdb_vec3_sub(PNANOVDB_DEREF(bbox_min), PNANOVDB_DEREF(origin)),
+    //                                        dir_inv);
+    // pnanovdb_vec3_t t1 = pnanovdb_vec3_mul(pnanovdb_vec3_sub(PNANOVDB_DEREF(bbox_max), PNANOVDB_DEREF(origin)),
+    //                                        dir_inv);
+    // pnanovdb_vec3_t tmin3 = pnanovdb_vec3_min(t0, t1);
+    // pnanovdb_vec3_t tmax3 = pnanovdb_vec3_max(t0, t1);
+    // float tnear           = pnanovdb_max(tmin3.x, pnanovdb_max(tmin3.y, tmin3.z));
+    // float tfar            = pnanovdb_min(tmax3.x, pnanovdb_min(tmax3.y, tmax3.z));
+    // pnanovdb_bool_t hit   = tnear <= tfar;
+    // PNANOVDB_DEREF(tmin)  = pnanovdb_max(PNANOVDB_DEREF(tmin), tnear);
+    // PNANOVDB_DEREF(tmax)  = pnanovdb_min(PNANOVDB_DEREF(tmax), tfar);
+    // return hit;
+
+    const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
+    const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
+    const auto tmin3   = std::min(t0, t1);
+    const auto tmax3   = std::max(t0, t1);
+    const float t_near = std::max(tmin3.x, std::max(tmin3.y, tmin3.z));
+    const float t_far  = std::min(tmax3.x, std::min(tmax3.y, tmax3.z));
+    const bool hit     = t_near <= t_far;
+    t_min              = std::max(tmin3, Point_3(t_near, t_near, t_near));
+    t_max              = std::min(tmax3, Point_3(t_far, t_far, t_far));
+    return hit;
 }
 
 
@@ -116,8 +113,6 @@ bool is_intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
 
     return true;
 }
-
-
 
 
 template<typename T>
