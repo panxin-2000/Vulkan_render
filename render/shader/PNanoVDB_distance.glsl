@@ -99,27 +99,32 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
     // 不是重新创建了一个，而是首次创建了一个
     // 这里的问题应该是 dim 是可以 pnanovdb_hdda_init 函数中获取的,但是为什么要传递一遍呢?
     pnanovdb_hdda_init(PNANOVDB_REF(hdda), origin_position, tmin, direction, tmax, dim);
+    float t_prev = hdda.tmin;
+
     // 开始步进  结果会存储 在 hdda 中
     // pnanovdb_hdda_step 只会步进 ,然后 最大步进到 tmax 就停止了
     // 如果我需要计算边界的话,那么就 需要手动计算 到 box 到距离了
     while (pnanovdb_hdda_step(PNANOVDB_REF(hdda))) {
         pnanovdb_vec3_t light_reach_position = pnanovdb_hdda_ray_start(origin_position, hdda.tmin, direction);
+        float step_length = hdda.tmin - t_prev;
+        //        bool is_active = pnanovdb_readaccessor_is_active(vdb_sampler.GridType, vdb_sampler.GridBuffer,
+        //                                                         vdb_sampler.Accessor, PNANOVDB_REF(hdda.voxel));
         ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(light_reach_position));
         dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
                                                                      vdb_sampler.GridBuffer,
                                                                      vdb_sampler.Accessor,
                                                                      PNANOVDB_REF(ijk)));
-        ijk = hdda.voxel;
+        pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin_position, direction, dim);
+        //        if (is_active) {
         pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
                                                                              vdb_sampler.GridBuffer,
                                                                              vdb_sampler.Accessor,
                                                                              PNANOVDB_REF(ijk));
-        pnanovdb_hdda_update(PNANOVDB_REF(hdda), origin_position, direction, dim);
-
         float density = pnanovdb_read_float(vdb_sampler.GridBuffer, address);
-        total_density = total_density + length(light_reach_position - position) * density;
-        // 其实这里稍微不太准 应该 是 单个网格的 维度 来确定距离的
-        position = light_reach_position;
+        // 这里是怎么算呢? 5 4 3
+        total_density += step_length * density;
+        //        }
+        t_prev = hdda.tmin;
     }
     return total_density;
 }

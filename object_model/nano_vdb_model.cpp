@@ -16,7 +16,7 @@
 #include "scene_component.h"
 #include "shader_component.h"
 #include "update_push_constants_data.h"
-
+#include <Eigen/Dense>
 
 void copy_nvdb1_to_gpu_memory(entt::entity entity, const std::string &name,
                               const nanovdb::GridHandle<nanovdb::HostBuffer> &handle) {
@@ -25,41 +25,40 @@ void copy_nvdb1_to_gpu_memory(entt::entity entity, const std::string &name,
         const auto size = handle.bufferSize();
         auto buffer     = copy_data_to_gpu_memory(ptr, size);
         set_render_parameter(entity, "nanovdb_buffer", buffer);
-
-        if (const nanovdb::GridMetaData *meta = handle.gridMetaData()) {
-            // 直接获取体素索引空间的包围盒 (nanovdb::BBox<nanovdb::Coord>)
-            auto indexBBox              = meta->indexBBox();
-            nanovdb::Coord minCoord     = indexBBox.min();
-            nanovdb::Coord maxCoord     = indexBBox.max();
-            nanovdb::Vec3d voxelSize    = meta->voxelSize();
-            const nanovdb::Map &gridMap = meta->map();
-            auto matrix_3x3             = gridMap.mMatF;
-            auto translation            = gridMap.mVecF;
-            // 能得到这里之后呢？ 之后 整合 为 一个旋转的矩阵
-            // 提取最小体素坐标和最大体素坐标
-            // 另一个问题是，单位是什么？ //
-            // 这里是按照体素来的
-            // 可以先绘制一下看看结果是否是 和 大小是否是对的
-            add_box_data(entity,
-                         minCoord.x() + gridMap.mVecF[0],
-                         minCoord.y() + gridMap.mVecF[1],
-                         minCoord.z() + gridMap.mVecF[2],
-                         maxCoord.x() + gridMap.mVecF[0],
-                         maxCoord.y() + gridMap.mVecF[1],
-                         maxCoord.z() + gridMap.mVecF[2]);
-            // 这里的问题， 这里导致了 volume 的颜色增加
-            // Render_AABB aabb{
-            //     {(float) minCoord.x(), (float) minCoord.y(), (float) minCoord.z(), 0.0f},
-            //     {(float) maxCoord.x(), (float) maxCoord.y(), (float) maxCoord.z(), 0.0f}
-            // };
-            // set_render_parameter(entity, "nanovdb_box", aabb);
-        }
         // set_render_parameter(entity, "nanovdb_size", size);
     }
 }
 
+void nanovdb_handle_add_box(const entt::entity entity,
+                            const nanovdb::GridHandle<nanovdb::HostBuffer> &handle) {
+    if (const nanovdb::GridMetaData *meta = handle.gridMetaData()) {
+        // 直接获取体素索引空间的包围盒 (nanovdb::BBox<nanovdb::Coord>)
+        auto indexBBox              = meta->indexBBox();
+        nanovdb::Coord minCoord     = indexBBox.min();
+        nanovdb::Coord maxCoord     = indexBBox.max();
+        nanovdb::Vec3d voxelSize    = meta->voxelSize();
+        const nanovdb::Map &gridMap = meta->map();
+        auto matrix_3x3             = gridMap.mMatF;
+        auto translation            = gridMap.mVecF;
+        add_box_data(entity,
+                     minCoord.x() + gridMap.mVecF[0],
+                     minCoord.y() + gridMap.mVecF[1],
+                     minCoord.z() + gridMap.mVecF[2],
+                     maxCoord.x() + gridMap.mVecF[0],
+                     maxCoord.y() + gridMap.mVecF[1],
+                     maxCoord.z() + gridMap.mVecF[2]);
+    }
+}
 
-void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name) {
+
+void add_nanovdb_to_gpu(const entt::entity entity,
+                        const std::string &file_name,
+                        const Point_3 offset,
+                        const Eigen::Quaternionf &rotate) {
+    const float angle = -90.0f * M_PI / 180.0f; // 或者直接使用 1.5707963f
+
+    Eigen::Quaternionf rotate1 = Eigen::Quaternionf(Eigen::AngleAxisf(angle, Eigen::Vector3f::UnitX()));
+
     std::filesystem::path filePath = file_name;
     std::string ext                = filePath.extension().string();
     if (ext == ".vdb") {
@@ -104,6 +103,25 @@ void add_nanovdb_to_gpu(const entt::entity entity, const std::string &file_name)
                     auto grid = openvdb::gridPtrCast<openvdb::FloatGrid>(baseGrid);
                     nanovdb::GridHandle<nanovdb::HostBuffer> handle = nanovdb::tools::openToNanoVDB(grid);
                     copy_nvdb1_to_gpu_memory(entity, " name_todo", handle);
+
+                    nanovdb_handle_add_box(entity, handle);
+                    if (const nanovdb::GridMetaData *meta = handle.gridMetaData()) {
+                        // 直接获取体素索引空间的包围盒 (nanovdb::BBox<nanovdb::Coord>)
+                        nanovdb::Vec3d voxelSize    = meta->voxelSize(); //
+                        const nanovdb::Map &gridMap = meta->map();
+                        auto matrix_3x3             = gridMap.mMatF;
+                        auto translation            = gridMap.mVecF;
+                        Point_3 offset_voxel{translation[0], translation[1], translation[2]};
+                        // 需要将 matrix_3x3 转化为 Eigen::Quaternionf ,  之后呢? 需要两个四元数 相乘,然后设置到最后的结果
+                        Eigen::Matrix3f mat{
+                            {gridMap.mMatF[0], gridMap.mMatF[1], gridMap.mMatF[2]},
+                            {gridMap.mMatF[3], gridMap.mMatF[4], gridMap.mMatF[5]},
+                            {gridMap.mMatF[6], gridMap.mMatF[7], gridMap.mMatF[8]}
+                        };
+                        Eigen::Quaternionf quaternion(mat);
+                        quaternion.normalize();
+                        Logic_entt().emplace_or_replace<Transform>(entity, offset, rotate1 * quaternion);
+                    }
                 } else if (baseGrid->isType<openvdb::Vec3fGrid>()) {
                     auto grid   = openvdb::gridPtrCast<openvdb::Vec3fGrid>(baseGrid);
                     auto handle = nanovdb::tools::openToNanoVDB(grid);
@@ -138,14 +156,17 @@ entt::entity add_volume_pass(const std::string &name,
                "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb_different_density.frag.spv",
                "", "");
 
-    add_nanovdb_to_gpu(entity, name);
+    add_nanovdb_to_gpu(entity, name, offset, rotate);
     // 更新物体的模型矩阵
 
     world_root_add_child(entity);
     logic_update_add_tag<volume_pass_tag>(entity);
-    const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
+
+    // transform 需要在之前的 add_nanovdb_to_gpu 中设置
+    const auto transform   = Logic_entt().get<Transform>(entity);
     const auto modelMatrix = get_model_matrix(transform);
     set_render_parameter(entity, "model_4x4", modelMatrix);
+
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));

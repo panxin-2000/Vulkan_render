@@ -148,8 +148,8 @@ void main() {
 
     // 射线的方向可以 由 观察点 和 UV 坐标计算得出
     VdbSampler VdbSampler = InitVdbSampler(buf);
-    pnanovdb_vec3_t view_position = pnanovdb_vec3_t(rayOrigin);
-    pnanovdb_vec3_t view_direction = pnanovdb_vec3_t(rayDir);
+    pnanovdb_vec3_t view_position = pnanovdb_vec3_t(localRayOrigin);
+    pnanovdb_vec3_t view_direction = pnanovdb_vec3_t(localRayDir);
     float t_max = 1000;
     float t_min = 0;
     float t_hit = 0;

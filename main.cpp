@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     // add_simple_computer_buffer_write();
     // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/Sphere.nvdb");
     // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/SmallCampfireVDB/smallCampfire/smallCampfireVDB/smallCampfire_0000.vdb");
-    add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
+    add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
