@@ -40,7 +40,7 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
     }
 }
 
-VKR_buffer_ptr copy_data_to_gpu_memory(void *src, uint64_t size);
+VKR_buffer_ptr copy_data_to_gpu_memory(const void *src, uint64_t size);
 
 
 #endif //HELLO_MAC_UPDATE_PUSH_CONSTANTS_DATA_H

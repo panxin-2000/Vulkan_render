@@ -61,36 +61,6 @@ inline entt::entity add_render_pass(const std::string &name) {
 }
 
 
-void add_nanovdb_to_gpu(entt::entity entity);
-
-inline entt::entity add_volume_pass(const std::string &name,
-                                    const Point_3 offset             = Point_3(500, 200, 0),
-                                    const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
-    entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
-
-
-
-    add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb.frag.spv",
-               "", "");
-
-    add_nanovdb_to_gpu(entity);
-    // 更新物体的模型矩阵
-
-    world_root_add_child(entity);
-    logic_update_add_tag<volume_pass_tag>(entity);
-    const auto transform   = Logic_entt().emplace<Transform>(entity, offset, rotate);
-    const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
-    Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
-    logic_update_proxy<Name_component>(entity);
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    auto primitives = create_primitives(entity);
-    logic_update_proxy(entity, primitives);
-    return entity;
-}
 
 using Point       = std::array<double, 2>;
 using ear_Polygon = std::vector<std::vector<Point> >;
@@ -360,7 +330,9 @@ int main(int argc, char *argv[]) {
     // add_manifold_entity();
 
     // add_simple_computer_buffer_write();
-    add_volume_pass("nanovdb_volume");
+    // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/Sphere.nvdb");
+    // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/SmallCampfireVDB/smallCampfire/smallCampfireVDB/smallCampfire_0000.vdb");
+    add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }

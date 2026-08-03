@@ -2717,6 +2717,33 @@ PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_ray_clip(
     return hit;
 }
 
+
+PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_is_box_intersect(
+    pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
+    pnanovdb_buf_t buf,             //
+    PNANOVDB_INOUT(pnanovdb_readaccessor_t) acc,
+    PNANOVDB_IN(pnanovdb_vec3_t) origin, PNANOVDB_OUT(float) tmin,
+    PNANOVDB_IN(pnanovdb_vec3_t) direction, PNANOVDB_OUT(float) tmax) {
+    // 3个 int 类型 的 最大值，最小值 坐标
+    pnanovdb_coord_t bbox_min = pnanovdb_root_get_bbox_min(buf, PNANOVDB_DEREF(acc).root);
+    pnanovdb_coord_t bbox_max = pnanovdb_root_get_bbox_max(buf, PNANOVDB_DEREF(acc).root);
+
+    // 拿到物理世界中的 包围盒的坐标
+    pnanovdb_vec3_t bbox_minf = pnanovdb_coord_to_vec3(bbox_min);
+    pnanovdb_vec3_t bbox_maxf = pnanovdb_coord_to_vec3(pnanovdb_coord_add(bbox_max, pnanovdb_coord_uniform(1)));
+
+    // 有两种不同类型的坐标,一种是 pnanovdb_vec3_t  另一种是 pnanovdb_coord_t
+
+    // 这里其实也有一个加速，如果与包围盒碰撞，会返回 碰到到包围盒的 tmin 的值，并不完全从 view 的位置查找
+    const pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(PNANOVDB_REF(bbox_minf), PNANOVDB_REF(bbox_maxf), origin,
+                                                       PNANOVDB_REF(tmin), direction, PNANOVDB_REF(tmax));
+    if (!hit || tmax > 1.0e20f) {
+        // 不与包围盒相交，直接返回
+        return PNANOVDB_FALSE;
+    }
+    return PNANOVDB_TRUE;
+}
+
 PNANOVDB_FORCE_INLINE pnanovdb_bool_t pnanovdb_hdda_zero_crossing(
     pnanovdb_grid_type_t grid_type, // pnanovdb_grid_get_grid_type 获取
     pnanovdb_buf_t buf,             //

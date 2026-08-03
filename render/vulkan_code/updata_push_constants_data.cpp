@@ -39,7 +39,9 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
 }
 
 VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
-    return create_vma_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT,
+    return create_vma_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                   VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
+                                   VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 }
@@ -53,7 +55,7 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
  * @param src
  * @param size
  */
-VKR_buffer_ptr copy_data_to_gpu_memory(void *src, uint64_t size) {
+VKR_buffer_ptr copy_data_to_gpu_memory(const void *src, uint64_t size) {
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
     auto mem_copy_function = [src,size](void *dst) {
         memcpy(dst, src, size);
