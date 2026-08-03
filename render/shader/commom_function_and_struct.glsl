@@ -1,4 +1,5 @@
-// 这里
+#ifndef COMMOM_FUNCTION_AND_STRUCT_INCLUDED
+#define COMMOM_FUNCTION_AND_STRUCT_INCLUDED
 
 struct VkDrawIndexedIndirectCommand {
     uint indexCount;
@@ -223,6 +224,15 @@ float hash(int xy) {
     return float(x) / 4294967295.0;
 }
 
+float hash(uint xy) {
+    uint x = xy;
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = ((x >> 16u) ^ x) * 0x45d9f3b3u;
+    x = (x >> 16u) ^ x;
+    return float(x) / 4294967295.0;
+}
+
+
 
 // Normal Distribution function --------------------------------------
 // 在当前材质粗糙度下，有多少比例的“微表面”刚好把光线反射到你的眼睛里
@@ -421,3 +431,77 @@ vec3 Irradiance_SphericalHarmonics(const vec3 n, SphericalHarmonics SH) {
 
     return max(sphericalHarmonics, 0.0);
 }
+
+
+
+
+// ==========================================
+// 1. 数据容器定义 (等价于开源库中的 RandomSequence 结构体)
+// ==========================================
+struct RandomSequence {
+    uint baseSeed;     // 每一个像素/网格固定的时空唯一基础种子
+    uint dimension;    // 当前采样的维度计数器 (每调用一次 Generate 就会自动递增)
+    uint sampleIndex;  // 当前像素的多重采样索引 (通常用于多帧抗锯齿积累)
+};
+
+// ==========================================
+// 2. 核心底层的 2D/3D 整数哈希函数 (Scrambler 混淆器)
+// ==========================================
+uint MurmurHash32(uint key) {
+    key ^= key >> 16U;
+    key *= 0x85ebca6bU;
+    key ^= key >> 13U;
+    key *= 0xc2b2ae35U;
+    key ^= key >> 16U;
+    return key;
+}
+
+// ==========================================
+// 3. 初始化序列器 (开源等价于 RandomSequence_Initialize)
+// ==========================================
+void RandomSequence_Initialize(out RandomSequence randSeq, ivec2 pixelCoord, uint sampleIndex, uint frameIndex) {
+    // 将像素物理坐标 X、Y 以及当前时间帧合并成一个独一无二的基础状态
+    uint seedX = MurmurHash32(uint(pixelCoord.x));
+    uint seedY = MurmurHash32(uint(pixelCoord.y));
+    uint seedT = MurmurHash32(frameIndex);
+
+    randSeq.baseSeed = seedX ^ (seedY << 1U) ^ (seedT << 2U);
+    randSeq.dimension = 0U;         // 从第 0 维度开始
+    randSeq.sampleIndex = sampleIndex; // 设置多采样深度
+}
+
+// ==========================================
+// 4. 🚀 核心一维采样器 (开源等价于 RandomSequence_GenerateSample1D)
+// ==========================================
+float RandomSequence_GenerateSample1D(inout RandomSequence randSeq) {
+    // A. 结合当前维度(Dimension)和采样计数(SampleIndex)，派生出当前的子空间种子
+    // 这样做能保证“第1次调用”、“第2次调用”拿到的数据在数学维度上绝对正交（独立）
+    uint currentDimensionSeed = randSeq.baseSeed + randSeq.dimension;
+
+    // B. 使用 LCG 算法进行超快的一维序列步进与空间弹开
+    uint scrambledHash = MurmurHash32(currentDimensionSeed ^ randSeq.sampleIndex);
+
+    // C. 🎯 核心操作：状态更新（副作用）
+    // 每次生成随机数后，将维度自动加 1。下一次在这个像素里调该函数时，
+    // 就会自动去拿“下一个独立维度”的随机数，绝对不会和前一次撞车！
+    randSeq.dimension += 1U;
+
+    // D. 映射到 [0.0, 1.0) 区间返回
+    return float(scrambledHash) * (1.0 / 4294967296.0);
+}
+
+// ==========================================
+// 5. 🎨 扩展：二维采样器 (开源等价于 RandomSequence_GenerateSample2D)
+// ==========================================
+vec2 RandomSequence_GenerateSample2D(inout RandomSequence randSeq) {
+    // 内部连续调用两次 1D 采样器
+    // 由于内部会自动增加 randSeq.dimension，所以 x 和 y 拿到的数天生正交，绝不重合
+    float x = RandomSequence_GenerateSample1D(randSeq);
+    float y = RandomSequence_GenerateSample1D(randSeq);
+    return vec2(x, y);
+}
+
+
+
+
+#endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

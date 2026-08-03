@@ -174,11 +174,11 @@ void main() {
         float sigma_a = 0.1;
         float density = 1;
         //
-        float distance_value = vdb_get_ray_density(VdbSampler,
-                                                   hit_pos_index,
-                                                   0,
-                                                   direction_index,
-                                                   t_max - t_min);  // AABB 包围盒的对角线长度 ，单步的距离
+        float distance_value = vdb_get_ray_density_same_step(VdbSampler,
+                                                             hit_pos_index,
+                                                             0,
+                                                             direction_index,
+                                                             t_max - t_min);  // AABB 包围盒的对角线长度 ，单步的距离
         float T = exp(-distance_value * sigma_a);
         vec3 volume_color = vec3(1.0, 1.0, 1.0);
         outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);

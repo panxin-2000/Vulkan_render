@@ -282,19 +282,19 @@ in out ZeroCrossingHit HitResults)
 // Fog Volume specific
 //-----------------------------------------------------------------------------------------------------------
 
-//float DeltaTracking(in VdbRay Ray, pnanovdb_buf_t buf, pnanovdb_uint32_t grid_type, pnanovdb_readaccessor_t acc, HeterogenousMedium medium, inout RandomSequence RandSequence)
-//{
-//    float densityMaxInv = 1.0f / medium.densityMax;
-//    float t = Ray.TMin;
-//    pnanovdb_vec3_t pos;
-//
-//    do {
-//        t += -log(RandomSequence_GenerateSample1D(RandSequence)) * densityMaxInv;
-//        pos = pnanovdb_hdda_ray_start(Ray.Origin, t, Ray.Direction);
-//    } while (t < Ray.TMax && ReadValue(pos, buf, grid_type, acc) * medium.densityScale * densityMaxInv < RandomSequence_GenerateSample1D(RandSequence));
-//
-//    return t;
-//}
+float DeltaTracking(in VdbRay Ray, pnanovdb_buf_t buf, pnanovdb_uint32_t grid_type, pnanovdb_readaccessor_t acc, HeterogenousMedium medium, inout RandomSequence RandSequence)
+{
+    float densityMaxInv = 1.0f / medium.densityMax;
+    float t = Ray.TMin;
+    pnanovdb_vec3_t pos;
+
+    do {
+        t += -log(RandomSequence_GenerateSample1D(RandSequence)) * densityMaxInv;
+        pos = pnanovdb_hdda_ray_start(Ray.Origin, t, Ray.Direction);
+    } while (t < Ray.TMax && ReadValue(pos, buf, grid_type, acc) * medium.densityScale * densityMaxInv < RandomSequence_GenerateSample1D(RandSequence));
+
+    return t;
+}
 
 pnanovdb_vec3_t sampleHG(float g, float e1, float e2)
 {
@@ -324,39 +324,39 @@ float PhaseHG(float CosTheta, float g)
 }
 
 // From NanoVDB samples
-//float GetTransmittance(
-//    pnanovdb_vec3_t bbox_min,
-//    pnanovdb_vec3_t bbox_max,
-//    VdbRay ray,
-//    pnanovdb_buf_t buf,
-//    pnanovdb_uint32_t grid_type,
-//    pnanovdb_readaccessor_t acc,
-//    HeterogenousMedium medium,
-//    float StepMultiplier,
-//in out RandomSequence RandSequence)
-//{
-//    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(bbox_min, bbox_max, ray.Origin, ray.TMin, ray.Direction, ray.TMax);
-//    if (!hit)
-//    return 1.0f;
-//
-//    float densityMaxInv = 1.0f / medium.densityMax;
-//    float densityMaxInvMultStep = densityMaxInv * StepMultiplier;
-//    float transmittance = 1.f;
-//    float t = ray.TMin;
-//    while (true)
-//    {
-//        t += densityMaxInvMultStep * (RandomSequence_GenerateSample1D(RandSequence) + 0.5);
-//        if (t >= ray.TMax)
-//        break;
-//
-//        float density = ReadValue(t, ray, buf, grid_type, acc) * medium.densityScale;
-//
-//        transmittance *= 1.0f - density * densityMaxInv;
-//        if (transmittance < 0.1f)
-//        return 0.f;
-//    }
-//    return transmittance;
-//}
+float GetTransmittance(
+    pnanovdb_vec3_t bbox_min,
+    pnanovdb_vec3_t bbox_max,
+    VdbRay ray,
+    pnanovdb_buf_t buf,
+    pnanovdb_uint32_t grid_type,
+    pnanovdb_readaccessor_t acc,
+    HeterogenousMedium medium,
+    float StepMultiplier,
+in out RandomSequence RandSequence)
+{
+    pnanovdb_bool_t hit = pnanovdb_hdda_ray_clip(bbox_min, bbox_max, ray.Origin, ray.TMin, ray.Direction, ray.TMax);
+    if (!hit)
+    return 1.0f;
+
+    float densityMaxInv = 1.0f / medium.densityMax;
+    float densityMaxInvMultStep = densityMaxInv * StepMultiplier;
+    float transmittance = 1.f;
+    float t = ray.TMin;
+    while (true)
+    {
+        t += densityMaxInvMultStep * (RandomSequence_GenerateSample1D(RandSequence) + 0.5);
+        if (t >= ray.TMax)
+        break;
+
+        float density = ReadValue(t, ray, buf, grid_type, acc) * medium.densityScale;
+
+        transmittance *= 1.0f - density * densityMaxInv;
+        if (transmittance < 0.1f)
+        return 0.f;
+    }
+    return transmittance;
+}
 
 // Cf FLinearColor::MakeFromColorTemperature
 vec3 ColorTemperatureToRGB(float Temp)

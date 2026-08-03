@@ -19,7 +19,7 @@
 #define PNANOVDB_FORCE_INLINE
 
 #include "VdbCommon.glsl"
-
+#include "commom_function_and_struct.glsl"
 
 /**
 *
@@ -126,6 +126,43 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
 }
 
 
+
+
+
+
+
+/**
+* 这个函数的计划是什么呢?
+* 我已经有了 min 和 max 的值,是光线首次到达包围盒的 时间 和 离开的时间
+* 那么把 这个时间分成固定的份数, 直接进行 固定步长 的积分呢?
+*/
+PNANOVDB_FORCE_INLINE float vdb_get_ray_density_same_step(VdbSampler vdb_sampler,
+                                                          PNANOVDB_IN(pnanovdb_vec3_t) origin_position, float tmin,
+                                                          PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax) {
+
+    RandomSequence randSeq;
+    RandomSequence_Initialize(randSeq, ivec2(gl_FragCoord.xy), 0U, 8);
+
+    float total_density = 0.0f;
+    float step_length = (tmax - tmin) / 64;
+    for (uint i = 0; i < 64; i++) {
+        float offset = RandomSequence_GenerateSample1D(randSeq);
+
+        pnanovdb_vec3_t light_reach_position = pnanovdb_hdda_ray_start(origin_position, tmin + (i + offset) * step_length, direction);
+        pnanovdb_coord_t  ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(light_reach_position));
+        pnanovdb_int32_t   dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
+                                                                                        vdb_sampler.GridBuffer,
+                                                                                        vdb_sampler.Accessor,
+                                                                                        PNANOVDB_REF(ijk)));
+        pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
+                                                                             vdb_sampler.GridBuffer,
+                                                                             vdb_sampler.Accessor,
+                                                                             PNANOVDB_REF(ijk));
+        float density = pnanovdb_read_float(vdb_sampler.GridBuffer, address);
+        total_density += step_length * density;
+    }
+    return total_density;
+}
 
 
 
