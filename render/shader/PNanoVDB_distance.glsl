@@ -141,7 +141,7 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density_same_step(VdbSampler vdb_sampler
                                                           PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax) {
 
     RandomSequence randSeq;
-    RandomSequence_Initialize(randSeq, ivec2(gl_FragCoord.xy), 0U, 8);
+    RandomSequence_Initialize(randSeq, ivec2(gl_FragCoord.xy), 0U, 8, 0);
 
     float total_density = 0.0f;
     float step_length = (tmax - tmin) / 64;
