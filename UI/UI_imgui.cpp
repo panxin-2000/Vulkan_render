@@ -282,10 +282,10 @@ void display_tree(entt::entity entity) {
     static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DrawLinesFull;
     auto name                            = Logic_entt().get<Name_component>(entity);
     if (ImGui::TreeNodeEx(name.name_.c_str(), base_flags)) {
-        ImGui::Text("display");
-        ImGui::SameLine();
-        if (ImGui::SmallButton("button")) {
-        }
+        // ImGui::Text("display");
+        // ImGui::SameLine();
+        // if (ImGui::SmallButton("button")) {
+        // }
 
         if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
             ImGui::DragFloat("speed", &move_speed->speed);
@@ -359,6 +359,14 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                 if (bistro == true) {
                     load_gltf_model("DamagedHelmet.gltf",
                                     "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+                }
+            }
+        } {
+            bool bistro = false;
+            if (ImGui::Checkbox("fox.gltf", &bistro)) {
+                if (bistro == true) {
+                    load_gltf_model("DamagedHelmet.gltf",
+                                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Fox/glTF/Fox.gltf");
                 }
             }
         }

@@ -183,7 +183,6 @@ auto copy_vertices_data(size_t size, fastgltf::Asset &model, const fastgltf::Pri
     Attribute normal     = {"normal", nullptr, 12, 0};
     Attribute texcoord_0 = {"texcoord_0", nullptr, 8, 0};
 
-
     // 2. 获取顶点属性（如位置、法线、纹理坐标）
     {
         for (const auto &attribute: primitive.attributes) {
@@ -211,17 +210,21 @@ auto copy_vertices_data(size_t size, fastgltf::Asset &model, const fastgltf::Pri
     attributes.push_back(texcoord_0);
 
     std::vector<std::string> find_strings;
-    // find_strings.push_back("JOINTS_0");
-    // find_strings.push_back("WEIGHTS_0");
-    // for (auto find_string: find_strings) {
-    //     auto it = primitive.attributes.find(find_string);
-    //     if (it != primitive.attributes.end()) {
-    //         Attribute attribute_temp;
-    //         attribute_temp.name = find_string;
-    //         read_attribute(model, model.accessors[it->second], attribute_temp);
-    //         attributes.push_back(attribute_temp);
-    //     }
-    // }
+    find_strings.push_back("JOINTS_0"); // 有时候是四字节, 有时候是 8 字节
+    find_strings.push_back("WEIGHTS_0");
+    for (auto find_string: find_strings) {
+        for (const auto &attribute: primitive.attributes) {
+            if (attribute.name == std::string_view(find_string)) {
+                Attribute attribute_temp;
+                attribute_temp.name = find_string;
+                read_attribute(model, model.accessors[attribute.accessorIndex], attribute_temp);
+                attributes.push_back(attribute_temp);
+                break;
+            }
+        }
+    }
+    // 然后这里就有问题了 , 我之前设置的都是 三个 数据,长度是固定的,
+    // 现在需要更改了
     return mem_copy_all_attributes(position.element_count, attributes);
     // 上面的做法应该是 有几个类型就复制几个属性，没有就跳过
 }
@@ -282,6 +285,7 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
         auto result = copy_vertices_data(vertices_memory_size, model, primitive);
         Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
+    // 其实到这里才确定了几何的数据类型
     const auto &data                         = Logic_entt().get_or_emplace<Geometry_data>(entity);
     const std::vector<share_block> &vertices = data.get_vertices();
     auto bound_box                           = find_min_max_point(vertices);
@@ -335,13 +339,13 @@ void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &no
  * @return
  */
 entt::entity load_node_data(fastgltf::Asset &model,
-                            std::vector<bool> &nodes_have_deal,
+                            std::vector<entt::entity> &nodes_have_deal,
                             const int current_node_index,
                             const int parent_node_index      = -1,
                             const entt::entity parent_entity = entt::null) {
     auto node                              = model.nodes[current_node_index];
-    nodes_have_deal.at(current_node_index) = true;
     const entt::entity entity              = Logic_entt().create();
+    nodes_have_deal.at(current_node_index) = entity;
     Logic_entt().emplace<Name_component>(entity, node.name.c_str());
     if (parent_entity == entt::null) world_root_add_child(entity);
     else add_relation(parent_entity, entity);
@@ -428,23 +432,23 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
         logic_create_proxy(model_entity); // 有几何的时候才创造吗？
-        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
+        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
         logic_update_proxy<shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
 
         auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
-        std::vector<bool> nodes_have_deal;
-        nodes_have_deal.resize(nodes_num, false);
+        std::vector<entt::entity> nodes_have_deal;
+        nodes_have_deal.resize(nodes_num, entt::null);
         size_t has_mesh = 0;
-        for (auto i = 0; i < nodes_num && nodes_have_deal.at(i) == false; ++i) {
+        for (auto i = 0; i < nodes_num; ++i) {
             auto node = model.nodes[i];
             if (node.meshIndex.has_value()) {
                 has_mesh++;
             }
         }
-        for (auto scene: model.scenes) {
+        for (const auto &scene: model.scenes) {
             const entt::entity entity = Logic_entt().create();
             Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
             add_relation(model_entity, entity);
@@ -454,6 +458,45 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         }
         // 之后呢? 其实完全是可以在这里操作的
         //
+
+        for (auto skin: model.skins) {
+            std::cout << "Skin Index: " << 0 << ", Name: " << skin.name << "\n";
+            std::cout << "  Joints count: " << skin.joints.size() << "\n";
+            // 这里需要完成一个转换
+            if (skin.skeleton.has_value()) {
+                size_t rootNodeIdx = skin.skeleton.value();
+                std::cout << "  Skeleton Root Node Index: " << rootNodeIdx << "\n";
+            }
+            // 4. 🎯 读取极其核心的：逆绑定矩阵 (Inverse Bind Matrices)
+            if (skin.inverseBindMatrices.has_value()) {
+                size_t accessorIdx                 = skin.inverseBindMatrices.value();
+                const fastgltf::Accessor &accessor = model.accessors[accessorIdx];
+
+                // 确保数据类型符合 glTF 的 Mat4 浮点矩阵规范
+                if (accessor.type == fastgltf::AccessorType::Mat4) {
+                    // 工业级做法：使用 fastgltf 自带的 iterateAccessor 极速遍历数据
+                    // 自动处理 BufferView、字节对齐（Stride）和各种内存偏移
+                    auto &matrixData = Logic_entt().emplace<std::vector<
+                        Eigen::Matrix4f> >(model_entity, accessor.count);
+
+                    size_t count  = 0;
+                    auto function = [&](fastgltf::math::fmat4x4 mat) {
+                        // mat.data 是一个包含 16 个 float 的数组
+                        const auto modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>
+                                (mat.data());
+                        // matrixData[count++] = modelMatrix;
+                        matrixData[count++] = Eigen::Matrix4f::Identity();
+                    };
+                    fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(model, accessor, function);
+
+                    std::cout << "  Successfully parsed " << accessor.count << " Inverse Bind Matrices.\n";
+                    // 此时 matrixData 就可以直接上传到你的 GPU 骨骼 Buffer 中了
+                }
+            } else {
+                // 如果 glTF 没提供 IBM，根据规范，所有关节默认使用单位矩阵 (Identity Matrix)
+                std::cout << "  No Inverse Bind Matrices found. Using identity matrices.\n";
+            }
+        }
         add_recursion_function_to_children(model_entity, update_transform_matrix);
 
         // 单线程的情况下,下面这个函数是对的
@@ -496,6 +539,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 // std::cout << "vertexOffset :" << i << std::endl;
                 // std::cout << "vertexOffset :" << primitives.at(i).draw_command.indexed_command.vertexOffset << std::endl;
                 // std::cout << "firstIndex   :" << primitives.at(i).draw_command.indexed_command.firstIndex << std::endl;
+            }
+            if (auto JointMatrices = Logic_entt().try_get<std::vector<Eigen::Matrix4f> >(model_entity)) {
+                const auto matrix_ptr = JointMatrices->data();
+                auto matrix_size      = JointMatrices->size() * sizeof(Eigen::Matrix4f);
+                auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
+                set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
             }
             // for (uint32_t i = 2000; i < primitives.size(); ++i) {
             //     primitives.at(i) = primitives.at(i - 1000);

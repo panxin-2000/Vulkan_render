@@ -49,7 +49,6 @@ void main()
     vec4 pos = model * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
     gl_Position = projection * view * pos;
-    outNormal = inNormal;
     outUV = inUV;
     // 世界空间
     outNormal = mat3(model) * inNormal;

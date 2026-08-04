@@ -233,7 +233,14 @@ void Engine::create() {
             "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
             "", ""
         };
-        shader_date = VKR_shader_init(shader_paths);
+        gltf_shader_data = VKR_shader_init(shader_paths);
+    } {
+        VKR_shader_paths shader_paths{
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model.vert.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+            "", ""
+        };
+        skinning_date = VKR_shader_init(shader_paths);
     } {
         VKR_shader_paths shader_paths{
             "",
@@ -243,11 +250,11 @@ void Engine::create() {
         };
         command_calculate = VKR_shader_init(shader_paths);
     }
-    descriptor_pool_manager_.set_shader_data(shader_date);
+    descriptor_pool_manager_.set_shader_data(gltf_shader_data);
     bindless_descriptor_sets_ =
             descriptor_pool_manager_.allocate_bindless_descriptor_sets(
-                                                                       shader_date->bindless_sets_bindings,
-                                                                       shader_date->bindless_set_layout);
+                                                                       gltf_shader_data->bindless_sets_bindings,
+                                                                       gltf_shader_data->bindless_set_layout);
     // 需要在这里创建一些内容
     // 或者说，到这里之后才能够进行上传
     {
@@ -283,7 +290,7 @@ void Engine::create() {
 
 
 void Engine::add_bindless_texture(const std::optional<Texture_parameter> &texture) {
-    for (auto const &[set_value, bindings_map]: shader_date->bindless_sets_bindings) {
+    for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_samplerColorMap") {
                 auto index                                              = texture.value().image.get_index();
@@ -394,7 +401,7 @@ void Engine::update_global_pbr_parameter(
 
 
         copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
-        set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+        set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                              "global_PBR_parameters", pbr_components_buffer_);
     }
 }
@@ -499,8 +506,8 @@ bool frustum_cull_2(const FrustumPlanes &frustum_planes,
 
 void Engine::update_global_parameter() {
     global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
-         shader_date->global_sets_bindings,
-         shader_date->global_descriptor_sets_layout
+         gltf_shader_data->global_sets_bindings,
+         gltf_shader_data->global_descriptor_sets_layout
         );
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     const auto extent              = VK_backend::instance().get_current_extent();
@@ -512,15 +519,15 @@ void Engine::update_global_parameter() {
 
     std::array<Eigen::Array4f, 9> &shCoefficients = global_parameters_.shCoefficients;
     // 值是一个差不多结果,不是很精准,因为 输出的 时候只保存了两位小数
-    shCoefficients[0]                             = {1.73, 1.73, 1.73, 0.0f};
-    shCoefficients[1]                             = {-0.05, -0.05, -0.05, 0.0f};
-    shCoefficients[2]                             = {-0.16, -0.16, -0.16, 0.0f};
-    shCoefficients[3]                             = {0.01, 0.01, 0.01, 0.0f};
-    shCoefficients[4]                             = {-0.0, -0.0, -0.0, 0.0f};
-    shCoefficients[5]                             = {0.02, 0.02, 0.02, 0.0f};
-    shCoefficients[6]                             = {0.03, 0.03, 0.03, 0.0f};
-    shCoefficients[7]                             = {-0.01, -0.01, -0.01, 0.0f};
-    shCoefficients[8]                             = {0.01, 0.01, 0.01, 0.0f};
+    shCoefficients[0] = {1.73, 1.73, 1.73, 0.0f};
+    shCoefficients[1] = {-0.05, -0.05, -0.05, 0.0f};
+    shCoefficients[2] = {-0.16, -0.16, -0.16, 0.0f};
+    shCoefficients[3] = {0.01, 0.01, 0.01, 0.0f};
+    shCoefficients[4] = {-0.0, -0.0, -0.0, 0.0f};
+    shCoefficients[5] = {0.02, 0.02, 0.02, 0.0f};
+    shCoefficients[6] = {0.03, 0.03, 0.03, 0.0f};
+    shCoefficients[7] = {-0.01, -0.01, -0.01, 0.0f};
+    shCoefficients[8] = {0.01, 0.01, 0.01, 0.0f};
 
     shCoefficients[0] *= 0.282095f;
     // 对应 l=1
@@ -536,7 +543,7 @@ void Engine::update_global_parameter() {
     shCoefficients[8] *= 0.546274f;
 
 
-    set_render_parameter(shader_date->global_sets_bindings, update_global_descriptor_sets,
+    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
 
     update_global_pbr_parameter(update_global_descriptor_sets);

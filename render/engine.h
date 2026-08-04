@@ -72,7 +72,8 @@ private:
 
     shader_data gltf_shader_data_;
 
-    std::shared_ptr<vk_shader_data> shader_date;
+    std::shared_ptr<vk_shader_data> gltf_shader_data;
+    std::shared_ptr<vk_shader_data> skinning_date;
     std::shared_ptr<vk_shader_data> command_calculate;
     std::shared_ptr<vk_shader_data> bindless_shader_date;
 
@@ -309,7 +310,11 @@ public:
     }
 
     std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
-        return shader_date;
+        return gltf_shader_data;
+    }
+
+    std::shared_ptr<vk_shader_data> get_skinning_shader_data() {
+        return skinning_date;
     }
 
     std::shared_ptr<vk_shader_data> get_command_calculate_shader_data() {
