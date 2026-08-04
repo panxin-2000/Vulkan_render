@@ -62,49 +62,110 @@ inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cro
     using namespace spirv_cross;
 
     // Handle Floating Point (float, double)
-    if (type.basetype == SPIRType::Float) {
-        if (type.width == 32) {
-            // 32-bit float
-            switch (type.vecsize) {
-                case 1: return {VK_FORMAT_R32_SFLOAT, 4 * 1};
-                case 2: return {VK_FORMAT_R32G32_SFLOAT, 4 * 2};
-                case 3: return {VK_FORMAT_R32G32B32_SFLOAT, 4 * 3};
-                case 4: return {VK_FORMAT_R32G32B32A32_SFLOAT, 4 * 4};
+    if (type.basetype == SPIRType::Float && type.width == 32) {
+        // 32-bit float
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R32_SFLOAT, 4 * 1};
+            case 2: return {VK_FORMAT_R32G32_SFLOAT, 4 * 2};
+            case 3: return {VK_FORMAT_R32G32B32_SFLOAT, 4 * 3};
+            case 4: return {VK_FORMAT_R32G32B32A32_SFLOAT, 4 * 4};
+            default: {
+                assert(false);
             }
-        } else if (type.width == 64) {
-            // 64-bit double
-            switch (type.vecsize) {
-                case 1: return {VK_FORMAT_R64_SFLOAT, 8 * 1};
-                case 2: return {VK_FORMAT_R64G64_SFLOAT, 8 * 2};
-                case 3: return {VK_FORMAT_R64G64B64_SFLOAT, 8 * 3};
-                case 4: return {VK_FORMAT_R64G64B64A64_SFLOAT, 8 * 4};
+        }
+    } else if (type.basetype == SPIRType::Double && type.width == 64) {
+        // 64-bit double
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R64_SFLOAT, 8 * 1};
+            case 2: return {VK_FORMAT_R64G64_SFLOAT, 8 * 2};
+            case 3: return {VK_FORMAT_R64G64B64_SFLOAT, 8 * 3};
+            case 4: return {VK_FORMAT_R64G64B64A64_SFLOAT, 8 * 4};
+            default: {
+                assert(false);
             }
         }
     }
     // Handle Unsigned Integer (uint)
-    else if (type.basetype == SPIRType::UInt) {
-        if (type.width == 32) {
-            switch (type.vecsize) {
-                case 1: return {VK_FORMAT_R32_UINT, 4 * 1};
-                case 2: return {VK_FORMAT_R32G32_UINT, 4 * 2};
-                case 3: return {VK_FORMAT_R32G32B32_UINT, 4 * 3};
-                case 4: return {VK_FORMAT_R32G32B32A32_UINT, 4 * 4};
+    else if (type.basetype == SPIRType::UInt && type.width == 32) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R32_UINT, 4 * 1};
+            case 2: return {VK_FORMAT_R32G32_UINT, 4 * 2};
+            case 3: return {VK_FORMAT_R32G32B32_UINT, 4 * 3};
+            case 4: return {VK_FORMAT_R32G32B32A32_UINT, 4 * 4};
+            default: {
+                assert(false);
             }
-        } else if (type.width == 8) {
-            // Often used for packed colors
-            switch (type.vecsize) {
-                case 4: return {VK_FORMAT_R8G8B8A8_UINT, 1 * 4};
+        }
+    } else if (type.basetype == SPIRType::Int64 && type.width == 64) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R64_SINT, 8 * 1};
+            case 2: return {VK_FORMAT_R64G64_UINT, 8 * 2};
+            case 3: return {VK_FORMAT_R64G64B64_UINT, 8 * 3};
+            case 4: return {VK_FORMAT_R64G64B64A64_UINT, 8 * 4};
+            default: {
+                assert(false);
+            }
+        }
+    } else if (type.basetype == SPIRType::UInt64 && type.width == 64) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R64_UINT, 8 * 1};
+            case 2: return {VK_FORMAT_R64G64_UINT, 8 * 2};
+            case 3: return {VK_FORMAT_R64G64B64_UINT, 8 * 3};
+            case 4: return {VK_FORMAT_R64G64B64A64_UINT, 8 * 4};
+            default: {
+                assert(false);
             }
         }
     }
     // Handle Signed Integer (int)
-    else if (type.basetype == SPIRType::Int) {
-        if (type.width == 32) {
-            switch (type.vecsize) {
-                case 1: return {VK_FORMAT_R32_SINT, 4 * 1};
-                case 2: return {VK_FORMAT_R32G32_SINT, 4 * 2};
-                case 3: return {VK_FORMAT_R32G32B32_SINT, 4 * 3};
-                case 4: return {VK_FORMAT_R32G32B32A32_SINT, 4 * 4};
+    else if (type.basetype == SPIRType::Int && type.width == 32) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R32_SINT, 4 * 1};
+            case 2: return {VK_FORMAT_R32G32_SINT, 4 * 2};
+            case 3: return {VK_FORMAT_R32G32B32_SINT, 4 * 3};
+            case 4: return {VK_FORMAT_R32G32B32A32_SINT, 4 * 4};
+            default: {
+                assert(false);
+            }
+        }
+    } else if (type.basetype == SPIRType::UShort && type.width == 16) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R16_UINT, 2 * 1};
+            case 2: return {VK_FORMAT_R16G16_UINT, 2 * 2};
+            case 3: return {VK_FORMAT_R16G16B16_UINT, 2 * 3};
+            case 4: return {VK_FORMAT_R16G16B16A16_UINT, 2 * 4};
+            default: {
+                assert(false);
+            }
+        }
+    } else if (type.basetype == SPIRType::Short && type.width == 16) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R16_SINT, 2 * 1};
+            case 2: return {VK_FORMAT_R16G16_SINT, 2 * 2};
+            case 3: return {VK_FORMAT_R16G16B16_SINT, 2 * 3};
+            case 4: return {VK_FORMAT_R16G16B16A16_SINT, 2 * 4};
+            default: {
+                assert(false);
+            }
+        }
+    } else if (type.basetype == SPIRType::SByte && type.width == 8) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R8_SINT, 2 * 1};
+            case 2: return {VK_FORMAT_R8G8_SINT, 2 * 2};
+            case 3: return {VK_FORMAT_R8G8B8_SINT, 2 * 3};
+            case 4: return {VK_FORMAT_R8G8B8A8_SINT, 2 * 4};
+            default: {
+                assert(false);
+            }
+        }
+    } else if (type.basetype == SPIRType::UByte && type.width == 8) {
+        switch (type.vecsize) {
+            case 1: return {VK_FORMAT_R8_UINT, 2 * 1};
+            case 2: return {VK_FORMAT_R8G8_UINT, 2 * 2};
+            case 3: return {VK_FORMAT_R8G8B8_UINT, 2 * 3};
+            case 4: return {VK_FORMAT_R8G8B8A8_UINT, 2 * 4};
+            default: {
+                assert(false);
             }
         }
     }
