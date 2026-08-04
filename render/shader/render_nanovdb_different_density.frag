@@ -31,6 +31,7 @@ layout (set = 2, binding = 4) uniform nanovdb_box
     vec4 box_max;
 };
 
+
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inLightVec;
@@ -123,6 +124,12 @@ vec3 check_grid_class(pnanovdb_uint32_t grid_index, pnanovdb_uint32_t grid_class
 
 }
 
+layout (push_constant) uniform uPushConstant {
+    float sigma_a;
+    float density;
+} pc;
+
+
 void main() {
     vec2 screen_UV = gl_FragCoord.xy / screen_size.xy;//如何用这个来替代呢？ screen_UV 在0到1之间
     vec2 ndc = screen_UV * 2.0 - 1.0;
@@ -166,22 +173,21 @@ void main() {
     // HDDA 必须在索引空间（Index Space）运行
     pnanovdb_vec3_t origin_index = pnanovdb_grid_world_to_indexf(VdbSampler.GridBuffer, VdbSampler.Grid, view_position);
     pnanovdb_vec3_t direction_index = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid, view_direction);
+    pnanovdb_vec3_t light_direction = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid, light.rotate.xyz);
 
     bool is_hit = trace_vdb_is_hit_box(VdbSampler, origin_index, direction_index, t_min, t_max);
     if (is_hit == true) {
         pnanovdb_vec3_t hit_pos_index = pnanovdb_hdda_ray_start(origin_index, t_min, direction_index);
 
-        float sigma_a = 0.1;
-        float density = 1;
-        //
-        float distance_value = vdb_get_ray_density_same_step(VdbSampler,
-                                                             hit_pos_index,
-                                                             0,
-                                                             direction_index,
-                                                             t_max - t_min);  // AABB 包围盒的对角线长度 ，单步的距离
-        float T = exp(-distance_value * sigma_a);
-        vec3 volume_color = vec3(1.0, 1.0, 1.0);
+        vec3 volume_color = vec3(0, 0, 0);
+        float T = vdb_get_ray_density(VdbSampler,
+                                      hit_pos_index,
+                                      0,
+                                      direction_index,
+                                      t_max - t_min,
+                                      light_direction, volume_color, 0.05);  // AABB 包围盒的对角线长度 ，单步的距离
         outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
+        //
     } else {
         outFragColor_B8G8R8A8_SRGB = vec4(0.5, 0, 0, 0.5);
         // 不相交的时候就忽略当前像素的颜色
