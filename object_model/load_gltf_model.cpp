@@ -10,6 +10,8 @@
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
+#include <oneapi/tbb/detail/_task.h>
+
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
 #include "Command_calculate.h"
@@ -422,6 +424,142 @@ Texture_parameter load_image(fastgltf::Image &image) {
 }
 
 
+struct inverseBindMatrix {
+    Eigen::Matrix4f matrix;
+};
+
+struct RuntimeChannel {
+    entt::entity nodeIndex;
+    fastgltf::AnimationPath path;
+    std::vector<float> keyframeTimes;
+    std::vector<fastgltf::AnimationInterpolation> interpolations;
+    std::variant<std::vector<Eigen::Vector3f>, std::vector<Eigen::Quaternionf> > offset_rotate;
+};
+
+struct RuntimeAnimation {
+    std::string name;
+    // float duration = 0.0f; // 整个动画的总时长（等于所有 channel 中最大的那个 keyframeTimes.back()）
+    std::vector<RuntimeChannel> channels;
+};
+
+// Logic_entt().emplace<std::vector<Animation_entity> >(root_entity, animations);
+
+/**
+ *
+ * sampler.inputAccessor：指向时间轴（Timeline）。
+ *    这是一个一维的浮点数数组（如 [0.0s, 0.5s, 1.0s]），代表每个关键帧发生的时间点。
+ * sampler.outputAccessor：指向变换数值（Transform Values）。
+ *    根据通道的不同，它可能是 vec3（位置/缩放）或 vec4（四元数旋转）。
+ * sampler.interpolation：一个枚举值，告诉引擎在两个关键帧之间应该如何平滑过渡
+ *    fastgltf::Interpolation::Linear（线性插值）
+ *    fastgltf::Interpolation::Step（阶跃，用于定格动画/开关状态）
+ *    fastgltf::Interpolation::CubicSpline（三次方样条插值，曲线更平滑）
+ * @param model
+ * @param nodes_have_deal
+ * @param root_entity
+ */
+void gltf_load_animal(const fastgltf::Asset &model,
+                      const std::vector<entt::entity> &nodes_have_deal,
+                      const entt::entity &root_entity) {
+    if (model.animations.empty()) {
+        return;
+    }
+    std::vector<RuntimeAnimation> animations;
+    animations.reserve(model.animations.size());
+
+    for (const auto &animation: model.animations) {
+        // animation.name.c_str(); 这里有动作的名字
+        // 有多个不同类型的 动作
+        std::vector<RuntimeChannel> channels;
+        channels.reserve(animation.channels.size());
+        for (const auto &channel: animation.channels) {
+            RuntimeChannel temp_channel;
+            if (channel.nodeIndex.has_value()) {
+                // 拿到了 nodeIndex
+                // 受影响的 glTF 节点（Node）全局索引
+                // 那个受会受影响,需要
+                temp_channel.nodeIndex = nodes_have_deal[channel.nodeIndex.value()];
+            } else {
+                temp_channel.nodeIndex = entt::null;
+            }
+            temp_channel.path                      = channel.path;
+            auto sampler                           = animation.samplers[channel.samplerIndex];
+            const fastgltf::Accessor &timeAccessor = model.accessors[sampler.inputAccessor];
+            temp_channel.keyframeTimes.reserve(timeAccessor.count);
+            fastgltf::iterateAccessor<float>(model, timeAccessor, [&](float timeValue) {
+                temp_channel.keyframeTimes.push_back(timeValue);
+            });
+            temp_channel.interpolations.reserve(timeAccessor.count);
+            temp_channel.interpolations.push_back(sampler.interpolation);
+
+            const fastgltf::Accessor &outputAccessor = model.accessors[sampler.outputAccessor];
+            if (outputAccessor.type == fastgltf::AccessorType::Vec4) {
+                std::vector<Eigen::Quaternionf> rotates;
+                rotates.reserve(outputAccessor.count);
+                auto function = [&](fastgltf::math::f32vec4 v4) {
+                    rotates.emplace_back(v4.w(), v4.x(), v4.y(), v4.z());
+                };
+                fastgltf::iterateAccessor<fastgltf::math::f32vec4>(model, outputAccessor, function);
+                temp_channel.offset_rotate = rotates;
+            } else if (outputAccessor.type == fastgltf::AccessorType::Vec3) {
+                std::vector<Eigen::Vector3f> offset;
+                offset.reserve(outputAccessor.count);
+                auto function = [&](fastgltf::math::f32vec3 v3) {
+                    offset.emplace_back(v3.x(), v3.y(), v3.z());
+                };
+                fastgltf::iterateAccessor<fastgltf::math::f32vec3>(model, outputAccessor, function);
+                temp_channel.offset_rotate = offset;
+            }
+            channels.push_back(temp_channel);
+            // channel.samplerIndex  这里是什么的意思 ?
+            // channel.samplerIndex  并不是一一 对应的 , 最简单的办法, 那就 完全复制 一条
+            // sampler.inputAccessor 大概率是同一条 ,但是也是存在不是同一条的情况
+            // 好像消息是 目前只 剩 CPU 部分需要去做了,坏消息是,很难做
+        }
+        RuntimeAnimation temp{animation.name.c_str(), channels};
+        animations.push_back(temp);
+    }
+    Logic_entt().emplace<std::vector<RuntimeAnimation> >(root_entity, animations);
+}
+
+void gltf_load_skin(const fastgltf::Asset &model,
+                    const std::vector<entt::entity> &nodes_have_deal,
+                    const entt::entity &root_entity) {
+    for (auto skin: model.skins) {
+        if (skin.skeleton.has_value()) {
+            size_t rootNodeIdx = skin.skeleton.value();
+            std::cout << "  Skeleton Root Node Index: " << rootNodeIdx << "\n";
+            // 指向整个骨骼关节层级树（Joints Hierarchy）的公共根节点
+        }
+        if (skin.inverseBindMatrices.has_value()) {
+            size_t accessorIdx                 = skin.inverseBindMatrices.value();
+            const fastgltf::Accessor &accessor = model.accessors[accessorIdx];
+            if (accessor.type == fastgltf::AccessorType::Mat4) {
+                auto &matrixData = Logic_entt().emplace<std::vector<
+                    Eigen::Matrix4f> >(root_entity, accessor.count);
+
+                size_t count  = 0;
+                auto function = [&](fastgltf::math::fmat4x4 mat) {
+                    const auto modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>
+                            (mat.data());
+                    matrixData[count++] = modelMatrix;
+                };
+                fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(model, accessor, function);
+
+                for (auto i = 0; i < skin.joints.size(); ++i) {
+                    auto joint  = skin.joints[i];
+                    auto entity = nodes_have_deal[joint];
+                    Logic_entt().emplace<inverseBindMatrix>(entity, matrixData[i]);
+                }
+            }
+        } else {
+            // 如果 glTF 没提供 IBM，根据规范，所有关节默认使用单位矩阵 (Identity Matrix)
+            std::cout << "  No Inverse Bind Matrices found. Using identity matrices.\n";
+        }
+    }
+}
+
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Point_3 offset,
                              const Eigen::Quaternionf &rotate,
@@ -457,46 +595,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             }
         }
         // 之后呢? 其实完全是可以在这里操作的
-        //
-
-        for (auto skin: model.skins) {
-            std::cout << "Skin Index: " << 0 << ", Name: " << skin.name << "\n";
-            std::cout << "  Joints count: " << skin.joints.size() << "\n";
-            // 这里需要完成一个转换
-            if (skin.skeleton.has_value()) {
-                size_t rootNodeIdx = skin.skeleton.value();
-                std::cout << "  Skeleton Root Node Index: " << rootNodeIdx << "\n";
-            }
-            // 4. 🎯 读取极其核心的：逆绑定矩阵 (Inverse Bind Matrices)
-            if (skin.inverseBindMatrices.has_value()) {
-                size_t accessorIdx                 = skin.inverseBindMatrices.value();
-                const fastgltf::Accessor &accessor = model.accessors[accessorIdx];
-
-                // 确保数据类型符合 glTF 的 Mat4 浮点矩阵规范
-                if (accessor.type == fastgltf::AccessorType::Mat4) {
-                    // 工业级做法：使用 fastgltf 自带的 iterateAccessor 极速遍历数据
-                    // 自动处理 BufferView、字节对齐（Stride）和各种内存偏移
-                    auto &matrixData = Logic_entt().emplace<std::vector<
-                        Eigen::Matrix4f> >(model_entity, accessor.count);
-
-                    size_t count  = 0;
-                    auto function = [&](fastgltf::math::fmat4x4 mat) {
-                        // mat.data 是一个包含 16 个 float 的数组
-                        const auto modelMatrix = Eigen::Map<const Eigen::Matrix<float, 4, 4, Eigen::ColMajor>>
-                                (mat.data());
-                        // matrixData[count++] = modelMatrix;
-                        matrixData[count++] = Eigen::Matrix4f::Identity();
-                    };
-                    fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(model, accessor, function);
-
-                    std::cout << "  Successfully parsed " << accessor.count << " Inverse Bind Matrices.\n";
-                    // 此时 matrixData 就可以直接上传到你的 GPU 骨骼 Buffer 中了
-                }
-            } else {
-                // 如果 glTF 没提供 IBM，根据规范，所有关节默认使用单位矩阵 (Identity Matrix)
-                std::cout << "  No Inverse Bind Matrices found. Using identity matrices.\n";
-            }
-        }
+        // 那么需要有一个假设,假设 是 按照  深度优先 的 方式进行的 node 的排序
+        gltf_load_skin(model, nodes_have_deal, model_entity);
+        gltf_load_animal(model, nodes_have_deal, model_entity);
         add_recursion_function_to_children(model_entity, update_transform_matrix);
 
         // 单线程的情况下,下面这个函数是对的

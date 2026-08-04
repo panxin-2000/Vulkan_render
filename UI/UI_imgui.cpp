@@ -309,7 +309,6 @@ void display_tree(entt::entity entity) {
             ImGui::PushID(i);
             display_tree(scene_component.children_[i]);
             ImGui::PopID();
-            ++i;
         }
         ImGui::TreePop();
     }
@@ -365,7 +364,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             bool bistro = false;
             if (ImGui::Checkbox("fox.gltf", &bistro)) {
                 if (bistro == true) {
-                    load_gltf_model("DamagedHelmet.gltf",
+                    load_gltf_model("fox.gltf",
                                     "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Fox/glTF/Fox.gltf");
                 }
             }
