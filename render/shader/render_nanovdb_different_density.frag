@@ -50,39 +50,6 @@ layout (location = 5) in vec3 inWorldPos;
 
 
 
-bool trace_vdb_is_hit_box(VdbSampler vdb_sampler,
-                          pnanovdb_vec3_t origin_index,
-                          pnanovdb_vec3_t direction_index, out float t_min, inout float t_max) {
-
-    // 只要你拿到了其中一个网格的地址，调用该函数都能得到整个缓冲区包含的网格总数
-    //    pnanovdb_uint32_t grid_count = pnanovdb_grid_get_grid_count(nanovdb_buffer, Grid);
-    //    if (grid_count > pnanovdb_uint32_t(1)) {
-    //        // 拿到第二个的
-    //        pnanovdb_uint64_t next_size = pnanovdb_grid_get_grid_size(nanovdb_buffer, Grid);
-    //        pnanovdb_grid_handle_t Grid_2;
-    //        pnanovdb_address_t address_grid_2;
-    //        address_grid_2.byte_offset = 0;
-    //        Grid_2.address = address_grid_2;
-    //    }
-
-    // 1. 初始化 Buffer 和 Grid 地址
-    // 注意：size_in_words 填入实际大小，或者如果是指针访问模式，填入一个足够大的占位值
-    // 这里是创建一个 pnanovdb_buf_t 的方式， 给出地址和最大的大小，在需要检查边界时才最使用最大的大小
-    // pnanovdb_buf_t buf;// = pnanovdb_make_buf(nanovdb_buffer.data, nanovdb_size);
-
-    // 3. 坐标转换：将世界空间射线转到索引空间
-
-    bool is_hit = pnanovdb_is_box_intersect(vdb_sampler.GridType,
-                                            vdb_sampler.GridBuffer,
-                                            vdb_sampler.Accessor, // 用于加速的结构
-                                            origin_index,
-                                            t_min,
-                                            direction_index,
-                                            t_max);
-    return is_hit;
-
-}
-
 
 //if (is_hit) {
 //

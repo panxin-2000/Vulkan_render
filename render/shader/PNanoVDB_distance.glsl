@@ -21,6 +21,42 @@
 #include "VdbCommon.glsl"
 #include "commom_function_and_struct.glsl"
 
+
+
+bool trace_vdb_is_hit_box(VdbSampler vdb_sampler,
+                          pnanovdb_vec3_t origin_index,
+                          pnanovdb_vec3_t direction_index, out float t_min, inout float t_max) {
+
+    // 只要你拿到了其中一个网格的地址，调用该函数都能得到整个缓冲区包含的网格总数
+    //    pnanovdb_uint32_t grid_count = pnanovdb_grid_get_grid_count(nanovdb_buffer, Grid);
+    //    if (grid_count > pnanovdb_uint32_t(1)) {
+    //        // 拿到第二个的
+    //        pnanovdb_uint64_t next_size = pnanovdb_grid_get_grid_size(nanovdb_buffer, Grid);
+    //        pnanovdb_grid_handle_t Grid_2;
+    //        pnanovdb_address_t address_grid_2;
+    //        address_grid_2.byte_offset = 0;
+    //        Grid_2.address = address_grid_2;
+    //    }
+
+    // 1. 初始化 Buffer 和 Grid 地址
+    // 注意：size_in_words 填入实际大小，或者如果是指针访问模式，填入一个足够大的占位值
+    // 这里是创建一个 pnanovdb_buf_t 的方式， 给出地址和最大的大小，在需要检查边界时才最使用最大的大小
+    // pnanovdb_buf_t buf;// = pnanovdb_make_buf(nanovdb_buffer.data, nanovdb_size);
+
+    // 3. 坐标转换：将世界空间射线转到索引空间
+
+    bool is_hit = pnanovdb_is_box_intersect(vdb_sampler.GridType,
+                                            vdb_sampler.GridBuffer,
+                                            vdb_sampler.Accessor, // 用于加速的结构
+                                            origin_index,
+                                            t_min,
+                                            direction_index,
+                                            t_max);
+    return is_hit;
+
+}
+
+
 /**
 *
 *  grid_type  pnanovdb_grid_get_grid_type 获取
@@ -177,10 +213,10 @@ PNANOVDB_FORCE_INLINE vec3 vdb_get_ray_density(VdbSampler vdb_sampler,
     float total_density = 0.0f;
     float transmission = 1.0f;
 
-    float step_length = (tmax - tmin) / 16;
+    float step_length = (tmax - tmin) / 64;
     float offset = RandomSequence_GenerateSample1D(randSeq);
     vec3 color = vec3(0.0f);
-    for (uint i = 0; i < 16; i++) {
+    for (uint i = 0; i < 64; i++) {
         float current_offset = RandomSequence_GenerateSample1D(randSeq);
         offset = offset + current_offset;
         pnanovdb_vec3_t light_reach_position = pnanovdb_hdda_ray_start(origin_position, tmin + offset * step_length, direction);
@@ -188,14 +224,12 @@ PNANOVDB_FORCE_INLINE vec3 vdb_get_ray_density(VdbSampler vdb_sampler,
         {
             float light_t_min = 0;
             float light_t_max = 0;
-            bool is_hit = pnanovdb_is_box_intersect(vdb_sampler.GridType,
-                                                    vdb_sampler.GridBuffer,
-                                                    vdb_sampler.Accessor,
-                                                    light_reach_position, light_t_min,
-                                                    light_direction, light_t_max);
+            bool is_hit = trace_vdb_is_hit_box(vdb_sampler,
+                                               light_reach_position, light_direction,
+                                               light_t_min, light_t_max);
             // 没有光影的原因是因为
-            float light_total_density = vdb_get_ray_density_same_step(vdb_sampler, light_reach_position, 0, light_direction, -light_t_min);
-            Li = 3 * exp(-light_total_density * sigma_a);
+            float light_total_density = vdb_get_ray_density_same_step(vdb_sampler, light_reach_position, 0, light_direction, 60);
+            Li = 3.1 * exp(-light_total_density * sigma_a);
         }
         pnanovdb_coord_t  ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(light_reach_position));
         pnanovdb_int32_t   dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
@@ -216,7 +250,7 @@ PNANOVDB_FORCE_INLINE vec3 vdb_get_ray_density(VdbSampler vdb_sampler,
         // total_density 是没有问题的,问题是  Li 过来的时候,
         // exp(-current_offset * step_length * density) 这个值 应该总是很小,很接近于 0
         // 怎么让它 快速变大
-        color = color + Li * vec3((1 - exp(-current_offset * step_length * density)) * transmission);
+        color = color + Li * vec3((1 - exp(-current_offset * step_length * density * sigma_a)) * transmission);
         //        color = color + Li * vec3((1 - transmission)); // 那么这里 就有点写反了,
     }
     T = exp(-total_density * sigma_a);
