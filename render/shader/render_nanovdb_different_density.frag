@@ -173,19 +173,20 @@ void main() {
     // HDDA 必须在索引空间（Index Space）运行
     pnanovdb_vec3_t origin_index = pnanovdb_grid_world_to_indexf(VdbSampler.GridBuffer, VdbSampler.Grid, view_position);
     pnanovdb_vec3_t direction_index = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid, view_direction);
-    pnanovdb_vec3_t light_direction = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid, light.rotate.xyz);
+    pnanovdb_vec3_t light_direction = pnanovdb_grid_world_to_index_dirf(VdbSampler.GridBuffer, VdbSampler.Grid,
+                                                                        vec3(light.rotate.x, light.rotate.y, light.rotate.z));
 
     bool is_hit = trace_vdb_is_hit_box(VdbSampler, origin_index, direction_index, t_min, t_max);
     if (is_hit == true) {
         pnanovdb_vec3_t hit_pos_index = pnanovdb_hdda_ray_start(origin_index, t_min, direction_index);
 
-        vec3 volume_color = vec3(0, 0, 0);
-        float T = vdb_get_ray_density(VdbSampler,
-                                      hit_pos_index,
-                                      0,
-                                      direction_index,
-                                      t_max - t_min,
-                                      light_direction, volume_color, 0.05);  // AABB 包围盒的对角线长度 ，单步的距离
+        float T = 0;
+        vec3 volume_color = vdb_get_ray_density(VdbSampler,
+                                                hit_pos_index,
+                                                0,
+                                                direction_index,
+                                                t_max - t_min,
+                                                light_direction, T, 0.1);  // AABB 包围盒的对角线长度 ，单步的距离
         outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
         //
     } else {

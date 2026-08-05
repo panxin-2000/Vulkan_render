@@ -167,27 +167,25 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density_same_step(VdbSampler vdb_sampler
 }
 
 
-PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
-                                                PNANOVDB_IN(pnanovdb_vec3_t) origin_position, float tmin,
-                                                PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax,
-                                                PNANOVDB_IN(pnanovdb_vec3_t) light_direction, inout vec3 color, float sigma_a) {
+PNANOVDB_FORCE_INLINE vec3 vdb_get_ray_density(VdbSampler vdb_sampler,
+                                               PNANOVDB_IN(pnanovdb_vec3_t) origin_position, float tmin,
+                                               PNANOVDB_IN(pnanovdb_vec3_t) direction, float tmax,
+                                               PNANOVDB_IN(pnanovdb_vec3_t) light_direction, out float T, float sigma_a) {
 
     RandomSequence randSeq;
     RandomSequence_Initialize(randSeq, ivec2(gl_FragCoord.xy), 0U, 8, 0);
     float total_density = 0.0f;
+    float transmission = 1.0f;
 
-    float result = 0.0f;
-    float step_length = (tmax - tmin) / 32;
+    float step_length = (tmax - tmin) / 16;
     float offset = RandomSequence_GenerateSample1D(randSeq);
-
-    for (uint i = 0; i < 32; i++) {
+    vec3 color = vec3(0.0f);
+    for (uint i = 0; i < 16; i++) {
         float current_offset = RandomSequence_GenerateSample1D(randSeq);
         offset = offset + current_offset;
         pnanovdb_vec3_t light_reach_position = pnanovdb_hdda_ray_start(origin_position, tmin + offset * step_length, direction);
-
         float Li = 0;
         {
-            float light_total_density = 0.0f;
             float light_t_min = 0;
             float light_t_max = 0;
             bool is_hit = pnanovdb_is_box_intersect(vdb_sampler.GridType,
@@ -195,27 +193,9 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
                                                     vdb_sampler.Accessor,
                                                     light_reach_position, light_t_min,
                                                     light_direction, light_t_max);
-            float light_result = 0.0f;
-            float light_step_length = tmax / 16;  // 已经在内部了
-            float light_offset = RandomSequence_GenerateSample1D(randSeq);
-            for (uint l = 0; l < 16; l++) {
-                float light_current_offset = RandomSequence_GenerateSample1D(randSeq);
-                light_offset = light_offset + light_current_offset;
-                pnanovdb_vec3_t l_reach_position = pnanovdb_hdda_ray_start(origin_position, tmin + offset * step_length, direction);
-                pnanovdb_coord_t  ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(l_reach_position));
-                pnanovdb_int32_t  dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
-                                                                                               vdb_sampler.GridBuffer,
-                                                                                               vdb_sampler.Accessor,
-                                                                                               PNANOVDB_REF(ijk)));
-                pnanovdb_address_t address = pnanovdb_readaccessor_get_value_address(PNANOVDB_GRID_TYPE_FLOAT,
-                                                                                     vdb_sampler.GridBuffer,
-                                                                                     vdb_sampler.Accessor,
-                                                                                     PNANOVDB_REF(ijk));
-                float density = pnanovdb_read_float(vdb_sampler.GridBuffer, address);
-                light_total_density += light_current_offset * step_length * density;
-
-            }
-            Li = 0.1 * exp(-light_total_density * sigma_a);
+            // 没有光影的原因是因为
+            float light_total_density = vdb_get_ray_density_same_step(vdb_sampler, light_reach_position, 0, light_direction, -light_t_min);
+            Li = 3 * exp(-light_total_density * sigma_a);
         }
         pnanovdb_coord_t  ijk = pnanovdb_hdda_pos_to_ijk(PNANOVDB_REF(light_reach_position));
         pnanovdb_int32_t   dim = pnanovdb_uint32_as_int32(pnanovdb_readaccessor_get_dim(PNANOVDB_GRID_TYPE_FLOAT,
@@ -228,13 +208,19 @@ PNANOVDB_FORCE_INLINE float vdb_get_ray_density(VdbSampler vdb_sampler,
                                                                              PNANOVDB_REF(ijk));
         float density = pnanovdb_read_float(vdb_sampler.GridBuffer, address);
         total_density += current_offset * step_length * density;
-        result = exp(-total_density * sigma_a);
+        transmission = exp(-total_density * sigma_a);
+        // transmission 最开始是 1 , 逐渐 接近 0
+        // 理论上 应该是 最边缘的 贡献的 能量是 最强的
         // 其实这里只有一个问题了,那就是  Li 应该如何获得
         // light_reach_position 有位置,
-
-        color = color + Li * result;
+        // total_density 是没有问题的,问题是  Li 过来的时候,
+        // exp(-current_offset * step_length * density) 这个值 应该总是很小,很接近于 0
+        // 怎么让它 快速变大
+        color = color + Li * vec3((1 - exp(-current_offset * step_length * density)) * transmission);
+        //        color = color + Li * vec3((1 - transmission)); // 那么这里 就有点写反了,
     }
-    return exp(-total_density * sigma_a);
+    T = exp(-total_density * sigma_a);
+    return color;
 }
 
 
