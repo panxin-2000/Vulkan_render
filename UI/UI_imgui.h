@@ -6,12 +6,12 @@
 #define HELLO_MAC_UI_IMGUI_H
 #include "imgui.h"
 #include "global_singleton.h"
-
+#include "base_geometry/geometry_element/point_3.h"
 
 entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data);
 
 entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   bool &show_demo_window,
                                   bool &show_another_window,
-                                  ImVec4 &clear_color);
+                                  ImVec4 &clear_color,Point_3 &world_light_pos);
 #endif //HELLO_MAC_UI_IMGUI_H

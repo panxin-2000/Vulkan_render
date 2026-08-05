@@ -256,7 +256,7 @@ void update_camera_parameter(const entt::entity entity) {
     auto camera                           = Logic_entt().get_or_emplace<camera_optical_component>(entity);
     const auto projection                 = camera.get_projection_matrix();
     Eigen::Matrix4f inv_projection_matrix = projection.inverse();
-    const Point_3 world_light_pos{0, 10, 6};
+    // const Point_3 world_light_pos{0, 10, 6};
 
     const auto view_matrix          = camera.get_view_matrix();
     Point_3 world_camera_pos        = camera.get_position();
@@ -271,7 +271,11 @@ void update_camera_parameter(const entt::entity entity) {
     Engine::instance().set_inv_view_matrix(inv_view_matrix);
     Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
     Engine::instance().set_invVP(invVP);
-    Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
+
+
+
+
+    // Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
 }
 
 

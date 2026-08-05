@@ -162,10 +162,12 @@ public:
         return true;
     }
 
-    bool set_sun_light(const Eigen::Vector3f &matrix) {
+    bool set_sun_light(const Eigen::Vector3f &v3) {
         global_parameters_.light.set_color(1.0f, 0.98f, 0.95f);
         global_parameters_.light.set_intensity(5.0f);
-        global_parameters_.light.set_rotate({0.43f, -0.85f, 0.26f, 0.0f});
+        auto tem = v3;
+        tem.normalize();
+        global_parameters_.light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
         return true;
     }
 

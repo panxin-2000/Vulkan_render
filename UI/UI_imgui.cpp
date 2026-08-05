@@ -317,7 +317,8 @@ void display_tree(entt::entity entity) {
 entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   bool &show_demo_window,
                                   bool &show_another_window,
-                                  ImVec4 &clear_color) {
+                                  ImVec4 &clear_color,
+                                  Point_3 &world_light_pos) {
     // Start the Dear ImGui frame
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplVulkan_NewFrame(entity);
@@ -344,7 +345,11 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
 
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
-
+        ImGui::SliderFloat("light pos x", &world_light_pos.x, -1.0f, 1.0f);
+        ImGui::SliderFloat("light pos y", &world_light_pos.y, -1.0f, 1.0f);
+        ImGui::SliderFloat("light pos z", &world_light_pos.z, -1.0f, 1.0f);
+        Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
+        //
         {
             bool bistro = false;
             if (ImGui::Checkbox("bistro.gltf", &bistro)) {

@@ -570,7 +570,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
         logic_create_proxy(model_entity); // 有几何的时候才创造吗？
-        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
+        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
         logic_update_proxy<shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);

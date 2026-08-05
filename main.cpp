@@ -71,6 +71,9 @@ int main(int argc, char *argv[]) {
     // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/Sphere.nvdb");
     // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/SmallCampfireVDB/smallCampfire/smallCampfireVDB/smallCampfire_0000.vdb");
     add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
+
+
+
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
@@ -81,6 +84,8 @@ int main(int argc, char *argv[]) {
 
 
     // Setup Dear ImGui context
+
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
@@ -113,7 +118,7 @@ int main(int argc, char *argv[]) {
     bool show_another_window = false;
     ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     auto imgui_entity        = create_imgui_entity("imgui", nullptr);
-
+    Point_3 world_light_pos(0.0f, 1.0f, 0.0f);
 
     // Render loop
     bool done = false;
@@ -153,7 +158,7 @@ int main(int argc, char *argv[]) {
         }
 
         Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
-        imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color);
+        imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
         clean_render_entity();
         sync_render_data_to_render_thread();
         framerate_measure.end_frame();
