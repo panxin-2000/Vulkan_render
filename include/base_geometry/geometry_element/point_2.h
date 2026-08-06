@@ -212,11 +212,10 @@ public:
         else return anticlockwise::clockwise;
     }
 
-    float dot(const Point_2 &b) {
+    float dot(const Point_2 &b) const {
         return this->x * b.x + this->y * b.y;
     }
 };
-
 
 
 inline Point_2 clamp(const Point_2 input, const Point_2 min, const Point_2 max) {
