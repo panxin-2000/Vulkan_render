@@ -157,8 +157,8 @@ public:
         return true;
     }
 
-    bool set_world_camera_pos(const Eigen::Vector3f &matrix) {
-        global_parameters_.world_camera_pos = {matrix.x(), matrix.y(), matrix.z(), 0};
+    bool set_world_camera_pos(const Eigen::Vector3f &v3) {
+        global_parameters_.world_camera_pos = {v3.x(), v3.y(), v3.z(), 0};
         return true;
     }
 

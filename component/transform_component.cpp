@@ -106,7 +106,7 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
     Eigen::Vector3f ray_origin    = world_start.head<3>();
     Eigen::Vector3f ray_direction = (world_end.head<3>() - ray_origin).normalized();
     last_ray                      = {
-        {offset},
+        {offset.x(), offset.y(), offset.z()},
         {ray_direction.x(), ray_direction.y(), ray_direction.z()}
     };
     return last_ray;
@@ -261,9 +261,9 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f inv_projection_matrix = projection.inverse();
     // const Point_3 world_light_pos{0, 10, 6};
 
-    const auto view_matrix          = camera.get_view_matrix();
-    Point_3 world_camera_pos        = camera.get_position();
-    Eigen::Matrix4f inv_view_matrix = view_matrix.inverse();
+    const auto view_matrix           = camera.get_view_matrix();
+    Eigen::Vector3f world_camera_pos = camera.get_position();
+    Eigen::Matrix4f inv_view_matrix  = view_matrix.inverse();
 
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
@@ -272,7 +272,7 @@ void update_camera_parameter(const entt::entity entity) {
     Engine::instance().set_inv_projection_matrix(inv_projection_matrix);
     Engine::instance().set_view_matrix(view_matrix);
     Engine::instance().set_inv_view_matrix(inv_view_matrix);
-    Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
+    Engine::instance().set_world_camera_pos(world_camera_pos);
     Engine::instance().set_invVP(invVP);
 
 

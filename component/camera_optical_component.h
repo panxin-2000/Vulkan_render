@@ -66,7 +66,7 @@ private:
     bool perspective_          = true;
     bool orthographic_         = false;
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
-    Point_3 position_          = {0, 0, 6};
+    Eigen::Vector3f position_  = {0, 0, 6};
 
 public:
     camera_optical_component() {
@@ -83,7 +83,7 @@ public:
         aspect_       = aspect;
     }
 
-    Point_3 add_offset(const Point_3 offset) {
+    Eigen::Vector3f add_offset(const Eigen::Vector3f offset) {
         return position_ = position_ + offset;
     }
 
@@ -108,27 +108,27 @@ public:
 
 
     [[nodiscard]] Eigen::Matrix4f get_view_matrix() {
-        const auto view = view_matrix({position_.x, position_.y, position_.z}, rotate_);
+        const auto view = view_matrix(position_, rotate_);
         return view;
     }
 
-    [[nodiscard]] Point_3 get_position() const {
+    [[nodiscard]] Eigen::Vector3f get_position() const {
         return position_;
     }
 
 
-    [[nodiscard]] Point_3 get_view_direction() {
+    [[nodiscard]] Eigen::Vector3f get_view_direction() {
         auto matrix                    = get_view_matrix().transpose();
         Eigen::Vector3f look_direction = matrix.block<3, 1>(0, 2);
         look_direction.normalize();
-        return {look_direction.x(), look_direction.y(), look_direction.z()};
+        return look_direction;
     }
 
-    [[nodiscard]] Point_3 get_view_right_direction() {
+    [[nodiscard]] Eigen::Vector3f get_view_right_direction() {
         auto matrix                     = get_view_matrix().transpose();
         Eigen::Vector3f right_direction = matrix.block<3, 1>(0, 0);
         right_direction.normalize();
-        return {right_direction.x(), right_direction.y(), right_direction.z()};
+        return right_direction;
     }
 };
 
