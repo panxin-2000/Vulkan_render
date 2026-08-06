@@ -179,7 +179,7 @@ void base_event_dealing(const SDL_Event &event) {
 
     static entt::entity current_select_entity = get_UI_scene_root();
     static wmOperatorStatus current_status    = OPERATOR_ZERO;
-    static Point_2 mouse_pos{-1, -1};
+    static Eigen::Vector2f mouse_pos{-1, -1};
 
     switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {

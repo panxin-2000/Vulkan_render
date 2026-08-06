@@ -61,9 +61,9 @@ void update_transform_matrix(const entt::entity entity) {
 // }
 
 
-Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
-    static Point_2 last_mouse_position = {0, 0};
-    static Ray<Point_3> last_ray       = {{0, 0, 0}, {0, 0, 1}};
+Ray<Point_3> &get_screen_ray(const Eigen::Vector2f mouse_positon) {
+    static Eigen::Vector2f last_mouse_position = {0, 0};
+    static Ray<Point_3> last_ray               = {{0, 0, 0}, {0, 0, 1}};
     if (mouse_positon == last_mouse_position) {
         return last_ray;
     }
@@ -81,8 +81,8 @@ Ray<Point_3> &get_screen_ray(const Point_2 mouse_positon) {
 
     // 1. 转换到 NDC 坐标 (假设鼠标坐标为 mouseX, mouseY)
     // 这里有一个坑，gltf 给出的坐标和拿到的 显示区域的宽和高差两倍
-    float x = (2.0f * mouse_positon.x) / static_cast<float>(width) - 1.0f;
-    float y = (2.0f * mouse_positon.y) / static_cast<float>(height) - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
+    float x = (2.0f * mouse_positon.x()) / static_cast<float>(width) - 1.0f;
+    float y = (2.0f * mouse_positon.y()) / static_cast<float>(height) - 1.0f; // 注意：Vulkan/GLFW 的 Y 轴通常需要反转
     // 应该更改为 2 因为上面的  SDL_GetWindowSize 的大小改变了， 是屏幕的逻辑大小，而不是具体的像素大小
     // 这里是什么空间？
     // LOG_INFO(g_log(), "NDC x: {} y: {}", x, y);
@@ -213,8 +213,8 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
         case SDL_EVENT_MOUSE_MOTION: {
             if (status.select_status_ == select_current) {
                 // TODO : 没有确定坐标或者说坐标的系数
-                Point_2 current_position{event.motion.x, event.motion.y};
-                Point_2 last_position{
+                Eigen::Vector2f current_position{event.motion.x, event.motion.y};
+                Eigen::Vector2f last_position{
                     event.motion.x - event.motion.xrel,
                     event.motion.y - event.motion.yrel
                 };

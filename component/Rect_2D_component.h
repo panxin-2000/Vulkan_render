@@ -59,11 +59,11 @@ bool deal_zoom(const entt::entity entity, const SDL_Event &event);
 
 bool deal_position_offset(const entt::entity entity, const SDL_Event &event);
 
-bool check_entity_intersect_point(const entt::entity entity, const Point_2 &current_position);
+bool check_entity_intersect_point(const entt::entity entity, const Eigen::Vector2f &current_position);
 
 
 bool get_intersect_entity(std::vector<entt::entity> &return_value,
                           const entt::entity entity,
-                          const Point_2 &mouse_position);
+                          const Eigen::Vector2f &mouse_position);
 
 #endif //HELLO_MAC_UI_POSITION_AND_OFFSET_H

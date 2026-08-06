@@ -3,9 +3,9 @@
 //
 #include "Rect_2D_component.h"
 
-bool check_entity_intersect_point(const entt::entity entity, const Point_2 &current_position) {
+bool check_entity_intersect_point(const entt::entity entity, const Eigen::Vector2f &current_position) {
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-        if (is_intersect(scene_node->get_bounding_box(), current_position)) {
+        if (is_intersect(scene_node->get_bounding_box(), {current_position.x(), current_position.y()})) {
             return true;
         }
     }
@@ -14,7 +14,7 @@ bool check_entity_intersect_point(const entt::entity entity, const Point_2 &curr
 
 bool get_intersect_entity(std::vector<entt::entity> &return_value,
                           const entt::entity entity,
-                          const Point_2 &mouse_position) {
+                          const Eigen::Vector2f &mouse_position) {
     if (const auto *scene_node = Logic_entt().try_get<Scene_Component>(entity)) {
         for (const entt::entity children_entity: scene_node->children_) {
             if (check_entity_intersect_point(children_entity, mouse_position)) {
