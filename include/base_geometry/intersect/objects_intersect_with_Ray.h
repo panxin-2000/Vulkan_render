@@ -37,23 +37,23 @@ inline bool have_intersect_axis(const float x1, const float x2, const float x3, 
 inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Ray<Point_2> &ray) {
     const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
     const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
-    const auto tmin3   = std::min(t0, t1);
-    const auto tmax3   = std::max(t0, t1);
+    const auto tmin3   = Point_2{std::min(t0.x, t1.x), std::min(t0.y, t1.y)};
+    const auto tmax3   = Point_2{std::max(t0.x, t1.x), std::max(t0.y, t1.y)};
     const float t_near = std::max(tmin3.x, tmin3.y);
     const float t_far  = std::min(tmax3.x, tmax3.y);
     const bool hit     = t_near <= t_far;
-    return hit;
+    return hit && (t_near > 0 || t_far > 0);
 }
 
 inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray) {
     const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
     const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
-    const auto tmin3   = std::min(t0, t1);
-    const auto tmax3   = std::max(t0, t1);
+    const auto tmin3   = Point_3{std::min(t0.x, t1.x), std::min(t0.y, t1.y), std::min(t0.z, t1.z)};
+    const auto tmax3   = Point_3{std::max(t0.x, t1.x), std::max(t0.y, t1.y), std::max(t0.z, t1.z)};
     const float t_near = std::max(tmin3.x, std::max(tmin3.y, tmin3.z));
     const float t_far  = std::min(tmax3.x, std::min(tmax3.y, tmax3.z));
     const bool hit     = t_near <= t_far;
-    return hit;
+    return hit && (t_near > 0 || t_far > 0);
 }
 
 inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> &ray, float &t_min, float &t_max) {
@@ -73,8 +73,8 @@ inline bool is_intersect(const AABB_min_max<Point_3> &L_box, const Ray<Point_3> 
 
     const auto t0      = (L_box.min_point_ - ray.point) / ray.direction;
     const auto t1      = (L_box.max_point_ - ray.point) / ray.direction;
-    const auto tmin3   = std::min(t0, t1);
-    const auto tmax3   = std::max(t0, t1);
+    const auto tmin3   = Point_3{std::min(t0.x, t1.x), std::min(t0.y, t1.y), std::min(t0.z, t1.z)};
+    const auto tmax3   = Point_3{std::max(t0.x, t1.x), std::max(t0.y, t1.y), std::max(t0.z, t1.z)};
     const float t_near = std::max(tmin3.x, std::max(tmin3.y, tmin3.z));
     const float t_far  = std::min(tmax3.x, std::min(tmax3.y, tmax3.z));
     const bool hit     = t_near <= t_far;

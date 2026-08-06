@@ -124,6 +124,7 @@ namespace sh {
 }
 
 TEST(SH, matrix) {
+    GTEST_SKIP();
     Picture_parameters picture_parameters{};
     picture_parameters.image_data = stbi_load("/Users/panxin/Downloads/pano.jpg",
                                               &picture_parameters.width,
