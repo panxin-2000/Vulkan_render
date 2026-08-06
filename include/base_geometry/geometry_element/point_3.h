@@ -152,18 +152,17 @@ public:
         return this->x * b.x + this->y * b.y + this->z * b.z;
     }
 
+    Point_3 cross(const Point_3 &b) const {
+        return {
+            this->y * b.z - this->z * b.y,
+            this->z * b.x - this->x * b.z,
+            this->x * b.y - this->y * b.x
+        };
+    }
+
 
     float single_area(const Point_3 &R);
 };
-
-
-inline Point_3 cross_product(const Point_3 &A, const Point_3 &b) {
-    return {
-        A.y * b.z - A.z * b.y,
-        A.z * b.x - A.x * b.z,
-        A.x * b.y - A.y * b.x
-    };
-}
 
 
 inline Point_3 clamp(const Point_3 input, const Point_3 min, const Point_3 max) {

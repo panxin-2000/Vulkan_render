@@ -34,7 +34,7 @@
 bool if_colinear(Point_2 a, Point_2 b, Point_2 c) {
     Point_2 ab = b - a;
     Point_2 ac = c - a;
-    float f1   = cross_product(ab, ac);
+    float f1   = cross(ab, ac);
     if (abs(f1) < 0.00001)
         return false;
     else

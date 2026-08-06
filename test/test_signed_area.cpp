@@ -10,12 +10,12 @@
 TEST(triangle, fsd) { {
         Point_2 ab{1, 1};
         Point_2 ac{2, 0};
-        float area = cross_product(ab, ac);
+        float area = cross(ab, ac);
         EXPECT_GT(0, area);
     } {
         Point_2 ab{-10, -1};
         Point_2 ac{-2, -0};
-        float area = cross_product(ab, ac);
+        float area = cross(ab, ac);
         EXPECT_GT(0, area);
     }
 }
@@ -24,12 +24,12 @@ TEST(triangle, fsd) { {
 TEST(triangle, fdsd) { {
         Point_2 ab{2, 0};
         Point_2 ac{1, 1};
-        float area = cross_product(ab, ac);
+        float area = cross(ab, ac);
         EXPECT_LT(0, area);
     } {
         Point_2 ab{1, 1};
         Point_2 ac{2, 3};
-        float area = cross_product(ab, ac);
+        float area = cross(ab, ac);
         EXPECT_LT(0, area);
     }
 }
@@ -45,9 +45,9 @@ TEST(triangle, three_point) {
     Point_2 ab = point_b - point_a;
     Point_2 ac = point_c - point_a;
     Point_2 bc = point_c - point_b;
-    EXPECT_GT(0, cross_product(ab,ac)); // 这里并不是为了判断等于，只是为了判断方向
-    EXPECT_GT(0, cross_product(ab,bc));
-    EXPECT_EQ(cross_product(ab,ac), cross_product(ab,bc));
+    EXPECT_GT(0, cross(ab,ac)); // 这里并不是为了判断等于，只是为了判断方向
+    EXPECT_GT(0, cross(ab,bc));
+    EXPECT_EQ(cross(ab,ac), cross(ab,bc));
     // 三角形的三个点，只要第三个点在另外两个点的逆时针方向，那么这个三角形就是逆时针的三角形
     // 所以可以通过这个办法来简单的判断顺时针和逆时针，确实只有在做的时候才会更加了解具体相关的细节
 }
