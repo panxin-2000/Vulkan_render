@@ -526,10 +526,19 @@ struct RuntimeChannel {
 
 struct RuntimeAnimation {
     std::string name;
-    // float duration = 0.0f; // 整个动画的总时长（等于所有 channel 中最大的那个 keyframeTimes.back()）
+    float max_frame_time = 0.0f; // 整个动画的总时长（等于所有 channel 中最大的那个 keyframeTimes.back()）
     std::vector<RuntimeChannel> channels;
 
-    void apply_animation(const float time) const {
+    void apply_animation(const float time, bool circle_animal = false) const {
+        auto number = std::floor(time / max_frame_time);
+        if (time > max_frame_time && circle_animal == true) {
+            for (const auto &channel: channels) {
+                channel.generate_local_JointTransform(time - number * max_frame_time);
+            }
+            return;
+        } else if (time > max_frame_time && circle_animal == false) {
+            return;
+        }
         for (const auto &channel: channels) {
             channel.generate_local_JointTransform(time);
         }
@@ -561,9 +570,11 @@ void gltf_load_animal(const fastgltf::Asset &model,
     std::vector<RuntimeAnimation> animations;
     animations.reserve(model.animations.size());
 
+
     for (const auto &animation: model.animations) {
         // animation.name.c_str(); 这里有动作的名字
         // 有多个不同类型的 动作
+        float max_frame_time = 0.0f;
         std::vector<RuntimeChannel> channels;
         channels.reserve(animation.channels.size());
         for (const auto &channel: animation.channels) {
@@ -583,6 +594,7 @@ void gltf_load_animal(const fastgltf::Asset &model,
             fastgltf::iterateAccessor<float>(model, timeAccessor, [&](float timeValue) {
                 temp_channel.keyframeTimes.push_back(timeValue);
             });
+            max_frame_time = std::max(max_frame_time, temp_channel.keyframeTimes.back());
             temp_channel.interpolations.reserve(timeAccessor.count);
             temp_channel.interpolations.push_back(sampler.interpolation);
 
@@ -610,7 +622,7 @@ void gltf_load_animal(const fastgltf::Asset &model,
             // sampler.inputAccessor 大概率是同一条 ,但是也是存在不是同一条的情况
             // 好像消息是 目前只 剩 CPU 部分需要去做了,坏消息是,很难做
         }
-        RuntimeAnimation temp{animation.name.c_str(), channels};
+        RuntimeAnimation temp{animation.name.c_str(), max_frame_time, channels};
         animations.push_back(temp);
     }
     Logic_entt().emplace<std::vector<RuntimeAnimation> >(root_entity, animations);
@@ -676,13 +688,20 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const entt::entity model_entity = Logic_entt().create();
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
-        logic_create_proxy(model_entity); // 有几何的时候才创造吗？
-        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
-        logic_update_proxy<shader_data>(model_entity);
+        auto &model = optional_model.value();
+
+        if (model.skins.empty()) {
+            logic_create_proxy(model_entity);
+            Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
+            logic_update_proxy<shader_data>(model_entity);
+        } else {
+            logic_create_proxy(model_entity);
+            Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
+            logic_update_proxy<shader_data>(model_entity);
+        }
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
 
-        auto &model          = optional_model.value();
         const auto nodes_num = model.nodes.size();
         std::vector<entt::entity> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, entt::null);
@@ -708,10 +727,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         gltf_load_skin(model, nodes_have_deal, model_entity);
         gltf_load_animal(model, nodes_have_deal, model_entity);
 
-
-        auto animation = Logic_entt().get<std::vector<RuntimeAnimation> >(model_entity);
-        if (!animation.empty()) {
-            animation.at(0).apply_animation(0.0f);
+        if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(model_entity)) {
+            animation->at(0).apply_animation(0.0f);
         }
 
         const auto &transform       = Logic_entt().get<Transform>(nodes_have_deal[mesh_entity_index]);
@@ -720,9 +737,6 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
 
         add_recursion_function_to_children(model_entity, update_transform_matrix);
-
-        // 我能
-        // Logic_entt().emplace<std::vector<entt::entity> > 拿到, 之后呢?
 
         // 单线程的情况下,下面这个函数是对的
         {
@@ -757,7 +771,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
                     auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
                     const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-                    Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+                    Eigen::Matrix4f result          = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
                     Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
                 }
             };
