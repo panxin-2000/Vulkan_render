@@ -14,9 +14,9 @@ struct Transform_matrix_dirty {
 };
 
 
-class alignas(16) Transform_matrix {
+class alignas(16) Transform_Matrix {
 public:
-    explicit Transform_matrix(const Eigen::Matrix4f &modelMatrix = Eigen::Matrix4f::Identity()) {
+    explicit Transform_Matrix(const Eigen::Matrix4f &modelMatrix = Eigen::Matrix4f::Identity()) {
         model_Matrix_ = modelMatrix;
     }
 

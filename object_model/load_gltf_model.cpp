@@ -424,22 +424,116 @@ Texture_parameter load_image(fastgltf::Image &image) {
 }
 
 
-struct inverseBindMatrix {
+struct InverseBindMatrix {
     Eigen::Matrix4f matrix;
 };
 
+struct JointMatrix {
+    Eigen::Matrix4f matrix;
+};
+
+
 struct RuntimeChannel {
-    entt::entity nodeIndex;
-    fastgltf::AnimationPath path;
+    entt::entity effect_entity   = entt::null;
+    fastgltf::AnimationPath path = fastgltf::AnimationPath::Translation;
     std::vector<float> keyframeTimes;
     std::vector<fastgltf::AnimationInterpolation> interpolations;
     std::variant<std::vector<Eigen::Vector3f>, std::vector<Eigen::Quaternionf> > offset_rotate;
+
+
+    auto get_interpolation_rotation(const float &time, const size_t index,
+                                    const std::vector<Eigen::Quaternionf> &rotates) const {
+        if (interpolations[index] == fastgltf::AnimationInterpolation::Step) {
+            uint32_t last = index;
+            return rotates[last];
+        } else if (interpolations[index] == fastgltf::AnimationInterpolation::Linear) {
+            uint32_t last = index;
+            uint32_t next = index + 1;
+            float t = (time - keyframeTimes[last]) / (keyframeTimes[next] - keyframeTimes[last]);
+            auto last_rotate = rotates[last];
+            auto next_rotate = rotates[next];
+            Eigen::Quaternionf q_interpolated = last_rotate.slerp(t, next_rotate);
+            return q_interpolated;
+        }
+    }
+
+    size_t get_time_index(const float &time) const {
+        for (uint32_t i = 0; i < keyframeTimes.size(); ++i) {
+            if (time >= keyframeTimes[i]) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    auto get_interpolation_offset_zoom(const float time, const size_t index,
+                                       const std::vector<Eigen::Vector3f> &offsets_or_zooms) const {
+        if (interpolations[index] == fastgltf::AnimationInterpolation::Step) {
+            uint32_t last = index;
+            return offsets_or_zooms[last];
+        } else if (interpolations[index] == fastgltf::AnimationInterpolation::Linear) {
+            uint32_t last = index;
+            uint32_t next = index + 1;
+            float t = (time - keyframeTimes[index]) / (keyframeTimes[next] - keyframeTimes[last]);
+            auto last_offset = offsets_or_zooms[last];
+            auto next_offset = offsets_or_zooms[next];
+            Eigen::Vector3f offset_interpolated = (1.0f - t) * last_offset + t * next_offset;
+            return offset_interpolated;
+        }
+        assert("program can run to here " && false);
+        return Eigen::Vector3f{1, 1, 1};
+    }
+
+    void generate_local_JointTransform(const float time) const {
+        auto &value               = Logic_entt().get<Transform>(effect_entity);
+        Eigen::Quaternionf rotate = value.get_rotate();
+        Point_3 offset            = value.get_position();
+        Point_3 zoom              = value.get_zoom();
+        const auto index          = get_time_index(time);
+
+        switch (path) {
+            case fastgltf::AnimationPath::Rotation: {
+                if (const auto rotates = std::get_if<std::vector<Eigen::Quaternionf> >(&offset_rotate)) {
+                    rotate = get_interpolation_rotation(time, index, *rotates);
+                }
+                break;
+            }
+            case fastgltf::AnimationPath::Translation: {
+                if (const auto offsets = std::get_if<std::vector<Eigen::Vector3f> >(&offset_rotate)) {
+                    auto temp = get_interpolation_offset_zoom(time, index, *offsets);
+                    offset    = {temp.x(), temp.y(), temp.z()};
+                }
+                break;
+            }
+            case fastgltf::AnimationPath::Scale: {
+                if (const auto offsets = std::get_if<std::vector<Eigen::Vector3f> >(&offset_rotate)) {
+                    auto temp = get_interpolation_offset_zoom(time, index, *offsets);
+                    zoom      = {temp.x(), temp.y(), temp.z()};
+                }
+                break;
+            }
+            case fastgltf::AnimationPath::Weights: {
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+        Logic_entt().emplace_or_replace<Transform>(effect_entity, offset, rotate, zoom);
+        Logic_entt().emplace_or_replace<Transform_matrix_dirty>(effect_entity);
+    }
 };
 
 struct RuntimeAnimation {
     std::string name;
     // float duration = 0.0f; // 整个动画的总时长（等于所有 channel 中最大的那个 keyframeTimes.back()）
     std::vector<RuntimeChannel> channels;
+
+    void apply_animation(const float time) const {
+        for (const auto &channel: channels) {
+            channel.generate_local_JointTransform(time);
+        }
+    }
 };
 
 // Logic_entt().emplace<std::vector<Animation_entity> >(root_entity, animations);
@@ -478,9 +572,9 @@ void gltf_load_animal(const fastgltf::Asset &model,
                 // 拿到了 nodeIndex
                 // 受影响的 glTF 节点（Node）全局索引
                 // 那个受会受影响,需要
-                temp_channel.nodeIndex = nodes_have_deal[channel.nodeIndex.value()];
+                temp_channel.effect_entity = nodes_have_deal[channel.nodeIndex.value()];
             } else {
-                temp_channel.nodeIndex = entt::null;
+                temp_channel.effect_entity = entt::null;
             }
             temp_channel.path                      = channel.path;
             auto sampler                           = animation.samplers[channel.samplerIndex];
@@ -546,11 +640,14 @@ void gltf_load_skin(const fastgltf::Asset &model,
                 };
                 fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(model, accessor, function);
 
+                std::vector<entt::entity> skin_joints;
                 for (auto i = 0; i < skin.joints.size(); ++i) {
                     auto joint  = skin.joints[i];
                     auto entity = nodes_have_deal[joint];
-                    Logic_entt().emplace<inverseBindMatrix>(entity, matrixData[i]);
+                    Logic_entt().emplace<InverseBindMatrix>(entity, matrixData[i]);
+                    skin_joints.push_back(entity);
                 }
+                Logic_entt().emplace<std::vector<entt::entity> >(root_entity, skin_joints);
             }
         } else {
             // 如果 glTF 没提供 IBM，根据规范，所有关节默认使用单位矩阵 (Identity Matrix)
@@ -558,6 +655,16 @@ void gltf_load_skin(const fastgltf::Asset &model,
         }
     }
 }
+
+
+void update_joint_matrix_matrix(const entt::entity entity) {
+    if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
+        auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
+        const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
+        Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+        Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
+    }
+};
 
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
@@ -570,7 +677,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
         logic_create_proxy(model_entity); // 有几何的时候才创造吗？
-        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
+        Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
         logic_update_proxy<shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
@@ -580,10 +687,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         std::vector<entt::entity> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, entt::null);
         size_t has_mesh = 0;
+        size_t mesh_entity_index;
         for (auto i = 0; i < nodes_num; ++i) {
             auto node = model.nodes[i];
             if (node.meshIndex.has_value()) {
                 has_mesh++;
+                mesh_entity_index = node.meshIndex.value();
             }
         }
         for (const auto &scene: model.scenes) {
@@ -598,20 +707,35 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         // 那么需要有一个假设,假设 是 按照  深度优先 的 方式进行的 node 的排序
         gltf_load_skin(model, nodes_have_deal, model_entity);
         gltf_load_animal(model, nodes_have_deal, model_entity);
+
+
+        auto animation = Logic_entt().get<std::vector<RuntimeAnimation> >(model_entity);
+        if (!animation.empty()) {
+            animation.at(0).apply_animation(0.0f);
+        }
+
+        const auto &transform       = Logic_entt().get<Transform>(nodes_have_deal[mesh_entity_index]);
+        Eigen::Matrix4f mesh_matrix = transform.get_transform_matrix();
+        mesh_matrix                 = mesh_matrix.inverse().eval();
+
+
         add_recursion_function_to_children(model_entity, update_transform_matrix);
+
+        // 我能
+        // Logic_entt().emplace<std::vector<entt::entity> > 拿到, 之后呢?
 
         // 单线程的情况下,下面这个函数是对的
         {
             auto boxes    = std::make_shared<std::vector<Render_AABB> >();
-            auto matrices = std::make_shared<std::vector<Transform_matrix> >();
+            auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
             Geometry_data bindless_Geometry_data;
-            auto view = Logic_entt().view<Geometry_data_need_copy_tag, Geometry_data, Transform_matrix>();
+            auto view = Logic_entt().view<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>();
             for (const auto entity: view) {
                 auto geometry_data = Logic_entt().get<Geometry_data>(entity);
                 auto vertices      = geometry_data.get_vertices();
                 auto indices       = geometry_data.get_indices();
                 // 这里其实有一个假设是 vertices.size() == indices.size()
-                auto &model_matrix = Logic_entt().get<Transform_matrix>(entity);
+                auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                 for (auto &vertex: vertices) {
                     bindless_Geometry_data.push_vertices(vertex);
                     const auto bound_box          = find_min_max_point(vertex);
@@ -629,6 +753,17 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 }
                 Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
+            auto function = [& mesh_matrix](const entt::entity entity) {
+                if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
+                    auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
+                    const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
+                    Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+                    Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
+                }
+            };
+
+            add_recursion_function_to_children(model_entity, function);
+
 
             // 那么另外一件事 包围盒 应该也是需要去重新计算了
             // 得到全部了,那么需要做什么呢? 上传到一个 buffer 中 生成 一个 std::vector<VKR_Primitive>
@@ -641,9 +776,14 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 // std::cout << "vertexOffset :" << primitives.at(i).draw_command.indexed_command.vertexOffset << std::endl;
                 // std::cout << "firstIndex   :" << primitives.at(i).draw_command.indexed_command.firstIndex << std::endl;
             }
-            if (auto JointMatrices = Logic_entt().try_get<std::vector<Eigen::Matrix4f> >(model_entity)) {
-                const auto matrix_ptr = JointMatrices->data();
-                auto matrix_size      = JointMatrices->size() * sizeof(Eigen::Matrix4f);
+            if (auto skin_joints = Logic_entt().try_get<std::vector<entt::entity> >(model_entity)) {
+                std::vector<Eigen::Matrix4f> JointMatrices;
+                for (const auto entity: *skin_joints) {
+                    JointMatrices.push_back(Logic_entt().get<JointMatrix>(entity).matrix);
+                    // 如果有问题, 是上面递归的问题,不会是这里的问题
+                }
+                const auto matrix_ptr = JointMatrices.data();
+                auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
                 auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
                 set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
             }
@@ -658,7 +798,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             Command_calculate command_calculate;
             command_calculate.command_size = primitives.size(); {
                 const auto matrix_ptr = matrices->data();
-                auto matrix_size      = matrices->size() * sizeof(Transform_matrix);
+                auto matrix_size      = matrices->size() * sizeof(Transform_Matrix);
                 auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
                 set_render_parameter(model_entity, "model_matrix_parameters", matrix_buffer);
             } {

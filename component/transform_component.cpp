@@ -42,10 +42,10 @@ void update_transform_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
         // 满足条件：两个组件都有
         auto parent_entity           = get_parent(entity);
-        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_matrix>(parent_entity);
+        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_Matrix>(parent_entity);
         const auto &transform        = Logic_entt().get<Transform>(entity);
         Eigen::Matrix4f result       = parent_transform_matrix.get() * transform.get_transform_matrix();
-        Logic_entt().emplace_or_replace<Transform_matrix>(entity, result);
+        Logic_entt().emplace_or_replace<Transform_Matrix>(entity, result);
         Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
 };
@@ -271,8 +271,6 @@ void update_camera_parameter(const entt::entity entity) {
     Engine::instance().set_inv_view_matrix(inv_view_matrix);
     Engine::instance().set_world_camera_pos({world_camera_pos.x, world_camera_pos.y, world_camera_pos.z});
     Engine::instance().set_invVP(invVP);
-
-
 
 
     // Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});

@@ -374,7 +374,7 @@ public:
             return; // 已经在运行中了，直接返回
         }
         need_render = running; // 设置为运行中
-        Render_entt().group<PBR_material_index, Transform_matrix, Render_AABB, Draw_command>();
+        Render_entt().group<PBR_material_index, Transform_Matrix, Render_AABB, Draw_command>();
         // 这四个 我目前感觉是需要
         // 然后需要怎么做呢? VKR_Primitive 是基本的命令的合集
         // 想要一起绘制呢? 首先需要 把顶点 全部都绑定 到一起,之后  firstIndex 和  vertexOffset 需要 重新计算
