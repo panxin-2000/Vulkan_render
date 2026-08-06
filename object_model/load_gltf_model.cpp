@@ -302,14 +302,14 @@ void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &no
     if (std::holds_alternative<fastgltf::TRS>(node.transform)) {
         auto &trs = std::get<fastgltf::TRS>(node.transform);
         Logic_entt().emplace<Transform>(entity,
-                                        Point_3{
+                                        Eigen::Vector3f{
                                             trs.translation.x(), trs.translation.y(), trs.translation.z()
                                         },
                                         Eigen::Quaternionf{
                                             trs.rotation.w(), trs.rotation.x(), trs.rotation.y(),
                                             trs.rotation.z()
                                         },
-                                        Point_3{trs.scale.x(), trs.scale.y(), trs.scale.z()});
+                                        Eigen::Vector3f{trs.scale.x(), trs.scale.y(), trs.scale.z()});
     } else if (std::holds_alternative<fastgltf::math::fmat4x4>(node.transform)) {
         auto &trs = std::get<fastgltf::math::fmat4x4>(node.transform);
         // 列存储
@@ -317,13 +317,13 @@ void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &no
         Eigen::Matrix3f rotation_matrix = modelMatrix.block<3, 3>(0, 0);
         Eigen::Quaternionf rotation     = Eigen::Quaternionf(rotation_matrix);;
         Logic_entt().emplace<Transform>(entity,
-                                        Point_3{
+                                        Eigen::Vector3f{
                                             modelMatrix(0, 3),
                                             modelMatrix(1, 3),
                                             modelMatrix(2, 3)
                                         },
                                         rotation,
-                                        Point_3{
+                                        Eigen::Vector3f{
                                             modelMatrix.col(0).head<3>().norm(),
                                             modelMatrix.col(1).head<3>().norm(),
                                             modelMatrix.col(2).head<3>().norm(),
@@ -487,8 +487,8 @@ struct RuntimeChannel {
     void generate_local_JointTransform(const float time) const {
         auto &value               = Logic_entt().get<Transform>(effect_entity);
         Eigen::Quaternionf rotate = value.get_rotate();
-        Point_3 offset            = value.get_position();
-        Point_3 zoom              = value.get_zoom();
+        Eigen::Vector3f offset    = value.get_offset();
+        Eigen::Vector3f zoom      = value.get_zoom();
         const auto index          = get_time_index(time);
 
         switch (path) {

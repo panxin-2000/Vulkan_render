@@ -220,7 +220,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
                 };
 
                 if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
-                    const auto object_position = transform->get_position();
+                    const auto object_position = transform->get_offset();
                     const auto world_entity    = get_world_root();
                     const auto current_ray     = get_screen_ray(current_position);
                     const auto last_ray        = get_screen_ray(last_position);
@@ -233,12 +233,15 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
                     // normal 其实是 view direction
                     // Eigen::Vector3f normal = camera_matrix.block<3, 1>(0, 2); // 另一种拿 法线的办法
                     // quat 乘于 unit Z (0,0,1) 的结果是可以被简化的 ，之后再看
-                    const Plane plane{object_position, {normal.x(), normal.y(), normal.z()}};
+                    const Plane plane{
+                        {object_position.x(), object_position.y(), object_position.z()},
+                        {normal.x(), normal.y(), normal.z()}
+                    };
 
                     const auto a = intersect_result(plane, current_ray);
                     const auto b = intersect_result(plane, last_ray);
 
-                    transform->add_offset(a - b);
+                    transform->add_offset({(a - b).x, (a - b).y, (a - b).z});
                     // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
                     Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
                     return OPERATOR_RUNNING_MODAL;

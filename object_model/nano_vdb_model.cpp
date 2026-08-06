@@ -53,7 +53,7 @@ void nanovdb_handle_add_box(const entt::entity entity,
 
 void add_nanovdb_to_gpu(const entt::entity entity,
                         const std::string &file_name,
-                        const Point_3 offset,
+                        const Eigen::Vector3f offset,
                         const Eigen::Quaternionf &rotate) {
     const float angle = -90.0f * M_PI / 180.0f; // 或者直接使用 1.5707963f
 
@@ -145,7 +145,7 @@ void add_nanovdb_to_gpu(const entt::entity entity,
 
 
 entt::entity add_volume_pass(const std::string &name,
-                             const Point_3 offset             = Point_3(500, 200, 0),
+                             const Eigen::Vector3f offset     = Eigen::Vector3f(500, 200, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity()) {
     entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);

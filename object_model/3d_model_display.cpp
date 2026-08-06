@@ -21,7 +21,7 @@
 #include "../UI/PLYLoader.h"
 
 
-entt::entity object_ply_model(const std::string &name, const std::string &file_path, const Point_3 offset,
+entt::entity object_ply_model(const std::string &name, const std::string &file_path, const Eigen::Vector3f offset,
                               const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
@@ -60,7 +60,7 @@ entt::entity object_ply_model(const std::string &name, const std::string &file_p
 
 entt::entity object_3d_model(const std::string &name,
                              const std::string &mesh_path,
-                             const Point_3 offset,
+                             const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
@@ -93,7 +93,7 @@ entt::entity object_3d_model(const std::string &name,
     return entity;
 }
 
-entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, const Point_3 offset,
+entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
@@ -205,7 +205,7 @@ entt::entity add_sky_box(const std::string &name) {
 
 entt::entity object_3d_model(const std::string &name,
                              const AABB_min_max<Point_3> &bounding_box,
-                             const Point_3 offset,
+                             const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);

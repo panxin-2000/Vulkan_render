@@ -13,16 +13,16 @@
 
 entt::entity object_3d_model(const std::string &name,
                              const std::string &mesh_path,
-                             const Point_3 offset             = Point_3(0, 0, 0),
+                             const Eigen::Vector3f offset             = Eigen::Vector3f(0, 0, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 entt::entity object_3d_model(const std::string &name,
                              const AABB_min_max<Point_3> &bounding_box,
-                             const Point_3 offset             = Point_3(0, 0, 0),
+                             const Eigen::Vector3f offset             = Eigen::Vector3f(0, 0, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh,
-                             const Point_3 offset,
+                             const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 

@@ -30,19 +30,19 @@ private:
 
 class alignas(16) Transform {
     Eigen::Quaternionf rotate_ = {1, 0, 0, 0};
-    Point_3 zoom_              = {1, 1, 1};
-    Point_3 position_          = {0, 0, 0};
+    Eigen::Vector3f zoom_      = {1, 1, 1};
+    Eigen::Vector3f offset_    = {0, 0, 0};
 
 public:
     explicit Transform(const Eigen::Matrix4f matrix) {
     }
 
-    explicit Transform(const Point_3 position,
+    explicit Transform(const Eigen::Vector3f offset,
                        const Eigen::Quaternionf &rotate = {1, 0, 0, 0},
-                       const Point_3 zoom               = {1, 1, 1}) {
-        position_ = position;
-        rotate_   = rotate;
-        zoom_     = zoom;
+                       const Eigen::Vector3f zoom       = {1, 1, 1}) {
+        offset_ = offset;
+        rotate_ = rotate;
+        zoom_   = zoom;
     }
 
 
@@ -50,16 +50,16 @@ public:
         return rotate_;
     }
 
-    [[nodiscard]] Point_3 get_zoom() const {
+    [[nodiscard]] auto get_zoom() const {
         return zoom_;
     }
 
-    [[nodiscard]] Point_3 get_position() const {
-        return position_;
+    [[nodiscard]] auto get_offset() const {
+        return offset_;
     }
 
-    Point_3 add_offset(const Point_3 offset) {
-        return position_ = position_ + offset;
+    auto add_offset(const Eigen::Vector3f offset) {
+        return offset_ = offset_ + offset;
     }
 
     Eigen::Quaternionf mult_rotate(const Eigen::Quaternionf &quaternion) {
@@ -74,11 +74,11 @@ public:
         // 定义一个仿射变换（4x4 矩阵）
         Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
         // 1. 平移 (Translation)
-        model_4x4.translate(Eigen::Vector3f(position_.x, position_.y, position_.z));
+        model_4x4.translate(offset_);
         // 2. 旋转 (Rotation) - 使用四元数
         model_4x4.rotate(rotate_);
         // 3. 缩放 (Scaling)
-        model_4x4.scale(Eigen::Vector3f(zoom_.x, zoom_.y, zoom_.z));
+        model_4x4.scale(zoom_);
         // 获取最终传给 Vulkan 的 4x4 矩阵
         Eigen::Matrix4f modelMatrix = model_4x4.matrix();
         return modelMatrix;
