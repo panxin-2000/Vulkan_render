@@ -17,16 +17,16 @@ template<typename T>
 float distance(const Segment<T> &segment, const T &test_point) {
     auto direction = segment.end_point - segment.start_point;
     auto PA        = test_point - segment.start_point;
-    auto t         = dot(PA, direction) / dot(direction, direction);
+    auto t         = (PA.dot(direction)) / (direction.dot(direction));
     if (t > 0 && t < 1) {
         auto D        = segment.start_point + direction * t;
-        auto distance = dot(test_point - D, test_point - D);
+        auto distance = ((test_point - D).dot(test_point - D));
         return distance;
     } else if (t <= 0) {
-        auto distance = dot(test_point - segment.start_point, test_point - segment.start_point);
+        auto distance = ((test_point - segment.start_point).dot(test_point - segment.start_point));
         return distance;
     } else if (t >= 0) {
-        auto distance = dot(test_point - segment.end_point, test_point - segment.end_point);
+        auto distance = ((test_point - segment.end_point).dot(test_point - segment.end_point));
         return distance;
     }
     return NAN;
@@ -34,20 +34,20 @@ float distance(const Segment<T> &segment, const T &test_point) {
 
 template<typename T>
 float distance(const T &point_L, const T &point_R) {
-    return dot(point_L - point_R, point_L - point_R);
+    return ((point_L - point_R).dot(point_L - point_R));
 }
 
 template<typename T>
 float distance(const Ray<T> &ray, const T &test_point) {
     auto direction = ray.direction;
     auto PA        = test_point - ray.point;
-    auto t         = dot(PA, direction) / dot(direction, direction);
+    auto t         = (PA.dot(direction)) / (direction.dot(direction));
     if (t > 0) {
         auto D        = ray.point + direction * t;
-        auto distance = dot(test_point - D, test_point - D);
+        auto distance = ((test_point - D).dot(test_point - D));
         return distance;
     } else if (t <= 0) {
-        auto distance = dot(test_point - ray.point, test_point - ray.point);
+        auto distance = ((test_point - ray.point).dot(test_point - ray.point));
         return distance;
     }
     return NAN;
@@ -57,9 +57,9 @@ template<typename T>
 float distance(const Straight_line<T> &line, const T &test_point) {
     auto direction = line.direction;
     auto PA        = test_point - line.point;
-    auto t         = dot(PA, direction) / dot(direction, direction);
+    auto t         = (PA.dot(direction)) / (direction.dot(direction));
     auto D         = line.point + direction * t;
-    auto distance  = dot(test_point - D, test_point - D);
+    auto distance  = ((test_point - D).dot(test_point - D));
     return distance;
 }
 
@@ -81,19 +81,19 @@ bool is_intersect(const AABB_centroid<T> &box, const T &test_point) {
 template<typename T>
 inline float distance_of_box_center(const AABB_centroid<T> &box, const T &test_point) {
     T distance = box.centroid_point_ - test_point;
-    return dot(distance, distance);
+    return (distance.dot(distance));
 }
 
 template<typename T>
 inline float distance_of_box_center(const AABB_min_max<T> &box, const T &test_point) {
     T distance = (box.max_point_ + box.min_point_) / 2 - test_point;
-    return dot(distance, distance);
+    return (distance.dot(distance));
 }
 
 
 template<typename T>
 inline bool is_intersect(const Plane<T> &plane, const T &test_point) {
-    if (abs(dot((test_point - plane.point), (plane.normal))) < 0.0000001) {
+    if (abs(((test_point - plane.point).dot(plane.normal))) < 0.0000001) {
         return true;
     }
     return false;
@@ -101,7 +101,7 @@ inline bool is_intersect(const Plane<T> &plane, const T &test_point) {
 
 template<typename T>
 inline bool is_intersect(const Sphere<T> &sphere, const T &test_point) {
-    if (dot((test_point - sphere.center), (test_point - sphere.center)) <=
+    if (((test_point - sphere.center).dot(test_point - sphere.center)) <=
         (sphere.radius * sphere.radius)) {
         return true;
     }

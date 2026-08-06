@@ -44,7 +44,7 @@ template<typename T>
 float distance(const AABB_min_max<T> &box, const T &test_point) {
     auto projection = clamp(test_point, box.min_point_, box.max_point_);
     // auto error      = clamp({}, box.max_point_ - test_point, test_point - box.min_point_);
-    return dot({test_point - projection}, {test_point - projection});
+    return ((test_point - projection).dot(test_point - projection));
 }
 
 template<typename T>

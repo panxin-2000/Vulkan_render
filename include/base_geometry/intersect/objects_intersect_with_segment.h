@@ -112,27 +112,27 @@ template<typename T>
 bool is_intersect(const Sphere<T> &sphere, const Segment<T> &segment) {
     Ray<T> ray_start(segment.start_point, segment.end_point - segment.start_point);
     auto center_to_segment_start = ray_start.point - sphere.center;
-    auto c_start = (dot(center_to_segment_start, center_to_segment_start) - sphere.radius * sphere.radius);
+    auto c_start = ((center_to_segment_start.dot(center_to_segment_start)) - sphere.radius * sphere.radius);
     if (c_start < 0) {
         return true; // 起点在球中
     }
     Ray<T> ray_end(segment.end_point, segment.start_point - segment.end_point);
     auto center_to_segment_end = ray_end.point - sphere.center;
-    auto c_end                 = (dot(center_to_segment_end, center_to_segment_end) - sphere.radius * sphere.radius);
+    auto c_end                 = ((center_to_segment_end.dot(center_to_segment_end)) - sphere.radius * sphere.radius);
     if (c_end < 0) {
         return true; // 钟点在球中
     }
     // 起点和终点都不在球中
 
     auto direction_start = ray_start.direction;
-    auto b_half_start    = dot(center_to_segment_start, direction_start);
-    auto a               = dot(direction_start, direction_start);
-    auto delta_half      = b_half_start * b_half_start - dot(direction_start, direction_start) * c_start;
+    auto b_half_start    = (center_to_segment_start.dot(direction_start));
+    auto a               = (direction_start.dot(direction_start));
+    auto delta_half      = b_half_start * b_half_start - (direction_start.dot(direction_start)) * c_start;
     if (delta_half < 0) {
         return false; // 这里决定了线段所在直线不会相交
     }
     auto direction_end = ray_end.direction;
-    auto b_half_end    = dot(center_to_segment_end, direction_end);
+    auto b_half_end    = (center_to_segment_end.dot(direction_end));
     if (-b_half_start < 0 || -b_half_end < 0) {
         return false; // 一个线段穿过球两次，所以不管那个点做起点，都不会小于零
     }
@@ -186,16 +186,16 @@ inline bool intersect_pass_AABB(const Segment<Point_2> &L_segment, const Segment
     // 如果有任何一个等于零的时候，那么需要判断是否在线上，因为不在线上也可能为零
     // 其实这里并不是很准确，因为应该判断小于一个固定小的常数。
     else if (f1 == 0 && is_intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                                  segment.start_point))
+                                     segment.start_point))
         return true;
     else if (f2 == 0 && is_intersect(AABB_min_max<Point_2>{L_segment.start_point, L_segment.end_point},
-                                  segment.end_point))
+                                     segment.end_point))
         return true;
     else if (f3 == 0 && is_intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
-                                  L_segment.start_point))
+                                     L_segment.start_point))
         return true;
     else if (f4 == 0 && is_intersect(AABB_min_max<Point_2>{segment.start_point, segment.end_point},
-                                  L_segment.end_point))
+                                     L_segment.end_point))
         return true;
     return false;
 }

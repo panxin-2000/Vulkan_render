@@ -51,8 +51,8 @@ inline bool is_intersect(const Plane<T> &plane, const Ray<T> &ray) {
 
 template<typename T>
 inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
-    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - ray.point); //射线的起点到平面的最近距离
-    auto b                           = dot(plane.normal, ray.direction);
+    auto distance_ray_start_to_plane = (plane.normal.dot(plane.point - ray.point)); //射线的起点到平面的最近距离
+    auto b                           = (plane.normal.dot(ray.direction));
     if (b != 0) {
         auto t      = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
         auto result = ray.point + ray.direction * t;
@@ -65,7 +65,7 @@ inline T intersect_result(const Plane<T> &plane, const Ray<T> &ray) {
 
 template<typename T>
 float distance(const Plane<T> &plane, const T &test_point) {
-    auto result = dot(plane.normal, (test_point - plane.point));
+    auto result = (plane.normal.dot(test_point - plane.point));
     return result * result;
 }
 
@@ -73,7 +73,7 @@ float distance(const Plane<T> &plane, const T &test_point) {
 template<typename T>
 inline bool is_intersect(const Plane<T> &plane, const Straight_line<T> &straight_line) {
     // 直线怎么判断？ // 直线的方向与法线 不垂直时 永远相交
-    if (abs(dot((straight_line.direction), (plane.normal))) < 0.0000001) {
+    if (abs(((straight_line.direction).dot(plane.normal))) < 0.0000001) {
         return false;
     }
     // 垂直时，点在平面上才相交
@@ -85,8 +85,8 @@ inline bool is_intersect(const Plane<T> &plane, const Straight_line<T> &straight
 
 template<typename T>
 inline T intersect_result(const Plane<T> &plane, const Straight_line<T> &line) {
-    auto distance_ray_start_to_plane = dot(plane.normal, plane.point - line.point); //射线的起点到平面的最近距离
-    auto b                           = dot(plane.normal, line.direction);
+    auto distance_ray_start_to_plane = (plane.normal.dot(plane.point - line.point)); //射线的起点到平面的最近距离
+    auto b                           = (plane.normal.dot(line.direction));
     auto t                           = distance_ray_start_to_plane / b; // 射线的起点到 平面 需要走几个单位方向的 数量
     auto result                      = line.point + line.direction * t;
     return result;

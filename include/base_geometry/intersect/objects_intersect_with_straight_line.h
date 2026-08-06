@@ -33,15 +33,15 @@ inline bool is_intersect(const AABB_min_max<Point_2> &L_box, const Straight_line
 template<typename T>
 bool is_intersect(const Sphere<T> &sphere, const Straight_line<T> &line) {
     auto center_to_ray_start = line.point - sphere.center;
-    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    auto c                   = ((center_to_ray_start.dot(center_to_ray_start)) - sphere.radius * sphere.radius);
     if (c < 0) {
         // 如果是直线的话，这个分支概率很小，几乎接近零
         return true;
     }
     auto direction  = line.direction;
-    auto b_half     = dot(center_to_ray_start, direction);
-    auto a          = dot(direction, direction);
-    auto delta_half = b_half * b_half - dot(direction, direction) * c;
+    auto b_half     = (center_to_ray_start.dot(direction));
+    auto a          = (direction.dot(direction));
+    auto delta_half = b_half * b_half - (direction.dot(direction)) * c;
     if (delta_half < 0) {
         return false;
     }

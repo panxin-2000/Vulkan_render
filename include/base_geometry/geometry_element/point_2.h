@@ -211,11 +211,12 @@ public:
         if (area > 0) return anticlockwise::counterclockwise;
         else return anticlockwise::clockwise;
     }
+
+    float dot(const Point_2 &b) {
+        return this->x * b.x + this->y * b.y;
+    }
 };
 
-inline float dot(const Point_2 &A, const Point_2 &b) {
-    return A.x * b.x + A.y * b.y;
-}
 
 inline float cross_product(const Point_2 &A, const Point_2 &b) {
     return Point_2::cross_product(A, b);

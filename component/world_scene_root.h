@@ -32,7 +32,7 @@ inline entt::entity &get_world_root() {
 }
 
 
-Ray<Point_3> &get_screen_ray(const Eigen::Vector2f mouse_positon);
+Ray<Eigen::Vector3f> &get_screen_ray(const Eigen::Vector2f mouse_positon);
 
 
 wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &event);

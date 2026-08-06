@@ -34,7 +34,7 @@ bool is_intersect(const Sphere<T> &L_sphere, const Triangle<T> &triangle) {
 template<typename T>
 bool is_intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
     auto distance        = L_sphere.center - R_sphere.center;
-    auto distanceSquared = dot(distance, distance);
+    auto distanceSquared = (distance.dot(distance));
     if (distanceSquared <= L_sphere.radius * L_sphere.radius + R_sphere.radius * R_sphere.radius) {
         return true;
     }
@@ -47,7 +47,7 @@ bool is_intersect(const Sphere<T> &L_sphere, const Sphere<T> &R_sphere) {
 
 template<typename T>
 float distance(const Sphere<T> &sphere, const T &test_point) {
-    auto distance        = dot({sphere.center - test_point}, {sphere.center - test_point});
+    auto distance        = ((sphere.center - test_point).dot(sphere.center - test_point));
     auto distanceSquared = sphere.radius * sphere.radius;
     if (distance <= distanceSquared) {
         return 0;

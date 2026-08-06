@@ -14,7 +14,7 @@ public:
     point_type normal;
 
     Plane(const point_type &point, const point_type &normal) : point(point), normal(normal) {
-        assert(std::abs ( dot(normal,normal ) - 1) <= 0.0001);
+        assert(std::abs ( ((normal).dot(normal) ) - 1) <= 0.0001);
     }
 };
 

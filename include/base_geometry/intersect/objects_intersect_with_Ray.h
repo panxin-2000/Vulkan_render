@@ -90,7 +90,7 @@ bool is_intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
     // 在光线追踪的最简实现中看到过 smallpt 这里比它多判断了一个条件
     // 优化了一元二次方程
     auto center_to_ray_start = ray.point - sphere.center;
-    auto c                   = (dot(center_to_ray_start, center_to_ray_start) - sphere.radius * sphere.radius);
+    auto c                   = ((center_to_ray_start.dot(center_to_ray_start)) - sphere.radius * sphere.radius);
     if (c < 0) {
         // 此时光线发射点在 球中
         // 如果光线的渲染要返回false
@@ -98,9 +98,9 @@ bool is_intersect(const Sphere<T> &sphere, const Ray<T> &ray) {
         return true;
     }
     auto direction  = ray.direction;
-    auto b_half     = dot(center_to_ray_start, direction);
-    auto a          = dot(direction, direction);
-    auto delta_half = b_half * b_half - dot(direction, direction) * c;
+    auto b_half     = (center_to_ray_start.dot(direction));
+    auto a          = (direction.dot(direction));
+    auto delta_half = b_half * b_half - (direction.dot(direction)) * c;
     if (delta_half < 0) {
         return false;
     }

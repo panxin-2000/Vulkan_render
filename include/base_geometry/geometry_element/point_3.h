@@ -148,14 +148,14 @@ public:
         return (*this);
     }
 
+    [[nodiscard]] float dot(const Point_3 &b) const {
+        return this->x * b.x + this->y * b.y + this->z * b.z;
+    }
+
 
     float single_area(const Point_3 &R);
 };
 
-
-inline float dot(const Point_3 &A, const Point_3 &b) {
-    return A.x * b.x + A.y * b.y + A.z * b.z;
-}
 
 inline Point_3 cross_product(const Point_3 &A, const Point_3 &b) {
     return {
