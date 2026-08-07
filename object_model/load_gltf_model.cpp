@@ -694,10 +694,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             logic_create_proxy(model_entity);
             Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
             logic_update_proxy<shader_data>(model_entity);
+            logic_update_add_tag<gltf_tag>(model_entity);
         } else {
             logic_create_proxy(model_entity);
             Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
             logic_update_proxy<shader_data>(model_entity);
+            logic_update_add_tag<skinning_tag>(model_entity);
         }
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
@@ -767,16 +769,19 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 }
                 Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
-            auto function = [& mesh_matrix](const entt::entity entity) {
-                if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
-                    auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
-                    const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-                    Eigen::Matrix4f result          = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
-                    Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
-                }
-            };
 
-            add_recursion_function_to_children(model_entity, function);
+
+            {
+                auto function = [& mesh_matrix](const entt::entity entity) {
+                    if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
+                        auto transform_matrix = Logic_entt().get<Transform_Matrix>(entity);
+                        const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
+                        Eigen::Matrix4f result = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
+                        Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
+                    }
+                };
+                add_recursion_function_to_children(model_entity, function);
+            }
 
 
             // 那么另外一件事 包围盒 应该也是需要去重新计算了

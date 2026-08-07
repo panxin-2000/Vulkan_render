@@ -79,11 +79,7 @@ public:
         } {
             const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
             for (const auto it: view) {
-                auto pipeline_layout   = get_pipeline_layout(it);
-                auto vk_pipeline       = get_pipeline(it);
                 auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
-                Render_entt().emplace_or_replace<decltype(pipeline_layout)>(it, pipeline_layout);
-                Render_entt().emplace_or_replace<decltype(vk_pipeline)>(it, vk_pipeline);
                 Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
             }
         }
@@ -157,7 +153,7 @@ public:
                 command_calculate.frustum_planes = frustum_planes; // 还需要在这里更新一次
                 vkCmdPushConstants(cb, command_shader->pipeline_layout,
                                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
-                                   &command_calculate);;
+                                   &command_calculate);
                 vkCmdDispatch(cb, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
 
                 auto &parameter               = Render_entt().get_or_emplace<shader_need_parameter>(it);
@@ -268,23 +264,19 @@ public:
                 // 计算AABB 包围盒 将新的 command 写入需要更改的 位置中
                 // 添加 屏障
                 // 绘制调用新的绘制命令
-                const auto cb = Engine::instance().get_current_command_buffer();
-
                 auto command_calculate = Render_entt().get<Command_calculate>(it);
-                // 添加 屏障
-
-                auto name = Render_entt().get<Name_component>(it);
+                auto name              = Render_entt().get<Name_component>(it);
                 bind_pipeline_update_parameter(handle, it, time_line);
                 DrawIndexedIndirect(handle, it, command_calculate, time_line);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                           opacity_tag,
-                                           Name_component>();
-            for (const auto it: view) {
-                auto name = Render_entt().get<Name_component>(it);
-                build_command_buffer(handle, it, time_line);
-            }
+            // auto view = Render_entt().view<std::vector<VKR_Primitive>,
+            //                                opacity_tag,
+            //                                Name_component>();
+            // for (const auto it: view) {
+            //     auto name = Render_entt().get<Name_component>(it);
+            //     build_command_buffer(handle, it, time_line);
+            // }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
             for (const auto it: view) {
