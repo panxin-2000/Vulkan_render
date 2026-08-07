@@ -745,33 +745,36 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             auto boxes    = std::make_shared<std::vector<Render_AABB> >();
             auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
             Geometry_data bindless_Geometry_data;
-            auto view = Logic_entt().view<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>();
-            for (const auto entity: view) {
-                auto geometry_data = Logic_entt().get<Geometry_data>(entity);
-                auto vertices      = geometry_data.get_vertices();
-                auto indices       = geometry_data.get_indices();
-                // 这里其实有一个假设是 vertices.size() == indices.size()
-                auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                for (auto &vertex: vertices) {
-                    bindless_Geometry_data.push_vertices(vertex);
-                    const auto bound_box          = find_min_max_point(vertex);
-                    Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
-                    Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
-                    Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
-                    boxes->push_back({
-                                         {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
-                                         {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
-                                     });
-                    matrices->push_back(model_matrix); // 暂时不想太复杂,暂时先放在这里
+            // 主要是下面这一行的问题, 之前的时候 全部 是没有问题,但是现在不行了
+            //  model_entity
+            for (auto entity: nodes_have_deal) {
+                if (entity != entt::null &&
+                    Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
+                    // auto view = Logic_entt().view<>();
+                    // for (const auto entity: view) {
+                    auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+                    auto vertices      = geometry_data.get_vertices();
+                    auto indices       = geometry_data.get_indices();
+                    // 这里其实有一个假设是 vertices.size() == indices.size()
+                    auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
+                    for (auto &vertex: vertices) {
+                        bindless_Geometry_data.push_vertices(vertex);
+                        const auto bound_box          = find_min_max_point(vertex);
+                        Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
+                        Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
+                        Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
+                        boxes->push_back({
+                                             {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
+                                             {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
+                                         });
+                        matrices->push_back(model_matrix); // 暂时不想太复杂,暂时先放在这里
+                    }
+                    for (auto &index: indices) {
+                        bindless_Geometry_data.push_indices(index);
+                    }
+                    Render_entt().remove<Geometry_data_need_copy_tag>(entity);
                 }
-                for (auto &index: indices) {
-                    bindless_Geometry_data.push_indices(index);
-                }
-                Render_entt().remove<Geometry_data_need_copy_tag>(entity);
-            }
-
-
-            {
+            } {
                 auto function = [& mesh_matrix](const entt::entity entity) {
                     if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
                         auto transform_matrix = Logic_entt().get<Transform_Matrix>(entity);
