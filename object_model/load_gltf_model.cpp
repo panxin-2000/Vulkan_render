@@ -277,7 +277,7 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
         }
         // 这里的时候才开始确定 material
         if (primitive.materialIndex.has_value())
-        Logic_entt().get_or_emplace<Geometry_data>(entity).push_material(primitive.materialIndex.value());
+            Logic_entt().get_or_emplace<Geometry_data>(entity).push_material(primitive.materialIndex.value());
     }
     for (const auto &primitive: mesh.primitives) {
         if (primitive.indicesAccessor.has_value()) {
@@ -760,6 +760,7 @@ auto load_texture_info(const std::filesystem::path &path,
             auto image   = model.images[texture.imageIndex.value()];
             auto picture = loadImage(path, model, image);
             auto result  = create_2d_texture(picture);
+            Engine::instance().add_bindless_texture(result);
             return result;
         } else if (texture.ddsImageIndex.has_value() &&
                    texture.ddsImageIndex.value() <= model.images.size()) {
@@ -825,22 +826,27 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             if (material.occlusionTexture.has_value()) {
                 pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
                 auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
+                pbr.ORM_Texture         = texture.image.get_index();
                 ptr.ORM_Texture         = texture;
             }
             if (material.normalTexture.has_value()) {
                 auto texture      = load_texture_info(path, model, material.normalTexture.value());
+                pbr.normalTexture = texture.image.get_index();
                 ptr.normalTexture = texture;
             }
             if (material.emissiveTexture.has_value()) {
                 auto texture        = load_texture_info(path, model, material.emissiveTexture.value());
+                pbr.emissiveTexture = texture.image.get_index();
                 ptr.emissiveTexture = texture;
             }
             if (material.pbrData.baseColorTexture.has_value()) {
                 auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
+                pbr.baseColorTexture = texture.image.get_index();
                 ptr.baseColorTexture = texture;
             }
             if (material.pbrData.metallicRoughnessTexture.has_value()) {
                 auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+                pbr.ORM_Texture = texture.image.get_index();
                 ptr.ORM_Texture = texture;
             }
             auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
@@ -908,7 +914,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     for (const std::size_t material: materials) {
                         const auto temp = material_indices.at(material);
                         // 还需要经过这里进行一次转化
-                        bindless_Geometry_data.push_material(temp);
+                        material_parameters->push_back(temp);
                     }
                     Render_entt().remove<Geometry_data_need_copy_tag>(entity);
                 }
@@ -950,7 +956,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             logic_update_proxy(model_entity, matrices);
             // 现在已经把 model_matrix 全部上传了
             Command_calculate command_calculate;
-            command_calculate.command_size = primitives.size(); {
+            command_calculate.command_size = primitives.size();
+            set_render_parameter(model_entity, "model_material_parameters", material_parameters); {
                 const auto matrix_ptr = matrices->data();
                 auto matrix_size      = matrices->size() * sizeof(Transform_Matrix);
                 auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);

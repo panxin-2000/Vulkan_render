@@ -27,8 +27,9 @@ layout (location = 7) flat in uint instance_index;
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
-
-
+layout (set = 3, binding = 0) readonly buffer model_material_parameters {
+    uint material_pbr_index[];
+};
 
 
 float get_roughness(ShaderMaterial material) {
@@ -155,11 +156,11 @@ void main()
 
 
 
-    float roughness = get_Roughness(material[material_index], inUV);
-    float metallic = get_Metallic(material[material_index], inUV);
-    vec3 base_color = get_base_color(material[material_index], inUV).rgb;
-    vec3 emissive_color = get_emissive_color(material[material_index], inUV).rgb;
-    vec3 N = get_normal(material[material_index], inWorldPos, inNormal, inUV);
+    float roughness = get_Roughness(material[material_pbr_index[material_index]], inUV);
+    float metallic = get_Metallic(material[material_pbr_index[material_index]], inUV);
+    vec3 base_color = get_base_color(material[material_pbr_index[material_index]], inUV).rgb;
+    vec3 emissive_color = get_emissive_color(material[material_pbr_index[material_index]], inUV).rgb;
+    vec3 N = get_normal(material[material_pbr_index[material_index]], inWorldPos, inNormal, inUV);
     vec3 V = normalize(inViewVec);
     float dotNV = clamp(dot(N, V), 0.0001, 1.0); // 会作为分母，需要一个偏移
     vec3 c_diffusen = get_c_diffusen(base_color, metallic);

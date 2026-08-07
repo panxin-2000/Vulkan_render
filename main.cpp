@@ -73,7 +73,6 @@ int main(int argc, char *argv[]) {
     // add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
 
 
-
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
@@ -82,6 +81,8 @@ int main(int argc, char *argv[]) {
     // auto entity = load_gltf_model("Sponza",
     //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
+    load_gltf_model("DamagedHelmet.gltf",
+                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
 
     // Setup Dear ImGui context
 
