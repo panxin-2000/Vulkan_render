@@ -19,8 +19,9 @@ layout (location = 2) in vec2 inUV;
 
 
 layout (set = 2, binding = 0) readonly buffer model_matrix_parameters {
-    mat4 model_vector[];
+    mat4 model_matrix[];
 };
+
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -44,13 +45,13 @@ void main()
     //    outMaterial_index = gl_BaseInstanceARB;
     outMaterial_index = 0;
     outInstance_index = gl_InstanceIndex;
-    vec4 pos = model_vector[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
+    vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
     gl_Position = projection * view * pos;
     outNormal = inNormal;
     outUV = inUV;
     // 世界空间
-    outNormal = mat3(model_vector[gl_InstanceIndex]) * inNormal;
+    outNormal = mat3(model_matrix[gl_InstanceIndex]) * inNormal;
     outLightVec = light.pos.xyz - pos.xyz;
     outViewVec = viewPos.xyz - pos.xyz;
 
