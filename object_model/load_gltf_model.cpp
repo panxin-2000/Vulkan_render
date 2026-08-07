@@ -689,18 +689,14 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         Logic_entt().emplace<Name_component>(model_entity, name);
         world_root_add_child(model_entity);
         auto &model = optional_model.value();
+        logic_create_proxy(model_entity);
 
         if (model.skins.empty()) {
-            logic_create_proxy(model_entity);
             Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
-            logic_update_proxy<shader_data>(model_entity);
-            logic_update_add_tag<gltf_tag>(model_entity);
         } else {
-            logic_create_proxy(model_entity);
             Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_skinning_shader_data());
-            logic_update_proxy<shader_data>(model_entity);
-            logic_update_add_tag<skinning_tag>(model_entity);
         }
+        logic_update_proxy<shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
 
@@ -740,14 +736,14 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         add_recursion_function_to_children(model_entity, update_transform_matrix);
 
+
         // 单线程的情况下,下面这个函数是对的
         {
             auto boxes    = std::make_shared<std::vector<Render_AABB> >();
             auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
             Geometry_data bindless_Geometry_data;
-            // 主要是下面这一行的问题, 之前的时候 全部 是没有问题,但是现在不行了
-            //  model_entity
-            for (auto entity: nodes_have_deal) {
+
+            auto geometry_function = [&](const entt::entity entity) {
                 if (entity != entt::null &&
                     Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
                     // auto view = Logic_entt().view<>();
@@ -774,17 +770,18 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     }
                     Render_entt().remove<Geometry_data_need_copy_tag>(entity);
                 }
-            } {
-                auto function = [& mesh_matrix](const entt::entity entity) {
-                    if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
-                        auto transform_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                        const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-                        Eigen::Matrix4f result = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
-                        Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
-                    }
-                };
-                add_recursion_function_to_children(model_entity, function);
-            }
+            };
+            add_recursion_function_to_children(model_entity, geometry_function);
+
+            auto skinning_function = [& mesh_matrix](const entt::entity entity) {
+                if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
+                    auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
+                    const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
+                    Eigen::Matrix4f result          = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
+                    Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
+                }
+            };
+            add_recursion_function_to_children(model_entity, skinning_function);
 
 
             // 那么另外一件事 包围盒 应该也是需要去重新计算了
@@ -794,25 +791,17 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             auto primitives = create_primitives(bindless_Geometry_data);
             for (uint32_t i = 0; i < primitives.size(); ++i) {
                 primitives.at(i).firstInstance = i;
-                // std::cout << "vertexOffset :" << i << std::endl;
-                // std::cout << "vertexOffset :" << primitives.at(i).draw_command.indexed_command.vertexOffset << std::endl;
-                // std::cout << "firstIndex   :" << primitives.at(i).draw_command.indexed_command.firstIndex << std::endl;
             }
             if (auto skin_joints = Logic_entt().try_get<std::vector<entt::entity> >(model_entity)) {
                 std::vector<Eigen::Matrix4f> JointMatrices;
                 for (const auto entity: *skin_joints) {
                     JointMatrices.push_back(Logic_entt().get<JointMatrix>(entity).matrix);
-                    // 如果有问题, 是上面递归的问题,不会是这里的问题
                 }
                 const auto matrix_ptr = JointMatrices.data();
                 auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
                 auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
                 set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
             }
-            // for (uint32_t i = 2000; i < primitives.size(); ++i) {
-            //     primitives.at(i) = primitives.at(i - 1000);
-            // }
-            // logic_update_proxy(model_entity, primitives);
             logic_update_proxy(model_entity, boxes);
             logic_update_proxy(model_entity, mesh);
             logic_update_proxy(model_entity, matrices);
@@ -831,7 +820,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 command_calculate.AABB_boxes_buffer = boxes_buffer;
             } {
                 const auto primitives_ptr                 = primitives.data();
-                auto primitives_size                      = (primitives.size() + 1) * sizeof(VKR_Primitive);
+                auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
                 auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
                 command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
                 command_calculate.command_buffer          = primitives_buffer;

@@ -268,13 +268,13 @@ public:
                 DrawIndexedIndirect(handle, it, command_calculate, time_line);
             }
         } {
-            // auto view = Render_entt().view<std::vector<VKR_Primitive>,
-            //                                opacity_tag,
-            //                                Name_component>();
-            // for (const auto it: view) {
-            //     auto name = Render_entt().get<Name_component>(it);
-            //     build_command_buffer(handle, it, time_line);
-            // }
+            auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                           opacity_tag,
+                                           Name_component>();
+            for (const auto it: view) {
+                auto name = Render_entt().get<Name_component>(it);
+                build_command_buffer(handle, it, time_line);
+            }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
             for (const auto it: view) {
