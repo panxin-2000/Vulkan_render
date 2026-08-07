@@ -67,8 +67,16 @@ public:
         indices_.push_back(indices_buffer);
     }
 
+    void push_material(const std::size_t &material) {
+        materials_.push_back(material);
+    }
+
     [[nodiscard]] std::vector<share_block> get_vertices() const {
         return vertices_;
+    };
+
+    [[nodiscard]] std::vector<std::size_t> get_materials() const {
+        return materials_;
     };
 
     [[nodiscard]] std::vector<share_block> get_indices() const {
@@ -85,6 +93,7 @@ public:
 private:
     std::vector<share_block> vertices_;
     std::vector<share_block> indices_;
+    std::vector<std::size_t> materials_;
 };
 
 template<typename vertex_t, typename index_t>

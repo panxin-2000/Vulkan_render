@@ -10,13 +10,12 @@
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
-#include <oneapi/tbb/detail/_task.h>
 
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
 #include "Command_calculate.h"
 #include "scene_component.h"
-#include "world_scene_root.h"
+#include "stb_image.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -276,6 +275,9 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
             vertices_memory_size += current_accessor.count * data_single_size;
             number_of_vertices   = current_accessor.count;
         }
+        // 这里的时候才开始确定 material
+        if (primitive.materialIndex.has_value())
+        Logic_entt().get_or_emplace<Geometry_data>(entity).push_material(primitive.materialIndex.value());
     }
     for (const auto &primitive: mesh.primitives) {
         if (primitive.indicesAccessor.has_value()) {
@@ -358,6 +360,7 @@ entt::entity load_node_data(fastgltf::Asset &model,
         get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
         // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     }
+
     if (node.cameraIndex.has_value()) {
         auto &camera = model.cameras[node.cameraIndex.value()];
         if (std::holds_alternative<fastgltf::Camera::Orthographic>(camera.camera)) {
@@ -679,6 +682,96 @@ void update_joint_matrix_matrix(const entt::entity entity) {
 };
 
 
+Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::Asset &model, fastgltf::Image &image) {
+    Picture_parameters picture_parameters{};
+    std::visit(fastgltf::visitor{
+                   [](auto &arg) {
+                   },
+                   [&](fastgltf::sources::URI &filePath) {
+                       assert(filePath.fileByteOffset == 0); // We don't support offsets with stbi.
+                       assert(filePath.uri.isLocalPath());
+
+                       std::filesystem::path baseDir = path.parent_path();
+
+                       // We're only capable of loading local files.
+
+                       const std::string relativePathStr(filePath.uri.path().begin(),
+                                                         filePath.uri.path().end()); // Thanks C++.
+                       std::filesystem::path absolutePath =
+                               std::filesystem::weakly_canonical(baseDir / relativePathStr);
+
+                       unsigned char *data = stbi_load(absolutePath.c_str(),
+                                                       &picture_parameters.width,
+                                                       &picture_parameters.height,
+                                                       &picture_parameters.channels,
+                                                       4);
+                       picture_parameters.channels   = 4;
+                       picture_parameters.image_data = data;
+                   },
+                   [&](fastgltf::sources::Array &vector) {
+                       int width, height, nrChannels;
+                       unsigned char *data =
+                               stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(vector.bytes.
+                                                         data()),
+                                                     static_cast<int>(vector.bytes.size()),
+                                                     &picture_parameters.width,
+                                                     &picture_parameters.height,
+                                                     &picture_parameters.channels,
+                                                     4);
+                       picture_parameters.image_data = data;
+                   },
+                   [&](fastgltf::sources::BufferView &view) {
+                       auto &bufferView = model.bufferViews[view.bufferViewIndex];
+                       auto &buffer     = model.buffers[bufferView.bufferIndex];
+                       // Yes, we've already loaded every buffer into some GL buffer. However, with GL it's simpler
+                       // to just copy the buffer data again for the texture. Besides, this is just an example.
+                       std::visit(fastgltf::visitor{
+                                      // We only care about VectorWithMime here, because we specify LoadExternalBuffers, meaning
+                                      // all buffers are already loaded into a vector.
+                                      [](auto &arg) {
+                                      },
+                                      [&](fastgltf::sources::Array &vector) {
+                                          int width, height, nrChannels;
+                                          unsigned char *data =
+                                                  stbi_load_from_memory(reinterpret_cast<const
+                                                                            stbi_uc *>(
+                                                                            vector.bytes.data() + bufferView.
+                                                                            byteOffset),
+                                                                        static_cast<int>(bufferView.byteLength),
+                                                                        &picture_parameters.width,
+                                                                        &picture_parameters.height,
+                                                                        &picture_parameters.channels,
+                                                                        4);
+                                          picture_parameters.image_data = data;
+                                      }
+                                  }, buffer.data);
+                   },
+               }, image.data);
+    return picture_parameters;
+}
+
+
+auto load_texture_info(const std::filesystem::path &path,
+                       const fastgltf::Asset &model,
+                       const fastgltf::TextureInfo &texture_info) {
+    if (texture_info.textureIndex < model.textures.size()) {
+        auto texture = model.textures[texture_info.textureIndex];
+        if (texture.imageIndex.has_value() && texture.imageIndex.value() <= model.images.size()) {
+            auto image   = model.images[texture.imageIndex.value()];
+            auto picture = loadImage(path, model, image);
+            auto result  = create_2d_texture(picture);
+            return result;
+        } else if (texture.ddsImageIndex.has_value() &&
+                   texture.ddsImageIndex.value() <= model.images.size()) {
+            auto image   = model.images[texture.ddsImageIndex.value()];
+            auto picture = loadImage(path, model, image);
+            auto result  = create_2d_texture(picture);
+            return result;
+        }
+    }
+}
+
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Point_3 offset,
                              const Eigen::Quaternionf &rotate,
@@ -712,6 +805,48 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 mesh_entity_index = node.meshIndex.value();
             }
         }
+        std::vector<uint32_t> material_indices;
+        auto &pbr_manager = Engine::instance().get_pbr_manager();
+        for (const auto &material: model.materials) {
+            PBR_component pbr;
+            PBR_Texture_ptr ptr;
+            pbr.alphaCutoff        = material.alphaCutoff;
+            pbr.doubleSided        = material.doubleSided;
+            pbr.alphaMode          = static_cast<uint32_t>(material.alphaMode);
+            pbr.baseColorFactor_.R = material.pbrData.baseColorFactor[0];
+            pbr.baseColorFactor_.G = material.pbrData.baseColorFactor[1];
+            pbr.baseColorFactor_.B = material.pbrData.baseColorFactor[2];
+            pbr.emissiveFactor_.R  = material.emissiveFactor[0];
+            pbr.emissiveFactor_.G  = material.emissiveFactor[1];
+            pbr.emissiveFactor_.B  = material.emissiveFactor[2];
+            pbr.metallicFactor_    = material.pbrData.metallicFactor;
+            pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
+            // pbr.ior                = material.ior;
+            if (material.occlusionTexture.has_value()) {
+                pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+                auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
+                ptr.ORM_Texture         = texture;
+            }
+            if (material.normalTexture.has_value()) {
+                auto texture      = load_texture_info(path, model, material.normalTexture.value());
+                ptr.normalTexture = texture;
+            }
+            if (material.emissiveTexture.has_value()) {
+                auto texture        = load_texture_info(path, model, material.emissiveTexture.value());
+                ptr.emissiveTexture = texture;
+            }
+            if (material.pbrData.baseColorTexture.has_value()) {
+                auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
+                ptr.baseColorTexture = texture;
+            }
+            if (material.pbrData.metallicRoughnessTexture.has_value()) {
+                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+                ptr.ORM_Texture = texture;
+            }
+            auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
+            material_indices.push_back(material_index);
+        }
+
         for (const auto &scene: model.scenes) {
             const entt::entity entity = Logic_entt().create();
             Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
@@ -739,8 +874,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         // 单线程的情况下,下面这个函数是对的
         {
-            auto boxes    = std::make_shared<std::vector<Render_AABB> >();
-            auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
+            auto material_parameters = std::make_shared<std::vector<uint32_t> >();
+            auto boxes               = std::make_shared<std::vector<Render_AABB> >();
+            auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
             Geometry_data bindless_Geometry_data;
 
             auto geometry_function = [&](const entt::entity entity) {
@@ -751,6 +887,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     auto geometry_data = Logic_entt().get<Geometry_data>(entity);
                     auto vertices      = geometry_data.get_vertices();
                     auto indices       = geometry_data.get_indices();
+                    auto materials     = geometry_data.get_materials();
                     // 这里其实有一个假设是 vertices.size() == indices.size()
                     auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                     for (auto &vertex: vertices) {
@@ -767,6 +904,11 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     }
                     for (auto &index: indices) {
                         bindless_Geometry_data.push_indices(index);
+                    }
+                    for (const std::size_t material: materials) {
+                        const auto temp = material_indices.at(material);
+                        // 还需要经过这里进行一次转化
+                        bindless_Geometry_data.push_material(temp);
                     }
                     Render_entt().remove<Geometry_data_need_copy_tag>(entity);
                 }
@@ -791,6 +933,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             auto primitives = create_primitives(bindless_Geometry_data);
             for (uint32_t i = 0; i < primitives.size(); ++i) {
                 primitives.at(i).firstInstance = i;
+                // 这里决定了
             }
             if (auto skin_joints = Logic_entt().try_get<std::vector<entt::entity> >(model_entity)) {
                 std::vector<Eigen::Matrix4f> JointMatrices;
