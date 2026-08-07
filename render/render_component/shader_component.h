@@ -65,6 +65,40 @@ bool render_render_parameter(const entt::entity entity, const std::string &bindi
     return false;
 }
 
+
+template<typename T1>
+bool set_render_parameter(const entt::entity entity,
+                          const std::string &binding_name,
+                          const std::shared_ptr<std::vector<T1> > &binding_data) {
+    const auto matrix_ptr = binding_data->data();
+    auto size             = binding_data->size() * sizeof(T1);
+    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
+        auto lambda = [ proxy_entity,binding_name, buffer ]() {
+            render_render_parameter(proxy_entity, binding_name, buffer);
+        };
+        vk_render_queue::instance().render_update_entt(lambda);
+    };
+    return true;
+}
+
+template<typename T1>
+bool set_render_parameter(const entt::entity entity,
+                          const std::string &binding_name,
+                          const std::vector<T1> &binding_data) {
+    const auto matrix_ptr = binding_data.data();
+    auto size             = binding_data.size() * sizeof(T1);
+    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
+        auto lambda = [ proxy_entity,binding_name, buffer ]() {
+            render_render_parameter(proxy_entity, binding_name, buffer);
+        };
+        vk_render_queue::instance().render_update_entt(lambda);
+    };
+    return true;
+}
+
+
 template<typename T1>
 bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {

@@ -215,10 +215,10 @@ struct Vertex_imgui {
 };
 
 struct Picture_parameters {
-    int width;
-    int height;
-    int channels;
-    uint8_t *image_data;
+    int width           = 0;
+    int height          = 0;
+    int channels        = 4;
+    uint8_t *image_data = nullptr;
 };
 
 template<typename T>
