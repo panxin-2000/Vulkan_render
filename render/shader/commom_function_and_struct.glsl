@@ -32,6 +32,7 @@ struct ShaderMaterial {
     float roughnessFactor;
     float occlusionStrength;
     float alphaCutoff;
+    float ior;                // 折射率
 
     uint doubleSided; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
     uint alphaMode;           // 有三个值
@@ -46,7 +47,6 @@ struct ShaderMaterial {
     uint ORM_Texture; // Occlusion, Roughness, Metallic
 
     uint pad_1;
-    uint pad_2;
     // 下面这两个有什么用？
     //    vec4 diffuseFactor;
     //    vec4 specularFactor;

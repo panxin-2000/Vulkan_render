@@ -39,8 +39,9 @@ public:
     float occlusion_strength_ = 1.0f; // 强度的公式稍微有点不一样
 
     float alphaCutoff    = 1.0f;
+    float ior            = 1.0f;
     uint32_t doubleSided = false; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
-    uint32_t alphaMode   = 1.0f;  // 有三个值
+    uint32_t alphaMode   = 0;     // 有三个值
     //                              OPAQUE (不透明 - 默认)
     //                              MASK  基于 alphaCutoff 阈值进行“全有或全无”的硬切
     //                              BLEND (混合/半透明)
