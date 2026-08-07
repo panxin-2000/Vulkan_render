@@ -256,9 +256,7 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                           opacity_tag, Command_calculate,
-                                           Name_component>();
+            auto view = Render_entt().view<opacity_tag, Command_calculate, Name_component>();
             for (const auto it: view) {
                 // 这里需要做什么呢? 创建计算着色器
                 // 计算AABB 包围盒 将新的 command 写入需要更改的 位置中

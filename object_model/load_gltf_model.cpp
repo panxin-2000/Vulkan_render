@@ -812,7 +812,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             // for (uint32_t i = 2000; i < primitives.size(); ++i) {
             //     primitives.at(i) = primitives.at(i - 1000);
             // }
-            logic_update_proxy(model_entity, primitives);
+            // logic_update_proxy(model_entity, primitives);
             logic_update_proxy(model_entity, boxes);
             logic_update_proxy(model_entity, mesh);
             logic_update_proxy(model_entity, matrices);
@@ -831,7 +831,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 command_calculate.AABB_boxes_buffer = boxes_buffer;
             } {
                 const auto primitives_ptr                 = primitives.data();
-                auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
+                auto primitives_size                      = (primitives.size() + 1) * sizeof(VKR_Primitive);
                 auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
                 command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
                 command_calculate.command_buffer          = primitives_buffer;
