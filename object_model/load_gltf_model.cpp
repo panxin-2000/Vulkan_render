@@ -926,7 +926,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     auto indices       = geometry_data.get_indices();
                     auto materials     = geometry_data.get_materials();
                     // 这里其实有一个假设是 vertices.size() == indices.size()
-                    auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
+                    const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                     for (auto &vertex: vertices) {
                         bindless_Geometry_data.push_vertices(vertex);
                         const auto bound_box          = find_min_max_point(vertex);

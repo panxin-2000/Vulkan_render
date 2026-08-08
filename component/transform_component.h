@@ -20,7 +20,7 @@ public:
         model_Matrix_ = modelMatrix;
     }
 
-    Eigen::Matrix4f &get() {
+    const Eigen::Matrix4f &get() const {
         return model_Matrix_;
     }
 
