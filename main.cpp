@@ -81,8 +81,9 @@ int main(int argc, char *argv[]) {
     // auto entity = load_gltf_model("Sponza",
     //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
 
-    load_gltf_model("DamagedHelmet.gltf",
-                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+    // load_gltf_model("DamagedHelmet.gltf",
+    //                 "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+
 
     // Setup Dear ImGui context
 

@@ -16,6 +16,7 @@
 #include "Command_calculate.h"
 #include "scene_component.h"
 #include "stb_image.h"
+#include "tinyddsloader.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -696,17 +697,26 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                        // We're only capable of loading local files.
 
                        const std::string relativePathStr(filePath.uri.path().begin(),
-                                                         filePath.uri.path().end()); // Thanks C++.
+                                                         filePath.uri.path().end());
                        std::filesystem::path absolutePath =
                                std::filesystem::weakly_canonical(baseDir / relativePathStr);
 
-                       unsigned char *data = stbi_load(absolutePath.c_str(),
-                                                       &picture_parameters.width,
-                                                       &picture_parameters.height,
-                                                       &picture_parameters.channels,
-                                                       4);
-                       picture_parameters.channels   = 4;
-                       picture_parameters.image_data = data;
+                       std::string ext = absolutePath.extension().string();
+
+                       if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
+                           unsigned char *data = stbi_load(absolutePath.c_str(),
+                                                           &picture_parameters.width,
+                                                           &picture_parameters.height,
+                                                           &picture_parameters.channels,
+                                                           4);
+                           picture_parameters.channels   = 4;
+                           picture_parameters.image_data = data;
+                       } else if (ext == ".dds") {
+                           tinyddsloader::DDSFile dds;
+                           auto ret = dds.Load(absolutePath.c_str());
+                           if (tinyddsloader::Result::Success == ret) {
+                           }
+                       }
                    },
                    [&](fastgltf::sources::Array &vector) {
                        int width, height, nrChannels;
@@ -718,6 +728,7 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                                      &picture_parameters.height,
                                                      &picture_parameters.channels,
                                                      4);
+                       picture_parameters.channels   = 4;
                        picture_parameters.image_data = data;
                    },
                    [&](fastgltf::sources::BufferView &view) {
@@ -728,9 +739,7 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                        std::visit(fastgltf::visitor{
                                       // We only care about VectorWithMime here, because we specify LoadExternalBuffers, meaning
                                       // all buffers are already loaded into a vector.
-                                      [](auto &arg) {
-                                      },
-                                      [&](fastgltf::sources::Array &vector) {
+                                      [&](const fastgltf::sources::Array &vector) {
                                           int width, height, nrChannels;
                                           unsigned char *data =
                                                   stbi_load_from_memory(reinterpret_cast<const
@@ -742,7 +751,11 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                                                         &picture_parameters.height,
                                                                         &picture_parameters.channels,
                                                                         4);
+                                          picture_parameters.channels   = 4;
                                           picture_parameters.image_data = data;
+                                      },
+                                      [](auto &arg) {
+                                          uint8_t *data;
                                       }
                                   }, buffer.data);
                    },
@@ -756,17 +769,35 @@ auto load_texture_info(const std::filesystem::path &path,
                        const fastgltf::TextureInfo &texture_info) {
     if (texture_info.textureIndex < model.textures.size()) {
         auto texture = model.textures[texture_info.textureIndex];
-        if (texture.imageIndex.has_value() && texture.imageIndex.value() <= model.images.size()) {
+
+        if (texture.ddsImageIndex.has_value() &&
+            texture.ddsImageIndex.value() <= model.images.size()) {
+            auto image = model.images[texture.ddsImageIndex.value()];
+
+            tinyddsloader::DDSFile dds;
+            if (std::holds_alternative<fastgltf::sources::URI>(image.data)) {
+                auto &filePath = std::get<fastgltf::sources::URI>(image.data);
+                assert(filePath.fileByteOffset == 0);
+                assert(filePath.uri.isLocalPath());
+                std::filesystem::path baseDir = path.parent_path();
+                const std::string relativePathStr(filePath.uri.path().begin(),
+                                                  filePath.uri.path().end());
+                std::filesystem::path absolutePath =
+                        std::filesystem::weakly_canonical(baseDir / relativePathStr);
+                std::string ext = absolutePath.extension().string();
+                if (ext == ".dds") {
+                    auto ret = dds.Load(absolutePath.c_str());
+                    if (tinyddsloader::Result::Success == ret) {
+                        auto result = load_dds_to_gpu(dds);
+                        return result;
+                    }
+                }
+            }
+        } else if (texture.imageIndex.has_value() && texture.imageIndex.value() <= model.images.size()) {
             auto image   = model.images[texture.imageIndex.value()];
             auto picture = loadImage(path, model, image);
             auto result  = create_2d_texture(picture);
             Engine::instance().add_bindless_texture(result);
-            return result;
-        } else if (texture.ddsImageIndex.has_value() &&
-                   texture.ddsImageIndex.value() <= model.images.size()) {
-            auto image   = model.images[texture.ddsImageIndex.value()];
-            auto picture = loadImage(path, model, image);
-            auto result  = create_2d_texture(picture);
             return result;
         }
     }
@@ -957,7 +988,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             // 现在已经把 model_matrix 全部上传了
             Command_calculate command_calculate;
             command_calculate.command_size = primitives.size();
-            set_render_parameter(model_entity, "model_material_parameters", material_parameters); {
+            if (!material_parameters->empty())
+                set_render_parameter(model_entity, "model_material_parameters", material_parameters); {
                 const auto matrix_ptr = matrices->data();
                 auto matrix_size      = matrices->size() * sizeof(Transform_Matrix);
                 auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);

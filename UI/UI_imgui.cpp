@@ -354,7 +354,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             bool bistro = false;
             if (ImGui::Checkbox("bistro.gltf", &bistro)) {
                 if (bistro == true) {
-                    load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/niagara_bistro-master/bistro2.gltf");
+                    load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/niagara_bistro-master/bistro.gltf");
                 }
             }
         } {

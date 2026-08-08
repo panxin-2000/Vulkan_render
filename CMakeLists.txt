@@ -158,6 +158,27 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(meshoptimizer)
 
 FetchContent_Declare(
+        ktx
+        GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
+        GIT_TAG v4.4.2 # 建议指定一个稳定的 Release 标签
+        GIT_SHALLOW TRUE
+)
+
+
+# 【核心步骤】通过 CMake 选项关闭整个 KTX 仓库的其他多余目标
+set(KTX_FEATURE_TOOLS OFF CACHE BOOL "" FORCE) # 关闭命令行工具 (ktxsc, toktx 等)
+set(KTX_FEATURE_TESTS OFF CACHE BOOL "" FORCE) # 关闭 KTX 自带的单元测试
+set(KTX_FEATURE_JNI OFF CACHE BOOL "" FORCE)   # 关闭 Java 绑定
+set(KTX_FEATURE_PY OFF CACHE BOOL "" FORCE)    # 关闭 Python 绑定
+
+# 只编译运行库，如果你只需要读取纹理，可以把这一项设为 ON 以启用极致裁剪版
+#set(LIBKTX_VERSION_READ_ONLY ON CACHE BOOL "" FORCE)
+
+
+FetchContent_MakeAvailable(ktx)
+
+
+FetchContent_Declare(
         cxxopts
         GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
         GIT_TAG v3.3.1
@@ -282,16 +303,20 @@ if (WITH_VULKAN_BACKEND)
     include_directories(external/ktx/other_include)
 
 
-    set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
-    set(KTX_SOURCES
-            ${KTX_DIR}/lib/texture.c
-            ${KTX_DIR}/lib/hashlist.c
-            ${KTX_DIR}/lib/checkheader.c
-            ${KTX_DIR}/lib/swap.c
-            ${KTX_DIR}/lib/memstream.c
-            ${KTX_DIR}/lib/filestream.c
-            ${KTX_DIR}/lib/vkloader.c)
-    add_library(ktx STATIC ${KTX_SOURCES})
+    #    set(KTX_FEATURE_OPENCL OFF CACHE BOOL "Disable OpenCL acceleration" FORCE)
+    #    set(KTX_FEATURE_VULKAN OFF CACHE BOOL "Disable Vulkan" FORCE)
+    #    set(KTX_FEATURE_OPENGL OFF CACHE BOOL "Disable OpenGL" FORCE)
+
+    #    set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
+    #    set(KTX_SOURCES
+    #            ${KTX_DIR}/lib/texture.c
+    #            ${KTX_DIR}/lib/hashlist.c
+    #            ${KTX_DIR}/lib/checkheader.c
+    #            ${KTX_DIR}/lib/swap.c
+    #            ${KTX_DIR}/lib/memstream.c
+    #            ${KTX_DIR}/lib/filestream.c
+    #            ${KTX_DIR}/lib/vkloader.c)
+    #    add_library(ktx STATIC ${KTX_SOURCES})
 
 
     file(GLOB_RECURSE vulkan_code
@@ -350,7 +375,7 @@ include_directories(render)
 include_directories(object_model)
 
 
-link_directories(/usr/local/lib/slang/lib)
+#link_directories(/usr/local/lib/slang/lib)
 
 
 include_directories(external/tinyobj)
@@ -587,9 +612,8 @@ find_package(harfbuzz REQUIRED)
 
 
 add_executable(learn_render main.cpp
-
         external/tinyobj/tiny_obj_loader.cc
-        assets/shader.slang
+
         ${SHADER_FILES}
         ${component}
         ${RENDER}
@@ -612,7 +636,7 @@ target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT qui
 
 target_link_libraries(learn_render PRIVATE cereal::cereal)
 #target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)
-target_link_libraries(learn_render PRIVATE ktx slang)
+#target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
@@ -625,6 +649,10 @@ target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
+# 【只选择其一】在这里只链接你需要的轻量库
+# 如果你上面开启了 LIBKTX_VERSION_READ_ONLY，请链接：ktx_read
+# 如果你需要完整的写功能，请链接：ktx
+target_link_libraries(learn_render PRIVATE ktx)
 target_link_libraries(learn_render PRIVATE cxxopts::cxxopts)
 target_link_libraries(learn_render PRIVATE readerwriterqueue)
 target_link_libraries(learn_render PRIVATE meshoptimizer)
