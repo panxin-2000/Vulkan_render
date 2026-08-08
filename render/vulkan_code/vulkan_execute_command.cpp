@@ -50,6 +50,7 @@ temp_command_execute::~temp_command_execute() {
 
     std::lock_guard<std::mutex> lock(submit.get_mutex());
     vkQueueWaitIdle(backend.get_queue());
+    // 应该是这里导致了速度慢了很多.
     if (commandBuffer != VK_NULL_HANDLE)
         vkFreeCommandBuffers(backend.get_device(), pool, 1, &commandBuffer);
     if (pool != VK_NULL_HANDLE)

@@ -212,6 +212,6 @@ void main()
     }
     vec3 out_color = emissive_color + direct_light + indirect_light;
 
-    outFragColor_B8G8R8A8_SRGB = vec4(base_color, 1.0);
+    outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }

@@ -22,6 +22,7 @@ std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path)
     fastgltf::Asset model;
     static constexpr auto supportedExtensions =
             fastgltf::Extensions::KHR_mesh_quantization |
+            fastgltf::Extensions::EXT_meshopt_compression |
             fastgltf::Extensions::KHR_texture_transform |
             fastgltf::Extensions::MSFT_texture_dds |
             fastgltf::Extensions::KHR_materials_variants;
@@ -854,11 +855,28 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             pbr.metallicFactor_    = material.pbrData.metallicFactor;
             pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
             // pbr.ior                = material.ior;
-            if (material.occlusionTexture.has_value()) {
+            if (material.occlusionTexture.has_value() && material.pbrData.metallicRoughnessTexture.has_value()) {
+                if (material.occlusionTexture.value().textureIndex ==
+                    material.pbrData.metallicRoughnessTexture.value().textureIndex) {
+                    pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+                    auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
+                    pbr.ORM_Texture         = texture.image.get_index();
+                    ptr.ORM_Texture         = texture;
+                } else {
+                    auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+                    pbr.ORM_Texture = texture.image.get_index();
+                    ptr.ORM_Texture = texture;
+                    // 否则的话,就需要 想办法合并两个通道的 内容 了
+                }
+            } else if (material.occlusionTexture.has_value()) {
                 pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
                 auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
                 pbr.ORM_Texture         = texture.image.get_index();
                 ptr.ORM_Texture         = texture;
+            } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
+                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+                pbr.ORM_Texture = texture.image.get_index();
+                ptr.ORM_Texture = texture;
             }
             if (material.normalTexture.has_value()) {
                 auto texture      = load_texture_info(path, model, material.normalTexture.value());
@@ -874,11 +892,6 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
                 pbr.baseColorTexture = texture.image.get_index();
                 ptr.baseColorTexture = texture;
-            }
-            if (material.pbrData.metallicRoughnessTexture.has_value()) {
-                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
-                pbr.ORM_Texture = texture.image.get_index();
-                ptr.ORM_Texture = texture;
             }
             auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
             material_indices.push_back(material_index);
@@ -896,6 +909,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         // 那么需要有一个假设,假设 是 按照  深度优先 的 方式进行的 node 的排序
         gltf_load_skin(model, nodes_have_deal, model_entity);
         gltf_load_animal(model, nodes_have_deal, model_entity);
+
 
         if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(model_entity)) {
             animation->at(0).apply_animation(0.0f);

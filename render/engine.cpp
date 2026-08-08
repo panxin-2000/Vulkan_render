@@ -259,7 +259,7 @@ void Engine::create() {
     // 或者说，到这里之后才能够进行上传
     {
         // 添加一张纯白的背景图片
-        auto texture_default_color_ = create_single_color_texture(0xff, 0xff, 0xff);
+        auto texture_default_color_ = create_single_color_texture(0x7f, 0x7f, 0x7f);
         add_bindless_texture(texture_default_color_);
         // 默认 指向于 z 轴的 法线
         auto texture_default_normal_ = create_single_color_texture(128, 128, 255);
