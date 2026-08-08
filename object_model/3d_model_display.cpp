@@ -216,7 +216,9 @@ entt::entity object_3d_model(const std::string &name,
                "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
                "", "");
     add_box_data(entity, bounding_box);
-    Logic_entt().emplace<Transform>(entity, offset, rotate);
+    auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
+    auto matrix_2 = matrix.get_transform_matrix();
+    set_render_parameter(entity, "model_4x4", matrix_2);
     Logic_entt().emplace<Transform_matrix_dirty>(entity);
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
