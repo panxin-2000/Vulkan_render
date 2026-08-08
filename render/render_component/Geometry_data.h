@@ -198,8 +198,8 @@ inline Render_AABB find_min_max_point(const share_block &vertex) {
     Render_AABB bounding_box;
     auto temp                        = (min + max) / 2;
     auto temp_2                      = (max - min) / 2;
-    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.y(), 1.0f};
-    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.y(), 0.0f};
+    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.z(), 1.0f};
+    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
     return bounding_box;
 }
 
