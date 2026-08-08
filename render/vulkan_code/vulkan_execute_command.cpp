@@ -48,6 +48,7 @@ temp_command_execute::~temp_command_execute() {
 
     command_submit submit(1, &commandBuffer, fence_);
 
+    std::lock_guard<std::mutex> lock(submit.get_mutex());
     vkQueueWaitIdle(backend.get_queue());
     if (commandBuffer != VK_NULL_HANDLE)
         vkFreeCommandBuffers(backend.get_device(), pool, 1, &commandBuffer);

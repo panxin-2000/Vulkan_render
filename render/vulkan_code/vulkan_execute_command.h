@@ -34,6 +34,10 @@ public:
         return result_;
     }
 
+    static auto &get_mutex() {
+        return submitMutex;
+    }
+
 
     command_submit(const VkPresentInfoKHR &presentInfo);
 };

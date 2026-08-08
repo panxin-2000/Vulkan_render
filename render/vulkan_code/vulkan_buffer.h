@@ -164,7 +164,6 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buf
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 
 
-
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer, const std::function<void(void *)> &mem_copy_callback);
 
 VKR_buffer_ptr create_vma_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaAllocationCreateFlags flags);
@@ -173,6 +172,5 @@ void discard_buffer_map_clean();
 
 using buffer_offset = VkDeviceSize;
 
-std::mutex &get_vkQueueSubmit_mutex();
 
 #endif //HELLO_MAC_VULKAN_BUFFER_H

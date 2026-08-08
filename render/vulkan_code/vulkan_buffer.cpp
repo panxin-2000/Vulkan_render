@@ -116,11 +116,6 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
     execute.add_execute_function(execute_function);
 }
 
-static std::mutex queueMutex;
-
-std::mutex &get_vkQueueSubmit_mutex() {
-    return queueMutex;
-}
 
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,

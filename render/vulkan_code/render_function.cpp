@@ -109,7 +109,6 @@ void Engine::copy_image_to_screen() {
         .pSwapchains        = &VK_backend::instance().get_swap_chain(),
         .pImageIndices      = &imageIndex
     }; {
-        std::lock_guard<std::mutex> lock(get_vkQueueSubmit_mutex());
 
         const command_submit submit(presentInfo);
         const auto result = submit.get_result();
