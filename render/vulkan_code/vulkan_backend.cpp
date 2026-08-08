@@ -503,7 +503,7 @@ VKR_image_ptr VK_backend::create_depth_image_and_view() {
         .viewType = VK_IMAGE_VIEW_TYPE_2D,
         .format   = depth_format_,
         .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
+            .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
             .baseMipLevel   = 0,
             .levelCount     = 1,
             .baseArrayLayer = 0,

@@ -127,6 +127,16 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
+    VkRenderingAttachmentInfo StencilAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .clearValue  = {.depthStencil = {1.0f, 0}}
+    };
+
+
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .renderArea{
@@ -135,7 +145,8 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .layerCount           = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments    = &colorAttachmentInfo,
-        .pDepthAttachment     = &depthAttachmentInfo // pDepthAttachment 在缩放时有问题。
+        .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
+        .pStencilAttachment   = &StencilAttachmentInfo
     };
     vkCmdBeginRendering(cb, &renderingInfo);
 }
@@ -153,6 +164,15 @@ inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
+    VkRenderingAttachmentInfo StencilAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .clearValue  = {.depthStencil = {1.0f, 0}}
+    };
+
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .renderArea{
@@ -161,7 +181,9 @@ inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
         .layerCount           = 1,
         .colorAttachmentCount = 0,
         .pColorAttachments    = nullptr,
-        .pDepthAttachment     = &depthAttachmentInfo
+        .pDepthAttachment     = &depthAttachmentInfo,
+        .pStencilAttachment   = &StencilAttachmentInfo
+
     };
     vkCmdBeginRendering(cb, &renderingInfo);
 }
@@ -335,6 +357,15 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
+    VkRenderingAttachmentInfo StencilAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .clearValue  = {.depthStencil = {1.0f, 0}}
+    };
+
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .renderArea{
@@ -343,7 +374,8 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         .layerCount           = 1,
         .colorAttachmentCount = colorAttachmentInfos.size(),
         .pColorAttachments    = colorAttachmentInfos.data(),
-        .pDepthAttachment     = &depthAttachmentInfo
+        .pDepthAttachment     = &depthAttachmentInfo,
+        .pStencilAttachment   = &StencilAttachmentInfo,
     };
     vkCmdBeginRendering(cb, &renderingInfo);
     return {};
