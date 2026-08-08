@@ -359,6 +359,14 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             }
         } {
             bool bistro = false;
+            if (ImGui::Checkbox("Sponza.gltf", &bistro)) {
+                if (bistro == true) {
+                    load_gltf_model("Sponza.gltf",
+                                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+                }
+            }
+        } {
+            bool bistro = false;
             if (ImGui::Checkbox("DamagedHelmet.gltf", &bistro)) {
                 if (bistro == true) {
                     load_gltf_model("DamagedHelmet.gltf",

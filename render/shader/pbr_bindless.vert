@@ -42,8 +42,8 @@ const mat4 biasMat = mat4(
 
 void main()
 {
-    //    outMaterial_index = gl_BaseInstanceARB;
-    outMaterial_index = 0;
+    outMaterial_index = gl_BaseInstanceARB;
+    //    outMaterial_index = gl_InstanceIndex;
     outInstance_index = gl_InstanceIndex;
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
