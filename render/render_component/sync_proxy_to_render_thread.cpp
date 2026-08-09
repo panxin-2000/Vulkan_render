@@ -3,6 +3,7 @@
 //
 
 
+#include "load_gltf_model.h"
 #include "model_matrix.h"
 #include "transform_component.h"
 #include "Rect_2D_component.h"
@@ -30,6 +31,12 @@ inline void update_object_transform_function() { {
         // 如果中间存在一个没有的时候，需要添加一个判断，是否需要向下传递，
         // 目前是从零开始把全部的节点都遍历了一遍
         add_recursion_function_to_children(root, update_transform_matrix);
+
+        const auto view = Logic_entt().view<JointMatrixDirty>();
+        for (const auto it: view) {
+            gltf_update_joint_matrix(it);
+            Logic_entt().remove<JointMatrixDirty>(it);
+        }
     }
 }
 

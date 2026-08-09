@@ -297,6 +297,12 @@ void display_tree(entt::entity entity) {
             }
             // Edit 1 float using a slider from 0.0f to 1.0f
         }
+        // if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(entity)) {
+        //     animation->at(0).apply_animation(0.0f);
+        //     Logic_entt().emplace_or_replace<JointMatrixDirty>(entity);
+        // }
+        // 想播放,但是不应该 是在这里
+
 
         // if (ImGui::Checkbox("mesh", &show_another_window)) {
         // }
