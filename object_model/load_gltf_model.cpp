@@ -288,14 +288,11 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
         } else {
             auto result = create_continue_indices(number_of_vertices);
         }
-        auto result = copy_vertices_data(vertices_memory_size, model, primitive);
-        Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
+        auto result          = copy_vertices_data(vertices_memory_size, model, primitive);
+        const auto bound_box = find_min_max_point(result);
+
+        Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result, bound_box);
     }
-    // 其实到这里才确定了几何的数据类型
-    const auto &data                         = Logic_entt().get_or_emplace<Geometry_data>(entity);
-    const std::vector<share_block> &vertices = data.get_vertices();
-    auto bound_box                           = find_min_max_point(vertices);
-    Logic_entt().emplace_or_replace<AABB_min_max<Point_3> >(entity, bound_box);
 
     Logic_entt().emplace_or_replace<Geometry_data_need_copy_tag>(entity);
     Logic_entt().emplace_or_replace<opacity_tag>(entity);
@@ -346,8 +343,8 @@ void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &no
  */
 entt::entity load_node_data(fastgltf::Asset &model,
                             std::vector<entt::entity> &nodes_have_deal,
-                            const int current_node_index,
-                            const int parent_node_index      = -1,
+                            const size_t current_node_index,
+                            const size_t parent_node_index   = -1,
                             const entt::entity parent_entity = entt::null) {
     auto node                              = model.nodes[current_node_index];
     const entt::entity entity              = Logic_entt().create();
@@ -446,23 +443,23 @@ struct RuntimeChannel {
     std::variant<std::vector<Eigen::Vector3f>, std::vector<Eigen::Quaternionf> > offset_rotate;
 
 
-    auto get_interpolation_rotation(const float &time, const size_t index,
-                                    const std::vector<Eigen::Quaternionf> &rotates) const {
+    [[nodiscard]] auto get_interpolation_rotation(const float &time, const size_t index,
+                                                  const std::vector<Eigen::Quaternionf> &rotates) const {
         if (interpolations[index] == fastgltf::AnimationInterpolation::Step) {
-            uint32_t last = index;
+            const uint32_t last = index;
             return rotates[last];
         } else if (interpolations[index] == fastgltf::AnimationInterpolation::Linear) {
-            uint32_t last = index;
-            uint32_t next = index + 1;
-            float t = (time - keyframeTimes[last]) / (keyframeTimes[next] - keyframeTimes[last]);
-            auto last_rotate = rotates[last];
-            auto next_rotate = rotates[next];
+            const uint32_t last = index;
+            const uint32_t next = index + 1;
+            const float t = (time - keyframeTimes[last]) / (keyframeTimes[next] - keyframeTimes[last]);
+            const auto last_rotate = rotates[last];
+            const auto next_rotate = rotates[next];
             Eigen::Quaternionf q_interpolated = last_rotate.slerp(t, next_rotate);
             return q_interpolated;
         }
     }
 
-    size_t get_time_index(const float &time) const {
+    [[nodiscard]] size_t get_time_index(const float &time) const {
         for (uint32_t i = 0; i < keyframeTimes.size(); ++i) {
             if (time >= keyframeTimes[i]) {
                 return i;
@@ -518,6 +515,7 @@ struct RuntimeChannel {
                 break;
             }
             case fastgltf::AnimationPath::Weights: {
+                // todo:
                 break;
             }
             default: {
@@ -633,6 +631,9 @@ void gltf_load_animal(const fastgltf::Asset &model,
     Logic_entt().emplace<std::vector<RuntimeAnimation> >(root_entity, animations);
 }
 
+
+using Skin_matrix_vector_index = std::vector<entt::entity>;
+
 void gltf_load_skin(const fastgltf::Asset &model,
                     const std::vector<entt::entity> &nodes_have_deal,
                     const entt::entity &root_entity) {
@@ -657,19 +658,33 @@ void gltf_load_skin(const fastgltf::Asset &model,
                 };
                 fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(model, accessor, function);
 
-                std::vector<entt::entity> skin_joints;
+                Skin_matrix_vector_index skin_joints;
                 for (auto i = 0; i < skin.joints.size(); ++i) {
                     auto joint  = skin.joints[i];
                     auto entity = nodes_have_deal[joint];
                     Logic_entt().emplace<InverseBindMatrix>(entity, matrixData[i]);
                     skin_joints.push_back(entity);
                 }
-                Logic_entt().emplace<std::vector<entt::entity> >(root_entity, skin_joints);
+                Logic_entt().emplace<Skin_matrix_vector_index>(root_entity, skin_joints);
             }
         } else {
             // 如果 glTF 没提供 IBM，根据规范，所有关节默认使用单位矩阵 (Identity Matrix)
             std::cout << "  No Inverse Bind Matrices found. Using identity matrices.\n";
         }
+    }
+}
+
+
+void gltf_update_skin(const entt::entity &model_entity) {
+    if (auto skin_joints = Logic_entt().try_get<Skin_matrix_vector_index>(model_entity)) {
+        std::vector<Eigen::Matrix4f> JointMatrices;
+        for (const auto entity: *skin_joints) {
+            JointMatrices.push_back(Logic_entt().get<JointMatrix>(entity).matrix);
+        }
+        const auto matrix_ptr = JointMatrices.data();
+        auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
+        auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
+        set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
     }
 }
 
@@ -805,6 +820,68 @@ auto load_texture_info(const std::filesystem::path &path,
 }
 
 
+void load_materials(std::vector<uint32_t> &material_indices,
+                    const std::filesystem::path &path,
+                    const fastgltf::Asset &model) {
+    auto &pbr_manager = Engine::instance().get_pbr_manager();
+    for (const auto &material: model.materials) {
+        PBR_component pbr;
+        PBR_Texture_ptr ptr;
+        pbr.alphaCutoff        = material.alphaCutoff;
+        pbr.doubleSided        = material.doubleSided;
+        pbr.alphaMode          = static_cast<uint32_t>(material.alphaMode);
+        pbr.baseColorFactor_.R = material.pbrData.baseColorFactor[0];
+        pbr.baseColorFactor_.G = material.pbrData.baseColorFactor[1];
+        pbr.baseColorFactor_.B = material.pbrData.baseColorFactor[2];
+        pbr.emissiveFactor_.R  = material.emissiveFactor[0];
+        pbr.emissiveFactor_.G  = material.emissiveFactor[1];
+        pbr.emissiveFactor_.B  = material.emissiveFactor[2];
+        pbr.metallicFactor_    = material.pbrData.metallicFactor;
+        pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
+        // pbr.ior                = material.ior;
+        if (material.occlusionTexture.has_value() && material.pbrData.metallicRoughnessTexture.has_value()) {
+            if (material.occlusionTexture.value().textureIndex ==
+                material.pbrData.metallicRoughnessTexture.value().textureIndex) {
+                pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+                auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
+                pbr.ORM_Texture         = texture.image.get_index();
+                ptr.ORM_Texture         = texture;
+            } else {
+                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+                pbr.ORM_Texture = texture.image.get_index();
+                ptr.ORM_Texture = texture;
+                // 否则的话,就需要 想办法合并两个通道的 内容 了
+            }
+        } else if (material.occlusionTexture.has_value()) {
+            pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+            auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
+            pbr.ORM_Texture         = texture.image.get_index();
+            ptr.ORM_Texture         = texture;
+        } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
+            auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
+            pbr.ORM_Texture = texture.image.get_index();
+            ptr.ORM_Texture = texture;
+        }
+        if (material.normalTexture.has_value()) {
+            auto texture      = load_texture_info(path, model, material.normalTexture.value());
+            pbr.normalTexture = texture.image.get_index();
+            ptr.normalTexture = texture;
+        }
+        if (material.emissiveTexture.has_value()) {
+            auto texture        = load_texture_info(path, model, material.emissiveTexture.value());
+            pbr.emissiveTexture = texture.image.get_index();
+            ptr.emissiveTexture = texture;
+        }
+        if (material.pbrData.baseColorTexture.has_value()) {
+            auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
+            pbr.baseColorTexture = texture.image.get_index();
+            ptr.baseColorTexture = texture;
+        }
+        auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
+        material_indices.push_back(material_index);
+    }
+}
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Point_3 offset,
                              const Eigen::Quaternionf &rotate,
@@ -829,73 +906,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const auto nodes_num = model.nodes.size();
         std::vector<entt::entity> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, entt::null);
-        size_t has_mesh = 0;
-        size_t mesh_entity_index;
-        for (auto i = 0; i < nodes_num; ++i) {
-            auto node = model.nodes[i];
-            if (node.meshIndex.has_value()) {
-                has_mesh++;
-                mesh_entity_index = node.meshIndex.value();
-            }
-        }
         std::vector<uint32_t> material_indices;
-        auto &pbr_manager = Engine::instance().get_pbr_manager();
-        for (const auto &material: model.materials) {
-            PBR_component pbr;
-            PBR_Texture_ptr ptr;
-            pbr.alphaCutoff        = material.alphaCutoff;
-            pbr.doubleSided        = material.doubleSided;
-            pbr.alphaMode          = static_cast<uint32_t>(material.alphaMode);
-            pbr.baseColorFactor_.R = material.pbrData.baseColorFactor[0];
-            pbr.baseColorFactor_.G = material.pbrData.baseColorFactor[1];
-            pbr.baseColorFactor_.B = material.pbrData.baseColorFactor[2];
-            pbr.emissiveFactor_.R  = material.emissiveFactor[0];
-            pbr.emissiveFactor_.G  = material.emissiveFactor[1];
-            pbr.emissiveFactor_.B  = material.emissiveFactor[2];
-            pbr.metallicFactor_    = material.pbrData.metallicFactor;
-            pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
-            // pbr.ior                = material.ior;
-            if (material.occlusionTexture.has_value() && material.pbrData.metallicRoughnessTexture.has_value()) {
-                if (material.occlusionTexture.value().textureIndex ==
-                    material.pbrData.metallicRoughnessTexture.value().textureIndex) {
-                    pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
-                    auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
-                    pbr.ORM_Texture         = texture.image.get_index();
-                    ptr.ORM_Texture         = texture;
-                } else {
-                    auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
-                    pbr.ORM_Texture = texture.image.get_index();
-                    ptr.ORM_Texture = texture;
-                    // 否则的话,就需要 想办法合并两个通道的 内容 了
-                }
-            } else if (material.occlusionTexture.has_value()) {
-                pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
-                auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
-                pbr.ORM_Texture         = texture.image.get_index();
-                ptr.ORM_Texture         = texture;
-            } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
-                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
-                pbr.ORM_Texture = texture.image.get_index();
-                ptr.ORM_Texture = texture;
-            }
-            if (material.normalTexture.has_value()) {
-                auto texture      = load_texture_info(path, model, material.normalTexture.value());
-                pbr.normalTexture = texture.image.get_index();
-                ptr.normalTexture = texture;
-            }
-            if (material.emissiveTexture.has_value()) {
-                auto texture        = load_texture_info(path, model, material.emissiveTexture.value());
-                pbr.emissiveTexture = texture.image.get_index();
-                ptr.emissiveTexture = texture;
-            }
-            if (material.pbrData.baseColorTexture.has_value()) {
-                auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
-                pbr.baseColorTexture = texture.image.get_index();
-                ptr.baseColorTexture = texture;
-            }
-            auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
-            material_indices.push_back(material_index);
-        }
+        load_materials(material_indices, path, model);
 
         for (const auto &scene: model.scenes) {
             const entt::entity entity = Logic_entt().create();
@@ -913,129 +925,114 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(model_entity)) {
             animation->at(0).apply_animation(0.0f);
+            // 这里只是更新了一个 dirty 相关的函数,更多的内容没有去计算
         }
-
-        const auto &transform       = Logic_entt().get<Transform>(nodes_have_deal[mesh_entity_index]);
-        Eigen::Matrix4f mesh_matrix = transform.get_transform_matrix();
-        mesh_matrix                 = mesh_matrix.inverse().eval();
-
 
         add_recursion_function_to_children(model_entity, update_transform_matrix);
+        // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
+        auto boxes    = std::make_shared<std::vector<Render_AABB> >();
+        auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
+
+        auto update_aabb = [&](const entt::entity entity) {
+            if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
+                auto geometry_data       = Logic_entt().get<Geometry_data>(entity);
+                auto aabbs               = geometry_data.get_aabbs();
+                const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
+                for (auto &bound_box: aabbs) {
+                    // 并不建议在这里
+                    Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
+                    Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
+                    Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
+                    boxes->push_back({
+                                         {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
+                                         {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
+                                     });
+                    matrices->push_back(model_matrix);
+                }
+            }
+        };
+        add_recursion_function_to_children(model_entity, update_aabb);
 
         // 单线程的情况下,下面这个函数是对的
-        {
-            auto material_parameters = std::make_shared<std::vector<uint32_t> >();
-            auto boxes               = std::make_shared<std::vector<Render_AABB> >();
-            auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
-            Geometry_data bindless_Geometry_data;
 
-            auto geometry_function = [&](const entt::entity entity) {
-                if (entity != entt::null &&
-                    Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
-                    // auto view = Logic_entt().view<>();
-                    // for (const auto entity: view) {
-                    auto geometry_data = Logic_entt().get<Geometry_data>(entity);
-                    auto vertices      = geometry_data.get_vertices();
-                    auto indices       = geometry_data.get_indices();
-                    auto materials     = geometry_data.get_materials();
-                    // 这里其实有一个假设是 vertices.size() == indices.size()
-                    const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                    for (auto &vertex: vertices) {
-                        bindless_Geometry_data.push_vertices(vertex);
-                        const auto bound_box          = find_min_max_point(vertex);
-                        Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
-                        Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
-                        Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
-                        boxes->push_back({
-                                             {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
-                                             {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
-                                         });
-                        matrices->push_back(model_matrix); // 暂时不想太复杂,暂时先放在这里
-                    }
-                    for (auto &index: indices) {
-                        bindless_Geometry_data.push_indices(index);
-                    }
-                    for (const std::size_t material: materials) {
-                        const auto temp = material_indices.at(material);
-                        // 还需要经过这里进行一次转化
-                        material_parameters->push_back(temp);
-                    }
-                    Render_entt().remove<Geometry_data_need_copy_tag>(entity);
+        Geometry_data bindless_Geometry_data;
+
+        auto geometry_function = [&](const entt::entity entity) {
+            if (entity != entt::null &&
+                Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
+                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+                const auto vertices      = geometry_data.get_vertices();
+                const auto indices       = geometry_data.get_indices();
+                const auto materials     = geometry_data.get_materials();
+                for (const auto &vertex: vertices) {
+                    bindless_Geometry_data.push_vertices(vertex);
                 }
-            };
-            add_recursion_function_to_children(model_entity, geometry_function);
-
-            auto skinning_function = [& mesh_matrix](const entt::entity entity) {
-                if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
-                    auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
-                    const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-                    Eigen::Matrix4f result          = mesh_matrix * transform_matrix.get() * inverse_bind_matrix.matrix;
-                    Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
+                for (const auto &index: indices) {
+                    bindless_Geometry_data.push_indices(index);
                 }
-            };
-            add_recursion_function_to_children(model_entity, skinning_function);
-
-
-            // 那么另外一件事 包围盒 应该也是需要去重新计算了
-            // 得到全部了,那么需要做什么呢? 上传到一个 buffer 中 生成 一个 std::vector<VKR_Primitive>
-            // 多个primitive 连续 才能合并,最后如果可以的话,是可以调用一个 命令来完成的
-            auto mesh       = create_mesh_data(bindless_Geometry_data);
-            auto primitives = create_primitives(bindless_Geometry_data);
-            for (uint32_t i = 0; i < primitives.size(); ++i) {
-                primitives.at(i).firstInstance = i;
-                // 这里决定了
-            }
-            if (auto skin_joints = Logic_entt().try_get<std::vector<entt::entity> >(model_entity)) {
-                std::vector<Eigen::Matrix4f> JointMatrices;
-                for (const auto entity: *skin_joints) {
-                    JointMatrices.push_back(Logic_entt().get<JointMatrix>(entity).matrix);
+                for (const auto &material: materials) {
+                    const auto temp = material_indices.at(material);
+                    bindless_Geometry_data.push_material(temp);
                 }
-                const auto matrix_ptr = JointMatrices.data();
-                auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
-                auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
-                set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
+                Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
-            logic_update_proxy(model_entity, boxes);
-            logic_update_proxy(model_entity, mesh);
-            logic_update_proxy(model_entity, matrices);
-            // 现在已经把 model_matrix 全部上传了
-            Command_calculate command_calculate;
-            command_calculate.command_size = primitives.size();
-            if (!material_parameters->empty())
-                set_render_parameter(model_entity, "model_material_parameters", material_parameters); {
-                const auto matrix_ptr = matrices->data();
-                auto matrix_size      = matrices->size() * sizeof(Transform_Matrix);
-                auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
-                set_render_parameter(model_entity, "model_matrix_parameters", matrix_buffer);
-            } {
-                const auto boxes_ptr                = boxes->data();
-                auto boxes_size                     = boxes->size() * sizeof(Render_AABB);
-                auto boxes_buffer                   = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
-                command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
-                command_calculate.AABB_boxes_buffer = boxes_buffer;
-            } {
-                const auto primitives_ptr                 = primitives.data();
-                auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
-                auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
-                command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
-                command_calculate.command_buffer          = primitives_buffer;
+        };
+        add_recursion_function_to_children(model_entity, geometry_function);
+
+        auto skinning_function = [](const entt::entity entity) {
+            if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
+                auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
+                const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
+                Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+                Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
             }
-            logic_update_proxy(model_entity, command_calculate);
+        };
+        add_recursion_function_to_children(model_entity, skinning_function);
+
+        auto mesh       = create_mesh_data(bindless_Geometry_data);
+        auto primitives = create_primitives(bindless_Geometry_data);
+
+        gltf_update_skin(model_entity);
+        logic_update_proxy(model_entity, boxes);
+        logic_update_proxy(model_entity, mesh);
+        logic_update_proxy(model_entity, matrices);
+
+        Command_calculate command_calculate;
+        command_calculate.command_size = primitives.size();
+        if (!bindless_Geometry_data.get_materials().empty())
+            set_render_parameter(model_entity, "model_material_parameters",
+                                 bindless_Geometry_data.get_materials());
 
 
-            // 改上传的参数我都已经准备好了 , 只是还没有完全移交到 engine 中
-
-
-            // 另一个紧接着的问题是  之后呢?
-            // entity 的顺序 和上面的顺序是相同的吗? 有必要相同吗?
-            // 这里是单个 还是可以的,但是多个的时候呢?
-            // 该算的应该已经算的差不多了,之后就是如何上传的问题了
-            // 之后就是应该怎么做呢?
-            // boxes 还是需要上传的, primitives 需要选择一个方式然后上传
-            // 之后就应该交由 渲染线程 来进行 更新结果了 然后看看怎么用一个参数完成调用  material  还是需要 选一个位置的
-            // 然后这里才是合并为一个 entity 看看是否需要去 传递给 render_thread , 当然,这里也还只是暂时的,
+        set_render_parameter(model_entity, "model_matrix_parameters", matrices); {
+            const auto boxes_ptr                = boxes->data();
+            auto boxes_size                     = boxes->size() * sizeof(Render_AABB);
+            auto boxes_buffer                   = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
+            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
+            command_calculate.AABB_boxes_buffer = boxes_buffer;
+        } {
+            const auto primitives_ptr                 = primitives.data();
+            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
+            auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
+            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
+            command_calculate.command_buffer          = primitives_buffer;
         }
+        logic_update_proxy(model_entity, command_calculate);
+
+
+        // 改上传的参数我都已经准备好了 , 只是还没有完全移交到 engine 中
+
+
+        // 另一个紧接着的问题是  之后呢?
+        // entity 的顺序 和上面的顺序是相同的吗? 有必要相同吗?
+        // 这里是单个 还是可以的,但是多个的时候呢?
+        // 该算的应该已经算的差不多了,之后就是如何上传的问题了
+        // 之后就是应该怎么做呢?
+        // boxes 还是需要上传的, primitives 需要选择一个方式然后上传
+        // 之后就应该交由 渲染线程 来进行 更新结果了 然后看看怎么用一个参数完成调用  material  还是需要 选一个位置的
+        // 然后这里才是合并为一个 entity 看看是否需要去 传递给 render_thread , 当然,这里也还只是暂时的,
+
 
         return model_entity;
     }

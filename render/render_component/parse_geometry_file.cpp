@@ -8,8 +8,8 @@
 
 
 bool load_obj_file(const std::string &path,
-                          const std::shared_ptr<std::vector<Vertex> > &vertices,
-                          const std::shared_ptr<std::vector<uint16_t> > &indices) {
+                   const std::shared_ptr<std::vector<Vertex> > &vertices,
+                   const std::shared_ptr<std::vector<uint16_t> > &indices) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -51,7 +51,7 @@ std::optional<AABB_min_max<Point_3> > load_model(const entt::entity entity, cons
     if (ext == ".obj") {
         load_obj_file(path, sp_vertices, sp_indices);
         add_geometry_data(entity, sp_vertices, sp_indices);
-        return find_min_max_point(sp_vertices);
+        return {};
     } else {
         return {};
     }

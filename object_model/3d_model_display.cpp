@@ -147,8 +147,6 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
         sp_indices->push_back(mesh.triVerts.at(i));
     }
     add_geometry_data(entity, sp_vertices, sp_indices);
-    auto box   = find_min_max_point(sp_vertices);
-    auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, box);
 
     // 更新物体的模型矩阵
     const auto transform = Logic_entt().emplace<Transform>(entity, offset, rotate);

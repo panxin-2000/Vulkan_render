@@ -22,6 +22,13 @@ struct share_block {
 struct Geometry_data_need_copy_tag {
 };
 
+struct alignas(16) Render_AABB {
+    Eigen::Vector4f centroid_points;
+    Eigen::Vector4f direction_intervals;
+};
+
+Render_AABB find_min_max_point(const share_block &vertex);
+
 /**
  * 目的是两个各种各样格式的数据 放置到 vertex 和 index 两个 共享指针的内存区中
  */
@@ -32,7 +39,7 @@ public:
     ~Geometry_data() = default;
 
     template<typename vertex_t>
-    void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices) {
+    void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices, const Render_AABB &aabb) {
         if (sp_vertices != nullptr) {
             const share_block vertices_buffer = {
                 sp_vertices,
@@ -42,11 +49,17 @@ public:
                 sizeof(vertex_t)
             };
             vertices_.push_back(vertices_buffer);
+            AABBs_.push_back(aabb);
         }
     }
 
     void push_vertices(const share_block &vertices_buffer) {
         vertices_.push_back(vertices_buffer);
+    }
+
+    void push_vertices(const share_block &vertices_buffer, const Render_AABB &aabb) {
+        vertices_.push_back(vertices_buffer);
+        AABBs_.push_back(aabb);
     }
 
     template<typename index_t>
@@ -83,10 +96,25 @@ public:
         return indices_;
     };
 
+    [[nodiscard]] std::vector<Render_AABB> get_aabbs() const {
+        return AABBs_;
+    };
+
     template<typename vertex_t, typename index_t>
     void push(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
               const std::shared_ptr<std::vector<index_t> > &sp_indices) {
-        push_vertices(sp_vertices);
+        if (sp_vertices != nullptr) {
+            const share_block vertices_buffer = {
+                sp_vertices,
+                sp_vertices->data(),
+                sp_vertices->size() * sizeof(vertex_t),
+                sp_vertices->size(),
+                sizeof(vertex_t)
+            };
+            vertices_.push_back(vertices_buffer);
+            const auto bound_box = find_min_max_point(vertices_buffer);
+            AABBs_.push_back(bound_box);
+        }
         push_indices(sp_indices);
     }
 
@@ -94,6 +122,7 @@ private:
     std::vector<share_block> vertices_;
     std::vector<share_block> indices_;
     std::vector<std::size_t> materials_;
+    std::vector<Render_AABB> AABBs_;
 };
 
 template<typename vertex_t, typename index_t>
@@ -142,47 +171,6 @@ bool add_box_data(entt::entity entity,
                   float x_max = 0.5,
                   float y_max = 0.5,
                   float z_max = 0.5);
-
-inline AABB_min_max<Point_3> find_min_max_point(const std::shared_ptr<std::vector<Vertex> > vertices) {
-    Point_3 min = Point_3::init_max_limit();
-    Point_3 max = Point_3::init_min_limit();
-    for (auto &vertex: *vertices) {
-        min = Point_3::min(vertex.pos, min);
-        max = Point_3::max(vertex.pos, max);
-    }
-    return {min, max};
-}
-
-inline AABB_min_max<Point_3> find_min_max_point(const std::vector<share_block> &vertices) {
-    Point_3 min = Point_3::init_max_limit();
-    Point_3 max = Point_3::init_min_limit();
-    for (auto vertex: vertices) {
-        for (int i = 0; i < vertex.count; i++) {
-            // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
-            auto pos = reinterpret_cast<Point_3 *>(static_cast<char *>(vertex.data) + vertex.single_size * i);
-            min      = Point_3::min(*pos, min);
-            max      = Point_3::max(*pos, max);
-        }
-    }
-    return {min, max};
-}
-
-// inline AABB_min_max<Point_3> find_min_max_point(const share_block &vertex) {
-//     Point_3 min = Point_3::init_max_limit();
-//     Point_3 max = Point_3::init_min_limit();
-//     for (int i = 0; i < vertex.count; i++) {
-//         // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
-//         auto pos = reinterpret_cast<Point_3 *>(static_cast<char *>(vertex.data) + vertex.single_size * i);
-//         min      = Point_3::min(*pos, min);
-//         max      = Point_3::max(*pos, max);
-//     }
-//     return {min, max};
-// }
-
-struct alignas(16) Render_AABB {
-    Eigen::Vector4f centroid_points;
-    Eigen::Vector4f direction_intervals;
-};
 
 
 inline Render_AABB find_min_max_point(const share_block &vertex) {
