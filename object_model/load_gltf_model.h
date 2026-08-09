@@ -51,13 +51,14 @@ struct RuntimeChannel {
             const auto last_rotate = rotates[last];
             const auto next_rotate = rotates[next];
             Eigen::Quaternionf q_interpolated = last_rotate.slerp(t, next_rotate);
+            q_interpolated.normalize();
             return q_interpolated;
         }
     }
 
     [[nodiscard]] size_t get_time_index(const float &time) const {
-        for (uint32_t i = 0; i < keyframeTimes.size(); ++i) {
-            if (time >= keyframeTimes[i]) {
+        for (uint32_t i = 0; i < keyframeTimes.size() - 1; ++i) {
+            if (time >= keyframeTimes[i] && time <= keyframeTimes[i + 1]) {
                 return i;
             }
         }
@@ -120,6 +121,7 @@ struct RuntimeChannel {
         }
         Logic_entt().emplace_or_replace<Transform>(effect_entity, offset, rotate, zoom);
         Logic_entt().emplace_or_replace<Transform_matrix_dirty>(effect_entity);
+        add_recursion_function_to_children(effect_entity, set_child_transform_dirty);
     }
 };
 
