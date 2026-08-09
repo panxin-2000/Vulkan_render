@@ -162,7 +162,8 @@ int main(int argc, char *argv[]) {
         Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
         imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
         clean_render_entity();
-        sync_render_data_to_render_thread();
+        auto run_time = framerate_measure.get_run_time();
+        sync_render_data_to_render_thread(run_time);
         framerate_measure.end_frame();
     }
 

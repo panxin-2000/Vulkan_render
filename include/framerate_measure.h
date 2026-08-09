@@ -9,6 +9,7 @@
 #include <thread>
 
 class FrameRate_measure {
+    std::chrono::time_point<std::chrono::high_resolution_clock> init_time_;
     std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
     std::chrono::time_point<std::chrono::high_resolution_clock> last_time;
     uint64_t frame_count;
@@ -24,6 +25,7 @@ public:
     }
 
     void init() {
+        init_time_  = std::chrono::high_resolution_clock::now();
         start_time  = std::chrono::high_resolution_clock::now();
         frame_count = 0;
     }
@@ -41,6 +43,13 @@ public:
     float get_frame_rate() const {
         return result;
     }
+
+    auto get_run_time() const {
+        auto now      = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - init_time_);
+        return duration.count();
+    }
+
 
     void end_frame() const {
         const std::chrono::milliseconds delay_duration(static_cast<int>(delay_time));

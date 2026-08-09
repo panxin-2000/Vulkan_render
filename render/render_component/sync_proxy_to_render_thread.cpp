@@ -13,7 +13,7 @@
 #include "world_scene_root.h"
 
 
-inline void update_object_transform_function() { {
+inline void update_object_transform_function(long long time_milliseconds) { {
         const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
         // 包围盒发生了更新
         for (const auto it: view) {
@@ -30,22 +30,34 @@ inline void update_object_transform_function() { {
         // 第一个是 没有 Transform 的时候，其实应该默认 给出单位矩阵
         // 如果中间存在一个没有的时候，需要添加一个判断，是否需要向下传递，
         // 目前是从零开始把全部的节点都遍历了一遍
-        add_recursion_function_to_children(root, update_transform_matrix);
 
-        const auto view = Logic_entt().view<JointMatrixDirty>();
-        for (const auto it: view) {
-            gltf_update_joint_matrix(it);
-            Logic_entt().remove<JointMatrixDirty>(it);
+        {
+            const auto view = Logic_entt().view<std::vector<RuntimeAnimation> >();
+            for (const auto entity: view) {
+                if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(entity)) {
+                    // 怎么把下面这个 给到一个 时间线呢?
+                    animation->at(2).apply_animation((double) (time_milliseconds) / 5000.0f, true);
+                    Logic_entt().emplace_or_replace<JointMatrixDirty>(entity);
+                }
+            }
+        }
+
+        add_recursion_function_to_children(root, update_transform_matrix); {
+            const auto view = Logic_entt().view<JointMatrixDirty>();
+            for (const auto it: view) {
+                gltf_update_joint_matrix(it);
+                Logic_entt().remove<JointMatrixDirty>(it);
+            }
         }
     }
 }
 
 
-void sync_render_data_to_render_thread() {
+void sync_render_data_to_render_thread(long long time_milliseconds) {
     // 应该不止更新 position，还有很多的都需要更新
     // 其实下面的两个也不应该这样写
     update_camera_transform();
-    update_object_transform_function();
+    update_object_transform_function(time_milliseconds);
 
     // 中间这部分需要移动
 

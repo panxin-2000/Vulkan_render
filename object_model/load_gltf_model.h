@@ -19,6 +19,10 @@ struct InverseBindMatrix {
     Eigen::Matrix4f matrix;
 };
 
+struct Inverse_Global_Transform {
+    Eigen::Matrix4f matrix;
+};
+
 struct JointMatrix {
     Eigen::Matrix4f matrix;
 };
