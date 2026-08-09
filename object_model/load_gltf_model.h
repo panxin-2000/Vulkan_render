@@ -12,6 +12,7 @@
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 
+#include "scene_component.h"
 #include "transform_component.h"
 
 
@@ -35,16 +36,16 @@ struct RuntimeChannel {
     entt::entity effect_entity   = entt::null;
     fastgltf::AnimationPath path = fastgltf::AnimationPath::Translation;
     std::vector<float> keyframeTimes;
-    std::vector<fastgltf::AnimationInterpolation> interpolations;
+    fastgltf::AnimationInterpolation interpolation;
     std::variant<std::vector<Eigen::Vector3f>, std::vector<Eigen::Quaternionf> > offset_rotate;
 
 
     [[nodiscard]] auto get_interpolation_rotation(const float &time, const size_t index,
                                                   const std::vector<Eigen::Quaternionf> &rotates) const {
-        if (interpolations[index] == fastgltf::AnimationInterpolation::Step) {
+        if (interpolation == fastgltf::AnimationInterpolation::Step) {
             const uint32_t last = index;
             return rotates[last];
-        } else if (interpolations[index] == fastgltf::AnimationInterpolation::Linear) {
+        } else if (interpolation == fastgltf::AnimationInterpolation::Linear) {
             const uint32_t last = index;
             const uint32_t next = index + 1;
             const float t = (time - keyframeTimes[last]) / (keyframeTimes[next] - keyframeTimes[last]);
@@ -67,10 +68,10 @@ struct RuntimeChannel {
 
     auto get_interpolation_offset_zoom(const float time, const size_t index,
                                        const std::vector<Eigen::Vector3f> &offsets_or_zooms) const {
-        if (interpolations[index] == fastgltf::AnimationInterpolation::Step) {
+        if (interpolation == fastgltf::AnimationInterpolation::Step) {
             uint32_t last = index;
             return offsets_or_zooms[last];
-        } else if (interpolations[index] == fastgltf::AnimationInterpolation::Linear) {
+        } else if (interpolation == fastgltf::AnimationInterpolation::Linear) {
             uint32_t last = index;
             uint32_t next = index + 1;
             float t = (time - keyframeTimes[index]) / (keyframeTimes[next] - keyframeTimes[last]);
@@ -149,9 +150,9 @@ struct RuntimeAnimation {
 
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &mesh_path,
-                             const Point_3 offset             = Point_3(0, 0, 0),
+                             const Eigen::Vector3f            = {0, 0, 0},
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity(),
-                             const Point_3 zoom               = Point_3(1, 1, 1));
+                             const Eigen::Vector3f            = {1, 1, 1});
 
 void gltf_update_joint_matrix(const entt::entity &model_entity);
 

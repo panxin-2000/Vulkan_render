@@ -471,9 +471,8 @@ void gltf_load_animal(const fastgltf::Asset &model,
             fastgltf::iterateAccessor<float>(model, timeAccessor, [&](float timeValue) {
                 temp_channel.keyframeTimes.push_back(timeValue);
             });
-            max_frame_time = std::max(max_frame_time, temp_channel.keyframeTimes.back());
-            temp_channel.interpolations.reserve(timeAccessor.count);
-            temp_channel.interpolations.push_back(sampler.interpolation);
+            max_frame_time             = std::max(max_frame_time, temp_channel.keyframeTimes.back());
+            temp_channel.interpolation = sampler.interpolation;
 
             const fastgltf::Accessor &outputAccessor = model.accessors[sampler.outputAccessor];
             if (outputAccessor.type == fastgltf::AccessorType::Vec4) {
@@ -516,6 +515,11 @@ void gltf_load_skin(const fastgltf::Asset &model,
             size_t rootNodeIdx = skin.skeleton.value();
             std::cout << "  Skeleton Root Node Index: " << rootNodeIdx << "\n";
             // 指向整个骨骼关节层级树（Joints Hierarchy）的公共根节点
+
+            const auto &transform       = Logic_entt().get<Transform>(nodes_have_deal[1]);
+            Eigen::Matrix4f mesh_matrix = transform.get_transform_matrix();
+            mesh_matrix                 = mesh_matrix.inverse().eval();
+            Logic_entt().emplace<Inverse_Global_Transform>(root_entity, mesh_matrix);
         }
         if (skin.inverseBindMatrices.has_value()) {
             size_t accessorIdx                 = skin.inverseBindMatrices.value();
@@ -767,9 +771,9 @@ void load_materials(std::vector<uint32_t> &material_indices,
 }
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
-                             const Point_3 offset,
+                             const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
-                             const Point_3 zoom) {
+                             const Eigen::Vector3f zoom) {
     auto optional_model = get_gltf_model(path);
     if (optional_model.has_value()) {
         const entt::entity model_entity = Logic_entt().create();
@@ -777,6 +781,10 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         world_root_add_child(model_entity);
         auto &model = optional_model.value();
         logic_create_proxy(model_entity);
+        const auto &transform  = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
+        Eigen::Matrix4f result = transform.get_transform_matrix();
+        Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, result);
+
 
         if (model.skins.empty()) {
             Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_gltf_shader_data());
@@ -794,11 +802,11 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         load_materials(material_indices, path, model);
 
         for (const auto &scene: model.scenes) {
-            const entt::entity entity = Logic_entt().create();
-            Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
-            add_relation(model_entity, entity);
+            // const entt::entity entity = Logic_entt().create();
+            // Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
+            // add_relation(model_entity, entity);
             for (const auto node_index: scene.nodeIndices) {
-                load_node_data(model, nodes_have_deal, node_index, -1, entity);
+                load_node_data(model, nodes_have_deal, node_index, -1, model_entity);
             }
         }
         // 之后呢? 其实完全是可以在这里操作的
@@ -807,6 +815,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         gltf_load_animal(model, nodes_have_deal, model_entity);
 
 
+        add_recursion_function_to_children(model_entity, set_child_transform_dirty);
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 

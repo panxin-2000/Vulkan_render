@@ -123,7 +123,8 @@ int main(int argc, char *argv[]) {
     Point_3 world_light_pos(0.0f, 1.0f, 0.0f);
 
     // Render loop
-    bool done = false;
+    float run_time = 0;
+    bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
     while (!done) {
         // Poll and handle events (inputs, window resize, etc.)
@@ -150,7 +151,7 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径
                 std::filesystem::path filePath = event.drop.data;
-                const auto entity              = load_gltf_model(filePath.stem().string(), filePath);
+                const auto entity              = load_gltf_model(filePath.stem().string(), filePath, {100, 0, 0});
             }
             if (event.type == SDL_EVENT_QUIT)
                 done = true;
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
         Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
         imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
         clean_render_entity();
-        auto run_time = framerate_measure.get_run_time();
+        run_time = run_time + 1.0f / 60.0f;
         sync_render_data_to_render_thread(run_time);
         framerate_measure.end_frame();
     }

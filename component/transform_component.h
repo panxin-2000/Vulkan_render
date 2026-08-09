@@ -94,5 +94,7 @@ void update_camera_transform();
 
 void update_transform_matrix(const entt::entity entity);
 
+void set_child_transform_dirty(const entt::entity entity);
+
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H

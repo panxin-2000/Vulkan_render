@@ -50,6 +50,13 @@ void update_transform_matrix(const entt::entity entity) {
     }
 };
 
+
+void set_child_transform_dirty(const entt::entity entity) {
+    if (Logic_entt().all_of<Scene_Component>(entity)) {
+        Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
+    }
+}
+
 // [[nodiscard]] Eigen::Matrix4f get_model_matrix(const AABB_min_max<Point_3> &bound_box, const Transform transform) {
 //     Eigen::Affine3f model_4x4 = Eigen::Affine3f::Identity();
 //     const auto center         = bound_box.get_centroid();

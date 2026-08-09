@@ -44,7 +44,7 @@ struct bindless_set_update_detail {
 };
 
 //
-void sync_render_data_to_render_thread(long long time_milliseconds);
+void sync_render_data_to_render_thread(float time_milliseconds);
 
 bool clean_VKR_object_proxy(const entt::entity entity);
 

@@ -13,7 +13,7 @@
 #include "world_scene_root.h"
 
 
-inline void update_object_transform_function(long long time_milliseconds) { {
+inline void update_object_transform_function(float time_milliseconds) { {
         const auto view = Logic_entt().view<UI_transform_dirty, Proxy_entity, Rect_2D_transform>();
         // 包围盒发生了更新
         for (const auto it: view) {
@@ -36,7 +36,7 @@ inline void update_object_transform_function(long long time_milliseconds) { {
             for (const auto entity: view) {
                 if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(entity)) {
                     // 怎么把下面这个 给到一个 时间线呢?
-                    animation->at(2).apply_animation((double) (time_milliseconds) / 5000.0f, true);
+                    animation->at(2).apply_animation((time_milliseconds), true);
                     Logic_entt().emplace_or_replace<JointMatrixDirty>(entity);
                 }
             }
@@ -53,7 +53,7 @@ inline void update_object_transform_function(long long time_milliseconds) { {
 }
 
 
-void sync_render_data_to_render_thread(long long time_milliseconds) {
+void sync_render_data_to_render_thread(float time_milliseconds) {
     // 应该不止更新 position，还有很多的都需要更新
     // 其实下面的两个也不应该这样写
     update_camera_transform();

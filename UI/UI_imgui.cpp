@@ -380,7 +380,8 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             if (ImGui::Checkbox("fox.gltf", &bistro)) {
                 if (bistro == true) {
                     load_gltf_model("fox.gltf",
-                                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Fox/glTF/Fox.gltf");
+                                    "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Fox/glTF/Fox.gltf",
+                                    {100, 0, 0});
                 }
             }
         }
