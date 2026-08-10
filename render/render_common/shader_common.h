@@ -197,11 +197,21 @@ struct uv_struct {
     float u, v;
 };
 
+
 struct Vertex {
     Point_3 pos;
     Point_3 normal{0, 0, 1};
     Point_2 uv{0, 0};
 };
+
+struct Line {
+    Point_2 pos;
+    uint8_t color_r;
+    uint8_t color_g;
+    uint8_t color_b;
+    uint8_t color_a;
+};
+
 
 struct Vertex_2D {
     Point_2 pos;

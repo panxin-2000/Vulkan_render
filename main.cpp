@@ -76,7 +76,8 @@ int main(int argc, char *argv[]) {
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
-    // object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
+    object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
+    object_line("line");
     // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
     // auto entity = load_gltf_model("Sponza",
     //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
@@ -151,7 +152,7 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径
                 std::filesystem::path filePath = event.drop.data;
-                const auto entity              = load_gltf_model(filePath.stem().string(), filePath, {100, 0, 0});
+                const auto entity              = load_gltf_model(filePath.stem().string(), filePath);
             }
             if (event.type == SDL_EVENT_QUIT)
                 done = true;

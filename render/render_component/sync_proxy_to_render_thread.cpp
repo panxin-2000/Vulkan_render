@@ -36,7 +36,7 @@ inline void update_object_transform_function(float time_milliseconds) { {
             for (const auto entity: view) {
                 if (auto animation = Logic_entt().try_get<std::vector<RuntimeAnimation> >(entity)) {
                     // 怎么把下面这个 给到一个 时间线呢?
-                    animation->at(2).apply_animation((time_milliseconds), true);
+                    animation->at(0).apply_animation((time_milliseconds), true);
                     Logic_entt().emplace_or_replace<JointMatrixDirty>(entity);
                 }
             }

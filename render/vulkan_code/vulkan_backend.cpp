@@ -260,9 +260,16 @@ void VK_backend::create_device() {
         queueFamilyIndices.transfer = queueFamilyIndices.graphics;
     }
 
+    VkPhysicalDeviceVulkan11Features enabledVk1Features{
+        .sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
+        .pNext                = nullptr,
+        .storageInputOutput16 = true
+    };
 
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
         .sType                                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .pNext                                        = &enabledVk1Features,
+        .shaderInt8                                   = true,
         .descriptorIndexing                           = true,
         .shaderSampledImageArrayNonUniformIndexing    = true,
         .descriptorBindingSampledImageUpdateAfterBind = true,
@@ -287,6 +294,7 @@ void VK_backend::create_device() {
         .multiDrawIndirect                      = VK_TRUE,
         .samplerAnisotropy                      = VK_TRUE,
         .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
+        .shaderInt64                            = VK_TRUE,
     };
     VkDeviceCreateInfo deviceCI{
         .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,

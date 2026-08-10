@@ -161,6 +161,9 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
+bool add_line(entt::entity entity,
+              Point_2 a,
+              Point_2 b);
 
 bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
 

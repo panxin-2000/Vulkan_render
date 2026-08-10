@@ -880,12 +880,13 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         command_calculate.command_size = primitives.size();
         if (!material_parameters->empty())
             set_render_parameter(model_entity, "model_material_parameters", material_parameters);
-
+        // 理论上来说已经完成了 copy , 后面没有它也没什么问题,
 
         set_render_parameter(model_entity, "model_matrix_parameters", matrices); {
-            const auto boxes_ptr                = boxes->data();
-            auto boxes_size                     = boxes->size() * sizeof(Render_AABB);
-            auto boxes_buffer                   = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
+            const auto boxes_ptr = boxes->data();
+            auto boxes_size      = boxes->size() * sizeof(Render_AABB);
+            auto boxes_buffer    = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
+            //
             command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
             command_calculate.AABB_boxes_buffer = boxes_buffer;
         } {

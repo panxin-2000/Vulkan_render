@@ -225,3 +225,20 @@ entt::entity object_3d_model(const std::string &name,
     logic_update_add_tag<opacity_tag>(entity);
     return entity;
 }
+
+
+entt::entity object_line(const std::string &name) {
+    const entt::entity entity = Logic_entt().create();
+    logic_create_proxy(entity);
+    Logic_entt().emplace<Name_component>(entity, name);
+    Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
+    logic_update_proxy<shader_data>(entity);
+    add_line(entity, {0.4, 0.4}, {0.6, 0.6});
+    world_root_add_child(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
+    logic_update_add_tag<Line_tag>(entity);
+    return entity;
+}

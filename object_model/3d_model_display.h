@@ -13,12 +13,12 @@
 
 entt::entity object_3d_model(const std::string &name,
                              const std::string &mesh_path,
-                             const Eigen::Vector3f offset             = Eigen::Vector3f(0, 0, 0),
+                             const Eigen::Vector3f offset     = Eigen::Vector3f(0, 0, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 entt::entity object_3d_model(const std::string &name,
                              const AABB_min_max<Point_3> &bounding_box,
-                             const Eigen::Vector3f offset             = Eigen::Vector3f(0, 0, 0),
+                             const Eigen::Vector3f offset     = Eigen::Vector3f(0, 0, 0),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
 entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh,
@@ -28,5 +28,6 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh,
 
 entt::entity add_sky_box(const std::string &name);
 
+entt::entity object_line(const std::string &name);
 
 #endif //HELLO_MAC_3D_MODEL_DISPLAY_H

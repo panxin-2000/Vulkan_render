@@ -150,20 +150,20 @@ inline std::pair<VkFormat, uint32_t> map_spirv_type_to_vk_format(const spirv_cro
         }
     } else if (type.basetype == SPIRType::SByte && type.width == 8) {
         switch (type.vecsize) {
-            case 1: return {VK_FORMAT_R8_SINT, 2 * 1};
-            case 2: return {VK_FORMAT_R8G8_SINT, 2 * 2};
-            case 3: return {VK_FORMAT_R8G8B8_SINT, 2 * 3};
-            case 4: return {VK_FORMAT_R8G8B8A8_SINT, 2 * 4};
+            case 1: return {VK_FORMAT_R8_SINT, 1 * 1};
+            case 2: return {VK_FORMAT_R8G8_SINT, 1 * 2};
+            case 3: return {VK_FORMAT_R8G8B8_SINT, 1 * 3};
+            case 4: return {VK_FORMAT_R8G8B8A8_SINT, 1 * 4};
             default: {
                 assert(false);
             }
         }
     } else if (type.basetype == SPIRType::UByte && type.width == 8) {
         switch (type.vecsize) {
-            case 1: return {VK_FORMAT_R8_UINT, 2 * 1};
-            case 2: return {VK_FORMAT_R8G8_UINT, 2 * 2};
-            case 3: return {VK_FORMAT_R8G8B8_UINT, 2 * 3};
-            case 4: return {VK_FORMAT_R8G8B8A8_UINT, 2 * 4};
+            case 1: return {VK_FORMAT_R8_UINT, 1 * 1};
+            case 2: return {VK_FORMAT_R8G8_UINT, 1 * 2};
+            case 3: return {VK_FORMAT_B8G8R8_UINT, 1 * 3};
+            case 4: return {VK_FORMAT_R8G8B8A8_UINT, 1 * 4};
             default: {
                 assert(false);
             }

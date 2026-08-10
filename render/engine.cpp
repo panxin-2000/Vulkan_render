@@ -243,6 +243,13 @@ void Engine::create() {
         skinning_date = VKR_shader_init(shader_paths);
     } {
         VKR_shader_paths shader_paths{
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/line.vert.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/line.frag.spv",
+            "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+        };
+        line_date = VKR_shader_init(shader_paths);
+    } {
+        VKR_shader_paths shader_paths{
             "",
             "",
             "",

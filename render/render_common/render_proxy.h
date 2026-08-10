@@ -66,8 +66,13 @@ struct translate_tag {
 
 struct opacity_tag {
 };
+
+struct Line_tag {
+};
+
 struct gltf_tag {
 };
+
 struct skinning_tag {
 };
 

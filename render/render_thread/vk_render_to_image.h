@@ -291,6 +291,11 @@ public:
                 build_command_buffer(handle, it, time_line);
             }
         } {
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
+            for (const auto it: view) {
+                build_command_buffer(handle, it, time_line);
+            }
+        } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto it: view) {
                 build_command_buffer(handle, it, time_line);

@@ -112,6 +112,23 @@ bool add_triangle_geometry(entt::entity entity,
     add_geometry_data(entity, vertices, indices);
 }
 
+bool add_line(entt::entity entity,
+              Point_2 a,
+              Point_2 b) {
+    const auto vertices = std::make_shared<std::vector<Line> >();
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();
+    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
+    {
+        indices->push_back(vertices->size() + 0);
+        indices->push_back(vertices->size() + 1);
+        vertices->emplace_back(Line{{a.x, a.y}, 1, 0, 0, 0});
+        vertices->emplace_back(Line{{b.x, b.y}, 255, 0, 0, 0});
+        // 不清楚转化了什么,
+    }
+    add_geometry_data(entity, vertices, indices);
+}
+
+
 bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
     return add_box_data(entity,
                         bounding_box.min_point_.x,
