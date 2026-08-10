@@ -819,8 +819,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
-        auto boxes    = std::make_shared<std::vector<Render_AABB> >();
-        auto matrices = std::make_shared<std::vector<Transform_Matrix> >();
+        auto material_parameters = std::make_shared<std::vector<uint32_t> >();
+        auto boxes               = std::make_shared<std::vector<Render_AABB> >();
+        auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
 
         auto update_aabb = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
@@ -860,7 +861,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 }
                 for (const auto &material: materials) {
                     const auto temp = material_indices.at(material);
-                    bindless_Geometry_data.push_material(temp);
+                    material_parameters->push_back(temp);
                 }
                 Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
@@ -877,9 +878,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         Command_calculate command_calculate;
         command_calculate.command_size = primitives.size();
-        if (!bindless_Geometry_data.get_materials().empty())
-            set_render_parameter(model_entity, "model_material_parameters",
-                                 bindless_Geometry_data.get_materials());
+        if (!material_parameters->empty())
+            set_render_parameter(model_entity, "model_material_parameters", material_parameters);
 
 
         set_render_parameter(model_entity, "model_matrix_parameters", matrices); {
