@@ -68,38 +68,149 @@ public:
         return knots;
     }
 
+#include <iostream>
+#include <array>
+#include <cmath>
+
+#include <iostream>
+#include <array>
+#include <cmath>
+
     /**
-     * 3. De Boor 算法：计算特定参数 t 对应的单个曲线点坐标
+     * 【完全直接代数求解版】
+     * 无任何中间插值步，直接输入参数 t 和 7 个节点，独立计算 4 个控制点的多项式系数
+     * 传入的 u 包含：u_{k-2}, u_{k-1}, u_k, u_{k+1}, u_{k+2}, u_{k+3}, u_{k+4}
      */
+    static std::array<double, 4> calculate4PointCoefficientsDirect(float t, const std::array<double, 7> &u) {
+        auto safe_div = [](float num, float denom) -> float {
+            return (std::abs(denom) > 1e-9f) ? (num / denom) : 0.0f;
+        };
+
+        // 1. 将 7 个节点对齐到 De Boor 的标准局部节点符号
+        // K1 = u[0], K2 = u[1], K3 = u[2] (即 u_k), K4 = u[3] (即 u_{k+1}), K5 = u[4], K6 = u[5]
+        float K1 = u[0]; // u_{k-2}
+        float K2 = u[1]; // u_{k-1}
+        float K3 = u[2]; // u_k      (当前区间左端)
+        float K4 = u[3]; // u_{k+1}  (当前区间右端)
+        float K5 = u[4]; // u_{k+2}
+        float K6 = u[5]; // u_{k+3}
+
+        // 2. 预先算出三层金字塔所有的局部线性代数比例项 (这些仅仅是关于 t 的一阶标量函数)
+        float a1 = safe_div(t - K1, K4 - K1);
+        float a2 = safe_div(t - K2, K5 - K2);
+        float a3 = safe_div(t - K3, K6 - K3);
+
+        float b2 = safe_div(t - K2, K4 - K2);
+        float b3 = safe_div(t - K3, K5 - K3);
+
+        float c3 = safe_div(t - K3, K4 - K3);
+
+        std::array<double, 4> coeffs;
+
+        // 3. 【核心代数解析式】完全不经过中间控制点插值，各点系数相互独立、直接展开
+
+        // --- 原始点 P0 (controlPoints[k-3]) 的直接代数多项式 ---
+        coeffs[0] = (1.0f - c3) * (1.0f - b2) * (1.0f - a1);
+
+        // --- 原始点 P1 (controlPoints[k-2]) 的直接代数多项式 ---
+        coeffs[1] = (1.0f - c3) * (1.0f - b2) * a1 +
+                    (1.0f - c3) * b2 * (1.0f - a2) +
+                    c3 * (1.0f - b3) * (1.0f - a2);
+
+        // --- 原始点 P2 (controlPoints[k-1]) 的直接代数多项式 ---
+        coeffs[2] = (1.0f - c3) * b2 * a2 +
+                    c3 * (1.0f - b3) * a2 +
+                    c3 * b3 * (1.0f - a3);
+
+        // --- 原始点 P3 (controlPoints[k]) 的直接代数多项式 ---
+        coeffs[3] = c3 * b3 * a3;
+
+        // 4. 消除浮点数极微小的精度截断误差
+        float sum = coeffs[0] + coeffs[1] + coeffs[2] + coeffs[3];
+        if (std::abs(sum - 1.0f) > 1e-6f) {
+            coeffs[0] /= sum;
+            coeffs[1] /= sum;
+            coeffs[2] /= sum;
+            coeffs[3] /= sum;
+        }
+
+        return coeffs;
+    }
+
+
+    static std::array<double, 4> calculate4PointCoefficients(double t, const std::array<double, 7> &u) {
+        // 第一层插值权重（4变3）
+        double a1 = (t - u[0]) / (u[3] - u[0]); // (t - u_{k-2}) / (u_{k+1} - u_{k-2})
+        double a2 = (t - u[1]) / (u[4] - u[1]); // (t - u_{k-1}) / (u_{k+2} - u_{k-1})
+        double a3 = (t - u[2]) / (u[5] - u[2]); // (t - u_k)     / (u_{k+3} - u_k)
+
+        // 第二层插值权重（3变2）
+        double b1 = (t - u[1]) / (u[3] - u[1]); // (t - u_{k-1}) / (u_{k+1} - u_{k-1})
+        double b2 = (t - u[2]) / (u[4] - u[2]); // (t - u_k)     / (u_{k+2} - u_k)
+
+        // 第三层插值权重（2变1）
+        double c1 = (t - u[2]) / (u[3] - u[2]); // (t - u_k)     / (u_{k+1} - u_k)
+
+        // 逆向级联组合（把三层线性插值像金字塔一样剥开合并）
+        // 最终曲线点 Pt = c1 * Layer2[1] + (1 - c1) * Layer2[0]
+        // 依次展开后，直接得到 4 个原始控制点的贡献系数：
+        std::array<double, 4> coeffs;
+
+        coeffs[0] = (1.0 - c1) * (1.0 - b1) * (1.0 - a1);
+        coeffs[1] = (1.0 - c1) * (1.0 - b1) * a1 + (1.0 - c1) * b1 * (1.0 - a2) + c1 * (1.0 - b2) * (1.0 - a2);
+        coeffs[2] = (1.0 - c1) * b1 * a2 + c1 * (1.0 - b2) * a2 + c1 * b2 * (1.0 - a3);
+        coeffs[3] = c1 * b2 * a3;
+
+        return coeffs;
+    }
 
     /**
  * 【已修正】De Boor 算法：计算特定参数 t 对应的单个曲线点坐标
  */
     static T deBoor(double t, const std::vector<double> &knots, const std::vector<T> &controlPoints, int degree = 3) {
-        int p = degree;
-        int n = static_cast<int>(controlPoints.size()) - 1;
-        int k = 0;
+        int p          = degree;
+        int n          = static_cast<int>(controlPoints.size()) - 1;
+        int knot_index = 0;
 
         // 1. 寻找 t 所在的激活节点区间 [knots[k], knots[k+1])
         if (t >= knots[n + 1]) {
-            k = n; // 处理边界 t = 1.0 的情况
+            knot_index = n; // 处理边界 t = 1.0 的情况
         } else {
-            auto it = std::upper_bound(knots.begin(), knots.end(), t);
-            k       = static_cast<int>(std::distance(knots.begin(), it)) - 1;
+            auto it    = std::upper_bound(knots.begin(), knots.end(), t);
+            knot_index = static_cast<int>(std::distance(knots.begin(), it)) - 1;
         }
+        // k 指的是 当前在那个 knots 的 区间中
 
         // 2. 提取当前区间相关的 p + 1 个控制点
-        std::vector<T> d;
-        d.reserve(p + 1);
-        for (int j = k - p; j <= k; ++j) {
-            d.push_back(controlPoints[j]);
+        std::vector<T> relation_cp;
+        relation_cp.reserve(p + 1);
+        for (int j = knot_index - p; j <= knot_index; ++j) {
+            relation_cp.push_back(controlPoints[j]);
         }
+        std::array<double, 7> u_7pts = {
+            knots[knot_index - 2],
+            knots[knot_index - 1],
+            knots[knot_index],
+            knots[knot_index + 1],
+            knots[knot_index + 2],
+            knots[knot_index + 3],
+            knots[knot_index + 4]
+        };
+
+        auto coeffs = calculate4PointCoefficientsDirect(t, u_7pts);
+
+        T final_point = relation_cp[0] * coeffs[0] +
+                        relation_cp[1] * coeffs[1] +
+                        relation_cp[2] * coeffs[2] +
+                        relation_cp[3] * coeffs[3];
+
+        return final_point;
 
         // 3. 迭代线性插值
         for (int r = 1; r <= p; ++r) {
             for (int j = p; j >= r; --j) {
                 // 【核心修正点】：映射到全局控制点的实际索引 i
-                int i = j + k - p;
+                int i = j + knot_index - p;
 
                 // 计算当前层级的节点分母
                 double denom = knots[i + p + 1 - r] - knots[i];
@@ -109,12 +220,12 @@ public:
                 }
 
                 // 执行插值
-                d[j].x() = (1.0 - alpha) * d[j - 1].x() + alpha * d[j].x();
-                d[j].y() = (1.0 - alpha) * d[j - 1].y() + alpha * d[j].y();
+                relation_cp[j].x() = (1.0 - alpha) * relation_cp[j - 1].x() + alpha * relation_cp[j].x();
+                relation_cp[j].y() = (1.0 - alpha) * relation_cp[j - 1].y() + alpha * relation_cp[j].y();
             }
         }
 
-        return d[p];
+        return relation_cp[p];
     }
 
 
