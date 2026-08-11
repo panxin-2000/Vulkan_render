@@ -4,6 +4,7 @@
 
 #include "Geometry_data.h"
 
+#include "bezier_curve.h"
 #include "shader_component.h"
 
 
@@ -123,11 +124,25 @@ bool add_line(entt::entity entity,
         indices->push_back(vertices->size() + 1);
         vertices->emplace_back(Line{{a.x, a.y}, 1, 0, 0, 0});
         vertices->emplace_back(Line{{b.x, b.y}, 255, 0, 0, 0});
-        // 不清楚转化了什么,
     }
     add_geometry_data(entity, vertices, indices);
 }
 
+bool add_bezier(entt::entity entity) {
+    Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
+    std::vector<Eigen::Vector2f> path;
+    bezier.Casteljau(&path);
+    const auto vertices = std::make_shared<std::vector<Line> >();
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();
+    for (const auto &vertex: path) {
+        vertices->emplace_back(Line{{vertex.x(), vertex.y()}, 1, 0, 0, 255});
+    }
+    for (uint i = 0; i < path.size() - 1; ++i) {
+        indices->push_back(i + 0);
+        indices->push_back(i + 1);
+    }
+    add_geometry_data(entity, vertices, indices);
+}
 
 bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
     return add_box_data(entity,

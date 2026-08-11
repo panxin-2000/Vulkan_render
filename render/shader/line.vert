@@ -19,5 +19,5 @@ layout (push_constant) uniform uPushConstant {
 void main() {
     // 直接输出二维坐标，Z为0，W为1
     gl_Position = vec4(inPosition * pc.uScale + pc.uTranslate, 0, 1);
-    fragColor = inColor.xyz * (1.0 / 255.0);
+    fragColor = inColor * (1.0 / 255.0);
 }

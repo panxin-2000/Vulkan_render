@@ -234,7 +234,8 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
-    add_line(entity, {40, 40}, {600, 600});
+    // add_line(entity, {40, 40}, {600, 600});
+    add_bezier(entity);
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));

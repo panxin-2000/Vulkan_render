@@ -165,6 +165,8 @@ bool add_line(entt::entity entity,
               Point_2 a,
               Point_2 b);
 
+bool add_bezier(entt::entity entity);
+
 bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
 
 bool add_box_data(entt::entity entity,
