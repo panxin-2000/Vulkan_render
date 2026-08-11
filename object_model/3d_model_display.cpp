@@ -235,6 +235,40 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
     // add_line(entity, {40, 40}, {600, 600});
+    add_b_spline(entity);
+    world_root_add_child(entity);
+    logic_update_proxy<Name_component>(entity);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
+
+    int logical_w, logical_h;
+    const auto &backend = VK_backend::instance();
+
+    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
+
+    float scale[2];
+    scale[0] = 2.0f / logical_w; // Scale
+    scale[1] = 2.0f / logical_h;
+    float translate[2];
+    translate[0] = -1.0f - 0 * scale[0]; // Translate
+    translate[1] = -1.0f - 0 * scale[1];
+
+    set_push_constant_parameter(entity, "uScale", scale);
+    set_push_constant_parameter(entity, "uTranslate", translate);
+
+    logic_update_add_tag<Line_tag>(entity);
+    return entity;
+}
+
+
+entt::entity object_line_old(const std::string &name) {
+    const entt::entity entity = Logic_entt().create();
+    logic_create_proxy(entity);
+    Logic_entt().emplace<Name_component>(entity, name);
+    Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
+    logic_update_proxy<shader_data>(entity);
+    // add_line(entity, {40, 40}, {600, 600});
     add_bezier(entity);
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);

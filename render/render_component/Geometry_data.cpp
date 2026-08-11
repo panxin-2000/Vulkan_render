@@ -5,6 +5,7 @@
 #include "Geometry_data.h"
 
 #include "bezier_curve.h"
+#include "B_spline_cureve.h"
 #include "shader_component.h"
 
 
@@ -132,6 +133,25 @@ bool add_bezier(entt::entity entity) {
     Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
     std::vector<Eigen::Vector2f> path;
     bezier.Casteljau(&path);
+    const auto vertices = std::make_shared<std::vector<Line> >();
+    const auto indices  = std::make_shared<std::vector<uint16_t> >();
+    for (const auto &vertex: path) {
+        vertices->emplace_back(Line{{vertex.x(), vertex.y()}, 1, 0, 0, 255});
+    }
+    for (uint i = 0; i < path.size() - 1; ++i) {
+        indices->push_back(i + 0);
+        indices->push_back(i + 1);
+    }
+    add_geometry_data(entity, vertices, indices);
+}
+
+bool add_b_spline(entt::entity entity) {
+    std::vector<Eigen::Vector2f> points;
+    points.push_back({200, 200});
+    points.push_back({200, 600});
+    points.push_back({600, 200});
+    points.push_back({600, 600});
+    auto path           = B_spline<Eigen::Vector2f>::calculateBSplinePathWithTol(points, 1.25);
     const auto vertices = std::make_shared<std::vector<Line> >();
     const auto indices  = std::make_shared<std::vector<uint16_t> >();
     for (const auto &vertex: path) {

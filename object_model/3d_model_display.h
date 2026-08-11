@@ -30,4 +30,6 @@ entt::entity add_sky_box(const std::string &name);
 
 entt::entity object_line(const std::string &name);
 
+entt::entity object_line_old(const std::string &name);
+
 #endif //HELLO_MAC_3D_MODEL_DISPLAY_H

@@ -9,9 +9,27 @@
 
 
 template<typename T>
-void PathBezierCubicCurveToCasteljau(std::vector<T> *path, const T &p1, const T &p2, const T &p3, const T &p4,
-                                     float tess_tol,
-                                     const int level) {
+bool need_tessellation(const T &p1, const T &mid, const T &p4, float tess_tol) {
+    // 1. 计算终点到起点的位移向量
+    T d41 = p4 - p1;
+
+    // 2. 利用二维向量叉乘，计算中点 mid 偏离端点连线（d41）的几何关系
+    // mid - p4 是中点到终点的向量，它与 d41 的叉乘绝对值代表平行四边形面积
+    float d_mid = std::abs((mid - p4).cross(d41));
+
+    // 3. 误差平直度检查 (Flatness test)
+    // 原理同四点法，两边平方以干掉开方计算。
+    // 因为只有一个中间点，所以原本的 (d2 + d3) 变成了 (d_mid + d_mid) = 2 * d_mid
+    // 平方后即为 4 * d_mid * d_mid
+    if (4.0f * d_mid * d_mid < tess_tol * d41.squaredNorm()) {
+        return false; // 足够平直，不需要细分
+    }
+    return true; // 不够平直，需要继续细分
+}
+
+
+template<typename T>
+bool need_tessellation(const T &p1, const T &p2, const T &p3, const T &p4, float tess_tol) {
     // 1. 计算终点到起点的位移向量
     T d41 = p4 - p1;
     // tess_tol 与像素相关的一个参数
@@ -24,6 +42,18 @@ void PathBezierCubicCurveToCasteljau(std::vector<T> *path, const T &p1, const T 
 
     // 3. 误差平直度检查 (Flatness test) // 中间的控制点，偏离“起点到终点的连线”有多远
     if ((d2 + d3) * (d2 + d3) < tess_tol * d41.squaredNorm()) {
+        return false;
+    }
+    return true;
+}
+
+
+template<typename T>
+void PathBezierCubicCurveToCasteljau(std::vector<T> *path, const T &p1, const T &p2, const T &p3, const T &p4,
+                                     float tess_tol,
+                                     const int level) {
+    // 3. 误差平直度检查 (Flatness test) // 中间的控制点，偏离“起点到终点的连线”有多远
+    if (!need_tessellation(p1, p2, p3, p4, tess_tol)) {
         path->push_back(p4);
     }
     // 4. 递归细分
