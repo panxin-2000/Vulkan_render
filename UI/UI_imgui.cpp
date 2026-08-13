@@ -103,6 +103,7 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             vtx_dst += cmd_list->VtxBuffer.Size;
             idx_dst += cmd_list->IdxBuffer.Size;
         }
+        clean_geometry_data(entity);
         add_geometry_data(entity, vertices, indices);
         auto mesh = get_VKR_mesh(entity);
         logic_update_proxy(entity, mesh);
