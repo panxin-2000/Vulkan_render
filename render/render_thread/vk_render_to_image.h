@@ -36,6 +36,7 @@
 #include "transform_component.h"
 #include "VCB_compute_command.h"
 #include "VCB_draw_command.h"
+#include "vulkan_execute_command.h"
 
 
 class vk_render_GPU {
@@ -73,6 +74,9 @@ public:
         auto camera_pos     = Engine::instance().get_world_camera_pos();
 
         // 上面的函数全部都是 绘制前需要的更新的部分
+
+        command_submit_manager::execute_callback_functions();
+
 
         Engine::instance().get_image_to_render(); // 这里已经有完整的
 
@@ -290,19 +294,7 @@ public:
         // registry.storage<Velocity>();
 
 
-        Engine::instance().shader_manager_destroy();
-        // pipeline 建议提前清理
-        // clean_all_pipeline(handle); 这里需要更改 // 什么时候清理呢? Render_entt 把 逻辑相关 相关的都在这里清理了
-        // clean_all_pipeline_layout(handle); //
-        // clean_all_shader_object(handle);
-        // VkDescriptorSet
-        // clean_all_descriptor_sets_layout(handle);
-        // 只剩这最后一个了,我 不太记得 这个是 做什么了 , 或者说没有感觉
-        // 理论上 应该知识一个 方便拓印 的模版
-
-        // clean_all_mesh_object(); // 放在这里似乎并不是太好， 函数被清理了
-
-        // destroy_texture();
+        Engine::instance().shader_manager_destroy(); // 需要放置在这里吗?
 
 
         have_object_need_update = false;

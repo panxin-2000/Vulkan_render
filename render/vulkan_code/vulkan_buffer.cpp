@@ -103,19 +103,23 @@ bool VKR_buffer::need_flush() const {
 
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
-                                  const VKR_buffer_ptr &dstBuffer, VkDeviceSize size) {
-    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+                                  const VKR_buffer_ptr &dstBuffer,
+                                  const VkDeviceSize size) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer) {
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;
         copyRegion.dstOffset = 0;
         copyRegion.size      = size;
-        vkCmdCopyBuffer(commandBuffer, srcBuffer->get_buffer_handle(), dstBuffer->get_buffer_handle(), 1, &copyRegion);
+        vkCmdCopyBuffer(commandBuffer,
+                        srcBuffer->get_buffer_handle(),
+                        dstBuffer->get_buffer_handle(),
+                        1,
+                        &copyRegion);
     };
 
     temp_command_execute execute;
-    execute.add_execute_function(execute_function);
+    command_submit_manager::add_execute_function(execute_function);
 }
-
 
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,

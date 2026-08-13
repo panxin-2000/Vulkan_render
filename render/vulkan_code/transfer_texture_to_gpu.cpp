@@ -97,7 +97,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         VkFence fenceOneTime{};
         VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle.get_device(), &fenceOneTimeCI, nullptr, &fenceOneTime));
 
-        auto execute_function = [&](VkCommandBuffer commandBuffer) {
+        auto execute_function = [=](VkCommandBuffer commandBuffer) {
             VkImageMemoryBarrier2 barrierTexImage{
                 .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                 .srcStageMask     = VK_PIPELINE_STAGE_2_NONE,

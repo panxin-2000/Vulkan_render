@@ -6,23 +6,24 @@
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
 
-std::mutex command_submit::submitMutex;
+std::mutex command_submit_manager::submitMutex_;
+std::vector<std::function<void(VkCommandBuffer commandBuffer)> > command_submit_manager::callback_functions_;
 
-command_submit::command_submit(const VkPresentInfoKHR &presentInfo) {
+VkResult command_submit_manager::command_present(const VkPresentInfoKHR &presentInfo) {
     const auto &backend = VK_backend::instance();
-    std::lock_guard<std::mutex> lock(submitMutex);
-    result_ = vkQueuePresentKHR(backend.get_queue(), &presentInfo);
+    std::lock_guard<std::mutex> lock(submitMutex_);
+    return vkQueuePresentKHR(backend.get_queue(), &presentInfo);
 }
 
-command_submit::command_submit(const uint32_t commandBufferCount,
-                               const VkCommandBuffer *pCommandBuffers,
-                               const VkFence fence,
-                               const void *pNext,
-                               const uint32_t waitSemaphoreCount,
-                               const VkSemaphore *pWaitSemaphores,
-                               const VkPipelineStageFlags *pWaitDstStageMask,
-                               const uint32_t signalSemaphoreCount,
-                               const VkSemaphore *pSignalSemaphores) {
+bool command_submit_manager::command_buffer_submit(const uint32_t commandBufferCount,
+                                                   const VkCommandBuffer *pCommandBuffers,
+                                                   const VkFence fence,
+                                                   const void *pNext,
+                                                   const uint32_t waitSemaphoreCount,
+                                                   const VkSemaphore *pWaitSemaphores,
+                                                   const VkPipelineStageFlags *pWaitDstStageMask,
+                                                   const uint32_t signalSemaphoreCount,
+                                                   const VkSemaphore *pSignalSemaphores) {
     const auto &backend = VK_backend::instance();
     const VkSubmitInfo submitInfo{
         .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -35,20 +36,20 @@ command_submit::command_submit(const uint32_t commandBufferCount,
         .signalSemaphoreCount = signalSemaphoreCount,
         .pSignalSemaphores    = pSignalSemaphores,
     };
-    std::lock_guard<std::mutex> lock(submitMutex);
-    result_ = vkQueueSubmit(backend.get_queue(), 1, &submitInfo, fence);
+    std::lock_guard<std::mutex> lock(submitMutex_);
+    VkResult result_ = vkQueueSubmit(backend.get_queue(), 1, &submitInfo, fence);
     VK_CHECK_RESULT_NOT_EXIT(result_);
+    return true;
 }
 
-
-temp_command_execute::~temp_command_execute() {
+void function_end(VkCommandPool &pool, VkCommandBuffer &commandBuffer, VkFence &fence) {
     const auto &backend = VK_backend::instance();
 
     vkEndCommandBuffer(commandBuffer);
 
-    command_submit submit(1, &commandBuffer, fence_);
+    command_submit_manager::command_buffer_submit(1, &commandBuffer, fence);
 
-    std::lock_guard<std::mutex> lock(submit.get_mutex());
+    std::lock_guard<std::mutex> lock(command_submit_manager::get_mutex());
     vkQueueWaitIdle(backend.get_queue());
     // 应该是这里导致了速度慢了很多.
     if (commandBuffer != VK_NULL_HANDLE)
@@ -57,6 +58,11 @@ temp_command_execute::~temp_command_execute() {
         vkDestroyCommandPool(backend.get_device(), pool, nullptr);
 }
 
+void command_submit_manager::add_execute_function(
+    const std::function<void(VkCommandBuffer commandBuffer)> &callback, VkFence fence) {
+    callback_functions_.push_back(callback);
+    // fence_ = fence;
+}
 
 void temp_command_execute::add_execute_function(
     const std::function<void(VkCommandBuffer commandBuffer)> &callback, VkFence fence) {
@@ -64,7 +70,8 @@ void temp_command_execute::add_execute_function(
     fence_ = fence;
 }
 
-temp_command_execute::temp_command_execute() {
+
+void function_init(VkCommandPool &pool, VkCommandBuffer &commandBuffer) {
     const auto &backend = VK_backend::instance();
     // pool // 是需要申请的
 
@@ -88,4 +95,32 @@ temp_command_execute::temp_command_execute() {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
+}
+
+
+temp_command_execute::temp_command_execute() {
+    function_init(pool, commandBuffer);
+}
+
+temp_command_execute::~temp_command_execute() {
+    function_end(pool, commandBuffer, fence_);
+}
+
+
+void command_submit_manager::execute_callback_functions() {
+    if (callback_functions_.empty()) return;
+    VkCommandPool pool            = VK_NULL_HANDLE;
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+    VkFence fence_                = VK_NULL_HANDLE;
+
+    function_init(pool, commandBuffer);
+    for (auto callback: callback_functions_) {
+        callback(commandBuffer);
+        // 数量多起来的时候也是很慢的 // 1000多的时候就很慢了
+    }
+    callback_functions_.clear();
+    function_end(pool, commandBuffer, fence_);
+    command_buffer_submit(1, &commandBuffer);
+
+    // 已经上传完成了
 }

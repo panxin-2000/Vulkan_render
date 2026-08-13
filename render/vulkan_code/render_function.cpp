@@ -88,14 +88,14 @@ void Engine::submit_render_queue(uint64_t time_line) {
         signal_semaphore_values
     };
 
-    command_submit submit(1, &cb,
-                          get_current_fences(),
-                          &timeline_semaphore_submit_info,
-                          1,
-                          &get_current_presentSemaphores(),
-                          &waitStages,
-                          2,
-                          signal_semaphores);
+    command_submit_manager::command_buffer_submit(1, &cb,
+                                                  get_current_fences(),
+                                                  &timeline_semaphore_submit_info,
+                                                  1,
+                                                  &get_current_presentSemaphores(),
+                                                  &waitStages,
+                                                  2,
+                                                  signal_semaphores);
 }
 
 
@@ -109,9 +109,7 @@ void Engine::copy_image_to_screen() {
         .pSwapchains        = &VK_backend::instance().get_swap_chain(),
         .pImageIndices      = &imageIndex
     }; {
-
-        const command_submit submit(presentInfo);
-        const auto result = submit.get_result();
+        const auto result = command_submit_manager::command_present(presentInfo);
         if (result == VK_SUCCESS) {
         } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
                    VK_backend::instance().is_frame_buffer_resize()) {
