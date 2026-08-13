@@ -263,7 +263,11 @@ void VK_backend::create_device() {
     VkPhysicalDeviceVulkan11Features enabledVk1Features{
         .sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
         .pNext                = nullptr,
-        .storageInputOutput16 = true
+        .storageInputOutput16 = true,
+        .shaderDrawParameters = true,
+        // gl_DrawID：当前绘制命令在本次批量绘制（Multi-Draw）中的索引（从 0 开始计数）。
+        // gl_BaseVertex：当前绘制命令中指定的顶点索引偏移量（对应 C++ 中 VkDrawIndexedIndirectCommand::vertexOffset）。
+        // gl_BaseInstance：当前绘制命令中指定的实例偏移量（对应 C++ 中 VkDrawIndexedIndirectCommand::firstInstance）。
     };
 
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
@@ -273,6 +277,7 @@ void VK_backend::create_device() {
         .descriptorIndexing                           = true,
         .shaderSampledImageArrayNonUniformIndexing    = true,
         .descriptorBindingSampledImageUpdateAfterBind = true,
+        .descriptorBindingUpdateUnusedWhilePending    = true,
         .descriptorBindingPartiallyBound              = true,
         .descriptorBindingVariableDescriptorCount     = true,
         .runtimeDescriptorArray                       = true,

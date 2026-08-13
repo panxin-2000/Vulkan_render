@@ -148,8 +148,10 @@ int main(int argc, char *argv[]) {
         framerate_measure.begin_frame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
-            base_event_dealing(event);
             ImGui_ImplSDL3_ProcessEvent(&event);
+            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                base_event_dealing(event);
+            }
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径
                 std::filesystem::path filePath = event.drop.data;

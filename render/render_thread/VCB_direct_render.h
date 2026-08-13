@@ -28,6 +28,19 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
             .image         = Engine::instance().get_current_swap_chain_image(),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .image         = Engine::instance().get_current_depth_image(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
+            }
+        },
     };
     VkDependencyInfo barrierDependencyInfo{
         .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
@@ -108,7 +121,6 @@ inline void add_one_indirect_draw_barrier(VK_backend &handle, VkBuffer buffer, V
     };
     vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
 }
-
 
 
 #endif //HELLO_MAC_DIRECT_RENDER_H
