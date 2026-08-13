@@ -82,4 +82,8 @@ vk_shader_data::~vk_shader_data() {
         if (pipeline_shader_stage_create_info.module != VK_NULL_HANDLE)
             vkDestroyShaderModule(handle.get_device(), pipeline_shader_stage_create_info.module, nullptr);
     }
+    for (auto pipeline_shader_stage_create_info: computer_shader_stage_create_infos) {
+        if (pipeline_shader_stage_create_info.module != VK_NULL_HANDLE)
+            vkDestroyShaderModule(handle.get_device(), pipeline_shader_stage_create_info.module, nullptr);
+    }
 }

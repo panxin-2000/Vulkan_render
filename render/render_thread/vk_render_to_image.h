@@ -22,7 +22,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 
-#include "calculate_Frustum_cull.h"
+#include "calculate_frustum_cull.h"
 #include "Command_calculate.h"
 #include "VCB_direct_render.h"
 #include "framerate_measure.h"

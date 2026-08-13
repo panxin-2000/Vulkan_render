@@ -255,7 +255,7 @@ void Engine::create() {
             "",
             "/Users/panxin/CLionProjects/hello_mac/render/shader/command_calculate.comp.spv"
         };
-        command_calculate = VKR_shader_init(shader_paths);
+        frustum_cull = VKR_shader_init(shader_paths);
     }
     descriptor_pool_manager_.set_shader_data(gltf_shader_data);
     bindless_descriptor_sets_ =

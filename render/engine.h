@@ -74,7 +74,7 @@ private:
     std::shared_ptr<vk_shader_data> gltf_shader_data;
     std::shared_ptr<vk_shader_data> skinning_date;
     std::shared_ptr<vk_shader_data> line_date;
-    std::shared_ptr<vk_shader_data> command_calculate;
+    std::shared_ptr<vk_shader_data> frustum_cull;
     std::shared_ptr<vk_shader_data> bindless_shader_date;
 
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
@@ -323,8 +323,8 @@ public:
         return line_date;
     }
 
-    std::shared_ptr<vk_shader_data> get_command_calculate_shader_data() {
-        return command_calculate;
+    std::shared_ptr<vk_shader_data> get_frustum_cull_shader_data() {
+        return frustum_cull;
     }
 
     void shader_manager_destroy() {
@@ -332,7 +332,7 @@ public:
         gltf_shader_data     = nullptr;
         skinning_date        = nullptr;
         line_date            = nullptr;
-        command_calculate    = nullptr;
+        frustum_cull         = nullptr;
         bindless_shader_date = nullptr;
     }
 

@@ -13,7 +13,7 @@ inline void calculate_frustum_cull(const VkCommandBuffer &cb,
                                    const FrustumPlanes &frustum_planes,
                                    const uint64_t timeline) {
     {
-        auto command_shader = Engine::instance().get_command_calculate_shader_data();
+        auto command_shader = Engine::instance().get_frustum_cull_shader_data();
         vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
 
         auto command_calculate           = Render_entt().get<Command_calculate>(entity);
