@@ -91,9 +91,10 @@ std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width,
     return {image, allocation};
 }
 
-VKR_buffer_ptr create_image_stage_buffer(const VK_backend &backend, VkDeviceSize size,
+VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
                                          std::function<void(void *)> mem_copy_callback) {
-    auto vBuffer =
+    auto &backend = VK_backend::instance();
+    auto vBuffer  =
             create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
@@ -115,7 +116,7 @@ VKR_buffer_ptr create_image_stage_buffer(const VK_backend &backend, VkDeviceSize
 
 
 // todo:: 想起来了，这里写过一次，写的时候还是很头痛的，之后也没有很仔细的验证结果，应该是好了的
-void transition_image(VK_backend &handle, VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
+void transition_image(VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
                       VkImageLayout oldLayout,
                       VkImageLayout newLayout,
                       VkAccessFlags srcAccessMask,
@@ -155,12 +156,12 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
     }
 
 
-    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         int32_t mipWidth  = texWidth;
         int32_t mipHeight = texHeight;
 
         for (uint32_t i = 1; i < mipLevels; i++) {
-            transition_image(handle, commandBuffer, image, i - 1,
+            transition_image(commandBuffer, image, i - 1,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -188,7 +189,7 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
                            1, &blit,
                            VK_FILTER_LINEAR);
 
-            transition_image(handle, commandBuffer, image, i - 1,
+            transition_image(commandBuffer, image, i - 1,
                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              VK_ACCESS_TRANSFER_READ_BIT,
@@ -200,7 +201,7 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
             if (mipHeight > 1) mipHeight /= 2;
         }
 
-        transition_image(handle, commandBuffer, image, mipLevels - 1,
+        transition_image(commandBuffer, image, mipLevels - 1,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                          VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -208,8 +209,7 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
                          VK_PIPELINE_STAGE_TRANSFER_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     };
-    temp_command_execute execute;
-    execute.add_execute_function(execute_function);
+    Command_submit_manager::add_execute_function(execute_function);
 }
 
 
@@ -243,7 +243,7 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
         memcpy(dst, picture_parameters.image_data, image_size);
     };
 
-    const auto staging_buffer = create_image_stage_buffer(handle, imageSize, mem_copy_function);
+    const auto staging_buffer = create_image_stage_buffer(imageSize, mem_copy_function);
 
     auto [textureImage,textureImage_allocation] = create_2D_Image(picture_parameters.width,
                                                                   picture_parameters.height,
@@ -262,6 +262,7 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
                       static_cast<uint32_t>(picture_parameters.height));
     transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+    // 其实这里算一个问题吗?
     staging_buffer->destroy_buffer();
 
     if (mipLevels > 1)
@@ -294,7 +295,7 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
 }
 
 void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, int layerCount) {
-    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         std::vector<VkBufferImageCopy> regions;
         VkBufferImageCopy region{};
         region.bufferOffset                    = 0;
@@ -321,14 +322,13 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
                               );
     };
 
-    temp_command_execute execute;
-    execute.add_execute_function(execute_function);
+    Command_submit_manager::add_execute_function(execute_function);
 }
 
 
 inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                   VkImageLayout newLayout, uint32_t mipLevels) {
-    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout                       = oldLayout;
@@ -381,13 +381,12 @@ inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout 
         // 暂时不动它了，
     };
 
-    temp_command_execute execute;
-    execute.add_execute_function(execute_function);
+    Command_submit_manager::add_execute_function(execute_function);
 }
 
 inline void transitionImageLayout_box(VkImage image, VkFormat format, VkImageLayout oldLayout,
                                       VkImageLayout newLayout, uint32_t mipLevels) {
-    auto execute_function = [&](const VkCommandBuffer commandBuffer) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout                       = oldLayout;
@@ -441,8 +440,7 @@ inline void transitionImageLayout_box(VkImage image, VkFormat format, VkImageLay
     };
 
 
-    temp_command_execute execute;
-    execute.add_execute_function(execute_function);
+    Command_submit_manager::add_execute_function(execute_function);
 }
 
 VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters) {
@@ -485,7 +483,7 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
             dst = static_cast<char *>(dst) + image_size;
         }
     };
-    const auto staging_buffer = create_image_stage_buffer(handle, imageSize, mem_copy_function);
+    const auto staging_buffer = create_image_stage_buffer(imageSize, mem_copy_function);
 
 
     auto [textureImage , textureImage_allocation] = create_sky_cube_Image(handle,

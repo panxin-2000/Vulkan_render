@@ -227,7 +227,8 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
-    descriptor_pool_manager_.create(); {
+    descriptor_pool_manager_.create();
+    command_submit_manager_.create(); {
         VKR_shader_paths shader_paths{
             "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.vert.spv",
             "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
@@ -339,6 +340,7 @@ void Engine::recreate_swap_chain() {
 
 void Engine::destroy() {
     pbr_manager_.destroy();
+    command_submit_manager_.create();
     if (pbr_components_buffer_ != nullptr) {
         pbr_components_buffer_ = {};
     }

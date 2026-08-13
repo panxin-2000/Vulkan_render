@@ -74,30 +74,15 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             }
         };
         VK_CHECK_RESULT_NOT_EXIT(vkCreateImageView(handle.get_device(), &texVewCI, nullptr, &image_view_temp));
-        // Upload
-        VkBuffer imgSrcBuffer{};
-        VmaAllocation imgSrcAllocation{};
-        VkBufferCreateInfo imgSrcBufferCI{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size  = (uint32_t) data_size,
-            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
-        };
-        VmaAllocationCreateInfo imgSrcAllocCI{
-            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
-            .usage = VMA_MEMORY_USAGE_AUTO
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(), &imgSrcBufferCI, &imgSrcAllocCI, &imgSrcBuffer
-                                   , &
-                                     imgSrcAllocation,
-                                     nullptr));
-        void *imgSrcBufferPtr{nullptr};
-        VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), imgSrcAllocation, &imgSrcBufferPtr));
-        memcpy(imgSrcBufferPtr, pdata, data_size);
-        VkFenceCreateInfo fenceOneTimeCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        VkFence fenceOneTime{};
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle.get_device(), &fenceOneTimeCI, nullptr, &fenceOneTime));
 
-        auto execute_function = [=](VkCommandBuffer commandBuffer) {
+
+        auto mem_copy_function = [&](void *dst) {
+            memcpy(dst, pdata, data_size);
+        };
+        const auto staging_buffer = create_image_stage_buffer(data_size, mem_copy_function);
+
+
+        auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
             VkImageMemoryBarrier2 barrierTexImage{
                 .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
                 .srcStageMask     = VK_PIPELINE_STAGE_2_NONE,
@@ -134,7 +119,10 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
                                           },
                                       });
             }
-            vkCmdCopyBufferToImage(commandBuffer, imgSrcBuffer, image_handle_temp, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            vkCmdCopyBufferToImage(commandBuffer,
+                                   staging_buffer->get_buffer_handle(time_line),
+                                   image_handle_temp,
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                    static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
             VkImageMemoryBarrier2 barrierTexRead{
                 .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -152,14 +140,8 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
             vkCmdPipelineBarrier2(commandBuffer, &barrierTexInfo);
         }; {
-            temp_command_execute execute;
-            execute.add_execute_function(execute_function, fenceOneTime);
+            Command_submit_manager::add_execute_function(execute_function);
         }
-
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle.get_device(), 1, &fenceOneTime, VK_TRUE, UINT64_MAX));
-        vkDestroyFence(handle.get_device(), fenceOneTime, nullptr);
-        vmaUnmapMemory(handle.get_allocator(), imgSrcAllocation);
-        vmaDestroyBuffer(handle.get_allocator(), imgSrcBuffer, imgSrcAllocation);
 
         // Sampler
         VkSamplerCreateInfo samplerCI{
@@ -288,7 +270,7 @@ Texture_parameter load_dds_to_gpu(const tinyddsloader::DDSFile &dds) {
     VkFence fenceOneTime{};
     VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle.get_device(), &fenceOneTimeCI, nullptr, &fenceOneTime));
 
-    auto execute_function = [&](VkCommandBuffer commandBuffer) {
+    auto execute_function = [&](VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier2 barrierTexImage{
             .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask     = VK_PIPELINE_STAGE_2_NONE,
@@ -357,8 +339,7 @@ Texture_parameter load_dds_to_gpu(const tinyddsloader::DDSFile &dds) {
         barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
         vkCmdPipelineBarrier2(commandBuffer, &barrierTexInfo);
     }; {
-        temp_command_execute execute;
-        execute.add_execute_function(execute_function, fenceOneTime);
+        Command_submit_manager::add_execute_function(execute_function, fenceOneTime);
     }
 
     VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle.get_device(), 1, &fenceOneTime, VK_TRUE, UINT64_MAX));

@@ -23,6 +23,7 @@
 #include "vulkan_code/vulkan_backend.h"
 
 #include "shader_resolve.h"
+#include "vulkan_execute_command.h"
 
 
 struct Engine {
@@ -64,6 +65,7 @@ private:
 
 
     Descriptor_pool_manager descriptor_pool_manager_;
+    Command_submit_manager command_submit_manager_;
     PBR_manager pbr_manager_;
     VKR_buffer_ptr pbr_components_buffer_;
 
@@ -321,6 +323,10 @@ public:
 
     std::shared_ptr<vk_shader_data> get_line_shader_data() {
         return line_date;
+    }
+
+    Command_submit_manager &get_command_submit_manager() {
+        return command_submit_manager_;
     }
 
     std::shared_ptr<vk_shader_data> get_frustum_cull_shader_data() {

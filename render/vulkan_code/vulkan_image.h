@@ -12,6 +12,8 @@
 
 #include <readerwriterqueue.h>
 
+#include "vulkan_buffer.h"
+
 class VKR_image : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
@@ -139,6 +141,8 @@ struct Texture_parameter {
     }
 };
 
+VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
+                                         std::function<void(void *)> mem_copy_callback);
 
 Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters);
 

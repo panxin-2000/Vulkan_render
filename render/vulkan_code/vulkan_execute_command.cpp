@@ -6,16 +6,17 @@
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
 
-std::mutex command_submit_manager::submitMutex_;
-std::vector<std::function<void(VkCommandBuffer commandBuffer)> > command_submit_manager::callback_functions_;
+std::mutex Command_submit_manager::submitMutex_;
+std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> >
+Command_submit_manager::callback_functions_;
 
-VkResult command_submit_manager::command_present(const VkPresentInfoKHR &presentInfo) {
+VkResult Command_submit_manager::command_copy_image_to_screen(const VkPresentInfoKHR &presentInfo) {
     const auto &backend = VK_backend::instance();
     std::lock_guard<std::mutex> lock(submitMutex_);
     return vkQueuePresentKHR(backend.get_queue(), &presentInfo);
 }
 
-bool command_submit_manager::command_buffer_submit(const uint32_t commandBufferCount,
+bool Command_submit_manager::command_buffer_submit(const uint32_t commandBufferCount,
                                                    const VkCommandBuffer *pCommandBuffers,
                                                    const VkFence fence,
                                                    const void *pNext,
@@ -42,36 +43,23 @@ bool command_submit_manager::command_buffer_submit(const uint32_t commandBufferC
     return true;
 }
 
-void function_end(VkCommandPool &pool, VkCommandBuffer &commandBuffer, VkFence &fence) {
+
+void Command_submit_manager::add_execute_function(
+    const std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> &callback, VkFence fence) {
+    callback_functions_.push_back(callback);
+    // fence_ = fence;
+}
+
+
+void Command_submit_manager::destroy() const {
     const auto &backend = VK_backend::instance();
-
-    vkEndCommandBuffer(commandBuffer);
-
-    command_submit_manager::command_buffer_submit(1, &commandBuffer, fence);
-
-    std::lock_guard<std::mutex> lock(command_submit_manager::get_mutex());
-    vkQueueWaitIdle(backend.get_queue());
-    // 应该是这里导致了速度慢了很多.
     if (commandBuffer != VK_NULL_HANDLE)
         vkFreeCommandBuffers(backend.get_device(), pool, 1, &commandBuffer);
     if (pool != VK_NULL_HANDLE)
         vkDestroyCommandPool(backend.get_device(), pool, nullptr);
 }
 
-void command_submit_manager::add_execute_function(
-    const std::function<void(VkCommandBuffer commandBuffer)> &callback, VkFence fence) {
-    callback_functions_.push_back(callback);
-    // fence_ = fence;
-}
-
-void temp_command_execute::add_execute_function(
-    const std::function<void(VkCommandBuffer commandBuffer)> &callback, VkFence fence) {
-    callback(commandBuffer);
-    fence_ = fence;
-}
-
-
-void function_init(VkCommandPool &pool, VkCommandBuffer &commandBuffer) {
+void Command_submit_manager::create() {
     const auto &backend = VK_backend::instance();
     // pool // 是需要申请的
 
@@ -89,38 +77,29 @@ void function_init(VkCommandPool &pool, VkCommandBuffer &commandBuffer) {
     allocInfo.commandBufferCount = 1;
     //  todo : vkAllocateCommandBuffers 必须加锁
     vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
+}
+
+void Command_submit_manager::execute_callback_functions() {
+    if (callback_functions_.empty()) return;
+
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
-}
-
-
-temp_command_execute::temp_command_execute() {
-    function_init(pool, commandBuffer);
-}
-
-temp_command_execute::~temp_command_execute() {
-    function_end(pool, commandBuffer, fence_);
-}
-
-
-void command_submit_manager::execute_callback_functions() {
-    if (callback_functions_.empty()) return;
-    VkCommandPool pool            = VK_NULL_HANDLE;
-    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    VkFence fence_                = VK_NULL_HANDLE;
-
-    function_init(pool, commandBuffer);
+    const uint64_t time_line = 9;
     for (auto callback: callback_functions_) {
-        callback(commandBuffer);
+        callback(commandBuffer, time_line);
         // 数量多起来的时候也是很慢的 // 1000多的时候就很慢了
     }
     callback_functions_.clear();
-    function_end(pool, commandBuffer, fence_);
+
+
+    vkEndCommandBuffer(commandBuffer);
+
     command_buffer_submit(1, &commandBuffer);
 
+    // 这里那么其实存在另一个问题,那就是需要
+    // 添加一个标志,用于询问是否已经上传完成
     // 已经上传完成了
 }

@@ -75,7 +75,7 @@ public:
 
         // 上面的函数全部都是 绘制前需要的更新的部分
 
-        command_submit_manager::execute_callback_functions();
+        Engine::instance().get_command_submit_manager().execute_callback_functions();
 
 
         Engine::instance().get_image_to_render(); // 这里已经有完整的

@@ -105,7 +105,7 @@ bool VKR_buffer::need_flush() const {
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
                                   const VKR_buffer_ptr &dstBuffer,
                                   const VkDeviceSize size) {
-    auto execute_function = [=](const VkCommandBuffer commandBuffer) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = 0;
         copyRegion.dstOffset = 0;
@@ -117,8 +117,7 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
                         &copyRegion);
     };
 
-    temp_command_execute execute;
-    command_submit_manager::add_execute_function(execute_function);
+    Command_submit_manager::add_execute_function(execute_function);
 }
 
 
