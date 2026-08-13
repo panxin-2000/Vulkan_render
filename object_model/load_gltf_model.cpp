@@ -260,9 +260,9 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
     for (const auto &primitive: mesh.primitives) {
         // 最开始需要能够确定数量
         if (primitive.indicesAccessor.has_value()) {
-            const auto current_accessor  = model.accessors[primitive.indicesAccessor.value()]; // 复制的函数需要处理
-            std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
-                                                                        current_accessor.componentType);
+            const auto current_accessor        = model.accessors[primitive.indicesAccessor.value()]; // 复制的函数需要处理
+            const std::size_t data_single_size = fastgltf::getElementByteSize(current_accessor.type,
+                                                                              current_accessor.componentType);
             indices_memory_size += current_accessor.count * data_single_size;
         }
 

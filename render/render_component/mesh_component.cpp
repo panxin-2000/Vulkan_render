@@ -3,15 +3,14 @@
 //
 
 #include "mesh_component.h"
-
 #include "Rect_2D_component.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 
 
-Mesh_data create_mesh_data(const VK_backend &backend,
-                           const std::vector<share_block> &vertices,
-                           const std::vector<share_block> &indices) {
+Mesh_data copy_mesh_data_to_gpu(const VK_backend &backend,
+                                const std::vector<share_block> &vertices,
+                                const std::vector<share_block> &indices) {
     VkDeviceSize vBufSize = 0;
     Mesh_data mesh_data;
 
@@ -29,7 +28,6 @@ Mesh_data create_mesh_data(const VK_backend &backend,
     }
     mesh_data.vertices_offset = 0;
     mesh_data.indices_offset  = vBufSize;
-
 
     // 具体的复制函数
     auto mem_copy_function = [vertices,indices](void *dst) {
@@ -66,8 +64,8 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
         int32_t vertices_offset = 0;
         uint32_t first_index    = 0;
         for (uint32_t i = 0; i < indices.size(); i++) {
-            auto index  = indices[i];
-            auto vertex = vertices[i];
+            const auto index  = indices[i];
+            const auto vertex = vertices[i];
             VKR_Primitive primitive;
             primitive.vertexOffset = vertices_offset; // 应该是这里的问题
             vertices_offset        += vertex.count;
@@ -90,6 +88,10 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
     return primitives;
 }
 
+Mesh_data create_mesh_data(const Geometry_data &data) {
+    return copy_mesh_data_to_gpu(VK_backend::instance(), data.get_vertices(), data.get_indices());
+}
+
 std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         return create_primitives(*data);
@@ -97,12 +99,8 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
     return {};
 }
 
-Mesh_data create_mesh_data(const Geometry_data &data) {
-    return create_mesh_data(VK_backend::instance(), data.get_vertices(), data.get_indices());
-}
 
 Mesh_data get_VKR_mesh(const entt::entity entity) {
-    const auto &backend = VK_backend::instance();
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         // todo : 这里的逻辑还是有问题的
         return create_mesh_data(*data);

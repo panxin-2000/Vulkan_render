@@ -8,6 +8,7 @@
 #include "global_singleton.h"
 #include "PBR_component.h"
 #include "shader_common.h"
+#include "AABB_box.h"
 
 struct share_block {
     std::shared_ptr<void> ptr;
@@ -22,10 +23,6 @@ struct share_block {
 struct Geometry_data_need_copy_tag {
 };
 
-struct alignas(16) Render_AABB {
-    Eigen::Vector4f centroid_points;
-    Eigen::Vector4f direction_intervals;
-};
 
 Render_AABB find_min_max_point(const share_block &vertex);
 
