@@ -79,5 +79,8 @@ struct bindless_tag {
 struct Render_destroy_tag {
 };
 
+struct Render_destroy_tag_last {
+};
+
 
 #endif //HELLO_MAC_RENDER_PROXY_H

@@ -62,6 +62,12 @@ public:
         return result;
     }
 
+    void clean_shader_data() {
+        if (shader_date_ != nullptr) {
+            shader_date_ = nullptr;
+        }
+    }
+
     void destroy() {
         for (auto descriptor_pool: descriptor_pools) {
             if (descriptor_pool != VK_NULL_HANDLE)

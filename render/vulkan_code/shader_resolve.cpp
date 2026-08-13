@@ -14,6 +14,8 @@
 shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
     shader_data shader_data_handle;
     // if (shader_data_handle.get() == nullptr)
+    // 这里需要进行检查,看看是否 存在相同的 VKR_shader_paths ,
+    // 如果这里相同, 那么 后面的一切都是相同的
     {
         auto &handle = VK_backend::instance();
         shader_data_handle = std::make_shared<vk_shader_data>();
@@ -61,7 +63,23 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
         shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
                                                                      temp, shader_data_handle->push_constant_map);
 
-        shader_data_handle->pipeline_t = find_pipeline(handle, shader_data_handle);
+        shader_data_handle->pipeline_t = create_pipeline(handle, *shader_data_handle.get());
     }
     return shader_data_handle;
+}
+
+
+vk_shader_data::~vk_shader_data() {
+    // 这里需要看看或者确定一下,有没有在管线 还是使用的过程中就删除了
+    auto &handle = VK_backend::instance();
+    if (pipeline_t != VK_NULL_HANDLE) {
+        vkDestroyPipeline(handle.get_device(), pipeline_t, nullptr);
+    }
+    if (pipeline_layout != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(handle.get_device(), pipeline_layout, nullptr);
+
+    for (auto pipeline_shader_stage_create_info: pipeline_shader_stage_create_infos) {
+        if (pipeline_shader_stage_create_info.module != VK_NULL_HANDLE)
+            vkDestroyShaderModule(handle.get_device(), pipeline_shader_stage_create_info.module, nullptr);
+    }
 }

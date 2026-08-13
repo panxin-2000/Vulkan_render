@@ -24,9 +24,7 @@ VkPipelineLayout create_pipeline_layout(VK_backend &handle, const std::string sh
                                         std::map<std::string, VkPushConstantRange> &push_constant_map);
 
 
-VkPipelineLayout find_pipeline_layout(VK_backend &handle, const std::string shader_key);
 
-void clean_all_pipeline_layout(VK_backend &handle);
 
 
 #endif //HELLO_MAC_PIPELINE_LAYOUT_H

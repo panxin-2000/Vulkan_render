@@ -70,7 +70,6 @@ private:
 
     Global_parameters global_parameters_;
 
-    shader_data gltf_shader_data_;
 
     std::shared_ptr<vk_shader_data> gltf_shader_data;
     std::shared_ptr<vk_shader_data> skinning_date;
@@ -328,6 +327,14 @@ public:
         return command_calculate;
     }
 
+    void shader_manager_destroy() {
+        descriptor_pool_manager_.clean_shader_data();
+        gltf_shader_data     = nullptr;
+        skinning_date        = nullptr;
+        line_date            = nullptr;
+        command_calculate    = nullptr;
+        bindless_shader_date = nullptr;
+    }
 
     void destroy_render_image();
 

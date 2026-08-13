@@ -69,16 +69,26 @@ public:
         descriptor_set_update_function();
         push_constant_update_function();
         //
-        {
-            const auto view = Render_entt().view<Render_destroy_tag>();
-            Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
-        }
         auto frustum_planes = Engine::instance().get_frustum_planes();
         auto camera_pos     = Engine::instance().get_world_camera_pos();
 
         // 上面的函数全部都是 绘制前需要的更新的部分
 
         Engine::instance().get_image_to_render(); // 这里已经有完整的
+
+        {
+            const auto view = Render_entt().view<Render_destroy_tag_last>();
+            Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+        } {
+            const auto view = Render_entt().view<Render_destroy_tag>();
+            for (const auto entity: view) {
+                Render_entt().remove<Render_destroy_tag>(entity);
+                Render_entt().emplace<Render_destroy_tag_last>(entity);
+            }
+            // 这里的执行销毁是有问题的, 应该是需要 再等一次才能够 删除
+            // 最好还是放在 get_image_to_render 之后 才会完全没有问题
+        }
+
 
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
@@ -274,13 +284,21 @@ public:
 
         // destroy_descriptorPool();
 
+        // 在开启多线程之前，先显式初始化这两个组件池 否则的话 还是有问题的
+        // 如果两个线程同时第一次为一个新组件分配空间，会并发修改 registry 内部的总控结构，导致崩溃
+        // registry.storage<Position>();
+        // registry.storage<Velocity>();
 
+
+        Engine::instance().shader_manager_destroy();
         // pipeline 建议提前清理
-        clean_all_pipeline(handle);
-        clean_all_pipeline_layout(handle);
-        clean_all_shader_object(handle);
+        // clean_all_pipeline(handle); 这里需要更改 // 什么时候清理呢? Render_entt 把 逻辑相关 相关的都在这里清理了
+        // clean_all_pipeline_layout(handle); //
+        // clean_all_shader_object(handle);
         // VkDescriptorSet
         clean_all_descriptor_sets_layout(handle);
+        // 只剩这最后一个了,我 不太记得 这个是 做什么了 , 或者说没有感觉
+        // 理论上 应该知识一个 方便拓印 的模版
 
         // clean_all_mesh_object(); // 放在这里似乎并不是太好， 函数被清理了
 

@@ -74,11 +74,12 @@ using bindings_map = std::map<uint32_t, binding_resource>;
 using sets_map     = std::map<uint32_t, bindings_map>;
 
 
-struct vk_shader_data {
+class vk_shader_data {
+public:
     std::string shader_key;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
     std::vector<VkPipelineShaderStageCreateInfo> computer_shader_stage_create_infos;
-    VkPrimitiveTopology topology;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     // 再想增加一个组的时候，还是需要到这里来增加
     sets_map bindless_sets_bindings;
     sets_map global_sets_bindings;
@@ -106,6 +107,8 @@ struct vk_shader_data {
     Push_constant_map &get_push_constant_map() {
         return push_constant_map;
     }
+
+    ~vk_shader_data();
 };
 
 using shader_data = std::shared_ptr<vk_shader_data>;
