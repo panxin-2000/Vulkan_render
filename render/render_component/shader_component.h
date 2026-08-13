@@ -72,7 +72,7 @@ bool set_render_parameter(const entt::entity entity,
                           const std::shared_ptr<std::vector<T1> > &binding_data) {
     const auto matrix_ptr = binding_data->data();
     auto size             = binding_data->size() * sizeof(T1);
-    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    auto buffer           = copy_data_to_SSBO_buffer(matrix_ptr, size);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, buffer ]() {
             render_render_parameter(proxy_entity, binding_name, buffer);
@@ -88,7 +88,7 @@ bool set_render_parameter(const entt::entity entity,
                           const std::vector<T1> &binding_data) {
     const auto matrix_ptr = binding_data.data();
     auto size             = binding_data.size() * sizeof(T1);
-    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    auto buffer           = copy_data_to_SSBO_buffer(matrix_ptr, size);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, buffer ]() {
             render_render_parameter(proxy_entity, binding_name, buffer);
@@ -104,7 +104,7 @@ bool set_render_parameter(const entt::entity entity,
                           std::shared_ptr<std::vector<T1> > &binding_data) {
     const auto matrix_ptr = binding_data->data();
     auto size             = binding_data->size() * sizeof(T1);
-    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    auto buffer           = copy_data_to_SSBO_buffer(matrix_ptr, size);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, buffer ]() {
             render_render_parameter(proxy_entity, binding_name, buffer);
@@ -120,7 +120,7 @@ bool set_render_parameter(const entt::entity entity,
                           std::vector<T1> &binding_data) {
     const auto matrix_ptr = binding_data.data();
     auto size             = binding_data.size() * sizeof(T1);
-    auto buffer           = copy_data_to_gpu_memory(matrix_ptr, size);
+    auto buffer           = copy_data_to_SSBO_buffer(matrix_ptr, size);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, buffer ]() {
             render_render_parameter(proxy_entity, binding_name, buffer);

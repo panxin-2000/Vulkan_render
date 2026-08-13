@@ -571,7 +571,7 @@ void gltf_update_joint_matrix(const entt::entity &model_entity) {
         }
         const auto matrix_ptr = JointMatrices.data();
         auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
-        auto matrix_buffer    = copy_data_to_gpu_memory(matrix_ptr, matrix_size);
+        auto matrix_buffer    = copy_data_to_SSBO_buffer(matrix_ptr, matrix_size);
         set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
     }
 }
@@ -885,14 +885,14 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         set_render_parameter(model_entity, "model_matrix_parameters", matrices); {
             const auto boxes_ptr = boxes->data();
             auto boxes_size      = boxes->size() * sizeof(Render_AABB);
-            auto boxes_buffer    = copy_data_to_gpu_memory(boxes_ptr, boxes_size);
+            auto boxes_buffer    = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
             //
             command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
             command_calculate.AABB_boxes_buffer = boxes_buffer;
         } {
             const auto primitives_ptr                 = primitives.data();
             auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
-            auto primitives_buffer                    = copy_data_to_gpu_memory(primitives_ptr, primitives_size);
+            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
             command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
             command_calculate.command_buffer          = primitives_buffer;
         }

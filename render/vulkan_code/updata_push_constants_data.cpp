@@ -3,6 +3,7 @@
 //
 
 #include "update_push_constants_data.h"
+#include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 
 VKR_buffer_pool_ptr buffer = nullptr;
@@ -25,6 +26,7 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
                      VMA_ALLOCATION_CREATE_MAPPED_BIT,
             .usage = VMA_MEMORY_USAGE_AUTO
         };
+        // 这里也是稍微有点问题的 ,
         VK_CHECK_RESULT_NOT_EXIT(
                                  vmaCreateBuffer(handle.get_allocator(),
                                      &uBufferCI,
@@ -55,12 +57,12 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
  * @param src
  * @param size
  */
-VKR_buffer_ptr copy_data_to_gpu_memory(const void *src, uint64_t size) {
+VKR_buffer_ptr copy_data_to_SSBO_buffer(const void *src, uint64_t size) {
+    const auto &backend = VK_backend::instance();
+
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(size));
     auto mem_copy_function = [src,size](void *dst) {
         memcpy(dst, src, size);
     };
-    copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
-
-    return temp_ptr;
+    return create_base_buffer(temp_ptr, backend, size, mem_copy_function);
 }
