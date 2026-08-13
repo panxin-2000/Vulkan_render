@@ -16,8 +16,8 @@
 
 #include "B_spline_cureve.h"
 #include "parse_geometry_file.h"
-#include "PBR_component.h"
-#include "render_state.h"
+#include "../render/render_common/PBR_component.h"
+#include "../render/render_common/render_state.h"
 #include "world_scene_root.h"
 #include "../UI/PLYLoader.h"
 

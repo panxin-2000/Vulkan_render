@@ -15,8 +15,8 @@
 #include <Eigen/Eigen>
 
 #include "Descriptor_pool_manager.h"
-#include "frustum.h"
-#include "PBR_component.h"
+#include "render_common/frustum.h"
+#include "render_common/PBR_component.h"
 #include "pbr_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"

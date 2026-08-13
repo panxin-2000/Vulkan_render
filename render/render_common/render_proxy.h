@@ -4,9 +4,6 @@
 
 #ifndef HELLO_MAC_RENDER_PROXY_H
 #define HELLO_MAC_RENDER_PROXY_H
-#include "descriptor.h"
-#include "mesh_component.h"
-
 
 // class VKR_object_proxy {
 // public:

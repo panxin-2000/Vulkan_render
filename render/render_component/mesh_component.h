@@ -4,12 +4,9 @@
 
 #ifndef HELLO_MAC_MESH_COMPONENT_H
 #define HELLO_MAC_MESH_COMPONENT_H
-#include "vulkan_buffer.h"
 #include "global_singleton.h"
-#include "render_mesh.h"
-#include "shader_common.h"
-#include "base_geometry/base.h"
-#include "Geometry_data.h"
+#include "../render_common/render_mesh.h"
+#include "../render_common/Geometry_data.h"
 
 
 /**

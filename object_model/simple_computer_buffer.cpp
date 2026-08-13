@@ -4,6 +4,7 @@
 
 #include "simple_computer_buffer.h"
 #include "global_singleton.h"
+#include "mesh_component.h"
 #include "name_component.h"
 #include "shader_component.h"
 #include "VKR_proxy_component.h"

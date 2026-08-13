@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_PBR_MANAGER_H
 #define HELLO_MAC_PBR_MANAGER_H
-#include "PBR_component.h"
+#include "render_common/PBR_component.h"
 #include "vulkan_buffer.h"
 
 

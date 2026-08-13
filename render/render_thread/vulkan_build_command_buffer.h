@@ -10,7 +10,8 @@
 #include "render_proxy.h"
 #include "../vulkan_code/vertex_and_buffer_index.h"
 #include "name_component.h"
-#include "render_state.h"
+#include "../render_common/render_state.h"
+#include "../render_common/render_mesh.h"
 
 struct scoped_debug_label {
     VkCommandBuffer cmd;

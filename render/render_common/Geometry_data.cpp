@@ -3,7 +3,7 @@
 //
 
 #include "Geometry_data.h"
-#include "shader_component.h"
+#include "../render_component/shader_component.h"
 
 
 bool add_2D_bound_box_geometry(const entt::entity entity,

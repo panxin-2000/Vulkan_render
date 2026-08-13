@@ -20,7 +20,7 @@
 #include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
 #include "nano_vdb_model.h"
-#include "PBR_component.h"
+#include "render/render_common/PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "UI_manager.h"
 #include "update_push_constants_data.h"
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]) {
     // }
     object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
     object_line("line");
+    object_line_old(" old");
     // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
     // auto entity = load_gltf_model("Sponza",
     //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");

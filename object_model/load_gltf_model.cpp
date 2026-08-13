@@ -6,7 +6,7 @@
 #include "input_component.h"
 #include "transform_component.h"
 #include "name_component.h"
-#include "PBR_component.h"
+#include "../render/render_common/PBR_component.h"
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
 #include "Command_calculate.h"

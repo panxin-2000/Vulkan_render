@@ -5,7 +5,6 @@
 #ifndef HELLO_MAC_RENDER_STATE_H
 #define HELLO_MAC_RENDER_STATE_H
 #include <volk.h>
-#include "vulkan_buffer.h"
 #include "vulkan_pipeline_dynamic_state.h"
 
 class VKR_Render_state {
