@@ -296,7 +296,7 @@ public:
         // clean_all_pipeline_layout(handle); //
         // clean_all_shader_object(handle);
         // VkDescriptorSet
-        clean_all_descriptor_sets_layout(handle);
+        // clean_all_descriptor_sets_layout(handle);
         // 只剩这最后一个了,我 不太记得 这个是 做什么了 , 或者说没有感觉
         // 理论上 应该知识一个 方便拓印 的模版
 

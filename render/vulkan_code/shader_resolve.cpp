@@ -86,4 +86,16 @@ vk_shader_data::~vk_shader_data() {
         if (pipeline_shader_stage_create_info.module != VK_NULL_HANDLE)
             vkDestroyShaderModule(handle.get_device(), pipeline_shader_stage_create_info.module, nullptr);
     }
+    for (const auto set_layout: bindless_set_layout) {
+        if (set_layout != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(handle.get_device(), set_layout, nullptr);
+    }
+    for (const auto set_layout: global_descriptor_sets_layout) {
+        if (set_layout != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(handle.get_device(), set_layout, nullptr);
+    }
+    for (const auto set_layout: object_descriptor_sets_layout) {
+        if (set_layout != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(handle.get_device(), set_layout, nullptr);
+    }
 }

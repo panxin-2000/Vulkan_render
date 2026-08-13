@@ -38,12 +38,6 @@ std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_backend &han
                                                                  const std::string &shader_key,
                                                                  const sets_map &organized_sets_and_bindings);
 
-std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_backend &handle,
-                                                               const std::string &shader_key);
-
-
-void clean_all_descriptor_sets_layout(VK_backend &handle);
-
 std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &backend,
                                                                    const sets_map &organized_sets_and_bindings);
 

@@ -4,12 +4,6 @@
 
 #include "sets_and_bindings_layout.h"
 
-std::map<std::string, std::pair<std::vector<VkDescriptorSetLayout>, uint32_t> > descriptor_sets_layout_map_;
-
-auto &get_descriptor_sets_layout_map() {
-    return descriptor_sets_layout_map_;
-}
-
 
 VkDescriptorSetLayoutBindingFlagsCreateInfo DescriptorSetLayoutBindingFlagsCreateInfo(
     const std::vector<VkDescriptorBindingFlags> &descVariableFlags) {
@@ -59,63 +53,25 @@ std::vector<VkDescriptorSetLayout> create_descriptor_sets_layout(VK_backend &han
                                                                  const std::string &shader_key,
                                                                  const sets_map &organized_sets_and_bindings) {
     std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    if (!shader_key.empty()) {
-        auto &map = get_descriptor_sets_layout_map();
-        auto it   = map.find(shader_key);
-        if (it != map.end()) {
-            it->second.second++;
-            return it->second.first;
-        } else {
-            for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {
-                const auto &organized_bindings = bindings_map;
-                if (organized_bindings.empty() == true)
-                    continue; // 我不确定，
-                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-                std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
-                for (const auto &[fst, snd]: organized_bindings) {
-                    layout_bindings.push_back(snd.LayoutBinding);
-                    layout_bindings_flags.push_back(snd.flag);
-                }
-                if (layout_bindings_flags.empty() == true && layout_bindings.empty() == true) {
-                    continue;
-                }
-                auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings, layout_bindings_flags);
-                descriptor_sets_layout.push_back(set_x_layout);
-            }
-            if (!descriptor_sets_layout.empty()) {
-                map.insert({shader_key, {descriptor_sets_layout, 1}});
-            }
-            return descriptor_sets_layout;
+    for (auto const &[set_value, bindings_map]: organized_sets_and_bindings) {
+        const auto &organized_bindings = bindings_map;
+        if (organized_bindings.empty() == true)
+            continue; // 我不确定，
+        std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+        std::vector<VkDescriptorBindingFlags> layout_bindings_flags;
+        for (const auto &[fst, snd]: organized_bindings) {
+            layout_bindings.push_back(snd.LayoutBinding);
+            layout_bindings_flags.push_back(snd.flag);
         }
+        if (layout_bindings_flags.empty() == true && layout_bindings.empty() == true) {
+            continue;
+        }
+        auto set_x_layout = create_descriptor_bindings_layout(handle, layout_bindings, layout_bindings_flags);
+        descriptor_sets_layout.push_back(set_x_layout);
     }
     return descriptor_sets_layout;
 }
 
-std::vector<VkDescriptorSetLayout> find_descriptor_sets_layout(VK_backend &handle,
-                                                               const std::string &shader_key) {
-    std::vector<VkDescriptorSetLayout> descriptor_sets_layout;
-    if (!shader_key.empty()) {
-        auto &map = get_descriptor_sets_layout_map();
-        auto it   = map.find(shader_key);
-        if (it != map.end()) {
-            it->second.second++;
-            return it->second.first;
-        } else {
-        }
-    }
-    return descriptor_sets_layout;
-}
-
-
-void clean_all_descriptor_sets_layout(VK_backend &handle) {
-    auto &map = get_descriptor_sets_layout_map();
-    for (const auto &[key, value]: map) {
-        for (auto Bindings: value.first) {
-            vkDestroyDescriptorSetLayout(handle.get_device(), Bindings, nullptr);
-        }
-    }
-    map.clear();
-}
 
 std::vector<VkDescriptorBindingFlags> create_descriptor_sets_flags(const VK_backend &backend,
                                                                    const sets_map &organized_sets_and_bindings) {
