@@ -13,7 +13,7 @@
 #include "../engine.h"
 #include "transfer_texture_to_gpu.h"
 #include "vertex_and_buffer_index.h"
-#include "vulkan_build_command_buffer.h"
+#include "VCB_vulkan_command_buffer.h"
 #include "vulkan_backend.h"
 #include "vulkan_texture_bindless.h"
 
@@ -24,16 +24,18 @@
 
 #include "calculate_Frustum_cull.h"
 #include "Command_calculate.h"
-#include "descriptor_pool.h"
+#include "VCB_direct_render.h"
 #include "framerate_measure.h"
+#include "VCB_G_buffer_render.h"
 #include "pipeline_layout.h"
-#include "pipeline_layout_component.h"
-#include "pipeline_component.h"
 #include "name_component.h"
 #include "vulkan_render_manage.h"
 #include "sets_and_bindings_layout.h"
+#include "VCB_shadow_render.h"
 #include "time_measure.h"
 #include "transform_component.h"
+#include "VCB_compute_command.h"
+#include "VCB_draw_command.h"
 
 
 class vk_render_GPU {
@@ -46,7 +48,7 @@ class vk_render_GPU {
 
 
 public:
-    void one_cycle(VK_backend &handle) {
+    void render_once(VK_backend &handle) {
         VK_backend::instance().update_current_extent();
         auto &engine = Engine::instance(); {
             std::unique_lock<std::mutex> lock(mtx);
@@ -71,16 +73,20 @@ public:
             const auto view = Render_entt().view<Render_destroy_tag>();
             Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
         }
-        const VkQueryPool queryPool = VK_NULL_HANDLE;
+        auto frustum_planes = Engine::instance().get_frustum_planes();
+        auto camera_pos     = Engine::instance().get_world_camera_pos();
+
+        // 上面的函数全部都是 绘制前需要的更新的部分
 
         Engine::instance().get_image_to_render(); // 这里已经有完整的
+
         const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
+
+        const VkQueryPool queryPool = VK_NULL_HANDLE;
         reset_current_command_buffer(handle, queryPool, time_line);
 
 
-        auto frustum_planes = Engine::instance().get_frustum_planes();
-        auto camera_pos     = Engine::instance().get_world_camera_pos();
         std::array<VkBufferMemoryBarrier2, 1> write_buffer{
             VkBufferMemoryBarrier2{
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -110,19 +116,18 @@ public:
             // 上一帧绘制的 command 的 buffer
             //
             auto view = Render_entt().view<compute_pass_tag>();
-            for (const auto it: view) {
-                // 这里还需要改为 dispatch
-                build_compute_dispatch(handle, it, time_line);
+            for (const auto entity: view) {
+                build_compute_dispatch(handle, entity, time_line);
             }
             // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
-        } {
+        }
+        // 视锥裁剪
+        {
             const auto cb = Engine::instance().get_current_command_buffer();
             auto view     = Render_entt().view<Command_calculate>();
-            for (const auto it: view)
-                calculate_frustum_cull(cb, it, frustum_planes, time_line);
+            for (const auto entity: view)
+                calculate_frustum_cull(cb, entity, frustum_planes, time_line);
         }
-
-
         // 阴影的 pass
         {
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
@@ -149,80 +154,79 @@ public:
                 shadow_pass_barrier(handle, time_line);
             }
         }
-        auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line); {
+
+        // 应该是在 需要 deferred 的时候才开启
+        {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
-                for (const auto it: view_opacity) {
-                    auto name = Render_entt().get<Name_component>(it);
-                    build_command_buffer(handle, it, time_line);
+                auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line);
+                auto view_opacity           = Render_entt().view<opacity_tag, Name_component>();
+                for (const auto entity: view_opacity) {
+                    auto name = Render_entt().get<Name_component>(entity);
+                    build_draw_command(handle, entity, time_line);
                 }
+                end_rendering(handle);
+                g_buffer_attachment_barrier(handle, time_line);
             }
         }
 
-        end_rendering(handle);
-        g_buffer_attachment_barrier(handle, time_line);
-
-
         begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
+
+
         // 应该先划分不同的 pass 阶段，
         //  deferred  不应该将深度值写入的
         {
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
             auto view = Render_entt().view<deferred_pass_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
             auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<opacity_tag, Command_calculate, Name_component>();
-            for (const auto it: view) {
-                // 这里需要做什么呢? 创建计算着色器
-                // 计算AABB 包围盒 将新的 command 写入需要更改的 位置中
-                // 添加 屏障
-                // 绘制调用新的绘制命令
-                auto command_calculate = Render_entt().get<Command_calculate>(it);
-                auto name              = Render_entt().get<Name_component>(it);
-                bind_pipeline_update_parameter(handle, it, time_line);
-                DrawIndexedIndirect(handle, it, command_calculate, time_line);
+            for (const auto entity: view) {
+                auto command_calculate = Render_entt().get<Command_calculate>(entity);
+                auto name              = Render_entt().get<Name_component>(entity);
+                bind_pipeline_update_parameter(handle, entity, time_line);
+                DrawIndexedIndirect(handle, entity, command_calculate, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
                                            opacity_tag,
                                            Name_component>();
-            for (const auto it: view) {
-                auto name = Render_entt().get<Name_component>(it);
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                auto name = Render_entt().get<Name_component>(entity);
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<volume_pass_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
-            for (const auto it: view) {
-                build_command_buffer(handle, it, time_line);
+            for (const auto entity: view) {
+                build_draw_command(handle, entity, time_line);
             }
         }
 
@@ -309,7 +313,7 @@ public:
         while (need_render == running) {
             framerate_measure.begin_frame();
             Engine::instance().set_framerate(framerate_measure.get_frame_rate());
-            one_cycle(handle);
+            render_once(handle);
             framerate_measure.end_frame();
         }
         exit_and_clean(handle);
