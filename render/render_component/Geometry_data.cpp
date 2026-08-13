@@ -3,9 +3,6 @@
 //
 
 #include "Geometry_data.h"
-
-#include "bezier_curve.h"
-#include "B_spline_cureve.h"
 #include "shader_component.h"
 
 
@@ -66,7 +63,7 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
     return true;
 }
 
-bool add_round_box_geometry(entt::entity entity,
+bool add_round_box_geometry(const entt::entity entity,
                             Point_3 min,
                             Point_3 max) {
     auto vertex_input   = get_attribute_description(entity);
@@ -94,9 +91,10 @@ bool add_round_box_geometry(entt::entity entity,
     }
 
     add_geometry_data(entity, vertices, indices);
+    return true;
 }
 
-bool add_triangle_geometry(entt::entity entity,
+bool add_triangle_geometry(const entt::entity entity,
                            Point_3 a,
                            Point_3 b,
                            Point_3 c) {
@@ -112,69 +110,36 @@ bool add_triangle_geometry(entt::entity entity,
         vertices->emplace_back(Vertex{{c.x, c.y, c.z}, {0, 0, 0}, {0, 0}}); //0 1 2
     }
     add_geometry_data(entity, vertices, indices);
+    return true;
 }
 
-bool add_line(entt::entity entity,
-              Point_2 a,
-              Point_2 b) {
-    const auto vertices = std::make_shared<std::vector<Line> >();
-    const auto indices  = std::make_shared<std::vector<uint16_t> >();
-    // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
-    {
-        indices->push_back(vertices->size() + 0);
-        indices->push_back(vertices->size() + 1);
-        vertices->emplace_back(Line{{a.x, a.y}, 1, 0, 0, 0});
-        vertices->emplace_back(Line{{b.x, b.y}, 255, 0, 0, 0});
+void clean_geometry_data(const entt::entity entity) {
+    if (Logic_entt().try_get<Geometry_data>(entity)) {
+        Logic_entt().remove<Geometry_data>(entity);
     }
-    add_geometry_data(entity, vertices, indices);
 }
 
-bool add_bezier(entt::entity entity) {
-    Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
-    std::vector<Eigen::Vector2f> path;
-    bezier.Casteljau(&path);
-    const auto vertices = std::make_shared<std::vector<Line> >();
-    const auto indices  = std::make_shared<std::vector<uint16_t> >();
+
+bool add_path(const entt::entity entity, const std::vector<Eigen::Vector2f> &path, const Color color) {
+    const auto vertices   = std::make_shared<std::vector<Line> >();
+    const auto indices    = std::make_shared<std::vector<uint16_t> >();
+    const uint8_t color_r = static_cast<uint8_t>(std::clamp(color.R * 255.0f + 0.5f, 0.0f, 255.0f));
+    const uint8_t color_g = static_cast<uint8_t>(std::clamp(color.G * 255.0f + 0.5f, 0.0f, 255.0f));
+    const uint8_t color_b = static_cast<uint8_t>(std::clamp(color.B * 255.0f + 0.5f, 0.0f, 255.0f));
+    const uint8_t color_a = static_cast<uint8_t>(std::clamp(color.LightType * 255.0f + 0.5f, 0.0f, 255.0f));
     for (const auto &vertex: path) {
-        vertices->emplace_back(Line{{vertex.x(), vertex.y()}, 1, 0, 0, 255});
+        vertices->emplace_back(Line{{vertex.x(), vertex.y()}, color_r, color_g, color_b, color_a});
     }
     for (uint i = 0; i < path.size() - 1; ++i) {
         indices->push_back(i + 0);
         indices->push_back(i + 1);
     }
     add_geometry_data(entity, vertices, indices);
+    return true;
 }
 
-bool add_b_spline(entt::entity entity) {
-    std::vector<Eigen::Vector2f> points;
-    points.push_back({200, 200});
-    points.push_back({200, 600});
-    points.push_back({600, 200});
-    points.push_back({600, 600});
-    auto path           = B_spline<Eigen::Vector2f>::calculateBSplinePathWithTol(points, 1.25);
-    const auto vertices = std::make_shared<std::vector<Line> >();
-    const auto indices  = std::make_shared<std::vector<uint16_t> >();
-    for (const auto &vertex: path) {
-        vertices->emplace_back(Line{{vertex.x(), vertex.y()}, 1, 0, 0, 255});
-    }
-    for (uint i = 0; i < path.size() - 1; ++i) {
-        indices->push_back(i + 0);
-        indices->push_back(i + 1);
-    }
-    add_geometry_data(entity, vertices, indices);
-}
 
-bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
-    return add_box_data(entity,
-                        bounding_box.min_point_.x,
-                        bounding_box.min_point_.y,
-                        bounding_box.min_point_.z,
-                        bounding_box.max_point_.x,
-                        bounding_box.max_point_.y,
-                        bounding_box.max_point_.z);
-}
-
-bool add_box_data(entt::entity entity,
+bool add_box_data(const entt::entity entity,
                   const float x_min,
                   const float y_min,
                   const float z_min,
@@ -317,6 +282,15 @@ bool add_box_data(entt::entity entity,
     return true;
 }
 
+bool add_box_data(const entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
+    return add_box_data(entity,
+                        bounding_box.min_point_.x,
+                        bounding_box.min_point_.y,
+                        bounding_box.min_point_.z,
+                        bounding_box.max_point_.x,
+                        bounding_box.max_point_.y,
+                        bounding_box.max_point_.z);
+}
 
 void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      const std::shared_ptr<std::vector<unsigned short> > &indices,
@@ -339,4 +313,5 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
     vertices->emplace_back(Vertex_2D{{max.x, min.y}, uv_max_x, uv_min_y});
     vertices->emplace_back(Vertex_2D{{max.x, max.y}, uv_max_x, uv_max_y}); // 2 3 0
     vertices->emplace_back(Vertex_2D{{min.x, max.y}, uv_min_x, uv_max_y});
+    return;
 }

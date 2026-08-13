@@ -14,6 +14,7 @@
 #include "transform_component.h"
 #include <meshoptimizer.h>
 
+#include "B_spline_cureve.h"
 #include "parse_geometry_file.h"
 #include "PBR_component.h"
 #include "render_state.h"
@@ -234,8 +235,20 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
-    // add_line(entity, {40, 40}, {600, 600});
-    add_b_spline(entity);
+    std::vector<Eigen::Vector2f> points;
+    points.push_back({200, 200});
+    points.push_back({200, 600});
+    points.push_back({600, 200});
+    points.push_back({600, 600});
+    points.push_back({700, 700});
+    auto path = B_spline<Eigen::Vector2f>::calculateBSplinePathWithTol(points, 1.25);
+
+    // Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
+    // std::vector<Eigen::Vector2f> path;
+    // bezier.Casteljau(&path);
+
+
+    add_path(entity, path, {});
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
@@ -269,7 +282,11 @@ entt::entity object_line_old(const std::string &name) {
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
     // add_line(entity, {40, 40}, {600, 600});
-    add_bezier(entity);
+    Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
+    std::vector<Eigen::Vector2f> path;
+    bezier.Casteljau(&path);
+    add_path(entity, path, {});
+
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));

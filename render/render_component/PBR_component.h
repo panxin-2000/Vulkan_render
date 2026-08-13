@@ -10,10 +10,10 @@
 
 
 struct Color {
-    float R;
-    float G;
-    float B;
-    float LightType; // 最后一个不用，但是需要占位对齐
+    float R         = 1.0f;
+    float G         = 1.0f;
+    float B         = 1.0f;
+    float LightType = 1.0f; // 最后一个不用，但是需要占位对齐
 };
 
 struct PBR_material_index {

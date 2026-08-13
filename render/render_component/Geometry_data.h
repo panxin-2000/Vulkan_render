@@ -4,9 +4,9 @@
 
 #ifndef HELLO_MAC_GEOMETRY_DATA_H
 #define HELLO_MAC_GEOMETRY_DATA_H
-#include "APP_utility_mixins.h"
 #include "vector"
 #include "global_singleton.h"
+#include "PBR_component.h"
 #include "shader_common.h"
 
 struct share_block {
@@ -129,15 +129,11 @@ template<typename vertex_t, typename index_t>
 void add_geometry_data(const entt::entity entity,
                        const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
                        const std::shared_ptr<std::vector<index_t> > &sp_indices) {
-    if (auto *pos = Logic_entt().try_get<Geometry_data>(entity)) {
-        Logic_entt().remove<Geometry_data>(entity);
-    }
-    Logic_entt().emplace<Geometry_data>(entity);
-
-    auto &geometry = Logic_entt().get<Geometry_data>(entity);
-
+    auto &geometry = Logic_entt().get_or_emplace<Geometry_data>(entity);
     geometry.push(sp_vertices, sp_indices);
 }
+
+void clean_geometry_data(const entt::entity entity);
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
                                const Point_2 min,
@@ -161,15 +157,10 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
-bool add_line(entt::entity entity,
-              Point_2 a,
-              Point_2 b);
 
-bool add_bezier(entt::entity entity);
+bool add_path(const entt::entity entity, const std::vector<Eigen::Vector2f> &path, const Color color);
 
-bool add_b_spline(entt::entity entity);
-
-bool add_box_data(entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
+bool add_box_data(const entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
 
 bool add_box_data(entt::entity entity,
                   float x_min = -0.5,
@@ -191,8 +182,8 @@ inline Render_AABB find_min_max_point(const share_block &vertex) {
         max = max.cwiseMax(pos);
     }
     Render_AABB bounding_box;
-    auto temp                        = (min + max) / 2;
-    auto temp_2                      = (max - min) / 2;
+    const auto temp                  = (min + max) / 2;
+    const auto temp_2                = (max - min) / 2;
     bounding_box.centroid_points     = {temp.x(), temp.y(), temp.z(), 1.0f};
     bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
     return bounding_box;
