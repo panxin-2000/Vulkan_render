@@ -251,6 +251,7 @@ Texture_parameter load_dds_to_gpu(const tinyddsloader::DDSFile &dds) {
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
+    // 我一直感觉这个 函数是 有问题的,但是没有测试
     VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(), &imgSrcBufferCI, &imgSrcAllocCI, &imgSrcBuffer
                                , &
                                  imgSrcAllocation,

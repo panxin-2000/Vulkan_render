@@ -26,13 +26,14 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, cons
 
 /**
  *  总会创建成功，除非内存不够，返回 都为 VK_NULL_HANDLE
+ *  create_image_stage_buffer 和这个函数大部分内容相同
  * @param backend
  * @param size
  * @param mem_copy_callback
  * @return
  */
 inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDeviceSize size,
-                                                 const std::function<void(void *)>& mem_copy_callback) {
+                                                 const std::function<void(void *)> &mem_copy_callback) {
     auto vBuffer = create_vertex_index_buffer(backend, size);
     if (vBuffer->empty())
         return {};
@@ -47,7 +48,6 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDe
             vBuffer->destroy_buffer();
             return {};
         }
-
         if (staging_buffer->host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {

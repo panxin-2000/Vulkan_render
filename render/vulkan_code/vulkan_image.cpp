@@ -98,9 +98,16 @@ VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
             create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
+    if (vBuffer->empty())
+        return {};
     if (vBuffer->host_visible() == false) {
         LOG_INFO(g_log(), "can find a cpu write memory, only get GPU memory", size);
         auto staging_buffer = create_staging_buffer(backend, size);
+        if (staging_buffer->empty()) {
+            // 创建 staging_buffer 失败
+            vBuffer->destroy_buffer();
+            return {};
+        }
         if (staging_buffer->host_visible() == false) {
             LOG_INFO(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
