@@ -822,8 +822,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         auto material_parameters = std::make_shared<std::vector<uint32_t> >();
         auto boxes               = std::make_shared<std::vector<Render_AABB> >();
         auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
-
-        auto update_aabb = [&](const entt::entity entity) {
+        auto update_aabb         = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
                 auto geometry_data       = Logic_entt().get<Geometry_data>(entity);
                 auto aabbs               = geometry_data.get_aabbs();
@@ -872,6 +871,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         auto primitives = create_primitives(bindless_Geometry_data);
 
         gltf_update_joint_matrix(model_entity);
+        auto min_max = merge_AABBs(*boxes.get());
+        Logic_entt().emplace<Render_AABB_min>(model_entity, min_max);
         logic_update_proxy(model_entity, boxes);
         logic_update_proxy(model_entity, mesh);
         logic_update_proxy(model_entity, matrices);

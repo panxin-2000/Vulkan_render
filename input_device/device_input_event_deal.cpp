@@ -56,7 +56,8 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
         }
         end_time_err;
         return OPERATOR_FINISHED;
-    }  if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
+    }
+    if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
         begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             auto offset = camera->get_view_direction() * pos_err;
@@ -65,7 +66,8 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
         }
         end_time_err;
         return OPERATOR_FINISHED;
-    }  if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
+    }
+    if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
         begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             auto offset = camera->get_view_right_direction() * -pos_err;
@@ -85,7 +87,8 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
         end_time_err;
 
         return OPERATOR_FINISHED;
-    }  if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
+    }
+    if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
         begin_time_err;
         if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
             if (event.key.mod & SDL_KMOD_SHIFT)
@@ -152,26 +155,39 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
 
 #include "base_geometry/intersect_function.h"
 
-// entt::entity find_entity_insert_ray(Ray<Point_3> &ray) {
-//     // ray.direction   = {0.0001, 0.0001, -1};
-//     const auto view = Logic_entt().view<Name_component, AABB_min_max<Point_3>, Transform>();
-//     for (auto &entity: view) {
-//         auto &name            = view.get<Name_component>(entity);
-//         const auto &transform = view.get<Transform>(entity);
-//         auto box              = view.get<AABB_min_max<Point_3> >(entity);
-//         // 这里有问题, 目前只做好了偏移，没有做好旋转
-//         // 单独的一个的话，是需要在 物体的局部空间中 选择 ray 的方式来实现的
-//         // auto model_matrix = get_model_matrix(box, transform);
-//         auto new_box      = box.multiply_matrix(model_matrix);
-//         if (is_intersect(new_box, ray)) {
-//             auto &name = view.get<Name_component>(entity);
-//             LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
-//             return entity;
-//         }
-//     }
-//
-//     return entt::null;
-// }
+entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
+    // ray.direction   = {0.0001, 0.0001, -1};
+    const auto view = Logic_entt().view<Name_component, Render_AABB_min, Transform_Matrix>();
+    for (auto &entity: view) {
+        auto &name               = view.get<Name_component>(entity);
+        const auto &model_matrix = view.get<Transform_Matrix>(entity);
+        auto bound_box           = view.get<Render_AABB_min>(entity);
+
+        AABB_min_max<Point_3> new_box = {
+            {
+                bound_box.min.x(),
+                bound_box.min.y(),
+                bound_box.min.z()
+            },
+            {
+                bound_box.max.x(),
+                bound_box.max.y(),
+                bound_box.max.z()
+            }
+        };
+        const Ray<Point_3> ray_temp = {
+            {ray.point.x(), ray.point.y(), ray.point.z()},
+            {ray.direction.x(), ray.direction.y(), ray.direction.z()}
+        };
+        if (is_intersect(new_box, ray_temp)) {
+            auto &name = view.get<Name_component>(entity);
+            LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
+            return entity;
+        }
+    }
+
+    return entt::null;
+}
 
 
 void base_event_dealing(const SDL_Event &event) {
@@ -242,9 +258,9 @@ void base_event_dealing(const SDL_Event &event) {
 
     std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
 
-    // if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
-    // UI_stack.push_back(insert_entity);
-    // }
+    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
+        UI_stack.push_back(insert_entity);
+    }
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
     //     auto &name = view.get<Name_component>(*it);

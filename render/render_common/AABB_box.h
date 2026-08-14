@@ -12,4 +12,26 @@ struct alignas(16) Render_AABB {
     Eigen::Vector4f direction_intervals;
 };
 
+struct alignas(16) Render_AABB_min {
+    Eigen::Vector4f min;
+    Eigen::Vector4f max;
+};
+
+
+inline Render_AABB_min merge_AABBs(const std::vector<Render_AABB> &aabbs) {
+    Eigen::Vector4f combined_min = Eigen::Vector4f::Constant(std::numeric_limits<float>::infinity());
+    Eigen::Vector4f combined_max = Eigen::Vector4f::Constant(-std::numeric_limits<float>::infinity());
+
+    for (const auto &aabb: aabbs) {
+        Eigen::Vector4f p_min = aabb.centroid_points - aabb.direction_intervals;
+        Eigen::Vector4f p_max = aabb.centroid_points + aabb.direction_intervals;
+
+        // cwiseMin 和 cwiseMax 是 Eigen 的逐分量比较函数
+        combined_min = combined_min.cwiseMin(p_min);
+        combined_max = combined_max.cwiseMax(p_max);
+    }
+    return {combined_min, combined_max};
+}
+
+
 #endif //HELLO_MAC_AABB_BOX_H
