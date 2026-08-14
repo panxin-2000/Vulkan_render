@@ -246,13 +246,11 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
 
     transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-    copyBufferToImage(staging_buffer->get_buffer_handle(), textureImage,
+    copyBufferToImage(staging_buffer, textureImage,
                       static_cast<uint32_t>(picture_parameters.width),
                       static_cast<uint32_t>(picture_parameters.height));
     transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
-    // 其实这里算一个问题吗?
-    staging_buffer->destroy_buffer();
 
     if (mipLevels > 1)
         generateMipmaps(handle, textureImage, format, picture_parameters.width,
@@ -283,7 +281,7 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
     return result;
 }
 
-void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, int layerCount) {
+void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uint32_t height, int layerCount) {
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         std::vector<VkBufferImageCopy> regions;
         VkBufferImageCopy region{};
@@ -303,7 +301,7 @@ void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t 
         }
         vkCmdCopyBufferToImage(
                                commandBuffer,
-                               buffer,
+                               buffer->get_buffer_handle(time_line),
                                image,
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                regions.size(),
@@ -487,13 +485,12 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 
     transitionImageLayout_box(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
-    copyBufferToImage(staging_buffer->get_buffer_handle(), textureImage,
+    copyBufferToImage(staging_buffer, textureImage,
                       static_cast<uint32_t>(picture_parameters[0].width),
                       static_cast<uint32_t>(picture_parameters[0].height), 6);
 
     transitionImageLayout_box(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
-    staging_buffer->destroy_buffer();
 
 
     auto texture_view = create_sky_cube_ImageView(textureImage,

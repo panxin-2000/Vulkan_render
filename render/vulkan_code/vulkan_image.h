@@ -117,7 +117,7 @@ private:
 };
 
 
-void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, int layerCount = 1);
+void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uint32_t height, int layerCount = 1);
 
 void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
                            VkImageLayout newLayout, uint32_t mipLevels);

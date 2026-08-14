@@ -74,8 +74,9 @@ public:
         auto camera_pos     = Engine::instance().get_world_camera_pos();
 
         // 上面的函数全部都是 绘制前需要的更新的部分
+        const uint64_t time_line = Engine::get_current_submit_timeline();
 
-        Engine::instance().get_command_submit_manager().execute_callback_functions();
+        Engine::instance().get_command_submit_manager().execute_callback_functions(time_line);
 
 
         Engine::instance().get_image_to_render(); // 这里已经有完整的
@@ -94,7 +95,6 @@ public:
         }
 
 
-        const uint64_t time_line = Engine::get_current_submit_timeline();
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
 
         const VkQueryPool queryPool = VK_NULL_HANDLE;

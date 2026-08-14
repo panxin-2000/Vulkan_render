@@ -111,8 +111,8 @@ void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
         copyRegion.dstOffset = 0;
         copyRegion.size      = size;
         vkCmdCopyBuffer(commandBuffer,
-                        srcBuffer->get_buffer_handle(),
-                        dstBuffer->get_buffer_handle(),
+                        srcBuffer->get_buffer_handle(time_line),
+                        dstBuffer->get_buffer_handle(time_line),
                         1,
                         &copyRegion);
     };

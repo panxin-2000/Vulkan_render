@@ -28,7 +28,7 @@ public:
      * 将之前汇总的函数全部提交
      * 问题是 这里是否 应是 update_descriptor
      */
-    void execute_callback_functions();
+    void execute_callback_functions(const uint64_t time_line);
 
     void destroy() const;
 

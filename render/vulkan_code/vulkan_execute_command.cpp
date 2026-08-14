@@ -79,15 +79,13 @@ void Command_submit_manager::create() {
     vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
 }
 
-void Command_submit_manager::execute_callback_functions() {
+void Command_submit_manager::execute_callback_functions(const uint64_t time_line) {
     if (callback_functions_.empty()) return;
-
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    const uint64_t time_line = 9;
     for (auto callback: callback_functions_) {
         callback(commandBuffer, time_line);
         // 数量多起来的时候也是很慢的 // 1000多的时候就很慢了
