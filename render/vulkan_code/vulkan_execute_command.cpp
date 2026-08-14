@@ -53,10 +53,14 @@ void Command_submit_manager::add_execute_function(
 }
 
 
-void Command_submit_manager::destroy() const {
+void Command_submit_manager::destroy() {
     const auto &backend = VK_backend::instance();
-    if (commandBuffer != VK_NULL_HANDLE)
-        vkFreeCommandBuffers(backend.get_device(), pool, 1, &commandBuffer);
+    for (auto &command_buffer: command_buffers_) {
+        if (command_buffer != VK_NULL_HANDLE)
+            vkFreeCommandBuffers(backend.get_device(), pool, 1, &command_buffer);
+        command_buffer = VK_NULL_HANDLE;
+    }
+
     if (pool != VK_NULL_HANDLE)
         vkDestroyCommandPool(backend.get_device(), pool, nullptr);
 }
@@ -76,17 +80,20 @@ void Command_submit_manager::create() {
     allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandPool        = pool;
-    allocInfo.commandBufferCount = 1;
-    //  todo : vkAllocateCommandBuffers 必须加锁
-    vkAllocateCommandBuffers(backend.get_device(), &allocInfo, &commandBuffer);
+    allocInfo.commandBufferCount = 2;
+    //  todo : vkAllocateCommandBuffers 必须加锁 ,
+    vkAllocateCommandBuffers(backend.get_device(), &allocInfo, command_buffers_.data());
 }
 
 void Command_submit_manager::execute_callback_functions(const uint64_t time_line) {
     if (callback_functions_.empty()) return;
 
     VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    beginInfo.sType                     = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags                     = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    const VkCommandBuffer commandBuffer = command_buffers_[command_buffer_count_];
+    command_buffer_count_               = (command_buffer_count_ + 1) % 2;
+    vkResetCommandBuffer(commandBuffer, 0);
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
     std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> > temp;
     temp.reserve(callback_functions_.size()); {

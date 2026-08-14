@@ -13,9 +13,10 @@ class Command_submit_manager {
     static std::mutex submitMutex_;
     static std::mutex callbackMutex_;
     static std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> > callback_functions_;
-    VkCommandPool pool            = VK_NULL_HANDLE;
-    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    VkFence fence_                = VK_NULL_HANDLE;
+    VkCommandPool pool                              = VK_NULL_HANDLE;
+    VkFence fence_                                  = VK_NULL_HANDLE;
+    std::array<VkCommandBuffer, 2> command_buffers_ = {};
+    std::atomic<uint64_t> command_buffer_count_     = 0;
 
 public:
     static auto &get_mutex() {
@@ -31,7 +32,7 @@ public:
      */
     void execute_callback_functions(const uint64_t time_line);
 
-    void destroy() const;
+    void destroy();
 
     static bool command_buffer_submit(uint32_t commandBufferCount,
                                       const VkCommandBuffer *pCommandBuffers,

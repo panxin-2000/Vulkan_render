@@ -182,10 +182,14 @@ public:
                 end_rendering(handle);
                 g_buffer_attachment_barrier(handle, time_line);
             }
+        } {
+            auto view = Render_entt().view<deferred_pass_tag>();
+            if (!view.empty()) {
+                begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
+            } else {
+                begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
+            }
         }
-
-        begin_rendering_attachment(handle, time_line); // 好消息是自己原本的理解已经基本成型了，坏消息是我没有确定分离的位置。
-
 
         // 应该先划分不同的 pass 阶段，
         //  deferred  不应该将深度值写入的

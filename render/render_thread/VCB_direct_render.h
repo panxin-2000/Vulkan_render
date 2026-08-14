@@ -13,7 +13,7 @@
 #include "VCB_debug_tag.h"
 
 
-inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_line) {
+inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp depth_loadOp, const uint64_t time_line) {
     auto cb = Engine::instance().get_current_command_buffer();
 
     std::vector<VkImageMemoryBarrier2> outputBarriers{
@@ -62,7 +62,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = Engine::instance().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
@@ -70,7 +70,7 @@ inline void begin_rendering_attachment(VK_backend &handle, const uint64_t time_l
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = Engine::instance().get_current_depth_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
