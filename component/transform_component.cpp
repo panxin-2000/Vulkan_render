@@ -5,6 +5,7 @@
 #include "transform_component.h"
 
 #include "camera_optical_component.h"
+#include "GPU_frustum_cull.h"
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
@@ -48,6 +49,53 @@ Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &
 }
 
 
+void update_primitives_model_box(const entt::entity model_entity) {
+    if (Logic_entt().all_of<Transform_Matrix,
+                            std::vector<Render_AABB>,
+                            std::vector<VKR_Primitive>,
+                            GPU_frustum_cull>(model_entity)) {
+        auto boxes_render        = std::make_shared<std::vector<Render_AABB> >();
+        auto boxes               = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
+        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
+        for (auto &box: boxes) {
+            auto temp_box = transform_AABB(box, model_entity_matrix);
+            boxes_render->push_back(temp_box);
+        }
+        const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
+
+        auto &command_calculate        = Logic_entt().get<GPU_frustum_cull>(model_entity);
+        command_calculate.command_size = primitives.size(); {
+            const auto boxes_ptr                = boxes.data();
+            auto boxes_size                     = boxes.size() * sizeof(Render_AABB);
+            auto boxes_buffer                   = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
+            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
+            command_calculate.AABB_boxes_buffer = boxes_buffer;
+        } {
+            const auto primitives_ptr                 = primitives.data();
+            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
+            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
+            command_calculate.command_buffer          = primitives_buffer;
+        }
+        logic_update_proxy(model_entity, command_calculate);
+    }
+}
+
+void update_primitives_model_matrix(const entt::entity model_entity) {
+    if (Logic_entt().all_of<Transform_Matrix, std::vector<Transform_Matrix> >(model_entity)) {
+        auto matrices            = Logic_entt().get<std::vector<Transform_Matrix> >(model_entity);
+        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
+
+        auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
+        for (Eigen::Matrix4f &matrix: matrices) {
+            Transform_Matrix temp_matrix(model_entity_matrix * matrix);
+            matrices_render->push_back(temp_matrix);
+        }
+        set_render_parameter(model_entity, "model_matrix_parameters", matrices_render);
+    }
+}
+
+
 void update_transform_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
         // 满足条件：两个组件都有
@@ -65,6 +113,8 @@ void update_transform_matrix(const entt::entity entity) {
             Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
         }
         //
+        update_primitives_model_box(entity);
+        update_primitives_model_matrix(entity);
         Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
 };
@@ -172,48 +222,12 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
             break;
         }
         case SDL_EVENT_KEY_DOWN: {
-            break;
-            if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, -1});
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({0, 0, 1});
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({-1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    position->add_offset({1, 0, 0});
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
+            if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
                 if (Logic_entt().valid(entity)) {
                     Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
                     return OPERATOR_FINISHED;
                 }
                 return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
-                if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                    if (event.key.mod & SDL_KMOD_SHIFT)
-                        position->add_offset({0, -1, 0});
-                    else
-                        position->add_offset({0, 1, 0});
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                }
-                return OPERATOR_FINISHED;
-            } else if (event.key.key == SDLK_ESCAPE && Logic_entt().valid(entity)) {
-                return OPERATOR_CANCELLED;
             } else {
                 return OPERATOR_PASS_THROUGH;
             }
@@ -251,7 +265,7 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
                     const auto current_ray     = get_screen_ray(current_position);
                     const auto last_ray        = get_screen_ray(last_position);
 
-                    const auto camera_position = Logic_entt().try_get<Transform>(world_entity);
+                    const auto camera_position = Logic_entt().try_get<camera_optical_component>(world_entity);
 
                     const auto quat        = camera_position->get_rotate();
                     Eigen::Vector3f normal = quat * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
@@ -264,9 +278,9 @@ wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &even
                     const auto a = intersect_result(plane, current_ray);
                     const auto b = intersect_result(plane, last_ray);
 
-                    transform->add_offset({(a - b).x(), (a - b).y(), (a - b).z()});
+                    transform->add_offset(a - b);
                     // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
-                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
+                    Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
                     return OPERATOR_RUNNING_MODAL;
                 }
             }

@@ -95,5 +95,8 @@ void update_transform_matrix(const entt::entity entity);
 
 void set_transform_dirty(const entt::entity entity);
 
+void update_primitives_model_matrix(const entt::entity model_entity);
+
+void update_primitives_model_box(const entt::entity model_entity);
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H

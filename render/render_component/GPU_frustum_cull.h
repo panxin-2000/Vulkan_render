@@ -7,7 +7,7 @@
 #include "../render_common/frustum.h"
 #include "vulkan_buffer.h"
 
-struct Command_calculate {
+struct GPU_frustum_cull {
     FrustumPlanes frustum_planes;
     uint64_t AABB_boxesAddress;
     uint64_t IndirectCommandsAddress;

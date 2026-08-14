@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_VULKAN_BUILD_DRAW_COMMAND_H
 #define HELLO_MAC_VULKAN_BUILD_DRAW_COMMAND_H
 
-#include "Command_calculate.h"
+#include "GPU_frustum_cull.h"
 #include "../engine.h"
 #include "render_proxy.h"
 #include "../render_common/render_state.h"
@@ -78,7 +78,7 @@ inline void build_draw_command(VK_backend &engine, entt::entity entity, const ui
 
 
 inline void DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
-                                Command_calculate command_calculate,
+                                GPU_frustum_cull command_calculate,
                                 const uint64_t time_line) {
     const auto cb        = Engine::instance().get_current_command_buffer();
     const auto mesh_data = Render_entt().get<Mesh_data>(entity);

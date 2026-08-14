@@ -230,9 +230,9 @@ void base_event_dealing(const SDL_Event &event) {
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
-    auto &name = view.get<Name_component>(current_select_entity);
+    // auto &name = view.get<Name_component>(current_select_entity);
     // std::cout << "last work name: " << name.name << std::endl;
-    if (current_status == OPERATOR_RUNNING_MODAL)
+    if (current_status == OPERATOR_RUNNING_MODAL && Logic_entt().valid(current_select_entity))
         if (const auto input = Logic_entt().try_get<Input_Component>(current_select_entity)) {
             if (input->on_Event != nullptr) {
                 auto status = input->on_Event(current_select_entity, event);

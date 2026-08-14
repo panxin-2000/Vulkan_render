@@ -340,7 +340,7 @@ void Engine::recreate_swap_chain() {
 
 void Engine::destroy() {
     pbr_manager_.destroy();
-    command_submit_manager_.create();
+    command_submit_manager_.destroy();
     if (pbr_components_buffer_ != nullptr) {
         pbr_components_buffer_ = {};
     }

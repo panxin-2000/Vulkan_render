@@ -9,11 +9,12 @@
 #include "../render/render_common/PBR_component.h"
 #include "3d_model_display.h"
 #include "camera_optical_component.h"
-#include "Command_calculate.h"
+#include "GPU_frustum_cull.h"
 #include "scene_component.h"
 #include "stb_image.h"
 #include "tinyddsloader.h"
 #include "transform_AABB.h"
+#include "world_scene_root.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -351,11 +352,9 @@ entt::entity load_node_data(fastgltf::Asset &model,
     else add_relation(parent_entity, entity);
     add_Transform_parameter(entity, node);
     if (node.meshIndex.has_value()) {
-        auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
-        // set_render_parameter(entity, "object_material", material);
         get_mesh_from_gltf_model(entity, model, node.meshIndex.value());
-        // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     }
+
 
     if (node.cameraIndex.has_value()) {
         auto &camera = model.cameras[node.cameraIndex.value()];
@@ -772,49 +771,6 @@ void load_materials(std::vector<uint32_t> &material_indices,
 }
 
 
-void update_primitives_model_box(const entt::entity model_entity) {
-    if (Logic_entt().all_of<Transform_Matrix, std::vector<Render_AABB> >(model_entity)) {
-        auto boxes_render        = std::make_shared<std::vector<Render_AABB> >();
-        auto boxes               = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
-        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
-        for (auto &box: boxes) {
-            auto temp_box = transform_AABB(box, model_entity_matrix);
-            boxes_render->push_back(temp_box);
-        }
-        const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
-
-        auto &command_calculate        = Logic_entt().emplace<Command_calculate>(model_entity);
-        command_calculate.command_size = primitives.size(); {
-            const auto boxes_ptr                = boxes.data();
-            auto boxes_size                     = boxes.size() * sizeof(Render_AABB);
-            auto boxes_buffer                   = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
-            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
-            command_calculate.AABB_boxes_buffer = boxes_buffer;
-        } {
-            const auto primitives_ptr                 = primitives.data();
-            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
-            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
-            command_calculate.command_buffer          = primitives_buffer;
-        }
-        logic_update_proxy(model_entity, command_calculate);
-    }
-}
-
-void update_primitives_model_matrix(const entt::entity model_entity) {
-    if (Logic_entt().all_of<Transform_Matrix, std::vector<Transform_Matrix> >(model_entity)) {
-        auto matrices            = Logic_entt().get<std::vector<Transform_Matrix> >(model_entity);
-        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
-
-        auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
-        for (Eigen::Matrix4f &matrix: matrices) {
-            Transform_Matrix temp_matrix(model_entity_matrix * matrix);
-            matrices_render->push_back(temp_matrix);
-        }
-        set_render_parameter(model_entity, "model_matrix_parameters", matrices);
-    }
-}
-
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
@@ -829,6 +785,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
         // Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
         // Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
+        Logic_entt().emplace<Input_Component>(model_entity, model_3d_Event);
 
 
         if (model.skins.empty()) {
@@ -930,6 +887,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         if (!material_parameters->empty())
             set_render_parameter(model_entity, "model_material_parameters", material_parameters);
         // 理论上来说已经完成了 copy , 后面没有它也没什么问题,
+
+        Logic_entt().emplace<GPU_frustum_cull>(model_entity);
         update_primitives_model_box(model_entity);
 
         return model_entity;

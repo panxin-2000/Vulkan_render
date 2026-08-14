@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_CALCULATE_FRUSTUM_CULL_H
 #define HELLO_MAC_CALCULATE_FRUSTUM_CULL_H
-#include "Command_calculate.h"
+#include "GPU_frustum_cull.h"
 #include "engine.h"
 #include "global_singleton.h"
 
@@ -16,7 +16,7 @@ inline void calculate_frustum_cull(const VkCommandBuffer &cb,
         auto command_shader = Engine::instance().get_frustum_cull_shader_data();
         vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
 
-        auto command_calculate           = Render_entt().get<Command_calculate>(entity);
+        auto command_calculate           = Render_entt().get<GPU_frustum_cull>(entity);
         command_calculate.frustum_planes = frustum_planes; // 还需要在这里更新一次
         vkCmdPushConstants(cb, command_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,

@@ -23,7 +23,7 @@
 
 
 #include "calculate_frustum_cull.h"
-#include "Command_calculate.h"
+#include "GPU_frustum_cull.h"
 #include "VCB_direct_render.h"
 #include "framerate_measure.h"
 #include "VCB_G_buffer_render.h"
@@ -138,7 +138,7 @@ public:
         // 视锥裁剪
         {
             const auto cb = Engine::instance().get_current_command_buffer();
-            auto view     = Render_entt().view<Command_calculate>();
+            auto view     = Render_entt().view<GPU_frustum_cull>();
             for (const auto entity: view)
                 calculate_frustum_cull(cb, entity, frustum_planes, time_line);
         }
@@ -202,9 +202,9 @@ public:
                 build_draw_command(handle, entity, time_line);
             }
         } {
-            auto view = Render_entt().view<opacity_tag, Command_calculate, Name_component>();
+            auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
             for (const auto entity: view) {
-                auto command_calculate = Render_entt().get<Command_calculate>(entity);
+                auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
                 auto name              = Render_entt().get<Name_component>(entity);
                 bind_pipeline_update_parameter(handle, entity, time_line);
                 DrawIndexedIndirect(handle, entity, command_calculate, time_line);
