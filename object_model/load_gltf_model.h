@@ -15,6 +15,13 @@
 #include "scene_component.h"
 #include "transform_component.h"
 
+class Local_Space_AABB : public Render_AABB {
+};
+
+
+class World_Space_AABB : public Render_AABB_min {
+};
+
 
 struct InverseBindMatrix {
     Eigen::Matrix4f matrix;

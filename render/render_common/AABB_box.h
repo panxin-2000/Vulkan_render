@@ -7,18 +7,40 @@
 
 #include <Eigen/Eigen>
 
-struct alignas(16) Render_AABB {
-    Eigen::Vector4f centroid_points;
-    Eigen::Vector4f direction_intervals;
-};
+struct alignas(16) Render_AABB;
+struct alignas(16) Render_AABB_min;
 
 struct alignas(16) Render_AABB_min {
     Eigen::Vector4f min;
     Eigen::Vector4f max;
+
+    Render_AABB get_centroid() const;
 };
 
+struct alignas(16) Render_AABB {
+    Eigen::Vector4f centroid_points;
+    Eigen::Vector4f direction_intervals;
 
-inline Render_AABB_min merge_AABBs(const std::vector<Render_AABB> &aabbs) {
+    Render_AABB_min get_aabb_min() const;
+};
+
+inline Render_AABB Render_AABB_min::get_centroid() const {
+    return Render_AABB{
+        (min + max) * 0.5f,
+        (max - min) * 0.5f
+    };
+}
+
+inline Render_AABB_min Render_AABB::get_aabb_min() const {
+    return Render_AABB_min{
+        centroid_points - direction_intervals,
+        centroid_points + direction_intervals
+    };
+}
+
+
+
+inline Render_AABB merge_AABBs(const std::vector<Render_AABB> &aabbs) {
     Eigen::Vector4f combined_min = Eigen::Vector4f::Constant(std::numeric_limits<float>::infinity());
     Eigen::Vector4f combined_max = Eigen::Vector4f::Constant(-std::numeric_limits<float>::infinity());
 
@@ -30,7 +52,10 @@ inline Render_AABB_min merge_AABBs(const std::vector<Render_AABB> &aabbs) {
         combined_min = combined_min.cwiseMin(p_min);
         combined_max = combined_max.cwiseMax(p_max);
     }
-    return {combined_min, combined_max};
+    return {
+        (combined_min + combined_max) * 0.5f,
+        (combined_max - combined_min) * 0.5f
+    };
 }
 
 

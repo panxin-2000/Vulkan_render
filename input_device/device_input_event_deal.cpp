@@ -4,6 +4,7 @@
 #include "name_component.h"
 #include "global_singleton.h"
 #include "input_component.h"
+#include "load_gltf_model.h"
 #include "move_speed.h"
 #include "scene_component.h"
 #include "Rect_2D_component.h"
@@ -157,11 +158,10 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
 
 entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
     // ray.direction   = {0.0001, 0.0001, -1};
-    const auto view = Logic_entt().view<Name_component, Render_AABB_min, Transform_Matrix>();
+    const auto view = Logic_entt().view<Name_component, World_Space_AABB>();
     for (auto &entity: view) {
-        auto &name               = view.get<Name_component>(entity);
-        const auto &model_matrix = view.get<Transform_Matrix>(entity);
-        auto bound_box           = view.get<Render_AABB_min>(entity);
+        auto &name     = view.get<Name_component>(entity);
+        auto bound_box = view.get<World_Space_AABB>(entity);
 
         AABB_min_max<Point_3> new_box = {
             {

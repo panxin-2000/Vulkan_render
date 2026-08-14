@@ -828,14 +828,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 auto aabbs               = geometry_data.get_aabbs();
                 const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                 for (auto &bound_box: aabbs) {
-                    // 并不建议在这里
-                    Eigen::Vector4f new_centroid  = model_matrix.get() * bound_box.centroid_points;
-                    Eigen::Matrix3f R             = model_matrix.get().block<3, 3>(0, 0);
-                    Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
-                    boxes->push_back({
-                                         {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
-                                         {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
-                                     });
+                    auto temp = transform_AABB(bound_box, model_matrix);
+                    boxes->push_back(temp);
                     matrices->push_back(model_matrix);
                 }
             }
