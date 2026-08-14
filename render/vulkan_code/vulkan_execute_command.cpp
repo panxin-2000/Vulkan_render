@@ -7,6 +7,7 @@
 #include "vulkan_buffer.h"
 
 std::mutex Command_submit_manager::submitMutex_;
+std::mutex Command_submit_manager::callbackMutex_;
 std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> >
 Command_submit_manager::callback_functions_;
 
@@ -46,6 +47,7 @@ bool Command_submit_manager::command_buffer_submit(const uint32_t commandBufferC
 
 void Command_submit_manager::add_execute_function(
     const std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> &callback, VkFence fence) {
+    std::lock_guard<std::mutex> lock(callbackMutex_);
     callback_functions_.push_back(callback);
     // fence_ = fence;
 }
@@ -86,11 +88,15 @@ void Command_submit_manager::execute_callback_functions(const uint64_t time_line
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    for (auto callback: callback_functions_) {
+    std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> > temp;
+    temp.reserve(callback_functions_.size()); {
+        std::lock_guard<std::mutex> lock(callbackMutex_);
+        std::swap(temp, callback_functions_);
+    }
+    for (auto callback: temp) {
         callback(commandBuffer, time_line);
         // 数量多起来的时候也是很慢的 // 1000多的时候就很慢了
     }
-    callback_functions_.clear();
 
 
     vkEndCommandBuffer(commandBuffer);

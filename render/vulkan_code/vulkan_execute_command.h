@@ -11,6 +11,7 @@
 
 class Command_submit_manager {
     static std::mutex submitMutex_;
+    static std::mutex callbackMutex_;
     static std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> > callback_functions_;
     VkCommandPool pool            = VK_NULL_HANDLE;
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
