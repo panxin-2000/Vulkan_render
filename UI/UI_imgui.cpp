@@ -293,12 +293,10 @@ void display_tree(entt::entity entity) {
         }
 
         if (auto transform = Logic_entt().try_get<Transform>(entity)) {
-            if (ImGui::DragFloat3("position", (float *) transform + 4 + 3)) {
-                std::cout << "transform change" << std::endl; // 这里确实没错，之后呢？
+            if (ImGui::DragFloat3("position", ((float *) transform) + 4 + 3)) {
+                add_recursion_function_to_itself_children(entity, set_transform_dirty);
             }
-            // Edit 1 float using a slider from 0.0f to 1.0f
         }
-        // 想播放,但是不应该 是在这里
 
 
         // if (ImGui::Checkbox("mesh", &show_another_window)) {

@@ -771,6 +771,50 @@ void load_materials(std::vector<uint32_t> &material_indices,
     }
 }
 
+
+void update_primitives_model_box(const entt::entity model_entity) {
+    if (Logic_entt().all_of<Transform_Matrix, std::vector<Render_AABB> >(model_entity)) {
+        auto boxes_render        = std::make_shared<std::vector<Render_AABB> >();
+        auto boxes               = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
+        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
+        for (auto &box: boxes) {
+            auto temp_box = transform_AABB(box, model_entity_matrix);
+            boxes_render->push_back(temp_box);
+        }
+        const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
+
+        auto &command_calculate        = Logic_entt().emplace<Command_calculate>(model_entity);
+        command_calculate.command_size = primitives.size(); {
+            const auto boxes_ptr                = boxes.data();
+            auto boxes_size                     = boxes.size() * sizeof(Render_AABB);
+            auto boxes_buffer                   = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
+            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
+            command_calculate.AABB_boxes_buffer = boxes_buffer;
+        } {
+            const auto primitives_ptr                 = primitives.data();
+            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
+            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
+            command_calculate.command_buffer          = primitives_buffer;
+        }
+        logic_update_proxy(model_entity, command_calculate);
+    }
+}
+
+void update_primitives_model_matrix(const entt::entity model_entity) {
+    if (Logic_entt().all_of<Transform_Matrix, std::vector<Transform_Matrix> >(model_entity)) {
+        auto matrices            = Logic_entt().get<std::vector<Transform_Matrix> >(model_entity);
+        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
+
+        auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
+        for (Eigen::Matrix4f &matrix: matrices) {
+            Transform_Matrix temp_matrix(model_entity_matrix * matrix);
+            matrices_render->push_back(temp_matrix);
+        }
+        set_render_parameter(model_entity, "model_matrix_parameters", matrices);
+    }
+}
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
@@ -818,14 +862,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
         auto material_parameters = std::make_shared<std::vector<uint32_t> >();
-        auto boxes               = std::make_shared<std::vector<Render_AABB> >();
-        auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
+        auto &boxes              = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+        auto &matrices           = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
         // 包含不包含 model_entity 的矩阵
         const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
-        // 不包含
 
-        // 下面这个做了什么?
         auto update_aabb = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
                 const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
@@ -833,8 +875,8 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                 const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                 for (auto &bound_box: aabbs) {
                     auto temp = transform_AABB(bound_box, model_matrix);
-                    boxes->push_back(temp);
-                    matrices->push_back(model_matrix);
+                    boxes.push_back(temp);
+                    matrices.push_back(model_matrix);
                 }
             }
         };
@@ -842,7 +884,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
 
         // 获取 每个 entity 的 全部 primitive 的 包围盒
-        auto local_aabb = merge_AABBs(*boxes.get());
+        auto local_aabb = merge_AABBs(boxes);
         Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
         const auto world_aabb = transform_AABB(local_aabb, model_entity_matrix);
         Logic_entt().emplace_or_replace<World_Space_AABB>(model_entity, world_aabb.get_aabb_min());
@@ -875,57 +917,20 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         auto mesh       = create_mesh_data(bindless_Geometry_data);
         auto primitives = create_primitives(bindless_Geometry_data);
 
+        Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives);
+
         gltf_update_joint_matrix(model_entity);
 
-        // 这里的AABB 应该是 物体没有偏移前的
-        // auto min_max = merge_AABBs(*boxes.get());
-        // Logic_entt().emplace<Local_Space_AABB>(model_entity, min_max);
-        for (auto &box: *boxes.get()) {
-            box = transform_AABB(box, model_entity_matrix);
-        }
-        // 当然了,这里最好还是有另一个 来存储 matrices
-        for (Eigen::Matrix4f &matrix: *matrices.get()) {
-            matrix = model_entity_matrix * matrix;
-        }
+        update_primitives_model_matrix(model_entity);
+
         logic_update_proxy(model_entity, boxes);
         logic_update_proxy(model_entity, mesh);
         logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
 
-        Command_calculate command_calculate;
-        command_calculate.command_size = primitives.size();
         if (!material_parameters->empty())
             set_render_parameter(model_entity, "model_material_parameters", material_parameters);
         // 理论上来说已经完成了 copy , 后面没有它也没什么问题,
-
-        set_render_parameter(model_entity, "model_matrix_parameters", matrices); {
-            const auto boxes_ptr = boxes->data();
-            auto boxes_size      = boxes->size() * sizeof(Render_AABB);
-            auto boxes_buffer    = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
-            //
-            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
-            command_calculate.AABB_boxes_buffer = boxes_buffer;
-        } {
-            const auto primitives_ptr                 = primitives.data();
-            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
-            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
-            command_calculate.command_buffer          = primitives_buffer;
-        }
-        logic_update_proxy(model_entity, command_calculate);
-
-
-        // 改上传的参数我都已经准备好了 , 只是还没有完全移交到 engine 中
-
-
-        // 另一个紧接着的问题是  之后呢?
-        // entity 的顺序 和上面的顺序是相同的吗? 有必要相同吗?
-        // 这里是单个 还是可以的,但是多个的时候呢?
-        // 该算的应该已经算的差不多了,之后就是如何上传的问题了
-        // 之后就是应该怎么做呢?
-        // boxes 还是需要上传的, primitives 需要选择一个方式然后上传
-        // 之后就应该交由 渲染线程 来进行 更新结果了 然后看看怎么用一个参数完成调用  material  还是需要 选一个位置的
-        // 然后这里才是合并为一个 entity 看看是否需要去 传递给 render_thread , 当然,这里也还只是暂时的,
-
+        update_primitives_model_box(model_entity);
 
         return model_entity;
     }
