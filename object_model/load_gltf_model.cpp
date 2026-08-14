@@ -13,6 +13,7 @@
 #include "scene_component.h"
 #include "stb_image.h"
 #include "tinyddsloader.h"
+#include "transform_AABB.h"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;
@@ -558,7 +559,7 @@ void gltf_update_joint_matrix(const entt::entity &model_entity) {
         if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
             auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
             const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-            Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+            Eigen::Matrix4f result          = transform_matrix * inverse_bind_matrix.matrix;
             Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
         }
     };
@@ -581,7 +582,7 @@ void update_joint_matrix_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
         auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
         const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-        Eigen::Matrix4f result          = transform_matrix.get() * inverse_bind_matrix.matrix;
+        Eigen::Matrix4f result          = transform_matrix * inverse_bind_matrix.matrix;
         Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
     }
 };
@@ -781,9 +782,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         world_root_add_child(model_entity);
         auto &model = optional_model.value();
         logic_create_proxy(model_entity);
-        const auto &transform  = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
-        Eigen::Matrix4f result = transform.get_transform_matrix();
-        Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, result);
+        const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
+        // Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
+        // Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
 
 
         if (model.skins.empty()) {
@@ -802,9 +803,6 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         load_materials(material_indices, path, model);
 
         for (const auto &scene: model.scenes) {
-            // const entt::entity entity = Logic_entt().create();
-            // Logic_entt().emplace<Name_component>(entity, scene.name.c_str());
-            // add_relation(model_entity, entity);
             for (const auto node_index: scene.nodeIndices) {
                 load_node_data(model, nodes_have_deal, node_index, -1, model_entity);
             }
@@ -815,17 +813,23 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         gltf_load_animal(model, nodes_have_deal, model_entity);
 
 
-        add_recursion_function_to_children(model_entity, set_child_transform_dirty);
+        add_recursion_function_to_children(model_entity, set_transform_dirty);
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
         auto material_parameters = std::make_shared<std::vector<uint32_t> >();
         auto boxes               = std::make_shared<std::vector<Render_AABB> >();
         auto matrices            = std::make_shared<std::vector<Transform_Matrix> >();
-        auto update_aabb         = [&](const entt::entity entity) {
+        // 包含不包含 model_entity 的矩阵
+        const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
+        Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
+        // 不包含
+
+        // 下面这个做了什么?
+        auto update_aabb = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
-                auto geometry_data       = Logic_entt().get<Geometry_data>(entity);
-                auto aabbs               = geometry_data.get_aabbs();
+                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+                const auto aabbs         = geometry_data.get_aabbs();
                 const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
                 for (auto &bound_box: aabbs) {
                     auto temp = transform_AABB(bound_box, model_matrix);
@@ -835,6 +839,13 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
             }
         };
         add_recursion_function_to_children(model_entity, update_aabb);
+
+
+        // 获取 每个 entity 的 全部 primitive 的 包围盒
+        auto local_aabb = merge_AABBs(*boxes.get());
+        Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
+        const auto world_aabb = transform_AABB(local_aabb, model_entity_matrix);
+        Logic_entt().emplace_or_replace<World_Space_AABB>(model_entity, world_aabb.get_aabb_min());
 
 
         Geometry_data bindless_Geometry_data;
@@ -865,11 +876,20 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         auto primitives = create_primitives(bindless_Geometry_data);
 
         gltf_update_joint_matrix(model_entity);
-        auto min_max = merge_AABBs(*boxes.get());
-        Logic_entt().emplace<Render_AABB_min>(model_entity, min_max);
+
+        // 这里的AABB 应该是 物体没有偏移前的
+        // auto min_max = merge_AABBs(*boxes.get());
+        // Logic_entt().emplace<Local_Space_AABB>(model_entity, min_max);
+        for (auto &box: *boxes.get()) {
+            box = transform_AABB(box, model_entity_matrix);
+        }
+        // 当然了,这里最好还是有另一个 来存储 matrices
+        for (Eigen::Matrix4f &matrix: *matrices.get()) {
+            matrix = model_entity_matrix * matrix;
+        }
         logic_update_proxy(model_entity, boxes);
         logic_update_proxy(model_entity, mesh);
-        logic_update_proxy(model_entity, matrices);
+        logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
 
         Command_calculate command_calculate;
         command_calculate.command_size = primitives.size();

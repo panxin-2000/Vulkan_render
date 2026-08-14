@@ -15,13 +15,6 @@
 #include "scene_component.h"
 #include "transform_component.h"
 
-class Local_Space_AABB : public Render_AABB {
-};
-
-
-class World_Space_AABB : public Render_AABB_min {
-};
-
 
 struct InverseBindMatrix {
     Eigen::Matrix4f matrix;
@@ -36,6 +29,9 @@ struct JointMatrix {
 };
 
 struct JointMatrixDirty {
+};
+
+struct ModelMatricesDirty {
 };
 
 
@@ -197,7 +193,7 @@ struct RuntimeChannel {
         }
         Logic_entt().emplace_or_replace<Transform>(effect_entity, offset, rotate, zoom);
         Logic_entt().emplace_or_replace<Transform_matrix_dirty>(effect_entity);
-        add_recursion_function_to_children(effect_entity, set_child_transform_dirty);
+        add_recursion_function_to_children(effect_entity, set_transform_dirty);
     }
 };
 

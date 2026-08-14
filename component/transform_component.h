@@ -7,6 +7,8 @@
 
 #include "base_geometry/base.h"
 #include <Eigen/Eigen>
+
+#include "AABB_box.h"
 #include "global_singleton.h"
 
 
@@ -14,18 +16,7 @@ struct Transform_matrix_dirty {
 };
 
 
-class alignas(16) Transform_Matrix {
-public:
-    explicit Transform_Matrix(const Eigen::Matrix4f &modelMatrix = Eigen::Matrix4f::Identity()) {
-        model_Matrix_ = modelMatrix;
-    }
-
-    const Eigen::Matrix4f &get() const {
-        return model_Matrix_;
-    }
-
-private:
-    Eigen::Matrix4f model_Matrix_;
+class alignas(16) Transform_Matrix : public Eigen::Matrix4f {
 };
 
 class alignas(16) Transform {
@@ -85,6 +76,14 @@ public:
     }
 };
 
+class Local_Space_AABB : public Render_AABB {
+};
+
+
+class World_Space_AABB : public Render_AABB_min {
+};
+
+Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &matrix);
 
 [[nodiscard]] Eigen::Matrix4f get_model_matrix(const Transform transform);
 
@@ -94,7 +93,7 @@ void update_camera_transform();
 
 void update_transform_matrix(const entt::entity entity);
 
-void set_child_transform_dirty(const entt::entity entity);
+void set_transform_dirty(const entt::entity entity);
 
 
 #endif //HELLO_MAC_RENDER_COMPONENT_H

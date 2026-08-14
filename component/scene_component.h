@@ -59,6 +59,16 @@ inline void add_recursion_function_to_children(const entt::entity entity,
     }
 }
 
+inline void add_recursion_function_to_itself_children(const entt::entity entity,
+                                                      const std::function<void(entt::entity entity)> &lambda) {
+    if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {
+        for (const entt::entity child: temp->get_children()) {
+            lambda(child);
+            add_recursion_function_to_children(child, lambda);
+        }
+    }
+}
+
 /**
  * 将一个节点添加到根节点
  * @param entity 必须存在Scene_Component，如果没有，会在这个函数中添加

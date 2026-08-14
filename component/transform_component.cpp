@@ -37,21 +37,37 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return transform.get_transform_matrix();
 }
 
+Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &matrix) {
+    const Eigen::Vector4f new_centroid  = matrix * bound_box.centroid_points;
+    const Eigen::Matrix3f R             = matrix.block<3, 3>(0, 0);
+    const Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
+    return {
+        {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
+        {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
+    };
+}
+
 
 void update_transform_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
         // 满足条件：两个组件都有
         auto parent_entity           = get_parent(entity);
-        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_Matrix>(parent_entity);
+        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_Matrix>(parent_entity,
+                 Eigen::Matrix4f::Identity());
         const auto &transform        = Logic_entt().get<Transform>(entity);
-        Eigen::Matrix4f result       = parent_transform_matrix.get() * transform.get_transform_matrix();
+        const Eigen::Matrix4f result = parent_transform_matrix * transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(entity, result);
+        if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB>(entity)) {
+            const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
+            const auto temp = transform_AABB(aabb, result);
+            Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
+        }
         Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
 };
 
 
-void set_child_transform_dirty(const entt::entity entity) {
+void set_transform_dirty(const entt::entity entity) {
     if (Logic_entt().all_of<Scene_Component>(entity)) {
         Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
     }
