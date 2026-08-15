@@ -175,10 +175,6 @@ void Engine::destroy_and_recreate_fence_and_semaphore() {
 }
 
 void Engine::destroy_render_image() {
-    for (const auto &image: depth_images_) {
-        image->destroy_image();
-    }
-    depth_images_.clear();
     for (const auto &image: swap_chain_images_) {
         image->destroy_image();
     }
@@ -189,9 +185,6 @@ void Engine::destroy_render_image() {
 void Engine::create_render_image() {
     swap_chain_images_ = VK_backend::instance().create_swap_chain_image_and_view();
 
-    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
-    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
-    depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
 
     render_image_manager_.create();
 }
@@ -396,7 +389,9 @@ void Engine::update_global_pbr_parameter(
 }
 
 
-void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen) {
+void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
+                                     std::optional<Texture_parameter> SSAO,
+                                     std::optional<Texture_parameter> depth) {
     global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
          gltf_shader_data->global_sets_bindings,
          gltf_shader_data->global_descriptor_sets_layout
@@ -439,6 +434,10 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen)
                          "global_parameters", global_parameters_);
     set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_offscreen", offscreen);
+    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                         "global_SSAO", SSAO);
+    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                         "global_depth", depth);
 
 
     update_global_pbr_parameter(update_global_descriptor_sets);

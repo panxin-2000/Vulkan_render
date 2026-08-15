@@ -12,6 +12,8 @@ class Render_image_manager {
     std::vector<VKR_image_ptr> G_buffer_Position_images_;
     std::vector<VKR_image_ptr> g_buffer_Normal_images_;
     std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
+    std::vector<VKR_image_ptr> depth_images_;
+
     Texture_parameter temp;
 
 public:
@@ -34,7 +36,17 @@ public:
     void create();
 
 
+    VKR_image_ptr get_one_depth_image() {
+        return depth_images_.back();
+    }
+
+
     void destroy() {
+        for (const auto &image: depth_images_) {
+            image->destroy_image();
+        }
+        depth_images_.clear();
+
         for (const auto &image: G_buffer_Position_images_) {
             image->destroy_image();
         }

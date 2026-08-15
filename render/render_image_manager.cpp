@@ -7,6 +7,12 @@
 
 void Render_image_manager::create() {
     {
+
+        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+
+
         G_buffer_Position_images_.push_back(VK_backend::instance().
                                             create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));

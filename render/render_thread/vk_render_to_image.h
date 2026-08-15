@@ -55,8 +55,13 @@ public:
             std::unique_lock<std::mutex> lock(mtx);
 
             auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
+            // 这里之后还需要做什么呢?
+            {
+                auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
+                auto depth     = Engine::instance().get_render_image_manager().get_one_depth_image();
+            }
 
-            engine.update_global_parameter(offscreen); // 这里的好消息是 什么？ 这里可以申请；
+            engine.update_global_parameter(offscreen, offscreen, offscreen); // 这里的好消息是 什么？ 这里可以申请；
             // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
             vk_render_queue::instance().execute_update_lambda();
         } {
@@ -178,7 +183,7 @@ public:
             if (!view.empty()) {
                 auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(backend,
                          Engine::instance().get_render_image_manager().get_one_color_image(),
-                         Engine::instance().get_current_depth_image(),
+                         Engine::instance().get_render_image_manager().get_one_depth_image(),
                          Engine::instance().get_render_image_manager().get_one_position_image(),
                          Engine::instance().get_render_image_manager().get_one_normal_image(),
                          time_line);
@@ -207,13 +212,15 @@ public:
                     begin_rendering_offscreen_attachment(backend,
                                                          Engine::instance().get_render_image_manager().
                                                          get_one_color_image(),
-                                                         Engine::instance().get_current_depth_image(),
+                                                         Engine::instance().get_render_image_manager().
+                                                         get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
                 } else {
                     begin_rendering_offscreen_attachment(backend,
                                                          Engine::instance().get_render_image_manager().
                                                          get_one_color_image(),
-                                                         Engine::instance().get_current_depth_image(),
+                                                         Engine::instance().get_render_image_manager().
+                                                         get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
                 }
             }
@@ -272,7 +279,7 @@ public:
 
             begin_rendering_attachment(backend,
                                        Engine::instance().get_current_swap_chain_image(),
-                                       Engine::instance().get_current_depth_image(),
+                                       Engine::instance().get_render_image_manager().get_one_depth_image(),
                                        VK_ATTACHMENT_LOAD_OP_CLEAR,
                                        time_line); {
                 auto index = Engine::instance().get_render_image_manager().get_one_color_image().get_index();

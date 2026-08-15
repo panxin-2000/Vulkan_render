@@ -42,7 +42,6 @@ private:
 
 
     std::vector<VKR_image_ptr> swap_chain_images_;
-    std::vector<VKR_image_ptr> depth_images_;
     Render_image_manager render_image_manager_;
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
@@ -251,7 +250,9 @@ public:
 
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
-    void update_global_parameter( std::optional<Texture_parameter> offscreen);
+    void update_global_parameter(std::optional<Texture_parameter> offscreen,
+                                 std::optional<Texture_parameter> SSAO,
+                                 std::optional<Texture_parameter> depth);
 
     FrustumPlanes get_frustum_planes() const {
         return global_parameters_.frustum_planes;
@@ -279,7 +280,6 @@ public:
     [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
 
-    [[nodiscard]] const VKR_image_ptr &get_current_depth_image() const;
 
     Render_image_manager &get_render_image_manager() {
         return render_image_manager_;
@@ -290,9 +290,6 @@ public:
         return swap_chain_images_;
     }
 
-    [[nodiscard]] const std::vector<VKR_image_ptr> &get_depth_images() const {
-        return depth_images_;
-    }
 
     std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
         return gltf_shader_data;

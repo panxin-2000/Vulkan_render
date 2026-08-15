@@ -13,9 +13,6 @@ const VKR_image_ptr &Engine::get_current_swap_chain_image() const {
 }
 
 
-const VKR_image_ptr &Engine::get_current_depth_image() const {
-    return get_depth_images().at(get_imageIndex());
-}
 
 void Engine::submit_render_queue(uint64_t time_line) {
     // Submit to graphics queue
