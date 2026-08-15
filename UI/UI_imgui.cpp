@@ -13,6 +13,7 @@
 #include "render_common/render_state.h"
 #include "scene_component.h"
 #include "shader_component.h"
+#include "time_measure.h"
 #include "transform_component.h"
 #include "UI_manager.h"
 #include "world_scene_root.h"
@@ -355,6 +356,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             bool bistro = false;
             if (ImGui::Checkbox("bistro.gltf", &bistro)) {
                 if (bistro == true) {
+                    ScopedTimer temp("bistro.gltf"); // 56.89 s
                     load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/glTF-Sample-Models/bistro.glb");
                 }
             }

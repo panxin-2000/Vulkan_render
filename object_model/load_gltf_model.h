@@ -219,6 +219,25 @@ struct RuntimeAnimation {
     }
 };
 
+/**
+ * 这里的存储的是已经 上传到GPU 上的 material 的索引
+ */
+class Gpu_material_indices : public std::vector<uint32_t> {
+public:
+    using std::vector<uint32_t>::vector;
+};
+
+/**
+ * 这里存储的 gltf 的 assert 中 的 material 的索引, 需要通过上一个转化为 engine 的才能上传到GPU
+ */
+class Gltf_material_parameters : public std::vector<uint32_t> {
+public:
+    using std::vector<uint32_t>::vector;
+};
+
+
+
+
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &mesh_path,
                              const Eigen::Vector3f            = {0, 0, 0},

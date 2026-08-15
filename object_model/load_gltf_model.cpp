@@ -12,6 +12,7 @@
 #include "GPU_frustum_cull.h"
 #include "scene_component.h"
 #include "stb_image.h"
+#include "time_measure.h"
 #include "tinyddsloader.h"
 #include "transform_AABB.h"
 #include "world_scene_root.h"
@@ -23,6 +24,7 @@ std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path)
             fastgltf::Extensions::EXT_meshopt_compression |
             fastgltf::Extensions::KHR_texture_transform |
             fastgltf::Extensions::MSFT_texture_dds |
+            fastgltf::Extensions::KHR_texture_basisu |
             fastgltf::Extensions::KHR_materials_variants;
     fastgltf::Parser parser(supportedExtensions);
     constexpr auto gltfOptions =
@@ -608,6 +610,7 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                        std::string ext = absolutePath.extension().string();
 
                        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
+                           ScopedTimer temp("stbi_load");
                            unsigned char *data = stbi_load(absolutePath.c_str(),
                                                            &picture_parameters.width,
                                                            &picture_parameters.height,
@@ -624,6 +627,7 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                    },
                    [&](fastgltf::sources::Array &vector) {
                        int width, height, nrChannels;
+                       ScopedTimer temp("stbi_load");
                        unsigned char *data =
                                stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(vector.bytes.
                                                          data()),
@@ -644,6 +648,7 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                       // We only care about VectorWithMime here, because we specify LoadExternalBuffers, meaning
                                       // all buffers are already loaded into a vector.
                                       [&](const fastgltf::sources::Array &vector) {
+                                          ScopedTimer temp("stbi_load");
                                           int width, height, nrChannels;
                                           unsigned char *data =
                                                   stbi_load_from_memory(reinterpret_cast<const
@@ -674,8 +679,12 @@ auto load_texture_info(const std::filesystem::path &path,
     if (texture_info.textureIndex < model.textures.size()) {
         auto texture = model.textures[texture_info.textureIndex];
 
-        if (texture.ddsImageIndex.has_value() &&
-            texture.ddsImageIndex.value() <= model.images.size()) {
+        if (texture.basisuImageIndex.has_value() &&
+            texture.basisuImageIndex.value() <= model.images.size()) {
+            auto image   = model.images[texture.basisuImageIndex.value()];
+            auto picture = loadImage(path, model, image);
+        } else if (texture.ddsImageIndex.has_value() &&
+                   texture.ddsImageIndex.value() <= model.images.size()) {
             auto image = model.images[texture.ddsImageIndex.value()];
 
             tinyddsloader::DDSFile dds;
@@ -711,6 +720,7 @@ auto load_texture_info(const std::filesystem::path &path,
 void load_materials(std::vector<uint32_t> &material_indices,
                     const std::filesystem::path &path,
                     const fastgltf::Asset &model) {
+    ScopedTimer temp("load_materials");
     auto &pbr_manager = Engine::instance().get_pbr_manager();
     for (const auto &material: model.materials) {
         PBR_component pbr;
@@ -771,6 +781,41 @@ void load_materials(std::vector<uint32_t> &material_indices,
 }
 
 
+void update_material(entt::entity model_entity) {
+    {
+        std::vector<uint32_t> temp;
+        auto material_indices    = Logic_entt().try_get<Gpu_material_indices>(model_entity);
+        auto material_parameters = Logic_entt().try_get<Gltf_material_parameters>(model_entity);
+
+        // 首先全部设置为零
+        if (material_indices != nullptr && !material_indices->empty())
+            temp.resize(material_indices->size());
+
+        if (material_indices != nullptr && !material_indices->empty() &&
+            material_parameters != nullptr && !material_parameters->empty()) {
+            for (const auto &material: *material_parameters) {
+                temp.push_back(material_indices->at(material));
+            }
+        }
+        if (!temp.empty())
+            set_render_parameter(model_entity, "model_material_parameters", temp);
+    }
+}
+
+
+void load_gltf_material_separate(entt::entity model_entity) {
+    if (auto path = Logic_entt().try_get<std::filesystem::path>(model_entity)) {
+        auto optional_model = get_gltf_model(*path);
+        if (optional_model.has_value()) {
+            auto &model            = optional_model.value();
+            auto &material_indices = Logic_entt().emplace<Gpu_material_indices>(model_entity);
+            load_materials(material_indices, *path, model);
+        }
+    }
+    update_material(model_entity);
+}
+
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
@@ -779,13 +824,12 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
     if (optional_model.has_value()) {
         const entt::entity model_entity = Logic_entt().create();
         Logic_entt().emplace<Name_component>(model_entity, name);
+        Logic_entt().emplace<std::filesystem::path>(model_entity, path);
         world_root_add_child(model_entity);
         auto &model = optional_model.value();
         logic_create_proxy(model_entity);
         const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
-        // Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
-        // Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
-        Logic_entt().emplace<Input_Component>(model_entity, model_3d_Event);
+        // Logic_entt().emplace<Input_Component>(model_entity, model_3d_Event);
 
 
         if (model.skins.empty()) {
@@ -800,8 +844,6 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const auto nodes_num = model.nodes.size();
         std::vector<entt::entity> nodes_have_deal;
         nodes_have_deal.resize(nodes_num, entt::null);
-        std::vector<uint32_t> material_indices;
-        load_materials(material_indices, path, model);
 
         for (const auto &scene: model.scenes) {
             for (const auto node_index: scene.nodeIndices) {
@@ -818,7 +860,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
-        auto material_parameters = std::make_shared<std::vector<uint32_t> >();
+        auto material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
         auto &boxes              = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
         auto &matrices           = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
         // 包含不包含 model_entity 的矩阵
@@ -863,13 +905,13 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     bindless_Geometry_data.push_indices(index);
                 }
                 for (const auto &material: materials) {
-                    const auto temp = material_indices.at(material);
-                    material_parameters->push_back(temp);
+                    material_parameters.push_back(material);
                 }
                 Render_entt().remove<Geometry_data_need_copy_tag>(entity);
             }
         };
         add_recursion_function_to_children(model_entity, geometry_function);
+
 
         auto mesh       = create_mesh_data(bindless_Geometry_data);
         auto primitives = create_primitives(bindless_Geometry_data);
@@ -884,9 +926,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         logic_update_proxy(model_entity, mesh);
         logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
 
-        if (!material_parameters->empty())
-            set_render_parameter(model_entity, "model_material_parameters", material_parameters);
-        // 理论上来说已经完成了 copy , 后面没有它也没什么问题,
+        update_material(model_entity);
 
         Logic_entt().emplace<GPU_frustum_cull>(model_entity);
         update_primitives_model_box(model_entity);
