@@ -251,7 +251,7 @@ public:
 
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
-    void update_global_parameter();
+    void update_global_parameter( std::optional<Texture_parameter> offscreen);
 
     FrustumPlanes get_frustum_planes() const {
         return global_parameters_.frustum_planes;

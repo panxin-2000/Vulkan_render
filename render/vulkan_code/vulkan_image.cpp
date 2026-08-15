@@ -313,8 +313,8 @@ void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uin
 }
 
 
-inline void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-                                  VkImageLayout newLayout, uint32_t mipLevels) {
+void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
+                           VkImageLayout newLayout, uint32_t mipLevels) {
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -599,6 +599,20 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
     auto &handle   = VK_backend::instance();
     auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 
+    auto textureSampler = create_2d_Texture_Sampler();
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = image_ptr->get_image_view();
+    imageInfo.sampler     = textureSampler;
+    Texture_parameter texture_parameter{
+        .image       = image_ptr,
+        .sampler     = textureSampler,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+    return texture_parameter;
+}
+
+Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr) {
     auto textureSampler = create_2d_Texture_Sampler();
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

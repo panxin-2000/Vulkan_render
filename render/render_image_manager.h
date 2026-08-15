@@ -12,6 +12,7 @@ class Render_image_manager {
     std::vector<VKR_image_ptr> G_buffer_Position_images_;
     std::vector<VKR_image_ptr> g_buffer_Normal_images_;
     std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
+    Texture_parameter temp;
 
 public:
     VKR_image_ptr &get_one_position_image() {
@@ -26,27 +27,11 @@ public:
         return G_buffer_BaseColor_images_.back();
     }
 
-
-    void create() {
-        G_buffer_Position_images_.push_back(VK_backend::instance().
-                                            create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_Position_images_.push_back(VK_backend::instance().
-                                            create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                          create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                          create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    std::optional<Texture_parameter> get_color_texture() {
+        return temp;
     }
+
+    void create();
 
 
     void destroy() {

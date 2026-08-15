@@ -53,7 +53,10 @@ public:
         VK_backend::instance().update_current_extent();
         auto &engine = Engine::instance(); {
             std::unique_lock<std::mutex> lock(mtx);
-            engine.update_global_parameter(); // 这里的好消息是 什么？ 这里可以申请；
+
+            auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
+
+            engine.update_global_parameter(offscreen); // 这里的好消息是 什么？ 这里可以申请；
             // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
             vk_render_queue::instance().execute_update_lambda();
         } {
@@ -287,9 +290,6 @@ public:
                                               VK_backend::instance().get_scissor());
                 vkCmdSetCullMode(cb, VK_CULL_MODE_NONE);
 
-                vkCmdPushConstants(cb, command_shader->pipeline_layout,
-                                   VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(index),
-                                   &index);
                 vkCmdDraw(cb, 3, 1, 0, 0);
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();

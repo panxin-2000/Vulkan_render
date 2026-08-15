@@ -102,7 +102,6 @@ public:
 
     static VK_backend &instance();
 
-    static void destroy_instance();
 
     void create() {
         // 顺序不能更改

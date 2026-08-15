@@ -50,12 +50,15 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
 
-    auto &backend   = VK_backend::instance();
-    auto &engine    = Engine::instance();
+    auto &backend = VK_backend::instance();
+    backend.create();
+    auto &engine = Engine::instance();
+    engine.create();
     auto world_root = get_world_root();
     auto UI_root    = get_UI_scene_root();
     // 需要确定启动的顺序
     render_thread_start(backend);
+
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
@@ -191,7 +194,7 @@ int main(int argc, char *argv[]) {
     buffer->destroy_buffer();
 
     engine.destroy();
-    VK_backend::destroy_instance();
+    backend.destroy();
 }
 
 

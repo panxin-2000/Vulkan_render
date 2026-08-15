@@ -16,6 +16,6 @@ layout (push_constant) uniform PushConstants {
 
 void main()
 {
-    vec4 color = texture(bindless_samplerColorMap[input_offscreen], inUV);
-    outFragColor_B8G8R8A8_SRGB = vec4(color, 1.0);
+    vec4 color = texture(global_offscreen, inUV);
+    outFragColor_B8G8R8A8_SRGB = vec4(color.rgb, 1.0);
 }

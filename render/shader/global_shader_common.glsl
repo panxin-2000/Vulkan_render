@@ -8,6 +8,9 @@
 
 
 layout (set = 0, binding = 0) uniform sampler2D bindless_samplerColorMap[];
+// layout (set = 0, binding = 0) uniform texture2D bindless_Textures[];
+// layout (set = 0, binding = 1) uniform sampler bindless_Samplers[];
+
 
 layout (set = 1, binding = 0) uniform global_parameters
 {
@@ -24,15 +27,14 @@ layout (set = 1, binding = 0) uniform global_parameters
 };
 
 
+
 layout (set = 1, binding = 1) readonly buffer global_PBR_parameters {
     ShaderMaterial material[];
 };
 
 
-layout (set = 1, binding = 2) readonly buffer global_PBR_indices {
-    uint pbr_index[];
-};
 
+layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
 
 
 

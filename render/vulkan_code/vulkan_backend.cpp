@@ -29,24 +29,12 @@ VK_backend &VK_backend::instance() {
         if (current == nullptr) {
             current = new VK_backend();
             assert(current != nullptr);
-            current->create(); // 完全初始化
             backend_instance.store(current, std::memory_order_release);
         }
     }
     return *current;
 }
 
-void VK_backend::destroy_instance() {
-    VK_backend *current = backend_instance.load(std::memory_order_acquire);
-    if (current == nullptr) return;
-    std::lock_guard<std::mutex> lock(backend_mutex);
-    current = backend_instance.load(std::memory_order_relaxed);
-    if (current != nullptr) {
-        backend_instance.store(nullptr, std::memory_order_release);
-        current->destroy(); // 销毁 VkDevice, VkInstance 等
-        delete current;     // 释放 C++ 内存
-    }
-}
 
 VK_backend::~VK_backend() {
     volkFinalize();

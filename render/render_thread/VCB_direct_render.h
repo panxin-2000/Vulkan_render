@@ -31,8 +31,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = color->get_image_handle(
-                                            ),
+            .image               = color->get_image_handle(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,

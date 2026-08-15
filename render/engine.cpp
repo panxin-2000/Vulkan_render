@@ -20,8 +20,6 @@ Engine &Engine::instance() {
         const auto new_value = new Engine();
 
         // 【关键修复】：在把指针暴露给全局之前，在线程私有空间内彻底把句柄初始化好！
-        new_value->create();
-
         Engine *expected = nullptr;
         // 3. 经典的无锁自旋尝试
         // 如果 instance 是 expected(nullptr)，就写入 new_value
@@ -33,7 +31,6 @@ Engine &Engine::instance() {
         } else {
             // 抢输了！说明别的线程已经把一个【完全初始化好】的单例塞进 instance 了
             // new_value();
-            new_value->destroy();
             delete new_value;   // 销毁自己这个备胎
             current = expected; // expected 已经被 CAS 自动更新为抢赢线程的那个完整指针
         }
@@ -238,6 +235,7 @@ void Engine::create() {
             "",
             ""
         };
+
         offscreen_to_screen = VKR_shader_init(shader_paths);
     }
     descriptor_pool_manager_.set_shader_data(gltf_shader_data);
@@ -398,7 +396,7 @@ void Engine::update_global_pbr_parameter(
 }
 
 
-void Engine::update_global_parameter() {
+void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen) {
     global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
          gltf_shader_data->global_sets_bindings,
          gltf_shader_data->global_descriptor_sets_layout
@@ -439,6 +437,9 @@ void Engine::update_global_parameter() {
 
     set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
+    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                         "global_offscreen", offscreen);
+
 
     update_global_pbr_parameter(update_global_descriptor_sets);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的

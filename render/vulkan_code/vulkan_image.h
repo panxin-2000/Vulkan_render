@@ -160,4 +160,7 @@ Texture_parameter create_texture_from_image(uint8_t *image,
                                             const int &channels);
 
 void discard_image_and_view_map_clean();
+
+Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr);
+
 #endif //HELLO_MAC_VULKAN_IMAGE_H
