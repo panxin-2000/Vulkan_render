@@ -67,7 +67,6 @@ void Command_submit_manager::destroy() {
 
 void Command_submit_manager::create() {
     const auto &backend = VK_backend::instance();
-    // pool // 是需要申请的
 
     const VkCommandPoolCreateInfo commandPoolCI{
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,

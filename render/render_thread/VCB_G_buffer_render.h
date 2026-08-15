@@ -176,6 +176,45 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
     return {};
 }
 
+
+inline void current_write_next_read_depth(VK_backend &handle,
+                                          const std::vector<VKR_image_ptr> &images,
+                                          const uint64_t time_line) {
+    auto cb = Engine::instance().get_current_command_buffer();
+    std::vector<VkImageMemoryBarrier2> outputBarriers;
+    outputBarriers.reserve(images.size());
+
+    for (const auto &image: images) {
+        VkImageMemoryBarrier2 tempBarrier{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,          // 下一阶段：后处理片元着色器
+            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                      // 允许着色器读取
+            .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // 渲染时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,         // 读取时布局
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = image->get_image_handle(),
+            .subresourceRange    = {
+                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel   = 0,
+                .levelCount     = 1,
+                .baseArrayLayer = 0,
+                .layerCount     = 1
+            }
+        };
+        outputBarriers.push_back(tempBarrier);
+    }
+    const VkDependencyInfo barrierDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
+        .pImageMemoryBarriers    = outputBarriers.data()
+    };
+    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+}
+
 inline void current_write_next_read_image(VK_backend &handle,
                                           const std::vector<VKR_image_ptr> &images,
                                           const uint64_t time_line) {

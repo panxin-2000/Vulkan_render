@@ -17,10 +17,10 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
     // 这里需要进行检查,看看是否 存在相同的 VKR_shader_paths ,
     // 如果这里相同, 那么 后面的一切都是相同的
     {
-        auto &handle = VK_backend::instance();
+        auto &backend = VK_backend::instance();
         shader_data_handle = std::make_shared<vk_shader_data>();
-        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(handle, shader_paths);
-        shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(handle, shader_paths);
+        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(backend, shader_paths);
+        shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(backend, shader_paths);
         shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
                  shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);
@@ -32,16 +32,16 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
 
 
         shader_data_handle->bindless_set_layout =
-                create_descriptor_sets_layout(handle,
+                create_descriptor_sets_layout(backend,
                                               shader_data_handle->shader_key + "bindless_set",
                                               shader_data_handle->bindless_sets_bindings);
         shader_data_handle->global_descriptor_sets_layout =
-                create_descriptor_sets_layout(handle,
+                create_descriptor_sets_layout(backend,
                                               shader_data_handle->shader_key + "global_bindings_set",
                                               shader_data_handle->global_sets_bindings);
 
         shader_data_handle->object_descriptor_sets_layout =
-                create_descriptor_sets_layout(handle,
+                create_descriptor_sets_layout(backend,
                                               shader_data_handle->shader_key,
                                               shader_data_handle->object_sets_bindings);
         std::vector<VkDescriptorSetLayout> temp;
@@ -60,10 +60,10 @@ shader_data VKR_shader_init(VKR_shader_paths &shader_paths) {
                     shader_data_handle->object_descriptor_sets_layout.end());
 
 
-        shader_data_handle->pipeline_layout = create_pipeline_layout(handle, shader_data_handle->shader_key,
+        shader_data_handle->pipeline_layout = create_pipeline_layout(backend, shader_data_handle->shader_key,
                                                                      temp, shader_data_handle->push_constant_map);
 
-        shader_data_handle->pipeline_t = create_pipeline(handle, *shader_data_handle.get());
+        shader_data_handle->pipeline_t = create_pipeline(backend, *shader_data_handle.get());
     }
     return shader_data_handle;
 }

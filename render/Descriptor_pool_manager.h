@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_DESCRIPTOR_POOL_MANAGER_H
 #define HELLO_MAC_DESCRIPTOR_POOL_MANAGER_H
+#include "descriptor_pool.h"
 #include "sets_and_bindings_layout.h"
 #include "shader_resolve.h"
 #include "vulkan_backend.h"

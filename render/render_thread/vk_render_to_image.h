@@ -49,9 +49,8 @@ class vk_render_GPU {
 
 
 public:
-    void render_once(VK_backend &backend) {
-        VK_backend::instance().update_current_extent();
-        auto &engine = Engine::instance(); {
+    void render_once(VK_backend &backend, Engine &engine) {
+        VK_backend::instance().update_current_extent(); {
             std::unique_lock<std::mutex> lock(mtx);
 
             auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
@@ -203,6 +202,26 @@ public:
                                               time_line);
             }
         }
+
+        // 这里是绘制 不透明
+        // 不能按照
+        // {
+        //     begin_rendering_depth_attachment(backend,
+        //                                      Engine::instance().get_render_image_manager().get_one_depth_image(),
+        //                                      VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
+        //     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
+        //     for (const auto entity: view) {
+        //         auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
+        //         auto name              = Render_entt().get<Name_component>(entity);
+        //         bind_pipeline_update_parameter(backend, entity, time_line);
+        //         DrawIndexedIndirect(backend, entity, command_calculate, time_line);
+        //     }
+        //     end_rendering(backend);
+        //     current_write_next_read_depth(backend, {
+        //                                       Engine::instance().get_render_image_manager().
+        //                                       get_one_depth_image()
+        //                                   }, time_line);
+        // }
 
         // 绘制 3d 物体的阶段 pass
         {
@@ -390,12 +409,12 @@ public:
         // 单个绘制过程中不能更换 shader 那么最开始 设置的 material_index  需要替换掉 PBR_component
         // 也就是不能通过 firstInstance 直接得到需要的 material_index 的索引值,需要 查找一次
         // firstInstance  instanceCount 这两个其实就 只有第一个参数有用
-
+        auto &engine = Engine::instance();
         FrameRate_measure framerate_measure(VK_backend::instance().get_refresh_rate());
         while (need_render == running) {
             framerate_measure.begin_frame();
-            Engine::instance().set_framerate(framerate_measure.get_frame_rate());
-            render_once(handle);
+            engine.set_framerate(framerate_measure.get_frame_rate());
+            render_once(handle, engine);
             framerate_measure.end_frame();
         }
         exit_and_clean(handle);

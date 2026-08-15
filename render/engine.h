@@ -11,8 +11,6 @@
 #include <vector>
 
 #include "vulkan_code/descriptor.h"
-#include "vulkan_code/descriptor_pool.h"
-#include <Eigen/Eigen>
 
 #include "Descriptor_pool_manager.h"
 #include "render_common/frustum.h"
@@ -26,6 +24,19 @@
 
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
+
+struct Global_parameters {
+    Eigen::Matrix4f view_matrix;
+    Eigen::Matrix4f projection_matrix;
+    Eigen::Matrix4f inv_view_matrix;
+    Eigen::Matrix4f inv_projection_matrix;
+    Eigen::Matrix4f invVP;
+    FrustumPlanes frustum_planes;
+    Eigen::Vector4f world_camera_pos;
+    Light light;
+    Eigen::Vector4f screen_size;
+    std::array<Eigen::Array4f, 9> shCoefficients;
+};
 
 
 struct Engine {
@@ -41,39 +52,25 @@ private:
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_ = {};
     std::vector<DescriptorSet_ptr> global_descriptor_sets_   = {};
 
-
     std::vector<VKR_image_ptr> swap_chain_images_;
+
     Render_image_manager render_image_manager_;
+    Descriptor_pool_manager descriptor_pool_manager_;
+    Command_submit_manager command_submit_manager_;
+    Shader_manager shader_manager_;
+    PBR_manager pbr_manager_;
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
     std::atomic<uint64_t> framerate_   = 0;
 
-
-    struct Global_parameters {
-        Eigen::Matrix4f view_matrix;
-        Eigen::Matrix4f projection_matrix;
-        Eigen::Matrix4f inv_view_matrix;
-        Eigen::Matrix4f inv_projection_matrix;
-        Eigen::Matrix4f invVP;
-        FrustumPlanes frustum_planes;
-        Eigen::Vector4f world_camera_pos;
-        Light light;
-        Eigen::Vector4f screen_size;
-        std::array<Eigen::Array4f, 9> shCoefficients;
-    };
-
-
-    Descriptor_pool_manager descriptor_pool_manager_;
-    Command_submit_manager command_submit_manager_;
-    PBR_manager pbr_manager_;
     VKR_buffer_ptr pbr_components_buffer_;
-
 
     Global_parameters global_parameters_;
 
-    Shader_manager shader_manager_;
-
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
+
+    uint32_t frameIndex = 0;
+    uint32_t imageIndex = 0;
 
 public:
     static Engine &instance();
@@ -101,7 +98,6 @@ public:
         return framerate_;
     }
 
-
     void submit_render_queue(uint64_t time_line);
 
     void copy_image_to_screen();
@@ -110,15 +106,12 @@ public:
 
     void create_timeline_Semaphores();
 
-
     static uint64_t get_current_submit_timeline() {
         static std::atomic<uint64_t> time_line = 1;
         ++time_line;
         return time_line - 1; // 第一次拿到的时候就是 1
     }
 
-    uint32_t frameIndex = 0;
-    uint32_t imageIndex = 0;
 
     uint32_t get_frameIndex() const {
         return frameIndex;
@@ -172,7 +165,6 @@ public:
         return true;
     }
 
-
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences_;
     }
@@ -200,7 +192,6 @@ public:
     VkSemaphore &get_current_renderSemaphores() {
         return get_can_render_to_image_semaphores()[frameIndex];
     }
-
 
     std::array<VkCommandBuffer, maxFramesInFlight> &get_command_buffers() {
         return command_buffers_;
@@ -240,7 +231,6 @@ public:
 
     void destroy_command_pool();
 
-
     std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const uint index = 0);
 
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
@@ -261,7 +251,6 @@ public:
 
     void update_bindless_parameter();
 
-
     VkDescriptorPool get_descriptor_pool() const {
         return descriptor_pool_manager_.get_descriptor_pool_for_alloc();
     }
@@ -274,11 +263,9 @@ public:
 
     [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
-
     Render_image_manager &get_render_image_manager() {
         return render_image_manager_;
     }
-
 
     [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
         return swap_chain_images_;
@@ -288,14 +275,13 @@ public:
         return shader_manager_;
     }
 
-
     Command_submit_manager &get_command_submit_manager() {
         return command_submit_manager_;
     }
 
-
     void shader_manager_destroy() {
         descriptor_pool_manager_.clean_shader_data();
+        shader_manager_.destroy();
     }
 
     void destroy_render_image();

@@ -8,7 +8,9 @@
 
 class Shader_manager {
     std::shared_ptr<vk_shader_data> gltf_shader_data;
+    std::shared_ptr<vk_shader_data> gltf_shader_opacity_data;
     std::shared_ptr<vk_shader_data> skinning_date;
+    std::shared_ptr<vk_shader_data> skinning_opacity_date;
     std::shared_ptr<vk_shader_data> line_date;
     std::shared_ptr<vk_shader_data> frustum_cull;
     std::shared_ptr<vk_shader_data> offscreen_to_screen;
@@ -45,6 +47,20 @@ public:
             gltf_shader_data = VKR_shader_init(shader_paths);
         } {
             VKR_shader_paths shader_paths{
+                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.vert.spv",
+                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.frag.spv",
+                "", ""
+            };
+            gltf_shader_opacity_data = VKR_shader_init(shader_paths);
+        } {
+            VKR_shader_paths shader_paths{
+                "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model_depth_write.vert.spv",
+                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.frag.spv",
+                "", ""
+            };
+            skinning_opacity_date = VKR_shader_init(shader_paths);
+        } {
+            VKR_shader_paths shader_paths{
                 "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model.vert.spv",
                 "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
                 "", ""
@@ -78,12 +94,14 @@ public:
     }
 
     void destroy() {
-        gltf_shader_data     = nullptr;
-        skinning_date        = nullptr;
-        line_date            = nullptr;
-        frustum_cull         = nullptr;
-        offscreen_to_screen  = nullptr;
-        bindless_shader_date = nullptr;
+        gltf_shader_data         = nullptr;
+        skinning_date            = nullptr;
+        gltf_shader_opacity_data = nullptr;
+        skinning_opacity_date    = nullptr;
+        line_date                = nullptr;
+        frustum_cull             = nullptr;
+        offscreen_to_screen      = nullptr;
+        bindless_shader_date     = nullptr;
     }
 };
 
