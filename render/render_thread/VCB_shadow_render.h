@@ -17,7 +17,7 @@ inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
 
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(), //  todo: 这里需要变更
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(), //  todo: 这里需要变更
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -25,7 +25,7 @@ inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -62,7 +62,7 @@ inline void shadow_pass_barrier(VK_backend &handle, const uint64_t time_line) {
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_depth_image(), // todo: 这里也需要更改
+            .image               = Engine::instance().get_current_depth_image()->get_image_handle(), // todo: 这里也需要更改
             .subresourceRange    = {
                 .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                 .baseMipLevel   = 0,

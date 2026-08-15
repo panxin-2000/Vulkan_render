@@ -52,7 +52,7 @@ inline void end_command_buffer(VK_backend &engine, VkQueryPool queryPool, const 
         .dstAccessMask = 0,
         .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         .newLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .image         = Engine::instance().get_current_swap_chain_image(),
+        .image         = Engine::instance().get_current_swap_chain_image()->get_image_handle(),
         .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
     };
     VkDependencyInfo barrierPresentDependencyInfo{

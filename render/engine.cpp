@@ -186,18 +186,7 @@ void Engine::destroy_render_image() {
         image->destroy_image();
     }
     swap_chain_images_.clear();
-    for (const auto &image: G_buffer_Position_images_) {
-        image->destroy_image();
-    }
-    G_buffer_Position_images_.clear();
-    for (const auto &image: g_buffer_Normal_images_) {
-        image->destroy_image();
-    }
-    g_buffer_Normal_images_.clear();
-    for (const auto &image: G_buffer_BaseColor_images_) {
-        image->destroy_image();
-    }
-    G_buffer_BaseColor_images_.clear();
+    render_image_manager_.destroy();
 }
 
 void Engine::create_render_image() {
@@ -207,22 +196,7 @@ void Engine::create_render_image() {
     depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
     depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
 
-    G_buffer_Position_images_.push_back(VK_backend::instance().
-                                        create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_Position_images_.push_back(VK_backend::instance().
-                                        create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                      create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                      create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_BaseColor_images_.push_back(VK_backend::instance().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    G_buffer_BaseColor_images_.push_back(VK_backend::instance().create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+    render_image_manager_.create();
 }
 
 

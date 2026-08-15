@@ -8,61 +8,13 @@
 #include "vulkan_buffer.h"
 #include "vulkan_execute_command.h"
 
-const VkImage &Engine::get_current_swap_chain_image(uint index) const {
-    return get_swap_chain_images()[get_imageIndex()]->get_image_handle();
+const VKR_image_ptr &Engine::get_current_swap_chain_image() const {
+    return get_swap_chain_images().at(get_imageIndex());
 }
 
-const VkImageView &Engine::get_current_swap_image_view(uint index) const {
-    return get_swap_chain_images()[get_imageIndex()]->get_image_view();
-}
 
-const VkImage &Engine::get_current_depth_image(uint index) const {
-    return get_depth_images()[get_imageIndex()]->get_image_handle();
-}
-
-const VKR_image_ptr &Engine::get_current_depth_image_ptr(uint index) const {
-    return get_depth_images()[get_imageIndex()];
-}
-
-const VkImageView &Engine::get_current_depth_view(uint index) const {
-    return get_depth_images()[get_imageIndex()]->get_image_view();
-}
-
-const VKR_image_ptr &Engine::get_current_position_image_ptr(uint index) const {
-    return G_buffer_Position_images_[0];
-}
-
-const VKR_image_ptr &Engine::get_current_normal_image_ptr(uint index) const {
-    return g_buffer_Normal_images_[0];
-}
-
-const VKR_image_ptr &Engine::get_current_baseColor_image_ptr(uint index) const {
-    return G_buffer_BaseColor_images_[0];
-}
-
-const VkImage &Engine::get_current_position_image(uint index) const {
-    return G_buffer_Position_images_[0]->get_image_handle();
-}
-
-const VkImageView &Engine::get_current_position_view(const uint index) const {
-    assert(G_buffer_Position_images_.size() > index);
-    return G_buffer_Position_images_.at(index)->get_image_view();
-}
-
-const VkImage &Engine::get_current_normal_image(uint index) const {
-    return g_buffer_Normal_images_[0]->get_image_handle();
-}
-
-const VkImageView &Engine::get_current_normal_view(uint index) const {
-    return g_buffer_Normal_images_[0]->get_image_view();
-}
-
-const VkImage &Engine::get_current_baseColor_image(uint index) const {
-    return G_buffer_BaseColor_images_[index]->get_image_handle();
-}
-
-const VkImageView &Engine::get_current_baseColor_view(uint index) const {
-    return G_buffer_BaseColor_images_[index]->get_image_view();
+const VKR_image_ptr &Engine::get_current_depth_image() const {
+    return get_depth_images().at(get_imageIndex());
 }
 
 void Engine::submit_render_queue(uint64_t time_line) {

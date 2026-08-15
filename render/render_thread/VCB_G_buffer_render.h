@@ -41,7 +41,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_position_image(),
+            .image = Engine::instance().get_render_image_manager().get_one_position_image()->get_image_handle(),
             .subresourceRange{
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
@@ -62,7 +62,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_normal_image(),
+            .image = Engine::instance().get_render_image_manager().get_one_normal_image()->get_image_handle(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,
@@ -80,7 +80,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_baseColor_image(0),
+            .image = Engine::instance().get_render_image_manager().get_one_color_image()->get_image_handle(),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,
@@ -98,7 +98,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_depth_image(),
+            .image               = Engine::instance().get_current_depth_image()->get_image_handle(time_line),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                 .levelCount = 1,
@@ -116,7 +116,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
     std::array<VkRenderingAttachmentInfo, 3> colorAttachmentInfos{
         VkRenderingAttachmentInfo{
             .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView   = Engine::instance().get_current_position_view(),
+            .imageView   = Engine::instance().get_render_image_manager().get_one_position_image()->get_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -124,7 +124,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         },
         VkRenderingAttachmentInfo{
             .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView   = Engine::instance().get_current_normal_view(),
+            .imageView   = Engine::instance().get_render_image_manager().get_one_normal_image()->get_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -132,7 +132,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         },
         VkRenderingAttachmentInfo{
             .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-            .imageView   = Engine::instance().get_current_baseColor_view(),
+            .imageView   = Engine::instance().get_render_image_manager().get_one_color_image()->get_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -142,7 +142,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
     auto temp_extent = VK_backend::instance().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -150,7 +150,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -186,8 +186,8 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_position_image(),
-            .subresourceRange    = {
+            .image = Engine::instance().get_render_image_manager().get_one_position_image()->get_image_handle(),
+            .subresourceRange = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
                 .levelCount     = 1,
@@ -207,8 +207,8 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_normal_image(),
-            .subresourceRange    = {
+            .image = Engine::instance().get_render_image_manager().get_one_normal_image()->get_image_handle(),
+            .subresourceRange = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
                 .levelCount     = 1,
@@ -227,8 +227,8 @@ inline void g_buffer_attachment_barrier(VK_backend &handle, const uint64_t time_
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_baseColor_image(),
-            .subresourceRange    = {
+            .image = Engine::instance().get_render_image_manager().get_one_color_image()->get_image_handle(),
+            .subresourceRange = {
                 .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
                 .baseMipLevel   = 0,
                 .levelCount     = 1,

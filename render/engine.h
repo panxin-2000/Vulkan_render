@@ -18,6 +18,7 @@
 #include "render_common/frustum.h"
 #include "render_common/PBR_component.h"
 #include "pbr_manager.h"
+#include "render_image_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
 #include "vulkan_code/vulkan_backend.h"
@@ -41,10 +42,8 @@ private:
 
 
     std::vector<VKR_image_ptr> swap_chain_images_;
-    std::vector<VKR_image_ptr> G_buffer_Position_images_;
-    std::vector<VKR_image_ptr> g_buffer_Normal_images_;
-    std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
     std::vector<VKR_image_ptr> depth_images_;
+    Render_image_manager render_image_manager_;
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
     std::atomic<uint64_t> framerate_   = 0;
@@ -276,33 +275,14 @@ public:
 
     void create_render_image();
 
-    [[nodiscard]] const VkImage &get_current_swap_chain_image(uint index = 0) const;
+    [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
-    [[nodiscard]] const VkImageView &get_current_swap_image_view(uint index = 0) const;
 
-    [[nodiscard]] const VkImage &get_current_depth_image(uint index = 0) const;
+    [[nodiscard]] const VKR_image_ptr &get_current_depth_image() const;
 
-    [[nodiscard]] const VkImageView &get_current_depth_view(uint index = 0) const;
-
-    [[nodiscard]] const VKR_image_ptr &get_current_position_image_ptr(uint index = 0) const;
-
-    [[nodiscard]] const VKR_image_ptr &get_current_normal_image_ptr(uint index = 0) const;
-
-    [[nodiscard]] const VKR_image_ptr &get_current_baseColor_image_ptr(uint index = 0) const;
-
-    [[nodiscard]] const VKR_image_ptr &get_current_depth_image_ptr(uint index = 0) const;
-
-    [[nodiscard]] const VkImage &get_current_position_image(uint index = 0) const;
-
-    [[nodiscard]] const VkImageView &get_current_position_view(uint index = 0) const;
-
-    [[nodiscard]] const VkImage &get_current_normal_image(uint index = 0) const;
-
-    [[nodiscard]] const VkImageView &get_current_normal_view(uint index = 0) const;
-
-    [[nodiscard]] const VkImage &get_current_baseColor_image(uint index = 0) const;
-
-    [[nodiscard]] const VkImageView &get_current_baseColor_view(uint index = 0) const;
+    Render_image_manager &get_render_image_manager() {
+        return render_image_manager_;
+    }
 
 
     [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {

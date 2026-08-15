@@ -30,7 +30,8 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_baseColor_image(1),
+            .image = Engine::instance().get_render_image_manager().get_one_color_image()->get_image_handle(
+                ),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,
@@ -45,7 +46,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = Engine::instance().get_current_depth_image(),
+            .image         = Engine::instance().get_current_depth_image()->get_image_handle(time_line),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
             }
@@ -60,7 +61,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
 
     VkRenderingAttachmentInfo colorAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_baseColor_view(1),
+        .imageView   = Engine::instance().get_render_image_manager().get_one_color_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -69,7 +70,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
     auto temp_extent = VK_backend::instance().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -77,7 +78,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -110,7 +111,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp de
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = Engine::instance().get_current_swap_chain_image(),
+            .image         = Engine::instance().get_current_swap_chain_image()->get_image_handle(time_line),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
         VkImageMemoryBarrier2{
@@ -121,7 +122,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp de
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = Engine::instance().get_current_depth_image(),
+            .image         = Engine::instance().get_current_depth_image()->get_image_handle(time_line),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
             }
@@ -136,7 +137,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp de
 
     VkRenderingAttachmentInfo colorAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_swap_image_view(),
+        .imageView   = Engine::instance().get_current_swap_chain_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -145,7 +146,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp de
     auto temp_extent = VK_backend::instance().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -153,7 +154,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp de
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageView   = Engine::instance().get_current_depth_image()->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
