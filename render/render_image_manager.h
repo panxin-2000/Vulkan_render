@@ -41,10 +41,10 @@ public:
                                           create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
                                                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
         G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
                                                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
         G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_R8G8B8A8_UNORM,
+                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
                                                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
     }
 

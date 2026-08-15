@@ -231,6 +231,14 @@ void Engine::create() {
             "/Users/panxin/CLionProjects/hello_mac/render/shader/command_calculate.comp.spv"
         };
         frustum_cull = VKR_shader_init(shader_paths);
+    } {
+        VKR_shader_paths shader_paths{
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred_to_screen.frag.spv",
+            "",
+            ""
+        };
+        offscreen_to_screen = VKR_shader_init(shader_paths);
     }
     descriptor_pool_manager_.set_shader_data(gltf_shader_data);
     bindless_descriptor_sets_ =

@@ -22,7 +22,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 
-#include "calculate_frustum_cull.h"
 #include "GPU_frustum_cull.h"
 #include "VCB_direct_render.h"
 #include "framerate_measure.h"
@@ -34,6 +33,7 @@
 #include "VCB_shadow_render.h"
 #include "time_measure.h"
 #include "transform_component.h"
+#include "VCB_calculate_frustum_cull.h"
 #include "VCB_compute_command.h"
 #include "VCB_draw_command.h"
 #include "vulkan_execute_command.h"
@@ -49,7 +49,7 @@ class vk_render_GPU {
 
 
 public:
-    void render_once(VK_backend &handle) {
+    void render_once(VK_backend &backend) {
         VK_backend::instance().update_current_extent();
         auto &engine = Engine::instance(); {
             std::unique_lock<std::mutex> lock(mtx);
@@ -98,7 +98,7 @@ public:
         // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
 
         const VkQueryPool queryPool = VK_NULL_HANDLE;
-        reset_current_command_buffer(handle, queryPool, time_line);
+        reset_current_command_buffer(backend, queryPool, time_line);
 
 
         std::array<VkBufferMemoryBarrier2, 1> write_buffer{
@@ -131,7 +131,7 @@ public:
             //
             auto view = Render_entt().view<compute_pass_tag>();
             for (const auto entity: view) {
-                build_compute_dispatch(handle, entity, time_line);
+                build_compute_dispatch(backend, entity, time_line);
             }
             // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
         }
@@ -147,7 +147,7 @@ public:
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
             const auto view = Render_entt().view<shadow_pass_tag>();
             if (!view.empty()) {
-                begin_shadow_pass(handle, time_line);
+                begin_shadow_pass(backend, time_line);
 
                 // 中间需要添加 被光 照 到的物体，能产生阴影的物体
                 // 这里的时候发生了一点改变，为什么呢？ 单个 mesh 需要多个不同的 render pass
@@ -164,8 +164,8 @@ public:
                 // 这个时候需要什么呢？ 物体的包围盒，model ,之后 再与 平头截体进行相交的判断
                 // 之后再是什么呢？ 看看如何将这部分的计算放到GPU中计算
 
-                end_rendering(handle);
-                shadow_pass_barrier(handle, time_line);
+                end_rendering(backend);
+                shadow_pass_barrier(backend, time_line);
             }
         }
 
@@ -173,7 +173,7 @@ public:
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle,
+                auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(backend,
                          Engine::instance().get_render_image_manager().get_one_color_image(),
                          Engine::instance().get_current_depth_image(),
                          Engine::instance().get_render_image_manager().get_one_position_image(),
@@ -182,10 +182,10 @@ public:
                 auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
                 for (const auto entity: view_opacity) {
                     auto name = Render_entt().get<Name_component>(entity);
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
-                end_rendering(handle);
-                current_write_next_read_image(handle,
+                end_rendering(backend);
+                current_write_next_read_image(backend,
                                               {
                                                   Engine::instance().get_render_image_manager().get_one_color_image(),
                                                   Engine::instance().get_render_image_manager().
@@ -201,13 +201,13 @@ public:
             {
                 auto view = Render_entt().view<deferred_pass_tag>();
                 if (!view.empty()) {
-                    begin_rendering_offscreen_attachment(handle,
+                    begin_rendering_offscreen_attachment(backend,
                                                          Engine::instance().get_render_image_manager().
                                                          get_one_color_image(),
                                                          Engine::instance().get_current_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
                 } else {
-                    begin_rendering_offscreen_attachment(handle,
+                    begin_rendering_offscreen_attachment(backend,
                                                          Engine::instance().get_render_image_manager().
                                                          get_one_color_image(),
                                                          Engine::instance().get_current_depth_image(),
@@ -220,21 +220,21 @@ public:
                 // g_buffer_image_indices 这是需要看看怎么传递进入其中
                 auto view = Render_entt().view<deferred_pass_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
                 for (const auto entity: view) {
                     auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
                     auto name              = Render_entt().get<Name_component>(entity);
-                    bind_pipeline_update_parameter(handle, entity, time_line);
-                    DrawIndexedIndirect(handle, entity, command_calculate, time_line);
+                    bind_pipeline_update_parameter(backend, entity, time_line);
+                    DrawIndexedIndirect(backend, entity, command_calculate, time_line);
                 }
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -242,60 +242,77 @@ public:
                                                Name_component>();
                 for (const auto entity: view) {
                     auto name = Render_entt().get<Name_component>(entity);
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 auto view = Render_entt().view<volume_pass_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             }
-            end_rendering(handle);
+            end_rendering(backend);
         }
 
 
         // 在这里的时候需要插入 FXAA
         {
-            begin_rendering_attachment(handle,
+            current_write_next_read_image(backend,
+                                          {
+                                              Engine::instance().get_render_image_manager().get_one_color_image()
+                                          },
+                                          time_line);
+
+            begin_rendering_attachment(backend,
                                        Engine::instance().get_current_swap_chain_image(),
                                        Engine::instance().get_current_depth_image(),
                                        VK_ATTACHMENT_LOAD_OP_CLEAR,
                                        time_line); {
-                current_write_next_read_image(handle,
-                                              {
-                                                  Engine::instance().get_render_image_manager().get_one_color_image()
-                                              },
-                                              time_line);
                 auto index = Engine::instance().get_render_image_manager().get_one_color_image().get_index();
-                // 那么这里就可以把
-                // 之后就需要做什么呢? 可以 push_constant , 可以直接
+                // 目前应该是只差 index 加入 bindless 了
+                const auto cb       = Engine::instance().get_current_command_buffer();
+                auto command_shader = Engine::instance().get_offscreen_to_screen_shader_data();
+                vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, command_shader->pipeline_t);
+                bind_Proxy_descriptor_sets(backend,
+                                           entt::null,
+                                           command_shader->pipeline_layout,
+                                           time_line,
+                                           VK_PIPELINE_BIND_POINT_GRAPHICS);
+                constexpr VKR_Render_state temp;
+                temp.set_render_state_command(cb, VK_backend::instance().get_viewport(),
+                                              VK_backend::instance().get_scissor());
+                vkCmdSetCullMode(cb, VK_CULL_MODE_NONE);
+
+                vkCmdPushConstants(cb, command_shader->pipeline_layout,
+                                   VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(index),
+                                   &index);
+                vkCmdDraw(cb, 3, 1, 0, 0);
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
                 for (const auto entity: view) {
-                    build_draw_command(handle, entity, time_line);
+                    build_draw_command(backend, entity, time_line);
                 }
             }
 
-            end_rendering(handle);
+            end_rendering(backend);
         }
 
 
-        end_command_buffer(handle, queryPool, time_line);
+        end_command_buffer(backend, queryPool, time_line);
 
         engine.submit_render_queue(time_line);
         engine.copy_image_to_screen();

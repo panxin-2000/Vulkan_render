@@ -76,6 +76,7 @@ private:
     std::shared_ptr<vk_shader_data> skinning_date;
     std::shared_ptr<vk_shader_data> line_date;
     std::shared_ptr<vk_shader_data> frustum_cull;
+    std::shared_ptr<vk_shader_data> offscreen_to_screen;
     std::shared_ptr<vk_shader_data> bindless_shader_date;
 
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
@@ -313,12 +314,17 @@ public:
         return frustum_cull;
     }
 
+    std::shared_ptr<vk_shader_data> get_offscreen_to_screen_shader_data() {
+        return offscreen_to_screen;
+    }
+
     void shader_manager_destroy() {
         descriptor_pool_manager_.clean_shader_data();
         gltf_shader_data     = nullptr;
         skinning_date        = nullptr;
         line_date            = nullptr;
         frustum_cull         = nullptr;
+        offscreen_to_screen  = nullptr;
         bindless_shader_date = nullptr;
     }
 

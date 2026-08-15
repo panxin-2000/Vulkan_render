@@ -15,11 +15,12 @@
 #include "../render_common/render_mesh.h"
 #include "vulkan_update_descriptor.h"
 
-inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, const uint64_t time_line,
+inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity,
+                                       VkPipelineLayout pipeline_layout,
+                                       const uint64_t time_line,
                                        VkPipelineBindPoint bind_point) {
     const auto cb                 = Engine::instance().get_current_command_buffer();
     const auto vk_descriptor_sets = update_descriptor_sets(entity);
-    const auto &shader_data_ref   = Render_entt().get<shader_data>(entity);
 
     if (!vk_descriptor_sets.empty()) {
         std::vector<VkDescriptorSet> temp_descriptor_sets;
@@ -41,7 +42,7 @@ inline void bind_Proxy_descriptor_sets(VK_backend &engine, entt::entity entity, 
             }
         }
         vkCmdBindDescriptorSets(cb, bind_point,
-                                shader_data_ref->pipeline_layout,
+                                pipeline_layout,
                                 0,
                                 temp_descriptor_sets.size(),
                                 temp_descriptor_sets.data(),
@@ -59,7 +60,8 @@ inline void bind_pipeline_update_parameter(VK_backend &engine, entt::entity enti
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_data_ref->pipeline_t);
 
 
-    bind_Proxy_descriptor_sets(engine, entity, time_line, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    bind_Proxy_descriptor_sets(engine, entity, shader_data_ref->pipeline_layout, time_line,
+                               VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制

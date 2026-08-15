@@ -19,7 +19,8 @@ inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, cons
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
 
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, shader_data_ref->pipeline_t);
-    bind_Proxy_descriptor_sets(engine, entity, time_line, VK_PIPELINE_BIND_POINT_COMPUTE);
+    bind_Proxy_descriptor_sets(engine, entity, shader_data_ref->pipeline_layout, time_line,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
 
     if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
         vkCmdDispatch(cb, group_count->X, group_count->Y, group_count->Z);

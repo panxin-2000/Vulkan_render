@@ -53,8 +53,8 @@ inline void draw(const VkCommandBuffer &cb,
 }
 
 
-inline void build_draw_command(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
-    bind_pipeline_update_parameter(engine, entity, time_line);
+inline void build_draw_command(VK_backend &backend, entt::entity entity, const uint64_t time_line) {
+    bind_pipeline_update_parameter(backend, entity, time_line);
     const auto cb = Engine::instance().get_current_command_buffer();
 
     const auto mesh_data     = Render_entt().get<Mesh_data>(entity);

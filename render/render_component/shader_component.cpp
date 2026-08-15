@@ -91,7 +91,19 @@ Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
 
 Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
-    if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
+    if (entity == entt::null) {
+        auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
+        auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
+
+        descriptor_sets.reserve(bindless_descriptor_sets.size() +
+                                global_descriptor_sets.size());
+        descriptor_sets.insert(descriptor_sets.end(),
+                               bindless_descriptor_sets.begin(),
+                               bindless_descriptor_sets.end());
+        descriptor_sets.insert(descriptor_sets.end(),
+                               global_descriptor_sets.begin(),
+                               global_descriptor_sets.end());
+    } else if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
