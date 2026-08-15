@@ -285,7 +285,7 @@ public:
                 auto index = Engine::instance().get_render_image_manager().get_one_color_image().get_index();
                 // 目前应该是只差 index 加入 bindless 了
                 const auto cb       = Engine::instance().get_current_command_buffer();
-                auto command_shader = Engine::instance().get_offscreen_to_screen_shader_data();
+                auto command_shader = Engine::instance().get_shader_manager().get_offscreen_to_screen_shader_data();
                 vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, command_shader->pipeline_t);
                 bind_Proxy_descriptor_sets(backend,
                                            entt::null,

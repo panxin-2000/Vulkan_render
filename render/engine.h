@@ -19,6 +19,7 @@
 #include "render_common/PBR_component.h"
 #include "pbr_manager.h"
 #include "render_image_manager.h"
+#include "Shader_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
 #include "vulkan_code/vulkan_backend.h"
@@ -70,13 +71,7 @@ private:
 
     Global_parameters global_parameters_;
 
-
-    std::shared_ptr<vk_shader_data> gltf_shader_data;
-    std::shared_ptr<vk_shader_data> skinning_date;
-    std::shared_ptr<vk_shader_data> line_date;
-    std::shared_ptr<vk_shader_data> frustum_cull;
-    std::shared_ptr<vk_shader_data> offscreen_to_screen;
-    std::shared_ptr<vk_shader_data> bindless_shader_date;
+    Shader_manager shader_manager_;
 
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
 
@@ -280,7 +275,6 @@ public:
     [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
 
-
     Render_image_manager &get_render_image_manager() {
         return render_image_manager_;
     }
@@ -290,39 +284,18 @@ public:
         return swap_chain_images_;
     }
 
-
-    std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
-        return gltf_shader_data;
+    Shader_manager get_shader_manager() {
+        return shader_manager_;
     }
 
-    std::shared_ptr<vk_shader_data> get_skinning_shader_data() {
-        return skinning_date;
-    }
-
-    std::shared_ptr<vk_shader_data> get_line_shader_data() {
-        return line_date;
-    }
 
     Command_submit_manager &get_command_submit_manager() {
         return command_submit_manager_;
     }
 
-    std::shared_ptr<vk_shader_data> get_frustum_cull_shader_data() {
-        return frustum_cull;
-    }
-
-    std::shared_ptr<vk_shader_data> get_offscreen_to_screen_shader_data() {
-        return offscreen_to_screen;
-    }
 
     void shader_manager_destroy() {
         descriptor_pool_manager_.clean_shader_data();
-        gltf_shader_data     = nullptr;
-        skinning_date        = nullptr;
-        line_date            = nullptr;
-        frustum_cull         = nullptr;
-        offscreen_to_screen  = nullptr;
-        bindless_shader_date = nullptr;
     }
 
     void destroy_render_image();

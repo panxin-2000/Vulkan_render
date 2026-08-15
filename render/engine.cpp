@@ -192,45 +192,9 @@ void Engine::create_render_image() {
 
 void Engine::create() {
     descriptor_pool_manager_.create();
-    command_submit_manager_.create(); {
-        VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-            "", ""
-        };
-        gltf_shader_data = VKR_shader_init(shader_paths);
-    } {
-        VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
-            "", ""
-        };
-        skinning_date = VKR_shader_init(shader_paths);
-    } {
-        VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/line.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/line.frag.spv",
-            "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-        };
-        line_date = VKR_shader_init(shader_paths);
-    } {
-        VKR_shader_paths shader_paths{
-            "",
-            "",
-            "",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/command_calculate.comp.spv"
-        };
-        frustum_cull = VKR_shader_init(shader_paths);
-    } {
-        VKR_shader_paths shader_paths{
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/fxaa.frag.spv",
-            "",
-            ""
-        };
-
-        offscreen_to_screen = VKR_shader_init(shader_paths);
-    }
+    command_submit_manager_.create();
+    shader_manager_.create();
+    auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
     descriptor_pool_manager_.set_shader_data(gltf_shader_data);
     bindless_descriptor_sets_ =
             descriptor_pool_manager_.allocate_bindless_descriptor_sets(
@@ -271,6 +235,7 @@ void Engine::create() {
 
 
 void Engine::add_bindless_texture(const std::optional<Texture_parameter> &texture) {
+    auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_samplerColorMap") {
@@ -383,6 +348,7 @@ void Engine::update_global_pbr_parameter(
 
 
         copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
+        auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
         set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                              "global_PBR_parameters", pbr_components_buffer_);
     }
@@ -392,6 +358,7 @@ void Engine::update_global_pbr_parameter(
 void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                                      std::optional<Texture_parameter> SSAO,
                                      std::optional<Texture_parameter> depth) {
+    auto gltf_shader_data   = shader_manager_.get_gltf_shader_data();
     global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
          gltf_shader_data->global_sets_bindings,
          gltf_shader_data->global_descriptor_sets_layout
