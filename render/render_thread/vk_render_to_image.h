@@ -173,25 +173,45 @@ public:
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle, time_line);
-                auto view_opacity           = Render_entt().view<opacity_tag, Name_component>();
+                auto g_buffer_image_indices = begin_g_buffer_rendering_attachment(handle,
+                         Engine::instance().get_render_image_manager().get_one_color_image(),
+                         Engine::instance().get_current_depth_image(),
+                         Engine::instance().get_render_image_manager().get_one_position_image(),
+                         Engine::instance().get_render_image_manager().get_one_normal_image(),
+                         time_line);
+                auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
                 for (const auto entity: view_opacity) {
                     auto name = Render_entt().get<Name_component>(entity);
                     build_draw_command(handle, entity, time_line);
                 }
                 end_rendering(handle);
-                g_buffer_attachment_barrier(handle, time_line);
+                current_write_next_read_image(handle,
+                                              {
+                                                  Engine::instance().get_render_image_manager().get_one_color_image(),
+                                                  Engine::instance().get_render_image_manager().
+                                                  get_one_position_image(),
+                                                  Engine::instance().get_render_image_manager().get_one_normal_image()
+                                              },
+                                              time_line);
             }
         }
 
-        // 绘制 3d 物体的阶段
+        // 绘制 3d 物体的阶段 pass
         {
             {
                 auto view = Render_entt().view<deferred_pass_tag>();
                 if (!view.empty()) {
-                    begin_rendering_offscreen_attachment(handle, VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
+                    begin_rendering_offscreen_attachment(handle,
+                                                         Engine::instance().get_render_image_manager().
+                                                         get_one_color_image(),
+                                                         Engine::instance().get_current_depth_image(),
+                                                         VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
                 } else {
-                    begin_rendering_offscreen_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
+                    begin_rendering_offscreen_attachment(handle,
+                                                         Engine::instance().get_render_image_manager().
+                                                         get_one_color_image(),
+                                                         Engine::instance().get_current_depth_image(),
+                                                         VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
                 }
             }
             // 应该先划分不同的 pass 阶段，
@@ -241,9 +261,19 @@ public:
 
         // 在这里的时候需要插入 FXAA
         {
-            begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line); {
-
-
+            begin_rendering_attachment(handle,
+                                       Engine::instance().get_current_swap_chain_image(),
+                                       Engine::instance().get_current_depth_image(),
+                                       VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                       time_line); {
+                current_write_next_read_image(handle,
+                                              {
+                                                  Engine::instance().get_render_image_manager().get_one_color_image()
+                                              },
+                                              time_line);
+                auto index = Engine::instance().get_render_image_manager().get_one_color_image().get_index();
+                // 那么这里就可以把
+                // 之后就需要做什么呢? 可以 push_constant , 可以直接
             } {
                 auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
                 for (const auto entity: view) {

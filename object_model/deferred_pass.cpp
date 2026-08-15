@@ -31,26 +31,26 @@ entt::entity add_render_pass(const std::string &name) {
     return entity;
 }
 
-void add_deferred_pass(void) {
+void add_deferred_pass(VKR_image_ptr color, VKR_image_ptr normal, VKR_image_ptr position) {
     auto &backend      = VK_backend::instance();
     const auto sampler = base_sample(); {
         const auto entity = add_render_pass("blank");
         logic_update_add_tag<deferred_pass_tag>(entity);
 
         Texture_parameter position_texture = {
-            .image       = Engine::instance().get_render_image_manager().get_one_position_image(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = position, // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> position = position_texture;
         Texture_parameter normal_texture          = {
-            .image       = Engine::instance().get_render_image_manager().get_one_normal_image(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = normal, // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
         std::optional<Texture_parameter> normal = normal_texture;
         Texture_parameter baseColor_texture     = {
-            .image       = Engine::instance().get_render_image_manager().get_one_color_image(), // 之前的差一帧的会出现绿色的问题在这里
+            .image       = color, // 之前的差一帧的会出现绿色的问题在这里
             .sampler     = sampler,
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         };
