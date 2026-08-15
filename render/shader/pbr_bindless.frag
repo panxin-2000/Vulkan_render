@@ -153,8 +153,8 @@ void main()
 {
 
     // 是否先获取无所谓，编译器会优化
-
-
+    //
+    float AO = 0;
 
     float roughness = get_Roughness(material[material_pbr_index[material_index]], inUV);
     float metallic = get_Metallic(material[material_pbr_index[material_index]], inUV);
@@ -170,7 +170,7 @@ void main()
     vec3 direct_light = vec3(0.0f);
     vec3 indirect_light = vec3(0.0f);
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
-    indirect_light = indirect_light_dufuse * c_diffusen;
+    indirect_light = indirect_light_dufuse * c_diffusen * AO;
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;

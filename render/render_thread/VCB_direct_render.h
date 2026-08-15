@@ -13,6 +13,91 @@
 #include "VCB_debug_tag.h"
 
 
+inline void begin_rendering_offscreen_attachment(VK_backend &handle,
+                                                 VkAttachmentLoadOp depth_loadOp,
+                                                 const uint64_t time_line) {
+    auto cb = Engine::instance().get_current_command_buffer();
+
+    std::vector<VkImageMemoryBarrier2> outputBarriers{
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .image               = Engine::instance().get_current_baseColor_image(1),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1
+            }
+        },
+        VkImageMemoryBarrier2{
+            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .srcStageMask  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
+            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            .image         = Engine::instance().get_current_depth_image(),
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
+            }
+        },
+    };
+    VkDependencyInfo barrierDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
+        .pImageMemoryBarriers    = outputBarriers.data()
+    };
+    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+
+    VkRenderingAttachmentInfo colorAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_baseColor_view(1),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
+    };
+    auto temp_extent = VK_backend::instance().get_current_extent();
+    VkRenderingAttachmentInfo depthAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = depth_loadOp,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .clearValue  = {.depthStencil = {1.0f, 0}}
+    };
+    VkRenderingAttachmentInfo StencilAttachmentInfo{
+        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .imageView   = Engine::instance().get_current_depth_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp      = depth_loadOp,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .clearValue  = {.depthStencil = {1.0f, 0}}
+    };
+
+    VkRenderingInfo renderingInfo{
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .renderArea{
+            .extent = temp_extent,
+        },
+        .layerCount           = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments    = &colorAttachmentInfo,
+        .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
+        .pStencilAttachment   = &StencilAttachmentInfo
+    };
+    vkCmdBeginRendering(cb, &renderingInfo);
+}
+
 inline void begin_rendering_attachment(VK_backend &handle, VkAttachmentLoadOp depth_loadOp, const uint64_t time_line) {
     auto cb = Engine::instance().get_current_command_buffer();
 

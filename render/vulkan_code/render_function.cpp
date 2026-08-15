@@ -58,11 +58,11 @@ const VkImageView &Engine::get_current_normal_view(uint index) const {
 }
 
 const VkImage &Engine::get_current_baseColor_image(uint index) const {
-    return G_buffer_BaseColor_images_[0]->get_image_handle();
+    return G_buffer_BaseColor_images_[index]->get_image_handle();
 }
 
 const VkImageView &Engine::get_current_baseColor_view(uint index) const {
-    return G_buffer_BaseColor_images_[0]->get_image_view();
+    return G_buffer_BaseColor_images_[index]->get_image_view();
 }
 
 void Engine::submit_render_queue(uint64_t time_line) {

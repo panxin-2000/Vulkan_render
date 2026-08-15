@@ -80,7 +80,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = Engine::instance().get_current_baseColor_image(),
+            .image               = Engine::instance().get_current_baseColor_image(0),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
                 .levelCount = 1,

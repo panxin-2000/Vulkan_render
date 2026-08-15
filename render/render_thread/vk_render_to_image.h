@@ -182,73 +182,87 @@ public:
                 end_rendering(handle);
                 g_buffer_attachment_barrier(handle, time_line);
             }
-        } {
-            auto view = Render_entt().view<deferred_pass_tag>();
-            if (!view.empty()) {
-                begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
-            } else {
-                begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
-            }
         }
 
-        // 应该先划分不同的 pass 阶段，
-        //  deferred  不应该将深度值写入的
+        // 绘制 3d 物体的阶段
         {
-            // g_buffer_image_indices 这是需要看看怎么传递进入其中
-            auto view = Render_entt().view<deferred_pass_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
+            {
+                auto view = Render_entt().view<deferred_pass_tag>();
+                if (!view.empty()) {
+                    begin_rendering_offscreen_attachment(handle, VK_ATTACHMENT_LOAD_OP_LOAD, time_line);
+                } else {
+                    begin_rendering_offscreen_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
+                }
             }
-        } {
-            // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
+            // 应该先划分不同的 pass 阶段，
+            //  deferred  不应该将深度值写入的
+            {
+                // g_buffer_image_indices 这是需要看看怎么传递进入其中
+                auto view = Render_entt().view<deferred_pass_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
+                for (const auto entity: view) {
+                    auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
+                    auto name              = Render_entt().get<Name_component>(entity);
+                    bind_pipeline_update_parameter(handle, entity, time_line);
+                    DrawIndexedIndirect(handle, entity, command_calculate, time_line);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                               opacity_tag,
+                                               Name_component>();
+                for (const auto entity: view) {
+                    auto name = Render_entt().get<Name_component>(entity);
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                auto view = Render_entt().view<volume_pass_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
             }
-        } {
-            auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
-            for (const auto entity: view) {
-                auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
-                auto name              = Render_entt().get<Name_component>(entity);
-                bind_pipeline_update_parameter(handle, entity, time_line);
-                DrawIndexedIndirect(handle, entity, command_calculate, time_line);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                           opacity_tag,
-                                           Name_component>();
-            for (const auto entity: view) {
-                auto name = Render_entt().get<Name_component>(entity);
-                build_draw_command(handle, entity, time_line);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
-            }
-        } {
-            auto view = Render_entt().view<volume_pass_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
-            for (const auto entity: view) {
-                build_draw_command(handle, entity, time_line);
-            }
+            end_rendering(handle);
         }
 
-        end_rendering(handle);
+
+        // 在这里的时候需要插入 FXAA
+        {
+            begin_rendering_attachment(handle, VK_ATTACHMENT_LOAD_OP_CLEAR, time_line); {
+
+
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
+                for (const auto entity: view) {
+                    build_draw_command(handle, entity, time_line);
+                }
+            }
+
+            end_rendering(handle);
+        }
 
 
         end_command_buffer(handle, queryPool, time_line);
