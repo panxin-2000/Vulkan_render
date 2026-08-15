@@ -231,7 +231,7 @@ void Engine::create() {
     } {
         VKR_shader_paths shader_paths{
             "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-            "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred_to_screen.frag.spv",
+            "/Users/panxin/CLionProjects/hello_mac/render/shader/fxaa.frag.spv",
             "",
             ""
         };
