@@ -8,20 +8,19 @@
 #include "engine.h"
 #include "global_singleton.h"
 
-inline void calculate_frustum_cull(const VkCommandBuffer &cb,
-                                   const entt::entity entity,
-                                   const FrustumPlanes &frustum_planes,
-                                   const uint64_t timeline) {
+inline void VCB::calculate_frustum_cull(
+    const entt::entity entity,
+    const FrustumPlanes &frustum_planes) {
     {
         auto command_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
-        vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
 
         auto command_calculate           = Render_entt().get<GPU_frustum_cull>(entity);
         command_calculate.frustum_planes = frustum_planes; // 还需要在这里更新一次
-        vkCmdPushConstants(cb, command_shader->pipeline_layout,
+        vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                            &command_calculate);
-        vkCmdDispatch(cb, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+        vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
 
         auto &parameter               = Render_entt().get_or_emplace<shader_need_parameter>(entity);
         VKR_buffer_ptr command_buffer = command_calculate.command_buffer;
@@ -44,7 +43,7 @@ inline void calculate_frustum_cull(const VkCommandBuffer &cb,
                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
                 // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                .buffer = command_buffer->get_buffer_handle(timeline), // 这里的buffer 句柄 应该从哪里拿?
+                .buffer = command_buffer->get_buffer_handle(time_line_), // 这里的buffer 句柄 应该从哪里拿?
                 .offset = 0,
                 // 7. 填入该缓冲区的实际字节大小，或使用 VK_WHOLE_SIZE 覆盖整块内存
                 .size = VK_WHOLE_SIZE,
@@ -61,7 +60,7 @@ inline void calculate_frustum_cull(const VkCommandBuffer &cb,
             .imageMemoryBarrierCount  = 0,
             .pImageMemoryBarriers     = nullptr,
         };
-        vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+        vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
     }
 }
 

@@ -1,0 +1,58 @@
+//
+// Created by 潘鑫 on 2026/8/16.
+//
+#include "VCB_vulkan_command_buffer.h"
+
+void VCB::reset_current_command_buffer(const uint64_t time_line, VkCommandBuffer command_buffer) {
+    command_buffer_ = command_buffer;
+    time_line_ = time_line;
+    VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(command_buffer_, 0));
+
+    VkCommandBufferBeginInfo cbBI{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+    };
+    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(command_buffer_, &cbBI)); // 所有 vkCmd 都必须在它 之后
+    if (query_pool_ != VK_NULL_HANDLE) {
+        vkCmdResetQueryPool(command_buffer_, query_pool_, 0, 2);
+        vkCmdWriteTimestamp(command_buffer_,
+                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
+                            query_pool_,
+                            0 // query 索引
+                           );
+    }
+    gpu_log_label_info("开始记录时间");
+}
+
+void VCB::end_rendering() {
+    vkCmdEndRendering(command_buffer_); // 这里和之后的 没有限制
+}
+
+void VCB::end_command_buffer() {
+    if (query_pool_ != VK_NULL_HANDLE) {
+        vkCmdWriteTimestamp(command_buffer_,
+                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
+                            query_pool_,
+                            1 // query 索引
+                           );
+    }
+    gpu_log_label_info("结束记录时间");
+
+    VkImageMemoryBarrier2 barrierPresent{
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = 0,
+        .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .newLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .image         = Engine::instance().get_current_swap_chain_image()->get_image_handle(),
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
+    };
+    VkDependencyInfo barrierPresentDependencyInfo{
+        .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &barrierPresent
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &barrierPresentDependencyInfo);
+    VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(command_buffer_)); // 所有 vkCmd 都必须在它 之前
+}

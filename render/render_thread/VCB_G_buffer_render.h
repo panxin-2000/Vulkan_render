@@ -10,20 +10,14 @@
 
 
 #include "VCB_debug_tag.h"
-
-struct G_buffer_image_index {
-    uint32_t position_image_index;
-    uint32_t normal_image_index;
-    uint32_t baseColor_image_index;
-};
+#include "VCB_vulkan_command_buffer.h"
 
 
-inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &handle,
-                                                                const VKR_image_ptr &color,
-                                                                const VKR_image_ptr &depth,
-                                                                const VKR_image_ptr &position,
-                                                                const VKR_image_ptr &normal,
-                                                                const uint64_t time_line) {
+inline G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
+    const VKR_image_ptr &color,
+    const VKR_image_ptr &depth,
+    const VKR_image_ptr &position,
+    const VKR_image_ptr &normal) {
     // 不存储位置，但是我之前都在存储位置， 之后看看如果更改为这个样子 现在的是 pos normal base_color depth
     // G-Buffer A: 法线 (Normal) + 粗糙度 (Roughness)
     // G-Buffer B: 金属度 (Metallic) + 高光 (Spec) + 遮蔽 (AO)
@@ -31,7 +25,6 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
     // Depth Buffer: 深度值（关键就在这里）
 
 
-    auto cb = Engine::instance().get_current_command_buffer();
     // 这个时候再去申请吗？
     std::array<VkImageMemoryBarrier2, 4> outputBarriers{
         VkImageMemoryBarrier2{
@@ -102,7 +95,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = depth->get_image_handle(time_line),
+            .image               = depth->get_image_handle(time_line_),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                 .levelCount = 1,
@@ -115,7 +108,7 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         .imageMemoryBarrierCount = outputBarriers.size(),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
     std::array<VkRenderingAttachmentInfo, 3> colorAttachmentInfos{
         VkRenderingAttachmentInfo{
@@ -172,15 +165,12 @@ inline G_buffer_image_index begin_g_buffer_rendering_attachment(VK_backend &hand
         .pDepthAttachment     = &depthAttachmentInfo,
         .pStencilAttachment   = &StencilAttachmentInfo,
     };
-    vkCmdBeginRendering(cb, &renderingInfo);
+    vkCmdBeginRendering(command_buffer_, &renderingInfo);
     return {};
 }
 
 
-inline void current_write_next_read_depth(VK_backend &handle,
-                                          const std::vector<VKR_image_ptr> &images,
-                                          const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images) {
     std::vector<VkImageMemoryBarrier2> outputBarriers;
     outputBarriers.reserve(images.size());
 
@@ -212,13 +202,10 @@ inline void current_write_next_read_depth(VK_backend &handle,
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
-inline void current_write_next_read_image(VK_backend &handle,
-                                          const std::vector<VKR_image_ptr> &images,
-                                          const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images) {
     std::vector<VkImageMemoryBarrier2> outputBarriers;
     outputBarriers.reserve(images.size());
 
@@ -250,7 +237,7 @@ inline void current_write_next_read_image(VK_backend &handle,
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
 

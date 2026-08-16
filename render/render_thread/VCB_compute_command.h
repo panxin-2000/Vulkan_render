@@ -13,17 +13,15 @@
 
 #include "VCB_bind_pipeline.h"
 
-inline void build_compute_dispatch(VK_backend &engine, entt::entity entity, const uint64_t time_line) {
-    const auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::build_compute_dispatch(VK_backend &engine, entt::entity entity) {
     // 下面一行估计还是有问题
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
 
-    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, shader_data_ref->pipeline_t);
-    bind_Proxy_descriptor_sets(engine, entity, shader_data_ref->pipeline_layout, time_line,
-                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, shader_data_ref->pipeline_t);
+    bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     if (const auto group_count = Render_entt().try_get<compute_group_count>(entity)) {
-        vkCmdDispatch(cb, group_count->X, group_count->Y, group_count->Z);
+        vkCmdDispatch(command_buffer_, group_count->X, group_count->Y, group_count->Z);
     }
     // layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in; // 工作组大小
     // 上面是什么内容呢？ 第一个需要理解的是，wave,  local_size 的 总数必须是 wave (32或64) 的整数倍

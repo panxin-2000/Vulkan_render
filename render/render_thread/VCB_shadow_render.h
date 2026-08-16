@@ -11,8 +11,7 @@
 
 #include "VCB_debug_tag.h"
 
-inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
-    auto cb          = Engine::instance().get_current_command_buffer();
+inline void VCB::begin_shadow_pass(VK_backend &handle) {
     auto temp_extent = VK_backend::instance().get_current_extent();
 
     VkRenderingAttachmentInfo depthAttachmentInfo{
@@ -45,12 +44,11 @@ inline void begin_shadow_pass(VK_backend &handle, const uint64_t time_line) {
         .pStencilAttachment   = &StencilAttachmentInfo
 
     };
-    vkCmdBeginRendering(cb, &renderingInfo);
+    vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
 
-inline void shadow_pass_barrier(VK_backend &handle, const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::shadow_pass_barrier() {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -79,7 +77,7 @@ inline void shadow_pass_barrier(VK_backend &handle, const uint64_t time_line) {
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
 

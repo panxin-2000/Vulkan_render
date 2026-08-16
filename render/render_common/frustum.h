@@ -53,33 +53,33 @@ inline void get_Frustum_Planes(const Eigen::Matrix4f &projection,
 }
 
 
-inline bool frustum_cull(const FrustumPlanes &frustum_planes,
-                         const AABB_min_max<Point_3> &bounds,
-                         const Eigen::Vector4f &camera_pos) {
-    // 根据 视锥裁切平面 法向量 ， 找到 包围盒 中 距离 平面最近的点， 判断 是否在视锥范围内
-    Eigen::Vector3f hi{bounds.max_point_.x, bounds.max_point_.y, bounds.max_point_.z};
-    Eigen::Vector3f lo{bounds.min_point_.x, bounds.min_point_.y, bounds.min_point_.z};
-
-    bool is_camera_inside = (camera_pos.x() >= lo.x() && camera_pos.x() <= hi.x()) &&
-                            (camera_pos.y() >= lo.y() && camera_pos.y() <= hi.y()) &&
-                            (camera_pos.z() >= lo.z() && camera_pos.z() <= hi.z());
-
-    if (is_camera_inside) {
-        return true; // 🌟 相机在物体内部，绝对可见，直接熔断返回！
-    }
-
-    float is_visible = 1.0f;
-    for (int i = 0; i < 6; i++) {
-        // 获取当前平面的系数。p.xyz 是法向量，p.w 是从原点到平面的距离
-        Eigen::Vector4f p         = frustum_planes.planes[i];
-        auto p_xyz                = p.head<3>();
-        auto high_mask            = (p_xyz.array() > 0.0f);
-        Eigen::Vector3f max_coord = high_mask.select(hi, lo);
-        float distance            = max_coord.dot(p.head<3>()) + p.w();
-        is_visible                *= (distance >= -0.0001f) ? 1.0f : 0.0f;
-    }
-    return is_visible > 0.5f;
-}
+// inline bool frustum_cull(const FrustumPlanes &frustum_planes,
+//                          const AABB_min_max<Point_3> &bounds,
+//                          const Eigen::Vector4f &camera_pos) {
+//     // 根据 视锥裁切平面 法向量 ， 找到 包围盒 中 距离 平面最近的点， 判断 是否在视锥范围内
+//     Eigen::Vector3f hi{bounds.max_point_.x, bounds.max_point_.y, bounds.max_point_.z};
+//     Eigen::Vector3f lo{bounds.min_point_.x, bounds.min_point_.y, bounds.min_point_.z};
+//
+//     bool is_camera_inside = (camera_pos.x() >= lo.x() && camera_pos.x() <= hi.x()) &&
+//                             (camera_pos.y() >= lo.y() && camera_pos.y() <= hi.y()) &&
+//                             (camera_pos.z() >= lo.z() && camera_pos.z() <= hi.z());
+//
+//     if (is_camera_inside) {
+//         return true; // 🌟 相机在物体内部，绝对可见，直接熔断返回！
+//     }
+//
+//     float is_visible = 1.0f;
+//     for (int i = 0; i < 6; i++) {
+//         // 获取当前平面的系数。p.xyz 是法向量，p.w 是从原点到平面的距离
+//         Eigen::Vector4f p         = frustum_planes.planes[i];
+//         auto p_xyz                = p.head<3>();
+//         auto high_mask            = (p_xyz.array() > 0.0f);
+//         Eigen::Vector3f max_coord = high_mask.select(hi, lo);
+//         float distance            = max_coord.dot(p.head<3>()) + p.w();
+//         is_visible                *= (distance >= -0.0001f) ? 1.0f : 0.0f;
+//     }
+//     return is_visible > 0.5f;
+// }
 
 
 inline bool frustum_cull_2(const FrustumPlanes &frustum_planes,

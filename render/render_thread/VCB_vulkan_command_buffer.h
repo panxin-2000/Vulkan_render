@@ -4,64 +4,139 @@
 
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
+#include "GPU_frustum_cull.h"
+#include "render_mesh.h"
+#include "render_state.h"
 #include "../engine.h"
-#include "VCB_debug_tag.h"
 
-inline void reset_current_command_buffer(VK_backend &handle, VkQueryPool queryPool, const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
-    VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(cb, 0));
+struct G_buffer_image_index {
+    uint32_t position_image_index;
+    uint32_t normal_image_index;
+    uint32_t baseColor_image_index;
+};
 
-    VkCommandBufferBeginInfo cbBI{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+
+class VCB {
+    VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
+    uint64_t time_line_             = 0;
+    VkQueryPool query_pool_         = VK_NULL_HANDLE;
+
+public:
+    struct scoped_debug_label {
+        VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+
+        scoped_debug_label(VCB &vcb, const std::string &label) {
+            command_buffer = vcb.command_buffer_;
+            VkDebugUtilsLabelEXT labelInfo{};
+            labelInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+            labelInfo.pLabelName = label.c_str();
+            labelInfo.color[0]   = 1.0f; // R (0.0~1.0)
+            labelInfo.color[1]   = 1.0f; // G
+            labelInfo.color[2]   = 0.0f; // B (黄色)
+            labelInfo.color[3]   = 1.0f; // A
+            vkCmdBeginDebugUtilsLabelEXT(command_buffer, &labelInfo);
+        };
+
+        ~scoped_debug_label() {
+            vkCmdEndDebugUtilsLabelEXT(command_buffer);
+        };
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cb, &cbBI)); // 所有 vkCmd 都必须在它 之后
-    if (queryPool != VK_NULL_HANDLE) {
-        vkCmdResetQueryPool(cb, queryPool, 0, 2);
-        vkCmdWriteTimestamp(cb,
-                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
-                            queryPool,
-                            0 // query 索引
-                           );
+
+    void reset_current_command_buffer(uint64_t time_line, VkCommandBuffer);
+
+    void end_rendering();
+
+    void end_command_buffer();
+
+
+    G_buffer_image_index begin_g_buffer_rendering_attachment(
+        const VKR_image_ptr &color,
+        const VKR_image_ptr &depth,
+        const VKR_image_ptr &position,
+        const VKR_image_ptr &normal);
+
+    void current_write_next_read_depth(
+        const std::vector<VKR_image_ptr> &images);
+
+    void current_write_next_read_image(
+        const std::vector<VKR_image_ptr> &images);
+
+    void begin_shadow_pass(VK_backend &handle);
+
+    void shadow_pass_barrier();
+
+    void build_draw_command(VK_backend &backend, entt::entity entity);
+
+
+    void render_post_deal(std::shared_ptr<vk_shader_data> command_shader, entt::entity entity) {
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, command_shader->pipeline_t);
+        bind_Proxy_descriptor_sets(entity,
+                                   command_shader->pipeline_layout,
+                                   VK_PIPELINE_BIND_POINT_GRAPHICS);
+        constexpr VKR_Render_state temp;
+        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
+                                      VK_backend::instance().get_scissor());
+        vkCmdSetCullMode(command_buffer_, VK_CULL_MODE_NONE);
+
+        vkCmdDraw(command_buffer_, 3, 1, 0, 0);
     }
-    gpu_log_label_info(cb, "开始记录时间");
-}
 
 
-inline void end_rendering(VK_backend &engine) {
-    auto cb = Engine::instance().get_current_command_buffer();
-    vkCmdEndRendering(cb); // 这里和之后的 没有限制
-}
+    void DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
+                             GPU_frustum_cull command_calculate);
 
-inline void end_command_buffer(VK_backend &engine, VkQueryPool queryPool, const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
-    if (queryPool != VK_NULL_HANDLE) {
-        vkCmdWriteTimestamp(cb,
-                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
-                            queryPool,
-                            1 // query 索引
-                           );
+    inline void draw(
+        const Mesh_data &mesh_data,
+        const std::vector<VKR_Primitive> &primitives,
+        const std::vector<VKR_Render_state> *render_states);
+
+
+    void begin_rendering_depth_attachment(VK_backend &handle,
+                                          VKR_image_ptr depth,
+                                          VkAttachmentLoadOp depth_loadOp);
+
+    void begin_rendering_offscreen_attachment(VK_backend &handle,
+                                              VKR_image_ptr color, VKR_image_ptr depth,
+                                              VkAttachmentLoadOp depth_loadOp);
+
+
+    void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, VKR_image_ptr depth,
+                                    VkAttachmentLoadOp depth_loadOp);
+
+
+    void add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
+                                       VkDeviceSize offset = 0);
+
+    void build_compute_dispatch(VK_backend &engine, entt::entity entity);
+
+
+    void calculate_frustum_cull(
+        const entt::entity entity,
+        const FrustumPlanes &frustum_planes);
+
+
+    void bind_Proxy_descriptor_sets(entt::entity entity,
+                                    VkPipelineLayout pipeline_layout,
+                                    VkPipelineBindPoint bind_point);
+
+    void bind_pipeline_update_parameter(VK_backend &engine, entt::entity entity);
+
+    void gpu_log_label_info(const std::string &label) {
+        VkDebugUtilsLabelEXT markerInfo{};
+        markerInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        markerInfo.pLabelName = label.c_str();
+        markerInfo.color[0]   = 1.0f; // R (0.0~1.0)
+        markerInfo.color[1]   = 1.0f; // G
+        markerInfo.color[2]   = 0.0f; // B (黄色)
+        markerInfo.color[3]   = 1.0f; // A
+        vkCmdInsertDebugUtilsLabelEXT(command_buffer_, &markerInfo);
     }
-    gpu_log_label_info(cb, "结束记录时间");
 
-    VkImageMemoryBarrier2 barrierPresent{
-        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dstAccessMask = 0,
-        .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .newLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .image         = Engine::instance().get_current_swap_chain_image()->get_image_handle(),
-        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-    };
-    VkDependencyInfo barrierPresentDependencyInfo{
-        .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &barrierPresent
-    };
-    vkCmdPipelineBarrier2(cb, &barrierPresentDependencyInfo);
-    VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cb)); // 所有 vkCmd 都必须在它 之前
-}
+    void SetDebugName(const VK_backend &backend,
+                      const VkObjectType objectType,
+                      const uint64_t handle,
+                      const std::string &name);
+};
 
 
 #endif //HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H

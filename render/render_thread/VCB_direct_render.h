@@ -13,11 +13,9 @@
 #include "VCB_debug_tag.h"
 
 
-inline void begin_rendering_depth_attachment(VK_backend &handle,
-                                             VKR_image_ptr depth,
-                                             VkAttachmentLoadOp depth_loadOp,
-                                             const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::begin_rendering_depth_attachment(VK_backend &handle,
+                                                  VKR_image_ptr depth,
+                                                  VkAttachmentLoadOp depth_loadOp) {
 
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
@@ -28,7 +26,7 @@ inline void begin_rendering_depth_attachment(VK_backend &handle,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = depth->get_image_handle(time_line),
+            .image         = depth->get_image_handle(time_line_),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
             }
@@ -39,7 +37,7 @@ inline void begin_rendering_depth_attachment(VK_backend &handle,
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
     auto temp_extent = VK_backend::instance().get_current_extent();
     VkRenderingAttachmentInfo depthAttachmentInfo{
@@ -70,15 +68,13 @@ inline void begin_rendering_depth_attachment(VK_backend &handle,
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
         .pStencilAttachment   = &StencilAttachmentInfo
     };
-    vkCmdBeginRendering(cb, &renderingInfo);
+    vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
 
-inline void begin_rendering_offscreen_attachment(VK_backend &handle,
-                                                 VKR_image_ptr color, VKR_image_ptr depth,
-                                                 VkAttachmentLoadOp depth_loadOp,
-                                                 const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::begin_rendering_offscreen_attachment(VK_backend &handle,
+                                                      VKR_image_ptr color, VKR_image_ptr depth,
+                                                      VkAttachmentLoadOp depth_loadOp) {
 
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
@@ -107,7 +103,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = depth->get_image_handle(time_line),
+            .image         = depth->get_image_handle(time_line_),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
             }
@@ -118,7 +114,7 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
     VkRenderingAttachmentInfo colorAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -157,13 +153,11 @@ inline void begin_rendering_offscreen_attachment(VK_backend &handle,
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
         .pStencilAttachment   = &StencilAttachmentInfo
     };
-    vkCmdBeginRendering(cb, &renderingInfo);
+    vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
-inline void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, VKR_image_ptr depth,
-                                       VkAttachmentLoadOp depth_loadOp, const uint64_t time_line) {
-    auto cb = Engine::instance().get_current_command_buffer();
-
+inline void VCB::begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, VKR_image_ptr depth,
+                                            VkAttachmentLoadOp depth_loadOp) {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -173,7 +167,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, 
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image         = color->get_image_handle(time_line),
+            .image         = color->get_image_handle(time_line_),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
         },
         VkImageMemoryBarrier2{
@@ -184,7 +178,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, 
             .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = depth->get_image_handle(time_line),
+            .image         = depth->get_image_handle(time_line_),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
             }
@@ -195,7 +189,7 @@ inline void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, 
         .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
         .pImageMemoryBarriers    = outputBarriers.data()
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
     VkRenderingAttachmentInfo colorAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -234,12 +228,11 @@ inline void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, 
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
         .pStencilAttachment   = &StencilAttachmentInfo
     };
-    vkCmdBeginRendering(cb, &renderingInfo);
+    vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
-inline void add_one_indirect_draw_barrier(VK_backend &handle, VkBuffer buffer, VkDeviceSize size,
-                                          VkDeviceSize offset = 0) {
-    auto cb = Engine::instance().get_current_command_buffer();
+inline void VCB::add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
+                                               VkDeviceSize offset) {
     std::array<VkBufferMemoryBarrier2, 1> write_finish_buffer{
         VkBufferMemoryBarrier2{
             .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -267,7 +260,7 @@ inline void add_one_indirect_draw_barrier(VK_backend &handle, VkBuffer buffer, V
         .imageMemoryBarrierCount  = 0,
         .pImageMemoryBarriers     = nullptr,
     };
-    vkCmdPipelineBarrier2(cb, &barrierDependencyInfo);
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
 
