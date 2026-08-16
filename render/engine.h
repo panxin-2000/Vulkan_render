@@ -36,6 +36,50 @@ struct Global_parameters {
     Light light;
     Eigen::Vector4f screen_size;
     std::array<Eigen::Array4f, 9> shCoefficients;
+
+    bool set_projection_matrix(const Eigen::Matrix4f &matrix) {
+        projection_matrix = matrix;
+        return true;
+    }
+
+    bool set_inv_projection_matrix(const Eigen::Matrix4f &matrix) {
+        inv_projection_matrix = matrix;
+        return true;
+    }
+
+    bool set_view_matrix(const Eigen::Matrix4f &matrix) {
+        view_matrix = matrix;
+        return true;
+    }
+
+    bool set_inv_view_matrix(const Eigen::Matrix4f &matrix) {
+        inv_view_matrix = matrix;
+        return true;
+    }
+
+    bool set_invVP(const Eigen::Matrix4f &matrix) {
+        invVP = matrix;
+        return true;
+    }
+
+    bool set_world_camera_pos(const Eigen::Vector3f &v3) {
+        world_camera_pos = {v3.x(), v3.y(), v3.z(), 0};
+        return true;
+    }
+
+    bool set_sun_light(const Eigen::Vector3f &v3) {
+        light.set_color(1.0f, 0.98f, 0.95f);
+        light.set_intensity(5.0f);
+        auto tem = v3;
+        tem.normalize();
+        light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
+        return true;
+    }
+
+    bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
+        screen_size = {screen_size_t.x(), screen_size_t.y(), 0, 0};;
+        return true;
+    }
 };
 
 
@@ -75,19 +119,14 @@ private:
 public:
     static Engine &instance();
 
-    [[nodiscard]] uint64_t get_finished_timeline() const {
-        uint64_t current_timeline;
-        // todo: 偶尔出现一个这个错误，应该是两个线程之间的一个同步问题
-        // 确定一下 这个 can't be called on VkImageView 出现后才会出现  assert 失败的情况
-        // vkGetSemaphoreCounterValue(): semaphore Invalid VkSemaphore Object 0x0
-        VkResult result = vkGetSemaphoreCounterValue(VK_backend::instance().get_device(), vk_timeline_semaphore_,
-                                                     &current_timeline);
-        assert(result == VK_SUCCESS && "vulkan get timeline semaphore value error");
-        return current_timeline;
-    }
+    [[nodiscard]] uint64_t get_finished_timeline() const;
 
     PBR_manager &get_pbr_manager() {
         return pbr_manager_;
+    }
+
+    Global_parameters &get_global_parameters() {
+        return global_parameters_;
     }
 
     void set_framerate(const uint64_t framerate) {
@@ -121,49 +160,6 @@ public:
         return imageIndex;
     }
 
-    bool set_projection_matrix(const Eigen::Matrix4f &matrix) {
-        global_parameters_.projection_matrix = matrix;
-        return true;
-    }
-
-    bool set_inv_projection_matrix(const Eigen::Matrix4f &matrix) {
-        global_parameters_.inv_projection_matrix = matrix;
-        return true;
-    }
-
-    bool set_view_matrix(const Eigen::Matrix4f &matrix) {
-        global_parameters_.view_matrix = matrix;
-        return true;
-    }
-
-    bool set_inv_view_matrix(const Eigen::Matrix4f &matrix) {
-        global_parameters_.inv_view_matrix = matrix;
-        return true;
-    }
-
-    bool set_invVP(const Eigen::Matrix4f &matrix) {
-        global_parameters_.invVP = matrix;
-        return true;
-    }
-
-    bool set_world_camera_pos(const Eigen::Vector3f &v3) {
-        global_parameters_.world_camera_pos = {v3.x(), v3.y(), v3.z(), 0};
-        return true;
-    }
-
-    bool set_sun_light(const Eigen::Vector3f &v3) {
-        global_parameters_.light.set_color(1.0f, 0.98f, 0.95f);
-        global_parameters_.light.set_intensity(5.0f);
-        auto tem = v3;
-        tem.normalize();
-        global_parameters_.light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
-        return true;
-    }
-
-    bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
-        global_parameters_.screen_size = {screen_size_t.x(), screen_size_t.y(), 0, 0};;
-        return true;
-    }
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences_;

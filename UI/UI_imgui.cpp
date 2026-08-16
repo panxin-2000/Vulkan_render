@@ -350,7 +350,10 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::SliderFloat("light pos x", &world_light_pos.x, -1.0f, 1.0f);
         ImGui::SliderFloat("light pos y", &world_light_pos.y, -1.0f, 1.0f);
         ImGui::SliderFloat("light pos z", &world_light_pos.z, -1.0f, 1.0f);
-        Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
+        Engine::instance().get_global_parameters().set_sun_light({
+                                                                     world_light_pos.x, world_light_pos.y,
+                                                                     world_light_pos.z
+                                                                 });
         //
         {
             bool bistro = false;

@@ -307,12 +307,12 @@ void update_camera_parameter(const entt::entity entity) {
     Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
     Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
 
-    Engine::instance().set_projection_matrix(projection);
-    Engine::instance().set_inv_projection_matrix(inv_projection_matrix);
-    Engine::instance().set_view_matrix(view_matrix);
-    Engine::instance().set_inv_view_matrix(inv_view_matrix);
-    Engine::instance().set_world_camera_pos(world_camera_pos);
-    Engine::instance().set_invVP(invVP);
+    Engine::instance().get_global_parameters().set_projection_matrix(projection);
+    Engine::instance().get_global_parameters().set_inv_projection_matrix(inv_projection_matrix);
+    Engine::instance().get_global_parameters().set_view_matrix(view_matrix);
+    Engine::instance().get_global_parameters().set_inv_view_matrix(inv_view_matrix);
+    Engine::instance().get_global_parameters().set_world_camera_pos(world_camera_pos);
+    Engine::instance().get_global_parameters().set_invVP(invVP);
 
 
     // Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
