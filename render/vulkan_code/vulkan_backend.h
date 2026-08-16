@@ -67,18 +67,11 @@ public:
     bool framebufferResized = false;
 
 public:
-    bool set_frame_buffer_resize(const bool value) {
-        framebufferResized = value;
-        return framebufferResized;
-    };
+    bool set_frame_buffer_resize(const bool value);;
 
-    [[nodiscard]] bool is_frame_buffer_resize() const {
-        return framebufferResized;
-    };
+    [[nodiscard]] bool is_frame_buffer_resize() const;;
 
-    float get_refresh_rate() const {
-        return refresh_rate_;
-    }
+    float get_refresh_rate() const;
 
     uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
 
@@ -102,138 +95,45 @@ public:
 
     static VK_backend &instance();
 
+    void create();
 
-    void create() {
-        // 顺序不能更改
-        create_instance();
-        create_surface();
-        choose_one_physical_device();
-        create_device();
-        create_VMA();
-        update_current_extent();
-        create_swap_chain(VK_NULL_HANDLE);
-        create_depth_format();
-    }
+    void create_depth_format();
 
-
-    void create_depth_format() {
-        std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
-        for (VkFormat &format: depthFormatList) {
-            VkFormatProperties2 formatProperties{.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
-            vkGetPhysicalDeviceFormatProperties2(physical_device_, format, &formatProperties);
-            if (formatProperties.formatProperties.optimalTilingFeatures &
-                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-                depth_format_ = format;
-                break;
-            }
-        }
-    }
-
-    void destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
-        if (old_swap_chain == swap_chain_ && old_swap_chain != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
-            swap_chain_ = VK_NULL_HANDLE;
-        } else if (old_swap_chain != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
-        }
-    }
+    void destroy_swap_chain(VkSwapchainKHR old_swap_chain);
 
     void destroy();
 
-    void update_current_extent() {
-        extent_ = get_swap_image_rational_extent(physical_device_, surface_, window_);
-    }
+    void update_current_extent();
 
-    [[nodiscard]] VkExtent2D get_current_extent() const {
-        return extent_;
-    }
+    [[nodiscard]] VkExtent2D get_current_extent() const;
 
-    [[nodiscard]] VkViewport get_viewport(bool flip_y_axis = false) const {
-        auto temp_extent = get_current_extent();
-        if (flip_y_axis == true) {
-            const VkViewport viewport{
-                .x        = 0,
-                .y        = static_cast<float>(temp_extent.height),
-                .width    = static_cast<float>(temp_extent.width),
-                .height   = -static_cast<float>(temp_extent.height),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f
-            };
-            return viewport;
-        } else {
-            VkViewport viewport{
-                .x        = 0,
-                .y        = 0,
-                .width    = static_cast<float>(temp_extent.width),
-                .height   = static_cast<float>(temp_extent.height),
-                .minDepth = 0.0f,
-                .maxDepth = 1.0f
-            };
-            return viewport;
-        }
-    }
+    [[nodiscard]] VkViewport get_viewport(bool flip_y_axis = false) const;
 
-    [[nodiscard]] VkRect2D get_scissor() const {
-        const auto temp_extent = get_current_extent();
-        VkRect2D scissor{
-            .extent = temp_extent,
-        };
-        return scissor;
-    }
+    [[nodiscard]] VkRect2D get_scissor() const;
 
-    [[nodiscard]] const VkFormat &get_image_format() const {
-        VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
-        return surfaceFormat.format;
-    }
+    [[nodiscard]] const VkFormat &get_image_format() const;
 
-    [[nodiscard]] const VkFormat &get_depth_format() const {
-        return depth_format_;
-    }
+    [[nodiscard]] const VkFormat &get_depth_format() const;
 
+    [[nodiscard]] uint32_t get_queue_Family() const;
 
-    [[nodiscard]] uint32_t get_queue_Family() const {
-        return queue_family_;
-    }
+    [[nodiscard]] const VkInstance &get_instance() const;
 
-    [[nodiscard]] const VkInstance &get_instance() const {
-        return instance_;
-    }
+    [[nodiscard]] const VkDevice &get_device() const;
 
-    [[nodiscard]] const VkDevice &get_device() const {
-        return device_;
-    }
+    [[nodiscard]] const VkPhysicalDevice &get_physical_device() const;
 
-    [[nodiscard]] const VkPhysicalDevice &get_physical_device() const {
-        return physical_device_;
-    }
+    [[nodiscard]] const VkQueue &get_queue() const;
 
-    [[nodiscard]] const VkQueue &get_queue() const {
-        return graphics_queue_;
-    }
+    [[nodiscard]] const VkSurfaceKHR &get_surface() const;
 
-    [[nodiscard]] const VkSurfaceKHR &get_surface() const {
-        return surface_;
-    }
+    [[nodiscard]] const VkSwapchainKHR &get_swap_chain() const;
 
-    [[nodiscard]] const VkSwapchainKHR &get_swap_chain() const {
-        return swap_chain_;
-    }
+    [[nodiscard]] const VmaAllocator &get_allocator() const;
 
+    [[nodiscard]] SDL_Window *get_window() const;
 
-    [[nodiscard]] const VmaAllocator &get_allocator() const {
-        return allocator_;
-    }
-
-    [[nodiscard]] SDL_Window *get_window() const {
-        return window_;
-    }
-
-
-    [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const {
-        VkSurfaceCapabilitiesKHR surface_caps_{};
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_);
-        return surface_caps_;
-    }
+    [[nodiscard]] VkSurfaceCapabilitiesKHR get_surface_caps() const;
 
 private:
     VK_backend() = default;

@@ -448,14 +448,17 @@ public:
 
 private:
     void clean_need_objects() {
+        auto &engine = Engine::instance();
+
+
         // discard_descriptor_set_map_clean(); // descriptor_pools_
         //                                     pipelines_
         //                                     pipeline_layouts_
         //                                     descriptor_sets_layout
         //                                     shader_modules_
         //                                     buffer_views_
-        discard_buffer_map_clean();         //         buffers_
-        discard_image_and_view_map_clean(); //  image_views_
+        discard_buffer_map_clean(engine.get_finished_timeline());         //         buffers_
+        discard_image_and_view_map_clean(engine.get_finished_timeline()); //  image_views_
         //                                     images_
 
 

@@ -65,6 +65,10 @@ void Command_submit_manager::destroy() {
         vkDestroyCommandPool(backend.get_device(), pool, nullptr);
 }
 
+std::mutex &Command_submit_manager::get_mutex() {
+    return submitMutex_;
+}
+
 void Command_submit_manager::create() {
     const auto &backend = VK_backend::instance();
 

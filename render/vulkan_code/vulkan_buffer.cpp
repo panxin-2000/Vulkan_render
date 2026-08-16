@@ -4,7 +4,6 @@
 
 #include "vulkan_buffer.h"
 
-#include "../engine.h"
 #include "vulkan_backend.h"
 #include "vulkan_execute_command.h"
 
@@ -64,6 +63,52 @@ bool VKR_buffer::flush(const VkDeviceSize offset, VkDeviceSize size) const {
         vmaFlushAllocation(backend.get_allocator(), allocation_, offset, size);
     }
     return true;
+}
+
+bool VKR_buffer::empty() const {
+    if (buffer_handle_ == VK_NULL_HANDLE || allocation_ == VK_NULL_HANDLE) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+VKR_buffer_pool::VKR_buffer_pool(const VkBuffer buffer_handle,
+                                 const VmaAllocation allocation) : VKR_buffer(buffer_handle, allocation) {
+    offset_and_size_map.insert({0, {complete_size(), true}});
+    size_and_offset_map.insert({complete_size(), {0}});
+}
+
+std::map<VkDeviceSize, size_and_status> &VKR_buffer_pool::get_offset_and_size_map() {
+    return offset_and_size_map;
+}
+
+std::multimap<VkDeviceSize, offset_no_status> &VKR_buffer_pool::get_size_and_offset_map() {
+    return size_and_offset_map;
+}
+
+VkBuffer VKR_buffer_block::get_buffer_handle(const uint64_t timeline) {
+    if (timeline > block_timeline_) block_timeline_ = timeline;
+    return ptr->get_buffer_handle(timeline);
+}
+
+const VkBuffer *VKR_buffer_block::get_buffer_handle_ptr(const uint64_t timeline) {
+    if (timeline > block_timeline_) block_timeline_ = timeline;
+    return ptr->get_buffer_handle_ptr(timeline);
+}
+
+VkDeviceAddress VKR_buffer_block::get_gpu_device_address(const uint64_t timeline) {
+    if (timeline > block_timeline_) block_timeline_ = timeline;
+    return ptr->get_gpu_device_address() + offset_;
+}
+
+const VKR_buffer_block &VKR_buffer_block::value() const {
+    return *this;
+}
+
+const VkBuffer *VKR_buffer::get_buffer_handle_ptr(const uint64_t timeline) {
+    if (timeline > timeline_) timeline_ = timeline;
+    return &buffer_handle_;
 }
 
 bool VKR_buffer::unmap_memory() const {
@@ -178,6 +223,10 @@ bool VKR_buffer::destroy_buffer() {
     return true;
 }
 
+VKR_buffer::VKR_buffer(const VkBuffer buffer_handle, const VmaAllocation allocation) : buffer_handle_(buffer_handle),
+    allocation_(allocation) {
+}
+
 VKR_buffer::~VKR_buffer() {
     if (buffer_handle_ != VK_NULL_HANDLE && allocation_ != VK_NULL_HANDLE) {
         std::lock_guard<std::mutex> lock(buffer_block_mutex);
@@ -188,16 +237,16 @@ VKR_buffer::~VKR_buffer() {
 }
 
 
-void discard_buffer_block_map_clean();
+void discard_buffer_block_map_clean(uint64_t finished_timeline);
 
-void discard_buffer_map_clean() {
+void discard_buffer_map_clean(uint64_t finished_timeline) {
     const auto &backend = VK_backend::instance();
-    discard_buffer_block_map_clean();
+    discard_buffer_block_map_clean(finished_timeline);
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(),
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline,
                   timeline);
-        if (Engine::instance().get_finished_timeline() >= timeline) {
+        if (finished_timeline >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
             vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);

@@ -19,9 +19,7 @@ class Command_submit_manager {
     std::atomic<uint64_t> command_buffer_count_     = 0;
 
 public:
-    static auto &get_mutex() {
-        return submitMutex_;
-    }
+    static std::mutex &get_mutex();
 
 
     void create();

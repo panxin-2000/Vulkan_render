@@ -14,7 +14,7 @@ public:
     VkDescriptorSetLayout descriptor_layout_ = VK_NULL_HANDLE;
     uint64_t timeline_                       = 0;
 
-    DescriptorSet_detail(const VkDescriptorSet descriptor_set, const VkDescriptorSetLayout layout) {
+    DescriptorSet_detail(const VkDescriptorSet &descriptor_set, const VkDescriptorSetLayout &layout) {
         descriptor_set_    = descriptor_set;
         descriptor_layout_ = layout;
     }

@@ -69,6 +69,14 @@ shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
 }
 
 
+std::vector<VkVertexInputAttributeDescription> vk_shader_data::get_vertexAttributes() const {
+    std::vector<VkVertexInputAttributeDescription> temp;
+    for (const auto &attribute: vertexAttributes) {
+        temp.push_back({attribute.location, attribute.binding, attribute.format, attribute.offset});
+    }
+    return temp;
+}
+
 vk_shader_data::~vk_shader_data() {
     // 这里需要看看或者确定一下,有没有在管线 还是使用的过程中就删除了
     auto &handle = VK_backend::instance();
@@ -98,4 +106,17 @@ vk_shader_data::~vk_shader_data() {
         if (set_layout != VK_NULL_HANDLE)
             vkDestroyDescriptorSetLayout(handle.get_device(), set_layout, nullptr);
     }
+}
+
+VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path, const std::string &fragment_path,
+    const std::string &geometry_path, const std::string &compute_path, const VkPrimitiveTopology topology) {
+    if (!vertex_path.empty())
+        vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert.spv";
+    if (!fragment_path.empty())
+        fragment_path_ = SHADER_BASE_DIR + fragment_path + ".frag.spv";
+    if (!geometry_path.empty())
+        geometry_path_ = SHADER_BASE_DIR + geometry_path + ".geo.spv";
+    if (!compute_path.empty())
+        compute_path_ = SHADER_BASE_DIR + compute_path + ".comp.spv";
+    topology_ = topology;
 }

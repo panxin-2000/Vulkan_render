@@ -11,6 +11,8 @@
 #include "descriptor.h"
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
+#include "absl/hash/hash.h" // 引入 Google Abseil 头文件
+
 
 using Push_constant_map = std::map<std::string, VkPushConstantRange>;
 
@@ -96,13 +98,7 @@ public:
     Fragment_output_map fragment_output_map;
 
 
-    [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_vertexAttributes() const {
-        std::vector<VkVertexInputAttributeDescription> temp;
-        for (const auto &attribute: vertexAttributes) {
-            temp.push_back({attribute.location, attribute.binding, attribute.format, attribute.offset});
-        }
-        return temp;
-    }
+    [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_vertexAttributes() const;
 
     Push_constant_map &get_push_constant_map() {
         return push_constant_map;
@@ -112,7 +108,6 @@ public:
 };
 
 using shader_data = std::shared_ptr<vk_shader_data>;
-#include "absl/hash/hash.h" // 引入 Google Abseil 头文件
 
 #ifndef SHADER_BASE_DIR
 #define SHADER_BASE_DIR "/Users/panxin/CLionProjects/hello_mac/render/shader/"
@@ -125,17 +120,7 @@ public:
                      const std::string &fragment_path,
                      const std::string &geometry_path,
                      const std::string &compute_path,
-                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
-        if (!vertex_path.empty())
-            vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert.spv";
-        if (!fragment_path.empty())
-            fragment_path_ = SHADER_BASE_DIR + fragment_path + ".frag.spv";
-        if (!geometry_path.empty())
-            geometry_path_ = SHADER_BASE_DIR + geometry_path + ".geo.spv";
-        if (!compute_path.empty())
-            compute_path_ = SHADER_BASE_DIR + compute_path + ".comp.spv";
-        topology_ = topology;
-    }
+                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
     VKR_shader_paths() = delete;
 

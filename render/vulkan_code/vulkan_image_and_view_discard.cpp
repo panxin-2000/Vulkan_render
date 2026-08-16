@@ -5,7 +5,6 @@
 #include <volk.h>
 #include <map>
 
-#include "../engine.h"
 #include "vulkan_backend.h"
 #include "vulkan_image.h"
 
@@ -26,13 +25,12 @@ void VKR_image::destroy_image() {
     }
 }
 
-void discard_image_and_view_map_clean() {
+void discard_image_and_view_map_clean(uint64_t finished_timeline) {
     const auto &backend = VK_backend::instance();
     for (auto it = discard_image_view_map.begin(); it != discard_image_view_map.end(); /* 后面不加 ++ */) {
         const auto &[image_view, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(),
-                  timeline);
-        if (Engine::instance().get_finished_timeline() >= timeline) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline, timeline);
+        if (finished_timeline >= timeline) {
             vkDestroyImageView(backend.get_device(), image_view, nullptr);
             it = discard_image_view_map.erase(it);
         } else {
@@ -41,9 +39,8 @@ void discard_image_and_view_map_clean() {
     }
     for (auto it = discard_image_map.begin(); it != discard_image_map.end(); /* 后面不加 ++ */) {
         const auto &[image, timeline] = *it;
-        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", Engine::instance().get_finished_timeline(),
-                  timeline.first);
-        if (Engine::instance().get_finished_timeline() >= timeline.first) {
+        LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline, timeline.first);
+        if (finished_timeline >= timeline.first) {
             vmaDestroyImage(backend.get_allocator(), image.first, image.second);
             it = discard_image_map.erase(it);
         } else {

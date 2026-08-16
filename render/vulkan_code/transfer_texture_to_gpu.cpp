@@ -13,7 +13,6 @@
 
 #include "create_texture.h"
 #include "tinyddsloader.h"
-#include "../engine.h"
 #include "vulkan_buffer.h"
 #include "vulkan_execute_command.h"
 #include "vulkan_sample.h"

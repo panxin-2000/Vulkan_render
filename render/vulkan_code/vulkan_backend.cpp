@@ -35,6 +35,82 @@ VK_backend &VK_backend::instance() {
     return *current;
 }
 
+void VK_backend::create() {
+    // 顺序不能更改
+    create_instance();
+    create_surface();
+    choose_one_physical_device();
+    create_device();
+    create_VMA();
+    update_current_extent();
+    create_swap_chain(VK_NULL_HANDLE);
+    create_depth_format();
+}
+
+void VK_backend::create_depth_format() {
+    std::vector<VkFormat> depthFormatList{VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT};
+    for (VkFormat &format: depthFormatList) {
+        VkFormatProperties2 formatProperties{.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2};
+        vkGetPhysicalDeviceFormatProperties2(physical_device_, format, &formatProperties);
+        if (formatProperties.formatProperties.optimalTilingFeatures &
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            depth_format_ = format;
+            break;
+        }
+    }
+}
+
+void VK_backend::destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
+    if (old_swap_chain == swap_chain_ && old_swap_chain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+        swap_chain_ = VK_NULL_HANDLE;
+    } else if (old_swap_chain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(device_, old_swap_chain, nullptr);
+    }
+}
+
+
+uint32_t VK_backend::get_queue_Family() const {
+    return queue_family_;
+}
+
+const VkInstance & VK_backend::get_instance() const {
+    return instance_;
+}
+
+const VkDevice & VK_backend::get_device() const {
+    return device_;
+}
+
+const VkPhysicalDevice & VK_backend::get_physical_device() const {
+    return physical_device_;
+}
+
+const VkQueue & VK_backend::get_queue() const {
+    return graphics_queue_;
+}
+
+const VkSurfaceKHR & VK_backend::get_surface() const {
+    return surface_;
+}
+
+const VkSwapchainKHR & VK_backend::get_swap_chain() const {
+    return swap_chain_;
+}
+
+const VmaAllocator & VK_backend::get_allocator() const {
+    return allocator_;
+}
+
+SDL_Window * VK_backend::get_window() const {
+    return window_;
+}
+
+VkSurfaceCapabilitiesKHR VK_backend::get_surface_caps() const {
+    VkSurfaceCapabilitiesKHR surface_caps_{};
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_caps_);
+    return surface_caps_;
+}
 
 VK_backend::~VK_backend() {
     volkFinalize();
@@ -157,6 +233,19 @@ bool VK_backend::choose_one_physical_device() {
     return true;
 }
 
+
+bool VK_backend::set_frame_buffer_resize(const bool value) {
+    framebufferResized = value;
+    return framebufferResized;
+}
+
+bool VK_backend::is_frame_buffer_resize() const {
+    return framebufferResized;
+}
+
+float VK_backend::get_refresh_rate() const {
+    return refresh_rate_;
+}
 
 uint32_t VK_backend::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
     auto queueFamilyProperties = get_queue_family_properties(physical_device_);
@@ -543,6 +632,56 @@ void VK_backend::destroy() {
         SDL_DestroyWindow(window_);
         SDL_Quit();
     }
+}
+
+void VK_backend::update_current_extent() {
+    extent_ = get_swap_image_rational_extent(physical_device_, surface_, window_);
+}
+
+VkExtent2D VK_backend::get_current_extent() const {
+    return extent_;
+}
+
+VkViewport VK_backend::get_viewport(bool flip_y_axis) const {
+    auto temp_extent = get_current_extent();
+    if (flip_y_axis == true) {
+        const VkViewport viewport{
+            .x        = 0,
+            .y        = static_cast<float>(temp_extent.height),
+            .width    = static_cast<float>(temp_extent.width),
+            .height   = -static_cast<float>(temp_extent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+        return viewport;
+    } else {
+        VkViewport viewport{
+            .x        = 0,
+            .y        = 0,
+            .width    = static_cast<float>(temp_extent.width),
+            .height   = static_cast<float>(temp_extent.height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+        return viewport;
+    }
+}
+
+VkRect2D VK_backend::get_scissor() const {
+    const auto temp_extent = get_current_extent();
+    VkRect2D scissor{
+        .extent = temp_extent,
+    };
+    return scissor;
+}
+
+const VkFormat & VK_backend::get_image_format() const {
+    VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
+    return surfaceFormat.format;
+}
+
+const VkFormat & VK_backend::get_depth_format() const {
+    return depth_format_;
 }
 
 /**
