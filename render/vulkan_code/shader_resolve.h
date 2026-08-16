@@ -107,7 +107,7 @@ public:
     ~vk_shader_data();
 };
 
-using shader_data = std::shared_ptr<vk_shader_data>;
+using Shader_data = std::shared_ptr<vk_shader_data>;
 
 #ifndef SHADER_BASE_DIR
 #define SHADER_BASE_DIR "/Users/panxin/CLionProjects/hello_mac/render/shader/"
@@ -165,6 +165,6 @@ public:
 };
 
 
-shader_data VKR_shader_init(const VKR_shader_paths &shader_paths);
+Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths);
 
 #endif //HELLO_MAC_SHADER_RESOLVE_H

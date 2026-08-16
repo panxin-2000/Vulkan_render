@@ -34,7 +34,7 @@ void allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
     auto &handle = VK_backend::instance();
-    if (const auto shader_ptr = Render_entt().try_get<shader_data>(entity)) {
+    if (const auto shader_ptr = Render_entt().try_get<Shader_data>(entity)) {
         auto shader_ref = *shader_ptr;
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
@@ -58,7 +58,7 @@ void allocate_descriptor_sets(const entt::entity entity) {
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
     if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
-        if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
+        if (const auto shader_temp = Render_entt().try_get<Shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
                 auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
@@ -104,7 +104,7 @@ Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
                                global_descriptor_sets.begin(),
                                global_descriptor_sets.end());
     } else if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
-        if (const auto shader_temp = Render_entt().try_get<shader_data>(entity)) {
+        if (const auto shader_temp = Render_entt().try_get<Shader_data>(entity)) {
             if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
                 auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
                 auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
@@ -135,12 +135,12 @@ void add_shader(const entt::entity entity, const std::string &vertex_path,
                 const std::string &computer_path) {
     Logic_entt().emplace<VKR_shader_paths>(entity, vertex_path, fragment_path, geometry_path, computer_path);
     auto &shader_temp = Logic_entt().get<VKR_shader_paths>(entity);
-    Logic_entt().emplace<shader_data>(entity, VKR_shader_init(shader_temp));
-    logic_update_proxy<shader_data>(entity); // 这步越来越重要了
+    Logic_entt().emplace<Shader_data>(entity, VKR_shader_init(shader_temp));
+    logic_update_proxy<Shader_data>(entity); // 这步越来越重要了
 }
 
 const std::vector<InputAttributeDescription> &get_attribute_description(const entt::entity entity) {
-    const auto &shader_temp = Logic_entt().get<shader_data>(entity);
+    const auto &shader_temp = Logic_entt().get<Shader_data>(entity);
     return shader_temp->vertexAttributes;
 }
 

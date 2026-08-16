@@ -11,8 +11,8 @@
 #include "vulkan_backend.h"
 #include "shader_create.h"
 
-shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
-    shader_data shader_data_handle;
+Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
+    Shader_data shader_data_handle;
     // if (shader_data_handle.get() == nullptr)
     // 这里需要进行检查,看看是否 存在相同的 VKR_shader_paths ,
     // 如果这里相同, 那么 后面的一切都是相同的

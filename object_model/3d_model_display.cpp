@@ -245,8 +245,8 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     Logic_entt().emplace<select_component>(entity);
 
-    Logic_entt().emplace<shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
-    logic_update_proxy<shader_data>(entity);
+    Logic_entt().emplace<Shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
+    logic_update_proxy<Shader_data>(entity);
 
     auto &BSpline = Logic_entt().emplace<B_spline<Eigen::Vector2f> >(entity);
     BSpline.add_point({200, 200});
@@ -287,8 +287,8 @@ entt::entity object_line_old(const std::string &name) {
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
-    Logic_entt().emplace<shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
-    logic_update_proxy<shader_data>(entity);
+    Logic_entt().emplace<Shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
+    logic_update_proxy<Shader_data>(entity);
     // add_line(entity, {40, 40}, {600, 600});
     Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
     std::vector<Eigen::Vector2f> path;

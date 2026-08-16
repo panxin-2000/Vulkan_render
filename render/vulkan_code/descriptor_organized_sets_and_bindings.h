@@ -562,7 +562,7 @@ inline std::string get_shader_key(const VKR_shader_paths &paths) {
 
 //
 static sets_map organize_descriptor_set_and_binding_layouts(
-    const VKR_shader_paths &paths, shader_data &shader_data) {
+    const VKR_shader_paths &paths, Shader_data &shader_data) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;

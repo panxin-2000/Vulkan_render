@@ -833,11 +833,11 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
 
         if (model.skins.empty()) {
-            Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_shader_manager().get_gltf_shader_data());
+            Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_gltf_shader_data());
         } else {
-            Logic_entt().emplace<shader_data>(model_entity, Engine::instance().get_shader_manager().get_skinning_shader_data());
+            Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_skinning_shader_data());
         }
-        logic_update_proxy<shader_data>(model_entity);
+        logic_update_proxy<Shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
         logic_update_add_tag<opacity_tag>(model_entity);
 

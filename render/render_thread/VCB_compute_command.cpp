@@ -10,7 +10,7 @@
 
 void VCB::build_compute_dispatch(entt::entity entity) {
     // 下面一行估计还是有问题
-    const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
+    const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
 
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, shader_data_ref->pipeline_t);
     bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_COMPUTE);
