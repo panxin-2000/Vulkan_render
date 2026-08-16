@@ -171,18 +171,18 @@ void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images
     for (const auto &image: images) {
         VkImageMemoryBarrier2 tempBarrier{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,          // 下一阶段：后处理片元着色器
+            .srcStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+            .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                      // 允许着色器读取
             .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // 渲染时布局
-            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,         // 读取时布局
+            .newLayout     = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,                // 读取时布局
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image               = image->get_image_handle(),
             .subresourceRange    = {
-                .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT,
                 .baseMipLevel   = 0,
                 .levelCount     = 1,
                 .baseArrayLayer = 0,
@@ -233,5 +233,3 @@ void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
-
-

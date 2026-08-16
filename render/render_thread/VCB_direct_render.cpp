@@ -20,7 +20,9 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
             .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             .image         = depth->get_image_handle(time_line_),
             .subresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
+                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+                .levelCount = 1,
+                .layerCount = 1
             }
         },
     };
@@ -37,7 +39,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .imageView   = depth->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{

@@ -834,6 +834,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         if (model.skins.empty()) {
             Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_gltf_shader_data());
+            logic_update_add_tag<opacity_gltf_tag>(model_entity);
         } else {
             Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_skinning_shader_data());
         }

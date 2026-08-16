@@ -51,7 +51,9 @@ void VCB::draw(const Mesh_data &mesh_data,
 
 
 void VCB::build_draw_command(entt::entity entity) {
-    bind_pipeline_update_parameter(entity);
+    const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+
+    bind_pipeline_update_parameter(entity, shader_data_ref);
 
     const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
     const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);

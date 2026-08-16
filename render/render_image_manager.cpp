@@ -51,12 +51,16 @@ void Render_image_manager::create() {
                                              create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
                                                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
         temp       = create_2d_texture(G_buffer_BaseColor_images_.back());
-        temp_depth = create_2d_texture(depth_images_.back());
+        temp_depth = create_2d_texture(depth_images_.at(0));
     }
 }
 
 VKR_image_ptr Render_image_manager::get_one_depth_image() {
     return depth_images_.back();
+}
+
+VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
+    return depth_images_.at(0);
 }
 
 void Render_image_manager::destroy() {

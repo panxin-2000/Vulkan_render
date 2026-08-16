@@ -31,6 +31,7 @@ public:
     void create();
 
     VKR_image_ptr get_one_depth_image();
+    VKR_image_ptr get_one_depth_AO_image();
 
     void destroy();
 };

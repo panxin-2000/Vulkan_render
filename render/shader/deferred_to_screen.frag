@@ -10,12 +10,8 @@ layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 
 
-layout (push_constant) uniform PushConstants {
-    uint input_offscreen;
-} pushConstants;
-
 void main()
 {
-    vec4 color = texture(global_offscreen, inUV);
-    outFragColor_B8G8R8A8_SRGB = vec4(color.rgb, 1.0);
+    float color = texture(global_depth, inUV).r;
+    outFragColor_B8G8R8A8_SRGB = vec4(color, color, color, 1.0);
 }

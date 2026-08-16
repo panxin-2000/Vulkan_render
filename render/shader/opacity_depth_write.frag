@@ -14,8 +14,8 @@
 #extension GL_EXT_buffer_reference: require
 
 
-layout (set = 2, binding = 0) readonly buffer model_matrix_parameters {
-    mat4 model_matrix[];
+layout (set = 3, binding = 0) readonly buffer model_material_parameters {
+    uint material_pbr_index[];
 };
 
 

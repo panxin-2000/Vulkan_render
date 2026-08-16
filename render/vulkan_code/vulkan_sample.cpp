@@ -61,24 +61,25 @@ VkSampler create_2d_Texture_Sampler() {
     VkSampler textureSampler;
 
     VkSamplerCreateInfo samplerInfo{};
-    samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter    = VK_FILTER_LINEAR;
-    samplerInfo.minFilter    = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT; // sky_cube VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter     = VK_FILTER_LINEAR;
+    samplerInfo.minFilter     = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU  = VK_SAMPLER_ADDRESS_MODE_REPEAT; // sky_cube VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+    samplerInfo.addressModeV  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.compareEnable = VK_FALSE;
 
-    // // Sampler // how to vulkan 2026 ,参数会稍微少一点
-    // VkSamplerCreateInfo samplerCI{
-    //     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-    //     .magFilter = VK_FILTER_LINEAR,
-    //     .minFilter = VK_FILTER_LINEAR,
-    //     .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-    //     .anisotropyEnable = VK_TRUE,
-    //     .maxAnisotropy = 8.0f,
-    //     .maxLod = (float) ktxTexture->numLevels,
-    // };
-    // VK_CHECK_RESULT(vkCreateSampler(handle->get_device(), &samplerCI, nullptr, &textures[i].sampler));
+            // // Sampler // how to vulkan 2026 ,参数会稍微少一点
+            // VkSamplerCreateInfo samplerCI{
+            //     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            //     .magFilter = VK_FILTER_LINEAR,
+            //     .minFilter = VK_FILTER_LINEAR,
+            //     .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            //     .anisotropyEnable = VK_TRUE,
+            //     .maxAnisotropy = 8.0f,
+            //     .maxLod = (float) ktxTexture->numLevels,
+            // };
+            // VK_CHECK_RESULT(vkCreateSampler(handle->get_device(), &samplerCI, nullptr, &textures[i].sampler));
 
 
     VkPhysicalDeviceFeatures supportedFeatures;
