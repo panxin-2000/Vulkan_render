@@ -71,8 +71,8 @@ entt::entity object_3d_model(const std::string &name,
 
 
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+               "Phong",
+               "pbr_bindless",
                "", "");
     auto aabb  = load_model(entity, mesh_path);
     auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, aabb.value());
@@ -104,8 +104,8 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
 
 
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Blinn_Phong_bindless.frag.spv",
+               "Phong",
+               "Blinn_Phong_bindless",
                "", "");
     const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
     // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
@@ -174,8 +174,8 @@ entt::entity add_sky_box(const std::string &name) {
 
 
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/skybox.frag.spv",
+               "skybox",
+               "skybox",
                "", "");
     add_box_data(entity);
 
@@ -211,8 +211,8 @@ entt::entity object_3d_model(const std::string &name,
     Logic_entt().emplace<Name_component>(entity, name);
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_different_color.frag.spv",
+               "Phong",
+               "vulkan_different_color",
                "", "");
     add_box_data(entity, bounding_box);
     auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);

@@ -528,7 +528,7 @@ inline std::string get_shader_key(const VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &computer_path = paths.computer_path_;
+    const std::string &computer_path = paths.compute_path_;
 
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
@@ -566,7 +566,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &computer_path = paths.computer_path_;
+    const std::string &computer_path = paths.compute_path_;
 
     sets_map sorted_sets_bindings;
     sets_map &bindless_set        = shader_data->bindless_sets_bindings;

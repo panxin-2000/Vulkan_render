@@ -112,6 +112,11 @@ public:
 };
 
 using shader_data = std::shared_ptr<vk_shader_data>;
+#include "absl/hash/hash.h" // 引入 Google Abseil 头文件
+
+#ifndef SHADER_BASE_DIR
+#define SHADER_BASE_DIR "/Users/panxin/CLionProjects/hello_mac/render/shader/"
+#endif
 
 
 class VKR_shader_paths {
@@ -119,13 +124,17 @@ public:
     VKR_shader_paths(const std::string &vertex_path,
                      const std::string &fragment_path,
                      const std::string &geometry_path,
-                     const std::string &computer_path,
+                     const std::string &compute_path,
                      const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
-        vertex_path_   = vertex_path;
-        fragment_path_ = fragment_path;
-        geometry_path_ = geometry_path;
-        computer_path_ = computer_path;
-        topology_      = topology;
+        if (!vertex_path.empty())
+            vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert.spv";
+        if (!fragment_path.empty())
+            fragment_path_ = SHADER_BASE_DIR + fragment_path + ".frag.spv";
+        if (!geometry_path.empty())
+            geometry_path_ = SHADER_BASE_DIR + geometry_path + ".geo.spv";
+        if (!compute_path.empty())
+            compute_path_ = SHADER_BASE_DIR + compute_path + ".comp.spv";
+        topology_ = topology;
     }
 
     VKR_shader_paths() = delete;
@@ -133,9 +142,12 @@ public:
     std::string vertex_path_;
     std::string geometry_path_;
     std::string fragment_path_;
-    std::string computer_path_;
+    std::string compute_path_;
     VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
+
+    // 利用 tuple 快速比较
+    bool operator==(const VKR_shader_paths &other) const = default;
 
     void set_vertex_shader(const std::string &path) {
         vertex_path_ = path;
@@ -150,9 +162,35 @@ public:
     }
 
     void set_computer_path(const std::string &path) {
-        computer_path_ = path;
+        compute_path_ = path;
+    }
+
+
+    template<typename H>
+    friend H AbslHashValue(H state, const VKR_shader_paths &sp) {
+        // 直接使用 H::combine 把所有成员丢进去，它支持任意数量、任意类型的参数！
+        // 并且完美支持原生枚举（如 VkPrimitiveTopology），不需要进行 static_cast 转换
+        return H::combine(std::move(state),
+                          sp.vertex_path_,
+                          sp.geometry_path_,
+                          sp.fragment_path_,
+                          sp.compute_path_,
+                          sp.topology_);
     }
 };
+
+
+// 2. 压制出来的核心宏
+// 传入顶点着色器和片元着色器的名字即可
+#define MAKE_SHADER_PATH(vert_name, frag_name,geometry_path,computer_path,topology) \
+VKR_shader_paths{ \
+    SHADER_BASE_DIR vert_name ".vert.spv", \
+    SHADER_BASE_DIR frag_name ".frag.spv", \
+    SHADER_BASE_DIR geometry_path ".geo.spv", \
+    SHADER_BASE_DIR computer_path ".comp.spv", \
+    topology \
+}
+
 
 shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
 

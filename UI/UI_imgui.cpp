@@ -190,8 +190,8 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
 
     logic_create_proxy(entity);
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/imgui.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/imgui.frag.spv",
+               "imgui",
+               "imgui",
                "", "");
 
 

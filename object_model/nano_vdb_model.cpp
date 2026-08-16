@@ -152,8 +152,8 @@ entt::entity add_volume_pass(const std::string &name,
 
 
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/Phong.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/render_nanovdb_different_density.frag.spv",
+               "Phong",
+               "render_nanovdb_different_density",
                "", "");
 
     add_nanovdb_to_gpu(entity, name, offset, rotate);

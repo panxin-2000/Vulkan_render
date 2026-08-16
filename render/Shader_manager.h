@@ -5,6 +5,8 @@
 #ifndef HELLO_MAC_SHADER_MANAGER_H
 #define HELLO_MAC_SHADER_MANAGER_H
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 
 class Shader_manager {
     std::shared_ptr<vk_shader_data> gltf_shader_data;
@@ -15,6 +17,8 @@ class Shader_manager {
     std::shared_ptr<vk_shader_data> frustum_cull;
     std::shared_ptr<vk_shader_data> offscreen_to_screen;
     std::shared_ptr<vk_shader_data> bindless_shader_date;
+
+    absl::flat_hash_map<VKR_shader_paths, std::shared_ptr<vk_shader_data> > map_;
 
 public:
     std::shared_ptr<vk_shader_data> get_gltf_shader_data() {
@@ -40,36 +44,38 @@ public:
 
     void create() { {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+                "pbr_bindless",
+                "pbr_bindless",
                 "", ""
             };
-            gltf_shader_data = VKR_shader_init(shader_paths);
+            gltf_shader_data   = VKR_shader_init(shader_paths);
+            map_[shader_paths] = gltf_shader_data;
         } {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.frag.spv",
+                "opacity_depth_write",
+                "opacity_depth_write",
                 "", ""
             };
             gltf_shader_opacity_data = VKR_shader_init(shader_paths);
+            map_[shader_paths]       = gltf_shader_opacity_data;
         } {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model_depth_write.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/opacity_depth_write.frag.spv",
+                "skinning_model_depth_write",
+                "opacity_depth_write",
                 "", ""
             };
             skinning_opacity_date = VKR_shader_init(shader_paths);
         } {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/skinning_model.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/pbr_bindless.frag.spv",
+                "skinning_model",
+                "pbr_bindless",
                 "", ""
             };
             skinning_date = VKR_shader_init(shader_paths);
         } {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/line.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/line.frag.spv",
+                "line",
+                "line",
                 "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST
             };
             line_date = VKR_shader_init(shader_paths);
@@ -78,13 +84,13 @@ public:
                 "",
                 "",
                 "",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/command_calculate.comp.spv"
+                "command_calculate"
             };
             frustum_cull = VKR_shader_init(shader_paths);
         } {
             VKR_shader_paths shader_paths{
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/deferred.vert.spv",
-                "/Users/panxin/CLionProjects/hello_mac/render/shader/fxaa.frag.spv",
+                "deferred",
+                "fxaa",
                 "",
                 ""
             };

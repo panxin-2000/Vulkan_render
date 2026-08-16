@@ -21,7 +21,7 @@ void add_simple_computer_buffer_write() {
                "",
                "",
                "",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/simple_write_buffer.comp.spv"
+               "simple_write_buffer"
               );
 
 

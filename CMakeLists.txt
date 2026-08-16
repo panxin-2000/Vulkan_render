@@ -595,6 +595,8 @@ target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
 
 
 find_package(TBB REQUIRED)
+find_package(absl REQUIRED COMPONENTS hash container)
+
 
 # 主要用于解决 Windows 平台上的命名冲突和数学常量支持问题
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")
@@ -650,6 +652,8 @@ target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
+target_link_libraries(learn_render PRIVATE absl::hash)
+target_link_libraries(learn_render PRIVATE absl::raw_hash_set)
 # 【只选择其一】在这里只链接你需要的轻量库
 # 如果你上面开启了 LIBKTX_VERSION_READ_ONLY，请链接：ktx_read
 # 如果你需要完整的写功能，请链接：ktx

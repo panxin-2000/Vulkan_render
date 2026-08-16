@@ -64,7 +64,7 @@ void create_Shader_Module(const VK_backend &backend, std::vector<VkPipelineShade
 std::vector<VkPipelineShaderStageCreateInfo> find_compute_shader_module(const VK_backend &backend,
                                                                         const VKR_shader_paths &paths) {
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    create_Shader_Module(backend, shaderStages, paths.computer_path_, VK_SHADER_STAGE_COMPUTE_BIT);
+    create_Shader_Module(backend, shaderStages, paths.compute_path_, VK_SHADER_STAGE_COMPUTE_BIT);
     return shaderStages;
 }
 

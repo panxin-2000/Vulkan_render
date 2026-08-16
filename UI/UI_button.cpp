@@ -87,8 +87,8 @@ entt::entity UI_button(const std::string &name,
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     add_shader(entity,
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_round_box.vert.spv",
-               "/Users/panxin/CLionProjects/hello_mac/render/shader/vulkan_round_box.frag.spv",
+               "vulkan_round_box",
+               "vulkan_round_box",
                "", ""); // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 暂时还不用
 
     if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
