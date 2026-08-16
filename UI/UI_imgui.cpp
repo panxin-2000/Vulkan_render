@@ -219,7 +219,7 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<imgui_draw>(entity);
-    scene_root_add_child(entity);
+    UI_root_add_child(entity);
     return entity;
 
     // 需要添加一个的特殊的 imgui 的 标记

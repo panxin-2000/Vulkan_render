@@ -232,21 +232,18 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
-    std::vector<Eigen::Vector2f> points;
-    points.push_back({200, 200});
-    points.push_back({200, 600});
-    points.push_back({600, 200});
-    points.push_back({600, 600});
-    points.push_back({700, 700});
-    auto path = B_spline<Eigen::Vector2f>::calculateBSplinePathWithTol(points, 1.25);
 
-    // Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
-    // std::vector<Eigen::Vector2f> path;
-    // bezier.Casteljau(&path);
+    B_spline<Eigen::Vector2f> BSpline;
+    BSpline.add_point({200, 200});
+    BSpline.add_point({200, 600});
+    BSpline.add_point({600, 200});
+    BSpline.add_point({600, 600});
+    BSpline.add_point({700, 700});
+    auto path = BSpline.calculateBSplinePathWithTol(points, 1.25);
 
 
     add_path(entity, path, {});
-    world_root_add_child(entity);
+    UI_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
@@ -284,7 +281,7 @@ entt::entity object_line_old(const std::string &name) {
     bezier.Casteljau(&path);
     add_path(entity, path, {});
 
-    world_root_add_child(entity);
+    UI_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));

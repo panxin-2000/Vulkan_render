@@ -380,7 +380,7 @@ entt::entity UI_text(const std::string &name,
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<UI_2D_tag>(entity);
 
-    scene_root_add_child(entity);
+    UI_root_add_child(entity);
     return entity;
 
     // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。

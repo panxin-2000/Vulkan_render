@@ -130,7 +130,7 @@ entt::entity UI_button(const std::string &name,
 
     set_push_constant_parameter(entity, "uScale", scale);
     set_push_constant_parameter(entity, "uTranslate", translate);
-    scene_root_add_child(entity);
+    UI_root_add_child(entity);
     return entity;
 
     // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。

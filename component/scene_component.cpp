@@ -13,7 +13,7 @@ void world_root_add_child(const entt::entity entity) {
     add_relation(root, entity);
 }
 
-void scene_root_add_child(const entt::entity entity) {
+void UI_root_add_child(const entt::entity entity) {
     const auto root = get_UI_scene_root();
     add_relation(root, entity);
 }

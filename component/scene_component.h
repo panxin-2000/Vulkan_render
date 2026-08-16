@@ -83,7 +83,7 @@ entt::entity get_parent(const entt::entity entity);
 bool clear_parent_relation(const entt::entity children_entity);
 
 // 最主要使用的函数应该是下面四个个，添加联系与删除联系
-void scene_root_add_child(entt::entity entity);
+void UI_root_add_child(entt::entity entity);
 
 void world_root_add_child(entt::entity entity);
 
