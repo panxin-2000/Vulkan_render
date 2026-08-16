@@ -8,386 +8,228 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include "Cox-de_Boor.h"
 #include "bezier_curve.h"
 
 template<typename T>
-class B_spline {
-public:
-    // 计算点 M 到线段 AB 的垂直距离（弦高）
-    double getSegmentDistance(const T &M, const T &A, const T &B) {
-        double dx    = B.x - A.x;
-        double dy    = B.y - A.y;
-        double lenSq = dx * dx + dy * dy;
+double getSegmentDistance(const T &M, const T &A, const T &B) {
+    double dx    = B.x - A.x;
+    double dy    = B.y - A.y;
+    double lenSq = dx * dx + dy * dy;
 
-        // 如果 A 和 B 几乎重合，直接返回 M 到 A 的距离
-        if (lenSq < 1e-12) {
-            return std::sqrt((M.x - A.x) * (M.x - A.x) + (M.y - A.y) * (M.y - A.y));
-        }
-
-        // 点到直线的距离公式
-        double num = std::abs(dy * M.x - dx * M.y + B.x * A.y - B.y * A.x);
-        return num / std::sqrt(lenSq);
+    // 如果 A 和 B 几乎重合，直接返回 M 到 A 的距离
+    if (lenSq < 1e-12) {
+        return std::sqrt((M.x - A.x) * (M.x - A.x) + (M.y - A.y) * (M.y - A.y));
     }
 
-
-    /**
-     * 2. 自动生成普通准均匀（Clamped）B样条的节点向量
-     * 中间节点均匀等距且不重复
-     */
-    static std::vector<double> generateClampedKnots(size_t numControlPoints, int degree = 3) {
-        int p           = degree;
-        int n           = static_cast<int>(numControlPoints) - 1;
-        int numInternal = n - p;
-
-        // if (numInternal < 0) {
-        //     throw std::invalid_error("控制点数量必须大于等于曲线阶数加1（对于三次曲线，至少需要4个点）");
-        // }
-
-        std::vector<double> knots;
-        knots.reserve(numControlPoints + p + 1);
-
-        // 头部重复 p + 1 次
-        for (int i = 0; i <= p; ++i) {
-            knots.push_back(0.0);
-        }
-
-        // 中间节点均匀分布（不重复）
-        if (numInternal > 0) {
-            // 总段数为 numInternal + 1
-            double step = 1.0 / (numInternal + 1);
-            for (int i = 1; i <= numInternal; ++i) {
-                knots.push_back(i * step);
-            }
-        }
-
-        // 尾部重复 p + 1 次
-        for (int i = 0; i <= p; ++i) {
-            knots.push_back(1.0);
-        }
-
-        return knots;
-    }
-
-#include <iostream>
-#include <array>
-#include <cmath>
-
-#include <iostream>
-#include <array>
-#include <cmath>
-
-    /**
-     * 【完全直接代数求解版】
-     * 无任何中间插值步，直接输入参数 t 和 7 个节点，独立计算 4 个控制点的多项式系数
-     * 传入的 u 包含：u_{k-2}, u_{k-1}, u_k, u_{k+1}, u_{k+2}, u_{k+3}, u_{k+4}
-     */
-    static std::array<double, 4> calculate4PointCoefficientsDirect(float t, const std::array<double, 7> &u) {
-        auto safe_div = [](float num, float denom) -> float {
-            return (std::abs(denom) > 1e-9f) ? (num / denom) : 0.0f;
-        };
-
-        // 1. 将 7 个节点对齐到 De Boor 的标准局部节点符号
-        // K1 = u[0], K2 = u[1], K3 = u[2] (即 u_k), K4 = u[3] (即 u_{k+1}), K5 = u[4], K6 = u[5]
-        float K1 = u[0]; // u_{k-2}
-        float K2 = u[1]; // u_{k-1}
-        float K3 = u[2]; // u_k      (当前区间左端)
-        float K4 = u[3]; // u_{k+1}  (当前区间右端)
-        float K5 = u[4]; // u_{k+2}
-        float K6 = u[5]; // u_{k+3}
-
-        // 2. 预先算出三层金字塔所有的局部线性代数比例项 (这些仅仅是关于 t 的一阶标量函数)
-        float a1 = safe_div(t - K1, K4 - K1);
-        float a2 = safe_div(t - K2, K5 - K2);
-        float a3 = safe_div(t - K3, K6 - K3);
-
-        float b2 = safe_div(t - K2, K4 - K2);
-        float b3 = safe_div(t - K3, K5 - K3);
-
-        float c3 = safe_div(t - K3, K4 - K3);
-
-        std::array<double, 4> coeffs;
-
-        // 3. 【核心代数解析式】完全不经过中间控制点插值，各点系数相互独立、直接展开
-
-        // --- 原始点 P0 (controlPoints[k-3]) 的直接代数多项式 ---
-        coeffs[0] = (1.0f - c3) * (1.0f - b2) * (1.0f - a1);
-
-        // --- 原始点 P1 (controlPoints[k-2]) 的直接代数多项式 ---
-        coeffs[1] = (1.0f - c3) * (1.0f - b2) * a1 +
-                    (1.0f - c3) * b2 * (1.0f - a2) +
-                    c3 * (1.0f - b3) * (1.0f - a2);
-
-        // --- 原始点 P2 (controlPoints[k-1]) 的直接代数多项式 ---
-        coeffs[2] = (1.0f - c3) * b2 * a2 +
-                    c3 * (1.0f - b3) * a2 +
-                    c3 * b3 * (1.0f - a3);
-
-        // --- 原始点 P3 (controlPoints[k]) 的直接代数多项式 ---
-        coeffs[3] = c3 * b3 * a3;
-
-        // 4. 消除浮点数极微小的精度截断误差
-        float sum = coeffs[0] + coeffs[1] + coeffs[2] + coeffs[3];
-        if (std::abs(sum - 1.0f) > 1e-6f) {
-            coeffs[0] /= sum;
-            coeffs[1] /= sum;
-            coeffs[2] /= sum;
-            coeffs[3] /= sum;
-        }
-
-        return coeffs;
-    }
+    // 点到直线的距离公式
+    double num = std::abs(dy * M.x - dx * M.y + B.x * A.y - B.y * A.x);
+    return num / std::sqrt(lenSq);
+}
 
 
-    static std::array<double, 4> calculate4PointCoefficients(double t, const std::array<double, 7> &u) {
-        // 第一层插值权重（4变3）
-        double a1 = (t - u[0]) / (u[3] - u[0]); // (t - u_{k-2}) / (u_{k+1} - u_{k-2})
-        double a2 = (t - u[1]) / (u[4] - u[1]); // (t - u_{k-1}) / (u_{k+2} - u_{k-1})
-        double a3 = (t - u[2]) / (u[5] - u[2]); // (t - u_k)     / (u_{k+3} - u_k)
-
-        // 第二层插值权重（3变2）
-        double b1 = (t - u[1]) / (u[3] - u[1]); // (t - u_{k-1}) / (u_{k+1} - u_{k-1})
-        double b2 = (t - u[2]) / (u[4] - u[2]); // (t - u_k)     / (u_{k+2} - u_k)
-
-        // 第三层插值权重（2变1）
-        double c1 = (t - u[2]) / (u[3] - u[2]); // (t - u_k)     / (u_{k+1} - u_k)
-
-        // 逆向级联组合（把三层线性插值像金字塔一样剥开合并）
-        // 最终曲线点 Pt = c1 * Layer2[1] + (1 - c1) * Layer2[0]
-        // 依次展开后，直接得到 4 个原始控制点的贡献系数：
-        std::array<double, 4> coeffs;
-
-        coeffs[0] = (1.0 - c1) * (1.0 - b1) * (1.0 - a1);
-        coeffs[1] = (1.0 - c1) * (1.0 - b1) * a1 + (1.0 - c1) * b1 * (1.0 - a2) + c1 * (1.0 - b2) * (1.0 - a2);
-        coeffs[2] = (1.0 - c1) * b1 * a2 + c1 * (1.0 - b2) * a2 + c1 * b2 * (1.0 - a3);
-        coeffs[3] = c1 * b2 * a3;
-
-        return coeffs;
-    }
-
-    /**
- * 【已修正】De Boor 算法：计算特定参数 t 对应的单个曲线点坐标
+/**
+ * 2. 自动生成普通准均匀（Clamped）B样条的节点向量
+ * 中间节点均匀等距且不重复
  */
-    static T deBoor(double t, const std::vector<double> &knots, const std::vector<T> &controlPoints, int degree = 3) {
-        int p          = degree;
-        int n          = static_cast<int>(controlPoints.size()) - 1;
-        int knot_index = 0;
+inline std::vector<double> generateClampedKnots(size_t numControlPoints, int degree = 3) {
+    int p           = degree;
+    int n           = static_cast<int>(numControlPoints) - 1;
+    int numInternal = n - p;
 
-        // 1. 寻找 t 所在的激活节点区间 [knots[k], knots[k+1])
-        if (t >= knots[n + 1]) {
-            knot_index = n; // 处理边界 t = 1.0 的情况
-        } else {
-            auto it    = std::upper_bound(knots.begin(), knots.end(), t);
-            knot_index = static_cast<int>(std::distance(knots.begin(), it)) - 1;
-        }
-        // k 指的是 当前在那个 knots 的 区间中
-
-        // 2. 提取当前区间相关的 p + 1 个控制点
-        std::vector<T> relation_cp;
-        relation_cp.reserve(p + 1);
-        for (int j = knot_index - p; j <= knot_index; ++j) {
-            relation_cp.push_back(controlPoints[j]);
-        }
-        std::array<double, 7> u_7pts = {
-            knots[knot_index - 2],
-            knots[knot_index - 1],
-            knots[knot_index],
-            knots[knot_index + 1],
-            knots[knot_index + 2],
-            knots[knot_index + 3],
-            knots[knot_index + 4]
-        };
-
-        auto coeffs = calculate4PointCoefficientsDirect(t, u_7pts);
-
-        T final_point = relation_cp[0] * coeffs[0] +
-                        relation_cp[1] * coeffs[1] +
-                        relation_cp[2] * coeffs[2] +
-                        relation_cp[3] * coeffs[3];
-
-        return final_point;
-
-        // 3. 迭代线性插值
-        for (int r = 1; r <= p; ++r) {
-            for (int j = p; j >= r; --j) {
-                // 【核心修正点】：映射到全局控制点的实际索引 i
-                int i = j + knot_index - p;
-
-                // 计算当前层级的节点分母
-                double denom = knots[i + p + 1 - r] - knots[i];
-                double alpha = 0.0;
-                if (denom > 1e-9) {
-                    alpha = (t - knots[i]) / denom;
-                }
-
-                // 执行插值
-                relation_cp[j].x() = (1.0 - alpha) * relation_cp[j - 1].x() + alpha * relation_cp[j].x();
-                relation_cp[j].y() = (1.0 - alpha) * relation_cp[j - 1].y() + alpha * relation_cp[j].y();
-            }
-        }
-
-        return relation_cp[p];
-    }
-
-
-    // static T deBoor(double t, const std::vector<double> &knots, const std::vector<T> &controlPoints,
-    //                 int degree = 3) {
-    //     int p = degree;
-    //     int k = 0;
-    //     int n = static_cast<int>(controlPoints.size()) - 1;
-    //
-    //     // 处理边界 t = 1.0 的特殊情况
-    //     if (std::abs(t - knots.back()) < 1e-9) {
-    //         k = n;
-    //     } else {
-    //         // 寻找 t 所在的节点区间 [knots[k], knots[k+1])
-    //         auto it = std::upper_bound(knots.begin(), knots.end(), t);
-    //         k       = static_cast<int>(std::distance(knots.begin(), it)) - 1;
-    //     }
-    //
-    //     // 提取当前区间相关的 p + 1 个控制点
-    //     std::vector<T> d;
-    //     d.reserve(p + 1);
-    //     for (int j = k - p; j <= k; ++j) {
-    //         d.push_back(controlPoints[j]);
-    //     }
-    //
-    //     // 迭代线性插值
-    //     for (int r = 1; r <= p; ++r) {
-    //         for (int j = p; j >= r; --j) {
-    //             double denom = knots[j + k - p + r] - knots[j + k - p];
-    //             double alpha = 0.0;
-    //             if (denom > 1e-9) {
-    //                 alpha = (t - knots[j + k - p]) / denom;
-    //             }
-    //
-    //             // 对 X 和 Y 坐标分别进行线性插值
-    //             d[j].x() = (1.0 - alpha) * d[j - 1].x() + alpha * d[j].x();
-    //             d[j].y() = (1.0 - alpha) * d[j - 1].y() + alpha * d[j].y();
-    //         }
-    //     }
-    //
-    //     return d[p];
+    // if (numInternal < 0) {
+    //     throw std::invalid_error("控制点数量必须大于等于曲线阶数加1（对于三次曲线，至少需要4个点）");
     // }
 
+    std::vector<double> knots;
+    knots.reserve(numControlPoints + p + 1);
 
-    /**
-     * 自适应细分核心递归函数
-     */
-    static void sampleAdaptive(double t_a, const T &A, double t_b, const T &B,
-                               double tess_tol, int max_depth, int current_depth,
-                               const std::vector<double> &knots,
-                               const std::vector<T> &controlPoints,
-                               int degree,
-                               std::vector<T> &out_path) {
-        // 1. 计算中点参数及对应的曲线坐标
-        double t_m = 0.5 * (t_a + t_b);
-        T M        = deBoor(t_m, knots, controlPoints, degree);
+    // 头部重复 p + 1 次
+    for (int i = 0; i <= p; ++i) {
+        knots.push_back(0.0);
+    }
 
-        // 3. 判别是否满足精度要求，或者达到了最大递归深度（防止死循环）
-        if (!need_tessellation(A, M, B, tess_tol) || current_depth >= max_depth) {
-            // 满足精度，将终点 B 压入路径（起点 A 会由上一段或者最开始压入）
-            out_path.push_back(B);
-        } else {
-            // 不满足精度，分别对左半段和右半段进行递归细分
-            sampleAdaptive(t_a, A, t_m, M, tess_tol, max_depth, current_depth + 1, knots, controlPoints, degree,
-                           out_path);
-            sampleAdaptive(t_m, M, t_b, B, tess_tol, max_depth, current_depth + 1, knots, controlPoints, degree,
-                           out_path);
+    // 中间节点均匀分布（不重复）
+    if (numInternal > 0) {
+        // 总段数为 numInternal + 1
+        double step = 1.0 / (numInternal + 1);
+        for (int i = 1; i <= numInternal; ++i) {
+            knots.push_back(i * step);
         }
     }
 
-    /**
- * 修改后的自适应细分函数
+    // 尾部重复 p + 1 次
+    for (int i = 0; i <= p; ++i) {
+        knots.push_back(1.0);
+    }
+
+    return knots;
+}
+
+
+/**
+ * 自适应细分核心递归函数
  */
-    static void sampleAdaptiveWithFlatness(double t_a, const T &p1, double t_b, const T &p4,
-                                           float tess_tol, int max_depth, int current_depth,
-                                           const std::vector<double> &knots, const std::vector<T> &controlPoints,
-                                           int degree,
-                                           std::vector<T> &out_path) {
-        // 1. 如果到了最大深度，强制终止，避免堆栈溢出
-        if (current_depth >= max_depth) {
-            out_path.push_back(p4);
-            return;
-        }
+template<typename T>
+void sampleAdaptive(double t_a, const T &A, double t_b, const T &B,
+                    double tess_tol, int max_depth, int current_depth,
+                    const std::vector<double> &knots,
+                    const std::vector<T> &controlPoints,
+                    int degree,
+                    std::vector<T> &out_path) {
+    // 1. 计算中点参数及对应的曲线坐标
+    double t_m = 0.5 * (t_a + t_b);
+    T M        = deBoor(t_m, knots, controlPoints, degree);
 
-        // 2. 在当前区间内，通过三等分采样，获得中间的两个探测点 p2 和 p3
-        double delta    = t_b - t_a;
-        double t_m1     = t_a + delta / 3.0;
-        double t_m2     = t_a + 2.0 * delta / 3.0;
-        double t_center = t_a + 0.5 * delta;
+    // 3. 判别是否满足精度要求，或者达到了最大递归深度（防止死循环）
+    if (!need_tessellation(A, M, B, tess_tol) || current_depth >= max_depth) {
+        // 满足精度，将终点 B 压入路径（起点 A 会由上一段或者最开始压入）
+        out_path.push_back(B);
+    } else {
+        // 不满足精度，分别对左半段和右半段进行递归细分
+        sampleAdaptive(t_a, A, t_m, M, tess_tol, max_depth, current_depth + 1, knots, controlPoints, degree,
+                       out_path);
+        sampleAdaptive(t_m, M, t_b, B, tess_tol, max_depth, current_depth + 1, knots, controlPoints, degree,
+                       out_path);
+    }
+}
 
-        T p2 = deBoor(t_m1, knots, controlPoints, degree);
-        T p3 = deBoor(t_m2, knots, controlPoints, degree);
-
-        // 3. 调用你的高效率检验算法
-        if (!need_tessellation(p1, p2, p3, p4, tess_tol)) {
-            // 如果足够平直，直接收尾（压入端点 p4）
-            out_path.push_back(p4);
-        } else {
-            // 如果不够平直，以中点为界，递归二分
-            T p_center = deBoor(t_center, knots, controlPoints, degree);
-
-            // 左半段递归：从 t_a 到 t_center
-            sampleAdaptiveWithFlatness(t_a, p1, t_center, p_center, tess_tol, max_depth, current_depth + 1, knots,
-                                       controlPoints, degree, out_path);
-            // 右半段递归：从 t_center 到 t_b
-            sampleAdaptiveWithFlatness(t_center, p_center, t_b, p4, tess_tol, max_depth, current_depth + 1, knots,
-                                       controlPoints, degree, out_path);
-        }
+/**
+* 修改后的自适应细分函数
+*/
+template<typename T>
+void sampleAdaptiveWithFlatness(double t_a, const T &p1, double t_b, const T &p4,
+                                float tess_tol, int max_depth, int current_depth,
+                                const std::vector<double> &knots, const std::vector<T> &controlPoints,
+                                int degree,
+                                std::vector<T> &out_path) {
+    // 1. 如果到了最大深度，强制终止，避免堆栈溢出
+    if (current_depth >= max_depth) {
+        out_path.push_back(p4);
+        return;
     }
 
+    // 2. 在当前区间内，通过三等分采样，获得中间的两个探测点 p2 和 p3
+    double delta    = t_b - t_a;
+    double t_m1     = t_a + delta / 3.0;
+    double t_m2     = t_a + 2.0 * delta / 3.0;
+    double t_center = t_a + 0.5 * delta;
 
-    /**
-     * 4. 主调用函数：计算整条 B 样条路径上的所有离散点
-     */
-    std::vector<T> calculateBSplinePath(const std::vector<T> &controlPoints,
-                                        int numSamples = 100,
-                                        int degree     = 3) {
-        // 自动生成节点向量
-        std::vector<double> knots = generateClampedKnots(controlPoints.size(), degree);
-        std::vector<T> path;
-        path.reserve(numSamples);
+    T p2 = deBoor(t_m1, knots, controlPoints, degree);
+    T p3 = deBoor(t_m2, knots, controlPoints, degree);
 
-        // 在 [0.0, 1.0] 范围内进行步长采样
-        double step = 1.0 / (numSamples - 1);
-        for (int i = 0; i < numSamples; ++i) {
-            double t = i * step;
-            // 防止浮点数微小误差超出 1.0
-            if (t > 1.0) t = 1.0;
+    // 3. 调用你的高效率检验算法
+    if (!need_tessellation(p1, p2, p3, p4, tess_tol)) {
+        // 如果足够平直，直接收尾（压入端点 p4）
+        out_path.push_back(p4);
+    } else {
+        // 如果不够平直，以中点为界，递归二分
+        T p_center = deBoor(t_center, knots, controlPoints, degree);
 
-            T pt = deBoor(t, knots, controlPoints, degree);
-            path.push_back(pt);
+        // 左半段递归：从 t_a 到 t_center
+        sampleAdaptiveWithFlatness(t_a, p1, t_center, p_center, tess_tol, max_depth, current_depth + 1, knots,
+                                   controlPoints, degree, out_path);
+        // 右半段递归：从 t_center 到 t_b
+        sampleAdaptiveWithFlatness(t_center, p_center, t_b, p4, tess_tol, max_depth, current_depth + 1, knots,
+                                   controlPoints, degree, out_path);
+    }
+}
+
+
+/**
+ * 4. 主调用函数：计算整条 B 样条路径上的所有离散点
+ */
+template<typename T>
+std::vector<T> calculateBSplinePath(const std::vector<T> &controlPoints,
+                                    int numSamples = 100,
+                                    int degree     = 3) {
+    // 自动生成节点向量
+    std::vector<double> knots = generateClampedKnots(controlPoints.size(), degree);
+    std::vector<T> path;
+    path.reserve(numSamples);
+
+    // 在 [0.0, 1.0] 范围内进行步长采样
+    double step = 1.0 / (numSamples - 1);
+    for (int i = 0; i < numSamples; ++i) {
+        double t = i * step;
+        // 防止浮点数微小误差超出 1.0
+        if (t > 1.0) t = 1.0;
+
+        T pt = deBoor(t, knots, controlPoints, degree);
+        path.push_back(pt);
+    }
+
+    return path;
+}
+
+/**
+ * 根据 tess_tol 计算 B 样条路径的主入口函数
+ */
+template<typename T>
+std::vector<T> calculateBSplinePathWithTol(const std::vector<T> &controlPoints,
+                                           const std::vector<double> &knots,
+                                           double tess_tol,
+                                           int degree = 3) {
+    std::vector<T> path;
+
+    if (controlPoints.empty()) return path;
+
+    // 计算起点 (t=0.0) 和 终点 (t=1.0)
+    T startPt = deBoor(0.0, knots, controlPoints, degree);
+    T endPt   = deBoor(1.0, knots, controlPoints, degree);
+
+    // 压入起始点
+    path.push_back(startPt);
+
+    // 限制最大递归深度为 10（单段最多细分 1024 次），防止极极端情况造成的堆栈溢出
+    int max_depth = 10;
+
+    // 开始自适应递归采样
+    sampleAdaptiveWithFlatness(0.0, startPt, 1.0, endPt,
+                               tess_tol, max_depth, 0, knots, controlPoints, degree, path);
+
+    return path;
+}
+
+
+template<typename T>
+class B_spline {
+    std::vector<T> points_;
+
+public:
+    void add_point(T x) {
+        points_.push_back(x);
+    }
+
+    void push_back(T x) {
+        points_.push_back(x);
+    }
+
+    bool insert_point(T x, size_t index) {
+        if (points_.size() <= index) {
+            return false;
         }
-
-        return path;
+        points_.insert(points_.begin() + index, x);
+        return true;
     }
 
-    /**
-     * 根据 tess_tol 计算 B 样条路径的主入口函数
-     */
-    static std::vector<T> calculateBSplinePathWithTol(const std::vector<T> &controlPoints, double tess_tol,
-                                                      int degree = 3) {
-        std::vector<double> knots = generateClampedKnots(controlPoints.size(), degree);
-        std::vector<T> path;
-
-        if (controlPoints.empty()) return path;
-
-        // 计算起点 (t=0.0) 和 终点 (t=1.0)
-        T startPt = deBoor(0.0, knots, controlPoints, degree);
-        T endPt   = deBoor(1.0, knots, controlPoints, degree);
-
-        // 压入起始点
-        path.push_back(startPt);
-
-        // 限制最大递归深度为 10（单段最多细分 1024 次），防止极极端情况造成的堆栈溢出
-        int max_depth = 10;
-
-        // 开始自适应递归采样
-        sampleAdaptiveWithFlatness(0.0, startPt, 1.0, endPt,
-                                   tess_tol, max_depth, 0, knots, controlPoints, degree, path);
-
-        return path;
+    bool remove_point(T x) {
+        std::erase(points_, x);
+        return true;
     }
+
+    bool remove_point(size_t index) {
+        points_.erase(points_.begin() + index);
+        return true;
+    }
+
+    auto get_path(double tess_tol = 1.25) {
+        std::vector<double> knots = generateClampedKnots(points_.size(), 3);
+        return calculateBSplinePathWithTol<T>(points_, knots, tess_tol, 3);
+    }
+
+public:
+    // 计算点 M 到线段 AB 的垂直距离（弦高）
 };
 
 #endif //HELLO_MAC_SPLINE_CUREVE_H

@@ -233,14 +233,13 @@ entt::entity object_line(const std::string &name) {
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
 
-    B_spline<Eigen::Vector2f> BSpline;
+    auto &BSpline = Logic_entt().emplace<B_spline<Eigen::Vector2f> >(entity);
     BSpline.add_point({200, 200});
     BSpline.add_point({200, 600});
     BSpline.add_point({600, 200});
     BSpline.add_point({600, 600});
     BSpline.add_point({700, 700});
-    auto path = BSpline.calculateBSplinePathWithTol(points, 1.25);
-
+    const auto path = BSpline.get_path(1.25);
 
     add_path(entity, path, {});
     UI_root_add_child(entity);
