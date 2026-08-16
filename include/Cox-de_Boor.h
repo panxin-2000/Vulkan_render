@@ -190,7 +190,7 @@ T deBoor(const double t, const std::vector<double> &knots, const std::vector<T> 
     for (int j = knot_index - degree; j <= knot_index; ++j) {
         relation_cp.push_back(controlPoints[j]);
     }
-    std::vector<double> u_7pts = {
+    std::array<double, 7> u_7pts = {
         knots[knot_index - 2],
         knots[knot_index - 1],
         knots[knot_index],
