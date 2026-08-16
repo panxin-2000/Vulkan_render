@@ -215,6 +215,7 @@ entt::entity object_3d_model(const std::string &name,
     add_box_data(entity, bounding_box);
     auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
     auto matrix_2 = matrix.get_transform_matrix();
+    // 这里的一个问题是,不统一
     set_render_parameter(entity, "model_4x4", matrix_2);
     Logic_entt().emplace<Transform_matrix_dirty>(entity);
     world_root_add_child(entity);

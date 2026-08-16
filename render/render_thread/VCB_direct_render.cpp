@@ -55,7 +55,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
             .extent = temp_extent,
         },
         .layerCount           = 1,
-        .colorAttachmentCount = 1,
+        .colorAttachmentCount = 0,
         .pColorAttachments    = nullptr,
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
         .pStencilAttachment   = &StencilAttachmentInfo

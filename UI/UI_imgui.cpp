@@ -190,10 +190,8 @@ entt::entity create_imgui_entity(const std::string &name, ImDrawData *draw_data)
     Logic_entt().emplace<Name_component>(entity, "imgui ui");
 
     logic_create_proxy(entity);
-    add_shader(entity,
-               "imgui",
-               "imgui",
-               "", "");
+
+    add_shader(entity, "imgui", "imgui", "", "");
 
 
     // 还是有点小问题的，已修改

@@ -5,15 +5,15 @@
 
 #include "engine.h"
 
-VKR_image_ptr & Render_image_manager::get_one_position_image() {
+VKR_image_ptr &Render_image_manager::get_one_position_image() {
     return G_buffer_Position_images_.back();
 }
 
-VKR_image_ptr & Render_image_manager::get_one_normal_image() {
+VKR_image_ptr &Render_image_manager::get_one_normal_image() {
     return g_buffer_Normal_images_.back();
 }
 
-VKR_image_ptr & Render_image_manager::get_one_color_image() {
+VKR_image_ptr &Render_image_manager::get_one_color_image() {
     return G_buffer_BaseColor_images_.back();
 }
 
@@ -21,9 +21,12 @@ std::optional<Texture_parameter> Render_image_manager::get_color_texture() {
     return temp;
 }
 
+std::optional<Texture_parameter> Render_image_manager::get_depth_texture() {
+    return temp_depth;
+}
+
 void Render_image_manager::create() {
     {
-
         depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
         depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
         depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
@@ -47,7 +50,8 @@ void Render_image_manager::create() {
         G_buffer_BaseColor_images_.push_back(VK_backend::instance().
                                              create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
                                                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        temp = create_2d_texture(G_buffer_BaseColor_images_.back());
+        temp       = create_2d_texture(G_buffer_BaseColor_images_.back());
+        temp_depth = create_2d_texture(depth_images_.back());
     }
 }
 

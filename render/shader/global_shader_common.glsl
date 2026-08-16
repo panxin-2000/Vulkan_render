@@ -35,8 +35,8 @@ layout (set = 1, binding = 1) readonly buffer global_PBR_parameters {
 
 
 layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
-layout (set = 1, binding = 2) uniform sampler2D global_SSAO;
-layout (set = 1, binding = 2) uniform sampler2D global_depth;
+layout (set = 1, binding = 3) uniform sampler2D global_SSAO;
+layout (set = 1, binding = 4) uniform sampler2D global_depth;
 
 
 

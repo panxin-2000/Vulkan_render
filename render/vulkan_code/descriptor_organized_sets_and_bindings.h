@@ -528,12 +528,12 @@ inline std::string get_shader_key(const VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &computer_path = paths.compute_path_;
+    const std::string &compute_path = paths.compute_path_;
 
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
     std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
-    std::string temp_computer_path = std::filesystem::path(computer_path).filename().string();
+    std::string temp_computer_path = std::filesystem::path(compute_path).filename().string();
 
     std::string target = ".spv"; {
         size_t pos = temp_vertex_path.find(target);
@@ -556,7 +556,7 @@ inline std::string get_shader_key(const VKR_shader_paths &paths) {
             temp_computer_path.erase(pos, target.length());
         }
     }
-    return temp_vertex_path + temp_fragment_path + geometry_path + computer_path;
+    return temp_vertex_path + temp_fragment_path + geometry_path + compute_path;
 }
 
 
@@ -566,7 +566,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &computer_path = paths.compute_path_;
+    const std::string &compute_path = paths.compute_path_;
 
     sets_map sorted_sets_bindings;
     sets_map &bindless_set        = shader_data->bindless_sets_bindings;
@@ -611,9 +611,9 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       push_constant_map);
         print_layout_binding_line(geometry_path);
     }
-    if (!computer_path.empty()) {
+    if (!compute_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
-        read_spv_file(computer_path, "computer",
+        read_spv_file(compute_path, "computer",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
@@ -621,7 +621,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
                       vertexBindings,
                       ColorAttachment,
                       push_constant_map);
-        print_layout_binding_line(computer_path);
+        print_layout_binding_line(compute_path);
     }
 #ifndef NDEBUG
     print_sorted_resources(sorted_sets_bindings);

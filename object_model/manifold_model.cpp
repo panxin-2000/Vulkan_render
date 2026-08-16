@@ -96,6 +96,5 @@ void add_manifold_entity() { {
         auto entity    = object_3d_model("manifold ", mesh_last, {0, 0, -50});
         uint32_t index = 7;
         set_render_parameter(entity, "samplerColor", index);
-        // logic_update_add_tag<opacity_tag>(entity);
     }
 }

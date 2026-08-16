@@ -110,23 +110,29 @@ void render_different_pass(VCB &vcb, Engine &engine) {
 
     // 这里是绘制 不透明
     // 不能按照
-    // {
-    //     begin_rendering_depth_attachment(backend,
-    //                                      engine.get_render_image_manager().get_one_depth_image(),
-    //                                      VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
-    //     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
-    //     for (const auto entity: view) {
-    //         auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
-    //         auto name              = Render_entt().get<Name_component>(entity);
-    //         bind_pipeline_update_parameter(backend, entity, time_line);
-    //         DrawIndexedIndirect(backend, entity, command_calculate, time_line);
-    //     }
-    //     end_rendering(backend);
-    //     current_write_next_read_depth(backend, {
-    //                                       engine.get_render_image_manager().
-    //                                       get_one_depth_image()
-    //                                   }, time_line);
-    // }
+    {
+        // vcb.begin_rendering_depth_attachment(engine.get_image_manager().get_one_depth_image(),
+        //                                      VK_ATTACHMENT_LOAD_OP_CLEAR);
+        // auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
+        // for (const auto entity: view) {
+        //     auto command_calculate      = Render_entt().get<GPU_frustum_cull>(entity);
+        //     auto name                   = Render_entt().get<Name_component>(entity);
+        //     const auto &shader_data_ref =
+        //             engine.get_shader_manager().find(VKR_shader_paths{
+        //                                                  "opacity_depth_write",
+        //                                                  "opacity_depth_write",
+        //                                                  "",
+        //                                                  ""
+        //                                              });
+        //     vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
+        //     // 现在绑定的管线是有问题的,
+        //     vcb.DrawIndexedIndirect(entity, command_calculate);
+        // }
+        // vcb.end_rendering();
+        // vcb.current_write_next_read_depth({
+        //                                       engine.get_image_manager().get_one_depth_image()
+        //                                   });
+    }
 
     // 绘制 3d 物体的阶段 pass
     {
@@ -241,10 +247,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         // 这里之后还需要做什么呢?
         {
             auto offscreen = engine.get_image_manager().get_color_texture();
-            auto depth     = engine.get_image_manager().get_one_depth_image();
         }
+        auto depth     = engine.get_image_manager().get_depth_texture();
 
-        engine.update_global_parameter(offscreen, offscreen, offscreen); // 这里的好消息是 什么？ 这里可以申请；
+        engine.update_global_parameter(offscreen, offscreen, depth); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
     } {

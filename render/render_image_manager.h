@@ -15,6 +15,7 @@ class Render_image_manager {
     std::vector<VKR_image_ptr> depth_images_;
 
     Texture_parameter temp;
+    Texture_parameter temp_depth;
 
 public:
     VKR_image_ptr &get_one_position_image();
@@ -24,6 +25,8 @@ public:
     VKR_image_ptr &get_one_color_image();
 
     std::optional<Texture_parameter> get_color_texture();
+
+    std::optional<Texture_parameter> get_depth_texture();
 
     void create();
 

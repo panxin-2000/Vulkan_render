@@ -165,18 +165,6 @@ public:
 };
 
 
-// 2. 压制出来的核心宏
-// 传入顶点着色器和片元着色器的名字即可
-#define MAKE_SHADER_PATH(vert_name, frag_name,geometry_path,computer_path,topology) \
-VKR_shader_paths{ \
-    SHADER_BASE_DIR vert_name ".vert.spv", \
-    SHADER_BASE_DIR frag_name ".frag.spv", \
-    SHADER_BASE_DIR geometry_path ".geo.spv", \
-    SHADER_BASE_DIR computer_path ".comp.spv", \
-    topology \
-}
-
-
 shader_data VKR_shader_init(const VKR_shader_paths &shader_paths);
 
 #endif //HELLO_MAC_SHADER_RESOLVE_H
