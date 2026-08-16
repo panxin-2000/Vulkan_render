@@ -16,6 +16,7 @@
 #include "descriptor_pool.h"
 #include "device_input_event_deal.h"
 #include "earcut.h"
+#include "framerate_measure.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
@@ -57,8 +58,7 @@ int main(int argc, char *argv[]) {
     auto world_root = get_world_root();
     auto UI_root    = get_UI_scene_root();
     // 需要确定启动的顺序
-    render_thread_start(backend);
-
+    render_thread_start(backend, engine);
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了

@@ -5,8 +5,9 @@
 #ifndef HELLO_MAC_BACKEND_H
 #define HELLO_MAC_BACKEND_H
 #include "vulkan_backend.h"
+#include "engine.h"
 
-void render_thread_start(VK_backend &handle);
+void render_thread_start(VK_backend &backend,Engine & engine );
 
 void render_thread_stop();
 

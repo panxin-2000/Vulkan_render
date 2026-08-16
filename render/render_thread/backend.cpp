@@ -17,9 +17,9 @@ void render_thread_stop_and_wait() {
 }
 
 
-void render_thread_start(VK_backend &handle) {
-    std::thread t([&handle]() {
-        vk_render_GPU::instance().render_thread(handle);
+void render_thread_start(VK_backend &backend, Engine &engine) {
+    std::thread t([&]() {
+        vk_render_GPU::instance().render_thread(backend, engine);
     });
     t.detach();
 }
