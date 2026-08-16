@@ -2,18 +2,12 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_G_BUFFER_RENDER_H
-#define HELLO_MAC_G_BUFFER_RENDER_H
 
 #include "../engine.h"
-#include "../render_common/render_state.h"
-
-
-#include "VCB_debug_tag.h"
 #include "VCB_vulkan_command_buffer.h"
 
 
-inline G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
+G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
     const VKR_image_ptr &color,
     const VKR_image_ptr &depth,
     const VKR_image_ptr &position,
@@ -170,7 +164,7 @@ inline G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
 }
 
 
-inline void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images) {
+void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images) {
     std::vector<VkImageMemoryBarrier2> outputBarriers;
     outputBarriers.reserve(images.size());
 
@@ -205,7 +199,7 @@ inline void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> 
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
-inline void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images) {
+void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images) {
     std::vector<VkImageMemoryBarrier2> outputBarriers;
     outputBarriers.reserve(images.size());
 
@@ -241,4 +235,3 @@ inline void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> 
 }
 
 
-#endif //HELLO_MAC_G_BUFFER_RENDER_H

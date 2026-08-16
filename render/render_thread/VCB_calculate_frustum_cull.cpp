@@ -2,15 +2,13 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_CALCULATE_FRUSTUM_CULL_H
-#define HELLO_MAC_CALCULATE_FRUSTUM_CULL_H
 #include "../render_component/GPU_frustum_cull.h"
 #include "engine.h"
 #include "global_singleton.h"
+#include "VCB_vulkan_command_buffer.h"
 
-inline void VCB::calculate_frustum_cull(
-    const entt::entity entity,
-    const FrustumPlanes &frustum_planes) {
+
+void VCB::calculate_frustum_cull(const entt::entity entity, const FrustumPlanes &frustum_planes) {
     {
         auto command_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
@@ -63,5 +61,3 @@ inline void VCB::calculate_frustum_cull(
         vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
     }
 }
-
-#endif //HELLO_MAC_CALCULATE_FRUSTUM_CULL_H

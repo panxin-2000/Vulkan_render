@@ -2,22 +2,17 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_VULKAN_BUILD_BIND_PIPELINE_H
-#define HELLO_MAC_VULKAN_BUILD_BIND_PIPELINE_H
 
-#include "GPU_frustum_cull.h"
 #include "../vulkan_code/descriptor.h"
-#include "../engine.h"
-#include "render_proxy.h"
-#include "../vulkan_code/vertex_and_buffer_index.h"
+#include "engine.h"
 #include "name_component.h"
-#include "../render_common/render_state.h"
-#include "../render_common/render_mesh.h"
-#include "vulkan_update_descriptor.h"
+#include "VCB_vulkan_command_buffer.h"
 
-inline void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
-                                            VkPipelineLayout pipeline_layout,
-                                            VkPipelineBindPoint bind_point) {
+#include "shader_component.h"
+
+void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
+                                     VkPipelineLayout pipeline_layout,
+                                     VkPipelineBindPoint bind_point) {
     const auto vk_descriptor_sets = update_descriptor_sets(entity);
 
     if (!vk_descriptor_sets.empty()) {
@@ -50,7 +45,7 @@ inline void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
 }
 
 
-inline void VCB::bind_pipeline_update_parameter(VK_backend &engine, entt::entity entity) {
+void VCB::bind_pipeline_update_parameter(entt::entity entity) {
     auto debug_name             = Render_entt().get<Name_component>(entity).name_;
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_data_ref->pipeline_t);
@@ -70,6 +65,3 @@ inline void VCB::bind_pipeline_update_parameter(VK_backend &engine, entt::entity
                                parameter->push_constant_pool + value.offset);
         }
 }
-
-
-#endif //HELLO_MAC_VULKAN_BUILD_BIND_PIPELINE_H

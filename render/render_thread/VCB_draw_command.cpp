@@ -2,8 +2,6 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_VULKAN_BUILD_DRAW_COMMAND_H
-#define HELLO_MAC_VULKAN_BUILD_DRAW_COMMAND_H
 
 #include "GPU_frustum_cull.h"
 #include "../engine.h"
@@ -11,11 +9,12 @@
 #include "../render_common/render_state.h"
 #include "../render_common/render_mesh.h"
 
-#include "VCB_bind_pipeline.h"
+#include "VCB_vulkan_command_buffer.h"
+#include "sync_proxy_to_render_thread.h"
 
-inline void VCB::draw(const Mesh_data &mesh_data,
-                      const std::vector<VKR_Primitive> &primitives,
-                      const std::vector<VKR_Render_state> *render_states) {
+void VCB::draw(const Mesh_data &mesh_data,
+               const std::vector<VKR_Primitive> &primitives,
+               const std::vector<VKR_Render_state> *render_states) {
     if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
         return;
     // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
@@ -51,8 +50,8 @@ inline void VCB::draw(const Mesh_data &mesh_data,
 }
 
 
-inline void VCB::build_draw_command(VK_backend &backend, entt::entity entity) {
-    bind_pipeline_update_parameter(backend, entity);
+void VCB::build_draw_command(entt::entity entity) {
+    bind_pipeline_update_parameter(entity);
 
     const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
     const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);
@@ -62,7 +61,8 @@ inline void VCB::build_draw_command(VK_backend &backend, entt::entity entity) {
         draw(mesh_data, primitives, render_states);
     } else if (!primitives.empty() && render_states == nullptr) {
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(), VK_backend::instance().get_scissor());
+        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
+                                      VK_backend::instance().get_scissor());
         draw(mesh_data, primitives, render_states);
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断
@@ -74,8 +74,8 @@ inline void VCB::build_draw_command(VK_backend &backend, entt::entity entity) {
 }
 
 
-inline void VCB::DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
-                                     GPU_frustum_cull command_calculate) {
+void VCB::DrawIndexedIndirect(entt::entity entity,
+                              GPU_frustum_cull command_calculate) {
     const auto mesh_data = Render_entt().get<Mesh_data>(entity);
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
                            mesh_data.vertices->get_buffer_handle_ptr(time_line_),
@@ -83,7 +83,8 @@ inline void VCB::DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
     if (mesh_data.indices != nullptr &&
         mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
         VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(), VK_backend::instance().get_scissor());
+        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
+                                      VK_backend::instance().get_scissor());
         vkCmdBindIndexBuffer(command_buffer_,
                              mesh_data.indices->get_buffer_handle(),
                              mesh_data.indices_offset,
@@ -95,6 +96,3 @@ inline void VCB::DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
                                  sizeof(VkDrawIndexedIndirectCommand));
     }
 }
-
-
-#endif //HELLO_MAC_VULKAN_BUILD_DRAW_COMMAND_H

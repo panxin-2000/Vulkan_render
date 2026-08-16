@@ -2,21 +2,16 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_SHADOW_RENDER_H
-#define HELLO_MAC_SHADOW_RENDER_H
 
 #include "../engine.h"
-#include "../render_common/render_state.h"
+#include "VCB_vulkan_command_buffer.h"
 
-
-#include "VCB_debug_tag.h"
-
-inline void VCB::begin_shadow_pass(VK_backend &handle) {
+void VCB::begin_shadow_pass(VKR_image_ptr depth_image) {
     auto temp_extent = VK_backend::instance().get_current_extent();
 
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = Engine::instance().get_render_image_manager().get_one_depth_image()->get_image_view(),
+        .imageView = depth_image->get_image_view(),
         //  todo: 这里需要变更
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -25,7 +20,7 @@ inline void VCB::begin_shadow_pass(VK_backend &handle) {
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = Engine::instance().get_render_image_manager().get_one_depth_image()->get_image_view(),
+        .imageView   = depth_image->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -48,7 +43,7 @@ inline void VCB::begin_shadow_pass(VK_backend &handle) {
 }
 
 
-inline void VCB::shadow_pass_barrier() {
+void VCB::shadow_pass_barrier() {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -79,6 +74,3 @@ inline void VCB::shadow_pass_barrier() {
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
-
-
-#endif //HELLO_MAC_SHADOW_RENDER_H

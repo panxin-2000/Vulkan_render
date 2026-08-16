@@ -2,21 +2,13 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_DIRECT_RENDER_H
-#define HELLO_MAC_DIRECT_RENDER_H
-
 
 #include "../engine.h"
 #include "../render_common/render_state.h"
+#include "VCB_vulkan_command_buffer.h"
 
-
-#include "VCB_debug_tag.h"
-
-
-inline void VCB::begin_rendering_depth_attachment(VK_backend &handle,
-                                                  VKR_image_ptr depth,
-                                                  VkAttachmentLoadOp depth_loadOp) {
-
+void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
+                                           VkAttachmentLoadOp depth_loadOp) {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -72,10 +64,8 @@ inline void VCB::begin_rendering_depth_attachment(VK_backend &handle,
 }
 
 
-inline void VCB::begin_rendering_offscreen_attachment(VK_backend &handle,
-                                                      VKR_image_ptr color, VKR_image_ptr depth,
-                                                      VkAttachmentLoadOp depth_loadOp) {
-
+void VCB::begin_rendering_offscreen_attachment(VKR_image_ptr color, VKR_image_ptr depth,
+                                               VkAttachmentLoadOp depth_loadOp) {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -156,8 +146,8 @@ inline void VCB::begin_rendering_offscreen_attachment(VK_backend &handle,
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
-inline void VCB::begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, VKR_image_ptr depth,
-                                            VkAttachmentLoadOp depth_loadOp) {
+void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
+                                     VkAttachmentLoadOp depth_loadOp) {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -231,8 +221,8 @@ inline void VCB::begin_rendering_attachment(VK_backend &handle, VKR_image_ptr co
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
 
-inline void VCB::add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
-                                               VkDeviceSize offset) {
+void VCB::add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
+                                        VkDeviceSize offset) {
     std::array<VkBufferMemoryBarrier2, 1> write_finish_buffer{
         VkBufferMemoryBarrier2{
             .sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -262,6 +252,3 @@ inline void VCB::add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize siz
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
-
-
-#endif //HELLO_MAC_DIRECT_RENDER_H

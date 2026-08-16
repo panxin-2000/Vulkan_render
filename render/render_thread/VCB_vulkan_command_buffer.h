@@ -61,11 +61,11 @@ public:
     void current_write_next_read_image(
         const std::vector<VKR_image_ptr> &images);
 
-    void begin_shadow_pass(VK_backend &handle);
+    void begin_shadow_pass(VKR_image_ptr depth_image);
 
     void shadow_pass_barrier();
 
-    void build_draw_command(VK_backend &backend, entt::entity entity);
+    void build_draw_command(entt::entity entity);
 
 
     void render_post_deal(std::shared_ptr<vk_shader_data> command_shader, entt::entity entity) {
@@ -82,7 +82,7 @@ public:
     }
 
 
-    void DrawIndexedIndirect(VK_backend &engine, entt::entity entity,
+    void DrawIndexedIndirect(entt::entity entity,
                              GPU_frustum_cull command_calculate);
 
     inline void draw(
@@ -91,23 +91,23 @@ public:
         const std::vector<VKR_Render_state> *render_states);
 
 
-    void begin_rendering_depth_attachment(VK_backend &handle,
-                                          VKR_image_ptr depth,
-                                          VkAttachmentLoadOp depth_loadOp);
+    void begin_rendering_depth_attachment(
+        VKR_image_ptr depth,
+        VkAttachmentLoadOp depth_loadOp);
 
-    void begin_rendering_offscreen_attachment(VK_backend &handle,
-                                              VKR_image_ptr color, VKR_image_ptr depth,
-                                              VkAttachmentLoadOp depth_loadOp);
+    void begin_rendering_offscreen_attachment(
+        VKR_image_ptr color, VKR_image_ptr depth,
+        VkAttachmentLoadOp depth_loadOp);
 
 
-    void begin_rendering_attachment(VK_backend &handle, VKR_image_ptr color, VKR_image_ptr depth,
+    void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
                                     VkAttachmentLoadOp depth_loadOp);
 
 
     void add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
                                        VkDeviceSize offset = 0);
 
-    void build_compute_dispatch(VK_backend &engine, entt::entity entity);
+    void build_compute_dispatch(entt::entity entity);
 
 
     void calculate_frustum_cull(
@@ -119,7 +119,7 @@ public:
                                     VkPipelineLayout pipeline_layout,
                                     VkPipelineBindPoint bind_point);
 
-    void bind_pipeline_update_parameter(VK_backend &engine, entt::entity entity);
+    void bind_pipeline_update_parameter(entt::entity entity);
 
     void gpu_log_label_info(const std::string &label) {
         VkDebugUtilsLabelEXT markerInfo{};

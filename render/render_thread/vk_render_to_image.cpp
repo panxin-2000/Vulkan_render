@@ -7,17 +7,11 @@
 #include "VCB_vulkan_command_buffer.h"
 #include "vk_render_to_image.h"
 #include "GPU_frustum_cull.h"
-#include "VCB_direct_render.h"
 #include "framerate_measure.h"
-#include "VCB_G_buffer_render.h"
 #include "name_component.h"
 #include "vulkan_render_manage.h"
-#include "VCB_shadow_render.h"
 #include "time_measure.h"
 #include "transform_component.h"
-#include "VCB_calculate_frustum_cull.h"
-#include "VCB_compute_command.h"
-#include "VCB_draw_command.h"
 #include "vulkan_execute_command.h"
 
 
@@ -25,11 +19,11 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent(); {
         std::unique_lock<std::mutex> lock(mtx);
 
-        auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
+        auto offscreen = engine.get_render_image_manager().get_color_texture();
         // 这里之后还需要做什么呢?
         {
-            auto offscreen = Engine::instance().get_render_image_manager().get_color_texture();
-            auto depth     = Engine::instance().get_render_image_manager().get_one_depth_image();
+            auto offscreen = engine.get_render_image_manager().get_color_texture();
+            auto depth     = engine.get_render_image_manager().get_one_depth_image();
         }
 
         engine.update_global_parameter(offscreen, offscreen, offscreen); // 这里的好消息是 什么？ 这里可以申请；
@@ -44,21 +38,21 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     }
     // bindless_uniform_sampler2D_update_function();
     // global_uniform_buffer_update_function();
-    Engine::instance().update_bindless_descriptor_sets_function();
+    engine.update_bindless_descriptor_sets_function();
     object_parameter_update();
     descriptor_set_update_function();
     push_constant_update_function();
     //
-    auto frustum_planes = Engine::instance().get_frustum_planes();
-    auto camera_pos     = Engine::instance().get_world_camera_pos();
+    auto frustum_planes = engine.get_frustum_planes();
+    auto camera_pos     = engine.get_world_camera_pos();
 
     // 上面的函数全部都是 绘制前需要的更新的部分
     const uint64_t time_line = Engine::get_current_submit_timeline();
 
-    Engine::instance().get_command_submit_manager().execute_callback_functions(time_line);
+    engine.get_command_submit_manager().execute_callback_functions(time_line);
 
 
-    Engine::instance().get_image_to_render(); // 这里已经有完整的
+    engine.get_image_to_render(); // 这里已经有完整的
 
     {
         const auto view = Render_entt().view<Render_destroy_tag_last>();
@@ -108,7 +102,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         //
         auto view = Render_entt().view<compute_pass_tag>();
         for (const auto entity: view) {
-            vcb.build_compute_dispatch(backend, entity);
+            vcb.build_compute_dispatch(entity);
         }
         // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
     }
@@ -123,7 +117,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         // g_buffer_image_indices 这是需要看看怎么传递进入其中
         const auto view = Render_entt().view<shadow_pass_tag>();
         if (!view.empty()) {
-            vcb.begin_shadow_pass(backend);
+            vcb.begin_shadow_pass(engine.get_render_image_manager().get_one_depth_image());
 
             // 中间需要添加 被光 照 到的物体，能产生阴影的物体
             // 这里的时候发生了一点改变，为什么呢？ 单个 mesh 需要多个不同的 render pass
@@ -149,29 +143,22 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     {
         auto view = Render_entt().view<deferred_pass_tag>();
         if (!view.empty()) {
-            auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(Engine::instance().
-                     get_render_image_manager().
-                     get_one_color_image(),
-                     Engine::instance().
-                     get_render_image_manager().
-                     get_one_depth_image(),
-                     Engine::instance().
-                     get_render_image_manager().
-                     get_one_position_image(),
-                     Engine::instance().
-                     get_render_image_manager().
-                     get_one_normal_image());
+            auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(
+                 engine.get_render_image_manager().get_one_color_image(),
+                 engine.get_render_image_manager().get_one_depth_image(),
+                 engine.get_render_image_manager().get_one_position_image(),
+                 engine.get_render_image_manager().get_one_normal_image());
             auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
             for (const auto entity: view_opacity) {
                 auto name = Render_entt().get<Name_component>(entity);
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
             vcb.end_rendering();
             vcb.current_write_next_read_image({
-                                                  Engine::instance().get_render_image_manager().get_one_color_image(),
-                                                  Engine::instance().get_render_image_manager().
+                                                  engine.get_render_image_manager().get_one_color_image(),
+                                                  engine.get_render_image_manager().
                                                   get_one_position_image(),
-                                                  Engine::instance().get_render_image_manager().get_one_normal_image()
+                                                  engine.get_render_image_manager().get_one_normal_image()
                                               });
         }
     }
@@ -180,7 +167,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 不能按照
     // {
     //     begin_rendering_depth_attachment(backend,
-    //                                      Engine::instance().get_render_image_manager().get_one_depth_image(),
+    //                                      engine.get_render_image_manager().get_one_depth_image(),
     //                                      VK_ATTACHMENT_LOAD_OP_CLEAR, time_line);
     //     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
     //     for (const auto entity: view) {
@@ -191,7 +178,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     //     }
     //     end_rendering(backend);
     //     current_write_next_read_depth(backend, {
-    //                                       Engine::instance().get_render_image_manager().
+    //                                       engine.get_render_image_manager().
     //                                       get_one_depth_image()
     //                                   }, time_line);
     // }
@@ -201,18 +188,12 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                vcb.begin_rendering_offscreen_attachment(backend,
-                                                         Engine::instance().get_render_image_manager().
-                                                         get_one_color_image(),
-                                                         Engine::instance().get_render_image_manager().
-                                                         get_one_depth_image(),
+                vcb.begin_rendering_offscreen_attachment(engine.get_render_image_manager().get_one_color_image(),
+                                                         engine.get_render_image_manager().get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_LOAD);
             } else {
-                vcb.begin_rendering_offscreen_attachment(backend,
-                                                         Engine::instance().get_render_image_manager().
-                                                         get_one_color_image(),
-                                                         Engine::instance().get_render_image_manager().
-                                                         get_one_depth_image(),
+                vcb.begin_rendering_offscreen_attachment(engine.get_render_image_manager().get_one_color_image(),
+                                                         engine.get_render_image_manager().get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_CLEAR);
             }
         }
@@ -222,21 +203,21 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
             auto view = Render_entt().view<deferred_pass_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
             auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
             for (const auto entity: view) {
                 auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
                 auto name              = Render_entt().get<Name_component>(entity);
-                vcb.bind_pipeline_update_parameter(backend, entity);
-                vcb.DrawIndexedIndirect(backend, entity, command_calculate);
+                vcb.bind_pipeline_update_parameter(entity);
+                vcb.DrawIndexedIndirect(entity, command_calculate);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -244,17 +225,17 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                                            Name_component>();
             for (const auto entity: view) {
                 auto name = Render_entt().get<Name_component>(entity);
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<volume_pass_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         }
         vcb.end_rendering();
@@ -264,28 +245,27 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 在这里的时候需要插入 FXAA
     {
         vcb.current_write_next_read_image({
-                                              Engine::instance().get_render_image_manager().get_one_color_image()
+                                              engine.get_render_image_manager().get_one_color_image()
                                           });
-        vcb.begin_rendering_attachment(backend,
-                                       Engine::instance().get_current_swap_chain_image(),
-                                       Engine::instance().get_render_image_manager().get_one_depth_image(),
+        vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
+                                       engine.get_render_image_manager().get_one_depth_image(),
                                        VK_ATTACHMENT_LOAD_OP_CLEAR); {
-            auto command_shader = Engine::instance().get_shader_manager().get_offscreen_to_screen_shader_data();
+            auto command_shader = engine.get_shader_manager().get_offscreen_to_screen_shader_data();
             vcb.render_post_deal(command_shader, entt::null);
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto entity: view) {
-                vcb.build_draw_command(backend, entity);
+                vcb.build_draw_command(entity);
             }
         }
 

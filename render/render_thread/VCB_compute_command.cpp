@@ -2,18 +2,13 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#ifndef HELLO_MAC_VULKAN_BUILD_COMPUTE_COMMAND_H
-#define HELLO_MAC_VULKAN_BUILD_COMPUTE_COMMAND_H
-#include "GPU_frustum_cull.h"
-#include "../vulkan_code/descriptor.h"
 #include "../engine.h"
 #include "render_proxy.h"
 #include "../vulkan_code/vertex_and_buffer_index.h"
 #include "name_component.h"
+#include "VCB_vulkan_command_buffer.h"
 
-#include "VCB_bind_pipeline.h"
-
-inline void VCB::build_compute_dispatch(VK_backend &engine, entt::entity entity) {
+void VCB::build_compute_dispatch(entt::entity entity) {
     // 下面一行估计还是有问题
     const auto &shader_data_ref = Render_entt().get<shader_data>(entity);
 
@@ -38,6 +33,3 @@ inline void VCB::build_compute_dispatch(VK_backend &engine, entt::entity entity)
     //  虽然都是可以凑到需要的线程数，但是需要考虑怎么凑才能 访问 绝对连续的显存空间，触发全速合并访问
     // }
 }
-
-
-#endif //HELLO_MAC_VULKAN_BUILD_COMPUTE_COMMAND_H
