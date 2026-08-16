@@ -16,6 +16,7 @@
 
 #include "B_spline_cureve.h"
 #include "parse_geometry_file.h"
+#include "select_component.h"
 #include "../render/render_common/PBR_component.h"
 #include "../render/render_common/render_state.h"
 #include "world_scene_root.h"
@@ -225,11 +226,24 @@ entt::entity object_3d_model(const std::string &name,
 }
 
 
+void update_curve(const entt::entity entity) {
+    if (auto BSpline = Logic_entt().try_get<B_spline<Eigen::Vector2f> >(entity)) {
+        const auto path = BSpline->get_path(1.25);
+        add_path(entity, path, {});
+        logic_update_proxy(entity, get_VKR_mesh(entity));
+    }
+}
+
+
+
+
 entt::entity object_line(const std::string &name) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    Logic_entt().emplace<select_component>(entity);
+
     Logic_entt().emplace<shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
     logic_update_proxy<shader_data>(entity);
 
