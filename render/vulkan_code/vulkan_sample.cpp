@@ -5,32 +5,87 @@
 #include "vulkan_sample.h"
 #include "vulkan_backend.h"
 #include <assert.h>
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 
 
-std::vector<VkSampler> vulkan_sample_vector;
+// 必须在全局命名空间中（或者与 VkSamplerCreateInfo 相同的命名空间，即全局）
+// 这样 Abseil 才能通过 ADL (Argument-Dependent Lookup) 找到它
+template<typename H>
+H AbslHashValue(H h, const VkSamplerCreateInfo &info) {
+    // 忽略 sType 和 pNext，因为它们是 Vulkan 链表头，不影响采样器状态
+    return H::combine(std::move(h),
+                      info.flags,
+                      info.magFilter,
+                      info.minFilter,
+                      info.mipmapMode,
+                      info.addressModeU,
+                      info.addressModeV,
+                      info.addressModeW,
+                      info.mipLodBias,
+                      info.anisotropyEnable,
+                      info.maxAnisotropy,
+                      info.compareEnable,
+                      info.compareOp,
+                      info.minLod,
+                      info.maxLod,
+                      info.borderColor,
+                      info.unnormalizedCoordinates
+                     );
+}
 
-VkSampler create_vulkan_sample(VkSamplerCreateInfo &samplerCI) {
-    // 很简单，只有16个参数 ， 其实只有一个问题，你是用索引呢？ 还是用其他的呢？
-    VkSampler sampler   = VK_NULL_HANDLE;
-    const auto &backend = VK_backend::instance();
-    // Sampler
-    assert(samplerCI.sType == VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
 
-    VK_CHECK_RESULT_NOT_EXIT(vkCreateSampler(backend.get_device(), &samplerCI, nullptr, &sampler));
+// 为 VkSamplerCreateInfo 实现全局的 == 运算符
+inline bool operator==(const VkSamplerCreateInfo &lhs, const VkSamplerCreateInfo &rhs) {
+    // 忽略 sType 和 pNext 指针，只比对核心功能字段
+    return lhs.flags == rhs.flags &&
+           lhs.magFilter == rhs.magFilter &&
+           lhs.minFilter == rhs.minFilter &&
+           lhs.mipmapMode == rhs.mipmapMode &&
+           lhs.addressModeU == rhs.addressModeU &&
+           lhs.addressModeV == rhs.addressModeV &&
+           lhs.addressModeW == rhs.addressModeW &&
+           lhs.mipLodBias == rhs.mipLodBias &&
+           lhs.anisotropyEnable == rhs.anisotropyEnable &&
+           lhs.maxAnisotropy == rhs.maxAnisotropy &&
+           lhs.compareEnable == rhs.compareEnable &&
+           lhs.compareOp == rhs.compareOp &&
+           lhs.minLod == rhs.minLod &&
+           lhs.maxLod == rhs.maxLod &&
+           lhs.borderColor == rhs.borderColor &&
+           lhs.unnormalizedCoordinates == rhs.unnormalizedCoordinates;
+}
 
-    if (sampler != VK_NULL_HANDLE) {
-        vulkan_sample_vector.push_back(sampler);
+
+absl::flat_hash_map<VkSamplerCreateInfo, VkSampler> map_;
+
+VkSampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI) {
+    if (map_.contains(samplerCI)) {
+        return map_[samplerCI];
+    } else {
+        VkSampler sampler   = VK_NULL_HANDLE;
+        const auto &backend = VK_backend::instance();
+        // Sampler
+        assert(samplerCI.sType == VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO);
+
+        VK_CHECK_RESULT_NOT_EXIT(vkCreateSampler(backend.get_device(), &samplerCI, nullptr, &sampler));
+
+        if (sampler != VK_NULL_HANDLE) {
+            map_[samplerCI] = sampler;
+            return sampler;
+        }
     }
-    return sampler;
+    return VK_NULL_HANDLE;
 }
 
 
 void destroy_all_vulkan_sample() {
     const auto &backend = VK_backend::instance();
-    for (const auto &sampler: vulkan_sample_vector) {
-        vkDestroySampler(backend.get_device(), sampler, nullptr);
+    for (const auto &[_, sampler]: map_) {
+        if (sampler != VK_NULL_HANDLE)
+            vkDestroySampler(backend.get_device(), sampler, nullptr);
     }
-    vulkan_sample_vector.clear();
+    map_.clear();
 }
 
 VkSampler base_sample() {
@@ -69,17 +124,17 @@ VkSampler create_2d_Texture_Sampler() {
     samplerInfo.addressModeW  = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.compareEnable = VK_FALSE;
 
-            // // Sampler // how to vulkan 2026 ,参数会稍微少一点
-            // VkSamplerCreateInfo samplerCI{
-            //     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-            //     .magFilter = VK_FILTER_LINEAR,
-            //     .minFilter = VK_FILTER_LINEAR,
-            //     .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-            //     .anisotropyEnable = VK_TRUE,
-            //     .maxAnisotropy = 8.0f,
-            //     .maxLod = (float) ktxTexture->numLevels,
-            // };
-            // VK_CHECK_RESULT(vkCreateSampler(handle->get_device(), &samplerCI, nullptr, &textures[i].sampler));
+    // // Sampler // how to vulkan 2026 ,参数会稍微少一点
+    // VkSamplerCreateInfo samplerCI{
+    //     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+    //     .magFilter = VK_FILTER_LINEAR,
+    //     .minFilter = VK_FILTER_LINEAR,
+    //     .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    //     .anisotropyEnable = VK_TRUE,
+    //     .maxAnisotropy = 8.0f,
+    //     .maxLod = (float) ktxTexture->numLevels,
+    // };
+    // VK_CHECK_RESULT(vkCreateSampler(handle->get_device(), &samplerCI, nullptr, &textures[i].sampler));
 
 
     VkPhysicalDeviceFeatures supportedFeatures;
