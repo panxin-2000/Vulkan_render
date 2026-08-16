@@ -288,6 +288,8 @@ void Engine::recreate_swap_chain() {
 }
 
 void Engine::destroy() {
+    shader_manager_destroy();
+
     pbr_manager_.destroy();
     command_submit_manager_.destroy();
     if (pbr_components_buffer_ != nullptr) {
@@ -299,8 +301,10 @@ void Engine::destroy() {
 
     // 这里的顺序不对
     destroy_render_image();
-    discard_buffer_map_clean(get_finished_timeline());
-    discard_image_and_view_map_clean(get_finished_timeline());
+    // 需要强制清除
+    constexpr uint64_t finished_timeline = std::numeric_limits<uint64_t>::max();
+    discard_buffer_map_clean(finished_timeline);
+    discard_image_and_view_map_clean(finished_timeline);
 
     // 销毁 timeline_semaphore 再全部检查一遍再销毁
     destroy_all_vulkan_sample();

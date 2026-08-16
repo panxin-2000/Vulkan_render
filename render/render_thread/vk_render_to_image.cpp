@@ -15,63 +15,7 @@
 #include "vulkan_execute_command.h"
 
 
-void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
-    VK_backend::instance().update_current_extent(); {
-        std::unique_lock<std::mutex> lock(mtx);
-
-        auto offscreen = engine.get_render_image_manager().get_color_texture();
-        // 这里之后还需要做什么呢?
-        {
-            auto offscreen = engine.get_render_image_manager().get_color_texture();
-            auto depth     = engine.get_render_image_manager().get_one_depth_image();
-        }
-
-        engine.update_global_parameter(offscreen, offscreen, offscreen); // 这里的好消息是 什么？ 这里可以申请；
-        // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
-        vk_render_queue::instance().execute_update_lambda();
-    } {
-        const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
-        for (const auto it: view) {
-            auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
-            Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
-        }
-    }
-    // bindless_uniform_sampler2D_update_function();
-    // global_uniform_buffer_update_function();
-    engine.update_bindless_descriptor_sets_function();
-    object_parameter_update();
-    descriptor_set_update_function();
-    push_constant_update_function();
-    //
-    auto frustum_planes = engine.get_frustum_planes();
-    auto camera_pos     = engine.get_world_camera_pos();
-
-    // 上面的函数全部都是 绘制前需要的更新的部分
-    const uint64_t time_line = Engine::get_current_submit_timeline();
-
-    engine.get_command_submit_manager().execute_callback_functions(time_line);
-
-
-    engine.get_image_to_render(); // 这里已经有完整的
-
-    {
-        const auto view = Render_entt().view<Render_destroy_tag_last>();
-        Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
-    } {
-        const auto view = Render_entt().view<Render_destroy_tag>();
-        for (const auto entity: view) {
-            Render_entt().remove<Render_destroy_tag>(entity);
-            Render_entt().emplace<Render_destroy_tag_last>(entity);
-        }
-        // 这里的执行销毁是有问题的, 应该是需要 再等一次才能够 删除
-        // 最好还是放在 get_image_to_render 之后 才会完全没有问题
-    }
-
-
-    // 查出哪些物体是需要绘制的，但是命令是需要看阶段的
-    VCB vcb;
-    vcb.reset_current_command_buffer(time_line, engine.get_current_command_buffer());
-
+void render_different_pass(VCB &vcb, Engine &engine) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
         VkBufferMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -106,6 +50,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         }
         // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
     }
+    auto frustum_planes = engine.get_frustum_planes();
     // 视锥裁剪
     {
         auto view = Render_entt().view<GPU_frustum_cull>();
@@ -117,7 +62,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         // g_buffer_image_indices 这是需要看看怎么传递进入其中
         const auto view = Render_entt().view<shadow_pass_tag>();
         if (!view.empty()) {
-            vcb.begin_shadow_pass(engine.get_render_image_manager().get_one_depth_image());
+            vcb.begin_shadow_pass(engine.get_image_manager().get_one_depth_image());
 
             // 中间需要添加 被光 照 到的物体，能产生阴影的物体
             // 这里的时候发生了一点改变，为什么呢？ 单个 mesh 需要多个不同的 render pass
@@ -144,10 +89,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         auto view = Render_entt().view<deferred_pass_tag>();
         if (!view.empty()) {
             auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(
-                 engine.get_render_image_manager().get_one_color_image(),
-                 engine.get_render_image_manager().get_one_depth_image(),
-                 engine.get_render_image_manager().get_one_position_image(),
-                 engine.get_render_image_manager().get_one_normal_image());
+                 engine.get_image_manager().get_one_color_image(),
+                 engine.get_image_manager().get_one_depth_image(),
+                 engine.get_image_manager().get_one_position_image(),
+                 engine.get_image_manager().get_one_normal_image());
             auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
             for (const auto entity: view_opacity) {
                 auto name = Render_entt().get<Name_component>(entity);
@@ -155,10 +100,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
             }
             vcb.end_rendering();
             vcb.current_write_next_read_image({
-                                                  engine.get_render_image_manager().get_one_color_image(),
-                                                  engine.get_render_image_manager().
+                                                  engine.get_image_manager().get_one_color_image(),
+                                                  engine.get_image_manager().
                                                   get_one_position_image(),
-                                                  engine.get_render_image_manager().get_one_normal_image()
+                                                  engine.get_image_manager().get_one_normal_image()
                                               });
         }
     }
@@ -188,12 +133,12 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                vcb.begin_rendering_offscreen_attachment(engine.get_render_image_manager().get_one_color_image(),
-                                                         engine.get_render_image_manager().get_one_depth_image(),
+                vcb.begin_rendering_offscreen_attachment(engine.get_image_manager().get_one_color_image(),
+                                                         engine.get_image_manager().get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_LOAD);
             } else {
-                vcb.begin_rendering_offscreen_attachment(engine.get_render_image_manager().get_one_color_image(),
-                                                         engine.get_render_image_manager().get_one_depth_image(),
+                vcb.begin_rendering_offscreen_attachment(engine.get_image_manager().get_one_color_image(),
+                                                         engine.get_image_manager().get_one_depth_image(),
                                                          VK_ATTACHMENT_LOAD_OP_CLEAR);
             }
         }
@@ -245,10 +190,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 在这里的时候需要插入 FXAA
     {
         vcb.current_write_next_read_image({
-                                              engine.get_render_image_manager().get_one_color_image()
+                                              engine.get_image_manager().get_one_color_image()
                                           });
         vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
-                                       engine.get_render_image_manager().get_one_depth_image(),
+                                       engine.get_image_manager().get_one_depth_image(),
                                        VK_ATTACHMENT_LOAD_OP_CLEAR); {
             auto command_shader = engine.get_shader_manager().get_offscreen_to_screen_shader_data();
             vcb.render_post_deal(command_shader, entt::null);
@@ -271,17 +216,65 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
 
         vcb.end_rendering();
     }
+}
 
 
+void destroy_Render_entt() { {
+        const auto view = Render_entt().view<Render_destroy_tag_last>();
+        Render_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+    } {
+        const auto view = Render_entt().view<Render_destroy_tag>();
+        for (const auto entity: view) {
+            Render_entt().remove<Render_destroy_tag>(entity);
+            Render_entt().emplace<Render_destroy_tag_last>(entity);
+        }
+        // 这里的执行销毁是有问题的, 应该是需要 再等一次才能够 删除
+        // 最好还是放在 get_image_to_render 之后 才会完全没有问题
+    }
+}
+
+void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
+    VK_backend::instance().update_current_extent(); {
+        std::unique_lock<std::mutex> lock(mtx);
+
+        auto offscreen = engine.get_image_manager().get_color_texture();
+        // 这里之后还需要做什么呢?
+        {
+            auto offscreen = engine.get_image_manager().get_color_texture();
+            auto depth     = engine.get_image_manager().get_one_depth_image();
+        }
+
+        engine.update_global_parameter(offscreen, offscreen, offscreen); // 这里的好消息是 什么？ 这里可以申请；
+        // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
+        vk_render_queue::instance().execute_update_lambda();
+    } {
+        const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
+        for (const auto it: view) {
+            auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
+            Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
+        }
+    }
+    engine.update_bindless_descriptor_sets_function();
+    object_parameter_update();
+    descriptor_set_update_function();
+
+
+    const uint64_t time_line             = Engine::get_current_submit_timeline();
+    const VkCommandBuffer command_buffer = engine.get_current_command_buffer();
+    engine.get_command_submit_manager().execute_callback_functions(time_line);
+    engine.get_image_to_render();
+    destroy_Render_entt();
+
+    // 录制全部的绘制命令
+    VCB vcb;
+    vcb.reset_current_command_buffer(time_line, command_buffer);
+    render_different_pass(vcb, engine);
     vcb.end_command_buffer();
 
     engine.submit_render_queue(time_line);
     engine.copy_image_to_screen();
-
-
-    // render_object_function();
-    clean_need_objects();
-    //
+    const uint64_t finished_timeline = engine.get_finished_timeline();
+    clean_discard_vulkan_handle(finished_timeline);
 }
 
 void vk_render_GPU::exit_and_clean(VK_backend &backend) {
@@ -310,7 +303,7 @@ void vk_render_GPU::exit_and_clean(VK_backend &backend) {
 
     Render_entt().clear();
 
-    clean_need_objects();
+    clean_discard_vulkan_handle(std::numeric_limits<uint64_t>::max());
 
     // destroy_descriptorPool();
 
@@ -318,10 +311,6 @@ void vk_render_GPU::exit_and_clean(VK_backend &backend) {
     // 如果两个线程同时第一次为一个新组件分配空间，会并发修改 registry 内部的总控结构，导致崩溃
     // registry.storage<Position>();
     // registry.storage<Velocity>();
-
-
-    Engine::instance().shader_manager_destroy(); // 需要放置在这里吗?
-
 
     have_object_need_update = false;
     need_render             = not_start;
@@ -332,6 +321,8 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
         return; // 已经在运行中了，直接返回
     }
     need_render = running; // 设置为运行中
+
+    vk_render_queue::instance();
     Render_entt().group<PBR_material_index, Transform_Matrix, Render_AABB, Draw_command>();
     // 这四个 我目前感觉是需要
     // 然后需要怎么做呢? VKR_Primitive 是基本的命令的合集
@@ -377,21 +368,7 @@ vk_render_GPU &vk_render_GPU::instance() {
     return *instance;
 }
 
-void vk_render_GPU::clean_need_objects() {
-    auto &engine = Engine::instance();
-
-
-    // discard_descriptor_set_map_clean(); // descriptor_pools_
-    //                                     pipelines_
-    //                                     pipeline_layouts_
-    //                                     descriptor_sets_layout
-    //                                     shader_modules_
-    //                                     buffer_views_
-    discard_buffer_map_clean(engine.get_finished_timeline());         //         buffers_
-    discard_image_and_view_map_clean(engine.get_finished_timeline()); //  image_views_
-    //                                     images_
-
-
-    // 简单的将内存区域标记为没有内容
-    // init_need_objects 再根据需要进行移动或者拼接操作
+void vk_render_GPU::clean_discard_vulkan_handle(const uint64_t finished_timeline) {
+    discard_buffer_map_clean(finished_timeline);         //  buffers_
+    discard_image_and_view_map_clean(finished_timeline); //  image_views_
 }

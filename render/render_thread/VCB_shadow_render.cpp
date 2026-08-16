@@ -56,7 +56,7 @@ void VCB::shadow_pass_barrier() {
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = Engine::instance().get_render_image_manager().get_one_depth_image()->get_image_handle(),
+            .image = Engine::instance().get_image_manager().get_one_depth_image()->get_image_handle(),
             // todo: 这里也需要更改
             .subresourceRange = {
                 .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,

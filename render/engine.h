@@ -259,7 +259,7 @@ public:
 
     [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
-    Render_image_manager &get_render_image_manager() {
+    Render_image_manager &get_image_manager() {
         return render_image_manager_;
     }
 

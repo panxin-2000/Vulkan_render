@@ -210,10 +210,7 @@ entt::entity object_3d_model(const std::string &name,
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
     Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
-    add_shader(entity,
-               "Phong",
-               "vulkan_different_color",
-               "", "");
+    add_shader(entity, "Phong", "vulkan_different_color", "", "");
     add_box_data(entity, bounding_box);
     auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
     auto matrix_2 = matrix.get_transform_matrix();

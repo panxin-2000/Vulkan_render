@@ -196,13 +196,3 @@ void descriptor_set_update_function() {
     }
 }
 
-void push_constant_update_function() {
-    //  TODO：这个函数是有问题的
-    const auto view = Render_entt().view<push_constant_update>();
-    // 位置发生了更新，需要讲更新传递出去
-    for (const auto it: view) {
-        auto parameter = Render_entt().get_or_emplace<shader_constant_parameter>(it);
-        Render_entt().emplace_or_replace<decltype(parameter)>(it, parameter);
-        Render_entt().remove<push_constant_update>(it);
-    }
-}

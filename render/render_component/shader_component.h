@@ -149,7 +149,6 @@ bool render_push_constant_parameter(const entt::entity entity, const std::string
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));
-            Render_entt().emplace_or_replace<push_constant_update>(entity);
             return true;
         }
     }
@@ -183,8 +182,6 @@ void global_uniform_buffer_update_function();
 void add_bindless_update_tag();
 
 void bindless_uniform_sampler2D_update_function();
-
-void push_constant_update_function();
 
 
 #endif //HELLO_MAC_SHADER_COMPONENT_H

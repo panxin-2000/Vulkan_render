@@ -15,7 +15,6 @@ template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
     const auto &buffer = get_uniform_buffer();
 
-
     uint32_t memory_size = 0;
     ([&] {
         memory_size += sizeof(args);

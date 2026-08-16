@@ -132,22 +132,6 @@ int main(int argc, char *argv[]) {
     bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
     while (!done) {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        // [If using SDL_MAIN_USE_CALLBACKS: call ImGui_ImplSDL3_ProcessEvent() from your SDL_AppEvent() function]
-        // // 只有当 ImGui 不需要鼠标时，主程序才响应鼠标事件（如点击选中 3D 物体）
-        // if (!io.WantCaptureMouse) {
-        //     ProcessMainApplicationMouse(mouseData);
-        // }
-        // // 只有当 ImGui 不需要键盘时，主程序才响应键盘事件（如 WASD 移动）
-        // if (!io.WantCaptureKeyboard) {
-        //     ProcessMainApplicationKeyboard(keyboardData);
-        // }
-
-
         framerate_measure.begin_frame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -158,7 +142,7 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径
                 std::filesystem::path filePath = event.drop.data;
-                const auto entity              = load_gltf_model(filePath.stem().string(), filePath);
+                load_gltf_model(filePath.stem().string(), filePath);
             }
             if (event.type == SDL_EVENT_QUIT)
                 done = true;

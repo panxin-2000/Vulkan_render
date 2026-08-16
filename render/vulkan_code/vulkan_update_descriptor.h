@@ -38,6 +38,7 @@ bool set_render_parameter(sets_map &sets_map_in_for,
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                 VKR_buffer_block_ptr buffer_block = copy_data_to_gpu_buffer(binding_data);
+                //
                 assert(buffer_block != nullptr); // 问题在这里， bistro.gltf 不能正常导入的问题
                 Update_descriptor_binding_fixed_temp;
                 temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

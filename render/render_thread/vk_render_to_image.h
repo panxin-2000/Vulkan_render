@@ -29,7 +29,7 @@ public:
 
     void exit_and_clean(VK_backend &backend);
 
-    void render_thread(VK_backend &backend,Engine &engine);
+    void render_thread(VK_backend &backend, Engine &engine);
 
     // 显式同步：即使使用 detach，也应通过原子变量（如 std::atomic<bool>）或信号量
     // 通知子线程退出，并确保其在主线程销毁全局资源前完成清理
@@ -40,7 +40,7 @@ public:
     static vk_render_GPU &instance();
 
 private:
-    void clean_need_objects();
+    static void clean_discard_vulkan_handle(uint64_t finished_timeline);
 
     vk_render_GPU() {
     }
