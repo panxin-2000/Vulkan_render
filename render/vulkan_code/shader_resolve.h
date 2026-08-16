@@ -192,6 +192,6 @@ VKR_shader_paths{ \
 }
 
 
-shader_data VKR_shader_init(VKR_shader_paths &shader_paths);
+shader_data VKR_shader_init(const VKR_shader_paths &shader_paths);
 
 #endif //HELLO_MAC_SHADER_RESOLVE_H

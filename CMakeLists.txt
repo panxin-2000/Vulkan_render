@@ -336,6 +336,7 @@ if (WITH_VULKAN_BACKEND)
             "render/vulkan_code/shader_resolve.cpp"
             "render/engine.cpp"
             "render/render_image_manager.cpp"
+            "render/Shader_manager.cpp"
             "render/vulkan_code/shader_create.cpp"
             "render/vulkan_code/descriptor.cpp"
             "render/vulkan_code/create_texture.cpp"
