@@ -26,7 +26,8 @@ Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
         shader_data_handle->shader_key = get_shader_key(shader_paths);
         shader_data_handle->topology   = shader_paths.topology_;
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
-
+        shader_data_handle->depthAttachmentFormat   = shader_paths.depthAttachmentFormat_;
+        shader_data_handle->stencilAttachmentFormat = shader_paths.stencilAttachmentFormat_;
         // descriptor_sets_layout 中包含 global 的 set
         // 重要是如果有时候，set = 0 在 global 时应该如何处理
 
@@ -108,8 +109,13 @@ vk_shader_data::~vk_shader_data() {
     }
 }
 
-VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path, const std::string &fragment_path,
-    const std::string &geometry_path, const std::string &compute_path, const VkPrimitiveTopology topology) {
+VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
+                                   const std::string &fragment_path,
+                                   const std::string &geometry_path, const std::string &compute_path,
+                                   const VkPrimitiveTopology topology,
+                                   const VkFormat depthAttachmentFormat,
+                                   const VkFormat stencilAttachmentFormat
+) {
     if (!vertex_path.empty())
         vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert.spv";
     if (!fragment_path.empty())
@@ -119,4 +125,11 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path, const std::st
     if (!compute_path.empty())
         compute_path_ = SHADER_BASE_DIR + compute_path + ".comp.spv";
     topology_ = topology;
+    if (depthAttachmentFormat == VK_FORMAT_UNDEFINED && stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
+        depthAttachmentFormat_   = VK_backend::instance().get_depth_format();
+        stencilAttachmentFormat_ = VK_backend::instance().get_depth_format();
+    } else {
+        depthAttachmentFormat_   = depthAttachmentFormat;
+        stencilAttachmentFormat_ = stencilAttachmentFormat;
+    }
 }

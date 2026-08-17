@@ -96,6 +96,8 @@ public:
     std::vector<InputAttributeDescription> vertexAttributes;
     std::vector<VkVertexInputBindingDescription> vertexBindings;
     Fragment_output_map fragment_output_map;
+    VkFormat depthAttachmentFormat;
+    VkFormat stencilAttachmentFormat;
 
 
     [[nodiscard]] std::vector<VkVertexInputAttributeDescription> get_vertexAttributes() const;
@@ -120,7 +122,9 @@ public:
                      const std::string &fragment_path,
                      const std::string &geometry_path,
                      const std::string &compute_path,
-                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+                     const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                     VkFormat depthAttachmentFormat     = VK_FORMAT_UNDEFINED,
+                     VkFormat stencilAttachmentFormat   = VK_FORMAT_UNDEFINED);
 
     VKR_shader_paths() = delete;
 
@@ -129,6 +133,8 @@ public:
     std::string fragment_path_;
     std::string compute_path_;
     VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    VkFormat depthAttachmentFormat_;
+    VkFormat stencilAttachmentFormat_;
 
 
     // 利用 tuple 快速比较
@@ -160,7 +166,9 @@ public:
                           sp.geometry_path_,
                           sp.fragment_path_,
                           sp.compute_path_,
-                          sp.topology_);
+                          sp.topology_,
+                          sp.depthAttachmentFormat_,
+                          sp.stencilAttachmentFormat_);
     }
 };
 

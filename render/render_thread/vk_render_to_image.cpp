@@ -119,10 +119,9 @@ void render_different_pass(VCB &vcb, Engine &engine) {
             auto name                   = Render_entt().get<Name_component>(entity);
             const auto &shader_data_ref =
                     engine.get_shader_manager().find(VKR_shader_paths{
-                                                         "opacity_depth_write",
-                                                         "opacity_depth_write",
-                                                         "",
-                                                         ""
+                                                         "opacity_depth_write", "opacity_depth_write", "", "",
+                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                                         VK_FORMAT_D32_SFLOAT
                                                      });
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
             // 现在绑定的管线是有问题的,
