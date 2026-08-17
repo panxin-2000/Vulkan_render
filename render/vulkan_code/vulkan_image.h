@@ -116,6 +116,8 @@ private:
     std::shared_ptr<VKR_image> ptr = nullptr;
 };
 
+VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &parameters);
+
 
 void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uint32_t height, int layerCount = 1);
 

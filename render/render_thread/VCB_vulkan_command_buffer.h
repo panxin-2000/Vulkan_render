@@ -114,6 +114,11 @@ public:
         const entt::entity entity,
         const FrustumPlanes &frustum_planes);
 
+    void default_status() const {
+        constexpr VKR_Render_state temp;
+        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
+                                      VK_backend::instance().get_scissor());
+    }
 
     void bind_Proxy_descriptor_sets(entt::entity entity,
                                     VkPipelineLayout pipeline_layout,

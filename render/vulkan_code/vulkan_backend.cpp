@@ -74,35 +74,35 @@ uint32_t VK_backend::get_queue_Family() const {
     return queue_family_;
 }
 
-const VkInstance & VK_backend::get_instance() const {
+const VkInstance &VK_backend::get_instance() const {
     return instance_;
 }
 
-const VkDevice & VK_backend::get_device() const {
+const VkDevice &VK_backend::get_device() const {
     return device_;
 }
 
-const VkPhysicalDevice & VK_backend::get_physical_device() const {
+const VkPhysicalDevice &VK_backend::get_physical_device() const {
     return physical_device_;
 }
 
-const VkQueue & VK_backend::get_queue() const {
+const VkQueue &VK_backend::get_queue() const {
     return graphics_queue_;
 }
 
-const VkSurfaceKHR & VK_backend::get_surface() const {
+const VkSurfaceKHR &VK_backend::get_surface() const {
     return surface_;
 }
 
-const VkSwapchainKHR & VK_backend::get_swap_chain() const {
+const VkSwapchainKHR &VK_backend::get_swap_chain() const {
     return swap_chain_;
 }
 
-const VmaAllocator & VK_backend::get_allocator() const {
+const VmaAllocator &VK_backend::get_allocator() const {
     return allocator_;
 }
 
-SDL_Window * VK_backend::get_window() const {
+SDL_Window *VK_backend::get_window() const {
     return window_;
 }
 
@@ -560,48 +560,18 @@ VKR_image_ptr VK_backend::create_G_buffer_image_and_view(VkFormat g_buffer_forma
 
 VKR_image_ptr VK_backend::create_depth_image_and_view() {
     // Depth attachment
+    Image_and_view_parameters parameters;
     const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
 
-    assert(depth_format_ != VK_FORMAT_UNDEFINED);
-    VkImageCreateInfo depthImageCI{
-        .sType     = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format    = depth_format_,
-        .extent{
-            .width  = extent.width,
-            .height = extent.height,
-            .depth  = 1
-        },
-        .mipLevels     = 1,
-        .arrayLayers   = 1,
-        .samples       = VK_SAMPLE_COUNT_1_BIT,
-        .tiling        = VK_IMAGE_TILING_OPTIMAL,
-        .usage         = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
-    const VmaAllocationCreateInfo allocCI{
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_AUTO
-    };
-    VkImage depth_image                = VK_NULL_HANDLE;
-    VmaAllocation depthImageAllocation = VK_NULL_HANDLE;
-    VkImageView depth_image_view       = VK_NULL_HANDLE;
-
-    VK_CHECK_RESULT(vmaCreateImage(allocator_, &depthImageCI, &allocCI, &depth_image, &depthImageAllocation,nullptr));
-    const VkImageViewCreateInfo depthViewCI{
-        .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image    = depth_image,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format   = depth_format_,
-        .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-            .baseMipLevel   = 0,
-            .levelCount     = 1,
-            .baseArrayLayer = 0,
-            .layerCount     = 1
-        }
-    };
-    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &depth_image_view));
-    return {depth_image, depthImageAllocation, depth_image_view};
+    parameters.format     = depth_format_;
+    parameters.width      = extent.width;
+    parameters.height     = extent.height;
+    parameters.depth      = 1;
+    parameters.usage      = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels  = 1;
+    return create_2d_image_and_view(parameters);
 }
 
 void VK_backend::destroy() {
@@ -675,12 +645,12 @@ VkRect2D VK_backend::get_scissor() const {
     return scissor;
 }
 
-const VkFormat & VK_backend::get_image_format() const {
+const VkFormat &VK_backend::get_image_format() const {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);
     return surfaceFormat.format;
 }
 
-const VkFormat & VK_backend::get_depth_format() const {
+const VkFormat &VK_backend::get_depth_format() const {
     return depth_format_;
 }
 

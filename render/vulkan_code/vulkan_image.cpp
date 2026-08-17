@@ -202,6 +202,53 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
 }
 
 
+VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &parameters) {
+    const auto &backend = VK_backend::instance();
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width  = parameters.width;
+    imageInfo.extent.height = parameters.height;
+    imageInfo.extent.depth  = parameters.depth;
+    imageInfo.mipLevels     = parameters.mipLevels;
+    imageInfo.arrayLayers   = 1;
+    imageInfo.format        = parameters.format;
+    imageInfo.tiling        = parameters.tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage         = parameters.usage;
+    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.flags                   = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+    allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO; // 让 VMA 自动选最快的显存
+    // 对于 Image，通常不需要 HOST_ACCESS，因为我们走 Staging 流程
+    // 如果你强制要 CPU 可见，通常只能用 TILING_LINEAR，性能很差
+
+    VkImage image            = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    VkImageView image_view   = VK_NULL_HANDLE;
+
+    VmaAllocationInfo resultInfo;
+    vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
+
+    const VkImageViewCreateInfo depthViewCI{
+        .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image    = image,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format   = parameters.format,
+        .subresourceRange{
+            .aspectMask     = parameters.aspectMask,
+            .baseMipLevel   = 0,
+            .levelCount     = 1,
+            .baseArrayLayer = 0,
+            .layerCount     = 1
+        }
+    };
+    VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
+    return {image, allocation, image_view};
+}
+
 VKR_image_ptr createTextureImage_detail(VK_backend &handle,
                                         const VkFormat format,
                                         const Picture_parameters &picture_parameters,

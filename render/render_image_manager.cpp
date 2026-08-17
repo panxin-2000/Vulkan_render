@@ -27,7 +27,20 @@ std::optional<Texture_parameter> Render_image_manager::get_depth_texture() {
 
 void Render_image_manager::create() {
     {
-        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
+        Image_and_view_parameters parameters;
+
+        parameters.format = VK_FORMAT_D32_SFLOAT;
+        parameters.width  = 2016;
+        parameters.height = 1832;
+        parameters.depth  = 1;
+        parameters.usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+        parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
+        parameters.mipLevels  = 1;
+        auto result           = create_2d_image_and_view(parameters);
+
+        depth_images_.push_back(result);
         depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
         depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
 

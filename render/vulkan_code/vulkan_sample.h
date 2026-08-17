@@ -7,7 +7,7 @@
 
 #include <volk.h>
 
-VkSampler create_vulkan_sample(VkSamplerCreateInfo &samplerCI);
+VkSampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI);
 
 void destroy_all_vulkan_sample();
 

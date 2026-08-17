@@ -126,6 +126,8 @@ void render_different_pass(VCB &vcb, Engine &engine) {
                                                      });
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
             // 现在绑定的管线是有问题的,
+            vcb.default_status();
+
             vcb.DrawIndexedIndirect(entity, command_calculate);
         }
         vcb.end_rendering();

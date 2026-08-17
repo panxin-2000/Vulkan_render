@@ -42,14 +42,14 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
-    VkRenderingAttachmentInfo StencilAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
+    // VkRenderingAttachmentInfo StencilAttachmentInfo{
+    //     .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+    //     .imageView   = depth->get_image_view(),
+    //     .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+    //     .loadOp      = depth_loadOp,
+    //     .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+    //     .clearValue  = {.depthStencil = {1.0f, 0}}
+    // };
 
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -60,7 +60,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .colorAttachmentCount = 0,
         .pColorAttachments    = nullptr,
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
-        .pStencilAttachment   = &StencilAttachmentInfo
+        .pStencilAttachment   = nullptr
     };
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
 }
