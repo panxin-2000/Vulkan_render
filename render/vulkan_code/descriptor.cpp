@@ -103,7 +103,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
     if (!binding_flags.empty()) {
         for (const auto flag: binding_flags) {
             if (flag != 0) {
-                const uint32_t binding_less_size = 1023; // 这里肯定还是有问题的
+                const uint32_t binding_less_size = 512; // 这里肯定还是有问题的
                 auto variableDescCountAI = variable_descriptor(binding_less_size, binding_flags, variableDescCount);
                 texDescSetAlloc.pNext = &variableDescCountAI;
             }

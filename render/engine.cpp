@@ -3,6 +3,8 @@
 //
 #include "engine.h"
 
+#include <sys/stat.h>
+
 #include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
 #include "transform_component.h"
@@ -211,6 +213,19 @@ void Engine::create() {
             descriptor_pool_manager_.allocate_bindless_descriptor_sets(
                                                                        gltf_shader_data->bindless_sets_bindings,
                                                                        gltf_shader_data->bindless_set_layout);
+    global_descriptor_sets_[0] = descriptor_pool_manager_.allocate_global_descriptor_sets(
+         gltf_shader_data->global_sets_bindings,
+         gltf_shader_data->global_descriptor_sets_layout
+        );
+    global_descriptor_sets_[1] = descriptor_pool_manager_.allocate_global_descriptor_sets(
+         gltf_shader_data->global_sets_bindings,
+         gltf_shader_data->global_descriptor_sets_layout
+        );
+    global_descriptor_sets_[2] = descriptor_pool_manager_.allocate_global_descriptor_sets(
+         gltf_shader_data->global_sets_bindings,
+         gltf_shader_data->global_descriptor_sets_layout
+        );
+
     // 需要在这里创建一些内容
     // 或者说，到这里之后才能够进行上传
     {
@@ -373,11 +388,8 @@ void Engine::update_global_pbr_parameter(
 void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                                      std::optional<Texture_parameter> SSAO,
                                      std::optional<Texture_parameter> depth) {
-    auto gltf_shader_data   = shader_manager_.get_gltf_shader_data();
-    global_descriptor_sets_ = descriptor_pool_manager_.allocate_global_descriptor_sets(
-         gltf_shader_data->global_sets_bindings,
-         gltf_shader_data->global_descriptor_sets_layout
-        );
+    auto gltf_shader_data        = shader_manager_.get_gltf_shader_data();
+    global_descriptor_sets_index = (global_descriptor_sets_index + 1) % 3;
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     const auto extent              = VK_backend::instance().get_current_extent();
     global_parameters_.screen_size = {static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0};
@@ -451,7 +463,7 @@ Proxy_descriptor_sets Engine::get_bindless_descriptor_set(const uint index) {
 }
 
 Proxy_descriptor_sets Engine::get_global_descriptor_set(const uint index) {
-    return global_descriptor_sets_;
+    return global_descriptor_sets_[global_descriptor_sets_index];
 }
 
 const VKR_image_ptr &Engine::get_current_swap_chain_image() const {

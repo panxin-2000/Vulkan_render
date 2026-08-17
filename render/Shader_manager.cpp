@@ -29,7 +29,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_frustum_cull_shader_data() {
 }
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_offscreen_to_screen_shader_data() {
-    return find(VKR_shader_paths{"deferred", "deferred_to_screen", "", ""});
+    return find(VKR_shader_paths{"deferred", "fxaa", "", ""});
 }
 
 std::shared_ptr<vk_shader_data> Shader_manager::find(const VKR_shader_paths &shader_paths) {

@@ -93,8 +93,9 @@ private:
     std::array<VkFence, maxFramesInFlight> fences_                  = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
 
-    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_ = {};
-    std::vector<DescriptorSet_ptr> global_descriptor_sets_   = {};
+    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
+    std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
+    uint32_t global_descriptor_sets_index                                 = 0;
 
     std::vector<VKR_image_ptr> swap_chain_images_;
 
