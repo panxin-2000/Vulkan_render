@@ -244,7 +244,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     engine.get_image_manager().using_to_free();
     const auto color_image    = engine.get_image_manager().get_one_color_image();
     const auto depth_image    = engine.get_image_manager().get_one_depth_image();
-    const auto depth_AO_image = engine.get_image_manager().get_one_depth_AO_image(); {
+    const auto depth_AO_image = engine.get_image_manager().get_one_depth_AO_image();
+    auto ktx                  = create_textures_to_gpu("/Users/panxin/CLionProjects/hello_mac/assets/suzanne0.ktx");
+    //
+    {
         std::unique_lock<std::mutex> lock(mtx);
 
 
@@ -252,7 +255,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         auto depth     = create_2d_texture(depth_AO_image);
 
 
-        engine.update_global_parameter(offscreen, {}, depth); // 这里的好消息是 什么？ 这里可以申请；
+        engine.update_global_parameter(ktx, {}, depth); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
     } {
