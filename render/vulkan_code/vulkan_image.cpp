@@ -18,78 +18,6 @@ std::vector<bool> image_index;
 std::atomic<uint32_t> VKR_image::max_index = 0;
 moodycamel::BlockingReaderWriterQueue<uint32_t> VKR_image::free_index;
 
-std::pair<VkImage, VmaAllocation> create_sky_cube_Image(VK_backend &handle,
-                                                        uint32_t width,
-                                                        uint32_t height,
-                                                        uint32_t mipLevels,
-                                                        VkFormat format,
-                                                        VkImageTiling tiling,
-                                                        VkImageUsageFlags usage) {
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width  = width;  // cube skybox  width
-    imageInfo.extent.height = height; // cube skybox  height  最好相等
-    imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = mipLevels;
-    imageInfo.arrayLayers   = 6; // cube skybox
-    imageInfo.format        = format;
-    imageInfo.tiling        = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = usage;
-    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags         = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT; // cube skybox
-
-
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO; // 让 VMA 自动选最快的显存
-    // 对于 Image，通常不需要 HOST_ACCESS，因为我们走 Staging 流程
-    // 如果你强制要 CPU 可见，通常只能用 TILING_LINEAR，性能很差
-
-    VkImage image;
-    VmaAllocation allocation;
-    VmaAllocationInfo resultInfo;
-    vmaCreateImage(handle.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
-
-    return {image, allocation};
-}
-
-std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width,
-                                                  uint32_t height,
-                                                  uint32_t mipLevels,
-                                                  VkFormat format,
-                                                  VkImageTiling tiling,
-                                                  VkImageUsageFlags usage) {
-    const auto &backend = VK_backend::instance();
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType     = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width  = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth  = 1;
-    imageInfo.mipLevels     = mipLevels;
-    imageInfo.arrayLayers   = 1;
-    imageInfo.format        = format;
-    imageInfo.tiling        = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage         = usage;
-    imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
-
-
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO; // 让 VMA 自动选最快的显存
-    // 对于 Image，通常不需要 HOST_ACCESS，因为我们走 Staging 流程
-    // 如果你强制要 CPU 可见，通常只能用 TILING_LINEAR，性能很差
-
-    VkImage image;
-    VmaAllocation allocation;
-    VmaAllocationInfo resultInfo;
-    vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
-
-    return {image, allocation};
-}
 
 VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
                                          std::function<void(void *)> mem_copy_callback) {
@@ -134,8 +62,13 @@ void transition_image(VkCommandBuffer commandBuffer, VkImage image, uint32_t bas
 }
 
 
-void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight,
-                     uint32_t mipLevels) {
+void generateMipmaps(VK_backend &handle, VKR_image_ptr image_ptr,
+                     Image_and_view_parameters parameters) {
+    const VkImage image        = image_ptr->get_image_handle();
+    const VkFormat imageFormat = parameters.format;
+    const int32_t texWidth     = parameters.width;
+    const int32_t texHeight    = parameters.height;
+    const uint32_t mipLevels   = parameters.mipLevels;
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
     vkGetPhysicalDeviceFormatProperties(handle.get_physical_device(), imageFormat, &formatProperties);
@@ -201,7 +134,11 @@ void generateMipmaps(VK_backend &handle, VkImage image, VkFormat imageFormat, in
     Command_submit_manager::add_execute_function(execute_function);
 }
 
-
+/**
+ * 这里是核心的绘制函数
+ * @param parameters
+ * @return
+ */
 VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &parameters) {
     const auto &backend = VK_backend::instance();
     VkImageCreateInfo imageInfo{};
@@ -289,36 +226,35 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
 
     const auto staging_buffer = create_image_stage_buffer(imageSize, mem_copy_function);
 
-    auto [textureImage,textureImage_allocation] = create_2D_Image(picture_parameters.width,
-                                                                  picture_parameters.height,
-                                                                  mipLevels,
-                                                                  format,
-                                                                  VK_IMAGE_TILING_OPTIMAL,
-                                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                                                  VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    Image_and_view_parameters parameters{
+        .format = format,
+        .width  = picture_parameters.width,
+        .height = picture_parameters.height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = mipLevels,
+        .arrayLayers = 1
+    };
+    auto image_ptr = create_2d_image_and_view(parameters);
 
 
-    transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
-    copyBufferToImage(staging_buffer, textureImage,
-                      static_cast<uint32_t>(picture_parameters.width),
-                      static_cast<uint32_t>(picture_parameters.height));
-    transitionImageLayout(textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
+    transitionImageLayout(image_ptr, parameters, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copyBufferToImage(staging_buffer, image_ptr, parameters);
+    transitionImageLayout(image_ptr, parameters, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     if (mipLevels > 1)
-        generateMipmaps(handle, textureImage, format, picture_parameters.width,
-                        picture_parameters.height,
-                        mipLevels);
+        generateMipmaps(handle, image_ptr, parameters);
 
 
-    auto texture_view = createImageView(textureImage,
-                                        format,
-                                        VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
-
-
-    return {textureImage, textureImage_allocation, texture_view};
+    return image_ptr;
 }
 
 
@@ -336,8 +272,13 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
     return result;
 }
 
-void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uint32_t height, int layerCount) {
+void copyBufferToImage(VKR_buffer_ptr buffer,
+                       VKR_image_ptr image_ptr,
+                       Image_and_view_parameters parameters) {
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
+        uint32_t width  = parameters.width;
+        uint32_t height = parameters.height;
+        int layerCount  = parameters.arrayLayers;
         std::vector<VkBufferImageCopy> regions;
         VkBufferImageCopy region{};
         region.bufferOffset                    = 0;
@@ -357,7 +298,7 @@ void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uin
         vkCmdCopyBufferToImage(
                                commandBuffer,
                                buffer->get_buffer_handle(time_line),
-                               image,
+                               image_ptr->get_image_handle(),
                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                regions.size(),
                                regions.data()
@@ -368,8 +309,13 @@ void copyBufferToImage(VKR_buffer_ptr buffer, VkImage image, uint32_t width, uin
 }
 
 
-void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-                           VkImageLayout newLayout, uint32_t mipLevels) {
+void transitionImageLayout(VKR_image_ptr image_ptr,
+                           Image_and_view_parameters parameters,
+                           VkImageLayout oldLayout,
+                           VkImageLayout newLayout) {
+    VkFormat format       = parameters.format;
+    uint32_t mipLevels    = parameters.mipLevels;
+    const VkImage image   = image_ptr->get_image_handle();
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -527,33 +473,39 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
     };
     const auto staging_buffer = create_image_stage_buffer(imageSize, mem_copy_function);
 
+    Image_and_view_parameters parameters{
+        .format = VK_FORMAT_R8G8B8A8_SRGB,
+        .width  = picture_parameters[0].width,
+        .height = picture_parameters[0].height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = mipLevels,
+        .arrayLayers = 6,
+        .flags       = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
+    };
 
-    auto [textureImage , textureImage_allocation] = create_sky_cube_Image(handle,
-                                                                          picture_parameters[0].width,
-                                                                          picture_parameters[0].height,
-                                                                          1,
-                                                                          VK_FORMAT_R8G8B8A8_SRGB,
-                                                                          VK_IMAGE_TILING_OPTIMAL,
-                                                                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                                                          VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                                                                          VK_IMAGE_USAGE_SAMPLED_BIT);
+    auto image_ptr = create_2d_image_and_view(parameters);
 
-    transitionImageLayout_box(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout_box(image_ptr->get_image_handle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6);
-    copyBufferToImage(staging_buffer, textureImage,
-                      static_cast<uint32_t>(picture_parameters[0].width),
-                      static_cast<uint32_t>(picture_parameters[0].height), 6);
+    copyBufferToImage(staging_buffer, image_ptr, parameters);
 
-    transitionImageLayout_box(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout_box(image_ptr->get_image_handle(), VK_FORMAT_R8G8B8A8_SRGB,
+                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
 
 
-    auto texture_view = create_sky_cube_ImageView(textureImage,
+    auto texture_view = create_sky_cube_ImageView(image_ptr->get_image_handle(),
                                                   VK_FORMAT_R8G8B8A8_SRGB,
                                                   VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
 
 
-    return {textureImage, textureImage_allocation, texture_view};
+    return image_ptr;
 }
 
 
