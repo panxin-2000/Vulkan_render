@@ -108,8 +108,8 @@ struct Vertex_imgui {
 };
 
 struct Picture_parameters {
-    int width           = 0;
-    int height          = 0;
+    uint32_t width           = 0;
+    uint32_t height          = 0;
     int channels        = 4;
     uint8_t *image_data = nullptr;
 };

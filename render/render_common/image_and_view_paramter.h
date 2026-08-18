@@ -17,6 +17,8 @@ struct Image_and_view_parameters {
     VkImageAspectFlags aspectMask;
     VkImageTiling tiling;
     uint32_t mipLevels;
+    uint32_t arrayLayers;     // sky_box 会使用
+    VkImageCreateFlags flags; // sky_box 会使用
 
 
     template<typename H>
@@ -31,7 +33,9 @@ struct Image_and_view_parameters {
                           sp.usage,
                           sp.aspectMask,
                           sp.tiling,
-                          sp.mipLevels);
+                          sp.mipLevels,
+                          sp.flags,
+                          sp.arrayLayers);
     }
 
     bool operator==(const Image_and_view_parameters &other) const = default;

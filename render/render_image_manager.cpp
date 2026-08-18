@@ -23,9 +23,11 @@ VKR_image_ptr Render_image_manager::get_one_position_image() {
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .tiling     = VK_IMAGE_TILING_OPTIMAL,
-        .mipLevels  = 1,
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = 1,
+        .arrayLayers = 1,
+        .flags       = 0
     };
     return find(parameters);
 }
@@ -39,9 +41,12 @@ VKR_image_ptr Render_image_manager::get_one_normal_image() {
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .tiling     = VK_IMAGE_TILING_OPTIMAL,
-        .mipLevels  = 1,
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = 1,
+        .arrayLayers = 1,
+        .flags       = 0
+
     };
     return find(parameters);
 }
@@ -55,9 +60,12 @@ VKR_image_ptr Render_image_manager::get_one_color_image() {
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
-        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-        .tiling     = VK_IMAGE_TILING_OPTIMAL,
-        .mipLevels  = 1,
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = 1,
+        .arrayLayers = 1,
+        .flags       = 0
+
     };
     return find(parameters);
 }
@@ -77,6 +85,9 @@ VKR_image_ptr Render_image_manager::get_one_depth_image() {
     parameters.aspectMask   = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
     parameters.tiling       = VK_IMAGE_TILING_OPTIMAL;
     parameters.mipLevels    = 1;
+    parameters.arrayLayers  = 1;
+    parameters.flags        = 0;
+
 
     return find(parameters);
 }
@@ -89,9 +100,12 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
     parameters.depth  = 1;
     parameters.usage  = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
-    parameters.mipLevels  = 1;
+    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels   = 1;
+    parameters.arrayLayers = 1;
+    parameters.flags       = 0;
+
     return find(parameters);
 }
 

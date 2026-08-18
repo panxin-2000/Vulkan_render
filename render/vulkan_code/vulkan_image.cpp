@@ -211,13 +211,14 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     imageInfo.extent.height = parameters.height;
     imageInfo.extent.depth  = parameters.depth;
     imageInfo.mipLevels     = parameters.mipLevels;
-    imageInfo.arrayLayers   = 1;
+    imageInfo.arrayLayers   = parameters.arrayLayers; // cube skybox
     imageInfo.format        = parameters.format;
     imageInfo.tiling        = parameters.tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage         = parameters.usage;
     imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags         = parameters.flags; // cube skybox
 
     VmaAllocationCreateInfo allocInfo = {};
     allocInfo.flags                   = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
@@ -232,19 +233,27 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     VmaAllocationInfo resultInfo;
     vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
 
-    const VkImageViewCreateInfo depthViewCI{
-        .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image    = image,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format   = parameters.format,
+    VkImageViewCreateInfo depthViewCI{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = image,
+        // .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        // .viewType = VK_IMAGE_VIEW_TYPE_CUBE,
+
+        .format = parameters.format,
         .subresourceRange{
             .aspectMask     = parameters.aspectMask,
             .baseMipLevel   = 0,
             .levelCount     = 1,
             .baseArrayLayer = 0,
-            .layerCount     = 1
+            .layerCount     = parameters.arrayLayers,
         }
     };
+    if (parameters.flags == 0) {
+        depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    } else if (parameters.flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+        depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    }
+
     VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
     return {image, allocation, image_view};
 }
@@ -317,8 +326,8 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
     assert(!picture_path.empty());
     Picture_parameters picture_parameters{};
     picture_parameters.image_data = stbi_load(picture_path.c_str(),
-                                              &picture_parameters.width,
-                                              &picture_parameters.height,
+                                              (int *) &picture_parameters.width,
+                                              (int *) &picture_parameters.height,
                                               &picture_parameters.channels, STBI_rgb_alpha);
     auto result = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 
@@ -551,8 +560,8 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 Texture_parameter create_2d_texture(const std::string &picture_path) {
     Picture_parameters picture_parameters{};
     picture_parameters.image_data = stbi_load(picture_path.c_str(),
-                                              &picture_parameters.width,
-                                              &picture_parameters.height,
+                                              (int *) &picture_parameters.width,
+                                              (int *) &picture_parameters.height,
                                               &picture_parameters.channels, STBI_rgb_alpha);
     picture_parameters.channels = 4;
     auto result                 = create_2d_texture(picture_parameters);
@@ -610,8 +619,8 @@ Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
     for (const auto &path: paths) {
         Picture_parameters picture_parameters{};
         picture_parameters.image_data = stbi_load(path.c_str(),
-                                                  &picture_parameters.width,
-                                                  &picture_parameters.height,
+                                                  (int *) &picture_parameters.width,
+                                                  (int *) &picture_parameters.height,
                                                   &picture_parameters.channels, STBI_rgb_alpha);
         picture_parameters.channels = 4;
         picture_parameters_vector.emplace_back(picture_parameters);

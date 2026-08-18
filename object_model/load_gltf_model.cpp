@@ -613,8 +613,8 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
                            ScopedTimer temp("stbi_load");
                            unsigned char *data = stbi_load(absolutePath.c_str(),
-                                                           &picture_parameters.width,
-                                                           &picture_parameters.height,
+                                                           (int *) &picture_parameters.width,
+                                                           (int *) &picture_parameters.height,
                                                            &picture_parameters.channels,
                                                            4);
                            picture_parameters.channels   = 4;
@@ -633,8 +633,8 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(vector.bytes.
                                                          data()),
                                                      static_cast<int>(vector.bytes.size()),
-                                                     &picture_parameters.width,
-                                                     &picture_parameters.height,
+                                                     (int *) &picture_parameters.width,
+                                                     (int *) &picture_parameters.height,
                                                      &picture_parameters.channels,
                                                      4);
                        picture_parameters.channels   = 4;
@@ -657,8 +657,8 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                                                             vector.bytes.data() + bufferView.
                                                                             byteOffset),
                                                                         static_cast<int>(bufferView.byteLength),
-                                                                        &picture_parameters.width,
-                                                                        &picture_parameters.height,
+                                                                        (int *) &picture_parameters.width,
+                                                                        (int *) &picture_parameters.height,
                                                                         &picture_parameters.channels,
                                                                         4);
                                           picture_parameters.channels   = 4;
