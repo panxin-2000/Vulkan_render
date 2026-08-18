@@ -13,6 +13,6 @@
 
 std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename);
 
-Texture_parameter load_dds_to_gpu(const tinyddsloader::DDSFile &dds);
+// Texture_parameter load_dds_to_gpu(const tinyddsloader::DDSFile &dds);
 
 #endif //HOWTOVULKAN_TRANSFER_TEXTURE_TO_GPU_H

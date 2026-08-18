@@ -702,8 +702,8 @@ auto load_texture_info(const std::filesystem::path &path,
                 if (ext == ".dds") {
                     auto ret = dds.Load(absolutePath.c_str());
                     if (tinyddsloader::Result::Success == ret) {
-                        auto result = load_dds_to_gpu(dds);
-                        return result;
+                        // auto result = load_dds_to_gpu(dds);
+                        // return result;
                     }
                 }
             }
