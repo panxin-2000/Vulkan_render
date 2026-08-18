@@ -11,6 +11,7 @@
 #include "camera_optical_component.h"
 #include "GPU_frustum_cull.h"
 #include "scene_component.h"
+#include "select_component.h"
 #include "stb_image.h"
 #include "time_measure.h"
 #include "tinyddsloader.h"
@@ -783,21 +784,23 @@ void load_materials(std::vector<uint32_t> &material_indices,
 
 void update_material(entt::entity model_entity) {
     {
-        std::vector<uint32_t> temp;
+        auto temp = std::make_shared<std::vector<uint32_t> >();
+
         auto material_indices    = Logic_entt().try_get<Gpu_material_indices>(model_entity);
         auto material_parameters = Logic_entt().try_get<Gltf_material_parameters>(model_entity);
 
-        // 首先全部设置为零
-        if (material_indices != nullptr && !material_indices->empty())
-            temp.resize(material_indices->size());
+        // 首先全部设置为零, 需要拿物体原本的,而不是
+        if (material_parameters != nullptr && !material_parameters->empty())
+            temp->reserve(material_parameters->size());
 
         if (material_indices != nullptr && !material_indices->empty() &&
-            material_parameters != nullptr && !material_parameters->empty()) {
+            material_parameters != nullptr) {
+            temp->reserve(material_indices->size());
             for (const auto &material: *material_parameters) {
-                temp.push_back(material_indices->at(material));
+                temp->push_back(material_indices->at(material));
             }
         }
-        if (!temp.empty())
+        if (!temp->empty())
             set_render_parameter(model_entity, "model_material_parameters", temp);
     }
 }
@@ -830,13 +833,16 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         logic_create_proxy(model_entity);
         const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
         // Logic_entt().emplace<Input_Component>(model_entity, model_3d_Event);
+        Logic_entt().emplace<load_material>(model_entity);
 
 
         if (model.skins.empty()) {
-            Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_gltf_shader_data());
+            Logic_entt().emplace<Shader_data>(model_entity,
+                                              Engine::instance().get_shader_manager().get_gltf_shader_data());
             logic_update_add_tag<opacity_gltf_tag>(model_entity);
         } else {
-            Logic_entt().emplace<Shader_data>(model_entity, Engine::instance().get_shader_manager().get_skinning_shader_data());
+            Logic_entt().emplace<Shader_data>(model_entity,
+                                              Engine::instance().get_shader_manager().get_skinning_shader_data());
         }
         logic_update_proxy<Shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);
@@ -861,9 +867,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
-        auto material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
-        auto &boxes              = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
-        auto &matrices           = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
+        auto &material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
+        auto &boxes               = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+        auto &matrices            = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
         // 包含不包含 model_entity 的矩阵
         const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);

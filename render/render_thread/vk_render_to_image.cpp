@@ -270,6 +270,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const uint64_t time_line             = Engine::get_current_submit_timeline();
     const VkCommandBuffer command_buffer = engine.get_current_command_buffer();
     engine.get_command_submit_manager().execute_callback_functions(time_line);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     engine.get_image_to_render();
     destroy_Render_entt();
 

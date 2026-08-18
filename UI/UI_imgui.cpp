@@ -290,6 +290,14 @@ void display_tree(entt::entity entity) {
         if (const auto select = Logic_entt().try_get<select_component>(entity)) {
             ImGui::Checkbox("select", &select->selected);
         }
+        if (const auto select = Logic_entt().try_get<load_material>(entity)) {
+            if (ImGui::Checkbox("load_material", &select->selected)) {
+                if (select->selected == false) {
+                } else {
+                    load_gltf_material_separate(entity);
+                }
+            }
+        }
 
 
         if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {

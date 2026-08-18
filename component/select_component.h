@@ -10,4 +10,7 @@ struct select_component {
     bool selected = false;
 };
 
+struct load_material : public select_component {
+};
+
 #endif //HELLO_MAC_SELECT_COMPONENT_H

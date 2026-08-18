@@ -236,7 +236,7 @@ public:
 };
 
 
-
+void load_gltf_material_separate(entt::entity model_entity);
 
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &mesh_path,

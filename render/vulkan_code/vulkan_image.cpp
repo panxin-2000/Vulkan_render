@@ -270,7 +270,6 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
         return {};
         // throw std::runtime_error("failed to load texture image!");
     }
-    VkDeviceMemory stagingBufferMemory;
 
     auto mem_copy_function = [picture_parameters](void *dst) {
         const VkDeviceSize image_size = picture_parameters.width *
