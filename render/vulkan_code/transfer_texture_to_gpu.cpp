@@ -32,7 +32,6 @@ struct KtxTextureDeleter {
 
 
 std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename) {
-    VK_backend &handle             = VK_backend::instance();
     std::filesystem::path filePath = filename;
     std::string ext                = filePath.extension().string();
     if (ext == ".ktx") {
@@ -64,41 +63,8 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         };
         const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
 
-
-        VkFenceCreateInfo fenceOneTimeCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-        VkFence fenceOneTime{};
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle.get_device(), &fenceOneTimeCI, nullptr, &fenceOneTime));
-        VkCommandBuffer cbOneTime{};
-        VkCommandBufferAllocateInfo cbOneTimeAI{
-            .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .commandPool        = Engine::instance().get_command_pool(),
-            .commandBufferCount = 1
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(handle.get_device(), &cbOneTimeAI, &cbOneTime));
-        VkCommandBufferBeginInfo cbOneTimeBI{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vkBeginCommandBuffer(cbOneTime, &cbOneTimeBI));
-        VkImageMemoryBarrier2 barrierTexImage{
-            .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask     = VK_PIPELINE_STAGE_2_NONE,
-            .srcAccessMask    = VK_ACCESS_2_NONE,
-            .dstStageMask     = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            .dstAccessMask    = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-            .oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .image            = image_ptr->get_image_handle(),
-            .subresourceRange = {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1
-            }
-        };
-        VkDependencyInfo barrierTexInfo{
-            .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 1,
-            .pImageMemoryBarriers = &barrierTexImage
-        };
-        vkCmdPipelineBarrier2(cbOneTime, &barrierTexInfo);
         std::vector<VkBufferImageCopy> copyRegions{};
-        for (auto j = 0; j < ktxTexture->numLevels; j++) {
+        for (auto j = 0; j < parameters.mipLevels; j++) {
             ktx_size_t mipOffset{0};
             KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, j, 0, 0, &mipOffset);
             copyRegions.push_back({
@@ -108,41 +74,64 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
                                           .layerCount = 1
                                       },
                                       .imageExtent{
-                                          .width = ktxTexture->baseWidth >> j, .height = ktxTexture->baseHeight >> j,
-                                          .depth = 1
+                                          .width  = parameters.width >> j,
+                                          .height = parameters.height >> j,
+                                          .depth  = 1
                                       },
                                   });
         }
-        vkCmdCopyBufferToImage(cbOneTime,
-                               staging_buffer->get_buffer_handle(),
-                               image_ptr->get_image_handle(),
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                               static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
-        VkImageMemoryBarrier2 barrierTexRead{
-            .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask     = VK_PIPELINE_STAGE_TRANSFER_BIT,
-            .srcAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .dstStageMask     = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccessMask    = VK_ACCESS_SHADER_READ_BIT,
-            .oldLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout        = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .image            = image_ptr->get_image_handle(),
-            .subresourceRange = {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1
-            }
+
+
+        auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
+            VkImageMemoryBarrier2 barrierTexImage{
+                .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask     = VK_PIPELINE_STAGE_2_NONE,
+                .srcAccessMask    = VK_ACCESS_2_NONE,
+                .dstStageMask     = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+                .dstAccessMask    = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+                .oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .image            = image_ptr->get_image_handle(),
+                .subresourceRange = {
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .levelCount = parameters.mipLevels,
+                    .layerCount = 1
+                }
+            };
+            VkDependencyInfo barrierTexInfo{
+                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers    = &barrierTexImage
+            };
+            vkCmdPipelineBarrier2(commandBuffer, &barrierTexInfo);
+
+            vkCmdCopyBufferToImage(commandBuffer,
+                                   staging_buffer->get_buffer_handle(time_line),
+                                   image_ptr->get_image_handle(time_line),
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                   static_cast<uint32_t>(copyRegions.size()),
+                                   copyRegions.data());
+
+
+            VkImageMemoryBarrier2 barrierTexRead{
+                .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask     = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                .srcAccessMask    = VK_ACCESS_TRANSFER_WRITE_BIT,
+                .dstStageMask     = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                .dstAccessMask    = VK_ACCESS_SHADER_READ_BIT,
+                .oldLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                .newLayout        = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+                .image            = image_ptr->get_image_handle(),
+                .subresourceRange = {
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .levelCount = parameters.mipLevels,
+                    .layerCount = 1
+                }
+            };
+            barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
+            vkCmdPipelineBarrier2(commandBuffer, &barrierTexInfo);
         };
-        barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
-        vkCmdPipelineBarrier2(cbOneTime, &barrierTexInfo);
-        VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(cbOneTime));
-        VkSubmitInfo oneTimeSI{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO, .commandBufferCount = 1, .pCommandBuffers = &cbOneTime
-        }; {
-            std::lock_guard<std::mutex> lock(Command_submit_manager::get_mutex());
-            VK_CHECK_RESULT_NOT_EXIT(vkQueueSubmit(handle.get_queue(), 1, &oneTimeSI, fenceOneTime));
-        }
-        // command_submit submit(1, &cbOneTime);
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle.get_device(), 1, &fenceOneTime, VK_TRUE, UINT64_MAX));
-        vkDestroyFence(handle.get_device(), fenceOneTime, nullptr);
+        Command_submit_manager::add_execute_function(execute_function);
 
 
         // Sampler
@@ -153,7 +142,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             .mipmapMode       = VK_SAMPLER_MIPMAP_MODE_LINEAR,
             .anisotropyEnable = VK_TRUE,
             .maxAnisotropy    = 8.0f,
-            .maxLod           = (float) ktxTexture->numLevels,
+            .maxLod           = (float) parameters.mipLevels,
         };
         VkSampler sampler = create_vulkan_sample(samplerCI);
 
