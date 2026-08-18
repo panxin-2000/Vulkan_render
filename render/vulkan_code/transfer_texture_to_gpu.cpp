@@ -16,9 +16,20 @@
 #include "vulkan_buffer.h"
 #include "vulkan_execute_command.h"
 #include "vulkan_sample.h"
+#include "fastgltf/types.hpp"
 
 
 // std::array<Texture_parameter, 3> textures{};
+
+
+struct KtxTextureDeleter {
+    void operator()(ktxTexture *texture) const {
+        if (texture) {
+            ktxTexture_Destroy(texture); // 确保调用 libktx 的销毁逻辑
+        }
+    }
+};
+
 
 std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filename) {
     VK_backend &handle             = VK_backend::instance();
@@ -26,54 +37,34 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
     std::string ext                = filePath.extension().string();
     if (ext == ".ktx") {
         Texture_parameter texture;
-        VkImage image_handle_temp     = VK_NULL_HANDLE;
-        VmaAllocation allocation_temp = VK_NULL_HANDLE;
-        VkImageView image_view_temp   = VK_NULL_HANDLE;
 
         ktxTexture *ktxTexture{nullptr};
         ktxTexture_CreateFromNamedFile(filename.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-        VkImageCreateInfo texImgCI{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-            .imageType     = VK_IMAGE_TYPE_2D,
-            .format        = ktxTexture_GetVkFormat(ktxTexture),
-            .extent        = {.width = ktxTexture->baseWidth, .height = ktxTexture->baseWidth, .depth = 1},
-            .mipLevels     = ktxTexture->numLevels,
-            .arrayLayers   = 1,
-            .samples       = VK_SAMPLE_COUNT_1_BIT,
-            .tiling        = VK_IMAGE_TILING_OPTIMAL,
-            .usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+
+        Image_and_view_parameters parameters{
+            .format = ktxTexture_GetVkFormat(ktxTexture),
+            .width  = ktxTexture->baseWidth,
+            .height = ktxTexture->baseHeight,
+            .depth  = ktxTexture->baseDepth,
+            .usage  = static_cast<VkImageUsageFlagBits>(
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+            .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+            .tiling      = VK_IMAGE_TILING_OPTIMAL,
+            .mipLevels   = ktxTexture->numLevels,
+            .arrayLayers = 1,
+            .flags       = 0
         };
-        VmaAllocationCreateInfo texImageAllocCI{.usage = VMA_MEMORY_USAGE_AUTO};
-        VK_CHECK_RESULT_NOT_EXIT(vmaCreateImage(handle.get_allocator(), &texImgCI, &texImageAllocCI, &image_handle_temp,
-                                     &allocation_temp,
-                                     nullptr));
-        VkImageViewCreateInfo texVewCI{
-            .sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, .image = image_handle_temp,
-            .viewType         = VK_IMAGE_VIEW_TYPE_2D, .format                   = texImgCI.format,
-            .subresourceRange = {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1
-            }
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateImageView(handle.get_device(), &texVewCI, nullptr, &image_view_temp));
+        auto image_ptr = create_2d_image_and_view(parameters);
+
         // Upload
-        VkBuffer imgSrcBuffer{};
-        VmaAllocation imgSrcAllocation{};
-        VkBufferCreateInfo imgSrcBufferCI{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, .size = (uint32_t) ktxTexture->dataSize,
-            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+
+
+        auto mem_copy_function = [&](void *dst) {
+            memcpy(dst, ktxTexture->pData, ktxTexture->dataSize);
         };
-        VmaAllocationCreateInfo imgSrcAllocCI{
-            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
-            .usage = VMA_MEMORY_USAGE_AUTO
-        };
-        VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(), &imgSrcBufferCI, &imgSrcAllocCI, &imgSrcBuffer
-                                   , &
-                                     imgSrcAllocation,
-                                     nullptr));
-        void *imgSrcBufferPtr{nullptr};
-        VK_CHECK_RESULT_NOT_EXIT(vmaMapMemory(handle.get_allocator(), imgSrcAllocation, &imgSrcBufferPtr));
-        memcpy(imgSrcBufferPtr, ktxTexture->pData, ktxTexture->dataSize);
+        const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
+
+
         VkFenceCreateInfo fenceOneTimeCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
         VkFence fenceOneTime{};
         VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(handle.get_device(), &fenceOneTimeCI, nullptr, &fenceOneTime));
@@ -96,7 +87,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             .dstAccessMask    = VK_ACCESS_2_TRANSFER_WRITE_BIT,
             .oldLayout        = VK_IMAGE_LAYOUT_UNDEFINED,
             .newLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .image            = image_handle_temp,
+            .image            = image_ptr->get_image_handle(),
             .subresourceRange = {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1
             }
@@ -122,7 +113,10 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
                                       },
                                   });
         }
-        vkCmdCopyBufferToImage(cbOneTime, imgSrcBuffer, image_handle_temp, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        vkCmdCopyBufferToImage(cbOneTime,
+                               staging_buffer->get_buffer_handle(),
+                               image_ptr->get_image_handle(),
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
         VkImageMemoryBarrier2 barrierTexRead{
             .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -132,7 +126,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             .dstAccessMask    = VK_ACCESS_SHADER_READ_BIT,
             .oldLayout        = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             .newLayout        = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .image            = image_handle_temp,
+            .image            = image_ptr->get_image_handle(),
             .subresourceRange = {
                 .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1
             }
@@ -149,8 +143,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         // command_submit submit(1, &cbOneTime);
         VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(handle.get_device(), 1, &fenceOneTime, VK_TRUE, UINT64_MAX));
         vkDestroyFence(handle.get_device(), fenceOneTime, nullptr);
-        vmaUnmapMemory(handle.get_allocator(), imgSrcAllocation);
-        vmaDestroyBuffer(handle.get_allocator(), imgSrcBuffer, imgSrcAllocation);
+
 
         // Sampler
         VkSamplerCreateInfo samplerCI{
@@ -166,12 +159,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
 
         ktxTexture_Destroy(ktxTexture);
 
-        VkDescriptorImageInfo temp{
-            .sampler     = sampler,
-            .imageView   = image_view_temp,
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
-        };
-        texture.image       = {image_handle_temp, allocation_temp, image_view_temp};
+        texture.image       = image_ptr;
         texture.sampler     = sampler;
         texture.imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
         return texture;

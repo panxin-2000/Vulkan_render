@@ -171,7 +171,7 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
         .subresourceRange{
             .aspectMask     = parameters.aspectMask,
             .baseMipLevel   = 0,
-            .levelCount     = 1,
+            .levelCount     = parameters.mipLevels,
             .baseArrayLayer = 0,
             .layerCount     = parameters.arrayLayers,
         }
