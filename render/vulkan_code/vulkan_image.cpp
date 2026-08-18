@@ -135,7 +135,7 @@ void generateMipmaps(VK_backend &handle, VKR_image_ptr image_ptr,
 }
 
 /**
- * 这里是核心的绘制函数
+ * 这里是核心的创建函数
  * @param parameters
  * @return
  */
@@ -171,11 +171,8 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
 
     VkImageViewCreateInfo depthViewCI{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = image,
-        // .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        // .viewType = VK_IMAGE_VIEW_TYPE_CUBE,
-
+        .sType  = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image  = image,
         .format = parameters.format,
         .subresourceRange{
             .aspectMask     = parameters.aspectMask,
@@ -201,22 +198,9 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
                                         const bool have_mip = false) {
     const VkDeviceSize imageSize = picture_parameters.width * picture_parameters.height * picture_parameters.channels;
 
-    uint32_t mipLevels;
-    if (have_mip == false) {
-        mipLevels = 1;
-    } else {
-        // 不想创建时可以设置为 1 ，不能设置为零
-        mipLevels =
-                static_cast<uint32_t>(std::floor(
-                                                 std::log2(std::max(picture_parameters.width,
-                                                                    picture_parameters.height)))) + 1;
-    }
-
     if (picture_parameters.image_data == nullptr) {
         return {};
-        // throw std::runtime_error("failed to load texture image!");
     }
-
     auto mem_copy_function = [picture_parameters](void *dst) {
         const VkDeviceSize image_size = picture_parameters.width *
                                         picture_parameters.height *
@@ -238,9 +222,12 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
             VK_IMAGE_USAGE_SAMPLED_BIT),
         .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
         .tiling      = VK_IMAGE_TILING_OPTIMAL,
-        .mipLevels   = mipLevels,
+        .mipLevels   = 1,
         .arrayLayers = 1
     };
+    if (have_mip) {
+        parameters.set_mip_levels();
+    }
     auto image_ptr = create_2d_image_and_view(parameters);
 
 
@@ -250,7 +237,7 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
     transitionImageLayout(image_ptr, parameters, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    if (mipLevels > 1)
+    if (parameters.mipLevels > 1)
         generateMipmaps(handle, image_ptr, parameters);
 
 
@@ -379,30 +366,10 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
     }
 
     auto &handle                 = VK_backend::instance();
-    const bool have_mip          = false;
     const VkDeviceSize imageSize = picture_parameters[0].width *
                                    picture_parameters[0].height *
                                    picture_parameters[0].channels * picture_parameters.size();
 
-    uint32_t mipLevels;
-    if (have_mip == false) {
-        mipLevels = 1;
-    } else {
-        // 不想创建时可以设置为 1 ，不能设置为零
-        mipLevels =
-                static_cast<uint32_t>(std::floor(
-                                                 std::log2(std::max(picture_parameters[0].width,
-                                                                    picture_parameters[0].height)))) + 1;
-    }
-
-    for (const auto &picture_parameter: picture_parameters) {
-        if (picture_parameter.image_data == nullptr) {
-            return {};
-            // throw std::runtime_error("failed to load texture image!");
-        }
-    }
-
-    VkDeviceMemory stagingBufferMemory;
 
     auto mem_copy_function = [picture_parameters](void *dst) {
         for (const auto &picture_parameter: picture_parameters) {
@@ -426,7 +393,7 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
             VK_IMAGE_USAGE_SAMPLED_BIT),
         .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
         .tiling      = VK_IMAGE_TILING_OPTIMAL,
-        .mipLevels   = mipLevels,
+        .mipLevels   = 1,
         .arrayLayers = 6,
         .flags       = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
     };

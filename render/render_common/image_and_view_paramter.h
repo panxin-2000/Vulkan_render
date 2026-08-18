@@ -21,6 +21,10 @@ struct Image_and_view_parameters {
     VkImageCreateFlags flags; // sky_box 会使用
 
 
+    void set_mip_levels() {
+        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    }
+
     template<typename H>
     friend H AbslHashValue(H state, const Image_and_view_parameters &sp) {
         // 直接使用 H::combine 把所有成员丢进去，它支持任意数量、任意类型的参数！
