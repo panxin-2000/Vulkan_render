@@ -19,10 +19,10 @@ std::atomic<uint32_t> VKR_image::max_index = 0;
 moodycamel::BlockingReaderWriterQueue<uint32_t> VKR_image::free_index;
 
 
-VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
-                                         std::function<void(void *)> mem_copy_callback) {
-    auto &backend = VK_backend::instance();
-    auto vBuffer  =
+VKR_buffer_ptr create_image_stage_buffer(const VkDeviceSize size,
+                                         const std::function<void(void *)> mem_copy_callback) {
+    auto &backend      = VK_backend::instance();
+    const auto vBuffer =
             create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
@@ -33,13 +33,15 @@ VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
 
 
 // todo:: 想起来了，这里写过一次，写的时候还是很头痛的，之后也没有很仔细的验证结果，应该是好了的
-void transition_image(VkCommandBuffer commandBuffer, VkImage image, uint32_t baseMipLevel,
-                      VkImageLayout oldLayout,
-                      VkImageLayout newLayout,
-                      VkAccessFlags srcAccessMask,
-                      VkAccessFlags dstAccessMask,
-                      VkPipelineStageFlags srcStageMask,
-                      VkPipelineStageFlags dstStageMask) {
+void transition_image(const VkCommandBuffer commandBuffer,
+                      const VkImage image,
+                      const uint32_t baseMipLevel,
+                      const VkImageLayout oldLayout,
+                      const VkImageLayout newLayout,
+                      const VkAccessFlags srcAccessMask,
+                      const VkAccessFlags dstAccessMask,
+                      const VkPipelineStageFlags srcStageMask,
+                      const VkPipelineStageFlags dstStageMask) {
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.image                           = image;
@@ -62,28 +64,20 @@ void transition_image(VkCommandBuffer commandBuffer, VkImage image, uint32_t bas
 }
 
 
-void generateMipmaps(VK_backend &handle, VKR_image_ptr image_ptr,
-                     Image_and_view_parameters parameters) {
-    const VkImage image        = image_ptr->get_image_handle();
-    const VkFormat imageFormat = parameters.format;
-    const int32_t texWidth     = parameters.width;
-    const int32_t texHeight    = parameters.height;
-    const uint32_t mipLevels   = parameters.mipLevels;
-    // Check if image format supports linear blitting
+void generateMipmaps(VK_backend &handle, const VKR_image_ptr image_ptr,
+                     const Image_and_view_parameters &parameters) {
     VkFormatProperties formatProperties;
-    vkGetPhysicalDeviceFormatProperties(handle.get_physical_device(), imageFormat, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(handle.get_physical_device(), parameters.format, &formatProperties);
 
     if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
-
-
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
-        int32_t mipWidth  = texWidth;
-        int32_t mipHeight = texHeight;
+        int32_t mipWidth  = parameters.width;
+        int32_t mipHeight = parameters.height;
 
-        for (uint32_t i = 1; i < mipLevels; i++) {
-            transition_image(commandBuffer, image, i - 1,
+        for (uint32_t i = 1; i < parameters.mipLevels; i++) {
+            transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -106,12 +100,12 @@ void generateMipmaps(VK_backend &handle, VKR_image_ptr image_ptr,
             blit.dstSubresource.layerCount = 1;
 
             vkCmdBlitImage(commandBuffer,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                            1, &blit,
                            VK_FILTER_LINEAR);
 
-            transition_image(commandBuffer, image, i - 1,
+            transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              VK_ACCESS_TRANSFER_READ_BIT,
@@ -123,7 +117,7 @@ void generateMipmaps(VK_backend &handle, VKR_image_ptr image_ptr,
             if (mipHeight > 1) mipHeight /= 2;
         }
 
-        transition_image(commandBuffer, image, mipLevels - 1,
+        transition_image(commandBuffer, image_ptr->get_image_handle(), parameters.mipLevels - 1,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                          VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -259,13 +253,16 @@ VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_
     return result;
 }
 
-void copyBufferToImage(VKR_buffer_ptr buffer,
-                       VKR_image_ptr image_ptr,
-                       Image_and_view_parameters parameters) {
+/**
+ * 这个函数只能复制 普通图片的 第一层 或者 天空盒的 每一层, 因为这里假设 每一层的 图片长宽相等
+ * @param buffer
+ * @param image_ptr
+ * @param parameters
+ */
+void copyBufferToImage(const VKR_buffer_ptr buffer,
+                       const VKR_image_ptr image_ptr,
+                       const Image_and_view_parameters &parameters) {
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
-        uint32_t width  = parameters.width;
-        uint32_t height = parameters.height;
-        int layerCount  = parameters.arrayLayers;
         std::vector<VkBufferImageCopy> regions;
         VkBufferImageCopy region{};
         region.bufferOffset                    = 0;
@@ -276,9 +273,9 @@ void copyBufferToImage(VKR_buffer_ptr buffer,
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount     = 1;
         region.imageOffset                     = {0, 0, 0};
-        region.imageExtent                     = {width, height, 1};
-        for (int i = 0; i < layerCount; i++) {
-            region.bufferOffset                    = width * height * 4 * i;
+        region.imageExtent                     = {parameters.width, parameters.height, 1};
+        for (int i = 0; i < parameters.arrayLayers; i++) {
+            region.bufferOffset                    = parameters.width * parameters.height * 4 * i;
             region.imageSubresource.baseArrayLayer = i;
             regions.emplace_back(region);
         }
@@ -296,13 +293,11 @@ void copyBufferToImage(VKR_buffer_ptr buffer,
 }
 
 
-void transitionImageLayout(VKR_image_ptr image_ptr,
-                           Image_and_view_parameters parameters,
-                           VkImageLayout oldLayout,
-                           VkImageLayout newLayout) {
-    VkFormat format       = parameters.format;
-    uint32_t arrayLayers  = parameters.arrayLayers;
-    const VkImage image   = image_ptr->get_image_handle();
+void transitionImageLayout(const VKR_image_ptr image_ptr,
+                           const Image_and_view_parameters &parameters,
+                           const VkImageLayout oldLayout,
+                           const VkImageLayout newLayout) {
+
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -310,12 +305,12 @@ void transitionImageLayout(VKR_image_ptr image_ptr,
         barrier.newLayout                       = newLayout;
         barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image                           = image;
+        barrier.image                           = image_ptr->get_image_handle();
         barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel   = 0;
         barrier.subresourceRange.levelCount     = 1;
         barrier.subresourceRange.baseArrayLayer = 0;
-        barrier.subresourceRange.layerCount     = arrayLayers;
+        barrier.subresourceRange.layerCount     = parameters.arrayLayers;
 
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;

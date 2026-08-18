@@ -122,12 +122,12 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
 
 void copyBufferToImage(VKR_buffer_ptr buffer,
                        VKR_image_ptr image_ptr,
-                       Image_and_view_parameters parameters);
+                       const Image_and_view_parameters &parameters);
 
-void transitionImageLayout(VKR_image_ptr image_ptr,
-                           Image_and_view_parameters parameters,
-                           VkImageLayout oldLayout,
-                           VkImageLayout newLayout);
+void transitionImageLayout(const VKR_image_ptr image_ptr,
+                           const Image_and_view_parameters &parameters,
+                           const VkImageLayout oldLayout,
+                           const VkImageLayout newLayout);
 
 std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width, uint32_t height, uint32_t mipLevels,
                                                   VkFormat format,
