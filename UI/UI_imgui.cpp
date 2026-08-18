@@ -371,7 +371,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
             if (ImGui::Checkbox("bistro.gltf", &bistro)) {
                 if (bistro == true) {
                     ScopedTimer temp("bistro.gltf"); // 56.89 s
-                    load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/glTF-Sample-Models/bistro.glb");
+                    load_gltf_model("bistro.gltf", "/Users/panxin/file_sync/bistro.gltf");
                 }
             }
         } {

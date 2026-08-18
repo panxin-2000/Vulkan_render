@@ -674,16 +674,51 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
 }
 
 
+VKR_image_ptr load_ktx(const std::filesystem::path &path, const fastgltf::Asset &model, fastgltf::Image &image) {
+    if (std::holds_alternative<fastgltf::sources::BufferView>(image.data)) {
+        auto &view       = std::get<fastgltf::sources::BufferView>(image.data);
+        auto &bufferView = model.bufferViews[view.bufferViewIndex];
+        auto &buffer     = model.buffers[bufferView.bufferIndex];
+        auto need_size   = bufferView.byteLength;
+        auto need_start  = bufferView.byteOffset;;
+
+
+        if (std::holds_alternative<fastgltf::sources::Array>(buffer.data)) {
+            auto &array = std::get<fastgltf::sources::Array>(buffer.data);
+            // 这里需要去 拿 地址 和 大小
+            auto size              = array.bytes.size();
+            auto start             = array.bytes.begin();
+            auto real_start        = start + need_start;
+            ktxTexture *ktxTexture = nullptr;
+
+            // 3. 调用专门的内存创建函数
+            KTX_error_code result = ktxTexture_CreateFromMemory((const ktx_uint8_t *) (real_start),
+                                                                need_size,
+                                                                KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, // 标志位：立即加载图像数据
+                                                                &ktxTexture
+                                                               );
+            if (result == KTX_SUCCESS) {
+                auto image_ptr = load_ktx(ktxTexture);
+                return image_ptr;
+            }
+        }
+    }
+    return {};
+}
+
+
 auto load_texture_info(const std::filesystem::path &path,
                        const fastgltf::Asset &model,
                        const fastgltf::TextureInfo &texture_info) {
     if (texture_info.textureIndex < model.textures.size()) {
         auto texture = model.textures[texture_info.textureIndex];
-
         if (texture.basisuImageIndex.has_value() &&
             texture.basisuImageIndex.value() <= model.images.size()) {
-            auto image   = model.images[texture.basisuImageIndex.value()];
-            auto picture = loadImage(path, model, image);
+            auto image     = model.images[texture.basisuImageIndex.value()];
+            auto image_ptr = load_ktx(path, model, image);
+            auto result    = create_2d_texture(image_ptr);
+            Engine::instance().add_bindless_texture(result);
+            return result;
         } else if (texture.ddsImageIndex.has_value() &&
                    texture.ddsImageIndex.value() <= model.images.size()) {
             auto image = model.images[texture.ddsImageIndex.value()];
