@@ -168,7 +168,7 @@ void main()
     vec3 direct_light = vec3(0.0f);
     vec3 indirect_light = vec3(0.0f);
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
-    indirect_light = indirect_light_dufuse * c_diffusen * AO;
+    indirect_light = indirect_light_dufuse * c_diffusen ;
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;

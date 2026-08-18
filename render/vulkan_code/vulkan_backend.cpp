@@ -344,16 +344,10 @@ void VK_backend::create_device() {
         queueFamilyIndices.transfer = queueFamilyIndices.graphics;
     }
 
-    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
-    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-
-    // 根据你 dstBinding(1) 的具体类型，至少开启以下对应的一项：
-    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
-
 
     VkPhysicalDeviceVulkan11Features enabledVk1Features{
         .sType                = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES,
-        .pNext                = &indexingFeatures,
+        .pNext                = nullptr,
         .storageInputOutput16 = true,
         .shaderDrawParameters = true,
         // gl_DrawID：当前绘制命令在本次批量绘制（Multi-Draw）中的索引（从 0 开始计数）。
