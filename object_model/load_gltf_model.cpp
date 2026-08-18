@@ -3,6 +3,9 @@
 //
 
 #include "load_gltf_model.h"
+
+#include <oneapi/tbb/task_group.h>
+
 #include "input_component.h"
 #include "transform_component.h"
 #include "name_component.h"
@@ -167,6 +170,7 @@ auto mem_copy_all_attributes(const uint32_t count, const std::vector<Attribute> 
     for (const auto &attribute: attributes) {
         single_size += attribute.element_size;
     }
+    // 这里居然花的时间很多  std::make_shared
     result.ptr         = std::make_shared<char[]>(count * single_size);
     result.count       = count;
     result.single_size = single_size;
@@ -337,19 +341,19 @@ void add_Transform_parameter(const entt::entity entity, const fastgltf::Node &no
 /**
  *
  * @param model
+ * @param node_entities
  * @param current_node_index
- * @param parent_node_index   好像确实没有什么用
  * @param parent_entity
  * @return
  */
 entt::entity load_node_data(fastgltf::Asset &model,
-                            std::vector<entt::entity> &nodes_have_deal,
+                            std::vector<entt::entity> &node_entities,
                             const size_t current_node_index,
-                            const size_t parent_node_index   = -1,
                             const entt::entity parent_entity = entt::null) {
-    auto node                              = model.nodes[current_node_index];
-    const entt::entity entity              = Logic_entt().create();
-    nodes_have_deal.at(current_node_index) = entity;
+    auto node = model.nodes[current_node_index];
+
+    const entt::entity entity = node_entities.at(current_node_index);
+
     Logic_entt().emplace<Name_component>(entity, node.name.c_str());
     if (parent_entity == entt::null) world_root_add_child(entity);
     else add_relation(parent_entity, entity);
@@ -413,7 +417,7 @@ entt::entity load_node_data(fastgltf::Asset &model,
     // }
 
     for (const auto i: node.children) {
-        load_node_data(model, nodes_have_deal, i, current_node_index, entity);
+        load_node_data(model, node_entities, i, entity);
     }
 
     return entt::null;
@@ -870,6 +874,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         // Logic_entt().emplace<Input_Component>(model_entity, model_3d_Event);
         Logic_entt().emplace<load_material>(model_entity);
 
+        tbb::task_group group;
 
         if (model.skins.empty()) {
             Logic_entt().emplace<Shader_data>(model_entity,
@@ -884,18 +889,21 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         logic_update_add_tag<opacity_tag>(model_entity);
 
         const auto nodes_num = model.nodes.size();
-        std::vector<entt::entity> nodes_have_deal;
-        nodes_have_deal.resize(nodes_num, entt::null);
-
+        std::vector<entt::entity> node_entities;
+        node_entities.resize(nodes_num, entt::null);
+        for (auto &have_deal: node_entities) {
+            have_deal = Logic_entt().create();
+        }
         for (const auto &scene: model.scenes) {
             for (const auto node_index: scene.nodeIndices) {
-                load_node_data(model, nodes_have_deal, node_index, -1, model_entity);
+                load_node_data(model, node_entities, node_index, model_entity);
             }
         }
+        group.wait();
         // 之后呢? 其实完全是可以在这里操作的
         // 那么需要有一个假设,假设 是 按照  深度优先 的 方式进行的 node 的排序
-        gltf_load_skin(model, nodes_have_deal, model_entity);
-        gltf_load_animal(model, nodes_have_deal, model_entity);
+        gltf_load_skin(model, node_entities, model_entity);
+        gltf_load_animal(model, node_entities, model_entity);
 
 
         add_recursion_function_to_children(model_entity, set_transform_dirty);
