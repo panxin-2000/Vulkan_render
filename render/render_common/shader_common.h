@@ -114,16 +114,6 @@ struct Picture_parameters {
     uint8_t *image_data = nullptr;
 };
 
-struct Image_and_view_parameters {
-    VkFormat format;
-    uint32_t width;
-    uint32_t height;
-    uint32_t depth;
-    VkImageUsageFlagBits usage;
-    VkImageAspectFlags aspectMask;
-    VkImageTiling tiling;
-    uint32_t mipLevels;
-};
 
 template<typename T>
 uint32_t to_u32(T val) {

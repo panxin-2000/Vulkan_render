@@ -5,93 +5,120 @@
 
 #include "engine.h"
 
-VKR_image_ptr &Render_image_manager::get_one_position_image() {
-    return G_buffer_Position_images_.back();
+void Render_image_manager::using_to_free() {
+    for (auto &[_, using_of_free]: map_) {
+        for (const auto &use: using_of_free.is_using) {
+            using_of_free.is_free.push_back(use);
+        }
+        using_of_free.is_using.clear();
+    }
 }
 
-VKR_image_ptr &Render_image_manager::get_one_normal_image() {
-    return g_buffer_Normal_images_.back();
+VKR_image_ptr Render_image_manager::get_one_position_image() {
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    Image_and_view_parameters parameters{
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .width  = extent.width,
+        .height = extent.height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling     = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels  = 1,
+    };
+    return find(parameters);
 }
 
-VKR_image_ptr &Render_image_manager::get_one_color_image() {
-    return G_buffer_BaseColor_images_.back();
+VKR_image_ptr Render_image_manager::get_one_normal_image() {
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    Image_and_view_parameters parameters{
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+        .width  = extent.width,
+        .height = extent.height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling     = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels  = 1,
+    };
+    return find(parameters);
 }
 
-std::optional<Texture_parameter> Render_image_manager::get_color_texture() {
-    return temp;
+VKR_image_ptr Render_image_manager::get_one_color_image() {
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    Image_and_view_parameters parameters{
+        .format = VK_FORMAT_B8G8R8A8_SRGB,
+        .width  = extent.width,
+        .height = extent.height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling     = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels  = 1,
+    };
+    return find(parameters);
 }
 
-std::optional<Texture_parameter> Render_image_manager::get_depth_texture() {
-    return temp_depth;
-}
 
 void Render_image_manager::create() {
-    {
-        Image_and_view_parameters parameters;
-
-        parameters.format = VK_FORMAT_D32_SFLOAT;
-        parameters.width  = 2016;
-        parameters.height = 1832;
-        parameters.depth  = 1;
-        parameters.usage  = static_cast<VkImageUsageFlagBits>(
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-        parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
-        parameters.mipLevels  = 1;
-        auto result           = create_2d_image_and_view(parameters);
-
-        depth_images_.push_back(result);
-        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
-        depth_images_.push_back(VK_backend::instance().create_depth_image_and_view());
-
-
-        G_buffer_Position_images_.push_back(VK_backend::instance().
-                                            create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_Position_images_.push_back(VK_backend::instance().
-                                            create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                          create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        g_buffer_Normal_images_.push_back(VK_backend::instance().
-                                          create_G_buffer_image_and_view(VK_FORMAT_R16G16B16A16_SFLOAT,
-                                                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        G_buffer_BaseColor_images_.push_back(VK_backend::instance().
-                                             create_G_buffer_image_and_view(VK_FORMAT_B8G8R8A8_SRGB,
-                                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-        temp       = create_2d_texture(G_buffer_BaseColor_images_.back());
-        temp_depth = create_2d_texture(depth_images_.at(0));
-    }
 }
 
 VKR_image_ptr Render_image_manager::get_one_depth_image() {
-    return depth_images_.back();
+    Image_and_view_parameters parameters{};
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    parameters.format       = VK_backend::instance().get_depth_format();
+    parameters.width        = extent.width;
+    parameters.height       = extent.height;
+    parameters.depth        = 1;
+    parameters.usage        = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    parameters.aspectMask   = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    parameters.tiling       = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels    = 1;
+
+    return find(parameters);
 }
 
 VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
-    return depth_images_.at(0);
+    Image_and_view_parameters parameters{};
+    parameters.format = VK_FORMAT_D32_SFLOAT;
+    parameters.width  = 2016;
+    parameters.height = 1832;
+    parameters.depth  = 1;
+    parameters.usage  = static_cast<VkImageUsageFlagBits>(
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels  = 1;
+    return find(parameters);
 }
 
-void Render_image_manager::destroy() {
-    for (const auto &image: depth_images_) {
-        image->destroy_image();
-    }
-    depth_images_.clear();
 
-    for (const auto &image: G_buffer_Position_images_) {
-        image->destroy_image();
+VKR_image_ptr Render_image_manager::find(const Image_and_view_parameters &parameters) {
+    if (map_.contains(parameters)) {
+        auto &using_of_free = map_[parameters];
+        if (using_of_free.is_free.empty()) {
+            auto result = create_2d_image_and_view(parameters);
+            using_of_free.is_using.push_back(result);
+            return result;
+        }
+        const auto result = using_of_free.is_free.back();
+        using_of_free.is_free.pop_back();
+        using_of_free.is_using.push_back(result);
+        return result;
+    } else {
+        auto result = create_2d_image_and_view(parameters);
+        Using_of_Free using_of_free{};
+        using_of_free.is_using.push_back(result);
+        map_[parameters] = using_of_free;
+        return result;
     }
-    G_buffer_Position_images_.clear();
-    for (const auto &image: g_buffer_Normal_images_) {
-        image->destroy_image();
-    }
-    g_buffer_Normal_images_.clear();
-    for (const auto &image: G_buffer_BaseColor_images_) {
-        image->destroy_image();
-    }
-    G_buffer_BaseColor_images_.clear();
+}
+
+
+void Render_image_manager::destroy() {
+    map_.clear();
+    // 那么我的问题是, 这两个清理掉之后,时候就没有 共享指针了
 }

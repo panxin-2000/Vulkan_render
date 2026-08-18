@@ -4,35 +4,37 @@
 
 #ifndef HELLO_MAC_RENDER_IMAGE_MANAGER_H
 #define HELLO_MAC_RENDER_IMAGE_MANAGER_H
+#include "image_and_view_paramter.h"
 #include "vulkan_backend.h"
 #include "vulkan_image.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 
 
 class Render_image_manager {
-    std::vector<VKR_image_ptr> G_buffer_Position_images_;
-    std::vector<VKR_image_ptr> g_buffer_Normal_images_;
-    std::vector<VKR_image_ptr> G_buffer_BaseColor_images_;
-    std::vector<VKR_image_ptr> depth_images_;
+    struct Using_of_Free {
+        std::vector<VKR_image_ptr> is_using;
+        std::vector<VKR_image_ptr> is_free;
+    };
 
-    Texture_parameter temp;
-    Texture_parameter temp_depth;
+    absl::flat_hash_map<Image_and_view_parameters, Using_of_Free> map_;
 
 public:
-    VKR_image_ptr &get_one_position_image();
+    void using_to_free();
 
-    VKR_image_ptr &get_one_normal_image();
+    VKR_image_ptr get_one_position_image();
 
-    VKR_image_ptr &get_one_color_image();
+    VKR_image_ptr get_one_normal_image();
 
-    std::optional<Texture_parameter> get_color_texture();
-
-    std::optional<Texture_parameter> get_depth_texture();
+    VKR_image_ptr get_one_color_image();
 
     void create();
 
     VKR_image_ptr get_one_depth_image();
 
     VKR_image_ptr get_one_depth_AO_image();
+
+    VKR_image_ptr find(const Image_and_view_parameters &parameters);
 
     void destroy();
 };

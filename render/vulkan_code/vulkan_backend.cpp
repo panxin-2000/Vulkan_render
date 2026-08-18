@@ -15,6 +15,8 @@
 #include <SDL3/SDL_vulkan.h>
 
 #include "global_singleton.h"
+#include "vulkan_read_attribute.h"
+#include "image_and_view_paramter.h"
 #include "vulkan_validation_layer.h"
 
 // 必须使用 atomic 保证多线程可见性与禁止指令重排
@@ -33,6 +35,11 @@ VK_backend &VK_backend::instance() {
         }
     }
     return *current;
+}
+
+VkExtent2D VK_backend::get_swap_rational_extent() const {
+    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
+    return extent;
 }
 
 void VK_backend::create() {
@@ -341,7 +348,7 @@ void VK_backend::create_device() {
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
 
     // 根据你 dstBinding(1) 的具体类型，至少开启以下对应的一项：
-    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE;
+    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 
 
     VkPhysicalDeviceVulkan11Features enabledVk1Features{
@@ -516,72 +523,6 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     return result;
 }
 
-
-VKR_image_ptr VK_backend::create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const {
-    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
-
-    assert(g_buffer_format != VK_FORMAT_UNDEFINED);
-    VkImageCreateInfo g_buffer_ImageCI{
-        .sType     = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format    = g_buffer_format,
-        .extent{
-            .width  = extent.width,
-            .height = extent.height,
-            .depth  = 1
-        },
-        .mipLevels     = 1,
-        .arrayLayers   = 1,
-        .samples       = VK_SAMPLE_COUNT_1_BIT,
-        .tiling        = VK_IMAGE_TILING_OPTIMAL,
-        .usage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
-
-    const VmaAllocationCreateInfo allocCI{
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, .usage = VMA_MEMORY_USAGE_GPU_ONLY
-    };
-    VkImage g_buffer_image                 = VK_NULL_HANDLE;
-    VmaAllocation g_buffer_ImageAllocation = VK_NULL_HANDLE;
-    VkImageView g_buffer_image_view        = VK_NULL_HANDLE;
-
-    VK_CHECK_RESULT(vmaCreateImage(allocator_, &g_buffer_ImageCI, &allocCI, &g_buffer_image, &g_buffer_ImageAllocation,
-                        nullptr));
-
-    const VkImageViewCreateInfo depthViewCI{
-        .sType    = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image    = g_buffer_image,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format   = g_buffer_format,
-        .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel   = 0,
-            .levelCount     = 1,
-            .baseArrayLayer = 0,
-            .layerCount     = 1
-        }
-    };
-    VK_CHECK_RESULT(vkCreateImageView(device_, &depthViewCI, nullptr, &g_buffer_image_view));
-
-
-    return {g_buffer_image, g_buffer_ImageAllocation, g_buffer_image_view};
-}
-
-VKR_image_ptr VK_backend::create_depth_image_and_view() {
-    // Depth attachment
-    Image_and_view_parameters parameters;
-    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
-
-    parameters.format     = depth_format_;
-    parameters.width      = extent.width;
-    parameters.height     = extent.height;
-    parameters.depth      = 1;
-    parameters.usage      = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    parameters.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    parameters.tiling     = VK_IMAGE_TILING_OPTIMAL;
-    parameters.mipLevels  = 1;
-    return create_2d_image_and_view(parameters);
-}
 
 void VK_backend::destroy() {
     if (swap_chain_ != VK_NULL_HANDLE)

@@ -15,7 +15,11 @@
 #include "vulkan_execute_command.h"
 
 
-void render_different_pass(VCB &vcb, Engine &engine) {
+void render_different_pass(VCB &vcb,
+                           Engine &engine,
+                           VKR_image_ptr color_image,
+                           VKR_image_ptr depth_image,
+                           VKR_image_ptr depth_AO_image) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
         VkBufferMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -62,7 +66,7 @@ void render_different_pass(VCB &vcb, Engine &engine) {
         // g_buffer_image_indices 这是需要看看怎么传递进入其中
         const auto view = Render_entt().view<shadow_pass_tag>();
         if (!view.empty()) {
-            vcb.begin_shadow_pass(engine.get_image_manager().get_one_depth_image());
+            vcb.begin_shadow_pass(depth_image);
 
             // 中间需要添加 被光 照 到的物体，能产生阴影的物体
             // 这里的时候发生了一点改变，为什么呢？ 单个 mesh 需要多个不同的 render pass
@@ -89,8 +93,7 @@ void render_different_pass(VCB &vcb, Engine &engine) {
         auto view = Render_entt().view<deferred_pass_tag>();
         if (!view.empty()) {
             auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(
-                 engine.get_image_manager().get_one_color_image(),
-                 engine.get_image_manager().get_one_depth_image(),
+                 color_image, depth_image,
                  engine.get_image_manager().get_one_position_image(),
                  engine.get_image_manager().get_one_normal_image());
             auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
@@ -100,9 +103,8 @@ void render_different_pass(VCB &vcb, Engine &engine) {
             }
             vcb.end_rendering();
             vcb.current_write_next_read_image({
-                                                  engine.get_image_manager().get_one_color_image(),
-                                                  engine.get_image_manager().
-                                                  get_one_position_image(),
+                                                  color_image,
+                                                  engine.get_image_manager().get_one_position_image(),
                                                   engine.get_image_manager().get_one_normal_image()
                                               });
         }
@@ -111,7 +113,7 @@ void render_different_pass(VCB &vcb, Engine &engine) {
     // 这里是绘制 不透明
     // 不能按照
     {
-        vcb.begin_rendering_depth_attachment(engine.get_image_manager().get_one_depth_AO_image(),
+        vcb.begin_rendering_depth_attachment(depth_AO_image,
                                              VK_ATTACHMENT_LOAD_OP_CLEAR);
         auto view = Render_entt().view<opacity_gltf_tag, GPU_frustum_cull, Name_component>();
         for (const auto entity: view) {
@@ -119,7 +121,10 @@ void render_different_pass(VCB &vcb, Engine &engine) {
             auto name                   = Render_entt().get<Name_component>(entity);
             const auto &shader_data_ref =
                     engine.get_shader_manager().find(VKR_shader_paths{
-                                                         "opacity_depth_write", "opacity_depth_write", "", "",
+                                                         "opacity_depth_write",
+                                                         "opacity_depth_write",
+                                                         "",
+                                                         "",
                                                          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                                                          VK_FORMAT_D32_SFLOAT
                                                      });
@@ -130,9 +135,7 @@ void render_different_pass(VCB &vcb, Engine &engine) {
             vcb.DrawIndexedIndirect(entity, command_calculate);
         }
         vcb.end_rendering();
-        vcb.current_write_next_read_depth({
-                                              engine.get_image_manager().get_one_depth_AO_image()
-                                          });
+        vcb.current_write_next_read_depth({depth_AO_image});
     }
 
     // 绘制 3d 物体的阶段 pass
@@ -140,13 +143,9 @@ void render_different_pass(VCB &vcb, Engine &engine) {
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                vcb.begin_rendering_offscreen_attachment(engine.get_image_manager().get_one_color_image(),
-                                                         engine.get_image_manager().get_one_depth_image(),
-                                                         VK_ATTACHMENT_LOAD_OP_LOAD);
+                vcb.begin_rendering_offscreen_attachment(color_image, depth_image, VK_ATTACHMENT_LOAD_OP_LOAD);
             } else {
-                vcb.begin_rendering_offscreen_attachment(engine.get_image_manager().get_one_color_image(),
-                                                         engine.get_image_manager().get_one_depth_image(),
-                                                         VK_ATTACHMENT_LOAD_OP_CLEAR);
+                vcb.begin_rendering_offscreen_attachment(color_image, depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR);
             }
         }
         // 应该先划分不同的 pass 阶段，
@@ -198,10 +197,10 @@ void render_different_pass(VCB &vcb, Engine &engine) {
     // 在这里的时候需要插入 FXAA
     {
         vcb.current_write_next_read_image({
-                                              engine.get_image_manager().get_one_color_image()
+                                              color_image
                                           });
         vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
-                                       engine.get_image_manager().get_one_depth_image(),
+                                       depth_image,
                                        VK_ATTACHMENT_LOAD_OP_CLEAR); {
             auto command_shader = engine.get_shader_manager().get_offscreen_to_screen_shader_data();
             vcb.render_post_deal(command_shader, entt::null);
@@ -221,7 +220,6 @@ void render_different_pass(VCB &vcb, Engine &engine) {
                 vcb.build_draw_command(entity);
             }
         }
-
         vcb.end_rendering();
     }
 }
@@ -242,13 +240,17 @@ void destroy_Render_entt() { {
 }
 
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
-    VK_backend::instance().update_current_extent(); {
+    VK_backend::instance().update_current_extent();
+    engine.get_image_manager().using_to_free();
+    const auto color_image    = engine.get_image_manager().get_one_color_image();
+    const auto depth_image    = engine.get_image_manager().get_one_depth_image();
+    const auto depth_AO_image = engine.get_image_manager().get_one_depth_AO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
-        auto offscreen = engine.get_image_manager().get_color_texture();
-        // 这里之后还需要做什么呢?
 
-        auto depth = engine.get_image_manager().get_depth_texture();
+        auto offscreen = create_2d_texture(color_image);
+        auto depth     = create_2d_texture(depth_AO_image);
+
 
         engine.update_global_parameter(offscreen, {}, depth); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
@@ -274,7 +276,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
-    render_different_pass(vcb, engine);
+    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image);
     vcb.end_command_buffer();
 
     engine.submit_render_queue(time_line);

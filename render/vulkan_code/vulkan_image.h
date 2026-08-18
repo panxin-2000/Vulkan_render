@@ -12,6 +12,7 @@
 
 #include <readerwriterqueue.h>
 
+#include "image_and_view_paramter.h"
 #include "vulkan_buffer.h"
 
 class VKR_image : public NonCopyable {
@@ -129,7 +130,7 @@ std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width, uint32_t heigh
                                                   VkImageTiling tiling, VkImageUsageFlags usage);
 
 struct Texture_parameter {
-    VKR_image_ptr image;
+    VKR_image_ptr image       = {};
     VkSampler sampler         = VK_NULL_HANDLE;
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -137,7 +138,7 @@ struct Texture_parameter {
         const VkDescriptorImageInfo temp{
             .sampler     = sampler,
             .imageView   = image->get_image_view(timeline),
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+            .imageLayout = imageLayout
         };
         return temp;
     }

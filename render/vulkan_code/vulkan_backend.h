@@ -89,11 +89,9 @@ public:
 
     std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
 
-    VKR_image_ptr create_G_buffer_image_and_view(VkFormat g_buffer_format, VkImageUsageFlagBits usage) const;
-
-    VKR_image_ptr create_depth_image_and_view();
-
     static VK_backend &instance();
+
+    VkExtent2D get_swap_rational_extent() const;
 
     void create();
 

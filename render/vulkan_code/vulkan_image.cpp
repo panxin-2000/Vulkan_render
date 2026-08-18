@@ -660,11 +660,7 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
 }
 
 Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr) {
-    auto textureSampler = create_2d_Texture_Sampler();
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView   = image_ptr->get_image_view();
-    imageInfo.sampler     = textureSampler;
+    const auto textureSampler = create_2d_Texture_Sampler(); // 这里不会创建重复的,
     Texture_parameter texture_parameter{
         .image       = image_ptr,
         .sampler     = textureSampler,
