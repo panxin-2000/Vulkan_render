@@ -8,6 +8,7 @@
 
 std::mutex Command_submit_manager::submitMutex_;
 std::mutex Command_submit_manager::callbackMutex_;
+std::atomic<bool> Command_submit_manager::sync_ = false;
 std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> >
 Command_submit_manager::callback_functions_;
 
@@ -89,7 +90,7 @@ void Command_submit_manager::create() {
 }
 
 void Command_submit_manager::execute_callback_functions(const uint64_t time_line) {
-    if (callback_functions_.empty()) return;
+    if (callback_functions_.empty() && sync_ == true) return;
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType                     = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -102,6 +103,7 @@ void Command_submit_manager::execute_callback_functions(const uint64_t time_line
     temp.reserve(callback_functions_.size()); {
         std::lock_guard<std::mutex> lock(callbackMutex_);
         std::swap(temp, callback_functions_);
+        sync_ = false;
     }
     for (auto callback: temp) {
         callback(commandBuffer, time_line);

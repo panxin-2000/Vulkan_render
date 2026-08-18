@@ -238,6 +238,7 @@ public:
 
 void load_gltf_material_separate(entt::entity model_entity);
 
+void update_material(entt::entity model_entity);
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &mesh_path,
                              const Eigen::Vector3f            = {0, 0, 0},

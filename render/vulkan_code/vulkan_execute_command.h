@@ -12,6 +12,7 @@
 class Command_submit_manager {
     static std::mutex submitMutex_;
     static std::mutex callbackMutex_;
+    static std::atomic<bool> sync_;
     static std::vector<std::function<void(VkCommandBuffer commandBuffer, uint64_t time_line)> > callback_functions_;
     VkCommandPool pool                              = VK_NULL_HANDLE;
     VkFence fence_                                  = VK_NULL_HANDLE;
@@ -29,6 +30,10 @@ public:
      * 问题是 这里是否 应是 update_descriptor
      */
     void execute_callback_functions(const uint64_t time_line);
+
+    static void set_sync() {
+        sync_ = true;
+    }
 
     void destroy();
 

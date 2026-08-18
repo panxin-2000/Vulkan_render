@@ -60,8 +60,7 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
     update_object_transform_function(time_milliseconds);
 
     // 中间这部分需要移动
-
-
+    Command_submit_manager::set_sync();
     vk_render_queue::instance().logic_add_finished();
 }
 
