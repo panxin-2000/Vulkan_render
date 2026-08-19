@@ -293,10 +293,8 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
         } else {
             auto result = create_continue_indices(number_of_vertices);
         }
-        auto result          = copy_vertices_data(vertices_memory_size, model, primitive);
-        const auto bound_box = find_min_max_point(result);
-
-        Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result, bound_box);
+        auto result = copy_vertices_data(vertices_memory_size, model, primitive);
+        Logic_entt().get_or_emplace<Geometry_data>(entity).push_vertices(result);
     }
 
     Logic_entt().emplace_or_replace<Geometry_data_need_copy_tag>(entity);
@@ -510,8 +508,6 @@ void gltf_load_animal(const fastgltf::Asset &model,
     }
     Logic_entt().emplace<std::vector<RuntimeAnimation> >(root_entity, animations);
 }
-
-
 
 
 void gltf_load_skin(const fastgltf::Asset &model,
@@ -928,10 +924,11 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         auto update_aabb = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
-                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
-                const auto aabbs         = geometry_data.get_aabbs();
+                auto geometry_data       = Logic_entt().get<Geometry_data>(entity);
                 const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                for (auto &bound_box: aabbs) {
+                for (auto &vertices: geometry_data.get_vertices()) {
+                    const auto bound_box = find_min_max_point(vertices);
+                    geometry_data.push_AABB(bound_box);
                     auto temp = transform_AABB(bound_box, model_matrix);
                     boxes.push_back(temp);
                     matrices.push_back(model_matrix);

@@ -37,11 +37,11 @@ public:
 
     ~Geometry_data() = default;
 
-    template<typename vertex_t>
-    void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices, const Render_AABB &aabb) {
-        push_vertices(sp_vertices);
+
+    void push_AABB(const Render_AABB &aabb) {
         AABBs_.push_back(aabb);
     }
+
 
     template<typename vertex_t>
     void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices) {
@@ -163,67 +163,5 @@ bool add_box_data(entt::entity entity,
                   float y_max = 0.5,
                   float z_max = 0.5);
 
-
-inline Render_AABB find_min_max_point(const share_block &vertex) {
-    // 基础常数定义
-    constexpr float inf = std::numeric_limits<float>::infinity();
-
-    struct AABB {
-        Eigen::Vector3f min;
-        Eigen::Vector3f max;
-    };
-
-    // 初始化全域初值
-    AABB identity{
-        Eigen::Vector3f::Constant(inf),
-        Eigen::Vector3f::Constant(-inf)
-    };
-
-
-    // 使用 tbb::parallel_reduce 进行并行化
-    auto result = tbb::parallel_reduce(
-                                       // 1. 定义迭代范围（建议设置合理粒度，例如 1024 或更大，视顶点数而定）
-                                       tbb::blocked_range<int>(0, vertex.count, 2048),
-
-                                       // 2. 身份元素/初始值
-                                       identity,
-
-                                       // 3. 线程内部的局部规约（计算局部小分块的 min/max）
-                                       [&](const tbb::blocked_range<int> &r, AABB local) -> AABB {
-                                           char *base_ptr = static_cast<char *>(vertex.data);
-                                           size_t stride  = vertex.single_size;
-
-                                           for (int i = r.begin(); i != r.end(); ++i) {
-                                               // 保持您原本的高效内存映射方式
-                                               Eigen::Map<const Eigen::Vector3f> pos(
-                                                    reinterpret_cast<const float *>(
-                                                        base_ptr + stride * i)
-                                                   );
-
-                                               local.min = local.min.cwiseMin(pos);
-                                               local.max = local.max.cwiseMax(pos);
-                                           }
-                                           return local;
-                                       },
-
-                                       // 4. 跨线程的树状合并（将各个线程的局部 AABB 合并为最终结果）
-                                       [](AABB a, AABB b) -> AABB {
-                                           return AABB{
-                                               a.min.cwiseMin(b.min),
-                                               a.max.cwiseMax(b.max)
-                                           };
-                                       }
-                                      );
-    const Eigen::Vector3f min = result.min;
-    const Eigen::Vector3f max = result.max;
-
-
-    Render_AABB bounding_box;
-    const auto temp                  = (min + max) / 2;
-    const auto temp_2                = (max - min) / 2;
-    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.z(), 1.0f};
-    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
-    return bounding_box;
-}
 
 #endif //HELLO_MAC_GEOMETRY_DATA_H
