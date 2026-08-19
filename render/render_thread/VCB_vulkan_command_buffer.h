@@ -50,10 +50,8 @@ public:
 
 
     G_buffer_image_index begin_g_buffer_rendering_attachment(
-        const VKR_image_ptr &color,
-        const VKR_image_ptr &depth,
-        const VKR_image_ptr &position,
-        const VKR_image_ptr &normal);
+        const std::vector<VKR_image_ptr> &color,
+        const VKR_image_ptr &depth, VkAttachmentLoadOp depth_loadOp);
 
     void current_write_next_read_depth(
         const std::vector<VKR_image_ptr> &images);
@@ -95,9 +93,6 @@ public:
         VKR_image_ptr depth,
         VkAttachmentLoadOp depth_loadOp);
 
-    void begin_rendering_offscreen_attachment(
-        VKR_image_ptr color, VKR_image_ptr depth,
-        VkAttachmentLoadOp depth_loadOp);
 
 
     void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,

@@ -233,6 +233,9 @@ inline VkFormat get_format_from_resource_name(const std::string &resource_name) 
     if (resource_name.find("B8G8R8A8_SRGB") != std::string::npos) {
         return VK_FORMAT_B8G8R8A8_SRGB;
     }
+    if (resource_name.find("R32_UINT") != std::string::npos) {
+        return VK_FORMAT_R32_UINT;
+    }
     assert(false);
 }
 

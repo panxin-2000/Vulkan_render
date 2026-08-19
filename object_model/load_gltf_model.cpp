@@ -512,7 +512,7 @@ void gltf_load_animal(const fastgltf::Asset &model,
 }
 
 
-using Skin_matrix_vector_index = std::vector<entt::entity>;
+
 
 void gltf_load_skin(const fastgltf::Asset &model,
                     const std::vector<entt::entity> &nodes_have_deal,
@@ -858,6 +858,14 @@ void load_gltf_material_separate(entt::entity model_entity) {
 }
 
 
+void update_entity_to_screen(const entt::entity model_entity) {
+    if (Logic_entt().all_of<read_render_entt>(model_entity)) {
+        auto &render_entity_to_screen = Logic_entt().get<read_render_entt>(model_entity);
+        set_render_parameter(model_entity, "render_entity_to_screen", render_entity_to_screen);
+    }
+}
+
+
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
@@ -910,9 +918,10 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         add_recursion_function_to_children(model_entity, update_transform_matrix);
         // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
 
-        auto &material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
-        auto &boxes               = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
-        auto &matrices            = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
+        auto &material_parameters     = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
+        auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+        auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
+        auto &render_entity_to_screen = Logic_entt().emplace<read_render_entt>(model_entity);
         // 包含不包含 model_entity 的矩阵
         const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
@@ -926,6 +935,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
                     auto temp = transform_AABB(bound_box, model_matrix);
                     boxes.push_back(temp);
                     matrices.push_back(model_matrix);
+                    render_entity_to_screen.push_back(entity);
                 }
             }
         };
@@ -970,7 +980,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
         gltf_update_joint_matrix(model_entity);
 
+        // to GPU
         update_primitives_model_matrix(model_entity);
+        update_entity_to_screen(model_entity);
 
         logic_update_proxy(model_entity, boxes);
         logic_update_proxy(model_entity, mesh);

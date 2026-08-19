@@ -19,7 +19,9 @@ void render_different_pass(VCB &vcb,
                            Engine &engine,
                            VKR_image_ptr color_image,
                            VKR_image_ptr depth_image,
-                           VKR_image_ptr depth_AO_image) {
+                           VKR_image_ptr depth_AO_image,
+                           VKR_image_ptr entity_image
+) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
         VkBufferMemoryBarrier2{
             .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -93,9 +95,10 @@ void render_different_pass(VCB &vcb,
         auto view = Render_entt().view<deferred_pass_tag>();
         if (!view.empty()) {
             auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(
-                 color_image, depth_image,
-                 engine.get_image_manager().get_one_position_image(),
-                 engine.get_image_manager().get_one_normal_image());
+                 {
+                     color_image, engine.get_image_manager().get_one_position_image(),
+                     engine.get_image_manager().get_one_normal_image()
+                 }, depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR);
             auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
             for (const auto entity: view_opacity) {
                 auto name = Render_entt().get<Name_component>(entity);
@@ -143,9 +146,9 @@ void render_different_pass(VCB &vcb,
         {
             auto view = Render_entt().view<deferred_pass_tag>();
             if (!view.empty()) {
-                vcb.begin_rendering_offscreen_attachment(color_image, depth_image, VK_ATTACHMENT_LOAD_OP_LOAD);
+                vcb.begin_g_buffer_rendering_attachment({color_image}, depth_image, VK_ATTACHMENT_LOAD_OP_LOAD);
             } else {
-                vcb.begin_rendering_offscreen_attachment(color_image, depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR);
+                vcb.begin_g_buffer_rendering_attachment({color_image,}, depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR);
             }
         }
         // 应该先划分不同的 pass 阶段，
@@ -197,7 +200,7 @@ void render_different_pass(VCB &vcb,
     // 在这里的时候需要插入 FXAA
     {
         vcb.current_write_next_read_image({
-                                              color_image
+                                              color_image, entity_image
                                           });
         vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
                                        depth_image,
@@ -243,6 +246,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
     const auto color_image    = engine.get_image_manager().get_one_color_image();
+    const auto entity_image   = engine.get_image_manager().get_one_entity_image();
     const auto depth_image    = engine.get_image_manager().get_one_depth_image();
     const auto depth_AO_image = engine.get_image_manager().get_one_depth_AO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
@@ -275,7 +279,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
-    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image);
+    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, entity_image);
     vcb.end_command_buffer();
 
     engine.submit_render_queue(time_line);

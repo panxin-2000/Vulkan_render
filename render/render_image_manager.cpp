@@ -70,6 +70,25 @@ VKR_image_ptr Render_image_manager::get_one_color_image() {
     return find(parameters);
 }
 
+VKR_image_ptr Render_image_manager::get_one_entity_image() {
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    Image_and_view_parameters parameters{
+        .format = VK_FORMAT_R32_UINT,
+        .width  = extent.width,
+        .height = extent.height,
+        .depth  = 1,
+        .usage  = static_cast<VkImageUsageFlagBits>(
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+        .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .mipLevels   = 1,
+        .arrayLayers = 1,
+        .flags       = 0
+
+    };
+    return find(parameters);
+}
+
 
 void Render_image_manager::create() {
 }

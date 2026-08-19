@@ -19,10 +19,13 @@ layout (location = 4) in vec4 inShadowCoord;
 layout (location = 5) in vec3 inWorldPos;
 layout (location = 6) flat in uint material_index;
 layout (location = 7) flat in uint instance_index;
+layout (location = 8) flat in uint entity;
+
 
 // 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 1) out uint out_entity_R32_UINT;
 
 
 layout (set = 3, binding = 0) readonly buffer model_material_parameters {
@@ -153,6 +156,7 @@ void main()
     // 是否先获取无所谓，编译器会优化
     //
     float AO = 0;
+    out_entity_R32_UINT = entity;
 
     float roughness = get_Roughness(material[material_pbr_index[material_index]], inUV);
     float metallic = get_Metallic(material[material_pbr_index[material_index]], inUV);
@@ -168,7 +172,7 @@ void main()
     vec3 direct_light = vec3(0.0f);
     vec3 indirect_light = vec3(0.0f);
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
-    indirect_light = indirect_light_dufuse * c_diffusen ;
+    indirect_light = indirect_light_dufuse * c_diffusen;
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;

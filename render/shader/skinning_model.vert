@@ -28,6 +28,11 @@ layout (std430, set = 2, binding = 1) readonly buffer JointMatrices {
     mat4 jointMatrices[];
 };
 
+layout (set = 2, binding = 2) readonly buffer render_entity_to_screen {
+    uint entities[];
+};
+
+
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outLightVec;

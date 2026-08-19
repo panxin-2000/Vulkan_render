@@ -147,6 +147,10 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
             .colorBlendOp        = VK_BLEND_OP_ADD,
             .colorWriteMask      = 0xF,
         };
+        if (colorAttachmentFormat[i].format == VK_FORMAT_B8G8R8A8_SRGB)
+            blendAttachment.blendEnable = VK_TRUE;
+        else if (colorAttachmentFormat[i].format == VK_FORMAT_R32_UINT)
+            blendAttachment.blendEnable = VK_FALSE;
         BlendAttachments[i] = blendAttachment;
     }
     VkPipelineColorBlendStateCreateInfo colorBlendState{

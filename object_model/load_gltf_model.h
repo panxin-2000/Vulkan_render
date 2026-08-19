@@ -235,6 +235,16 @@ public:
     using std::vector<uint32_t>::vector;
 };
 
+class Skin_matrix_vector_index : public std::vector<entt::entity> {
+public:
+    using std::vector<entt::entity>::vector;
+};
+
+class read_render_entt : public std::vector<entt::entity> {
+public:
+    using std::vector<entt::entity>::vector;
+};
+
 
 void load_gltf_material_separate(entt::entity model_entity);
 
