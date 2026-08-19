@@ -171,18 +171,8 @@ bool add_box_data(entt::entity entity,
 
 
 inline Render_AABB find_min_max_point(const share_block &vertex) {
-    // Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());;
-    // Eigen::Vector3f max = Eigen::Vector3f::Constant(-std::numeric_limits<float>::infinity());
-    // for (int i = 0; i < vertex.count; i++) {
-    //     // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
-    //     Eigen::Map<Eigen::Vector3f> pos(reinterpret_cast<float *>(
-    //                                         static_cast<char *>(vertex.data) + vertex.single_size * i));
-    //     min = min.cwiseMin(pos);
-    //     max = max.cwiseMax(pos);
-    // }
-
     // 基础常数定义
-    const float inf = std::numeric_limits<float>::infinity();
+    constexpr float inf = std::numeric_limits<float>::infinity();
 
     struct AABB {
         Eigen::Vector3f min;
@@ -194,6 +184,7 @@ inline Render_AABB find_min_max_point(const share_block &vertex) {
         Eigen::Vector3f::Constant(inf),
         Eigen::Vector3f::Constant(-inf)
     };
+
 
     // 使用 tbb::parallel_reduce 进行并行化
     auto result = tbb::parallel_reduce(

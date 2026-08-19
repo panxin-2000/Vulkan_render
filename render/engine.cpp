@@ -280,6 +280,13 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
                 temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 temp.texture_info                                       = {true, texture.value()};
                 update_bindless_descriptor_sets_[std::to_string(index)] = temp;
+
+                // tbb::concurrent_hash_map<std::string, Update_descriptor_binding>::accessor acc;
+                // if (update_bindless_descriptor_sets_.insert(acc, std::to_string(index))) {
+                //     acc->second = temp;
+                // } else {
+                //     acc->second = temp;
+                // }
                 // 这个时候需要做什么呢？ 添加一个更新的函数，这是记录了需要更新的内容，还没有真正更新
                 // bindless.bindings[name] = {return_value, temp}; // 这句应该是暂时没有用了
             }
