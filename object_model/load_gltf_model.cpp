@@ -4,7 +4,7 @@
 
 #include "load_gltf_model.h"
 
-#include <oneapi/tbb/task_group.h>
+#include <oneapi/tbb.h>
 
 #include "input_component.h"
 #include "transform_component.h"

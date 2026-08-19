@@ -4,6 +4,8 @@
 
 #ifndef HELLO_MAC_GEOMETRY_DATA_H
 #define HELLO_MAC_GEOMETRY_DATA_H
+#include <oneapi/tbb.h>
+
 #include "vector"
 #include "global_singleton.h"
 #include "PBR_component.h"
@@ -169,15 +171,68 @@ bool add_box_data(entt::entity entity,
 
 
 inline Render_AABB find_min_max_point(const share_block &vertex) {
-    Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());;
-    Eigen::Vector3f max = Eigen::Vector3f::Constant(-std::numeric_limits<float>::infinity());
-    for (int i = 0; i < vertex.count; i++) {
-        // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
-        Eigen::Map<Eigen::Vector3f> pos(reinterpret_cast<float *>(
-                                            static_cast<char *>(vertex.data) + vertex.single_size * i));
-        min = min.cwiseMin(pos);
-        max = max.cwiseMax(pos);
-    }
+    // Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());;
+    // Eigen::Vector3f max = Eigen::Vector3f::Constant(-std::numeric_limits<float>::infinity());
+    // for (int i = 0; i < vertex.count; i++) {
+    //     // 有一个大的前提，那就是 默认 位置一定是 pos 是在最前的
+    //     Eigen::Map<Eigen::Vector3f> pos(reinterpret_cast<float *>(
+    //                                         static_cast<char *>(vertex.data) + vertex.single_size * i));
+    //     min = min.cwiseMin(pos);
+    //     max = max.cwiseMax(pos);
+    // }
+
+    // 基础常数定义
+    const float inf = std::numeric_limits<float>::infinity();
+
+    struct AABB {
+        Eigen::Vector3f min;
+        Eigen::Vector3f max;
+    };
+
+    // 初始化全域初值
+    AABB identity{
+        Eigen::Vector3f::Constant(inf),
+        Eigen::Vector3f::Constant(-inf)
+    };
+
+    // 使用 tbb::parallel_reduce 进行并行化
+    auto result = tbb::parallel_reduce(
+                                       // 1. 定义迭代范围（建议设置合理粒度，例如 1024 或更大，视顶点数而定）
+                                       tbb::blocked_range<int>(0, vertex.count, 2048),
+
+                                       // 2. 身份元素/初始值
+                                       identity,
+
+                                       // 3. 线程内部的局部规约（计算局部小分块的 min/max）
+                                       [&](const tbb::blocked_range<int> &r, AABB local) -> AABB {
+                                           char *base_ptr = static_cast<char *>(vertex.data);
+                                           size_t stride  = vertex.single_size;
+
+                                           for (int i = r.begin(); i != r.end(); ++i) {
+                                               // 保持您原本的高效内存映射方式
+                                               Eigen::Map<const Eigen::Vector3f> pos(
+                                                    reinterpret_cast<const float *>(
+                                                        base_ptr + stride * i)
+                                                   );
+
+                                               local.min = local.min.cwiseMin(pos);
+                                               local.max = local.max.cwiseMax(pos);
+                                           }
+                                           return local;
+                                       },
+
+                                       // 4. 跨线程的树状合并（将各个线程的局部 AABB 合并为最终结果）
+                                       [](AABB a, AABB b) -> AABB {
+                                           return AABB{
+                                               a.min.cwiseMin(b.min),
+                                               a.max.cwiseMax(b.max)
+                                           };
+                                       }
+                                      );
+    const Eigen::Vector3f min = result.min;
+    const Eigen::Vector3f max = result.max;
+
+
     Render_AABB bounding_box;
     const auto temp                  = (min + max) / 2;
     const auto temp_2                = (max - min) / 2;
