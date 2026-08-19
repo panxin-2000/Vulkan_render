@@ -198,6 +198,19 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(readerwriterqueue)
 
 
+#FetchContent_Declare(
+#        shaderc
+#        GIT_REPOSITORY https://github.com/google/shaderc.git
+#        GIT_TAG v2026.3
+#        GIT_SHALLOW TRUE
+#)
+## 临时关闭 shaderc 内部自带的测试用例和第三方多余组件的编译，加快你的 CMake 速度
+#set(SHADERC_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+#set(SHADERC_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+#
+#FetchContent_MakeAvailable(shaderc)
+
+
 add_subdirectory(thirdparty/libccd)
 
 find_package(highway)
@@ -264,7 +277,7 @@ if (WITH_VULKAN_BACKEND)
     # Use FindVulkan module added with CMAKE 3.7
     if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
         message(STATUS "Using module to find Vulkan")
-        find_package(Vulkan REQUIRED)
+        find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
     endif ()
 
     # 关于vulkan的内容，尽量聚拢到一起
@@ -666,6 +679,7 @@ target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE manifold)
+target_link_libraries(learn_render PRIVATE Vulkan::shaderc_combined)
 target_link_libraries(learn_render PRIVATE TBB::tbbmalloc_proxy)
 target_link_libraries(learn_render PRIVATE absl::hash)
 target_link_libraries(learn_render PRIVATE absl::raw_hash_set)
@@ -680,18 +694,18 @@ target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 # 使用自定义命令复制文件
-foreach (SHADER_FILE ${SHADER_FILES})
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-    add_custom_command(
-            TARGET learn_render
-            PRE_BUILD
-            COMMAND glslc --target-env=vulkan1.3 ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
-            COMMAND echo "compiler " ${SHADER_SOURCE_DIR}/${SHADER_NAME}
-    )
-endforeach ()
-
-# 创建一个目标来依赖所有着色器
-add_custom_target(shaders_complier ALL DEPENDS ${SHADER_FILE})
+#foreach (SHADER_FILE ${SHADER_FILES})
+#    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
+#    add_custom_command(
+#            TARGET learn_render
+#            PRE_BUILD
+#            COMMAND glslc --target-env=vulkan1.3 ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
+#            COMMAND echo "compiler " ${SHADER_SOURCE_DIR}/${SHADER_NAME}
+#    )
+#endforeach ()
+#
+## 创建一个目标来依赖所有着色器
+#add_custom_target(shaders_complier ALL DEPENDS ${SHADER_FILE})
 
 # 将自定义目标与可执行目标关联
-add_dependencies(learn_render shaders_complier)
+#add_dependencies(learn_render shaders_complier)

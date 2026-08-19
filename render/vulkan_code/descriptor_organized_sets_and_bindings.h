@@ -449,7 +449,7 @@ static void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compil
 }
 
 
-static void read_spv_file(const std::string &file_name, const std::string &shaderStage,
+static void read_spv_file(std::vector<uint32_t> &spv_binary, const std::string &shaderStage,
                           sets_map &bindless_set,
                           sets_map &global_bindings_set_0,
                           sets_map &sorted_sets_bindings,
@@ -457,15 +457,9 @@ static void read_spv_file(const std::string &file_name, const std::string &shade
                           std::vector<VkVertexInputBindingDescription> &vertexBindings,
                           Fragment_output_map &ColorAttachment,
                           Push_constant_map &push_constant_map) {
-    if (file_name.empty() == true) {
+    if (spv_binary.empty() == true) {
         return;
     }
-    std::ifstream file(file_name, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<uint32_t> spv_binary(size / sizeof(uint32_t));
-    file.read(reinterpret_cast<char *>(spv_binary.data()), size);
 
     const spirv_cross::CompilerGLSL compiler(spv_binary);
     spirv_cross::ShaderResources resources = compiler.get_shader_resources();
@@ -531,7 +525,7 @@ inline std::string get_shader_key(const VKR_shader_paths &paths) {
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &compute_path = paths.compute_path_;
+    const std::string &compute_path  = paths.compute_path_;
 
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
@@ -569,7 +563,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     const std::string &vertex_path   = paths.vertex_path_;
     const std::string &fragment_path = paths.fragment_path_;
     const std::string &geometry_path = paths.geometry_path_;
-    const std::string &compute_path = paths.compute_path_;
+    const std::string &compute_path  = paths.compute_path_;
 
     sets_map sorted_sets_bindings;
     sets_map &bindless_set        = shader_data->bindless_sets_bindings;
@@ -580,7 +574,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     auto &push_constant_map       = shader_data->push_constant_map;
     if (!vertex_path.empty()) {
         LOG_INFO(g_log(), "--- vertex shader ---");
-        read_spv_file(vertex_path, "vertex",
+        read_spv_file(shader_data->spv_data_vert, "vertex",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
@@ -592,7 +586,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     }
     if (!fragment_path.empty()) {
         LOG_INFO(g_log(), "--- fragment shader ---");
-        read_spv_file(fragment_path, "fragment",
+        read_spv_file(shader_data->spv_data_frag, "fragment",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
@@ -604,7 +598,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     }
     if (!geometry_path.empty()) {
         LOG_INFO(g_log(), "--- geometry shader ---");
-        read_spv_file(geometry_path, "geometry",
+        read_spv_file(shader_data->spv_data_geo, "geometry",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,
@@ -616,7 +610,7 @@ static sets_map organize_descriptor_set_and_binding_layouts(
     }
     if (!compute_path.empty()) {
         LOG_INFO(g_log(), "--- computer shader ---");
-        read_spv_file(compute_path, "computer",
+        read_spv_file(shader_data->spv_data_comp, "computer",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,

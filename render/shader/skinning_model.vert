@@ -41,13 +41,14 @@ layout (location = 4) out vec4 outShadowCoord;
 layout (location = 5) out vec3 outWorldPos;
 layout (location = 6) flat out uint outMaterial_index;
 layout (location = 7) flat out uint outInstance_index;
+layout (location = 8) flat out uint out_entity;
 
 void main()
 {
     //    outMaterial_index = gl_BaseInstanceARB;
     outMaterial_index = 0;
     outInstance_index = gl_InstanceIndex;
-
+    out_entity = entities[gl_InstanceIndex];
 
     // Calculate skinned matrix from weights and joint indices of the current vertex
     mat4 skinMat =

@@ -17,12 +17,19 @@ Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
     // 这里需要进行检查,看看是否 存在相同的 VKR_shader_paths ,
     // 如果这里相同, 那么 后面的一切都是相同的
     {
-        auto &backend = VK_backend::instance();
-        shader_data_handle = std::make_shared<vk_shader_data>();
-        shader_data_handle->pipeline_shader_stage_create_infos = find_graphics_shader_module(backend, shader_paths);
-        shader_data_handle->computer_shader_stage_create_infos = find_compute_shader_module(backend, shader_paths);
-        shader_data_handle->object_sets_bindings = organize_descriptor_set_and_binding_layouts(shader_paths,
-                 shader_data_handle);
+        auto &backend                     = VK_backend::instance();
+        shader_data_handle                = std::make_shared<vk_shader_data>();
+        shader_data_handle->spv_data_vert = CompileGlslToSpv(shader_paths.vertex_path_, shaderc_glsl_vertex_shader);
+        shader_data_handle->spv_data_frag = CompileGlslToSpv(shader_paths.fragment_path_, shaderc_glsl_fragment_shader);
+        shader_data_handle->spv_data_comp = CompileGlslToSpv(shader_paths.compute_path_, shaderc_glsl_compute_shader);
+        shader_data_handle->spv_data_geo  = CompileGlslToSpv(shader_paths.geometry_path_, shaderc_glsl_geometry_shader);
+
+        shader_data_handle->pipeline_shader_stage_create_infos =
+                find_graphics_shader_module(backend, shader_paths, shader_data_handle);
+        shader_data_handle->computer_shader_stage_create_infos =
+                find_compute_shader_module(backend, shader_paths, shader_data_handle);
+        shader_data_handle->object_sets_bindings =
+                organize_descriptor_set_and_binding_layouts(shader_paths, shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);
         shader_data_handle->topology   = shader_paths.topology_;
         // 下面这两个对于创建的顺序有点要求，上面的没有顺序要求
@@ -117,13 +124,13 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
                                    const VkFormat stencilAttachmentFormat
 ) {
     if (!vertex_path.empty())
-        vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert.spv";
+        vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert";
     if (!fragment_path.empty())
-        fragment_path_ = SHADER_BASE_DIR + fragment_path + ".frag.spv";
+        fragment_path_ = SHADER_BASE_DIR + fragment_path + ".frag";
     if (!geometry_path.empty())
-        geometry_path_ = SHADER_BASE_DIR + geometry_path + ".geo.spv";
+        geometry_path_ = SHADER_BASE_DIR + geometry_path + ".geo";
     if (!compute_path.empty())
-        compute_path_ = SHADER_BASE_DIR + compute_path + ".comp.spv";
+        compute_path_ = SHADER_BASE_DIR + compute_path + ".comp";
     topology_ = topology;
     if (depthAttachmentFormat == VK_FORMAT_UNDEFINED && stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
         depthAttachmentFormat_   = VK_backend::instance().get_depth_format();

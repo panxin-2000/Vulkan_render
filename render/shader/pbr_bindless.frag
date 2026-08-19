@@ -25,7 +25,6 @@ layout (location = 8) flat in uint entity;
 // 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
-layout (location = 1) out uint out_entity_R32_UINT;
 
 
 layout (set = 3, binding = 0) readonly buffer model_material_parameters {
@@ -156,7 +155,6 @@ void main()
     // 是否先获取无所谓，编译器会优化
     //
     float AO = 0;
-    out_entity_R32_UINT = entity;
 
     float roughness = get_Roughness(material[material_pbr_index[material_index]], inUV);
     float metallic = get_Metallic(material[material_pbr_index[material_index]], inUV);

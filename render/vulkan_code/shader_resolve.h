@@ -79,6 +79,10 @@ using sets_map     = std::map<uint32_t, bindings_map>;
 class vk_shader_data {
 public:
     std::string shader_key;
+    std::vector<uint32_t> spv_data_vert;
+    std::vector<uint32_t> spv_data_frag;
+    std::vector<uint32_t> spv_data_comp;
+    std::vector<uint32_t> spv_data_geo;
     std::vector<VkPipelineShaderStageCreateInfo> pipeline_shader_stage_create_infos;
     std::vector<VkPipelineShaderStageCreateInfo> computer_shader_stage_create_infos;
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;

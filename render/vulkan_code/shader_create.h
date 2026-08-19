@@ -22,5 +22,17 @@ std::vector<VkPipelineShaderStageCreateInfo> find_compute_shader_module(const VK
 std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &backend,
                                                                          const VKR_shader_paths &paths);
 
+std::vector<VkPipelineShaderStageCreateInfo> find_graphics_shader_module(const VK_backend &backend,
+                                                                         const VKR_shader_paths &paths,
+                                                                         const Shader_data &shader_data_handle);
 
+
+std::vector<VkPipelineShaderStageCreateInfo> find_compute_shader_module(const VK_backend &backend,
+                                                                        const VKR_shader_paths &paths,
+                                                                        const Shader_data &shader_data_handle);
+
+#include <shaderc/shaderc.hpp>
+
+
+std::vector<uint32_t> CompileGlslToSpv(const std::string &filename, shaderc_shader_kind shader_kind);
 #endif //HOWTOVULKAN_CREATE_SHADER_H
