@@ -39,6 +39,12 @@ public:
 
     template<typename vertex_t>
     void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices, const Render_AABB &aabb) {
+        push_vertices(sp_vertices);
+        AABBs_.push_back(aabb);
+    }
+
+    template<typename vertex_t>
+    void push_vertices(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices) {
         if (sp_vertices != nullptr) {
             const share_block vertices_buffer = {
                 sp_vertices,
@@ -48,7 +54,6 @@ public:
                 sizeof(vertex_t)
             };
             vertices_.push_back(vertices_buffer);
-            AABBs_.push_back(aabb);
         }
     }
 
@@ -102,18 +107,7 @@ public:
     template<typename vertex_t, typename index_t>
     void push(const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
               const std::shared_ptr<std::vector<index_t> > &sp_indices) {
-        if (sp_vertices != nullptr) {
-            const share_block vertices_buffer = {
-                sp_vertices,
-                sp_vertices->data(),
-                sp_vertices->size() * sizeof(vertex_t),
-                sp_vertices->size(),
-                sizeof(vertex_t)
-            };
-            vertices_.push_back(vertices_buffer);
-            const auto bound_box = find_min_max_point(vertices_buffer);
-            AABBs_.push_back(bound_box);
-        }
+        push_vertices(sp_vertices);
         push_indices(sp_indices);
     }
 
