@@ -94,7 +94,7 @@ void Engine::create_query_pool() {
 
 void Engine::destroy_query_pool() {
     const auto &backend = VK_backend::instance();
-    for (auto i = 0; i < maxFramesInFlight; i++) {
+    for (auto i = 0; i < command_buffers_.size(); i++) {
         vkDestroyQueryPool(backend.get_device(), query_pools[i], nullptr);
         command_buffers_[i] = VK_NULL_HANDLE;
     }
@@ -108,7 +108,7 @@ void Engine::create_command_buffer() {
         .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
         .commandPool        = get_command_pool(),
         .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = maxFramesInFlight
+        .commandBufferCount = static_cast<uint32_t>(command_buffers_.size()),
     };
     VK_CHECK_RESULT_NOT_EXIT(vkAllocateCommandBuffers(backend.get_device(), &cbAllocCI,
                                  command_buffers_.data()));

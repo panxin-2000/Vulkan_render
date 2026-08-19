@@ -46,6 +46,8 @@ public:
 
     void end_rendering();
 
+    void submit_render_queue( Engine &engine);
+
     void end_command_buffer();
 
 

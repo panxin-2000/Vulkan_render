@@ -90,7 +90,7 @@ void Command_submit_manager::create() {
 }
 
 void Command_submit_manager::execute_callback_functions(const uint64_t time_line) {
-    if (callback_functions_.empty() && sync_ == true) return;
+    if (callback_functions_.empty() || sync_ == false) return;
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType                     = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

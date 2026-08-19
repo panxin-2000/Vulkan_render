@@ -281,7 +281,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, entity_image);
     vcb.end_command_buffer();
 
-    engine.submit_render_queue(time_line);
+    vcb.submit_render_queue(engine);
     engine.copy_image_to_screen();
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);

@@ -74,20 +74,20 @@ std::shared_ptr<vk_shader_data> Shader_manager::find(const VKR_shader_paths &sha
 }
 
 void Shader_manager::create() {
-    find(VKR_shader_paths{"pbr_bindless", "pbr_bindless", "", ""});
-    find(VKR_shader_paths{
-             "opacity_depth_write", "opacity_depth_write", "", "",
-             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-             VK_FORMAT_D32_SFLOAT
-         });
-    find(VKR_shader_paths{
-             "skinning_model_depth_write", "opacity_depth_write", "", "",
-             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-             VK_FORMAT_D32_SFLOAT
-         });
-    find(VKR_shader_paths{"skinning_model", "pbr_bindless", "", ""});
-    find(VKR_shader_paths{"line", "line", "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST});
-    find(VKR_shader_paths{"", "", "", "command_calculate"});
-    find(VKR_shader_paths{"deferred", "fxaa", "", ""});
-    find(VKR_shader_paths{"deferred", "deferred_to_screen", "", ""});
+    // find(VKR_shader_paths{"pbr_bindless", "pbr_bindless", "", ""});
+    // find(VKR_shader_paths{
+    //          "opacity_depth_write", "opacity_depth_write", "", "",
+    //          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //          VK_FORMAT_D32_SFLOAT
+    //      });
+    // find(VKR_shader_paths{
+    //          "skinning_model_depth_write", "opacity_depth_write", "", "",
+    //          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    //          VK_FORMAT_D32_SFLOAT
+    //      });
+    // find(VKR_shader_paths{"skinning_model", "pbr_bindless", "", ""});
+    // find(VKR_shader_paths{"line", "line", "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST});
+    // find(VKR_shader_paths{"", "", "", "command_calculate"});
+    // find(VKR_shader_paths{"deferred", "fxaa", "", ""});
+    // find(VKR_shader_paths{"deferred", "deferred_to_screen", "", ""});
 }

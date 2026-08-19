@@ -87,12 +87,12 @@ struct Global_parameters {
 struct Engine {
 private:
     // 也许这里需要一个 VK_backend 的指针
-    std::vector<VkCommandPool> command_pools_                       = {};
-    std::vector<VkSemaphore> render_to_image_semaphores_            = {};
-    std::array<VkCommandBuffer, maxFramesInFlight> command_buffers_ = {};
-    std::array<VkQueryPool, maxFramesInFlight> query_pools          = {};
-    std::array<VkFence, maxFramesInFlight> fences_                  = {};
-    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_  = {};
+    std::vector<VkCommandPool> command_pools_                      = {};
+    std::vector<VkSemaphore> render_to_image_semaphores_           = {};
+    std::array<VkCommandBuffer, 3> command_buffers_                = {};
+    std::array<VkQueryPool, maxFramesInFlight> query_pools         = {};
+    std::array<VkFence, maxFramesInFlight> fences_                 = {};
+    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
 
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
@@ -191,12 +191,13 @@ public:
         return get_can_render_to_image_semaphores()[frameIndex];
     }
 
-    std::array<VkCommandBuffer, maxFramesInFlight> &get_command_buffers() {
-        return command_buffers_;
+    VkSemaphore &get_timeline_semaphore() {
+        return vk_timeline_semaphore_;
     }
 
+
     VkCommandBuffer &get_current_command_buffer() {
-        return get_command_buffers()[frameIndex];
+        return command_buffers_[global_descriptor_sets_index];
     }
 
     VkQueryPool &get_current_query_pool() {
@@ -269,7 +270,7 @@ public:
         return swap_chain_images_;
     }
 
-    Shader_manager get_shader_manager() {
+    Shader_manager &get_shader_manager() {
         return shader_manager_;
     }
 

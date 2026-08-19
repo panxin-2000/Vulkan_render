@@ -28,6 +28,38 @@ void VCB::end_rendering() {
     vkCmdEndRendering(command_buffer_); // 这里和之后的 没有限制
 }
 
+void VCB::submit_render_queue(Engine &engine) {
+    // Submit to graphics queue
+    VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
+
+    // uint32_t wait_semaphore_len = submit_task->wait_semaphore == VK_NULL_HANDLE ? 0 : 1;
+    uint32_t signal_semaphore_len    = 2;
+    VkSemaphore signal_semaphores[2] = {
+        engine.get_timeline_semaphore(),
+        engine.get_can_render_to_image_semaphores()[engine.get_imageIndex()]
+    };
+    uint64_t signal_semaphore_values[2] = {time_line_, 0};
+
+    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = {
+        VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+        nullptr,
+        0,
+        nullptr,
+        signal_semaphore_len,
+        signal_semaphore_values
+    };
+
+    Command_submit_manager::command_buffer_submit(1, &command_buffer_,
+                                                  engine.get_current_fences(),
+                                                  &timeline_semaphore_submit_info,
+                                                  1,
+                                                  &engine.get_current_presentSemaphores(),
+                                                  &waitStages,
+                                                  2,
+                                                  signal_semaphores);
+}
+
 void VCB::end_command_buffer() {
     if (query_pool_ != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(command_buffer_,
