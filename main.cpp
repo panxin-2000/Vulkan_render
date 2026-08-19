@@ -28,6 +28,7 @@
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
 #include "imgui.h"
+#include "input_device_manage.h"
 #include "skybox.h"
 
 
@@ -126,23 +127,15 @@ int main(int argc, char *argv[]) {
     float run_time = 0;
     bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
-    base_event_with_stamp base_envent;
+    Mouse_status mouse_status;
     while (!done) {
         framerate_measure.begin_frame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                int num_keys;
-                const bool *key_states = SDL_GetKeyboardState(&num_keys);
-                for (int i = 0; i < num_keys; ++i) {
-                    if (key_states[i]) {
-                        // 如果该键被按下 (值为 true)
-                        // 将索引转换为 SDL_Scancode
-                        const SDL_Scancode scancode = static_cast<SDL_Scancode>(i);
-
-                    }
-                }
+                std::optional<base_event_with_stamp> mouse = mouse_status.check_status();
+                auto keys                                  = check_key();
                 base_event_dealing(event);
             }
             if (event.type == SDL_EVENT_DROP_FILE) {

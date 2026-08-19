@@ -5,14 +5,12 @@
 #ifndef LEARN_OPENGL_INPUT_DEVICE_MANAGE_H
 #define LEARN_OPENGL_INPUT_DEVICE_MANAGE_H
 #include <unordered_set>
-#include <unordered_map>
-#include <mutex>
 #include <algorithm>
 #include <iostream>
-#include <GLFW/glfw3.h>
-#include "../input_device/key_map_value.h"
-#include <entt/entt.hpp>
 #include <SDL3/SDL_scancode.h>
+#include <map>
+#include <string>
+#include <SDL3/SDL.h>
 
 #include "base_event.h"
 
@@ -21,7 +19,17 @@ class Combined_shortcut_keys {
     std::unordered_set<uint16_t> keys_;
     std::bitset<512> new_key_;
 
+
+    // if ((current_input & required_combo) == required_combo) {
+    //     // 快捷键组合触发成功（哪怕玩家同时按了别的没用的键）
+    // }
+
+
 public:
+    void add_pressed_key(const SDL_Scancode code) {
+        new_key_[code] = true;
+    }
+
     static std::string toLower(const std::string &str) {
         std::string lowerStr;
         for (const char ch: str) {
@@ -34,21 +42,25 @@ public:
     std::map<std::string, uint16_t> buildKeyMap() {
         std::map<std::string, uint16_t> keyMap;
 
-        // 修饰键
-        keyMap["shift"]   = SDL_SCANCODE_LSHIFT;
-        keyMap["lshift"]  = SDL_SCANCODE_LSHIFT;
-        keyMap["rshift"]  = SDL_SCANCODE_RSHIFT;
-        keyMap["ctrl"]    = SDL_SCANCODE_LCTRL;
-        keyMap["lctrl"]   = SDL_SCANCODE_LCTRL;
-        keyMap["rctrl"]   = SDL_SCANCODE_RCTRL;
-        keyMap["control"] = SDL_SCANCODE_RCTRL;
-        keyMap["alt"]     = SDL_SCANCODE_LALT;
-        keyMap["lalt"]    = SDL_SCANCODE_LALT;
-        keyMap["ralt"]    = SDL_SCANCODE_RALT;
-        keyMap["super"]   = SDL_SCANCODE_LGUI;
-        keyMap["meta"]    = SDL_SCANCODE_LGUI;
+        // ==========================================
+        // 1. 修饰键 (Modifiers)
+        // ==========================================
+        keyMap["shift"]  = SDL_SCANCODE_LSHIFT;
+        keyMap["lshift"] = SDL_SCANCODE_LSHIFT;
+        keyMap["rshift"] = SDL_SCANCODE_RSHIFT;
+        keyMap["ctrl"]   = SDL_SCANCODE_LCTRL;
+        keyMap["lctrl"]  = SDL_SCANCODE_LCTRL;
+        keyMap["rctrl"]  = SDL_SCANCODE_RCTRL;
+        keyMap["alt"]    = SDL_SCANCODE_LALT;
+        keyMap["lalt"]   = SDL_SCANCODE_LALT;
+        keyMap["ralt"]   = SDL_SCANCODE_RALT;
+        keyMap["win"]    = SDL_SCANCODE_LGUI;
+        keyMap["lgui"]   = SDL_SCANCODE_LGUI;
+        keyMap["rgui"]   = SDL_SCANCODE_RGUI;
 
-        // 字母键
+        // ==========================================
+        // 2. 字母键 (A-Z)
+        // ==========================================
         keyMap["a"] = SDL_SCANCODE_A;
         keyMap["b"] = SDL_SCANCODE_B;
         keyMap["c"] = SDL_SCANCODE_C;
@@ -76,35 +88,23 @@ public:
         keyMap["y"] = SDL_SCANCODE_Y;
         keyMap["z"] = SDL_SCANCODE_Z;
 
-        // 数字键 + 符号键
-        keyMap["1"]      = SDL_SCANCODE_1;
-        keyMap["2"]      = SDL_SCANCODE_2;
-        keyMap["3"]      = SDL_SCANCODE_3;
-        keyMap["4"]      = SDL_SCANCODE_4;
-        keyMap["5"]      = SDL_SCANCODE_5;
-        keyMap["6"]      = SDL_SCANCODE_6;
-        keyMap["7"]      = SDL_SCANCODE_7;
-        keyMap["8"]      = SDL_SCANCODE_8;
-        keyMap["9"]      = SDL_SCANCODE_9;
-        keyMap["0"]      = SDL_SCANCODE_0;
-        keyMap["+"]      = SDL_SCANCODE_KP_PLUS;      // 小键盘 + 号（主流）
-        keyMap["plus"]   = SDL_SCANCODE_KP_PLUS;      // 兼容 "plus" 写法
-        keyMap["kp_add"] = SDL_SCANCODE_KP_PLUS;      // 原生 GLFW 名称
-        keyMap["equal"]  = SDL_SCANCODE_EQUALS;       // 主键盘 =/+ 键（兼容）
-        keyMap["="]      = SDL_SCANCODE_EQUALS;       // 主键盘 = 号
-        keyMap["."]      = SDL_SCANCODE_PERIOD;       // 句号 . 键（核心新增行）
-        keyMap["/"]      = SDL_SCANCODE_SLASH;        // 斜杠 / 键（核心新增行）
-        keyMap["["]      = SDL_SCANCODE_LEFTBRACKET;  // 左方括号 [
-        keyMap["\\"]     = SDL_SCANCODE_BACKSLASH;    // 反斜杠
-        keyMap["]"]      = SDL_SCANCODE_RIGHTBRACKET; // 右方括号 ]
-        keyMap["`"]      = SDL_SCANCODE_GRAVE;        // 反引号 `
-        keyMap[";"]      = SDL_SCANCODE_SEMICOLON;    // 分号 ;
-        keyMap["="]      = SDL_SCANCODE_EQUALS;       // 等号 =
-        keyMap["'"]      = SDL_SCANCODE_APOSTROPHE;   // 单引号 ' // 有点奇怪
-        keyMap[","]      = SDL_SCANCODE_COMMA;        // 逗号 ,
-        keyMap["-"]      = SDL_SCANCODE_MINUS;        // 减号 -
+        // ==========================================
+        // 3. 数字键 (主键盘区 0-9)
+        // ==========================================
+        keyMap["1"] = SDL_SCANCODE_1;
+        keyMap["2"] = SDL_SCANCODE_2;
+        keyMap["3"] = SDL_SCANCODE_3;
+        keyMap["4"] = SDL_SCANCODE_4;
+        keyMap["5"] = SDL_SCANCODE_5;
+        keyMap["6"] = SDL_SCANCODE_6;
+        keyMap["7"] = SDL_SCANCODE_7;
+        keyMap["8"] = SDL_SCANCODE_8;
+        keyMap["9"] = SDL_SCANCODE_9;
+        keyMap["0"] = SDL_SCANCODE_0;
 
-        // 功能键
+        // ==========================================
+        // 4. 功能键 (F1-F12)
+        // ==========================================
         keyMap["f1"]  = SDL_SCANCODE_F1;
         keyMap["f2"]  = SDL_SCANCODE_F2;
         keyMap["f3"]  = SDL_SCANCODE_F3;
@@ -118,23 +118,85 @@ public:
         keyMap["f11"] = SDL_SCANCODE_F11;
         keyMap["f12"] = SDL_SCANCODE_F12;
 
-        // 特殊键
-        keyMap["space"]     = SDL_SCANCODE_SPACE;
-        keyMap["enter"]     = SDL_SCANCODE_RETURN;
-        keyMap["esc"]       = SDL_SCANCODE_ESCAPE;
+        // ==========================================
+        // 5. 控制与动作键 (Control & Action Keys)
+        // ==========================================
+        keyMap["return"]    = SDL_SCANCODE_RETURN;
+        keyMap["enter"]     = SDL_SCANCODE_RETURN; // 常用别名
         keyMap["escape"]    = SDL_SCANCODE_ESCAPE;
-        keyMap["tab"]       = SDL_SCANCODE_TAB;
+        keyMap["esc"]       = SDL_SCANCODE_ESCAPE; // 常用别名
         keyMap["backspace"] = SDL_SCANCODE_BACKSPACE;
-        keyMap["delete"]    = SDL_SCANCODE_DELETE;
-        keyMap["up"]        = SDL_SCANCODE_UP;
-        keyMap["down"]      = SDL_SCANCODE_DOWN;
-        keyMap["left"]      = SDL_SCANCODE_LEFT;
-        keyMap["right"]     = SDL_SCANCODE_RIGHT;
+        keyMap["tab"]       = SDL_SCANCODE_TAB;
+        keyMap["space"]     = SDL_SCANCODE_SPACE;
+        keyMap["capslock"]  = SDL_SCANCODE_CAPSLOCK;
+
+        // ==========================================
+        // 6. 导航与编辑键 (Navigation & Edit Keys)
+        // ==========================================
+        keyMap["printscreen"] = SDL_SCANCODE_PRINTSCREEN;
+        keyMap["scrolllock"]  = SDL_SCANCODE_SCROLLLOCK;
+        keyMap["pause"]       = SDL_SCANCODE_PAUSE;
+        keyMap["insert"]      = SDL_SCANCODE_INSERT;
+        keyMap["home"]        = SDL_SCANCODE_HOME;
+        keyMap["pageup"]      = SDL_SCANCODE_PAGEUP;
+        keyMap["delete"]      = SDL_SCANCODE_DELETE;
+        keyMap["end"]         = SDL_SCANCODE_END;
+        keyMap["pagedown"]    = SDL_SCANCODE_PAGEDOWN;
+
+        // ==========================================
+        // 7. 方向键 (Arrow Keys)
+        // ==========================================
+        keyMap["right"] = SDL_SCANCODE_RIGHT;
+        keyMap["left"]  = SDL_SCANCODE_LEFT;
+        keyMap["down"]  = SDL_SCANCODE_DOWN;
+        keyMap["up"]    = SDL_SCANCODE_UP;
+
+        // ==========================================
+        // 8. 标点符号与特殊符号 (Symbols)
+        // ==========================================
+        keyMap["numlock"]      = SDL_SCANCODE_NUMLOCKCLEAR;
+        keyMap["grave"]        = SDL_SCANCODE_GRAVE;        // ` ~ 键
+        keyMap["minus"]        = SDL_SCANCODE_MINUS;        // - _ 键
+        keyMap["equals"]       = SDL_SCANCODE_EQUALS;       // = + 键
+        keyMap["leftbracket"]  = SDL_SCANCODE_LEFTBRACKET;  // [ { 键
+        keyMap["rightbracket"] = SDL_SCANCODE_RIGHTBRACKET; // ] } 键
+        keyMap["backslash"]    = SDL_SCANCODE_BACKSLASH;    // \ | 键
+        keyMap["semicolon"]    = SDL_SCANCODE_SEMICOLON;    // ; : 键
+        keyMap["apostrophe"]   = SDL_SCANCODE_APOSTROPHE;   // ' " 键
+        keyMap["comma"]        = SDL_SCANCODE_COMMA;        // , < 键
+        keyMap["period"]       = SDL_SCANCODE_PERIOD;       // . > 键
+        keyMap["slash"]        = SDL_SCANCODE_SLASH;        // / ? 键
+
+        // ==========================================
+        // 9. 数字小键盘区 (Keypad)
+        // ==========================================
+        keyMap["kp_divide"]   = SDL_SCANCODE_KP_DIVIDE;
+        keyMap["kp_multiply"] = SDL_SCANCODE_KP_MULTIPLY;
+        keyMap["kp_minus"]    = SDL_SCANCODE_KP_MINUS;
+        keyMap["kp_plus"]     = SDL_SCANCODE_KP_PLUS;
+        keyMap["kp_enter"]    = SDL_SCANCODE_KP_ENTER;
+        keyMap["kp_1"]        = SDL_SCANCODE_KP_1;
+        keyMap["kp_2"]        = SDL_SCANCODE_KP_2;
+        keyMap["kp_3"]        = SDL_SCANCODE_KP_3;
+        keyMap["kp_4"]        = SDL_SCANCODE_KP_4;
+        keyMap["kp_5"]        = SDL_SCANCODE_KP_5;
+        keyMap["kp_6"]        = SDL_SCANCODE_KP_6;
+        keyMap["kp_7"]        = SDL_SCANCODE_KP_7;
+        keyMap["kp_8"]        = SDL_SCANCODE_KP_8;
+        keyMap["kp_9"]        = SDL_SCANCODE_KP_9;
+        keyMap["kp_0"]        = SDL_SCANCODE_KP_0;
+        keyMap["kp_period"]   = SDL_SCANCODE_KP_PERIOD;
+        keyMap["kp_equals"]   = SDL_SCANCODE_KP_EQUALS;
 
         return keyMap;
     }
 
-
+    /**
+     * 输入： "'Ctrl' + 'Alt' + 'a'"
+     * 输出： {"ctrl", "alt", "a"}（直接过滤掉了其中的 + 号、空格以及外部字符）。
+     * @param keyStr
+     * @return
+     */
     static std::vector<std::string> splitKeyString(const std::string &keyStr) {
         std::vector<std::string> key_strings;
         std::string currentContent; // 存储当前单引号内的内容
@@ -144,10 +206,9 @@ public:
             // 修复：通过编码判断单引号（半角'=0x27，全角’=0x2019）
             // 注：char 是1字节，全角字符需用 unsigned char 或 wchar_t，此处简化为兼容处理
             bool isQuote = (static_cast<unsigned char>(ch) == 0x27) || // 半角单引号 '
-                           (static_cast<unsigned char>(ch) == 0xE2 && static_cast<unsigned char>(keyStr[
-                                keyStr.find(ch) + 1]) == 0x80 && static_cast<unsigned char>(keyStr[keyStr.find(ch) + 2])
-                            ==
-                            0x99); // 全角单引号 ’ 的UTF-8编码
+                           (static_cast<unsigned char>(ch) == 0xE2 &&
+                            static_cast<unsigned char>(keyStr[keyStr.find(ch) + 1]) == 0x80 &&
+                            static_cast<unsigned char>(keyStr[keyStr.find(ch) + 2]) == 0x99); // 全角单引号 ’ 的UTF-8编码
 
             // 简化版（推荐）：仅处理半角单引号（避免多字节字符判断）
             // bool isQuote = (ch == '\'');
@@ -170,7 +231,6 @@ public:
             }
             // 非单引号且不在引号内：直接忽略
         }
-
         // 处理字符串结束时仍未闭合的单引号（残缺单引号）
         if (inQuote && !currentContent.empty()) {
             currentContent.erase(0, currentContent.find_first_not_of(" \t"));
@@ -179,7 +239,6 @@ public:
                 key_strings.push_back(toLower(currentContent));
             }
         }
-
         return key_strings;
     }
 
@@ -205,106 +264,105 @@ public:
     explicit Combined_shortcut_keys(const std::string &key_name) {
         keys_ = parseGLFWKeyString(key_name);
     }
+
+    explicit Combined_shortcut_keys() {
+    }
 };
 
 
-// 组合键状态管理器（仅负责按键状态+组合键匹配）
-class Keyboard_Manage {
+inline Combined_shortcut_keys check_key() {
+    Combined_shortcut_keys keys;
+    int num_keys;
+    const bool *key_states = SDL_GetKeyboardState(&num_keys);
+    for (int i = 0; i < num_keys; ++i) {
+        if (key_states[i]) {
+            // 如果该键被按下 (值为 true)
+            // 将索引转换为 SDL_Scancode
+            const SDL_Scancode scancode = static_cast<SDL_Scancode>(i);
+            keys.add_pressed_key(scancode);
+        }
+    }
+    return keys;
+}
+
+class Mouse_status {
 public:
-    using ComboRule = std::unordered_set<uint16_t>; // 组合键规则（GLFW按键码集合）
+    Mouse_status() = default;
 
+    ~Mouse_status() = default;
 
-    // 构造函数：依赖注入事件队列管理器
-    Keyboard_Manage() = default;
-
-    bool init_eventQueueMgr(entt::dispatcher *dispatcher) {
-        dispatcher_ = dispatcher;
-        return true;
-    }
-
-
-    ~Keyboard_Manage() = default;
-
-
-    // 转换字符串为小写（统一匹配）
-    static std::string toLower(const std::string &str) {
-        std::string lowerStr;
-        for (const char ch: str) {
-            lowerStr += std::tolower(static_cast<unsigned char>(ch));
-        }
-        return lowerStr;
-    }
-
-
-    void handle_mouse_click_left(std::array<float, 2> pos) {
-        manage_click_position   = pos;
+    base_event_with_stamp handle_mouse_click_left(std::array<float, 2> pos) {
+        first_click_position    = pos;
         mouse_button_left_click = true;
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        MOUSE_LEFT,
-                                                        KM_PRESS,
-                                                        pos,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
+        return {
+            MOUSE_LEFT,
+            KM_PRESS,
+            pos,
+            last_position,
+            first_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        };
     }
 
-    void handle_mouse_click_right(std::array<float, 2> pos) {
-        manage_click_position    = pos;
+    base_event_with_stamp handle_mouse_click_right(std::array<float, 2> pos) {
+        first_click_position     = pos;
         mouse_button_right_click = true;
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        MOUSE_RIGHT,
-                                                        KM_PRESS,
-                                                        pos,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
+        return {
+            MOUSE_RIGHT,
+            KM_PRESS,
+            pos,
+            last_position,
+            first_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        };
     }
 
 
-    void handle_drag(std::array<float, 2> pos) {
-        manage_current_position = pos;
+    base_event_with_stamp handle_drag(std::array<float, 2> pos) {
+        current_position = pos;
         if ((mouse_button_left_click == true || mouse_button_right_click == true)
-            && !(pos == manage_last_position)) {
-            dispatcher_->enqueue<base_event_with_stamp>({
-                                                            MOUSE_MOVE,
-                                                            KM_PRESS,
-                                                            manage_current_position,
-                                                            manage_last_position,
-                                                            manage_click_position,
-                                                            manage_scroll,
-                                                            manage_modifier_flag
-                                                        });
+            && !(pos == last_position)) {
+            auto temp     = last_position;
+            last_position = pos;
+            return {
+                MOUSE_MOVE,
+                KM_PRESS,
+                current_position,
+                temp,
+                first_click_position,
+                manage_scroll,
+                manage_modifier_flag
+            };
         }
-        manage_last_position = pos;
+        last_position = pos;
+        return {};
     }
 
-    void handle_scroll(std::array<float, 2> pos) {
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        MOUSE_ROTATE,
-                                                        KM_NOTHING,
-                                                        manage_current_position,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        pos,
-                                                        manage_modifier_flag
-                                                    });
+    base_event_with_stamp handle_scroll(std::array<float, 2> pos) {
+        return {
+            MOUSE_ROTATE,
+            KM_NOTHING,
+            current_position,
+            last_position,
+            first_click_position,
+            pos,
+            manage_modifier_flag
+        };
     }
 
-    void handle_mouse_release_left(const std::array<float, 2> release_pos) {
+    base_event_with_stamp handle_mouse_release_left(const std::array<float, 2> release_pos) {
         mouse_button_left_click = false;
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        MOUSE_LEFT,
-                                                        KM_RELEASE,
-                                                        release_pos,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
+        return {
+            MOUSE_LEFT,
+            KM_RELEASE,
+            release_pos,
+            last_position,
+            first_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        };
     }
 
     // 选择与拖动的区别，如果已经在已经选择的物品了，那么可以直接移动物品
@@ -313,95 +371,26 @@ public:
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
 
 
-    void handle_mouse_release_right(const std::array<float, 2> release_pos) {
+    base_event_with_stamp handle_mouse_release_right(const std::array<float, 2> release_pos) {
         mouse_button_right_click = false;
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        MOUSE_RIGHT,
-                                                        KM_RELEASE,
-                                                        release_pos,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
+        return {
+            MOUSE_RIGHT,
+            KM_RELEASE,
+            release_pos,
+            last_position,
+            first_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        };
     }
 
-
-    // 处理GLFW按键按下事件（更新Set状态）
-    void handleKeyDown(int keyCode) {
-        if (keyCode == EVT_KEY_LEFT_SHIFT || keyCode == EVT_KEY_RIGHT_SHIFT) {
-            manage_modifier_flag = manage_modifier_flag | KM_SHIFT;
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_CONTROL || keyCode == EVT_KEY_RIGHT_CONTROL) {
-            manage_modifier_flag = manage_modifier_flag | KM_CTRL;
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_ALT || keyCode == EVT_KEY_RIGHT_ALT) {
-            manage_modifier_flag = manage_modifier_flag | KM_ALT;
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_SUPER || keyCode == EVT_KEY_RIGHT_SUPER) {
-            manage_modifier_flag = manage_modifier_flag | KM_OSKEY;
-            return;
-        }
-
-
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        static_cast<wmEventType>(keyCode),
-                                                        KM_PRESS,
-                                                        manage_current_position,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
+    base_event_with_stamp check_status() {
+        return {};
     }
 
-    // 处理GLFW按键松开事件（更新Set状态）
-    void handleKeyUp(int keyCode) {
-        if (keyCode == EVT_KEY_LEFT_SHIFT || keyCode == EVT_KEY_RIGHT_SHIFT) {
-            manage_modifier_flag &= (~KM_SHIFT);
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_CONTROL || keyCode == EVT_KEY_RIGHT_CONTROL) {
-            manage_modifier_flag &= (~KM_CTRL);
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_ALT || keyCode == EVT_KEY_RIGHT_ALT) {
-            manage_modifier_flag &= (~KM_ALT);
-            return;
-        } else if (keyCode == EVT_KEY_LEFT_SUPER || keyCode == EVT_KEY_RIGHT_SUPER) {
-            manage_modifier_flag &= (~KM_OSKEY);
-            return;
-        }
-        dispatcher_->enqueue<base_event_with_stamp>({
-                                                        static_cast<wmEventType>(keyCode),
-                                                        KM_RELEASE,
-                                                        manage_current_position,
-                                                        manage_last_position,
-                                                        manage_click_position,
-                                                        manage_scroll,
-                                                        manage_modifier_flag
-                                                    });
-        manage_event_type = EVENT_NONE;
-    }
-
-    // 清空所有状态（窗口失焦时）
-    void clear_focus() {
-        std::lock_guard<std::mutex> lock(_mutex);
-        focus = false;
-        pressed_keys.clear();
-    }
-
-    void set_focus() {
-        std::lock_guard<std::mutex> lock(_mutex);
-        focus = true;
-    }
 
     [[nodiscard]] bool get_focus() const {
         return focus;
-    }
-
-
-    static Keyboard_Manage &instance() {
-        static auto *instance = new Keyboard_Manage();
-        return *instance;
     }
 
 private:
@@ -411,13 +400,11 @@ private:
     wmEventType manage_event_type;
     wmEventModifierFlag manage_modifier_flag;
 
-    std::array<float, 2> manage_current_position         = {0, 0};
-    std::array<float, 2> manage_last_position            = {0, 0};
-    std::array<float, 2> manage_click_position           = {0, 0};
+    std::array<float, 2> current_position                = {0, 0};
+    std::array<float, 2> last_position                   = {0, 0};
+    std::array<float, 2> first_click_position            = {0, 0};
     std::array<float, 2> manage_scroll                   = {0, 0};
     std::array<float, 2> error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改，当是屏幕像素时，就没有改的必要了
-    std::mutex _mutex;                                             // 线程安全锁
-    std::unordered_set<uint16_t> pressed_keys;                     // Set：当前按下的按键
 };
 
 
