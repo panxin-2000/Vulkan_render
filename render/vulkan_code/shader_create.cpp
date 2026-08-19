@@ -108,7 +108,9 @@ private:
 };
 
 
-std::vector<uint32_t> CompileGlslToSpv(const std::string &filename, shaderc_shader_kind shader_kind) {
+std::vector<uint32_t> CompileGlslToSpv(const VKR_shader_paths &shader_paths,
+                                       const std::string &filename,
+                                       shaderc_shader_kind shader_kind) {
     // 2. 如果没找到，读取源码文件
     if (filename.empty())
         return {};
@@ -129,14 +131,9 @@ std::vector<uint32_t> CompileGlslToSpv(const std::string &filename, shaderc_shad
     options.SetIncluder(std::make_unique<CustomShaderIncluder>(baseDir));
     options.SetGenerateDebugInfo();
 
-    // 🚀 根据不同的 Pass 运行时动态注入宏
-    // if (pass == RenderPassType::Depth) {
-    //     options.AddMacroDefinition("PASS_DEPTH", "1");
-    // } else if (pass == RenderPassType::Picking) {
-    //     options.AddMacroDefinition("PASS_PICKING", "1");
-    // } else {
-    //     options.AddMacroDefinition("PASS_COLOR", "1");
-    // }
+    for (const auto &temp: shader_paths.define_macro_) {
+        options.AddMacroDefinition(temp.first, std::to_string(temp.second));
+    }
 
     shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
                                                                      source_code, shader_kind,

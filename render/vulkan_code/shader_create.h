@@ -34,5 +34,7 @@ std::vector<VkPipelineShaderStageCreateInfo> find_compute_shader_module(const VK
 #include <shaderc/shaderc.hpp>
 
 
-std::vector<uint32_t> CompileGlslToSpv(const std::string &filename, shaderc_shader_kind shader_kind);
+std::vector<uint32_t> CompileGlslToSpv(const VKR_shader_paths &shader_paths,
+                                       const std::string &filename,
+                                       shaderc_shader_kind shader_kind);
 #endif //HOWTOVULKAN_CREATE_SHADER_H

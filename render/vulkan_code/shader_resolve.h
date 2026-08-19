@@ -9,6 +9,7 @@
 #include <map>
 
 #include "descriptor.h"
+#include "PBR_component.h"
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
 #include "absl/hash/hash.h" // 引入 Google Abseil 头文件
@@ -122,13 +123,21 @@ using Shader_data = std::shared_ptr<vk_shader_data>;
 
 class VKR_shader_paths {
 public:
+    enum Render_Pass_Type {
+        Depth,
+        Color,
+        Pickup
+    };
+
+
     VKR_shader_paths(const std::string &vertex_path,
                      const std::string &fragment_path,
                      const std::string &geometry_path,
                      const std::string &compute_path,
                      const VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                      VkFormat depthAttachmentFormat     = VK_FORMAT_UNDEFINED,
-                     VkFormat stencilAttachmentFormat   = VK_FORMAT_UNDEFINED);
+                     VkFormat stencilAttachmentFormat   = VK_FORMAT_UNDEFINED,
+                     Render_Pass_Type render_pass_type  = Render_Pass_Type::Color);
 
     VKR_shader_paths() = delete;
 
@@ -139,6 +148,7 @@ public:
     VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkFormat depthAttachmentFormat_;
     VkFormat stencilAttachmentFormat_;
+    std::vector<std::pair<std::string, uint32_t> > define_macro_;
 
 
     // 利用 tuple 快速比较
@@ -160,6 +170,10 @@ public:
         compute_path_ = path;
     }
 
+    void add_define_macro(const std::string &macro_name, const uint32_t macro_value) {
+        define_macro_.emplace_back(macro_name, macro_value);
+    }
+
 
     template<typename H>
     friend H AbslHashValue(H state, const VKR_shader_paths &sp) {
@@ -172,7 +186,8 @@ public:
                           sp.compute_path_,
                           sp.topology_,
                           sp.depthAttachmentFormat_,
-                          sp.stencilAttachmentFormat_);
+                          sp.stencilAttachmentFormat_,
+                          sp.define_macro_);
     }
 };
 

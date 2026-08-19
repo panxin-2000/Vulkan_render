@@ -23,9 +23,13 @@ layout (location = 8) flat in uint entity;
 
 
 // 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
-
+#if defined(PASS_COLOR)
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+#elif defined(PASS_DEPTH)
 
+#elif defined(PASS_PICKUP)
+layout (location = 0) out uint out_entity_R32_UINT;
+#endif
 
 layout (set = 3, binding = 0) readonly buffer model_material_parameters {
     uint material_pbr_index[];

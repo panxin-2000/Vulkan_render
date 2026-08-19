@@ -19,10 +19,14 @@ Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
     {
         auto &backend                     = VK_backend::instance();
         shader_data_handle                = std::make_shared<vk_shader_data>();
-        shader_data_handle->spv_data_vert = CompileGlslToSpv(shader_paths.vertex_path_, shaderc_glsl_vertex_shader);
-        shader_data_handle->spv_data_frag = CompileGlslToSpv(shader_paths.fragment_path_, shaderc_glsl_fragment_shader);
-        shader_data_handle->spv_data_comp = CompileGlslToSpv(shader_paths.compute_path_, shaderc_glsl_compute_shader);
-        shader_data_handle->spv_data_geo  = CompileGlslToSpv(shader_paths.geometry_path_, shaderc_glsl_geometry_shader);
+        shader_data_handle->spv_data_vert = CompileGlslToSpv(shader_paths, shader_paths.vertex_path_,
+                                                             shaderc_glsl_vertex_shader);
+        shader_data_handle->spv_data_frag = CompileGlslToSpv(shader_paths, shader_paths.fragment_path_,
+                                                             shaderc_glsl_fragment_shader);
+        shader_data_handle->spv_data_comp = CompileGlslToSpv(shader_paths, shader_paths.compute_path_,
+                                                             shaderc_glsl_compute_shader);
+        shader_data_handle->spv_data_geo = CompileGlslToSpv(shader_paths, shader_paths.geometry_path_,
+                                                            shaderc_glsl_geometry_shader);
 
         shader_data_handle->pipeline_shader_stage_create_infos =
                 find_graphics_shader_module(backend, shader_paths, shader_data_handle);
@@ -121,7 +125,8 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
                                    const std::string &geometry_path, const std::string &compute_path,
                                    const VkPrimitiveTopology topology,
                                    const VkFormat depthAttachmentFormat,
-                                   const VkFormat stencilAttachmentFormat
+                                   const VkFormat stencilAttachmentFormat,
+                                   const Render_Pass_Type render_pass_type
 ) {
     if (!vertex_path.empty())
         vertex_path_ = SHADER_BASE_DIR + vertex_path + ".vert";
@@ -138,5 +143,12 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
     } else {
         depthAttachmentFormat_   = depthAttachmentFormat;
         stencilAttachmentFormat_ = stencilAttachmentFormat;
+    }
+    if (render_pass_type == Render_Pass_Type::Color) {
+        define_macro_.push_back({"PASS_COLOR", 1});
+    } else if (render_pass_type == Render_Pass_Type::Depth) {
+        define_macro_.push_back({"PASS_DEPTH", 1});
+    } else if (render_pass_type == Render_Pass_Type::Pickup) {
+        define_macro_.push_back({"PASS_PICKUP", 1});
     }
 }
