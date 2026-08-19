@@ -922,13 +922,39 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
 
+
+        std::vector<entt::entity> temp;
+        auto generate_aabb = [&](const entt::entity entity) {
+            if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
+                temp.push_back(entity);
+            }
+        };
+        add_recursion_function_to_children(model_entity, generate_aabb);
+
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, temp.size()),
+                          [&](const tbb::blocked_range<size_t> &r) {
+                              // 注意：这里的 r 是大区间被拆分后的一小段区间
+                              // 必须使用 r.begin() 和 r.end()，绝对不能用 0 和 N
+                              for (size_t i = r.begin(); i != r.end(); ++i) {
+                                  const auto entity = temp.at(i);
+                                  if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
+                                      auto &geometry_data = Logic_entt().get<Geometry_data>(entity);
+                                      for (auto &vertices: geometry_data.get_vertices()) {
+                                          const auto bound_box = find_min_max_point(vertices);
+                                          geometry_data.push_AABB(bound_box);
+                                      }
+                                  }
+                              }
+                          }
+                         );
+
+
         auto update_aabb = [&](const entt::entity entity) {
             if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
-                auto geometry_data       = Logic_entt().get<Geometry_data>(entity);
+                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+                const auto aabbs         = geometry_data.get_aabbs();
                 const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                for (auto &vertices: geometry_data.get_vertices()) {
-                    const auto bound_box = find_min_max_point(vertices);
-                    geometry_data.push_AABB(bound_box);
+                for (auto &bound_box: aabbs) {
                     auto temp = transform_AABB(bound_box, model_matrix);
                     boxes.push_back(temp);
                     matrices.push_back(model_matrix);
