@@ -13,20 +13,16 @@
 #include "UI/UI_button.h"
 
 #include "global_singleton.h"
-#include "descriptor_pool.h"
 #include "device_input_event_deal.h"
 #include "earcut.h"
 #include "framerate_measure.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"
 #include "load_gltf_model.h"
-#include "nano_vdb_model.h"
-#include "render/render_common/PBR_component.h"
 #include "sync_proxy_to_render_thread.h"
 #include "UI_manager.h"
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
-#include "vulkan_sample.h"
 #include "ccd/ccd.h"
 #include "object_model/3d_model_display.h"
 #include "UI/UI_imgui.h"
@@ -35,8 +31,6 @@
 #include "skybox.h"
 
 
-#include "spherical_harmonics.h"
-#include "spherical_SH.h"
 #include "world_scene_root.h"
 
 
@@ -132,12 +126,23 @@ int main(int argc, char *argv[]) {
     float run_time = 0;
     bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
+    base_event_with_stamp base_envent;
     while (!done) {
         framerate_measure.begin_frame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                int num_keys;
+                const bool *key_states = SDL_GetKeyboardState(&num_keys);
+                for (int i = 0; i < num_keys; ++i) {
+                    if (key_states[i]) {
+                        // 如果该键被按下 (值为 true)
+                        // 将索引转换为 SDL_Scancode
+                        const SDL_Scancode scancode = static_cast<SDL_Scancode>(i);
+
+                    }
+                }
                 base_event_dealing(event);
             }
             if (event.type == SDL_EVENT_DROP_FILE) {
