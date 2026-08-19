@@ -48,42 +48,9 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
     return interval;
 }
 
-#include <shaderc/shaderc.hpp>
-
-std::vector<uint32_t> get_or_compile(const std::string &filename, const std::string &source_code) {
-    // 2. 如果没找到，读取源码文件
-    // std::ifstream file(filename);
-    // std::stringstream buffer;
-    // buffer << file.rdbuf();
-    // std::string source_code = buffer.str();
-
-    shaderc::Compiler compiler;
-    shaderc::CompileOptions options;
-    options.SetOptimizationLevel(shaderc_optimization_level_performance); // 开启性能优化
-
-    // 🚀 根据不同的 Pass 运行时动态注入宏
-    // if (pass == RenderPassType::Depth) {
-    //     options.AddMacroDefinition("PASS_DEPTH", "1");
-    // } else if (pass == RenderPassType::Picking) {
-    //     options.AddMacroDefinition("PASS_PICKING", "1");
-    // } else {
-    //     options.AddMacroDefinition("PASS_COLOR", "1");
-    // }
-
-    shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(
-                                                                     source_code, shaderc_glsl_fragment_shader,
-                                                                     filename.c_str(), options
-                                                                    );
-    if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-        return {};
-    }
-    std::vector<uint32_t> spirv_code(result.cbegin(), result.cend());
-}
 
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-
-    // get_or_compile("");
 
     auto &backend = VK_backend::instance();
     backend.create();
