@@ -35,75 +35,82 @@ if (event.type == SDL_EVENT_KEY_DOWN) {\
     last_timestamp = 0;\
 }
 
-/**
- *
- * @param entity
- * @param event
- * @param time_stamp_err 这里的单位应该是ms
- * @return
- */
-static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Event &event) {
+
+wmOperatorStatus view_move_up(const entt::entity entity, std::chrono::milliseconds ms) {
     float speed = 1.0f;
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
+    float pos_err = speed * ms.count();
+    std::cout << " std::chrono::milliseconds    " << ms << std::endl;
 
-    if (event.key.key == SDLK_W && Logic_entt().valid(entity)) {
-        begin_time_err;
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            auto offset = camera->get_view_direction() * -pos_err;
-            camera->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        end_time_err;
-        return OPERATOR_FINISHED;
+    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+        auto offset = camera->get_view_direction() * -pos_err;
+        camera->add_offset(offset);
+        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
     }
-    if (event.key.key == SDLK_S && Logic_entt().valid(entity)) {
-        begin_time_err;
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            auto offset = camera->get_view_direction() * pos_err;
-            camera->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        end_time_err;
-        return OPERATOR_FINISHED;
-    }
-    if (event.key.key == SDLK_A && Logic_entt().valid(entity)) {
-        begin_time_err;
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            auto offset = camera->get_view_right_direction() * -pos_err;
-            camera->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        end_time_err;
+    return OPERATOR_FINISHED;
+}
 
-        return OPERATOR_FINISHED;
-    } else if (event.key.key == SDLK_D && Logic_entt().valid(entity)) {
-        begin_time_err;
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            auto offset = camera->get_view_right_direction() * pos_err;
-            camera->add_offset(offset);
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        end_time_err;
-
-        return OPERATOR_FINISHED;
+wmOperatorStatus view_move_down(const entt::entity entity, std::chrono::milliseconds ms) {
+    float speed = 1.0f;
+    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
+        speed = move_speed->speed;
     }
-    if (event.key.key == SDLK_SPACE && Logic_entt().valid(entity)) {
-        begin_time_err;
-        if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-            if (event.key.mod & SDL_KMOD_SHIFT)
-                camera->add_offset({0, -1, 0});
-            else
-                camera->add_offset({0, 1, 0});
-            Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        }
-        end_time_err;
+    float pos_err = speed * ms.count();
+    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+        auto offset = camera->get_view_direction() * pos_err;
+        camera->add_offset(offset);
+        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
+    }
+    return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus view_move_left(const entt::entity entity, std::chrono::milliseconds ms) {
+    float speed = 1.0f;
+    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
+        speed = move_speed->speed;
+    }
+    float pos_err = speed * ms.count();
+    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+        auto offset = camera->get_view_right_direction() * -pos_err;
+        camera->add_offset(offset);
+        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
+    }
+    return OPERATOR_FINISHED;
+}
+
+wmOperatorStatus view_move_right(const entt::entity entity, std::chrono::milliseconds ms) {
+    float speed = 1.0f;
+    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
+        speed = move_speed->speed;
+    }
+    float pos_err = speed * ms.count();
+    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+        auto offset = camera->get_view_right_direction() * pos_err;
+        camera->add_offset(offset);
+        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
+    }
+    return OPERATOR_FINISHED;
+}
+
+
+static wmOperatorStatus world_rotate(const entt::entity entity, const Point_2 temp) {
+    if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+        auto q_current = camera->get_rotate();
+        q_current      = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) *
+                                       q_current);
+        q_current =
+                q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+        q_current.normalize();
+        camera->set_rotate(q_current);
+        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
         return OPERATOR_FINISHED;
     } else {
         return OPERATOR_PASS_THROUGH;
     }
 }
+
 
 static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event,
                                             std::optional<base_event_with_stamp> mouse) {
@@ -132,22 +139,17 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
             }
             case EVENT_SCROLL: {
                 const Point_2 temp{mouse.value().scroll[0], mouse.value().scroll[1]};
-                if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-                    auto q_current = camera->get_rotate();
-                    q_current      = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) *
-                                                   q_current);
-                    q_current =
-                            q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                    q_current.normalize();
-                    camera->set_rotate(q_current);
-                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                    return OPERATOR_FINISHED;
-                } else {
-                    return OPERATOR_PASS_THROUGH;
-                }
-                break;
+                return world_rotate(entity, temp);
             }
             case EVENT_MOVE: {
+                break;
+            }
+            case EVENT_KEY_DOWN:
+            case EVENT_KEY_FIRST_DOWN: {
+                Combined_shortcut_keys temp(" 'w' ");
+                if (mouse->keys_ == temp) {
+                    view_move_up(entity, mouse->current_timestamp - mouse->last_timestamp);
+                }
                 break;
             }
         }

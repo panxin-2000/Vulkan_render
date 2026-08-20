@@ -37,6 +37,9 @@ enum wmEventType : int16_t {
     EVENT_RELEASE_RIGHT,
     EVENT_SCROLL,
     EVENT_MOVE,
+    EVENT_KEY_FIRST_DOWN,
+    EVENT_KEY_DOWN,
+    EVENT_KEY_UP,
 };
 
 
@@ -80,9 +83,7 @@ ENABLE_BITWISE_OPERATORS(wmOperatorStatus)
 
 
 class Combined_shortcut_keys {
-    std::unordered_set<uint16_t> keys_;
     std::bitset<512> new_key_;
-
 
     // if ((current_input & required_combo) == required_combo) {
     //     // 快捷键组合触发成功（哪怕玩家同时按了别的没用的键）
@@ -90,9 +91,11 @@ class Combined_shortcut_keys {
 
 
 public:
-    void add_pressed_key(const SDL_Scancode code) {
-        new_key_[code] = true;
+    inline void add_pressed_key(const SDL_Scancode code, const bool value = true) {
+        new_key_[code] = value;
     }
+
+    bool operator==(const Combined_shortcut_keys &temp) const = default;
 
     static std::string toLower(const std::string &str) {
         std::string lowerStr;
@@ -324,9 +327,13 @@ public:
         return keys;
     }
 
+    void clear() {
+        new_key_.reset();
+    }
+
 
     explicit Combined_shortcut_keys(const std::string &key_name) {
-        keys_ = parseGLFWKeyString(key_name);
+        parseGLFWKeyString(key_name);
     }
 
     explicit Combined_shortcut_keys() {

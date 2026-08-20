@@ -15,57 +15,35 @@
 #include "base_event.h"
 
 
-inline Combined_shortcut_keys check_key() {
-    Combined_shortcut_keys keys;
-    int num_keys;
-    const bool *key_states = SDL_GetKeyboardState(&num_keys);
-    for (int i = 0; i < num_keys; ++i) {
-        if (key_states[i]) {
-            // 如果该键被按下 (值为 true)
-            // 将索引转换为 SDL_Scancode
-            const SDL_Scancode scancode = static_cast<SDL_Scancode>(i);
-            keys.add_pressed_key(scancode);
-        }
-    }
-    return keys;
-}
-
 class Mouse_status {
 public:
     Mouse_status() = default;
 
     ~Mouse_status() = default;
 
-    void handle_mouse_click_left(std::array<float, 2> pos) {
-    }
 
-    void handle_mouse_click_right(std::array<float, 2> pos) {
-        first_click_position     = pos;
-        mouse_button_right_click = true;
-    }
-
-
-    void handle_mouse_release_left(const std::array<float, 2> release_pos) {
-        mouse_button_left_click = false;
-    }
-
-    void handle_mouse_release_right(const std::array<float, 2> release_pos) {
-        mouse_button_right_click = false;
+    void check_key() {
+        int num_keys;
+        const bool *key_states = SDL_GetKeyboardState(&num_keys);
+        if (num_keys == 512) {
+            for (int i = 0; i < 512; ++i) {
+                keys_.add_pressed_key(static_cast<SDL_Scancode>(i), key_states[i]);
+            }
+        } else
+            for (int i = 0; i < num_keys; ++i) {
+                keys_.add_pressed_key(static_cast<SDL_Scancode>(i), key_states[i]);
+            }
     }
 
     // 选择与拖动的区别，如果已经在已经选择的物品了，那么可以直接移动物品
     // 如果在首次的坐标不再选择的物品上，那么直接走到选择的逻辑
     // 如果拖着事件已经中了，那么如果处理选择框的事件呢？
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
-    base_event_with_stamp add_scroll(const std::array<float, 2> pos) {
-    }
 
     base_event_with_stamp check_status(const SDL_Event &event) {
-        current_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>
-                (std::chrono::system_clock::now().time_since_epoch());
 
-
-        keys_ = check_key();
+        std::chrono::nanoseconds sdl_nanos(event.common.timestamp);
+        current_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(sdl_nanos);
 
         int num_keys;
         manage_modifier_flag   = KM_NULL;
@@ -85,6 +63,7 @@ public:
             }
         }
         base_event_with_stamp temp{};
+
         switch (event.type) {
             case SDL_EVENT_MOUSE_WHEEL: {
                 manage_event_type = EVENT_SCROLL;
@@ -95,6 +74,25 @@ public:
                     manage_scroll = {0, event.wheel.y};
                     temp          = get_result();
                 }
+                break;
+            }
+            case SDL_EVENT_KEY_DOWN: {
+                if (event.key.repeat == 0) {
+                    last_timestamp    = current_timestamp;
+                    manage_event_type = EVENT_KEY_FIRST_DOWN;
+                } else {
+                    manage_event_type = EVENT_KEY_DOWN;
+                }
+                check_key();
+                temp = get_result();
+                break;
+            }
+            case SDL_EVENT_KEY_UP: {
+                manage_event_type = EVENT_KEY_UP;
+                keys_.clear();
+                check_key();
+                temp = get_result();
+                break;
             }
             default:
                 break;
@@ -143,7 +141,7 @@ public:
         }
         if (manage_event_type != EVENT_NONE) {
             std::cout << " current_timestamp " << current_timestamp << std::endl;
-            std::cout << " last_timestamp " << last_timestamp << std::endl;
+            std::cout << " last_timestamp    " << last_timestamp << std::endl;
             last_position     = current_position;
             last_timestamp    = current_timestamp;
             manage_event_type = EVENT_NONE;
