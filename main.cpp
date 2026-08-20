@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                std::optional<base_event_with_stamp> mouse = mouse_status.check_status();
+                std::optional<base_event_with_stamp> mouse = mouse_status.check_status(event);
                 auto keys                                  = check_key();
                 base_event_dealing(event);
             }

@@ -375,26 +375,68 @@ public:
     // 如果在首次的坐标不再选择的物品上，那么直接走到选择的逻辑
     // 如果拖着事件已经中了，那么如果处理选择框的事件呢？
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
+    base_event_with_stamp add_scroll(const std::array<float, 2> pos) {
+    }
 
-
-    base_event_with_stamp check_status() {
+    base_event_with_stamp check_status(const SDL_Event &event) {
         float x = 0.0f;
         float y = 0.0f;
+
+        int num_keys;
+        manage_modifier_flag   = KM_NULL;
+        const bool *key_states = SDL_GetKeyboardState(&num_keys);
+        if (key_states) {
+            if (key_states[SDL_SCANCODE_LSHIFT] || key_states[SDL_SCANCODE_RSHIFT]) {
+                manage_modifier_flag |= KM_SHIFT;
+            }
+            if (key_states[SDL_SCANCODE_LCTRL] || key_states[SDL_SCANCODE_RCTRL]) {
+                manage_modifier_flag |= KM_CTRL;
+            }
+            if (key_states[SDL_SCANCODE_LALT] || key_states[SDL_SCANCODE_RALT]) {
+                manage_modifier_flag |= KM_ALT;
+            }
+            if (key_states[SDL_SCANCODE_LGUI] || key_states[SDL_SCANCODE_RGUI]) {
+                manage_modifier_flag |= KM_OS_KEY;
+            }
+        }
+
+        switch (event.type) {
+            case SDL_EVENT_MOUSE_WHEEL: {
+                if (std::abs(event.wheel.x) > std::abs(event.wheel.y))
+                    return {
+                        manage_event_type,
+                        current_position,
+                        last_position,
+                        first_click_position,
+                        {-event.wheel.x, 0},
+                        manage_modifier_flag
+                    };
+                else
+                    return {
+                        manage_event_type,
+                        current_position,
+                        last_position,
+                        first_click_position,
+                        {0, event.wheel.y},
+                        manage_modifier_flag
+                    };
+            }
+            default:
+                break;
+        }
 
         // 查询当前鼠标在窗口内的位置和按键状态
         const SDL_MouseButtonFlags buttons = SDL_GetMouseState(&x, &y);
         current_position[0]                = x;
         current_position[1]                = y;
-
-
         if (mouse_button_left_click == true && (buttons & SDL_BUTTON_LMASK)) {
             manage_event_type = EVENT_PRESS_DOWN_LEFT;
-            handle_drag(current_position);
-            std::cout << " handle_drag left " << std::endl;
+            return handle_drag(current_position);
+            // std::cout << " handle_drag left " << std::endl;
         }
         if (mouse_button_right_click == true && (buttons & SDL_BUTTON_RMASK)) {
             manage_event_type = EVENT_PRESS_DOWN_RIGHT;
-            handle_drag(current_position);
+            return handle_drag(current_position);
             std::cout << " handle_drag right " << std::endl;
         }
 
@@ -402,31 +444,30 @@ public:
             // 左键正被按下
             if (mouse_button_left_click == false) {
                 manage_event_type = EVENT_FIRST_LEFT;
-                handle_mouse_click_left(current_position);
-                std::cout << " handle_mouse_click_left " << std::endl;
+                return handle_mouse_click_left(current_position);
+                // std::cout << " handle_mouse_click_left " << std::endl;
             }
         } else {
             if (mouse_button_left_click == true) {
                 manage_event_type = EVENT_RELEASE_LEFT;
-                handle_mouse_release_left(current_position);
-                std::cout << " handle_mouse_release_left " << std::endl;
+                return handle_mouse_release_left(current_position);
+                // std::cout << " handle_mouse_release_left " << std::endl;
             }
         }
         if (buttons & SDL_BUTTON_RMASK) {
             // 右键正被按下
             if (mouse_button_right_click == false) {
                 manage_event_type = EVENT_FIRST_RIGHT;
-                handle_mouse_click_right(current_position);
-                std::cout << " handle_mouse_click_right " << std::endl;
+                return handle_mouse_click_right(current_position);
+                // std::cout << " handle_mouse_click_right " << std::endl;
             }
         } else {
             if (mouse_button_right_click == true) {
                 manage_event_type = EVENT_RELEASE_RIGHT;
-                handle_mouse_release_right(current_position);
-                std::cout << " handle_mouse_release_right " << std::endl;
+                return handle_mouse_release_right(current_position);
+                // std::cout << " handle_mouse_release_right " << std::endl;
             }
         }
-        last_position = current_position;
         return {};
     }
 
