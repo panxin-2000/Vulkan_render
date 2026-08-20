@@ -295,8 +295,7 @@ public:
         first_click_position    = pos;
         mouse_button_left_click = true;
         return {
-            MOUSE_LEFT,
-            KM_PRESS,
+            manage_event_type,
             pos,
             last_position,
             first_click_position,
@@ -309,8 +308,7 @@ public:
         first_click_position     = pos;
         mouse_button_right_click = true;
         return {
-            MOUSE_RIGHT,
-            KM_PRESS,
+            manage_event_type,
             pos,
             last_position,
             first_click_position,
@@ -319,7 +317,6 @@ public:
         };
     }
 
-
     base_event_with_stamp handle_drag(std::array<float, 2> pos) {
         current_position = pos;
         if ((mouse_button_left_click == true || mouse_button_right_click == true)
@@ -327,8 +324,7 @@ public:
             auto temp     = last_position;
             last_position = pos;
             return {
-                MOUSE_MOVE,
-                KM_PRESS,
+                manage_event_type,
                 current_position,
                 temp,
                 first_click_position,
@@ -342,8 +338,7 @@ public:
 
     base_event_with_stamp handle_scroll(std::array<float, 2> pos) {
         return {
-            MOUSE_ROTATE,
-            KM_NOTHING,
+            manage_event_type,
             current_position,
             last_position,
             first_click_position,
@@ -355,8 +350,19 @@ public:
     base_event_with_stamp handle_mouse_release_left(const std::array<float, 2> release_pos) {
         mouse_button_left_click = false;
         return {
-            MOUSE_LEFT,
-            KM_RELEASE,
+            manage_event_type,
+            release_pos,
+            last_position,
+            first_click_position,
+            manage_scroll,
+            manage_modifier_flag
+        };
+    }
+
+    base_event_with_stamp handle_mouse_release_right(const std::array<float, 2> release_pos) {
+        mouse_button_right_click = false;
+        return {
+            manage_event_type,
             release_pos,
             last_position,
             first_click_position,
@@ -371,23 +377,58 @@ public:
     // 如果鼠标按键按下到松开的时间内有拖拽事件处理成功，那么丢弃掉这个事件
 
 
-    base_event_with_stamp handle_mouse_release_right(const std::array<float, 2> release_pos) {
-        mouse_button_right_click = false;
-        return {
-            MOUSE_RIGHT,
-            KM_RELEASE,
-            release_pos,
-            last_position,
-            first_click_position,
-            manage_scroll,
-            manage_modifier_flag
-        };
-    }
-
     base_event_with_stamp check_status() {
+        float x = 0.0f;
+        float y = 0.0f;
+
+        // 查询当前鼠标在窗口内的位置和按键状态
+        const SDL_MouseButtonFlags buttons = SDL_GetMouseState(&x, &y);
+        current_position[0]                = x;
+        current_position[1]                = y;
+
+
+        if (mouse_button_left_click == true && (buttons & SDL_BUTTON_LMASK)) {
+            manage_event_type = EVENT_PRESS_DOWN_LEFT;
+            handle_drag(current_position);
+            std::cout << " handle_drag left " << std::endl;
+        }
+        if (mouse_button_right_click == true && (buttons & SDL_BUTTON_RMASK)) {
+            manage_event_type = EVENT_PRESS_DOWN_RIGHT;
+            handle_drag(current_position);
+            std::cout << " handle_drag right " << std::endl;
+        }
+
+        if (buttons & SDL_BUTTON_LMASK) {
+            // 左键正被按下
+            if (mouse_button_left_click == false) {
+                manage_event_type = EVENT_FIRST_LEFT;
+                handle_mouse_click_left(current_position);
+                std::cout << " handle_mouse_click_left " << std::endl;
+            }
+        } else {
+            if (mouse_button_left_click == true) {
+                manage_event_type = EVENT_RELEASE_LEFT;
+                handle_mouse_release_left(current_position);
+                std::cout << " handle_mouse_release_left " << std::endl;
+            }
+        }
+        if (buttons & SDL_BUTTON_RMASK) {
+            // 右键正被按下
+            if (mouse_button_right_click == false) {
+                manage_event_type = EVENT_FIRST_RIGHT;
+                handle_mouse_click_right(current_position);
+                std::cout << " handle_mouse_click_right " << std::endl;
+            }
+        } else {
+            if (mouse_button_right_click == true) {
+                manage_event_type = EVENT_RELEASE_RIGHT;
+                handle_mouse_release_right(current_position);
+                std::cout << " handle_mouse_release_right " << std::endl;
+            }
+        }
+        last_position = current_position;
         return {};
     }
-
 
     [[nodiscard]] bool get_focus() const {
         return focus;
@@ -400,11 +441,10 @@ private:
     wmEventType manage_event_type;
     wmEventModifierFlag manage_modifier_flag;
 
-    std::array<float, 2> current_position                = {0, 0};
-    std::array<float, 2> last_position                   = {0, 0};
-    std::array<float, 2> first_click_position            = {0, 0};
-    std::array<float, 2> manage_scroll                   = {0, 0};
-    std::array<float, 2> error_between_click_and_release = {5, 5}; // 这里的范围有问题，需要更改，当是屏幕像素时，就没有改的必要了
+    std::array<float, 2> current_position     = {0, 0};
+    std::array<float, 2> last_position        = {0, 0};
+    std::array<float, 2> first_click_position = {0, 0};
+    std::array<float, 2> manage_scroll        = {0, 0};
 };
 
 
