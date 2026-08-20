@@ -148,7 +148,7 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
             case EVENT_KEY_FIRST_DOWN: {
                 Combined_shortcut_keys temp(" 'w' ");
                 if (mouse->keys_ == temp) {
-                    view_move_up(entity, mouse->current_timestamp - mouse->last_timestamp);
+                    view_move_up(entity, mouse->key_error_timestamp);
                 }
                 break;
             }

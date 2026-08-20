@@ -331,6 +331,16 @@ public:
         new_key_.reset();
     }
 
+    int new_press_count(const Combined_shortcut_keys last_key) const {
+        const std::bitset<512> bits_added = new_key_ & ~last_key.new_key_; // 多的键
+        return static_cast<int>(bits_added.count());
+    }
+
+    int new_release_count(const Combined_shortcut_keys last_key) const {
+        const std::bitset<512> bits_removed = ~new_key_ & last_key.new_key_; // 少的键
+        return static_cast<int>(bits_removed.count());
+    }
+
 
     explicit Combined_shortcut_keys(const std::string &key_name) {
         parseGLFWKeyString(key_name);
@@ -347,8 +357,9 @@ public:
  */
 class base_event_with_stamp {
 public:
-    std::chrono::milliseconds current_timestamp{0}; // 事件时间戳（高精度）
-    std::chrono::milliseconds last_timestamp{0};    // 事件时间戳（高精度）
+    std::chrono::milliseconds current_timestamp{0};   // 事件时间戳（高精度）
+    std::chrono::milliseconds last_timestamp{0};      // 事件时间戳（高精度）
+    std::chrono::milliseconds key_error_timestamp{0}; // 事件时间戳（高精度）
     wmEventType event_type;
     std::array<float, 2> current_position; // 当前的鼠标位置
     std::array<float, 2> last_position;
@@ -367,7 +378,9 @@ public:
                           const wmEventModifierFlag modifier_flag,
                           const Combined_shortcut_keys keys,
                           const std::chrono::milliseconds current,
-                          const std::chrono::milliseconds last)
+                          const std::chrono::milliseconds last,
+                          const std::chrono::milliseconds key_error
+    )
         : event_type(event_type),
           current_position(current_position),
           last_position(move_position),
@@ -376,6 +389,7 @@ public:
           keys_(keys),
           modifier_flag(modifier_flag),
           current_timestamp(current),
+          key_error_timestamp(key_error),
           last_timestamp(last) {
     }
 
