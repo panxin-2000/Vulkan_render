@@ -105,50 +105,52 @@ static wmOperatorStatus world_root_move(const entt::entity entity, const SDL_Eve
     }
 }
 
-static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event) {
-    switch (event.type) {
-        case SDL_EVENT_MOUSE_MOTION: {
-            return OPERATOR_PASS_THROUGH;
-        }
-        case SDL_EVENT_MOUSE_WHEEL: {
-            const Point_2 temp{event.wheel.x, event.wheel.y};
-            if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-                auto q_current = camera->get_rotate();
-                q_current = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) * q_current);
-                q_current = q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                q_current.normalize();
-                camera->set_rotate(q_current);
-                Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-                return OPERATOR_FINISHED;
-            } else {
-                return OPERATOR_PASS_THROUGH;
+static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event,
+                                            std::optional<base_event_with_stamp> mouse) {
+    if (mouse.has_value()) {
+        switch (mouse.value().event_type) {
+            case EVENT_NONE: {
+                break;
+            }
+            case EVENT_FIRST_LEFT: {
+                break;
+            }
+            case EVENT_PRESS_DOWN_LEFT: {
+                break;
+            }
+            case EVENT_RELEASE_LEFT: {
+                break;
+            }
+            case EVENT_FIRST_RIGHT: {
+                break;
+            }
+            case EVENT_PRESS_DOWN_RIGHT: {
+                break;
+            }
+            case EVENT_RELEASE_RIGHT: {
+                break;
+            }
+            case EVENT_SCROLL: {
+                const Point_2 temp{mouse.value().scroll[0], mouse.value().scroll[1]};
+                if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
+                    auto q_current = camera->get_rotate();
+                    q_current      = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) *
+                                                   q_current);
+                    q_current =
+                            q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+                    q_current.normalize();
+                    camera->set_rotate(q_current);
+                    Logic_entt().emplace_or_replace<Camera_dirty>(entity);
+                    return OPERATOR_FINISHED;
+                } else {
+                    return OPERATOR_PASS_THROUGH;
+                }
+                break;
+            }
+            case EVENT_MOVE: {
+                break;
             }
         }
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        case SDL_EVENT_MOUSE_BUTTON_UP: {
-        }
-        case SDL_EVENT_TEXT_INPUT: {
-        }
-        case SDL_EVENT_KEY_UP: {
-            return world_root_move(entity, event);
-        }
-        case SDL_EVENT_KEY_DOWN: {
-            return world_root_move(entity, event);
-        }
-        case SDL_EVENT_FINGER_MOTION: {
-        }
-        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
-        }
-        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-        }
-        case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        case SDL_EVENT_WINDOW_FOCUS_LOST: {
-        }
-        case SDL_EVENT_GAMEPAD_ADDED:
-        case SDL_EVENT_GAMEPAD_REMOVED: {
-        }
-        default:
-            break;
     }
     return OPERATOR_PASS_THROUGH;
 }
@@ -190,7 +192,7 @@ entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
 }
 
 
-void base_event_dealing(const SDL_Event &event) {
+void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_stamp> mouse) {
     const auto view = Logic_entt().view<Name_component, Scene_Component, Input_Component>();
 
     static entt::entity current_select_entity = get_UI_scene_root();
@@ -286,6 +288,6 @@ void base_event_dealing(const SDL_Event &event) {
     }
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {
-        world_root_on_Event(get_world_root(), event);
+        world_root_on_Event(get_world_root(), event, mouse);
     }
 }

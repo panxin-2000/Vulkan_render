@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
                 std::optional<base_event_with_stamp> mouse = mouse_status.check_status(event);
                 auto keys                                  = check_key();
-                base_event_dealing(event);
+                base_event_dealing(event, mouse);
             }
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径

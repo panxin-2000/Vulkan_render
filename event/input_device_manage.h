@@ -404,7 +404,7 @@ public:
             case SDL_EVENT_MOUSE_WHEEL: {
                 if (std::abs(event.wheel.x) > std::abs(event.wheel.y))
                     return {
-                        manage_event_type,
+                        EVENT_SCROLL,
                         current_position,
                         last_position,
                         first_click_position,
@@ -413,7 +413,7 @@ public:
                     };
                 else
                     return {
-                        manage_event_type,
+                        EVENT_SCROLL,
                         current_position,
                         last_position,
                         first_click_position,
