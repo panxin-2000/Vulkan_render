@@ -134,8 +134,14 @@ int main(int argc, char *argv[]) {
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                std::optional<base_event_with_stamp> mouse = mouse_status.check_mouse_scroll_status(event);
-                base_event_dealing(event, mouse);
+                if (event.type == SDL_EVENT_MOUSE_MOTION ||
+                    event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+                    event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
+                    event.type == SDL_EVENT_MOUSE_WHEEL
+                ) {
+                    auto mouse = mouse_status.check_mouse_scroll_status(event);
+                    base_event_dealing(event, mouse);
+                }
             }
             if (event.type == SDL_EVENT_DROP_FILE) {
                 SDL_Log("File: %s", event.drop.data); // 获取路径
@@ -149,8 +155,9 @@ int main(int argc, char *argv[]) {
                 done = true;
         }
         if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-            std::optional<base_event_with_stamp> mouse = mouse_status.check_key_status();
-            base_event_dealing(event, mouse);
+            auto mouse = mouse_status.check_key_status();
+            if (mouse.event_type != EVENT_NONE)
+                base_event_dealing(event, mouse);
         }
 
         Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());

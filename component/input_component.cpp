@@ -44,6 +44,12 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
                 break;
             }
             case EVENT_KEY_DOWN:
+                for (const auto &shortcut_key: long_press_keys) {
+                    if (mouse->keys_ == shortcut_key.first) {
+                        return shortcut_key.second(entity, mouse->key_error_timestamp);
+                    }
+                }
+                break;
             case EVENT_KEY_FIRST_DOWN: {
                 for (const auto &shortcut_key: shortcut_keys) {
                     if (mouse->keys_ == shortcut_key.first) {
@@ -53,6 +59,8 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
                 break;
             }
             case EVENT_KEY_UP:
+                break;
+            case EVENT_MOVE:
                 break;
         }
     }

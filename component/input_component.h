@@ -28,6 +28,9 @@ public:
     std::vector<std::pair<Combined_shortcut_keys, std::function<wmOperatorStatus (entt::entity,
                               std::chrono::milliseconds ms)> > > shortcut_keys;
 
+    std::vector<std::pair<Combined_shortcut_keys, std::function<wmOperatorStatus (entt::entity,
+                              std::chrono::milliseconds ms)> > > long_press_keys;
+
     std::function<wmOperatorStatus (const entt::entity entity, const Point_2 temp)> scroll = nullptr;
     std::function<wmOperatorStatus (const entt::entity entity,
                                     const Eigen::Vector2f current_position,
@@ -38,8 +41,13 @@ public:
 
     void add_shortcut_keys(Combined_shortcut_keys temp_w,
                            const std::function<wmOperatorStatus (entt::entity,
-                                                                 std::chrono::milliseconds ms)> &function) {
-        shortcut_keys.emplace_back(temp_w, function);
+                                                                 std::chrono::milliseconds ms)> &function,
+                           const bool long_press = false) {
+        if (long_press == true) {
+            long_press_keys.emplace_back(temp_w, function);
+        } else {
+            shortcut_keys.emplace_back(temp_w, function);
+        }
     }
 
     void add_scroll(const std::function<wmOperatorStatus (const entt::entity entity, const Point_2 temp)> function) {

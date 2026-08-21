@@ -98,10 +98,10 @@ void init_world_scene_root(entt::entity entity) {
     update_camera_parameter(entity);
 
     auto &input = Logic_entt().emplace<Input_Component>(entity);
-    input.add_shortcut_keys(Combined_shortcut_keys(" 'w' "), view_move_up);
-    input.add_shortcut_keys(Combined_shortcut_keys(" 'a' "), view_move_down);
-    input.add_shortcut_keys(Combined_shortcut_keys(" 's' "), view_move_left);
-    input.add_shortcut_keys(Combined_shortcut_keys(" 'd' "), view_move_right);
+    input.add_shortcut_keys(Combined_shortcut_keys(" 'w' "), view_move_up, true);
+    input.add_shortcut_keys(Combined_shortcut_keys(" 'a' "), view_move_down, true);
+    input.add_shortcut_keys(Combined_shortcut_keys(" 's' "), view_move_left, true);
+    input.add_shortcut_keys(Combined_shortcut_keys(" 'd' "), view_move_right, true);
 
     input.add_scroll(world_rotate);
 }
