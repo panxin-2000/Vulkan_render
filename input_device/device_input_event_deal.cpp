@@ -41,7 +41,7 @@ wmOperatorStatus view_move_up(const entt::entity entity, std::chrono::millisecon
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
-    float pos_err = speed * ms.count();
+    float pos_err = speed * ms.count() / 1000.f;
     std::cout << " std::chrono::milliseconds    " << ms << std::endl;
 
     if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
@@ -57,7 +57,7 @@ wmOperatorStatus view_move_down(const entt::entity entity, std::chrono::millisec
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
-    float pos_err = speed * ms.count();
+    float pos_err = speed * ms.count() / 1000.f;
     if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
         auto offset = camera->get_view_direction() * pos_err;
         camera->add_offset(offset);
@@ -71,7 +71,7 @@ wmOperatorStatus view_move_left(const entt::entity entity, std::chrono::millisec
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
-    float pos_err = speed * ms.count();
+    float pos_err = speed * ms.count() / 1000.f;
     if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
         auto offset = camera->get_view_right_direction() * -pos_err;
         camera->add_offset(offset);
@@ -85,7 +85,7 @@ wmOperatorStatus view_move_right(const entt::entity entity, std::chrono::millise
     if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
         speed = move_speed->speed;
     }
-    float pos_err = speed * ms.count();
+    float pos_err = speed * ms.count() / 1000.f;
     if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
         auto offset = camera->get_view_right_direction() * pos_err;
         camera->add_offset(offset);
@@ -146,12 +146,23 @@ static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL
             }
             case EVENT_KEY_DOWN:
             case EVENT_KEY_FIRST_DOWN: {
-                Combined_shortcut_keys temp(" 'w' ");
-                if (mouse->keys_ == temp) {
+                Combined_shortcut_keys temp_w(" 'w' ");
+                Combined_shortcut_keys temp_a(" 'a' ");
+                Combined_shortcut_keys temp_s(" 's' ");
+                Combined_shortcut_keys temp_d(" 'd' ");
+                if (mouse->keys_ == temp_w) {
                     view_move_up(entity, mouse->key_error_timestamp);
+                } else if (mouse->keys_ == temp_s) {
+                    view_move_down(entity, mouse->key_error_timestamp);
+                } else if (mouse->keys_ == temp_d) {
+                    view_move_right(entity, mouse->key_error_timestamp);
+                } else if (mouse->keys_ == temp_a) {
+                    view_move_left(entity, mouse->key_error_timestamp);
                 }
                 break;
             }
+            case EVENT_KEY_UP:
+                break;
         }
     }
     return OPERATOR_PASS_THROUGH;

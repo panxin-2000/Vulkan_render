@@ -116,8 +116,6 @@ public:
                 break;
         }
         if (manage_event_type != EVENT_NONE) {
-            std::cout << " current_timestamp " << current_timestamp << std::endl;
-            std::cout << " last_timestamp    " << last_timestamp << std::endl;
             last_position     = current_position;
             last_timestamp    = current_timestamp;
             manage_event_type = EVENT_NONE;
