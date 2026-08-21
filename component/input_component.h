@@ -13,11 +13,13 @@
 #include "base_event.h"
 #include "imgui_impl_sdl3.h"
 #include "base_geometry/geometry_element/point_2.h"
+#include "Eigen/Eigen"
 
 enum operator_select_status {
     no_select_current = 0,
     select_current    = 1,
 };
+
 
 class Input_Component {
 public:
@@ -27,6 +29,9 @@ public:
                               std::chrono::milliseconds ms)> > > shortcut_keys;
 
     std::function<wmOperatorStatus (const entt::entity entity, const Point_2 temp)> scroll = nullptr;
+    std::function<wmOperatorStatus (const entt::entity entity,
+                                    const Eigen::Vector2f current_position,
+                                    const Eigen::Vector2f last_position)> mouse_drag = nullptr;
 
 
     Input_Component() = default;
@@ -39,6 +44,12 @@ public:
 
     void add_scroll(const std::function<wmOperatorStatus (const entt::entity entity, const Point_2 temp)> function) {
         scroll = function;
+    }
+
+    void add_mouse_drag(const std::function<wmOperatorStatus (const entt::entity entity,
+                                                              const Eigen::Vector2f current_position,
+                                                              const Eigen::Vector2f last_position)> &function) {
+        mouse_drag = function;
     }
 
     ~Input_Component() = default;

@@ -115,6 +115,49 @@ public:
             default:
                 break;
         }
+
+        // 查询当前鼠标在窗口内的位置和按键状态
+        const SDL_MouseButtonFlags buttons = SDL_GetMouseState(&current_position[0], &current_position[1]);
+        if (mouse_button_left_click == true && (buttons & SDL_BUTTON_LMASK) && current_position != last_position) {
+            manage_event_type = EVENT_PRESS_DOWN_LEFT;
+            temp              = get_result();
+        }
+        if (mouse_button_right_click == true && (buttons & SDL_BUTTON_RMASK) && current_position != last_position) {
+            manage_event_type = EVENT_PRESS_DOWN_RIGHT;
+            temp              = get_result();
+        }
+
+        if (buttons & SDL_BUTTON_LMASK) {
+            // 左键正被按下
+            if (mouse_button_left_click == false) {
+                manage_event_type       = EVENT_FIRST_LEFT;
+                first_click_position    = current_position;
+                mouse_button_left_click = true;
+                temp                    = get_result();
+            }
+        } else {
+            if (mouse_button_left_click == true) {
+                manage_event_type       = EVENT_RELEASE_LEFT;
+                mouse_button_left_click = false;
+                temp                    = get_result();
+            }
+        }
+        if (buttons & SDL_BUTTON_RMASK) {
+            // 右键正被按下
+            if (mouse_button_right_click == false) {
+                manage_event_type        = EVENT_FIRST_RIGHT;
+                first_click_position     = current_position;
+                mouse_button_right_click = true;
+                temp                     = get_result();
+            }
+        } else {
+            if (mouse_button_right_click == true) {
+                manage_event_type        = EVENT_RELEASE_RIGHT;
+                mouse_button_right_click = false;
+                temp                     = get_result();
+            }
+        }
+
         if (manage_event_type != EVENT_NONE) {
             last_position     = current_position;
             last_timestamp    = current_timestamp;

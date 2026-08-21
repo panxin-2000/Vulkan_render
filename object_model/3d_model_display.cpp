@@ -29,8 +29,7 @@ entt::entity object_ply_model(const std::string &name, const std::string &file_p
     logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
-
+    add_model_3d_Event(entity);
 
     add_shader(entity,
                "",
@@ -68,7 +67,7 @@ entt::entity object_3d_model(const std::string &name,
     logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
 
 
     add_shader(entity,
@@ -101,7 +100,7 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     logic_create_proxy(entity);
 
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
 
 
     add_shader(entity,
@@ -171,7 +170,7 @@ entt::entity add_sky_box(const std::string &name) {
 
 
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
 
 
     add_shader(entity,
@@ -210,7 +209,7 @@ entt::entity object_3d_model(const std::string &name,
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
     add_shader(entity, "Phong", "vulkan_different_color", "", "");
     add_box_data(entity, bounding_box);
     auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
@@ -236,13 +235,11 @@ void update_curve(const entt::entity entity) {
 }
 
 
-
-
 entt::entity object_line(const std::string &name) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
     Logic_entt().emplace<select_component>(entity);
 
     Logic_entt().emplace<Shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
@@ -286,7 +283,7 @@ entt::entity object_line_old(const std::string &name) {
     const entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
-    // Logic_entt().emplace<Input_Component>(entity, model_3d_Event);
+    add_model_3d_Event(entity);
     Logic_entt().emplace<Shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
     logic_update_proxy<Shader_data>(entity);
     // add_line(entity, {40, 40}, {600, 600});

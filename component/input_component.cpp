@@ -15,9 +15,6 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
             case EVENT_FIRST_LEFT: {
                 break;
             }
-            case EVENT_PRESS_DOWN_LEFT: {
-                break;
-            }
             case EVENT_RELEASE_LEFT: {
                 break;
             }
@@ -35,7 +32,15 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
                     scroll(entity, {mouse.value().scroll[0], mouse.value().scroll[1]});
                 }
             }
-            case EVENT_MOVE: {
+            case EVENT_PRESS_DOWN_LEFT: {
+                const Eigen::Vector2f current_position{event.motion.x, event.motion.y};
+                const Eigen::Vector2f last_position{
+                    event.motion.x - event.motion.xrel,
+                    event.motion.y - event.motion.yrel
+                };
+                if (mouse_drag != nullptr) {
+                    return mouse_drag(entity, current_position, last_position);
+                }
                 break;
             }
             case EVENT_KEY_DOWN:
@@ -45,7 +50,7 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
                         return shortcut_key.second(entity, mouse->key_error_timestamp);
                     }
                 }
-                return OPERATOR_PASS_THROUGH;
+                break;
             }
             case EVENT_KEY_UP:
                 break;

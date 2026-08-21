@@ -189,109 +189,76 @@ Ray<Eigen::Vector3f> &get_screen_ray(const Eigen::Vector2f mouse_positon) {
 }
 
 
-wmOperatorStatus model_3d_Event(const entt::entity entity, const SDL_Event &event) {
-    auto &status = Logic_entt().get<Input_Component>(entity);
-    switch (event.type) {
-        case SDL_EVENT_MOUSE_WHEEL: {
-            Point_2 temp;
-            if (std::abs(event.wheel.x) > std::abs(event.wheel.y))
-                temp = {-event.wheel.x, 0};
-            else
-                temp = {0, event.wheel.y};
-            if (auto position = Logic_entt().try_get<Transform>(entity)) {
-                auto q_current = position->get_rotate();
-                auto delta_y   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()));
-                auto delta_x   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-                position->set_rotate(delta_x * delta_y * q_current);
-                Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
-            }
-            return OPERATOR_RUNNING_MODAL;
-        }
-        case SDL_EVENT_MOUSE_BUTTON_DOWN: {
-            status.select_status_ = select_current;
-            return OPERATOR_RUNNING_MODAL;
-        }
-        case SDL_EVENT_MOUSE_BUTTON_UP: {
-            status.select_status_ = no_select_current;
-            return OPERATOR_FINISHED;
-        }
-        case SDL_EVENT_TEXT_INPUT: {
-            break;
-        }
-        case SDL_EVENT_KEY_UP: {
-            break;
-        }
-        case SDL_EVENT_KEY_DOWN: {
-            if (event.key.key == SDLK_X && Logic_entt().valid(entity)) {
-                if (Logic_entt().valid(entity)) {
-                    Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
-                    return OPERATOR_FINISHED;
-                }
-                return OPERATOR_FINISHED;
-            } else {
-                return OPERATOR_PASS_THROUGH;
-            }
-        }
-        case SDL_EVENT_FINGER_MOTION: {
-            break;
-        }
-        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
-            break;
-        }
-        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-            break;
-        }
-        case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        case SDL_EVENT_WINDOW_FOCUS_LOST: {
-            break;
-        }
-        case SDL_EVENT_GAMEPAD_ADDED:
-        case SDL_EVENT_GAMEPAD_REMOVED: {
-            break;
-        }
+static wmOperatorStatus model_rotate(const entt::entity entity, const Point_2 temp) {
+    if (auto position = Logic_entt().try_get<Transform>(entity)) {
+        auto q_current = position->get_rotate();
+        auto delta_y   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()));
+        auto delta_x   = Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
+        position->set_rotate(delta_x * delta_y * q_current);
+        Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
+        return OPERATOR_RUNNING_MODAL;
+    } else {
+        return OPERATOR_PASS_THROUGH;
+    }
+}
 
-        case SDL_EVENT_MOUSE_MOTION: {
-            if (status.select_status_ == select_current) {
-                // TODO : 没有确定坐标或者说坐标的系数
-                Eigen::Vector2f current_position{event.motion.x, event.motion.y};
+/**
+ *
+*                 Eigen::Vector2f current_position{event.motion.x, event.motion.y};
                 Eigen::Vector2f last_position{
                     event.motion.x - event.motion.xrel,
                     event.motion.y - event.motion.yrel
                 };
 
-                if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
-                    const auto object_position = transform->get_offset();
-                    const auto world_entity    = get_world_root();
-                    const auto current_ray     = get_screen_ray(current_position);
-                    const auto last_ray        = get_screen_ray(last_position);
+ * @param entity
+ * @param current_position
+ * @param last_position
+ * @return
+ */
+static wmOperatorStatus model_offset(const entt::entity entity,
+                                     const Eigen::Vector2f current_position,
+                                     const Eigen::Vector2f last_position) {
+    if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
+        const auto object_position = transform->get_offset();
+        const auto world_entity    = get_world_root();
+        const auto current_ray     = get_screen_ray(current_position);
+        const auto last_ray        = get_screen_ray(last_position);
 
-                    const auto camera_position = Logic_entt().try_get<camera_optical_component>(world_entity);
+        const auto camera_position = Logic_entt().try_get<camera_optical_component>(world_entity);
 
-                    const auto quat        = camera_position->get_rotate();
-                    Eigen::Vector3f normal = quat * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
-                    normal.normalize();                                       // 这个法线的求法是对的吗？
-                    // normal 其实是 view direction
-                    // Eigen::Vector3f normal = camera_matrix.block<3, 1>(0, 2); // 另一种拿 法线的办法
-                    // quat 乘于 unit Z (0,0,1) 的结果是可以被简化的 ，之后再看
-                    const Plane<Eigen::Vector3f> plane{object_position, normal};
-                    // 只剩 下面这一个问题了
-                    const auto a = intersect_result(plane, current_ray);
-                    const auto b = intersect_result(plane, last_ray);
+        const auto quat        = camera_position->get_rotate();
+        Eigen::Vector3f normal = quat * Eigen::Vector3f::UnitZ(); // 假设法向量指向 Z 轴
+        normal.normalize();                                       // 这个法线的求法是对的吗？
+        // normal 其实是 view direction
+        // Eigen::Vector3f normal = camera_matrix.block<3, 1>(0, 2); // 另一种拿 法线的办法
+        // quat 乘于 unit Z (0,0,1) 的结果是可以被简化的 ，之后再看
+        const Plane<Eigen::Vector3f> plane{object_position, normal};
+        // 只剩 下面这一个问题了
+        const auto a = intersect_result(plane, current_ray);
+        const auto b = intersect_result(plane, last_ray);
 
-                    transform->add_offset(a - b);
-                    // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
-                    Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
-                    return OPERATOR_RUNNING_MODAL;
-                }
-            }
-            return OPERATOR_PASS_THROUGH;
-        }
-        default:
-            break;
+        transform->add_offset(a - b);
+        // 这里 y 需要乘与一个 负号的 原因是因为 拿到的 屏幕的坐标 与 归一化坐标不一致
+        Logic_entt().emplace_or_replace<Transform_matrix_dirty>(entity);
+        return OPERATOR_RUNNING_MODAL;
+    } else {
+        return OPERATOR_PASS_THROUGH;
     }
+}
 
-    return
-            OPERATOR_PASS_THROUGH;
+wmOperatorStatus delete_object(const entt::entity entity, std::chrono::milliseconds ms) {
+    if (Logic_entt().valid(entity)) {
+        Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
+        return OPERATOR_FINISHED;
+    }
+    return OPERATOR_PASS_THROUGH;
+}
+
+void add_model_3d_Event(const entt::entity entity) {
+    auto &status = Logic_entt().emplace_or_replace<Input_Component>(entity);
+    status.add_scroll(model_rotate);
+    status.add_mouse_drag(model_offset);
+    status.add_shortcut_keys(Combined_shortcut_keys(" 'x' "), delete_object);
 }
 
 void update_camera_parameter(const entt::entity entity) {
@@ -317,8 +284,6 @@ void update_camera_parameter(const entt::entity entity) {
 
     // Engine::instance().set_sun_light({world_light_pos.x, world_light_pos.y, world_light_pos.z});
 }
-
-
 
 
 void update_camera_transform() {
