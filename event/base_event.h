@@ -309,22 +309,28 @@ public:
         return key_strings;
     }
 
-    std::unordered_set<uint16_t> parseGLFWKeyString(const std::string &keyStr) {
+
+    void parse_key_string(const std::string &keyStr) {
+        const std::vector<std::string> keyParts = splitKeyString(keyStr);
+        parse_key_string(keyParts);
+    }
+
+    void parse_key_string(const std::vector<std::string> &keyParts) {
         static auto keyMap = buildKeyMap();
         std::unordered_set<uint16_t> keys;
-
-        const std::vector<std::string> keyParts = splitKeyString(keyStr);
         for (const std::string &part: keyParts) {
             auto it = keyMap.find(part);
             if (it != keyMap.end()) {
                 keys.insert(it->second);
                 new_key_[it->second] = true;
             } else {
-                std::cerr << "警告：未知键名 -> " << part << "（原始输入：" << keyStr << "）" << std::endl;
+                std::cerr << "警告：未知键名 -> " << std::endl;
+                for (const std::string &key: keyParts) {
+                    std::cerr << " " << key << " ";
+                }
+                std::cerr << std::endl;
             }
         }
-
-        return keys;
     }
 
     void clear() {
@@ -343,7 +349,7 @@ public:
 
 
     explicit Combined_shortcut_keys(const std::string &key_name) {
-        parseGLFWKeyString(key_name);
+        parse_key_string(key_name);
     }
 
     explicit Combined_shortcut_keys() {
