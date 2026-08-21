@@ -319,32 +319,6 @@ void update_camera_parameter(const entt::entity entity) {
 }
 
 
-void init_world_scene_root(entt::entity entity) {
-    Logic_entt().emplace<Scene_Component>(entity);
-    Logic_entt().emplace<Name_component>(entity, "world_scene_root");
-    Logic_entt().emplace<Move_speed>(entity);
-
-    update_camera_parameter(entity);
-    // // vec2 ndc = in_UV * 2.0 - 1.0;
-    //
-    // // 2. 计算视图空间中的目标点 (设 z=1 为远裁剪面方向)
-    // auto viewTarget            = (inv_view_matrix * inv_projection_matrix * Eigen::Vector4f(0.0f, -1.0f, 1.0, 1.0));
-    // auto far_x                 = viewTarget.x() / viewTarget.w();
-    // auto far_y                 = viewTarget.y() / viewTarget.w();
-    // auto far_z                 = viewTarget.z() / viewTarget.w();
-    // auto viewTarget_normalized = Eigen::Vector3f(far_x, far_y, far_z).normalized();
-    //
-    //
-    // auto ray_dir_x = far_x - world_camera_pos.x;
-    // auto ray_dir_y = far_y - world_camera_pos.y;
-    // auto ray_dir_z = far_z - world_camera_pos.z;
-    //
-    // auto pow = std::sqrt(ray_dir_x * ray_dir_x + ray_dir_y * ray_dir_y + ray_dir_z * ray_dir_z);
-    //
-    // Point_3 ray_dir{ray_dir_x / pow, ray_dir_y / pow, ray_dir_z / pow};
-
-    // allocate_descriptor_sets(entity, "bindless"); // todo : 需要确定放在哪里？
-}
 
 
 void update_camera_transform() {

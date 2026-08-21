@@ -449,6 +449,8 @@ file(GLOB_RECURSE component
         "component/transform_component.cpp"
         "component/farmhash.cpp"
         "component/Rect_2D_component.cpp"
+        "component/input_component.cpp"
+        "component/world_scene_root.cpp"
 )
 
 

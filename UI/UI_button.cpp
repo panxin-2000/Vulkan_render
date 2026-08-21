@@ -83,7 +83,7 @@ entt::entity UI_button(const std::string &name,
     logic_create_proxy(entity);
 
     /***************创建*******************/
-    Logic_entt().emplace<Input_Component>(entity, on_Event);
+    // Logic_entt().emplace<Input_Component>(entity, on_Event);
 
     Logic_entt().emplace<Rect_2D_transform>(entity);
     add_shader(entity,

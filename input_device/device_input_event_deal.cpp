@@ -13,162 +13,6 @@
 #include "base_geometry/base.h"
 
 
-entt::dispatcher dispatcher;
-
-
-#define begin_time_err \
-static int64_t last_timestamp = 0;\
-uint64_t time_stamp_err       = 0;\
-if (last_timestamp == 0) {\
-    last_timestamp = event.key.timestamp;\
-    time_stamp_err = 1.0 * 1000.0f * 1000.0f * 1000.0f;\
-} else {\
-time_stamp_err = event.key.timestamp - last_timestamp ;\
-}\
-float ms      = time_stamp_err / 1000.0f / 1000.0f / 1000.0f;\
-float pos_err = speed * ms;
-
-#define end_time_err \
-if (event.type == SDL_EVENT_KEY_DOWN) {\
-    last_timestamp = event.key.timestamp;\
-} else if (event.type == SDL_EVENT_KEY_UP) { \
-    last_timestamp = 0;\
-}
-
-
-wmOperatorStatus view_move_up(const entt::entity entity, std::chrono::milliseconds ms) {
-    float speed = 1.0f;
-    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
-        speed = move_speed->speed;
-    }
-    float pos_err = speed * ms.count() / 1000.f;
-    std::cout << " std::chrono::milliseconds    " << ms << std::endl;
-
-    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-        auto offset = camera->get_view_direction() * -pos_err;
-        camera->add_offset(offset);
-        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-    }
-    return OPERATOR_FINISHED;
-}
-
-wmOperatorStatus view_move_down(const entt::entity entity, std::chrono::milliseconds ms) {
-    float speed = 1.0f;
-    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
-        speed = move_speed->speed;
-    }
-    float pos_err = speed * ms.count() / 1000.f;
-    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-        auto offset = camera->get_view_direction() * pos_err;
-        camera->add_offset(offset);
-        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-    }
-    return OPERATOR_FINISHED;
-}
-
-wmOperatorStatus view_move_left(const entt::entity entity, std::chrono::milliseconds ms) {
-    float speed = 1.0f;
-    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
-        speed = move_speed->speed;
-    }
-    float pos_err = speed * ms.count() / 1000.f;
-    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-        auto offset = camera->get_view_right_direction() * -pos_err;
-        camera->add_offset(offset);
-        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-    }
-    return OPERATOR_FINISHED;
-}
-
-wmOperatorStatus view_move_right(const entt::entity entity, std::chrono::milliseconds ms) {
-    float speed = 1.0f;
-    if (const auto move_speed = Logic_entt().try_get<Move_speed>(entity)) {
-        speed = move_speed->speed;
-    }
-    float pos_err = speed * ms.count() / 1000.f;
-    if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-        auto offset = camera->get_view_right_direction() * pos_err;
-        camera->add_offset(offset);
-        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-    }
-    return OPERATOR_FINISHED;
-}
-
-
-static wmOperatorStatus world_rotate(const entt::entity entity, const Point_2 temp) {
-    if (auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
-        auto q_current = camera->get_rotate();
-        q_current      = Eigen::Quaternionf(Eigen::AngleAxisf(temp.x / 100, Eigen::Vector3f::UnitY()) *
-                                       q_current);
-        q_current =
-                q_current * Eigen::Quaternionf(Eigen::AngleAxisf(temp.y / 100, Eigen::Vector3f::UnitX()));
-        q_current.normalize();
-        camera->set_rotate(q_current);
-        Logic_entt().emplace_or_replace<Camera_dirty>(entity);
-        return OPERATOR_FINISHED;
-    } else {
-        return OPERATOR_PASS_THROUGH;
-    }
-}
-
-
-static wmOperatorStatus world_root_on_Event(const entt::entity entity, const SDL_Event &event,
-                                            std::optional<base_event_with_stamp> mouse) {
-    if (mouse.has_value()) {
-        switch (mouse.value().event_type) {
-            case EVENT_NONE: {
-                break;
-            }
-            case EVENT_FIRST_LEFT: {
-                break;
-            }
-            case EVENT_PRESS_DOWN_LEFT: {
-                break;
-            }
-            case EVENT_RELEASE_LEFT: {
-                break;
-            }
-            case EVENT_FIRST_RIGHT: {
-                break;
-            }
-            case EVENT_PRESS_DOWN_RIGHT: {
-                break;
-            }
-            case EVENT_RELEASE_RIGHT: {
-                break;
-            }
-            case EVENT_SCROLL: {
-                const Point_2 temp{mouse.value().scroll[0], mouse.value().scroll[1]};
-                return world_rotate(entity, temp);
-            }
-            case EVENT_MOVE: {
-                break;
-            }
-            case EVENT_KEY_DOWN:
-            case EVENT_KEY_FIRST_DOWN: {
-                Combined_shortcut_keys temp_w(" 'w' ");
-                Combined_shortcut_keys temp_a(" 'a' ");
-                Combined_shortcut_keys temp_s(" 's' ");
-                Combined_shortcut_keys temp_d(" 'd' ");
-                if (mouse->keys_ == temp_w) {
-                    view_move_up(entity, mouse->key_error_timestamp);
-                } else if (mouse->keys_ == temp_s) {
-                    view_move_down(entity, mouse->key_error_timestamp);
-                } else if (mouse->keys_ == temp_d) {
-                    view_move_right(entity, mouse->key_error_timestamp);
-                } else if (mouse->keys_ == temp_a) {
-                    view_move_left(entity, mouse->key_error_timestamp);
-                }
-                break;
-            }
-            case EVENT_KEY_UP:
-                break;
-        }
-    }
-    return OPERATOR_PASS_THROUGH;
-}
-
-
 #include "base_geometry/intersect_function.h"
 
 entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
@@ -212,36 +56,6 @@ void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_st
     static wmOperatorStatus current_status    = OPERATOR_ZERO;
     static Eigen::Vector2f mouse_pos{-1, -1};
 
-    switch (event.type) {
-        case SDL_EVENT_MOUSE_MOTION: {
-            mouse_pos = {(float) event.motion.x, (float) event.motion.y};
-            // 还是需要进行一个 计算 的 变换  什么时候完成归一化呢？ //
-            break;
-        }
-        case SDL_EVENT_MOUSE_WHEEL: {
-        }
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-        case SDL_EVENT_MOUSE_BUTTON_UP: {
-        }
-        case SDL_EVENT_TEXT_INPUT: {
-        }
-        case SDL_EVENT_KEY_DOWN:
-        case SDL_EVENT_KEY_UP: {
-        }
-        case SDL_EVENT_WINDOW_MOUSE_ENTER: {
-        }
-        case SDL_EVENT_WINDOW_MOUSE_LEAVE: {
-        }
-        case SDL_EVENT_WINDOW_FOCUS_GAINED:
-        case SDL_EVENT_WINDOW_FOCUS_LOST: {
-        }
-        case SDL_EVENT_GAMEPAD_ADDED:
-        case SDL_EVENT_GAMEPAD_REMOVED: {
-        }
-        default:
-            break;
-    }
-
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）
     // 按下 ESC 键时，取消操作，模态已经在，之后的时间不处理，只等鼠标松开取消模态
@@ -249,19 +63,17 @@ void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_st
     // std::cout << "last work name: " << name.name << std::endl;
     if (current_status == OPERATOR_RUNNING_MODAL && Logic_entt().valid(current_select_entity))
         if (const auto input = Logic_entt().try_get<Input_Component>(current_select_entity)) {
-            if (input->on_Event != nullptr) {
-                auto status = input->on_Event(current_select_entity, event);
-                if (OPERATOR_RUNNING_MODAL & status) {
-                    current_select_entity = current_select_entity; // 目的是更新，但是没有什么意义
-                    current_status        = OPERATOR_RUNNING_MODAL;
-                    return;
-                } else if (OPERATOR_FINISHED & status) {
-                    current_status        = OPERATOR_ZERO;
-                    current_select_entity = get_UI_scene_root();
-                    return;
-                }
-                current_status = OPERATOR_ZERO;
+            const auto status = input->on_Event(current_select_entity, event, mouse);
+            if (OPERATOR_RUNNING_MODAL & status) {
+                current_select_entity = current_select_entity; // 目的是更新，但是没有什么意义
+                current_status        = OPERATOR_RUNNING_MODAL;
+                return;
+            } else if (OPERATOR_FINISHED & status) {
+                current_status        = OPERATOR_ZERO;
+                current_select_entity = get_UI_scene_root();
+                return;
             }
+            current_status = OPERATOR_ZERO;
         }
 
     // 找到当前区域的一个递归栈
@@ -284,23 +96,23 @@ void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_st
 
     for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
         if (const auto input = Logic_entt().try_get<Input_Component>(*it)) {
-            if (input->on_Event != nullptr) {
-                auto status = input->on_Event(*it, event);
-                if (OPERATOR_RUNNING_MODAL & status) {
-                    current_select_entity = *it;
-                    current_status        = OPERATOR_RUNNING_MODAL;
-                    break;
-                } else if (OPERATOR_PASS_THROUGH & status) {
-                    continue;
-                } else {
-                    current_status = OPERATOR_ZERO;
-                    break;
-                }
+            const auto status = input->on_Event(*it, event, mouse);
+            if (OPERATOR_RUNNING_MODAL & status) {
+                current_select_entity = *it;
+                current_status        = OPERATOR_RUNNING_MODAL;
+                break;
+            } else if (OPERATOR_PASS_THROUGH & status) {
+                continue;
+            } else {
+                current_status = OPERATOR_ZERO;
+                break;
             }
         }
     }
     // 需要一个状态来确定需要进入3d来处理
     if (current_status == OPERATOR_ZERO) {
-        world_root_on_Event(get_world_root(), event, mouse);
+        if (const auto input = Logic_entt().try_get<Input_Component>(get_world_root())) {
+            input->on_Event(get_world_root(), event, mouse);
+        }
     }
 }
