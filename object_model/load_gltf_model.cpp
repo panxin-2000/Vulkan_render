@@ -10,7 +10,7 @@
 #include "transform_component.h"
 #include "name_component.h"
 #include "../render/render_common/PBR_component.h"
-#include "3d_model_display.h"
+#include "base_3d_render_object.h"
 #include "camera_optical_component.h"
 #include "GPU_frustum_cull.h"
 #include "scene_component.h"

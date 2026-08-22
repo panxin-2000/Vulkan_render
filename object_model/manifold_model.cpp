@@ -7,7 +7,7 @@
 #include "manifold/manifold.h"
 #include <vector>
 
-#include "3d_model_display.h"
+#include "base_3d_render_object.h"
 #include "earcut.h"
 #include "shader_component.h"
 

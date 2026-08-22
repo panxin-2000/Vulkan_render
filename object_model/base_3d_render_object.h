@@ -6,25 +6,11 @@
 #define HELLO_MAC_3D_MODEL_DISPLAY_H
 
 #include "global_singleton.h"
-#include "shader_resolve.h"
 #include "base_geometry/base.h"
 #include "transform_component.h"
 #include "manifold/manifold.h"
 #include "shader_component.h"
-
-
-class logic_render_object {
-protected:
-    const entt::entity entity;
-
-public:
-    explicit logic_render_object(const std::string &name);
-
-    logic_render_object &add_shader_path(VKR_shader_paths shader_path);
-
-    void set_random_triangle_color();
-};
-
+#include "base_render_object.h"
 
 class object_3d : public logic_render_object {
 public:
@@ -53,12 +39,6 @@ public:
 inline object_3d create_object_3d(const std::string &name) {
     return object_3d(name);
 }
-
-
-class object_2d : public logic_render_object {
-public:
-    object_2d(const std::string &name);
-};
 
 
 entt::entity object_line(const std::string &name);

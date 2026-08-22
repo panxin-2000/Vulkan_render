@@ -24,7 +24,7 @@
 #include "update_push_constants_data.h"
 #include "vk_render_to_image.h"
 #include "ccd/ccd.h"
-#include "object_model/3d_model_display.h"
+#include "object_model/base_3d_render_object.h"
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
 #include "imgui.h"

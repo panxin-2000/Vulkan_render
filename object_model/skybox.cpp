@@ -4,7 +4,7 @@
 
 #include "skybox.h"
 
-#include "3d_model_display.h"
+#include "base_3d_render_object.h"
 #include "shader_component.h"
 #include "vulkan_image.h"
 

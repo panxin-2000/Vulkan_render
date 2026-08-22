@@ -85,10 +85,10 @@ std::array<double, 4> calculate4PointCoefficientsDirect(float t, const std::arra
  * @param degree 样条次数（如：线性=1, 二次=2, 三次=3...）
  * @return 返回一个大小为 degree + 1 的 std::vector<double>，表示对应控制点的直接组合系数
  */
-std::vector<double> calculatePointCoefficientsDirect(double t,
-                                                     int knot_index,
-                                                     const std::vector<double> &knots,
-                                                     int degree = 3) {
+inline std::vector<double> calculatePointCoefficientsDirect(double t,
+                                                            int knot_index,
+                                                            const std::vector<double> &knots,
+                                                            int degree = 3) {
     // 分配 degree + 1 个系数空间（对应原先的 coeffs 数组）
     std::vector<double> coeffs(degree + 1, 0.0);
 
