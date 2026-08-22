@@ -695,19 +695,3 @@ target_link_libraries(learn_render PRIVATE meshoptimizer)
 target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
-# 使用自定义命令复制文件
-#foreach (SHADER_FILE ${SHADER_FILES})
-#    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-#    add_custom_command(
-#            TARGET learn_render
-#            PRE_BUILD
-#            COMMAND glslc --target-env=vulkan1.3 ${SHADER_SOURCE_DIR}/${SHADER_NAME} -o ${SHADER_SOURCE_DIR}/${SHADER_NAME}.spv
-#            COMMAND echo "compiler " ${SHADER_SOURCE_DIR}/${SHADER_NAME}
-#    )
-#endforeach ()
-#
-## 创建一个目标来依赖所有着色器
-#add_custom_target(shaders_complier ALL DEPENDS ${SHADER_FILE})
-
-# 将自定义目标与可执行目标关联
-#add_dependencies(learn_render shaders_complier)

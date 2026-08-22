@@ -32,6 +32,7 @@ layout (set = 2, binding = 2) readonly buffer render_entity_to_screen {
     uint entities[];
 };
 
+#if defined(PASS_COLOR)
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
@@ -41,14 +42,12 @@ layout (location = 4) out vec4 outShadowCoord;
 layout (location = 5) out vec3 outWorldPos;
 layout (location = 6) flat out uint outMaterial_index;
 layout (location = 7) flat out uint outInstance_index;
-layout (location = 8) flat out uint out_entity;
 
 void main()
 {
     //    outMaterial_index = gl_BaseInstanceARB;
     outMaterial_index = 0;
     outInstance_index = gl_InstanceIndex;
-    out_entity = entities[gl_InstanceIndex];
 
     // Calculate skinned matrix from weights and joint indices of the current vertex
     mat4 skinMat =
@@ -69,3 +68,45 @@ void main()
     outViewVec = viewPos.xyz - pos.xyz;
 
 }
+#elif defined(PASS_DEPTH)
+
+void main()
+{
+
+    // Calculate skinned matrix from weights and joint indices of the current vertex
+    mat4 skinMat =
+    inJointWeights.x * jointMatrices[int(inJointIndices.x)] +
+    inJointWeights.y * jointMatrices[int(inJointIndices.y)] +
+    inJointWeights.z * jointMatrices[int(inJointIndices.z)] +
+    inJointWeights.w * jointMatrices[int(inJointIndices.w)];
+
+    vec4 pos = model_vector[gl_InstanceIndex] * skinMat * vec4(inPos.xyz, 1.0);
+
+    gl_Position = projection * view * pos;
+}
+
+#elif defined(PASS_PICKUP)
+
+layout (location = 0) flat out uint out_entity;
+
+
+void main()
+{
+    //    outMaterial_index = gl_BaseInstanceARB;
+    out_entity = entities[gl_InstanceIndex];
+
+    // Calculate skinned matrix from weights and joint indices of the current vertex
+    mat4 skinMat =
+    inJointWeights.x * jointMatrices[int(inJointIndices.x)] +
+    inJointWeights.y * jointMatrices[int(inJointIndices.y)] +
+    inJointWeights.z * jointMatrices[int(inJointIndices.z)] +
+    inJointWeights.w * jointMatrices[int(inJointIndices.w)];
+
+    vec4 pos = model_vector[gl_InstanceIndex] * skinMat * vec4(inPos.xyz, 1.0);
+
+    gl_Position = projection * view * pos;
+    out_entity = entities[gl_InstanceIndex];
+}
+
+
+#endif
