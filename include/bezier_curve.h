@@ -74,12 +74,77 @@ void PathBezierCubicCurveToCasteljau(std::vector<T> *path, const T &p1, const T 
 }
 
 
+// 5点高斯-勒让德求积法的常量表 (标准区间为 [-1, 1])
+// 采用 double 保证积分中间步骤的计算精度，避免累加过程中的浮点截断误差
+constexpr double GAUSS_X[] = {
+    -0.9061798459386640, -0.5384693101056831, 0.0000000000000000, 0.5384693101056831, 0.9061798459386640
+};
+constexpr double GAUSS_W[] = {
+    0.2369268850561891, 0.4786286704993665, 0.5688888888888889, 0.4786286704993665, 0.2369268850561891
+};
+constexpr int GAUSS_COUNT = 5;
+
+
 template<typename T>
 class Bezier {
 public:
     Bezier(const T &p1, const T &p2, const T &p3, const T &p4,
            float tess_tol) : p1_(p1), p2_(p2), p3_(p3), p4_(p4), tess_tol_(tess_tol) {
     }
+
+
+    /**
+     * @brief 计算三次贝塞尔曲线在参数 t 处的导数(切向量)
+     */
+    T GetCubicBezierDerivative(
+        const T &p0,
+        const T &p1,
+        const T &p2,
+        const T &p3,
+        double t) {
+        double u  = 1.0 - t;
+        double t2 = t * t;
+        double u2 = u * u;
+        double ut = u * t;
+
+        T derivative;
+        // 使用常引用传递后，通过 .x 和 .y 直接读取
+        derivative.x = static_cast<float>(3.0 * u2 * (p1.x - p0.x) + 6.0 * ut * (p2.x - p1.x) + 3.0 * t2 * (
+                                              p3.x - p2.x));
+        derivative.y = static_cast<float>(3.0 * u2 * (p1.y - p0.y) + 6.0 * ut * (p2.y - p1.y) + 3.0 * t2 * (
+                                              p3.y - p2.y));
+
+        return derivative;
+    }
+
+    /**
+     * @brief 使用高斯-勒让德求积法计算三次贝塞尔曲线的长度
+     */
+    float CalculateCubicBezierLength(
+        const T &p0,
+        const T &p1,
+        const T &p2,
+        const T &p3) {
+        double totalLength = 0.0;
+
+        for (int i = 0; i < GAUSS_COUNT; ++i) {
+            // 1. 将标准积分区间 [-1, 1] 线性映射到参数区间 [0, 1]
+            double t = 0.5 * GAUSS_X[i] + 0.5;
+
+            // 2. 计算当前 t 下的切向量 (dx/dt, dy/dt)
+            T dP = GetCubicBezierDerivative(p0, p1, p2, p3, t);
+
+            // 3. 计算速度标量（微元长度速度系数）
+            double speed = std::sqrt(static_cast<double>(dP.x) * dP.x + static_cast<double>(dP.y) * dP.y);
+
+            // 4. 累加： 权重 * 函数值
+            totalLength += GAUSS_W[i] * speed;
+        }
+
+        // 5. 乘以区间缩放因子 0.5，并转回 float 返回
+        return static_cast<float>(totalLength * 0.5);
+    }
+
 
     void Casteljau(std::vector<T> *path, const int level = 0) {
         assert(path != nullptr);

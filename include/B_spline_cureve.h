@@ -195,6 +195,8 @@ std::vector<T> calculateBSplinePathWithTol(const std::vector<T> &controlPoints,
 template<typename T>
 class B_spline {
     std::vector<T> points_;
+    std::vector<double> knots;
+    int degree;
 
 public:
     void add_point(T x) {
@@ -226,6 +228,104 @@ public:
     auto get_path(double tess_tol = 1.25) {
         std::vector<double> knots = generateClampedKnots(points_.size(), 3);
         return calculateBSplinePathWithTol<T>(points_, knots, tess_tol, 3);
+    }
+
+    T EvaluateDerivative(double u) const {
+        int n = static_cast<int>(points_.size()) - 1;
+        int p = degree;
+
+        // 1. 安全边界检查：使用 Eigen 特有的静态零构造
+        if (n < p || knots.size() != static_cast<size_t>(n + p + 2)) {
+            return T::Zero();
+        }
+
+        // 2. 钳制参数 u
+        double u_min = knots[p];
+        double u_max = knots[n + 1];
+        if (u < u_min) u = u_min;
+        if (u > u_max) u = u_max;
+
+        int k = p;
+        if (std::abs(u - u_max) < 1e-7) {
+            k = n;
+        } else {
+            auto it = std::upper_bound(knots.begin() + p, knots.end() - p, u);
+            k       = static_cast<int>(std::distance(knots.begin(), it)) - 1;
+        }
+
+        // 3. 准备局部缓冲区
+        // 为了防止 Eigen 的单精度 float 在多轮递推中产生舍入误差，
+        // 我们在内部将控制点临时转换为全双精度（double）的 Eigen 向量进行计算
+        using TD = typename Eigen::Matrix<double, T::RowsAtCompileTime, T::ColsAtCompileTime>;
+        std::vector<TD> d_points(p);
+
+        for (int i = 0; i < p; ++i) {
+            int idx      = k - p + 1 + i;
+            double denom = knots[idx + p] - knots[idx];
+
+            if (denom > 1e-7) {
+                double factor = static_cast<double>(p) / denom;
+                // 使用 .template cast<double>() 将 Vector2f 安全转为 Vector2d 参与高精度计算
+                d_points[i] = (points_[idx].template cast<double>() - points_[idx - 1].template cast<double>()) *
+                              factor;
+            } else {
+                d_points[i] = TD::Zero();
+            }
+        }
+
+        // 4. De Boor 算法高精度递推
+        int p_deriv = p - 1;
+        for (int r = 1; r <= p_deriv; ++r) {
+            for (int i = p_deriv; i >= r; --i) {
+                int idx      = k - p_deriv + i;
+                double alpha = (u - knots[idx]) / (knots[idx + p_deriv + 1 - r] - knots[idx]);
+
+                d_points[i] = d_points[i - 1] * (1.0 - alpha) + d_points[i] * alpha;
+            }
+        }
+
+        // 5. 最终将双精度结果重新转回您的原生类型 T (即 Eigen::Vector2f) 输出
+        return d_points[p_deriv].template cast<typename T::Scalar>();
+    }
+
+    float CalculateSplineLength() {
+        double totalLength = 0.0;
+        const auto &knots  = generateClampedKnots(points_.size(), 3);
+
+        if (knots.size() < 2) return 0.0f;
+
+        // 外层循环：遍历所有节点区间（Span）
+        for (size_t i = 0; i < knots.size() - 1; ++i) {
+            double u_start = knots[i];
+            double u_end   = knots[i + 1];
+
+            // 跨过重合节点（无实际长度的无效区间）
+            if (std::abs(u_end - u_start) < 1e-6) {
+                continue;
+            }
+
+            // 内层循环：对当前有效区间 [u_start, u_end] 进行高斯积分
+            double subLength = 0.0;
+            for (int g = 0; g < GAUSS_COUNT; ++g) {
+                // 将标准区间 [-1, 1] 映射到当前节点区间 [u_start, u_end]
+                // u = 0.5 * (u_end - u_start) * x + 0.5 * (u_start + u_end)
+                double u = 0.5 * (u_end - u_start) * GAUSS_X[g] + 0.5 * (u_start + u_end);
+
+                // 计算当前参数 u 处的切向量
+                T dP = EvaluateDerivative(static_cast<float>(u));
+
+                // 计算模长（瞬时速度）
+                double speed = std::sqrt(static_cast<double>(dP.x) * dP.x + static_cast<double>(dP.y) * dP.y);
+
+                // 高斯加权求和
+                subLength += GAUSS_W[g] * speed;
+            }
+
+            // 乘以当前区间的缩放因子： (u_end - u_start) / 2
+            totalLength += subLength * 0.5 * (u_end - u_start);
+        }
+
+        return static_cast<float>(totalLength);
     }
 
 public:
