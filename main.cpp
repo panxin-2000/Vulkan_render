@@ -84,8 +84,11 @@ int main(int argc, char *argv[]) {
     box.set_transform();
 
 
-    object_line("line");
-    object_line_old(" old");
+    object_line line("line");
+    line.add_B_spline_curve();
+
+    object_line object_line_old(" old");
+    object_line_old.add_bezier_curve();
     // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
     // auto entity = load_gltf_model("Sponza",
     //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");

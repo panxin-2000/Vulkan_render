@@ -37,13 +37,11 @@ object_2d &object_2d::add_B_spline_curve() {
     return *this;
 }
 
-void object_line(const std::string &name) {
-    object_2d line(name);
-
-    // Logic_entt().emplace<select_component>(entity);
-    line.add_shader_path(Engine::instance().get_shader_manager().get_line_shader_path());
-    line.add_B_spline_curve();
-
+object_line::object_line(const std::string &name) : object_2d(name) {
+    add_shader_path(VKR_shader_paths{
+                        "2D/line", "2D/line",
+                        "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+                    });
     int logical_w, logical_h;
     const auto &backend = VK_backend::instance();
 
@@ -56,44 +54,20 @@ void object_line(const std::string &name) {
     translate[0] = -1.0f - 0 * scale[0]; // Translate
     translate[1] = -1.0f - 0 * scale[1];
 
-    line.add_push_constant_parameter("uScale", scale);
-    line.add_push_constant_parameter("uTranslate", translate);
+    add_push_constant_parameter("uScale", scale);
+    add_push_constant_parameter("uTranslate", translate);
 }
 
+void object_line(const std::string &name) {
+}
 
-entt::entity object_line_old(const std::string &name) {
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
-    Logic_entt().emplace<Name_component>(entity, name);
-    add_model_3d_Event(entity);
-    Logic_entt().emplace<Shader_data>(entity, Engine::instance().get_shader_manager().get_line_shader_data());
-    logic_update_proxy<Shader_data>(entity);
-    // add_line(entity, {40, 40}, {600, 600});
+object_2d &object_2d::add_bezier_curve() {
     Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
     std::vector<Eigen::Vector2f> path;
     bezier.Casteljau(&path);
     add_path(entity, path, {});
-
-    UI_root_add_child(entity);
-    logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
-
-    int logical_w, logical_h;
-    const auto &backend = VK_backend::instance();
-
-    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
-
-    float scale[2];
-    scale[0] = 2.0f / logical_w; // Scale
-    scale[1] = 2.0f / logical_h;
-    float translate[2];
-    translate[0] = -1.0f - 0 * scale[0]; // Translate
-    translate[1] = -1.0f - 0 * scale[1];
-
-    set_push_constant_parameter(entity, "uScale", scale);
-    set_push_constant_parameter(entity, "uTranslate", translate);
-
     logic_update_add_tag<Line_tag>(entity);
-    return entity;
+    return *this;
 }

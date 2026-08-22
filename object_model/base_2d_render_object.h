@@ -13,6 +13,8 @@ public:
     object_2d(const std::string &name);
 
     object_2d &add_B_spline_curve();
+
+    object_2d &add_bezier_curve();
 };
 
 
