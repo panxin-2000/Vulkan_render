@@ -16,7 +16,7 @@ public:
 
     logic_render_object &add_shader_path(VKR_shader_paths shader_path);
 
-    void set_random_triangle_color();
+    bool set_random_triangle_color();
 };
 
 

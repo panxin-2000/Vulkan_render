@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
     object_3d box("box");
-    // box.add_shader_path(get_gltf_shader_path());
+    box.add_shader_path(get_gltf_shader_path());
     box.set_random_triangle_color();
     box.add_mesh({{1, 1, 1}, {2, 2, 2}});
     box.set_transform();

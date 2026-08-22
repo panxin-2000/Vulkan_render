@@ -25,13 +25,15 @@ logic_render_object &logic_render_object::add_shader_path(VKR_shader_paths shade
     return *this;
 }
 
-void logic_render_object::set_random_triangle_color() {
-    auto shader_path = get_gltf_shader_path();
-    shader_path.clear_define_macro();
-    shader_path.add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
-    Logic_entt().emplace<VKR_shader_paths>(entity, shader_path);
-    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
-    Logic_entt().emplace<Shader_data>(entity, shader_data);
-    logic_update_proxy<VKR_shader_paths>(entity);
-    logic_update_proxy<Shader_data>(entity);
+bool logic_render_object::set_random_triangle_color() {
+    if (auto shader_path = Logic_entt().try_get<VKR_shader_paths>(entity)) {
+        shader_path->clear_define_macro();
+        shader_path->add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
+        auto shader_data = Engine::instance().get_shader_manager().find(*shader_path);
+        Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
+        logic_update_proxy<VKR_shader_paths>(entity);
+        logic_update_proxy<Shader_data>(entity);
+        return true;
+    }
+    return false;
 }
