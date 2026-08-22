@@ -118,21 +118,17 @@ void render_different_pass(VCB &vcb,
     {
         vcb.begin_rendering_depth_attachment(depth_AO_image,
                                              VK_ATTACHMENT_LOAD_OP_CLEAR);
-        auto view = Render_entt().view<opacity_gltf_tag, GPU_frustum_cull, Name_component>();
+        auto view = Render_entt().view<opacity_gltf_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
         for (const auto entity: view) {
-            auto command_calculate      = Render_entt().get<GPU_frustum_cull>(entity);
-            auto name                   = Render_entt().get<Name_component>(entity);
+            auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
+            auto name              = Render_entt().get<Name_component>(entity);
+            auto shader_paths      = Render_entt().get<VKR_shader_paths>(entity);
+            shader_paths.clear_define_macro();
+            shader_paths.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
+            shader_paths.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+            shader_paths.add_define_macro("PASS_DEPTH", 1);
             const auto &shader_data_ref =
-                    engine.get_shader_manager().find(VKR_shader_paths{
-                                                         "pbr_bindless",
-                                                         "pbr_bindless",
-                                                         "",
-                                                         "",
-                                                         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                                                         VK_FORMAT_D32_SFLOAT,
-                                                         VK_FORMAT_UNDEFINED,
-                                                         VKR_shader_paths::Render_Pass_Type::Depth
-                                                     });
+                    engine.get_shader_manager().find(shader_paths);
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
             // 现在绑定的管线是有问题的,
             vcb.default_status();

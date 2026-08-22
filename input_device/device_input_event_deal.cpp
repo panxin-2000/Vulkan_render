@@ -55,7 +55,6 @@ void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_st
     static entt::entity current_select_entity = get_UI_scene_root();
     static wmOperatorStatus current_status    = OPERATOR_ZERO;
     static Eigen::Vector2f mouse_pos          = {mouse.value().current_position[0], mouse.value().current_position[1]};
-    std::cout << "base_event_dealing " << std::endl;
 
 
     // 鼠标按下时进入模态，移动时，持续模态，鼠标松开时 完成模态 ，按下 ESC 键时，取消模态（ 取消后按键依旧按下，处理需谨慎）

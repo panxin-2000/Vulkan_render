@@ -11,6 +11,15 @@ void Shader_manager::destroy() {
     map_.clear();
 }
 
+VKR_shader_paths get_gltf_shader_path() {
+    return VKR_shader_paths{
+        "pbr_bindless", "pbr_bindless", "", "",
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        VK_FORMAT_UNDEFINED,
+        VK_FORMAT_UNDEFINED,
+        VKR_shader_paths::Render_Pass_Type::Color
+    };
+}
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_gltf_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {

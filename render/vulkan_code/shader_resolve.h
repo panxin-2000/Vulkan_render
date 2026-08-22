@@ -174,6 +174,10 @@ public:
         define_macro_.emplace_back(macro_name, macro_value);
     }
 
+    void clear_define_macro() {
+        define_macro_.clear();
+    }
+
 
     template<typename H>
     friend H AbslHashValue(H state, const VKR_shader_paths &sp) {
