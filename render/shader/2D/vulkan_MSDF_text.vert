@@ -6,7 +6,6 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
 
 #extension GL_EXT_scalar_block_layout: require
 #extension GL_EXT_buffer_reference: require

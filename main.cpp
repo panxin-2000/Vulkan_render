@@ -75,6 +75,8 @@ int main(int argc, char *argv[]) {
     // add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
 
 
+    UI_Text text("AbcgoyQj");
+    text.set_string("AbcgoyQj");
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }

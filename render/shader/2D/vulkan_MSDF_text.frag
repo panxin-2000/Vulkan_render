@@ -1,14 +1,9 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier: require
-#extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
 
 layout (location = 0) in vec2 in_UV;
-
-
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-layout (set = 2, binding = 1) uniform sampler2D msdf;
+layout (set = 0, binding = 0) uniform sampler2D msdf;
 
 
 float median(float r, float g, float b) {

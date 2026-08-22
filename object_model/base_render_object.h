@@ -19,6 +19,9 @@ public:
 
     bool set_random_triangle_color();
 
+    entt::entity get_entity() const {
+        return entity;
+    }
 
     template<typename T1>
     logic_render_object &add_render_parameter(const std::string &binding_name, T1 &binding_data) {

@@ -14,7 +14,7 @@
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
 #include <json_fwd.hpp> // 正确：只引入前置声明，文件极小，编译极快 , 只是声明
-
+#include "base_2d_render_object.h"
 
 struct Atlas {
     std::string type;
@@ -131,6 +131,16 @@ public:
         return static_cast<int>(atlas.distanceRange);
     }
 };
+
+
+
+class UI_Text : public object_2d {
+public:
+    UI_Text(const std::string &name);
+
+    void set_string(const std::string &string);
+};
+
 
 
 void create_text_render(const entt::entity entity, const std::string &name, Msdf_text &msdf_text,

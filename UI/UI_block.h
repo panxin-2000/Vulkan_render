@@ -10,25 +10,16 @@
 #include "scene_component.h"
 #include "UI_button.h"
 
-inline entt::entity UI_block(const std::string &name,
-                             const float min_x,
-                             const float min_y,
-                             const float max_x,
-                             const float max_y) {
-    // const auto entity = UI_button(name, min_x, min_y, max_x, max_y);
-    // return entity;
-}
 
-/**
- * 在任意一个 UI 上创建一个 button
- * @param entity
- * @param name
- * @param min_x
- * @param min_y
- * @param max_x
- * @param max_y
- * @return 返回创建的button 的 entt::entity
- */
+class UI_block : public UI_Button {
+public:
+    UI_block(const std::string &name);
+
+    UI_Button add_button(const std::string &name);
+};
+
+
+
 inline entt::entity add_button(const entt::entity entity, const std::string &name,
                                const int min_x,
                                const int min_y,

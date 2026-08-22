@@ -9,6 +9,7 @@
 #include "json.hpp"  // 仅在需要处理具体业务的 .cpp 文件中引入完整实现
 #include <fstream>
 
+#include "base_2d_render_object.h"
 #include "model_matrix.h"
 
 void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
@@ -316,40 +317,41 @@ Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points,
 }
 
 
-entt::entity UI_text(const std::string &name,
-                     float min_x,
-                     float min_y,
-                     float max_x,
-                     float max_y) {
-    std::string_view df = "";
+UI_Text::UI_Text(const std::string &name) : object_2d(name) {
+    add_shader_path(VKR_shader_paths{
+                        "2D/vulkan_MSDF_text",
+                        "2D/vulkan_MSDF_text",
+                        "", ""
+                    });
+    int logical_w, logical_h;
+    const auto &backend = VK_backend::instance();
 
-    LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
+    logic_update_add_tag<UI_2D_tag>(entity);
 
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
+    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
 
+    float scale[2];
+    scale[0] = 2.0f / logical_w; // Scale
+    scale[1] = 2.0f / logical_h;
+    float translate[2];
+    translate[0] = -1.0f - 0 * scale[0]; // Translate
+    translate[1] = -1.0f - 0 * scale[1];
 
-    Logic_entt().emplace<Rect_2D_transform>(entity);
-    add_shader(entity,
-               "2D/vulkan_MSDF_text",
-               "2D/vulkan_MSDF_text",
-               "", "");
+    add_push_constant_parameter("uScale", scale);
+    add_push_constant_parameter("uTranslate", translate);
+}
 
-    if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-        scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
-    }
-    Logic_entt().emplace<Name_component>(entity, name);
-
+void UI_Text::set_string(const std::string &name) {
     std::string utf8_text = name;
     std::vector<uint32_t> unicode_points;
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
 
     auto &msdf_text_tem = get_msdf_text_add_string(unicode_points,
                                                    "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
-    // read_msdf_atlas(msdf_text_tem, "atlas.json");
-    create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
-    // 不同的材质？ 不同的着色器
+    float min_x = 0;
+    float min_y = 0;
 
+    create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
     {
         auto &msdf_text_tem                      = get_msdf_text();
         std::optional<Texture_parameter> texture = create_texture_from_image(msdf_text_tem.image.get_data(),
@@ -359,30 +361,7 @@ entt::entity UI_text(const std::string &name,
         set_render_parameter(entity, "msdf", texture);
         // assert(index == 1);
     }
-
-    matrix_4x4 model;
-    UI_matrix_4x4(&model, {1, 1}, {0, 0});
-    set_render_parameter(entity, "model_4x4", model);
-
-    float scale[2];
-    scale[0] = 2.0f / 1280.f;
-    scale[1] = 2.0f / 720;
-    float translate[2];
-    translate[0] = -1.0f - 0.0f * scale[0];
-    translate[1] = -1.0f - 0.0f * scale[1];
-
-    set_push_constant_parameter(entity, "uScale", scale);
-    set_push_constant_parameter(entity, "uTranslate", translate);
-
-
-    logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<UI_2D_tag>(entity);
-
-    UI_root_add_child(entity);
-    return entity;
-
-    // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。
-    /***************添加到渲染管理器**********************/
 }
