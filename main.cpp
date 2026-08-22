@@ -43,6 +43,7 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
     return interval;
 }
 
+VKR_shader_paths get_gltf_shader_path();
 
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
@@ -75,7 +76,13 @@ int main(int argc, char *argv[]) {
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
-    object_3d_model("box", {{1, 1, 1}, {2, 2, 2}});
+    object_3d box("box");
+    // box.add_shader_path(get_gltf_shader_path());
+    box.set_random_triangle_color();
+    box.add_mesh({{1, 1, 1}, {2, 2, 2}});
+    box.set_transform();
+
+
     object_line("line");
     object_line_old(" old");
     // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
@@ -192,6 +199,6 @@ int main(int argc, char *argv[]) {
 
 
 void test_projection_matrix() {
-    auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
-    add_triangle_geometry(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
+    // auto entity = object_3d_model("triangle", "", {0.0f, 0.0f, 0.0f});
+    // add_triangle_geometry(entity, {-0.5f, -0.5f, 0.0f}, {0.5f, -0.5f, 0.0f}, {0.0f, 0.5f, 0.0f});
 }

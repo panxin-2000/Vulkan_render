@@ -10,7 +10,6 @@
 #include "mesh_component.h"
 #include "shader_component.h"
 #include <Eigen/Eigen>
-#include "base_geometry/intersect_function.h"
 #include "transform_component.h"
 #include <meshoptimizer.h>
 
@@ -59,54 +58,51 @@ entt::entity object_ply_model(const std::string &name, const std::string &file_p
     return entity;
 }
 
-entt::entity object_3d_model(const std::string &name,
-                             const std::string &mesh_path,
-                             const Eigen::Vector3f offset,
-                             const Eigen::Quaternionf &rotate) {
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
 
+logic_render_object::logic_render_object(const std::string &name) : entity(Logic_entt().create()) {
     Logic_entt().emplace<Name_component>(entity, name);
-    add_model_3d_Event(entity);
-
-
-    // add_shader(entity,
-    //            "Phong",
-    //            "pbr_bindless",
-    //            "", "");
-    auto aabb  = load_model(entity, mesh_path);
-    auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, aabb.value());
-
-    // 更新物体的模型矩阵
-    auto transform = Logic_entt().emplace<Transform>(entity, offset, rotate);
-
-    const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
-
-    world_root_add_child(entity);
-    auto material = Logic_entt().get_or_emplace<PBR_component>(entity);
-    set_render_parameter(entity, "object_material", material);
-
-    logic_update_proxy<Name_component>(entity);
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    const auto primitives = create_primitives(entity);
-    logic_update_proxy(entity, primitives);
-    return entity;
 }
 
-entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, const Eigen::Vector3f offset,
-                             const Eigen::Quaternionf &rotate) {
-    const entt::entity entity = Logic_entt().create();
+logic_render_object &logic_render_object::add_shader_path(VKR_shader_paths shader_path) {
+    Logic_entt().emplace_or_replace<VKR_shader_paths>(entity, shader_path);
+    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
+    Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
+    logic_update_proxy<VKR_shader_paths>(entity);
+    logic_update_proxy<Shader_data>(entity);
+    return *this;
+}
+
+VKR_shader_paths get_gltf_shader_path();
+
+
+void logic_render_object::set_random_triangle_color() {
+    auto shader_path = get_gltf_shader_path();
+    shader_path.clear_define_macro();
+    shader_path.add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
+    Logic_entt().emplace<VKR_shader_paths>(entity, shader_path);
+    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
+    Logic_entt().emplace<Shader_data>(entity, shader_data);
+    logic_update_proxy<VKR_shader_paths>(entity);
+    logic_update_proxy<Shader_data>(entity);
+}
+
+
+object_3d::object_3d(const std::string &name) : logic_render_object(name) {
     logic_create_proxy(entity);
-
-    Logic_entt().emplace<Name_component>(entity, name);
     add_model_3d_Event(entity);
+    logic_update_proxy<Name_component>(entity);
+    world_root_add_child(entity);
+}
 
+object_3d &object_3d::object_3d_add_mesh(const AABB_min_max<Point_3> &bounding_box) {
+    add_box_data(entity, bounding_box);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
+    logic_update_add_tag<opacity_tag>(entity);
+    return *this;
+}
 
-    // add_shader(entity,
-    //            "Phong",
-    //            "Blinn_Phong_bindless",
-    //            "", "");
+object_3d &object_3d::add_manifold_mesh(manifold::MeshGL &mesh) {
     const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
     // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
 
@@ -134,13 +130,10 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
                                 vertex_count,                               // 顶点数
                                 mesh.numProp * sizeof(float)                // 每个顶点的字节步长
                                );
-
     // 将优化后的顶点数据写回
     mesh.vertProperties = std::move(optimized_vertices);
-
-
-    auto sp_vertices = std::make_shared<std::vector<Vertex> >();
-    auto sp_indices  = std::make_shared<std::vector<uint16_t> >();
+    auto sp_vertices    = std::make_shared<std::vector<Vertex> >();
+    auto sp_indices     = std::make_shared<std::vector<uint16_t> >();
     sp_vertices->resize(mesh.vertProperties.size() / mesh.numProp);
     sp_indices->reserve(mesh.triVerts.size());
     memcpy(sp_vertices->data(), mesh.vertProperties.data(), sp_vertices->size() * sizeof(Vertex));
@@ -148,37 +141,38 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
         sp_indices->push_back(mesh.triVerts.at(i));
     }
     add_geometry_data(entity, sp_vertices, sp_indices);
-
-    // 更新物体的模型矩阵
-    const auto transform = Logic_entt().emplace<Transform>(entity, offset, rotate);
-
-    const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
-
-    world_root_add_child(entity);
-
-    logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
-    return entity;
+    return *this;
+}
+
+object_3d &object_3d::add_mesh(const std::string &mesh_path) {
+    auto aabb = load_model(entity, mesh_path);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    const auto primitives = create_primitives(entity);
+    logic_update_proxy(entity, primitives);
+    return *this;
+}
+
+object_3d &object_3d::add_mesh(const AABB_min_max<Point_3> &bounding_box) {
+    add_box_data(entity, bounding_box);
+    logic_update_proxy(entity, get_VKR_mesh(entity));
+    logic_update_proxy(entity, create_primitives(entity));
+    logic_update_add_tag<opacity_tag>(entity);
+    return *this;
 }
 
 
-entt::entity add_sky_box(const std::string &name) {
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
+object_2d::object_2d(const std::string &name) : logic_render_object(name) {
+}
 
-
-    Logic_entt().emplace<Name_component>(entity, name);
-    add_model_3d_Event(entity);
-
-
+object_3d &object_3d::add_sky_box() {
+    logic_update_proxy<Name_component>(entity);
     add_shader(entity,
                "skybox",
                "skybox",
                "", "");
     add_box_data(entity);
-
     const auto mesh = get_VKR_mesh(entity);
     auto primitives = create_primitives(entity);
     std::vector<VKR_Render_state> render_states;
@@ -190,51 +184,19 @@ entt::entity add_sky_box(const std::string &name) {
     logic_update_proxy(entity, mesh);
     logic_update_proxy(entity, primitives);
     logic_update_proxy(entity, render_states);
-
-
-    // 更新物体的模型矩阵
-
-    world_root_add_child(entity);
-
-    logic_update_proxy<Name_component>(entity);
-
-    return entity;
+    logic_update_add_tag<skybox_tag>(entity);
+    return *this;
 }
 
-VKR_shader_paths get_gltf_shader_path();
-
-entt::entity object_3d_model(const std::string &name,
-                             const AABB_min_max<Point_3> &bounding_box,
-                             const Eigen::Vector3f offset,
-                             const Eigen::Quaternionf &rotate) {
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
-    Logic_entt().emplace<Name_component>(entity, name);
-    add_model_3d_Event(entity);
-    auto shader_path = get_gltf_shader_path();
-    shader_path.clear_define_macro();
-    shader_path.add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
-    Logic_entt().emplace<VKR_shader_paths>(entity, shader_path);
-    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
-    Logic_entt().emplace<Shader_data>(entity, shader_data);
-    logic_update_proxy<VKR_shader_paths>(entity);
-    logic_update_proxy<Shader_data>(entity);
-
-    add_box_data(entity, bounding_box);
-    auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
-    auto matrix_2 = matrix.get_transform_matrix();
-    // 这里的一个问题是,不统一
+object_3d &object_3d::set_transform(const Eigen::Vector3f offset, const Eigen::Quaternionf &rotate) {
+    auto matrix          = Logic_entt().emplace<Transform>(entity, offset, rotate);
+    auto matrix_2        = matrix.get_transform_matrix();
     auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
     matrices_render->push_back(static_cast<std::vector<Transform_Matrix>::value_type>(matrix_2));
     set_render_parameter(entity, "model_matrix_parameters", matrices_render);
-
     Logic_entt().emplace<Transform_matrix_dirty>(entity);
-    world_root_add_child(entity);
-    logic_update_proxy<Name_component>(entity);
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity));
-    logic_update_add_tag<opacity_tag>(entity);
-    return entity;
+
+    return *this;
 }
 
 
