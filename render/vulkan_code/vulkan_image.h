@@ -155,7 +155,7 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
 
 VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters);
 
-Texture_parameter create_skybox_texture_all(const std::string &picture_path);
+Texture_parameter create_skybox_texture_all(std::vector<std::string> paths);
 
 Texture_parameter create_2d_texture(const std::string &picture_path);
 

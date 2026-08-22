@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
 
 
     // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    // UI_block("按钮1", 0, 0, 60, 60);
+    UI_Button button("按钮1");
+    button.set_round_box(0, 0, 60, 60);
     // UI_block("功能块", 0, 0, 50, 200);
     // UI_block("按钮2", 0, 0, 145, 130);
     //

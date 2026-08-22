@@ -455,15 +455,8 @@ Texture_parameter create_texture_from_image(uint8_t *image,
 }
 
 
-Texture_parameter create_skybox_texture_all(const std::string &picture_path) {
+Texture_parameter create_skybox_texture_all(std::vector<std::string> paths) {
     auto &handle = VK_backend::instance();
-    std::vector<std::string> paths;
-    paths.emplace_back("assets/skybox_right.jpg");
-    paths.emplace_back("assets/skybox_left.jpg");
-    paths.emplace_back("assets/skybox_top.jpg");
-    paths.emplace_back("assets/skybox_bottom.jpg");
-    paths.emplace_back("assets/skybox_front.jpg");
-    paths.emplace_back("assets/skybox_back.jpg");
 
     std::vector<Picture_parameters> picture_parameters_vector;
 

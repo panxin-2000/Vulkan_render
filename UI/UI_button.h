@@ -6,6 +6,7 @@
 #define HELLO_MAC_UI_BUTTON_H
 
 
+#include "base_2d_render_object.h"
 #include "span.hpp"
 #include "global_singleton.h"
 
@@ -15,10 +16,18 @@
 // 键盘是另一种操作，按下时就去执行响应的动作，有时会增加弹窗来进行确认
 
 
-entt::entity UI_button(const std::string &name,
-                       float min_x,
-                       float min_y,
-                       float max_x,
-                       float max_y);
+class UI_Button : public object_2d {
+public:
+    UI_Button &set_round_box(float min_x, float min_y, float max_x, float max_y);
+
+    UI_Button(const std::string &name);
+};
+
+
+// entt::entity UI_button(const std::string &name,
+                       // float min_x,
+                       // float min_y,
+                       // float max_x,
+                       // float max_y);
 
 #endif //HELLO_MAC_UI_BUTTON_H

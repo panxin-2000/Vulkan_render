@@ -65,6 +65,7 @@ void VCB::build_draw_command(entt::entity entity) {
         constexpr VKR_Render_state temp;
         temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
                                       VK_backend::instance().get_scissor());
+
         draw(mesh_data, primitives, render_states);
     } else {
         // 为空并且有一个deferred 标记 // todo: 标记判断

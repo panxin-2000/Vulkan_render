@@ -8,6 +8,7 @@
 #include "model_matrix.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"
+#include "render_state.h"
 
 
 struct Round_box {
@@ -69,70 +70,46 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &eve
 }
 
 
-entt::entity UI_button(const std::string &name,
-                       float min_x,
-                       float min_y,
-                       float max_x,
-                       float max_y) {
-    // std::cout << "UI_button" << std::endl;
-    std::string_view df = "";
-
-    LOG_INFO(g_log(), "UI create  {} {} {} {} {} ", name, min_x, min_y, max_x, max_y);
-
-    const entt::entity entity = Logic_entt().create();
-    logic_create_proxy(entity);
-
-    /***************创建*******************/
-    // Logic_entt().emplace<Input_Component>(entity, on_Event);
-
-    Logic_entt().emplace<Rect_2D_transform>(entity);
-    add_shader(entity,
-               "2D/vulkan_round_box",
-               "2D/vulkan_round_box",
-               "", ""); // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP 暂时还不用
-
-    if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-        scene_node->set_bounding_box({min_x, min_y}, {max_x, max_y});
-    }
-    Logic_entt().emplace<Name_component>(entity, name);
+UI_Button &UI_Button::set_round_box(float min_x,
+                                    float min_y,
+                                    float max_x,
+                                    float max_y) {
+    LOG_INFO(g_log(), "UI create  {} {} {} {} ", min_x, min_y, max_x, max_y);
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
-
-    matrix_4x4 model;
-    UI_matrix_4x4(&model, {1, 1}, {0, 0});
-    set_render_parameter(entity, "model_4x4", model);
-
     Round_box &round_box = Logic_entt().emplace<
         Round_box>(entity, Round_box{min_x, min_y, max_x, max_y, 20, 10, 10, 10});
-
     set_render_parameter(entity, "round_box", round_box);
-    // 然后应该想办法做什么呢？
-    // 要么是想办法更新顶点 ，要么是
-
-    logic_update_proxy<Name_component>(entity);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
-    for (auto &primitive: primitives) {
-        // primitive.pipelineDynamicState.depthTestEnable  = VK_FALSE;  // TODP :暂时不用,先不做修改
-        // primitive.pipelineDynamicState.depthWriteEnable = VK_FALSE;
-        // primitive.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
-        // primitive.set_VkCullModeFlags(VK_CULL_MODE_NONE);
-        // 也就是 UI 部分的 代码，其实 有时候是没有办法去管理三角形的 大小的
-    }
     logic_update_proxy(entity, primitives);
+    std::vector<VKR_Render_state> render_states;
+    VKR_Render_state render_state;
+    render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    render_state.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+    render_states.push_back(render_state);
+    logic_update_proxy(entity, render_states);
+
+    return *this;
+}
+
+UI_Button::UI_Button(const std::string &name) : object_2d(name) {
+    add_shader_path(VKR_shader_paths{
+                        "2D/vulkan_round_box", "2D/vulkan_round_box", "", ""
+                    });
+    int logical_w, logical_h;
+    const auto &backend = VK_backend::instance();
+
     logic_update_add_tag<UI_2D_tag>(entity);
 
+    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
+
     float scale[2];
-    scale[0] = 2.0f / 1280.f;
-    scale[1] = 2.0f / 800;
+    scale[0] = 2.0f / logical_w; // Scale
+    scale[1] = 2.0f / logical_h;
     float translate[2];
-    translate[0] = -1.0f - 0.0f * scale[0];
-    translate[1] = -1.0f - 0.0f * scale[1];
+    translate[0] = -1.0f - 0 * scale[0]; // Translate
+    translate[1] = -1.0f - 0 * scale[1];
 
-    set_push_constant_parameter(entity, "uScale", scale);
-    set_push_constant_parameter(entity, "uTranslate", translate);
-    UI_root_add_child(entity);
-    return entity;
-
-    // 还想需要添加位置的，以及缩放。缩放暂时不需要，需要添加层。
-    /***************添加到渲染管理器**********************/
+    add_push_constant_parameter("uScale", scale);
+    add_push_constant_parameter("uTranslate", translate);
 }
