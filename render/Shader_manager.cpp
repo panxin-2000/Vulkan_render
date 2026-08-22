@@ -57,7 +57,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_frustum_cull_shader_data(
 std::shared_ptr<vk_shader_data> Shader_manager::get_offscreen_to_screen_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
     return find(VKR_shader_paths{
-                    "full_screen_triangle", "fxaa", "", "", VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FORMAT_UNDEFINED,
+                    "full_screen_triangle", "SSAO", "", "", VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FORMAT_UNDEFINED,
                     VK_FORMAT_UNDEFINED, render_pass_type
                 });
 }

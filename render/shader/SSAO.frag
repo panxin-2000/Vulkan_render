@@ -42,17 +42,62 @@ const vec3 SSAO_KERNEL[64] = vec3[64](
 
 
 
+vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
+    vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
+    // 3. 乘以投影矩阵的逆矩阵，变换回 View 空间（裁剪空间逆变换）
+    vec4 viewPos = invProjection * clipPos;
+    // 4. 执行透视除法（Perspective Divide），此时 viewPos.z 就是 View 空间的深度
+    viewPos /= viewPos.w;
+    return viewPos.xyz;
+}
+
+highp vec3 computeViewSpaceNormalHighQ_temp(
+        const highp sampler2D depthTexture, const highp vec2 uv,
+        const highp float depth, const highp vec3 position,
+        highp vec2 texel, highp mat4 invProjection) {
+    precision highp
+    float;
+
+    vec3 pos_c = position;
+    highp vec2 dx = vec2(texel.x, 0.0);
+    highp vec2 dy = vec2(0.0, texel.y);
+
+    vec4 H;
+    H.x = sampleDepth(depthTexture, uv - dx, 0.0);
+    H.y = sampleDepth(depthTexture, uv + dx, 0.0);
+    H.z = sampleDepth(depthTexture, uv - dx * 2.0, 0.0);
+    H.w = sampleDepth(depthTexture, uv + dx * 2.0, 0.0);
+    vec2 he = abs((2.0 * H.xy - H.zw) - depth);
+    vec3 pos_l = get_view_pos(uv - dx, (H.x), invProjection);
+    vec3 pos_r = get_view_pos(uv + dx, (H.y), invProjection);
+    vec3 dpdx = (he.x < he.y) ? (pos_c - pos_l) : (pos_r - pos_c);
+
+    vec4 V;
+    V.x = sampleDepth(depthTexture, uv - dy, 0.0);
+    V.y = sampleDepth(depthTexture, uv + dy, 0.0);
+    V.z = sampleDepth(depthTexture, uv - dy * 2.0, 0.0);
+    V.w = sampleDepth(depthTexture, uv + dy * 2.0, 0.0);
+    vec2 ve = abs((2.0 * V.xy - V.zw) - depth);
+    vec3 pos_d = get_view_pos(uv - dy, (V.x), invProjection);
+    vec3 pos_u = get_view_pos(uv + dy, (V.y), invProjection);
+    vec3 dpdy = (ve.x < ve.y) ? (pos_c - pos_d) : (pos_u - pos_c);
+
+    return normalize(cross(dpdy, dpdx));
+}
+
+
 void main()
 {
 
     highp float depth = sampleDepth(global_depth, inUV, 0.0);
-    highp float z = linearizeDepth(depth);
-    vec2 positionParams = vec2(invProjection[0][0] * 2, invProjection[1][1] * 2);
-    highp vec3 origin = computeViewSpacePositionFromDepth(inUV, z, positionParams);
+    vec3 viewPos = get_view_pos(inUV, depth, invProjection);
 
-    vec3 normal = computeViewSpaceNormal(global_depth, inUV, depth, origin,
-            1 / (screen_size.xy),
-            positionParams);
+    //    highp float z = linearizeDepth(depth);
+    //    vec2 positionParams = vec2(invProjection[0][0] * 2, invProjection[1][1] * 2);
+    //    highp vec3 origin = computeViewSpacePositionFromDepth(inUV, z, positionParams);
+
+    vec3 normal = computeViewSpaceNormalHighQ_temp(global_depth, inUV, viewPos.z, viewPos, 1 / (screen_size.xy),
+            invProjection);
 
     float noise = interleavedGradientNoise(gl_FragCoord.xy);
     float angle = noise * 2.0 * 3.1415926535f; // 映射到 0 到 360 度
@@ -76,7 +121,7 @@ void main()
     for (int i = 0; i < SSAO_KERNEL_SIZE; i++)
     {
         vec3 samplePos = TBN * SSAO_KERNEL[i];
-        samplePos = origin + samplePos * SSAO_RADIUS;
+        samplePos = viewPos + samplePos * SSAO_RADIUS;
 
         // project
         vec4 offset = vec4(samplePos, 1.0f);
@@ -84,14 +129,15 @@ void main()
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5f + 0.5f;
 
-        float neighborNative = -texture(global_depth, offset.xy).r;
-        float sampleDepth = -linearizeDepth(neighborNative);
+        highp float depth_temp = sampleDepth(global_depth, offset.xy, 0.0);
 
-        float rangeCheck = smoothstep(0.0f, 1.0f, SSAO_RADIUS / abs(z - sampleDepth));
-        occlusion += (sampleDepth <= samplePos.z + bias ? 1.0f : 0.0f) * rangeCheck;
+        vec3 sampleDepth = get_view_pos(offset.xy, depth_temp, invProjection);
+
+
+        float rangeCheck = smoothstep(0.0f, 1.0f, SSAO_RADIUS / abs(viewPos.z - sampleDepth.z));
+        occlusion += (sampleDepth.z >= samplePos.z + bias ? 1.0f : 0.0f) * rangeCheck;
     }
     occlusion = 1.0 - (occlusion / float(SSAO_KERNEL_SIZE));
-
 
 
 

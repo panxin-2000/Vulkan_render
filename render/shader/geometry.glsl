@@ -98,10 +98,8 @@ highp vec3 computeViewSpaceNormalHighQ(
     H.z = sampleDepth(depthTexture, uv - dx * 2.0, 0.0);
     H.w = sampleDepth(depthTexture, uv + dx * 2.0, 0.0);
     vec2 he = abs((2.0 * H.xy - H.zw) - depth);
-    vec3 pos_l = computeViewSpacePositionFromDepth(uv - dx,
-            linearizeDepth(H.x), positionParams);
-    vec3 pos_r = computeViewSpacePositionFromDepth(uv + dx,
-            linearizeDepth(H.y), positionParams);
+    vec3 pos_l = computeViewSpacePositionFromDepth(uv - dx, linearizeDepth(H.x), positionParams);
+    vec3 pos_r = computeViewSpacePositionFromDepth(uv + dx, linearizeDepth(H.y), positionParams);
     vec3 dpdx = (he.x < he.y) ? (pos_c - pos_l) : (pos_r - pos_c);
 
     vec4 V;
@@ -126,11 +124,11 @@ highp vec3 computeViewSpaceNormalHighQ(
 // positionParams : invProjection[0][0] * 2, invProjection[1][1] * 2 // 用于从非线性深度重建线性坐标的相机裁剪面参数
 //
 highp vec3 computeViewSpaceNormal(const highp sampler2D depthTexture,
-                                  const highp vec2 uv,
-                                  const highp float depth,
-                                  const highp vec3 position,
-                                  highp vec2 texel,
-                                  highp vec2 positionParams) {
+        const highp vec2 uv,
+        const highp float depth,
+        const highp vec3 position,
+        highp vec2 texel,
+        highp vec2 positionParams) {
     // todo: maybe make this a quality parameter
     #if FILAMENT_QUALITY == FILAMENT_QUALITY_HIGH
     vec3 normal = computeViewSpaceNormalHighQ(depthTexture, uv, depth, position,

@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/8/22.
 //
 
-#include "../object_model/base_2d_render_object.h"
+#include "base_2d_render_object.h"
 
 #include "name_component.h"
 #include "scene_component.h"
