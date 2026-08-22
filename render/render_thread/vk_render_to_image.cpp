@@ -200,7 +200,7 @@ void render_different_pass(VCB &vcb,
     // 在这里的时候需要插入 FXAA
     {
         vcb.current_write_next_read_image({
-                                              color_image, entity_image
+                                              color_image
                                           });
         vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
                                        depth_image,
