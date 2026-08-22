@@ -326,7 +326,7 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
     int logical_w, logical_h;
     const auto &backend = VK_backend::instance();
 
-    logic_update_add_tag<UI_2D_tag>(entity);
+    logic_update_add_tag<UI_render_text>(entity);
 
     SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
 
@@ -363,5 +363,5 @@ void UI_Text::set_string(const std::string &name) {
     }
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
-    logic_update_add_tag<UI_2D_tag>(entity);
+    logic_update_add_tag<UI_render_text>(entity);
 }

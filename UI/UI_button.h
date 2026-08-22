@@ -9,6 +9,7 @@
 #include "base_2d_render_object.h"
 #include "span.hpp"
 #include "global_singleton.h"
+#include "UI_text.h"
 
 // 按键和鼠标有两种截然不同的策略，基本上，所以的鼠标的点击时并没有反应，但是呢？
 // 松开时 采取执行按键设计的动作
@@ -21,13 +22,15 @@ public:
     UI_Button &set_round_box(float min_x, float min_y, float max_x, float max_y);
 
     UI_Button(const std::string &name);
+
+    UI_Text set_text(const std::string &text);
 };
 
 
 // entt::entity UI_button(const std::string &name,
-                       // float min_x,
-                       // float min_y,
-                       // float max_x,
-                       // float max_y);
+// float min_x,
+// float min_y,
+// float max_x,
+// float max_y);
 
 #endif //HELLO_MAC_UI_BUTTON_H

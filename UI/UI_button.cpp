@@ -9,6 +9,7 @@
 #include "name_component.h"
 #include "Rect_2D_component.h"
 #include "render_state.h"
+#include "UI_text.h"
 
 
 struct Round_box {
@@ -112,4 +113,12 @@ UI_Button::UI_Button(const std::string &name) : object_2d(name) {
 
     add_push_constant_parameter("uScale", scale);
     add_push_constant_parameter("uTranslate", translate);
+}
+
+UI_Text UI_Button::set_text(const std::string &text) {
+    UI_Text text_string(text);
+    clear_parent_relation(text_string.get_entity());
+    add_relation(entity, text_string.get_entity());
+    text_string.set_string(text);
+    return text_string;
 }

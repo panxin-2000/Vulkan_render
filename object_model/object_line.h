@@ -6,7 +6,7 @@
 #define HELLO_MAC_OBJECT_LINE_H
 
 #include "base_render_object.h"
-#include "base_2d_render_object.h"
+#include "../UI/base_2d_render_object.h"
 #include "base_3d_render_object.h"
 
 

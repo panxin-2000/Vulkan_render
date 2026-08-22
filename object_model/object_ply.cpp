@@ -13,7 +13,7 @@
 #include "B_spline_cureve.h"
 #include "../render/render_common/PBR_component.h"
 #include "world_scene_root.h"
-#include "../UI/PLYLoader.h"
+#include "PLYLoader.h"
 
 
 entt::entity object_ply_model(const std::string &name, const std::string &file_path, const Eigen::Vector3f offset,

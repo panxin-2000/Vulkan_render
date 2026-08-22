@@ -122,7 +122,7 @@ void render_different_pass(VCB &vcb,
         for (const auto entity: view) {
             auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
             auto name              = Render_entt().get<Name_component>(entity);
-            auto shader_path      = Render_entt().get<VKR_shader_paths>(entity);
+            auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
             shader_path.clear_define_macro();
             shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
             shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
@@ -207,6 +207,11 @@ void render_different_pass(VCB &vcb,
             vcb.render_post_deal(command_shader, entt::null);
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
+            for (const auto entity: view) {
+                vcb.build_draw_command(entity);
+            }
+        } {
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_render_text>();
             for (const auto entity: view) {
                 vcb.build_draw_command(entity);
             }

@@ -6,7 +6,7 @@
 #define HELLO_MAC_BASE_2D_RENDER_OBJECT_H
 
 
-#include "base_render_object.h"
+#include "../object_model/base_render_object.h"
 
 class object_2d : public logic_render_object {
 public:
