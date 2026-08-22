@@ -61,8 +61,6 @@ struct AABB_box {
 
 
 
-
-
 bool IsAABBInFrustum(Frustum frustum, AABB_box box)
 {
     for (int i = 0; i < 6; ++i)

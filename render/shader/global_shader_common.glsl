@@ -4,6 +4,8 @@
 
 
 #extension GL_GOOGLE_include_directive: enable
+#extension GL_EXT_nonuniform_qualifier: require
+
 #include "commom_function_and_struct.glsl"
 
 
@@ -38,6 +40,56 @@ layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
 layout (set = 1, binding = 3) uniform sampler2D global_SSAO;
 layout (set = 1, binding = 4) uniform sampler2D global_depth;
 
+float get_roughness(ShaderMaterial material) {
+    return material.roughnessFactor;
+}
+float get_metallic(ShaderMaterial material) {
+    return material.metallicFactor;
+}
+
+vec4 get_base_color(ShaderMaterial material, vec2 inUV)
+{
+    vec4 inColor = texture(bindless_samplerColorMap[material.baseColorTexture], inUV);
+    return inColor * material.baseColorFactor;
+}
+
+vec4 get_emissive_color(ShaderMaterial material, vec2 inUV)
+{
+    vec4 emissive = texture(bindless_samplerColorMap[material.emissiveTexture], inUV);
+    return emissive * material.emissiveFactor;
+}
+
+float get_Roughness(ShaderMaterial material, vec2 inUV)
+{
+    // Occlusion, Roughness, Metallic
+    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    return Color.g * material.roughnessFactor;
+}
+
+float get_Metallic(ShaderMaterial material, vec2 inUV)
+{
+    // Occlusion, Roughness, Metallic
+    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    return Color.b * material.metallicFactor;
+}
+
+float get_Occlusion(ShaderMaterial material, vec2 inUV)
+{
+    // Occlusion, Roughness, Metallic
+    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    return 1.0 + material.occlusionStrength + (Color.r - 1.0);
+}
+
+vec3 get_Occlusion_Roughness_Metallic(ShaderMaterial material, vec2 inUV) {
+    // Occlusion, Roughness, Metallic
+    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    vec3 result = Color.rgb * vec3(material.occlusionStrength, material.roughnessFactor, material.metallicFactor);
+    result.r = 1.0 + result.r - material.occlusionStrength;
+    return result;
+}
+
+// Calculation of TBN matrix and terminology based on "Surface
+// Gradient-Based Bump Mapping Framework" (2020)
 
 
 

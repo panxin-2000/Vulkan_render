@@ -26,7 +26,14 @@ layout (set = 2, binding = 1) readonly buffer render_entity_to_screen {
     uint entities[];
 };
 
+const mat4 biasMat = mat4(
+        0.5, 0.0, 0.0, 0.0,
+        0.0, 0.5, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.5, 0.5, 0.0, 1.0);
 
+
+#if defined(PASS_COLOR)
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outLightVec;
@@ -38,12 +45,6 @@ layout (location = 7) flat out uint outInstance_index;
 layout (location = 8) flat out uint out_entity;
 
 
-const mat4 biasMat = mat4(
-        0.5, 0.0, 0.0, 0.0,
-        0.0, 0.5, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.5, 0.5, 0.0, 1.0);
-
 
 void main()
 {
@@ -51,7 +52,6 @@ void main()
     //    outMaterial_index = gl_InstanceIndex;
     outInstance_index = gl_InstanceIndex;
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
-    out_entity = entities[gl_InstanceIndex];
     outWorldPos = pos.xyz;
     gl_Position = projection * view * pos;
     outNormal = inNormal;
@@ -66,4 +66,23 @@ void main()
 
 
 }
-// 能编译的过，不确定能不能行，然后就是之前写的参数排布会稍微更好一点
+
+
+#elif defined(PASS_DEPTH)
+void main()
+{
+    vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
+    gl_Position = projection * view * pos;
+
+}
+
+#elif defined(PASS_PICKUP)
+layout (location = 0) flat out uint out_entity;
+void main()
+{
+    vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
+    gl_Position = projection * view * pos;
+    out_entity = entities[gl_InstanceIndex];
+}
+#endif
+

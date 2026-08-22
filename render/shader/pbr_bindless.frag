@@ -5,11 +5,23 @@
  */
 
 #version 450
-#extension GL_EXT_nonuniform_qualifier: require
 #extension GL_GOOGLE_include_directive: enable
 #include "global_shader_common.glsl"
 #include "pbr_material.glsl"
 
+
+
+
+// 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
+
+
+layout (set = 3, binding = 0) readonly buffer model_material_parameters {
+    uint material_pbr_index[];
+};
+
+
+#if defined(PASS_COLOR)
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
@@ -19,88 +31,7 @@ layout (location = 4) in vec4 inShadowCoord;
 layout (location = 5) in vec3 inWorldPos;
 layout (location = 6) flat in uint material_index;
 layout (location = 7) flat in uint instance_index;
-layout (location = 8) flat in uint entity;
 
-
-// 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
-#if defined(PASS_COLOR)
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
-#elif defined(PASS_DEPTH)
-
-#elif defined(PASS_PICKUP)
-layout (location = 0) out uint out_entity_R32_UINT;
-#endif
-
-layout (set = 3, binding = 0) readonly buffer model_material_parameters {
-    uint material_pbr_index[];
-};
-
-
-float get_roughness(ShaderMaterial material) {
-    return material.roughnessFactor;
-}
-float get_metallic(ShaderMaterial material) {
-    return material.metallicFactor;
-}
-
-vec4 get_base_color(ShaderMaterial material, vec2 inUV)
-{
-    vec4 inColor = texture(bindless_samplerColorMap[material.baseColorTexture], inUV);
-    return inColor * material.baseColorFactor;
-}
-
-vec4 get_emissive_color(ShaderMaterial material, vec2 inUV)
-{
-    vec4 emissive = texture(bindless_samplerColorMap[material.emissiveTexture], inUV);
-    return emissive * material.emissiveFactor;
-}
-
-float get_Roughness(ShaderMaterial material, vec2 inUV)
-{
-    // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
-    return Color.g * material.roughnessFactor;
-}
-
-float get_Metallic(ShaderMaterial material, vec2 inUV)
-{
-    // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
-    return Color.b * material.metallicFactor;
-}
-
-float get_Occlusion(ShaderMaterial material, vec2 inUV)
-{
-    // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
-    return 1.0 + material.occlusionStrength + (Color.r - 1.0);
-}
-
-vec3 get_Occlusion_Roughness_Metallic(ShaderMaterial material, vec2 inUV) {
-    // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
-    vec3 result = Color.rgb * vec3(material.occlusionStrength, material.roughnessFactor, material.metallicFactor);
-    result.r = 1.0 + result.r - material.occlusionStrength;
-    return result;
-}
-
-
-
-
-
-
-
-
-
-// Specular BRDF composition --------------------------------------------
-
-
-
-
-
-
-// Calculation of TBN matrix and terminology based on "Surface
-// Gradient-Based Bump Mapping Framework" (2020)
 mat3
 ComputeTBNMatrix(vec3 P, vec3 N, vec2 st)
 {
@@ -136,7 +67,6 @@ ComputeTBNMatrix(vec3 P, vec3 N, vec2 st)
 
     return mat3(T, B, N);
 }
-
 
 vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inUV) {
     // 1. 从贴图采样（得到 0.0 到 1.0 之间的值）
@@ -219,3 +149,37 @@ void main()
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }
+
+#elif defined(PASS_DEPTH)
+
+void main()
+{
+
+}
+#elif defined(PASS_PICKUP)
+
+layout (location = 0) flat in uint entity;
+
+layout (location = 0) out uint out_entity_R32_UINT;
+void main()
+{
+    out_entity_R32_UINT = entity;
+}
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+// Specular BRDF composition --------------------------------------------
+
+
+
