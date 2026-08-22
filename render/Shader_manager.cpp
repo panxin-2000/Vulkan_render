@@ -31,6 +31,12 @@ VKR_shader_paths get_skinning_shader_path() {
     };
 }
 
+VKR_shader_paths Shader_manager::get_line_shader_path() {
+    return VKR_shader_paths{
+        "2D/line", "2D/line", "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+    };
+}
+
 std::shared_ptr<vk_shader_data> Shader_manager::get_gltf_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
     return find(get_gltf_shader_path());
@@ -43,13 +49,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_skinning_shader_data(
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_line_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
-    return find(VKR_shader_paths{
-                    "2D/line", "2D/line", "", "",
-                    VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                    VK_FORMAT_UNDEFINED,
-                    VK_FORMAT_UNDEFINED,
-                    render_pass_type
-                });
+    return find(get_line_shader_path());
 }
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_frustum_cull_shader_data(

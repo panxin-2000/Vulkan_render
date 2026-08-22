@@ -6,10 +6,9 @@
 #define HELLO_MAC_3D_MODEL_DISPLAY_H
 
 #include "global_singleton.h"
-#include "base_geometry/base.h"
-#include "transform_component.h"
-#include "manifold/manifold.h"
 #include "shader_component.h"
+#include "base_geometry/base.h"
+#include "manifold/manifold.h"
 #include "base_render_object.h"
 
 class object_3d : public logic_render_object {
@@ -34,14 +33,18 @@ public:
         set_render_parameter(entity, binding_name, binding_data);
         return *this;
     }
+
+    template<typename T1>
+    object_3d &add_push_constant_parameter(const std::string &binding_name, T1 &binding_data) {
+        set_push_constant_parameter(entity, binding_name, binding_data);
+        return *this;
+    }
 };
 
 inline object_3d create_object_3d(const std::string &name) {
     return object_3d(name);
 }
 
-
-entt::entity object_line(const std::string &name);
 
 entt::entity object_line_old(const std::string &name);
 

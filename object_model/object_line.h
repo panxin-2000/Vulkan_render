@@ -9,5 +9,6 @@
 #include "base_2d_render_object.h"
 #include "base_3d_render_object.h"
 
+void object_line(const std::string &name);
 
 #endif //HELLO_MAC_OBJECT_LINE_H

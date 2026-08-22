@@ -11,6 +11,8 @@
 class object_2d : public logic_render_object {
 public:
     object_2d(const std::string &name);
+
+    object_2d &add_B_spline_curve();
 };
 
 

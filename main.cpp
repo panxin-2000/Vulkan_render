@@ -29,6 +29,7 @@
 #include "UI/UI_text.h"
 #include "imgui.h"
 #include "input_device_manage.h"
+#include "object_line.h"
 #include "skybox.h"
 
 
