@@ -68,7 +68,7 @@ void main()
     outViewVec = viewPos.xyz - pos.xyz;
 
 }
-#elif defined(PASS_DEPTH)
+#elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
 
 void main()
 {

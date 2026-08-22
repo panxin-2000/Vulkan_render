@@ -21,31 +21,30 @@ VKR_shader_paths get_gltf_shader_path() {
     };
 }
 
+VKR_shader_paths get_skinning_shader_path() {
+    return VKR_shader_paths{
+        "skinning_model", "pbr_bindless", "", "",
+        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        VK_FORMAT_UNDEFINED,
+        VK_FORMAT_UNDEFINED,
+        VKR_shader_paths::Render_Pass_Type::Color
+    };
+}
+
 std::shared_ptr<vk_shader_data> Shader_manager::get_gltf_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
-    return find(VKR_shader_paths{
-                    "pbr_bindless", "pbr_bindless", "", "",
-                    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                    VK_FORMAT_UNDEFINED,
-                    VK_FORMAT_UNDEFINED,
-                    render_pass_type
-                });
+    return find(get_gltf_shader_path());
 }
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_skinning_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
-    return find(VKR_shader_paths{
-                    "skinning_model", "pbr_bindless", "", "",
-                    VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-                    VK_FORMAT_UNDEFINED,
-                    VK_FORMAT_UNDEFINED, render_pass_type
-                });
+    return find(get_skinning_shader_path());
 }
 
 std::shared_ptr<vk_shader_data> Shader_manager::get_line_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
     return find(VKR_shader_paths{
-                    "line", "line", "", "",
+                    "2D/line", "2D/line", "", "",
                     VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
                     VK_FORMAT_UNDEFINED,
                     VK_FORMAT_UNDEFINED,
@@ -56,7 +55,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_line_shader_data(
 std::shared_ptr<vk_shader_data> Shader_manager::get_frustum_cull_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
     return find(VKR_shader_paths{
-                    "", "", "", "command_calculate",
+                    "", "", "", "frustum_cull",
                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                     VK_FORMAT_UNDEFINED,
                     VK_FORMAT_UNDEFINED,
@@ -67,7 +66,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_frustum_cull_shader_data(
 std::shared_ptr<vk_shader_data> Shader_manager::get_offscreen_to_screen_shader_data(
     VKR_shader_paths::Render_Pass_Type render_pass_type) {
     return find(VKR_shader_paths{
-                    "deferred", "fxaa", "", "", VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FORMAT_UNDEFINED,
+                    "full_screen_triangle", "fxaa", "", "", VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_FORMAT_UNDEFINED,
                     VK_FORMAT_UNDEFINED, render_pass_type
                 });
 }
@@ -83,20 +82,4 @@ std::shared_ptr<vk_shader_data> Shader_manager::find(const VKR_shader_paths &sha
 }
 
 void Shader_manager::create() {
-    // find(VKR_shader_paths{"pbr_bindless", "pbr_bindless", "", ""});
-    // find(VKR_shader_paths{
-    //          "opacity_depth_write", "opacity_depth_write", "", "",
-    //          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    //          VK_FORMAT_D32_SFLOAT
-    //      });
-    // find(VKR_shader_paths{
-    //          "skinning_model_depth_write", "opacity_depth_write", "", "",
-    //          VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    //          VK_FORMAT_D32_SFLOAT
-    //      });
-    // find(VKR_shader_paths{"skinning_model", "pbr_bindless", "", ""});
-    // find(VKR_shader_paths{"line", "line", "", "", VK_PRIMITIVE_TOPOLOGY_LINE_LIST});
-    // find(VKR_shader_paths{"", "", "", "command_calculate"});
-    // find(VKR_shader_paths{"deferred", "fxaa", "", ""});
-    // find(VKR_shader_paths{"deferred", "deferred_to_screen", "", ""});
 }

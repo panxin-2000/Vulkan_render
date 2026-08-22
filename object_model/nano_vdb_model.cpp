@@ -150,9 +150,9 @@ entt::entity add_volume_pass(const std::string &name,
     entt::entity entity = Logic_entt().create();
     logic_create_proxy(entity);
 
-
+// 不确定,需要检查一下
     add_shader(entity,
-               "Phong",
+               "pbr_bindless",
                "render_nanovdb_different_density",
                "", "");
 

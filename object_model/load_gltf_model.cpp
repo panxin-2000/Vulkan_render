@@ -298,7 +298,6 @@ void get_mesh_from_gltf_model(entt::entity entity, fastgltf::Asset &model, const
     }
 
     Logic_entt().emplace_or_replace<Geometry_data_need_copy_tag>(entity);
-    Logic_entt().emplace_or_replace<opacity_tag>(entity);
 }
 
 
@@ -865,6 +864,8 @@ void update_entity_to_screen(const entt::entity model_entity) {
 
 VKR_shader_paths get_gltf_shader_path();
 
+VKR_shader_paths get_skinning_shader_path();
+
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
@@ -890,11 +891,14 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
             auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
             Logic_entt().emplace<Shader_data>(model_entity, shader_data);
-            logic_update_add_tag<opacity_gltf_tag>(model_entity);
             logic_update_proxy<VKR_shader_paths>(model_entity);
         } else {
-            Logic_entt().emplace<Shader_data>(model_entity,
-                                              Engine::instance().get_shader_manager().get_skinning_shader_data());
+            auto shader_path = get_skinning_shader_path();
+            Logic_entt().emplace<VKR_shader_paths>(model_entity, shader_path);
+
+            auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
+            Logic_entt().emplace<Shader_data>(model_entity, shader_data);
+            logic_update_proxy<VKR_shader_paths>(model_entity);
         }
         logic_update_proxy<Shader_data>(model_entity);
         logic_update_proxy<Name_component>(model_entity);

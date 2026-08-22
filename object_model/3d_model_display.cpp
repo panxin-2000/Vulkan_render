@@ -31,11 +31,11 @@ entt::entity object_ply_model(const std::string &name, const std::string &file_p
     Logic_entt().emplace<Name_component>(entity, name);
     add_model_3d_Event(entity);
 
-    add_shader(entity,
-               "",
-               "",
-               "",
-               "");
+    // add_shader(entity,
+    //            "",
+    //            "",
+    //            "",
+    //            "");
     // 这里需要解决另一个问题，想要运行这个，需要不止一个 shader
 
     int _degree        = 0;
@@ -70,10 +70,10 @@ entt::entity object_3d_model(const std::string &name,
     add_model_3d_Event(entity);
 
 
-    add_shader(entity,
-               "Phong",
-               "pbr_bindless",
-               "", "");
+    // add_shader(entity,
+    //            "Phong",
+    //            "pbr_bindless",
+    //            "", "");
     auto aabb  = load_model(entity, mesh_path);
     auto &AABB = Logic_entt().get_or_emplace<AABB_min_max<Point_3> >(entity, aabb.value());
 
@@ -103,10 +103,10 @@ entt::entity object_3d_model(const std::string &name, manifold::MeshGL &mesh, co
     add_model_3d_Event(entity);
 
 
-    add_shader(entity,
-               "Phong",
-               "Blinn_Phong_bindless",
-               "", "");
+    // add_shader(entity,
+    //            "Phong",
+    //            "Blinn_Phong_bindless",
+    //            "", "");
     const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
     // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
 
@@ -201,6 +201,7 @@ entt::entity add_sky_box(const std::string &name) {
     return entity;
 }
 
+VKR_shader_paths get_gltf_shader_path();
 
 entt::entity object_3d_model(const std::string &name,
                              const AABB_min_max<Point_3> &bounding_box,
@@ -210,12 +211,23 @@ entt::entity object_3d_model(const std::string &name,
     logic_create_proxy(entity);
     Logic_entt().emplace<Name_component>(entity, name);
     add_model_3d_Event(entity);
-    add_shader(entity, "Phong", "vulkan_different_color", "", "");
+    auto shader_path = get_gltf_shader_path();
+    shader_path.clear_define_macro();
+    shader_path.add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
+    Logic_entt().emplace<VKR_shader_paths>(entity, shader_path);
+    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
+    Logic_entt().emplace<Shader_data>(entity, shader_data);
+    logic_update_proxy<VKR_shader_paths>(entity);
+    logic_update_proxy<Shader_data>(entity);
+
     add_box_data(entity, bounding_box);
     auto matrix   = Logic_entt().emplace<Transform>(entity, offset, rotate);
     auto matrix_2 = matrix.get_transform_matrix();
     // 这里的一个问题是,不统一
-    set_render_parameter(entity, "model_4x4", matrix_2);
+    auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
+    matrices_render->push_back(static_cast<std::vector<Transform_Matrix>::value_type>(matrix_2));
+    set_render_parameter(entity, "model_matrix_parameters", matrices_render);
+
     Logic_entt().emplace<Transform_matrix_dirty>(entity);
     world_root_add_child(entity);
     logic_update_proxy<Name_component>(entity);

@@ -166,6 +166,16 @@ void main()
     out_entity_R32_UINT = entity;
 }
 
+
+#elif defined(PASS_RANDOM_TRIANGLE_COLOR)
+
+layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+
+void main()
+{
+    outFragColor_B8G8R8A8_SRGB = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
+}
+
 #endif
 
 

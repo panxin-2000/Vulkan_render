@@ -68,7 +68,7 @@ void main()
 }
 
 
-#elif defined(PASS_DEPTH)
+#elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
 void main()
 {
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);

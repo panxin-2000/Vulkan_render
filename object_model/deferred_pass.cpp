@@ -16,10 +16,10 @@ entt::entity add_render_pass(const std::string &name) {
 
     Logic_entt().emplace<Name_component>(entity, name + "deferred_pass");
 
-    add_shader(entity,
-               "deferred",
-               "deferred",
-               "", "");
+    // add_shader(entity,
+    //            "deferred",
+    //            "deferred",
+    //            "", "");
 
     // 更新物体的模型矩阵
 
