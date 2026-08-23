@@ -889,7 +889,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         auto &model = optional_model.value();
         logic_create_proxy(model_entity);
         const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
-        add_model_3d_Event(model_entity);
+        // add_model_3d_Event(model_entity);
         Logic_entt().emplace<load_material>(model_entity);
 
         tbb::task_group group;

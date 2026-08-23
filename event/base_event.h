@@ -352,6 +352,10 @@ public:
         parse_key_string(key_name);
     }
 
+    explicit Combined_shortcut_keys(const std::vector<std::string> &key_name) {
+        parse_key_string(key_name);
+    }
+
     explicit Combined_shortcut_keys() {
     }
 };
