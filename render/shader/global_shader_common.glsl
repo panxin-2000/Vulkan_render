@@ -37,8 +37,9 @@ layout (set = 1, binding = 1) readonly buffer global_PBR_parameters {
 
 
 layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
-layout (set = 1, binding = 3) uniform sampler2D global_SSAO;
+layout (set = 1, binding = 3) uniform sampler2D global_SSAO;       // 这里是第一次输出的结果
 layout (set = 1, binding = 4) uniform sampler2D global_depth;
+layout (set = 1, binding = 5) uniform sampler2D global_Blur_SSAO;  // 这里是经过模糊之后的SSAO
 
 float get_roughness(ShaderMaterial material) {
     return material.roughnessFactor;

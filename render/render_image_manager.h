@@ -36,6 +36,8 @@ public:
 
     VKR_image_ptr get_one_depth_AO_image();
 
+    VKR_image_ptr get_one_depth_SSAO_image();
+
     VKR_image_ptr find(const Image_and_view_parameters &parameters);
 
     void destroy();

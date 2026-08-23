@@ -128,6 +128,23 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
     return find(parameters);
 }
 
+VKR_image_ptr Render_image_manager::get_one_depth_SSAO_image() {
+    Image_and_view_parameters parameters{};
+    parameters.format = VK_FORMAT_R8_UNORM;
+    parameters.width  = 2016;
+    parameters.height = 1832;
+    parameters.depth  = 1;
+    parameters.usage  = static_cast<VkImageUsageFlagBits>(
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels   = 1;
+    parameters.arrayLayers = 1;
+    parameters.flags       = 0;
+
+    return find(parameters);
+}
+
 
 VKR_image_ptr Render_image_manager::find(const Image_and_view_parameters &parameters) {
     if (map_.contains(parameters)) {

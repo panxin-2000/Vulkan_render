@@ -6,6 +6,12 @@ layout (location = 0) in vec2 inUV;
 
 layout (location = 0) out float outFragColor;
 
+
+#include "global_shader_common.glsl"
+
+#include "geometry.glsl"
+
+
 void main()
 {
     const int blurRange = 2;

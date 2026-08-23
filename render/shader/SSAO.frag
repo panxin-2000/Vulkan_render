@@ -14,7 +14,7 @@ layout (constant_id = 1) const float SSAO_RADIUS = 0.5;
 #include "geometry.glsl"
 
 layout (location = 0) in vec2 inUV;
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out float out_occlusion_R8_UNORM; // 这里更改了,
 
 float interleavedGradientNoise(vec2 fragCoord) {
     return fract(52.582f * fract(fragCoord.x * 0.06711f + fragCoord.y * 0.00583f));
