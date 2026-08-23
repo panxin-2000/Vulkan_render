@@ -236,7 +236,8 @@ public:
 
     void update_global_parameter(std::optional<Texture_parameter> offscreen,
                                  std::optional<Texture_parameter> SSAO,
-                                 std::optional<Texture_parameter> depth);
+                                 std::optional<Texture_parameter> depth,
+                                 std::optional<Texture_parameter> blur_SSAO);
 
     FrustumPlanes get_frustum_planes() const {
         return global_parameters_.frustum_planes;

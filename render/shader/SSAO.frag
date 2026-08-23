@@ -141,5 +141,5 @@ void main()
 
 
 
-    outFragColor_B8G8R8A8_SRGB = vec4(occlusion, occlusion, occlusion, 1.0);
+    out_occlusion_R8_UNORM = occlusion;
 }

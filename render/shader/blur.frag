@@ -4,7 +4,7 @@ layout (binding = 0) uniform sampler2D samplerSSAO;
 
 layout (location = 0) in vec2 inUV;
 
-layout (location = 0) out float outFragColor;
+layout (location = 0) out float out_occlusion_R8_UNORM;
 
 
 #include "global_shader_common.glsl"
@@ -27,5 +27,6 @@ void main()
             n++;
         }
     }
-    outFragColor = result / (float(n));
+    // 这里的模糊代码,应该是还是有更好的解决的方案的
+    out_occlusion_R8_UNORM = result / (float(n));
 }

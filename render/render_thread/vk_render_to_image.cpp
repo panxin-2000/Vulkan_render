@@ -20,6 +20,8 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr color_image,
                            VKR_image_ptr depth_image,
                            VKR_image_ptr depth_AO_image,
+                           VKR_image_ptr SSAO_image,
+                           VKR_image_ptr blur_SSAO_image,
                            VKR_image_ptr entity_image
 ) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
@@ -137,6 +139,40 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_AO_image});
+    } {
+        vcb.begin_rendering_attachment(SSAO_image,
+                                       depth_image,
+                                       VK_ATTACHMENT_LOAD_OP_CLEAR);
+        VKR_shader_paths SSAO{
+            "full_screen_triangle", "SSAO", "", "",
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            VK_FORMAT_UNDEFINED,
+            VK_FORMAT_UNDEFINED,
+        };
+
+        auto command_shader = engine.get_shader_manager().find(SSAO);
+        vcb.render_post_deal(command_shader, entt::null);
+
+        vcb.end_rendering();
+        vcb.current_write_next_read_image({
+                                              SSAO_image
+                                          });
+    } {
+        vcb.begin_rendering_attachment(blur_SSAO_image,
+                                       depth_image,
+                                       VK_ATTACHMENT_LOAD_OP_CLEAR);
+        VKR_shader_paths blur{
+            "full_screen_triangle", "blur", "", "",
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            VK_FORMAT_UNDEFINED,
+            VK_FORMAT_UNDEFINED,
+        };
+        auto command_shader = engine.get_shader_manager().find(blur);
+        vcb.render_post_deal(command_shader, entt::null);
+        vcb.end_rendering();
+        vcb.current_write_next_read_image({
+                                              blur_SSAO_image
+                                          });
     }
 
     // 绘制 3d 物体的阶段 pass
@@ -248,16 +284,20 @@ void destroy_Render_entt() { {
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
-    const auto color_image    = engine.get_image_manager().get_one_color_image();
-    const auto entity_image   = engine.get_image_manager().get_one_entity_image();
-    const auto depth_image    = engine.get_image_manager().get_one_depth_image();
-    const auto depth_AO_image = engine.get_image_manager().get_one_depth_AO_image(); {
+    const auto color_image     = engine.get_image_manager().get_one_color_image();
+    const auto entity_image    = engine.get_image_manager().get_one_entity_image();
+    const auto depth_image     = engine.get_image_manager().get_one_depth_image();
+    const auto depth_AO_image  = engine.get_image_manager().get_one_depth_AO_image();
+    const auto SSAO_image      = engine.get_image_manager().get_one_depth_SSAO_image();
+    const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
         auto offscreen = create_2d_texture(color_image);
         auto depth     = create_2d_texture(depth_AO_image);
+        auto SSAO      = create_2d_texture(SSAO_image);
+        auto blur_SSAO = create_2d_texture(blur_SSAO_image);
 
-        engine.update_global_parameter(offscreen, {}, depth); // 这里的好消息是 什么？ 这里可以申请；
+        engine.update_global_parameter(offscreen, SSAO, depth, blur_SSAO); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
     } {
@@ -281,7 +321,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
-    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, entity_image);
+    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
+                          blur_SSAO_image, entity_image);
     vcb.end_command_buffer();
 
     vcb.submit_render_queue(engine);

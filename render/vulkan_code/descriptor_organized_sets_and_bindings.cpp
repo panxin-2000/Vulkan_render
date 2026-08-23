@@ -235,6 +235,9 @@ VkFormat get_format_from_resource_name(const std::string &resource_name) {
     if (resource_name.find("R32_UINT") != std::string::npos) {
         return VK_FORMAT_R32_UINT;
     }
+    if (resource_name.find("R8_UNORM") != std::string::npos) {
+        return VK_FORMAT_R8_UNORM;
+    }
     assert(false);
 }
 

@@ -132,7 +132,7 @@ void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images
             .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                      // 允许着色器读取
             .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // 渲染时布局
-            .newLayout     = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,                // 读取时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,                // 读取时布局
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
