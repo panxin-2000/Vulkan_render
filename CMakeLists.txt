@@ -339,6 +339,7 @@ if (WITH_VULKAN_BACKEND)
             "render/vulkan_code/vulkan_image.cpp"
             "render/vulkan_code/vulkan_image_view.cpp"
             "render/vulkan_code/vulkan_image_and_view_discard.cpp"
+            "render/vulkan_code/descriptor_organized_sets_and_bindings.cpp"
             "render/vulkan_code/vulkan_sample.cpp"
             "render/vulkan_code/vulkan_buffer.cpp"
             "render/vulkan_code/vulkan_execute_command.cpp"
