@@ -149,7 +149,31 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
         };
         if (colorAttachmentFormat[i].format == VK_FORMAT_B8G8R8A8_SRGB)
             blendAttachment.blendEnable = VK_TRUE;
-        else if (colorAttachmentFormat[i].format == VK_FORMAT_R32_UINT)
+        else if (
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_SNORM ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_USCALED ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_SSCALED ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_UINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_SINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_SRGB ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_UNORM ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_SNORM ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_USCALED ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_SSCALED ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_UINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_SINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R16_SFLOAT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R32_UINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R32_SINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R32_SFLOAT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R64_UINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R64_SINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R64_SFLOAT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_D16_UNORM ||
+            colorAttachmentFormat[i].format == VK_FORMAT_D16_UNORM ||
+            colorAttachmentFormat[i].format == VK_FORMAT_D32_SFLOAT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_S8_UINT ||
+            colorAttachmentFormat[i].format == VK_FORMAT_R8_UNORM)
             blendAttachment.blendEnable = VK_FALSE;
         BlendAttachments[i] = blendAttachment;
     }

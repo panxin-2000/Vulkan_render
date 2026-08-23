@@ -46,7 +46,7 @@ public:
 
     void end_rendering();
 
-    void submit_render_queue( Engine &engine);
+    void submit_render_queue(Engine &engine);
 
     void end_command_buffer();
 
@@ -77,6 +77,7 @@ public:
         temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
                                       VK_backend::instance().get_scissor());
         vkCmdSetCullMode(command_buffer_, VK_CULL_MODE_NONE);
+        vkCmdSetDepthTestEnable(command_buffer_, VK_FALSE);
 
         vkCmdDraw(command_buffer_, 3, 1, 0, 0);
     }
@@ -94,7 +95,6 @@ public:
     void begin_rendering_depth_attachment(
         VKR_image_ptr depth,
         VkAttachmentLoadOp depth_loadOp);
-
 
 
     void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
