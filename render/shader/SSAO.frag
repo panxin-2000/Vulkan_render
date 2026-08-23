@@ -44,11 +44,11 @@ const vec3 SSAO_KERNEL[64] = vec3[64](
 
 vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
     vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
-    // 3. 乘以投影矩阵的逆矩阵，变换回 View 空间（裁剪空间逆变换）
-    vec4 viewPos = invProjection * clipPos;
-    // 4. 执行透视除法（Perspective Divide），此时 viewPos.z 就是 View 空间的深度
-    viewPos /= viewPos.w;
-    return viewPos.xyz;
+    float x = invProjection[0][0] * clipPos.x;
+    float y = invProjection[1][1] * clipPos.y;
+    float z = invProjection[2][2] * clipPos.z + invProjection[3][2];
+    float w = invProjection[2][3] * clipPos.z + invProjection[3][3];
+    return vec3(x, y, z) / w;
 }
 
 highp vec3 computeViewSpaceNormalHighQ_temp(
