@@ -89,7 +89,7 @@ void transfer_ktx_to_gpu(const VKR_image_ptr image_ptr,
 
 
 VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
-    auto ktx2   = reinterpret_cast<ktxTexture2 *>(ktxTexture);
+    auto ktx2 = reinterpret_cast<ktxTexture2 *>(ktxTexture);
 
     // 1. 检查是否需要转码（如果已经是常规格式则不转）
     if (ktxTexture2_NeedsTranscoding(ktx2)) {

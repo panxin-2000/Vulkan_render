@@ -757,7 +757,12 @@ void load_materials(std::vector<uint32_t> &material_indices,
                     const fastgltf::Asset &model) {
     ScopedTimer temp("load_materials");
     auto &pbr_manager = Engine::instance().get_pbr_manager();
-    for (const auto &material: model.materials) {
+    std::vector<std::pair<PBR_component, PBR_Texture_ptr> > result;
+    result.resize(model.materials.size());
+
+    // 现在下面的代码可以并行执行了
+    for (uint32_t i = 0; i < model.materials.size(); ++i) {
+        const auto &material = model.materials[i];
         PBR_component pbr;
         PBR_Texture_ptr ptr;
         pbr.alphaCutoff        = material.alphaCutoff;
@@ -810,7 +815,11 @@ void load_materials(std::vector<uint32_t> &material_indices,
             pbr.baseColorTexture = texture.image.get_index();
             ptr.baseColorTexture = texture;
         }
-        auto material_index = pbr_manager.push(pbr, ptr); // 总之,最后 ,需要写到这里的
+        result[i] = {pbr, ptr};
+    }
+
+    for (const auto &pair: result) {
+        auto material_index = pbr_manager.push(pair.first, pair.second);
         material_indices.push_back(material_index);
     }
 }
