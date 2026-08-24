@@ -158,12 +158,24 @@ void render_different_pass(VCB &vcb,
                     engine.get_shader_manager().find(shader_path);
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
             // 这里就需要看看怎么push
-            //
             for (uint i = 0; i < 4; ++i) {
+                VkClearAttachment clearAttachment{};
+                clearAttachment.aspectMask              = VK_IMAGE_ASPECT_DEPTH_BIT;
+                clearAttachment.clearValue.depthStencil = {1.0f, 0}; // 刷成最远
+
+                VkClearRect clearRect{};
+                clearRect.rect.offset    = {0, 0};
+                clearRect.rect.extent    = {depth_shadow_image->get_width(), depth_shadow_image->get_height()};
+                clearRect.baseArrayLayer = 0; // 核心：精确指定清空第 i 层
+                clearRect.layerCount     = 1;
+
+                vkCmdClearAttachments(vcb.get_command_buffer(), 1, &clearAttachment, 1, &clearRect);
+
+                uint temp = 3 - i;
                 vcb.PushConstants(shader_data_ref->pipeline_layout,
-                                  VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &i);
+                                  VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &temp);
                 // 现在绑定的管线是有问题的,
-                // vcb.default_status();
+                vcb.default_status();
                 vcb.DrawIndexedIndirect(entity, command_calculate);
             }
         }
@@ -172,6 +184,7 @@ void render_different_pass(VCB &vcb,
     }
     // CSM
     {
+        // 这里还是稍微有点问题,其实是可以不要深度的
         vcb.begin_rendering_attachment(SSAO_image,
                                        depth_image,
                                        VK_ATTACHMENT_LOAD_OP_CLEAR);

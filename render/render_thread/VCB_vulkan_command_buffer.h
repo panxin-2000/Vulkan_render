@@ -24,6 +24,15 @@ class VCB {
     VkRect2D pass_scissor_          = {};
 
 public:
+    VkCommandBuffer get_command_buffer() const {
+        return command_buffer_;
+    }
+
+    VkQueryPool get_query_pool() const {
+        return query_pool_;
+    }
+
+
     struct scoped_debug_label {
         VkCommandBuffer command_buffer = VK_NULL_HANDLE;
 

@@ -189,10 +189,11 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
 
     VkPipelineRenderingCreateInfo renderingCI{
         .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .viewMask                = 0,
         .colorAttachmentCount    = static_cast<uint32_t>(pColorAttachmentFormats.size()),
         .pColorAttachmentFormats = pColorAttachmentFormats.data(),
         .depthAttachmentFormat   = data.depthAttachmentFormat,
-        .stencilAttachmentFormat = data.stencilAttachmentFormat
+        .stencilAttachmentFormat = data.stencilAttachmentFormat,
     };
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
