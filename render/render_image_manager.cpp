@@ -131,8 +131,8 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
 VKR_image_ptr Render_image_manager::get_one_shadow_image() {
     Image_and_view_parameters parameters{};
     parameters.format = VK_FORMAT_D32_SFLOAT;
-    parameters.width  = 2016;
-    parameters.height = 1832;
+    parameters.width  = 2048;
+    parameters.height = 2048;
     parameters.depth  = 1;
     parameters.usage  = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);

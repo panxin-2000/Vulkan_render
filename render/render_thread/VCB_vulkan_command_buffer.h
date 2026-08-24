@@ -117,6 +117,15 @@ public:
                                       VK_backend::instance().get_scissor());
     }
 
+    void PushConstants(VkPipelineLayout layout,
+                       VkShaderStageFlags stageFlags,
+                       uint32_t offset,
+                       uint32_t size,
+                       const void *pValues) const {
+        vkCmdPushConstants(command_buffer_, layout,
+                           stageFlags, offset, size, pValues);
+    }
+
     void bind_Proxy_descriptor_sets(entt::entity entity,
                                     VkPipelineLayout pipeline_layout,
                                     VkPipelineBindPoint bind_point);

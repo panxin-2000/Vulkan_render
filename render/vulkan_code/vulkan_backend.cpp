@@ -513,7 +513,8 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
     }
     for (auto i = 0; i < imageCount; i++) {
-        result.emplace_back(images[i],VK_NULL_HANDLE, image_views[i]);
+        Image_and_view_parameters parameters; // todo :这里还是有问题的,需要把参数补充完整
+        result.emplace_back(images[i],VK_NULL_HANDLE, image_views[i], parameters);
     }
     return result;
 }

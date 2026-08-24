@@ -22,7 +22,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
                 .levelCount = 1,
-                .layerCount = 1
+                .layerCount = depth->get_arrayLayers(),
             }
         },
     };
@@ -33,7 +33,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
-    auto temp_extent = VK_backend::instance().get_current_extent();
+    VkExtent2D current_depth_extent = {depth->get_width(), depth->get_height()};
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = depth->get_image_view(),
@@ -42,19 +42,13 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {1.0f, 0}}
     };
-    // VkRenderingAttachmentInfo StencilAttachmentInfo{
-    //     .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-    //     .imageView   = depth->get_image_view(),
-    //     .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-    //     .loadOp      = depth_loadOp,
-    //     .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-    //     .clearValue  = {.depthStencil = {1.0f, 0}}
-    // };
 
+    // 多个附件的长宽必须相等
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .renderArea{
-            .extent = temp_extent,
+            .offset = {0, 0},
+            .extent = current_depth_extent,
         },
         .layerCount           = 1,
         .colorAttachmentCount = 0,
@@ -63,6 +57,24 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .pStencilAttachment   = nullptr
     };
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
+
+    // 修正 4：【最重要】动态渲染不会自动帮你缩放视口！你必须在 Begin 后立刻手动更新视口和裁剪区
+    // 确实是需要更新的,之前一直都没有更新
+    VkViewport viewport{
+        .x        = 0.0f,
+        .y        = 0.0f,
+        .width    = static_cast<float>(current_depth_extent.width),
+        .height   = static_cast<float>(current_depth_extent.height),
+        .minDepth = 0.0f,
+        .maxDepth = 1.0f
+    };
+    vkCmdSetViewport(command_buffer_, 0, 1, &viewport);
+
+    VkRect2D scissor{
+        .offset = {0, 0},
+        .extent = current_depth_extent
+    };
+    vkCmdSetScissor(command_buffer_, 0, 1, &scissor);
 }
 
 

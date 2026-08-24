@@ -22,6 +22,7 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr depth_AO_image,
                            VKR_image_ptr SSAO_image,
                            VKR_image_ptr blur_SSAO_image,
+                           VKR_image_ptr depth_shadow_image,
                            VKR_image_ptr entity_image
 ) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
@@ -141,34 +142,34 @@ void render_different_pass(VCB &vcb,
         vcb.current_write_next_read_depth({depth_AO_image});
     }
     // CSM  当然了,这里还是有一个问题, 最好能不需要渲染全部的,
-    // {
-    //     vcb.begin_rendering_depth_attachment(depth_shadow_image,
-    //                                          VK_ATTACHMENT_LOAD_OP_CLEAR);
-    //     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
-    //     for (const auto entity: view) {
-    //         auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
-    //         auto name              = Render_entt().get<Name_component>(entity);
-    //         auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
-    //         shader_path.clear_define_macro();
-    //         shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
-    //         shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
-    //         shader_path.add_define_macro("PASS_SHADOW_MAP", 1);
-    //         const auto &shader_data_ref =
-    //                 engine.get_shader_manager().find(shader_path);
-    //         vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
-    //         // 这里就需要看看怎么push
-    //         //
-    //         for (uint i = 0; i < 4; ++i) {
-    //             vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
-    //                                VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &i);
-    //             // 现在绑定的管线是有问题的,
-    //             vcb.default_status(); //
-    //             vcb.DrawIndexedIndirect(entity, command_calculate);
-    //         }
-    //     }
-    //     vcb.end_rendering();
-    //     vcb.current_write_next_read_depth({depth_shadow_image});
-    // }
+    {
+        vcb.begin_rendering_depth_attachment(depth_shadow_image,
+                                             VK_ATTACHMENT_LOAD_OP_CLEAR);
+        auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
+        for (const auto entity: view) {
+            auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
+            auto name              = Render_entt().get<Name_component>(entity);
+            auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
+            shader_path.clear_define_macro();
+            shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
+            shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+            shader_path.add_define_macro("PASS_SHADOW_MAP", 1);
+            const auto &shader_data_ref =
+                    engine.get_shader_manager().find(shader_path);
+            vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
+            // 这里就需要看看怎么push
+            //
+            for (uint i = 0; i < 4; ++i) {
+                vcb.PushConstants(shader_data_ref->pipeline_layout,
+                                  VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &i);
+                // 现在绑定的管线是有问题的,
+                // vcb.default_status();
+                vcb.DrawIndexedIndirect(entity, command_calculate);
+            }
+        }
+        vcb.end_rendering();
+        vcb.current_write_next_read_depth({depth_shadow_image});
+    }
     // CSM
     {
         vcb.begin_rendering_attachment(SSAO_image,
@@ -315,12 +316,13 @@ void destroy_Render_entt() { {
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
-    const auto color_image     = engine.get_image_manager().get_one_color_image();
-    const auto entity_image    = engine.get_image_manager().get_one_entity_image();
-    const auto depth_image     = engine.get_image_manager().get_one_depth_image();
-    const auto depth_AO_image  = engine.get_image_manager().get_one_depth_AO_image();
-    const auto SSAO_image      = engine.get_image_manager().get_one_depth_SSAO_image();
-    const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
+    const auto color_image        = engine.get_image_manager().get_one_color_image();
+    const auto entity_image       = engine.get_image_manager().get_one_entity_image();
+    const auto depth_image        = engine.get_image_manager().get_one_depth_image();
+    const auto depth_AO_image     = engine.get_image_manager().get_one_depth_AO_image();
+    const auto SSAO_image         = engine.get_image_manager().get_one_depth_SSAO_image();
+    const auto depth_shadow_image = engine.get_image_manager().get_one_shadow_image();
+    const auto blur_SSAO_image    = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
         auto offscreen = create_2d_texture(color_image);
@@ -353,7 +355,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
     render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
-                          blur_SSAO_image, entity_image);
+                          blur_SSAO_image, depth_shadow_image, entity_image);
     vcb.end_command_buffer();
 
     vcb.submit_render_queue(engine);

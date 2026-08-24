@@ -177,13 +177,17 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
         }
     };
     if (parameters.flags == 0) {
-        depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        if (parameters.arrayLayers > 1) {
+            depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        } else if (parameters.arrayLayers == 1) {
+            depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        }
     } else if (parameters.flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
         depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     }
 
     VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
-    return {image, allocation, image_view};
+    return {image, allocation, image_view, parameters};
 }
 
 VKR_image_ptr createTextureImage_detail(VK_backend &handle,
@@ -297,7 +301,6 @@ void transitionImageLayout(const VKR_image_ptr image_ptr,
                            const Image_and_view_parameters &parameters,
                            const VkImageLayout oldLayout,
                            const VkImageLayout newLayout) {
-
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkImageMemoryBarrier barrier{};
         barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

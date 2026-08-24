@@ -21,15 +21,30 @@ class VKR_image : public NonCopyable {
     VkImageView image_view_   = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
     uint32_t index_           = 0; //
+    Image_and_view_parameters parameters_;
 
 public:
     VKR_image(const VkImage &image_handle,
               const VmaAllocation &allocation,
-              const VkImageView &image_view) : image_handle_(image_handle),
-                                               allocation_(allocation),
-                                               image_view_(image_view) {
+              const VkImageView &image_view,
+              const Image_and_view_parameters &parameters) : image_handle_(image_handle),
+                                                             allocation_(allocation),
+                                                             image_view_(image_view),
+                                                             parameters_(parameters) {
         // 这里开始构建的 时候就需要 添加 index 了
         index_ = get_one_bindless_index();
+    }
+
+    uint32_t get_width() const {
+        return parameters_.width;
+    }
+
+    uint32_t get_height() const {
+        return parameters_.height;
+    }
+
+    uint32_t get_arrayLayers() const {
+        return parameters_.arrayLayers;
     }
 
     [[nodiscard]] uint32_t get_index() const {
@@ -82,9 +97,12 @@ private:
 
 class VKR_image_ptr {
 public:
-    VKR_image_ptr(const VkImage &image_handle, const VmaAllocation &allocation,
-                  const VkImageView &image_view) : ptr(std::make_shared<VKR_image>(image_handle, allocation,
-                                                                image_view)) {
+    VKR_image_ptr(const VkImage &image_handle,
+                  const VmaAllocation &allocation,
+                  const VkImageView &image_view,
+                  const Image_and_view_parameters &parameters) : ptr(std::make_shared<VKR_image>(image_handle,
+                                                                              allocation,
+                                                                              image_view, parameters)) {
     }
 
     VKR_image_ptr() = default;

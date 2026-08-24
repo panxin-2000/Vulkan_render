@@ -91,7 +91,7 @@ layout(push_constant) uniform PushConsts {
 
 void main()
 {
-    gl_Layer = cascadeIndex; // 暂时先这个样子, 之后再看
+    gl_Layer = int (pushConsts.cascadeIndex); // 暂时先这个样子, 之后再看
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     gl_Position = cascadeViewProjMat[pushConsts.cascadeIndex] * pos;
 }
