@@ -6,42 +6,6 @@
 #include "../engine.h"
 #include "VCB_vulkan_command_buffer.h"
 
-void VCB::begin_shadow_pass(VKR_image_ptr depth_image) {
-    auto temp_extent = VK_backend::instance().get_current_extent();
-
-    VkRenderingAttachmentInfo depthAttachmentInfo{
-        .sType     = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView = depth_image->get_image_view(),
-        //  todo: 这里需要变更
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
-    VkRenderingAttachmentInfo StencilAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth_image->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
-
-    VkRenderingInfo renderingInfo{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .renderArea{
-            .extent = temp_extent,
-        },
-        .layerCount           = 1,
-        .colorAttachmentCount = 0,
-        .pColorAttachments    = nullptr,
-        .pDepthAttachment     = &depthAttachmentInfo,
-        .pStencilAttachment   = &StencilAttachmentInfo
-
-    };
-    vkCmdBeginRendering(command_buffer_, &renderingInfo);
-}
-
 
 void VCB::shadow_pass_barrier() {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
@@ -56,7 +20,7 @@ void VCB::shadow_pass_barrier() {
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image = Engine::instance().get_image_manager().get_one_depth_image()->get_image_handle(),
+            .image               = Engine::instance().get_image_manager().get_one_depth_image()->get_image_handle(),
             // todo: 这里也需要更改 get_one_depth_image 没有给出 pass 的 有效的时间 , 所以还是写的不够
             .subresourceRange = {
                 .aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,

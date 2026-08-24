@@ -20,6 +20,8 @@ class VCB {
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     uint64_t time_line_             = 0;
     VkQueryPool query_pool_         = VK_NULL_HANDLE;
+    VkViewport pass_viewport_       = {};
+    VkRect2D pass_scissor_          = {};
 
 public:
     struct scoped_debug_label {
@@ -42,6 +44,24 @@ public:
         };
     };
 
+    void set_pass_viewport(const uint32_t width, const uint32_t height) {
+        pass_viewport_ = VkViewport{
+            .x        = 0,
+            .y        = 0,
+            .width    = static_cast<float>(width),
+            .height   = static_cast<float>(height),
+            .minDepth = 0.0f,
+            .maxDepth = 1.0f
+        };
+    }
+
+    void set_pass_scissor(const uint32_t width, const uint32_t height) {
+        pass_scissor_ = VkRect2D{
+            .offset = {0, 0},
+            .extent = {width, height},
+        };
+    }
+
     void reset_current_command_buffer(uint64_t time_line, VkCommandBuffer);
 
     void end_rendering();
@@ -61,8 +81,6 @@ public:
     void current_write_next_read_image(
         const std::vector<VKR_image_ptr> &images);
 
-    void begin_shadow_pass(VKR_image_ptr depth_image);
-
     void shadow_pass_barrier();
 
     void build_draw_command(entt::entity entity);
@@ -74,8 +92,7 @@ public:
                                    command_shader->pipeline_layout,
                                    VK_PIPELINE_BIND_POINT_GRAPHICS);
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
-                                      VK_backend::instance().get_scissor());
+        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdSetCullMode(command_buffer_, VK_CULL_MODE_NONE);
         vkCmdSetDepthTestEnable(command_buffer_, VK_FALSE);
 
@@ -113,8 +130,7 @@ public:
 
     void default_status() const {
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, VK_backend::instance().get_viewport(),
-                                      VK_backend::instance().get_scissor());
+        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
     }
 
     void PushConstants(VkPipelineLayout layout,

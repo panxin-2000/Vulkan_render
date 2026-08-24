@@ -105,10 +105,6 @@ public:
 
     [[nodiscard]] VkExtent2D get_current_extent() const;
 
-    [[nodiscard]] VkViewport get_viewport(bool flip_y_axis = false) const;
-
-    [[nodiscard]] VkRect2D get_scissor() const;
-
     [[nodiscard]] const VkFormat &get_image_format() const;
 
     [[nodiscard]] const VkFormat &get_depth_format() const;

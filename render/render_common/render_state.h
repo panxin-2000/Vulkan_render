@@ -31,18 +31,18 @@ public:
     }
 
     void set_render_state_command(const VkCommandBuffer &cb,
-                                  VkViewport global_viewport,
-                                  VkRect2D global_scissor) const {
+                                  const VkViewport pass_viewport,
+                                  const VkRect2D pass_scissor) const {
         if (viewport.x == 0 && viewport.y == 0 &&
             viewport.width == 0 && viewport.height == 0 &&
             viewport.minDepth == 0 && viewport.maxDepth == 1.0f) {
-            vkCmdSetViewport(cb, 0, 1, &global_viewport);
+            vkCmdSetViewport(cb, 0, 1, &pass_viewport);
         } else {
             vkCmdSetViewport(cb, 0, 1, &viewport);
         }
         if (scissor.extent.width == 0 && scissor.extent.height == 0 &&
             scissor.offset.x == 0 && scissor.offset.y == 0) {
-            vkCmdSetScissor(cb, 0, 1, &global_scissor);
+            vkCmdSetScissor(cb, 0, 1, &pass_scissor);
         } else {
             vkCmdSetScissor(cb, 0, 1, &scissor);
         }

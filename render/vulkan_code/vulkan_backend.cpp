@@ -570,38 +570,6 @@ VkExtent2D VK_backend::get_current_extent() const {
     return extent_;
 }
 
-VkViewport VK_backend::get_viewport(bool flip_y_axis) const {
-    auto temp_extent = get_current_extent();
-    if (flip_y_axis == true) {
-        const VkViewport viewport{
-            .x        = 0,
-            .y        = static_cast<float>(temp_extent.height),
-            .width    = static_cast<float>(temp_extent.width),
-            .height   = -static_cast<float>(temp_extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-        return viewport;
-    } else {
-        VkViewport viewport{
-            .x        = 0,
-            .y        = 0,
-            .width    = static_cast<float>(temp_extent.width),
-            .height   = static_cast<float>(temp_extent.height),
-            .minDepth = 0.0f,
-            .maxDepth = 1.0f
-        };
-        return viewport;
-    }
-}
-
-VkRect2D VK_backend::get_scissor() const {
-    const auto temp_extent = get_current_extent();
-    VkRect2D scissor{
-        .extent = temp_extent,
-    };
-    return scissor;
-}
 
 const VkFormat &VK_backend::get_image_format() const {
     VkSurfaceFormatKHR surfaceFormat = choose_swap_surface_format(physical_device_, surface_);

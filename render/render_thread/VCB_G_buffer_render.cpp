@@ -75,7 +75,7 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 
     std::vector<VkRenderingAttachmentInfo> colorAttachmentInfos;
-    
+
     for (auto image_ptr: color) {
         colorAttachmentInfos.push_back(VkRenderingAttachmentInfo{
                                            .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -86,7 +86,7 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
                                            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
                                        });
     }
-    auto temp_extent = VK_backend::instance().get_current_extent();
+    const VkExtent2D temp_extent = {depth->get_width(), depth->get_height()};
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = depth->get_image_view(),
@@ -116,6 +116,9 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
         .pStencilAttachment   = &StencilAttachmentInfo,
     };
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
+    set_pass_viewport(depth->get_width(), depth->get_height());
+    set_pass_scissor(depth->get_width(), depth->get_height());
+
     return {};
 }
 
@@ -132,7 +135,7 @@ void VCB::current_write_next_read_depth(const std::vector<VKR_image_ptr> &images
             .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                      // 允许着色器读取
             .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // 渲染时布局
-            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,                // 读取时布局
+            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,         // 读取时布局
 
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
