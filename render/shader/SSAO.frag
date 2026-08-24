@@ -139,20 +139,21 @@ void main()
     }
     occlusion = 1.0 - (occlusion / float(SSAO_KERNEL_SIZE));
 
-    const float FADE_DIST = 0.05;
-
-    // 计算靠近左/上边缘（0.0）和右/下边缘（1.0）的平滑淡出系数
-    // smoothstep(min, max, x) 会在 min 到 max 之间返回 0.0 到 1.0 的平滑插值
-    vec2 edgeFadeStart = smoothstep(vec2(0.0), vec2(FADE_DIST), texCoord);
-    vec2 edgeFadeEnd = smoothstep(vec2(1.0), vec2(1.0 - FADE_DIST), texCoord);
-
-    // 将四个方向的淡出系数乘起来，得到最终的屏幕整体淡出因子 (0.0 到 1.0)
-    // 当像素完全在屏幕中央时，screenFade = 1.0；当极度靠近边缘时，screenFade 趋近于 0.0
-    float screenFade = edgeFadeStart.x * edgeFadeStart.y * edgeFadeEnd.x * edgeFadeEnd.y;
-
-    // 将遮蔽值向 1.0（即完全没有环境光遮蔽、全白状态）进行线性插值
-    // 这样在屏幕边缘时，AO 会极其平滑地消隐，消除突兀的截断感
-    occlusion = mix(1.0, occlusion, screenFade);
+    //    const float FADE_DIST = 0.05;
+    //
+    //    //     计算靠近左/上边缘（0.0）和右/下边缘（1.0）的平滑淡出系数
+    //    //     smoothstep(min, max, x) 会在 min 到 max 之间返回 0.0 到 1.0 的平滑插值
+    //    vec2 edgeFadeStart = smoothstep(vec2(0.0), vec2(FADE_DIST), inUV);
+    //    vec2 edgeFadeEnd = smoothstep(vec2(1.0), vec2(1.0 - FADE_DIST), inUV);
+    //
+    //    // 将四个方向的淡出系数乘起来，得到最终的屏幕整体淡出因子 (0.0 到 1.0)
+    //    // 当像素完全在屏幕中央时，screenFade = 1.0；当极度靠近边缘时，screenFade 趋近于 0.0
+    //    float screenFade = edgeFadeStart.x * edgeFadeStart.y * edgeFadeEnd.x * edgeFadeEnd.y;
+    //
+    //    // 将遮蔽值向 1.0（即完全没有环境光遮蔽、全白状态）进行线性插值
+    //    // 这样在屏幕边缘时，AO 会极其平滑地消隐，消除突兀的截断感
+    //    occlusion = mix(1.0, occlusion, screenFade);
+    //    // 不清楚修改那里了,导致上面的做不做好像都没有什么变化
 
 
 
