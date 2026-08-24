@@ -14,6 +14,9 @@ layout (set = 0, binding = 0) uniform sampler2D bindless_samplerColorMap[];
 // layout (set = 0, binding = 1) uniform sampler bindless_Samplers[];
 
 
+#define SHADOW_MAP_CASCADE_COUNT 4
+
+
 layout (set = 1, binding = 0) uniform global_parameters
 {
     mat4 view;
@@ -21,11 +24,13 @@ layout (set = 1, binding = 0) uniform global_parameters
     mat4 invView;
     mat4 invProjection;
     mat4 inv_VP;
+    mat4 cascadeViewProjMat[SHADOW_MAP_CASCADE_COUNT];
     vec4 frustum_planes[6];
     vec3 viewPos;
     Light light;
     vec4 screen_size;
     SphericalHarmonics SH;
+    float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
 };
 
 
@@ -40,6 +45,7 @@ layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
 layout (set = 1, binding = 3) uniform sampler2D global_SSAO;       // 这里是第一次输出的结果
 layout (set = 1, binding = 4) uniform sampler2D global_depth;
 layout (set = 1, binding = 5) uniform sampler2D global_Blur_SSAO;  // 这里是经过模糊之后的SSAO
+layout (set = 1, binding = 6) uniform sampler2DArray global_shadow_texture;  // 这里是经过模糊之后的SSAO
 
 float get_roughness(ShaderMaterial material) {
     return material.roughnessFactor;

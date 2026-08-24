@@ -36,7 +36,7 @@ const mat4 biasMat = mat4(
 #if defined(PASS_COLOR)
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
-layout (location = 2) out vec3 outLightVec;
+layout (location = 2) out vec3 outShadow_UV;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec4 outShadowCoord;
 layout (location = 5) out vec3 outWorldPos;
@@ -53,13 +53,24 @@ void main()
     outInstance_index = gl_InstanceIndex;
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
+    vec4 view_space_pos = view * pos;
     gl_Position = projection * view * pos;
     outNormal = inNormal;
     outUV = inUV;
     // 世界空间
     outNormal = mat3(model_matrix[gl_InstanceIndex]) * inNormal;
-    outLightVec = light.pos.xyz - pos.xyz;
     outViewVec = viewPos.xyz - pos.xyz;
+
+    uint cascadeIndex = 0;
+    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
+        if (view_space_pos.z < cascadeSplits[i]) {
+            cascadeIndex = i + 1;
+        }
+    }
+    vec4 shadowCoord = (biasMat * cascadeViewProjMat[cascadeIndex]) * vec4(inPos, 1.0);
+    vec2 shadow_UV = shadowCoord.st / shadowCoord.w;
+    outShadow_UV = vec3(shadow_UV.xy, cascadeIndex);
+
 
     // 多个光源时 输出世界空间下的顶点位置 outWorldPos，让片元着色器去遍历光源。
     //    outShadowCoord = (biasMat * lightSpace * model) * vec4(inPos, 1.0);
@@ -67,14 +78,28 @@ void main()
 
 }
 
-
 #elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
 void main()
 {
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     gl_Position = projection * view * pos;
-
 }
+
+#elif defined(PASS_SHADOW_MAP)
+
+
+layout(push_constant) uniform PushConsts {
+    vec4 position;
+    uint cascadeIndex;
+} pushConsts;
+
+
+void main()
+{
+    vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
+    gl_Position = cascadeViewProjMat[pushConsts.cascadeIndex] * pos;
+}
+
 
 #elif defined(PASS_PICKUP)
 layout (location = 0) flat out uint out_entity;

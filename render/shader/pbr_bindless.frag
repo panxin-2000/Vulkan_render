@@ -25,7 +25,7 @@ layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
-layout (location = 2) in vec3 inLightVec;
+layout (location = 2) in vec3 inShadow_UV;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec4 inShadowCoord;
 layout (location = 5) in vec3 inWorldPos;
@@ -82,6 +82,42 @@ vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inU
 
 }
 
+//float textureProj(const highp sampler2D shadow_texture, vec2 shadowCoord, vec2 offset, uint cascadeIndex)
+//{
+//    float shadow = 1.0;
+//    float bias = 0.005;
+//
+//    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
+//        float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
+//        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
+//            shadow = ambient;
+//        }
+//    }
+//    return shadow;
+//
+//}
+
+//float filterPCF(const highp sampler2D shadow_texture, vec2 sc, uint cascadeIndex)
+//{
+//    ivec2 texDim = textureSize(shadow_texture, 0).xy;
+//    float scale = 0.75;
+//    float dx = scale * 1.0 / float(texDim.x);
+//    float dy = scale * 1.0 / float(texDim.y);
+//
+//    float shadowFactor = 0.0;
+//    int count = 0;
+//    int range = 1;
+//
+//    for (int x = -range; x <= range; x++) {
+//        for (int y = -range; y <= range; y++) {
+//            shadowFactor += textureProj(shadow_texture, sc, vec2(dx * x, dy * y), cascadeIndex);
+//            count++;
+//        }
+//    }
+//    return shadowFactor / count;
+//}
+
+
 
 void main()
 {
@@ -106,6 +142,8 @@ void main()
     vec3 indirect_light = vec3(0.0f);
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
     indirect_light = indirect_light_dufuse * c_diffusen;
+
+//    float shadow = filterPCF(shadow_texture, inShadow_UV.xy, inShadow_UV.z);
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;
@@ -151,7 +189,7 @@ void main()
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }
 
-#elif defined(PASS_DEPTH)
+#elif defined(PASS_DEPTH) || defined(PASS_SHADOW_MAP)
 
 void main()
 {

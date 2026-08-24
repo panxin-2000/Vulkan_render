@@ -349,6 +349,7 @@ if (WITH_VULKAN_BACKEND)
             "render/render_thread/backend.cpp"
             "render/vulkan_code/shader_resolve.cpp"
             "render/engine.cpp"
+            "render/global_parameters.cpp"
             "render/VCB_bind_pipeline.cpp"
             "render/VCB_calculate_frustum_cull.cpp"
             "render/VCB_compute_command.cpp"

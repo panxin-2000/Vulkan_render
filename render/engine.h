@@ -14,6 +14,7 @@
 #include "vulkan_code/descriptor.h"
 
 #include "Descriptor_pool_manager.h"
+#include "global_parameters.h"
 #include "render_common/frustum.h"
 #include "render_common/PBR_component.h"
 #include "pbr_manager.h"
@@ -21,67 +22,10 @@
 #include "Shader_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
-#include "vulkan_code/vulkan_backend.h"
 
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
 
-struct Global_parameters {
-    Eigen::Matrix4f view_matrix;
-    Eigen::Matrix4f projection_matrix;
-    Eigen::Matrix4f inv_view_matrix;
-    Eigen::Matrix4f inv_projection_matrix;
-    Eigen::Matrix4f invVP;
-    FrustumPlanes frustum_planes;
-    Eigen::Vector4f world_camera_pos;
-    Light light;
-    Eigen::Vector4f screen_size;
-    std::array<Eigen::Array4f, 9> shCoefficients;
-
-    bool set_projection_matrix(const Eigen::Matrix4f &matrix) {
-        projection_matrix = matrix;
-        return true;
-    }
-
-    bool set_inv_projection_matrix(const Eigen::Matrix4f &matrix) {
-        inv_projection_matrix = matrix;
-        return true;
-    }
-
-    bool set_view_matrix(const Eigen::Matrix4f &matrix) {
-        view_matrix = matrix;
-        return true;
-    }
-
-    bool set_inv_view_matrix(const Eigen::Matrix4f &matrix) {
-        inv_view_matrix = matrix;
-        return true;
-    }
-
-    bool set_invVP(const Eigen::Matrix4f &matrix) {
-        invVP = matrix;
-        return true;
-    }
-
-    bool set_world_camera_pos(const Eigen::Vector3f &v3) {
-        world_camera_pos = {v3.x(), v3.y(), v3.z(), 0};
-        return true;
-    }
-
-    bool set_sun_light(const Eigen::Vector3f &v3) {
-        light.set_color(1.0f, 0.98f, 0.95f);
-        light.set_intensity(5.0f);
-        auto tem = v3;
-        tem.normalize();
-        light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
-        return true;
-    }
-
-    bool set_screen_size(const Eigen::Vector2f &screen_size_t) {
-        screen_size = {screen_size_t.x(), screen_size_t.y(), 0, 0};;
-        return true;
-    }
-};
 
 
 struct Engine {
