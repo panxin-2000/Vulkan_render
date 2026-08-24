@@ -139,7 +139,38 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_AO_image});
-    } {
+    }
+    // CSM  当然了,这里还是有一个问题, 最好能不需要渲染全部的,
+    // {
+    //     vcb.begin_rendering_depth_attachment(depth_shadow_image,
+    //                                          VK_ATTACHMENT_LOAD_OP_CLEAR);
+    //     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
+    //     for (const auto entity: view) {
+    //         auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
+    //         auto name              = Render_entt().get<Name_component>(entity);
+    //         auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
+    //         shader_path.clear_define_macro();
+    //         shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
+    //         shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+    //         shader_path.add_define_macro("PASS_SHADOW_MAP", 1);
+    //         const auto &shader_data_ref =
+    //                 engine.get_shader_manager().find(shader_path);
+    //         vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
+    //         // 这里就需要看看怎么push
+    //         //
+    //         for (uint i = 0; i < 4; ++i) {
+    //             vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
+    //                                VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &i);
+    //             // 现在绑定的管线是有问题的,
+    //             vcb.default_status(); //
+    //             vcb.DrawIndexedIndirect(entity, command_calculate);
+    //         }
+    //     }
+    //     vcb.end_rendering();
+    //     vcb.current_write_next_read_depth({depth_shadow_image});
+    // }
+    // CSM
+    {
         vcb.begin_rendering_attachment(SSAO_image,
                                        depth_image,
                                        VK_ATTACHMENT_LOAD_OP_CLEAR);

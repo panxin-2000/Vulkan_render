@@ -58,8 +58,10 @@ inline bool operator==(const VkSamplerCreateInfo &lhs, const VkSamplerCreateInfo
 
 
 absl::flat_hash_map<VkSamplerCreateInfo, VkSampler> map_;
+std::mutex sampler_manager_mutex_;
 
 VkSampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI) {
+    std::lock_guard<std::mutex> lock(sampler_manager_mutex_);
     if (map_.contains(samplerCI)) {
         return map_[samplerCI];
     } else {

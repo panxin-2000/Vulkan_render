@@ -7,6 +7,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive: enable
 #extension GL_ARB_shader_draw_parameters: enable
+#extension GL_ARB_shader_viewport_layer_array : enable
 
 #include "global_shader_common.glsl"
 
@@ -70,6 +71,7 @@ void main()
     vec4 shadowCoord = (biasMat * cascadeViewProjMat[cascadeIndex]) * vec4(inPos, 1.0);
     vec3 shadow_UV = shadowCoord.xyz / shadowCoord.w;
     outShadow_UV = vec4(shadow_UV.xyz, cascadeIndex);
+    // 比正常的多算一个这个,过去读取阴影贴图 // 还没有给阴影 添加
 }
 
 #elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
@@ -83,13 +85,13 @@ void main()
 
 
 layout(push_constant) uniform PushConsts {
-    vec4 position;
     uint cascadeIndex;
 } pushConsts;
 
 
 void main()
 {
+    gl_Layer = cascadeIndex; // 暂时先这个样子, 之后再看
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     gl_Position = cascadeViewProjMat[pushConsts.cascadeIndex] * pos;
 }

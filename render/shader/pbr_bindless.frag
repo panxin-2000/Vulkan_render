@@ -87,10 +87,12 @@ float textureProj(const highp sampler2DArray shadow_texture, vec3 shadowCoord, v
     float shadow = 1.0;
     float bias = 0.005;
 
+    // 但是这里的判断也阻挡了 之后的对阴影贴图的采样 这里需要先修正
     if (shadowCoord.z > 0.0 && shadowCoord.z < 1.0) {
         float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
         // 如果从光源看过去的最近距离 dist，小于当前像素的距离 shadowCoord.z，说明前面有物体挡住了光
-        if (dist < shadowCoord.z - bias) {
+        // 下面新加的这一行是有用的
+        if (dist > 0.001 && dist < shadowCoord.z - bias) {
             shadow = 0.0f;
         }
     }
@@ -182,7 +184,7 @@ void main()
 
         // 这里其实并没有把遮挡算进去
         vec3 specular_contribution = D * V * F;
-        direct_light += sun * (diffuse_contribution * (vec3(1.0) - F) + specular_contribution) * dotNL;
+        direct_light += sun * (diffuse_contribution * (vec3(1.0) - F) + specular_contribution) * dotNL * shadow;
     }
     vec3 out_color = emissive_color + direct_light + indirect_light;
 
