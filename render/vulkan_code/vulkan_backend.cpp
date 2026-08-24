@@ -492,6 +492,19 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     std::vector<VkImageView> image_views;
     images.resize(imageCount);
     image_views.resize(imageCount);
+    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+
+    Image_and_view_parameters parameters{};
+    parameters.format      = surfaceFormat.format;
+    parameters.width       = extent.width;
+    parameters.height      = extent.height;
+    parameters.depth       = 1;
+    parameters.usage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels   = 1;
+    parameters.arrayLayers = 1;
+    parameters.flags       = 0;
 
     // 这里的问题导致的，
     update_current_extent(); // 两个函数足够近，应该能避免很多问题
@@ -513,7 +526,6 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
     }
     for (auto i = 0; i < imageCount; i++) {
-        Image_and_view_parameters parameters; // todo :这里还是有问题的,需要把参数补充完整
         result.emplace_back(images[i],VK_NULL_HANDLE, image_views[i], parameters);
     }
     return result;
