@@ -8,6 +8,7 @@
 
 
 void Shader_manager::destroy() {
+    std::lock_guard<std::mutex> lock(shader_manager_mutex_);
     map_.clear();
 }
 
@@ -80,6 +81,7 @@ std::shared_ptr<vk_shader_data> Shader_manager::get_offscreen_to_screen_shader_d
 
 
 std::shared_ptr<vk_shader_data> Shader_manager::find(const VKR_shader_paths &shader_paths) {
+    std::lock_guard<std::mutex> lock(shader_manager_mutex_);
     if (map_.contains(shader_paths)) {
         return map_[shader_paths];
     } else {

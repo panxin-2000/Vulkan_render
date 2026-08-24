@@ -11,6 +11,7 @@
 
 class Shader_manager {
     absl::flat_hash_map<VKR_shader_paths, std::shared_ptr<vk_shader_data> > map_;
+    std::mutex shader_manager_mutex_;
 
 public:
     std::shared_ptr<vk_shader_data> get_gltf_shader_data(

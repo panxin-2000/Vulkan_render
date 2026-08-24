@@ -151,6 +151,10 @@ public:
         rotate_ = rotate;
     }
 
+    Eigen::Vector3f get_direction() {
+        return rotate_.head<3>();
+    }
+
 
     /**
      *

@@ -25,7 +25,7 @@ layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
-layout (location = 2) in vec3 inShadow_UV;
+layout (location = 2) in vec4 inShadow_UV;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec4 inShadowCoord;
 layout (location = 5) in vec3 inWorldPos;
@@ -82,40 +82,41 @@ vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inU
 
 }
 
-//float textureProj(const highp sampler2D shadow_texture, vec2 shadowCoord, vec2 offset, uint cascadeIndex)
-//{
-//    float shadow = 1.0;
-//    float bias = 0.005;
-//
-//    if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
-//        float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
-//        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
-//            shadow = ambient;
-//        }
-//    }
-//    return shadow;
-//
-//}
+float textureProj(const highp sampler2DArray shadow_texture, vec3 shadowCoord, vec2 offset, uint cascadeIndex)
+{
+    float shadow = 1.0;
+    float bias = 0.005;
 
-//float filterPCF(const highp sampler2D shadow_texture, vec2 sc, uint cascadeIndex)
-//{
-//    ivec2 texDim = textureSize(shadow_texture, 0).xy;
-//    float scale = 0.75;
-//    float dx = scale * 1.0 / float(texDim.x);
-//    float dy = scale * 1.0 / float(texDim.y);
-//
-//    float shadowFactor = 0.0;
-//    int count = 0;
-//    int range = 1;
-//
-//    for (int x = -range; x <= range; x++) {
-//        for (int y = -range; y <= range; y++) {
-//            shadowFactor += textureProj(shadow_texture, sc, vec2(dx * x, dy * y), cascadeIndex);
-//            count++;
-//        }
-//    }
-//    return shadowFactor / count;
-//}
+    if (shadowCoord.z > 0.0 && shadowCoord.z < 1.0) {
+        float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
+        // 如果从光源看过去的最近距离 dist，小于当前像素的距离 shadowCoord.z，说明前面有物体挡住了光
+        if (dist < shadowCoord.z - bias) {
+            shadow = 0.0f;
+        }
+    }
+    return shadow;
+
+}
+
+float filterPCF(const highp sampler2DArray shadow_texture, vec3 sc, uint cascadeIndex)
+{
+    ivec2 texDim = textureSize(shadow_texture, 0).xy;
+    float scale = 0.75;
+    float dx = scale * 1.0 / float(texDim.x);
+    float dy = scale * 1.0 / float(texDim.y);
+
+    float shadowFactor = 0.0;
+    int count = 0;
+    int range = 1;
+
+    for (int x = -range; x <= range; x++) {
+        for (int y = -range; y <= range; y++) {
+            shadowFactor += textureProj(shadow_texture, sc, vec2(dx * x, dy * y), cascadeIndex);
+            count++;
+        }
+    }
+    return shadowFactor / count;
+}
 
 
 
@@ -143,7 +144,7 @@ void main()
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
     indirect_light = indirect_light_dufuse * c_diffusen;
 
-//    float shadow = filterPCF(shadow_texture, inShadow_UV.xy, inShadow_UV.z);
+    float shadow = filterPCF(global_shadow_texture, inShadow_UV.xyz, uint(inShadow_UV.w));
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;
@@ -181,7 +182,7 @@ void main()
 
         // 这里其实并没有把遮挡算进去
         vec3 specular_contribution = D * V * F;
-        direct_light += sun * (diffuse_contribution + specular_contribution) * dotNL;
+        direct_light += sun * (diffuse_contribution * (vec3(1.0) - F) + specular_contribution) * dotNL;
     }
     vec3 out_color = emissive_color + direct_light + indirect_light;
 

@@ -22,7 +22,7 @@ public:
     Light light;
     Eigen::Vector4f screen_size;
     std::array<Eigen::Array4f, 9> shCoefficients;
-    Eigen::Vector4f cascadeSplits;
+    float split_depth[4];
 
     bool set_projection_matrix(const Eigen::Matrix4f &matrix);
 

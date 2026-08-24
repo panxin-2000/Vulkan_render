@@ -36,7 +36,7 @@ const mat4 biasMat = mat4(
 #if defined(PASS_COLOR)
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
-layout (location = 2) out vec3 outShadow_UV;
+layout (location = 2) out vec4 outShadow_UV;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec4 outShadowCoord;
 layout (location = 5) out vec3 outWorldPos;
@@ -68,14 +68,8 @@ void main()
         }
     }
     vec4 shadowCoord = (biasMat * cascadeViewProjMat[cascadeIndex]) * vec4(inPos, 1.0);
-    vec2 shadow_UV = shadowCoord.st / shadowCoord.w;
-    outShadow_UV = vec3(shadow_UV.xy, cascadeIndex);
-
-
-    // 多个光源时 输出世界空间下的顶点位置 outWorldPos，让片元着色器去遍历光源。
-    //    outShadowCoord = (biasMat * lightSpace * model) * vec4(inPos, 1.0);
-
-
+    vec3 shadow_UV = shadowCoord.xyz / shadowCoord.w;
+    outShadow_UV = vec4(shadow_UV.xyz, cascadeIndex);
 }
 
 #elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
