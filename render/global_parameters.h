@@ -40,7 +40,7 @@ public:
 
     bool set_screen_size(const Eigen::Vector2f &screen_size_t);
 
-    bool update_directional_light(const Eigen::Vector3f &v3);;
+    bool update_directional_light();;
 };
 
 

@@ -20,8 +20,6 @@ wmOperatorStatus view_move_up(const entt::entity entity, std::chrono::millisecon
         speed = move_speed->speed;
     }
     float pos_err = speed * ms.count() / 1000.f;
-    std::cout << " std::chrono::milliseconds    " << ms << std::endl;
-
     if (const auto camera = Logic_entt().try_get<camera_optical_component>(entity)) {
         auto offset = camera->get_view_direction() * -pos_err;
         camera->add_offset(offset);

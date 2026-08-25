@@ -338,14 +338,16 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const auto blur_SSAO_image    = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
-        auto offscreen = create_2d_texture(color_image);
-        auto depth     = create_2d_texture(depth_AO_image);
-        auto SSAO      = create_2d_texture(SSAO_image);
-        auto blur_SSAO = create_2d_texture(blur_SSAO_image);
+        auto offscreen      = create_2d_texture(color_image);
+        auto depth          = create_2d_texture(depth_AO_image);
+        auto SSAO           = create_2d_texture(SSAO_image);
+        auto blur_SSAO      = create_2d_texture(blur_SSAO_image);
+        auto shadow_texture = create_2d_texture(depth_shadow_image);
 
-        engine.update_global_parameter(offscreen, SSAO, depth, blur_SSAO); // 这里的好消息是 什么？ 这里可以申请；
+        engine.update_global_parameter(offscreen, SSAO, depth, blur_SSAO, shadow_texture); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
+
     } {
         const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
         for (const auto it: view) {

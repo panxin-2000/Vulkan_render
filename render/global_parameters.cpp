@@ -40,8 +40,6 @@ bool Global_parameters::set_sun_light(const Eigen::Vector3f &v3) {
     auto tem = v3;
     tem.normalize();
     light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
-    update_directional_light(Eigen::Vector3f::Zero());
-    // 主要的原因应该是从来都没有调用过这个函数
     return true;
 }
 
@@ -115,7 +113,7 @@ eigenOrthoDX_FlipY_StandardZ(float left, float right, float bottom, float top, f
 }
 
 
-bool Global_parameters::update_directional_light(const Eigen::Vector3f &v3) {
+bool Global_parameters::update_directional_light() {
 #define SHADOW_MAP_CASCADE_COUNT 4
 
     float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];

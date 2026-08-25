@@ -62,13 +62,18 @@ void main()
     outNormal = mat3(model_matrix[gl_InstanceIndex]) * inNormal;
     outViewVec = viewPos.xyz - pos.xyz;
 
-    uint cascadeIndex = 0;
+    uint cascadeIndex = SHADOW_MAP_CASCADE_COUNT - 1; // 默认是最远的那一层
+
     for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
-        if (view_space_pos.z < cascadeSplits[i]) {
-            cascadeIndex = i + 1;
+        // 因为是负数，Z 轴越大（如 -5.0 > -10.0）代表越近。
+        // 如果物体的 Z 轴比当前分割点还要大，说明它在这个分割点之内的近处！
+        if (view_space_pos.z > cascadeSplits[i]) {
+            cascadeIndex = i;
+            break; // 极其重要：找到了就要立刻退出，否则会被后面的判定覆盖！
         }
     }
-    vec4 shadowCoord = (biasMat * cascadeViewProjMat[cascadeIndex]) * vec4(inPos, 1.0);
+
+    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * pos;
     vec3 shadow_UV = shadowCoord.xyz / shadowCoord.w;
     outShadow_UV = vec4(shadow_UV.xyz, cascadeIndex);
     // 比正常的多算一个这个,过去读取阴影贴图 // 还没有给阴影 添加
