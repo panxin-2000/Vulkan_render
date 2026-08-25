@@ -40,6 +40,8 @@ bool Global_parameters::set_sun_light(const Eigen::Vector3f &v3) {
     auto tem = v3;
     tem.normalize();
     light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
+    update_directional_light(Eigen::Vector3f::Zero());
+    // 主要的原因应该是从来都没有调用过这个函数
     return true;
 }
 
@@ -121,7 +123,7 @@ bool Global_parameters::update_directional_light(const Eigen::Vector3f &v3) {
     float cascadeSplitLambda = 0.95f;
     float nearClip           = 0;
     float farClip            = 0;
-    getPerspectiveClips(view_matrix, nearClip, farClip);
+    getPerspectiveClips(projection_matrix, nearClip, farClip);
 
     float clipRange = farClip - nearClip;
 
@@ -197,7 +199,7 @@ bool Global_parameters::update_directional_light(const Eigen::Vector3f &v3) {
         // 假设 lightPos 是 Eigen::Vector3f 类型的灯光方向或位置
         Eigen::Vector3f lightDir = light.get_direction();
 
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter - lightDir * -minExtents.z(),
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter - lightDir * maxExtents.z(),
                                                       frustumCenter,
                                                       Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
