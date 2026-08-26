@@ -160,6 +160,7 @@ bool Global_parameters::update_directional_light() {
         // Project frustum corners into world space
         // glm::mat4 invCam = glm::inverse(camera.matrices.perspective * camera.matrices.view);
         for (uint32_t j = 0; j < 8; j++) {
+            
             Eigen::Vector4f invCorner = invVP * Eigen::Vector4f(frustumCorners[j].x(),
                                                                 frustumCorners[j].y(),
                                                                 frustumCorners[j].z(),
