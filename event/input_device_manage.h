@@ -104,7 +104,7 @@ public:
             case SDL_EVENT_MOUSE_WHEEL: {
                 manage_event_type = EVENT_SCROLL;
                 if (std::abs(event.wheel.x) > std::abs(event.wheel.y)) {
-                    manage_scroll = {-event.wheel.x, 0};
+                    manage_scroll = {event.wheel.x, 0};
                     temp          = get_result();
                 } else {
                     manage_scroll = {0, event.wheel.y};
