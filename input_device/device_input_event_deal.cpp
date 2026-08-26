@@ -40,7 +40,7 @@ entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
         };
         if (is_intersect(new_box, ray_temp)) {
             auto &name = view.get<Name_component>(entity);
-            LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
+            // LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
             return entity;
         }
     }

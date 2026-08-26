@@ -536,7 +536,7 @@ void Engine::copy_image_to_screen() {
             recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            std::cout << "failed to acquire swap chain image!" << std::endl;
+            LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
         }
     }
 }
@@ -574,7 +574,7 @@ void Engine::get_image_to_render() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         // 有时候成功，有时候不能一次成功，不知道为什么
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        std::cout << "failed to acquire swap chain image!" << std::endl;
+        LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
     }
 }
 

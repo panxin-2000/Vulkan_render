@@ -292,12 +292,28 @@ void update_camera_transform() {
         auto &camera = view.get<camera_optical_component>(it);
         auto &name   = view.get<Name_component>(it);
         if (name.name_.find("world_scene_root") != std::string::npos) {
-            update_camera_parameter(it);
-            auto lambda = [](const entt::entity entity) {
-                if (Logic_entt().all_of<Scene_Component>(entity))
-                    Logic_entt().emplace_or_replace<UI_transform_dirty>(entity);
+            // update_camera_parameter(it);
+
+            auto camera                           = Logic_entt().get_or_emplace<camera_optical_component>(it);
+            const auto projection                 = camera.get_projection_matrix();
+            Eigen::Matrix4f inv_projection_matrix = projection.inverse();
+
+            const auto view_matrix           = camera.get_view_matrix();
+            Eigen::Vector3f world_camera_pos = camera.get_position();
+            Eigen::Matrix4f inv_view_matrix  = view_matrix.inverse();
+
+            Eigen::Matrix4f invVP   = (projection * view_matrix).inverse();
+            Eigen::Matrix4f invVP_3 = inv_view_matrix * inv_projection_matrix;
+
+            auto lambda = [=]() {
+                Engine::instance().get_global_parameters().set_projection_matrix(projection);
+                Engine::instance().get_global_parameters().set_inv_projection_matrix(inv_projection_matrix);
+                Engine::instance().get_global_parameters().set_view_matrix(view_matrix);
+                Engine::instance().get_global_parameters().set_inv_view_matrix(inv_view_matrix);
+                Engine::instance().get_global_parameters().set_world_camera_pos(world_camera_pos);
+                Engine::instance().get_global_parameters().set_invVP(invVP);
             };
-            add_recursion_function_to_children(it, lambda);
+            vk_render_queue::instance().render_update_entt(lambda);
         }
         Logic_entt().remove<Camera_dirty>(it);
     }
