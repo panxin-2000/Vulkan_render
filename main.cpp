@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     bool show_another_window = false;
     ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     auto imgui_entity        = create_imgui_entity("imgui", nullptr);
-    Point_3 world_light_pos(0.0f, 1.0f, 0.0f);
+    Point_3 world_light_pos(0.250f, -1.0f, 0.750f);
 
     // Render loop
     float run_time = 0;
