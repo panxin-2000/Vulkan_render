@@ -76,7 +76,7 @@ void VCB::build_draw_command(entt::entity entity) {
 
 
 void VCB::DrawIndexedIndirect(entt::entity entity,
-                              GPU_frustum_cull command_calculate) {
+                              uint32_t command_size, VKR_buffer_ptr read_buffer) {
     const auto mesh_data = Render_entt().get<Mesh_data>(entity);
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
                            mesh_data.vertices->get_buffer_handle_ptr(time_line_),
@@ -90,9 +90,9 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
                              mesh_data.indices_offset,
                              mesh_data.index_type);
         vkCmdDrawIndexedIndirect(command_buffer_,
-                                 command_calculate.command_buffer->get_buffer_handle(time_line_),
+                                 read_buffer->get_buffer_handle(time_line_),
                                  0,
-                                 command_calculate.command_size,
+                                 command_size,
                                  sizeof(VkDrawIndexedIndirectCommand));
     }
 }

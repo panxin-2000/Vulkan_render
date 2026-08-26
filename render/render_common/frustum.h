@@ -15,12 +15,9 @@ struct FrustumPlanes {
 };
 
 
-inline void get_Frustum_Planes(const Eigen::Matrix4f &projection,
-                               const Eigen::Matrix4f &view,
-                               FrustumPlanes &frustum_planes) {
+inline FrustumPlanes get_Frustum_Planes(Eigen::Matrix4f vp) {
     // 1. 计算 View-Projection 复合矩阵
-    Eigen::Matrix4f vp = projection * view;
-
+    FrustumPlanes frustum_planes;
     // 2. 提取 4 个行向量 (Row Vectors)
     const Eigen::Vector4f r0 = vp.row(0);
     const Eigen::Vector4f r1 = vp.row(1);
@@ -50,6 +47,7 @@ inline void get_Frustum_Planes(const Eigen::Matrix4f &projection,
         // 归一化整个 vec4 (A, B, C, D)
         frustum_planes.planes[i] = raw_planes[i] * inv_length;
     }
+    return frustum_planes;
 }
 
 

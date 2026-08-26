@@ -369,6 +369,7 @@ void VK_backend::create_device() {
         .scalarBlockLayout                            = true,
         .timelineSemaphore                            = true,
         .bufferDeviceAddress                          = true,
+        .shaderOutputViewportIndex                    = true,
         .shaderOutputLayer                            = true,
     };
     VkPhysicalDeviceVulkan13Features enabledVk13Features{

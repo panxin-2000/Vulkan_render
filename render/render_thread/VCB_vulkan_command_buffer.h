@@ -110,7 +110,7 @@ public:
 
 
     void DrawIndexedIndirect(entt::entity entity,
-                             GPU_frustum_cull command_calculate);
+                             uint32_t command_size, VKR_buffer_ptr read_buffer);
 
     inline void draw(
         const Mesh_data &mesh_data,
@@ -135,7 +135,8 @@ public:
 
     void calculate_frustum_cull(
         const entt::entity entity,
-        const FrustumPlanes &frustum_planes);
+        const FrustumPlanes &frustum_planes,
+        const std::array<FrustumPlanes, 4> &light_frustum_planes);
 
     void default_status() const {
         constexpr VKR_Render_state temp;

@@ -18,6 +18,7 @@ public:
     Eigen::Matrix4f invVP;
     Eigen::Matrix4f light_viewProjMatrix[4];
     FrustumPlanes frustum_planes;
+    std::array<FrustumPlanes, 4> light_frustum_planes;
     Eigen::Vector4f world_camera_pos;
     Light light;
     Eigen::Vector4f screen_size;

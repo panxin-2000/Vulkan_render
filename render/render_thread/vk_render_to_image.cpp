@@ -60,12 +60,14 @@ void render_different_pass(VCB &vcb,
         // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
     }
     auto frustum_planes = engine.get_frustum_planes();
+    auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
     {
         auto view = Render_entt().view<GPU_frustum_cull>();
         for (const auto entity: view)
-            vcb.calculate_frustum_cull(entity, frustum_planes);
+            vcb.calculate_frustum_cull(entity, frustum_planes, light_planes);
     }
+    // 平行光 也是需要 视锥裁剪
     // 阴影的 pass
     // {
     //     // g_buffer_image_indices 这是需要看看怎么传递进入其中
@@ -116,7 +118,7 @@ void render_different_pass(VCB &vcb,
         }
     }
 
-    // 这里是绘制 不透明
+    // 这里是绘制 不透明 ,得到深度图, 还是
     // 不能按照
     {
         vcb.begin_rendering_depth_attachment(depth_AO_image,
@@ -136,7 +138,7 @@ void render_different_pass(VCB &vcb,
             // 现在绑定的管线是有问题的,
             vcb.default_status();
 
-            vcb.DrawIndexedIndirect(entity, command_calculate);
+            vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_AO_image});
@@ -176,7 +178,8 @@ void render_different_pass(VCB &vcb,
                                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &temp);
                 // 现在绑定的管线是有问题的,
                 vcb.default_status();
-                vcb.DrawIndexedIndirect(entity, command_calculate);
+                vcb.DrawIndexedIndirect(entity, command_calculate.command_size,
+                                        command_calculate.light_write_buffer[temp]);
             }
         }
         vcb.end_rendering();
@@ -251,7 +254,7 @@ void render_different_pass(VCB &vcb,
                 auto name                   = Render_entt().get<Name_component>(entity);
                 const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
                 vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
-                vcb.DrawIndexedIndirect(entity, command_calculate);
+                vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -347,7 +350,6 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         engine.update_global_parameter(offscreen, SSAO, depth, blur_SSAO, shadow_texture); // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
-
     } {
         const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
         for (const auto it: view) {

@@ -403,9 +403,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     const auto extent              = VK_backend::instance().get_current_extent();
     global_parameters_.screen_size = {static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0};
 
-    get_Frustum_Planes(global_parameters_.projection_matrix,
-                       global_parameters_.view_matrix,
-                       global_parameters_.frustum_planes);
+    global_parameters_.frustum_planes =
+            get_Frustum_Planes(global_parameters_.projection_matrix * global_parameters_.view_matrix);
 
     std::array<Eigen::Array4f, 9> &shCoefficients = global_parameters_.shCoefficients;
     // 值是一个差不多结果,不是很精准,因为 输出的 时候只保存了两位小数

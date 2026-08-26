@@ -12,8 +12,9 @@ struct GPU_frustum_cull {
     uint64_t AABB_boxesAddress;
     uint64_t IndirectCommandsAddress;
     uint32_t command_size;
-    VKR_buffer_ptr command_buffer;
+    VKR_buffer_ptr camera_write_buffer;
     VKR_buffer_ptr AABB_boxes_buffer;
+    VKR_buffer_ptr light_write_buffer[4];
 };
 
 #endif //HELLO_MAC_COMMAND_CALCULATE_H

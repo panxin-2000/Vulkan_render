@@ -26,11 +26,13 @@ layout (set = 1, binding = 0) uniform global_parameters
     mat4 inv_VP;
     mat4 cascadeViewProjMat[SHADOW_MAP_CASCADE_COUNT];
     vec4 frustum_planes[6];
+    vec4 light_frustum_planes[4 * 6];
     vec3 viewPos;
     Light light;
     vec4 screen_size;
     SphericalHarmonics SH;
     float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
+    vec4 pad[6];
 };
 
 

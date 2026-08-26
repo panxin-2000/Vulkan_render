@@ -160,7 +160,6 @@ bool Global_parameters::update_directional_light() {
         // Project frustum corners into world space
         // glm::mat4 invCam = glm::inverse(camera.matrices.perspective * camera.matrices.view);
         for (uint32_t j = 0; j < 8; j++) {
-            
             Eigen::Vector4f invCorner = invVP * Eigen::Vector4f(frustumCorners[j].x(),
                                                                 frustumCorners[j].y(),
                                                                 frustumCorners[j].z(),
@@ -286,7 +285,7 @@ bool Global_parameters::update_directional_light() {
         // Store split distance and matrix in cascade
         split_depth[i]          = (nearClip + splitDist * clipRange) * -1.0f;
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;
-
-        lastSplitDist = cascadeSplits[i];
+        light_frustum_planes[i] = get_Frustum_Planes(light_viewProjMatrix[i]);
+        lastSplitDist           = cascadeSplits[i];
     }
 }
