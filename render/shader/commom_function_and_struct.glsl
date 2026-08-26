@@ -21,7 +21,32 @@ struct Frustum {
 #define PREVENT_DIV0(n, d, magic)   ((n) / (d))
 #endif
 
-
+// From http://filmicworlds.com/blog/filmic-tonemapping-operators/
+vec3 Uncharted2Tonemap(vec3 color)
+{
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    float W = 11.2;
+    return ((color * (A * color + C * B) + D * E) / (color * (A * color + B) + D * F)) - E / F;
+}
+// 色调映射，如果是正向渲染（Forward Rendering）且没有复杂的后处理，
+// 可以直接在计算完所有光源的 Fragment Shader 末尾调用 tonemap 函数，然后输出
+// 单独开一个（或多个）后处理 Pass
+// 先将所有光照结果输出到一个 16位浮点格式（如 VK_FORMAT_R16G16B16A16_SFLOAT）的 HDR 纹理中
+// 单独开一个全屏 Quad（或者 Compute Shader）作为后处理 Pass，读取这个 HDR 纹理并应用 Tone Mapping
+// 可以轻松地在光照和 Tone Mapping 之间插入
+// Bloom、Motion Blur（运动模糊）、SSR（屏幕空间反射）、TAA（时间性抗锯齿）
+// 这些特效都必须在 HDR 线性空间下计算才物理正确
+vec4 tonemap(vec4 color, float exposure, float gamma)
+{
+    vec3 outcol = Uncharted2Tonemap(color.rgb * exposure);
+    outcol = outcol * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    return vec4(pow(outcol, vec3(1.0f / gamma)), color.a);
+}
 
 // 需要 与 PBR_component 布局相同
 struct ShaderMaterial {
@@ -36,10 +61,10 @@ struct ShaderMaterial {
 
     uint doubleSided; // 是否开始背面剪裁， 叶子、旗帜、纸张等超薄物体 需要为 true
     uint alphaMode;           // 有三个值
-    //                              OPAQUE (不透明 - 默认)
-    //                              MASK  基于 alphaCutoff 阈值进行“全有或全无”的硬切
-    //                              BLEND (混合/半透明)
-    // 需要一个为全为一的贴图，也就是纯白的贴图
+//                              OPAQUE (不透明 - 默认)
+//                              MASK  基于 alphaCutoff 阈值进行“全有或全无”的硬切
+//                              BLEND (混合/半透明)
+// 需要一个为全为一的贴图，也就是纯白的贴图
     uint baseColorTexture; // 基础颜色 贴图
     uint normalTexture; //
 
@@ -47,10 +72,10 @@ struct ShaderMaterial {
     uint ORM_Texture; // Occlusion, Roughness, Metallic
 
     uint pad_1;
-    // 下面这两个有什么用？
-    //    vec4 diffuseFactor;
-    //    vec4 specularFactor;
-    // 那么总共的字节数 是 16 + 16 + 16 + 16 + 16  = 80 字节
+// 下面这两个有什么用？
+//    vec4 diffuseFactor;
+//    vec4 specularFactor;
+// 那么总共的字节数 是 16 + 16 + 16 + 16 + 16  = 80 字节
 };
 
 
@@ -137,10 +162,10 @@ mat4 calculate_matrix(vec3 instancePos, vec3 instanceDir) {
     // 4. 在 GLSL 中实时动态构建 4x4 变换矩阵
     // 注意：GLSL 的 mat4 是 列主序 (Column-Major)，传参按列排列
     mat4 model = mat4(
-    vec4(right, 0.0), // 第一列：X 轴 (旋转)
-    vec4(up, 0.0), // 第二列：Y 轴 (旋转)
-    vec4(forward, 0.0), // 第三列：Z 轴 (旋转)
-    vec4(instancePos, 1.0) // 第四列：位移 (Position)
+            vec4(right, 0.0), // 第一列：X 轴 (旋转)
+            vec4(up, 0.0), // 第二列：Y 轴 (旋转)
+            vec4(forward, 0.0), // 第三列：Z 轴 (旋转)
+            vec4(instancePos, 1.0) // 第四列：位移 (Position)
     );
     return model;
 }
@@ -315,59 +340,59 @@ struct PixelParams {
     float perceptualRoughness;
     float perceptualRoughnessUnclamped;
     vec3 f0;
-    #if defined(MATERIAL_HAS_SPECULAR_COLOR_FACTOR) || defined(MATERIAL_HAS_SPECULAR_FACTOR)
+#if defined(MATERIAL_HAS_SPECULAR_COLOR_FACTOR) || defined(MATERIAL_HAS_SPECULAR_FACTOR)
     float f90;
     float specular;
     vec3 specularColor;
-    #endif
+#endif
     float roughness;
     vec3 dfg;
     vec3 energyCompensation;
 
-    #if defined(MATERIAL_HAS_CLEAR_COAT)
+#if defined(MATERIAL_HAS_CLEAR_COAT)
     float clearCoat;
     float clearCoatPerceptualRoughness;
     float clearCoatRoughness;
-    #endif
+#endif
 
-    #if defined(MATERIAL_HAS_SHEEN_COLOR)
+#if defined(MATERIAL_HAS_SHEEN_COLOR)
     vec3 sheenColor;
-    #if !defined(SHADING_MODEL_CLOTH)
+#if !defined(SHADING_MODEL_CLOTH)
     float sheenRoughness;
     float sheenPerceptualRoughness;
     float sheenScaling;
     float sheenDFG;
-    #endif
+#endif
 #endif
 
-    #if defined(MATERIAL_HAS_ANISOTROPY)
+#if defined(MATERIAL_HAS_ANISOTROPY)
     vec3 anisotropicT;
     vec3 anisotropicB;
     float anisotropy;
-    #endif
+#endif
 
-    #if defined(SHADING_MODEL_SUBSURFACE) || defined(MATERIAL_HAS_REFRACTION)
+#if defined(SHADING_MODEL_SUBSURFACE) || defined(MATERIAL_HAS_REFRACTION)
     float thickness;
-    #endif
+#endif
 #if defined(SHADING_MODEL_SUBSURFACE)
     vec3 subsurfaceColor;
     float subsurfacePower;
-    #endif
+#endif
 
-    #if defined(SHADING_MODEL_CLOTH) && defined(MATERIAL_HAS_SUBSURFACE_COLOR)
+#if defined(SHADING_MODEL_CLOTH) && defined(MATERIAL_HAS_SUBSURFACE_COLOR)
     vec3 subsurfaceColor;
-    #endif
+#endif
 
-    #if defined(MATERIAL_HAS_REFRACTION)
+#if defined(MATERIAL_HAS_REFRACTION)
     float etaRI;
     float etaIR;
-    #if defined(MATERIAL_HAS_DISPERSION) && (REFRACTION_TYPE == REFRACTION_TYPE_SOLID)
+#if defined(MATERIAL_HAS_DISPERSION) && (REFRACTION_TYPE == REFRACTION_TYPE_SOLID)
     float dispersion;
-    #endif
+#endif
     float transmission;
     float uThickness;
     vec3 absorption;
-    #endif
+#endif
 };
 
 
@@ -625,9 +650,9 @@ uvec4 SamplerCore(uint SampleIndex, inout uint Seed)
 {
     #if RANDSEQ == RANDSEQ_PURERANDOM
     uvec4 Result = uvec4(StrongIntegerHash(Seed + 0),
-StrongIntegerHash(Seed + 1),
-StrongIntegerHash(Seed + 2),
-StrongIntegerHash(Seed + 3));
+            StrongIntegerHash(Seed + 1),
+            StrongIntegerHash(Seed + 2),
+            StrongIntegerHash(Seed + 3));
     Seed += 4;
     return Result;
     #elif RANDSEQ == RANDSEQ_OWENSOBOL
@@ -717,9 +742,9 @@ RandomSequence RandomSequenceCreate(uint PositionSeed, uint FrameIndex)
     // change seed to get a unique sequence per pixel
     RandSequence.SampleSeed = StrongIntegerHash(PositionSeed);
     #else
-#error "Unknown random sequence chosen in path tracer"
-#endif
- return RandSequence;
+    #error "Unknown random sequence chosen in path tracer"
+    #endif
+    return RandSequence;
 }
 
 
