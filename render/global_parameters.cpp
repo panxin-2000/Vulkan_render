@@ -174,37 +174,68 @@ bool Global_parameters::update_directional_light() {
             frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
             frustumCorners[j]     = frustumCorners[j] + (dist * lastSplitDist);
         }
-        //
-        // Get frustum center
+
         Eigen::Vector3f frustumCenter = Eigen::Vector3f::Zero();
         for (uint32_t j = 0; j < 8; j++) {
             frustumCenter += frustumCorners[j];
         }
         frustumCenter /= 8.0f;
 
-        // 计算包围球半径
-        float radius = 0.0f;
-        for (uint32_t j = 0; j < 8; j++) {
-            // glm::length 替换为 Eigen 的 .norm()
-            float distance = (frustumCorners[j] - frustumCenter).norm();
-            radius         = std::max(radius, distance);
-        }
-        radius = std::ceil(radius * 16.0f) / 16.0f;
-
-        Eigen::Vector3f maxExtents = Eigen::Vector3f::Constant(radius);
-        Eigen::Vector3f minExtents = -maxExtents;
-
-        // 假设 lightPos 是 Eigen::Vector3f 类型的灯光方向或位置
         Eigen::Vector3f lightDir = light.get_direction();
 
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter - lightDir * maxExtents.z(),
-                                                      frustumCenter,
-                                                      Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
-        // 替换 glm::ortho (使用上面专门为 DX/Vulkan 写的函数)
-        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minExtents.x(), maxExtents.x(),
-                                                                        minExtents.y(), maxExtents.y(),
-                                                                        0.0f, maxExtents.z() - minExtents.z());
+        // 1. 依然先计算光照视矩阵，但这次把相机放在视锥体中心 (或者稍微靠后一点的保底位置)
+        // 我们假定一个基础的灯光位置，方向由 lightDir 决定
+        Eigen::Vector3f baseLightPos    = frustumCenter - lightDir * 1.0f;
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(baseLightPos, frustumCenter, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+
+        // 2. 将视锥体的 8 个顶点全部转换到灯光空间 (Light Space)
+        float minX = std::numeric_limits<float>::max();
+        float maxX = std::numeric_limits<float>::lowest();
+        float minY = std::numeric_limits<float>::max();
+        float maxY = std::numeric_limits<float>::lowest();
+        float minZ = std::numeric_limits<float>::max();
+        float maxZ = std::numeric_limits<float>::lowest();
+
+        for (uint32_t j = 0; j < 8; j++) {
+            // 将顶点乘以 lightViewMatrix
+            Eigen::Vector4f posLightSpace = lightViewMatrix * Eigen::Vector4f(frustumCorners[j].x(),
+                                                                              frustumCorners[j].y(),
+                                                                              frustumCorners[j].z(), 1.0f);
+
+            // 寻找灯光空间下的最大最小值 (AABB)
+            minX = std::min(minX, posLightSpace.x());
+            maxX = std::max(maxX, posLightSpace.x());
+            minY = std::min(minY, posLightSpace.y());
+            maxY = std::max(maxY, posLightSpace.y());
+            minZ = std::min(minZ, posLightSpace.z());
+            maxZ = std::max(maxZ, posLightSpace.z());
+        }
+
+        // 3. 给 Z 轴（深度）加一个保底的缓冲区 (防止刚好在视锥体外面的大物体遮挡光线却被裁剪了)
+        float zBuffer = 50.0f; // 根据你的场景规模调整
+        minZ          -= zBuffer;
+
+        float shadowMapResolution = 2048.0f;
+        float worldTexelSizeX     = (maxX - minX) / shadowMapResolution;
+        float worldTexelSizeY     = (maxY - minY) / shadowMapResolution;
+
+        minX = std::floor(minX / worldTexelSizeX) * worldTexelSizeX;
+        maxX = std::floor(maxX / worldTexelSizeX) * worldTexelSizeX;
+        minY = std::floor(minY / worldTexelSizeY) * worldTexelSizeY;
+        maxY = std::floor(maxY / worldTexelSizeY) * worldTexelSizeY;
+
+
+        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(
+                                                                        minX, // left
+                                                                        maxX, // right
+                                                                        minY, // bottom
+                                                                        maxY, // top
+                                                                        0.0f,
+                                                                        // near plane (offset to 0 as your function expects)
+                                                                        maxZ - minZ
+                                                                        // far plane (the total depth range of the bounding box)
+                                                                       );
 
         // Store split distance and matrix in cascade
         split_depth[i]          = (nearClip + splitDist * clipRange) * -1.0f;
