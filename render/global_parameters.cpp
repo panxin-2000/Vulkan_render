@@ -181,6 +181,17 @@ bool Global_parameters::update_directional_light() {
         }
         frustumCenter /= 8.0f;
 
+
+        // 计算包围球半径
+        float radius = 0.0f;
+        for (uint32_t j = 0; j < 8; j++) {
+            // glm::length 替换为 Eigen 的 .norm()
+            float distance = (frustumCorners[j] - frustumCenter).norm();
+            radius         = std::max(radius, distance);
+        }
+        radius = std::ceil(radius * 16.0f) / 16.0f;
+
+
         Eigen::Vector3f lightDir = light.get_direction();
 
 
@@ -209,6 +220,30 @@ bool Global_parameters::update_directional_light() {
             minZ = std::min(minZ, posLightSpace.z()); // 视锥体距离光源最近的点
             maxZ = std::max(maxZ, posLightSpace.z()); // 视锥体距离光源最远的点
         }
+
+
+        // 1. 确定你的 Vulkan 阴影贴图分辨率 (例如 2048x2048)
+        float shadowMapResolution = 2048.0f;
+
+        float fixedSize = 2.0f * radius;
+
+        // 重新计算基于圆心对齐的紧凑中心
+        float centerX = (minX + maxX) * 0.5f;
+        float centerY = (minY + maxY) * 0.5f;
+
+        // 建立恒定大小的临时边界
+        minX = centerX - radius;
+        maxX = centerX + radius;
+        minY = centerY - radius;
+        maxY = centerY + radius;
+
+        // 然后运行上面的 Texel Snapping (单像素大小现在变成了固定的 fixedSize / shadowMapResolution)
+        float texelSize = fixedSize / shadowMapResolution;
+        minX            = std::floor(minX / texelSize) * texelSize;
+        minY            = std::floor(minY / texelSize) * texelSize;
+        maxX            = minX + fixedSize;
+        maxY            = minY + fixedSize;
+
 
         // 3. 🎯 核心改变：自定义 Z 轴的“远程遮挡物捕捉范围”
         // 此时以 frustumCenter 为原点，光线背后（即玩家身后）的物体在灯光空间中是负 Z 方向。
