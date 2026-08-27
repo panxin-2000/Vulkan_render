@@ -1,13 +1,17 @@
 #version 450
+// 必须开启 64 位整型支持
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+// 开启物理内存指针引用支持
+#extension GL_EXT_buffer_reference : require
+// 开启标量块布局，防止结构体、连续数组在连续排布时产生对齐空洞
+#extension GL_EXT_scalar_block_layout : require
+
+#extension GL_GOOGLE_include_directive : enable
+#include "./../global_shader_common.glsl"
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
-
-#extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
-
-
-// Spherical harmonics constants
+// 球谐函数常数定义
 #define SH_C0 0.28209479177387814
 const float SH_C1 = 0.4886025119029199;
 const float SH_C2[5] = float[](
@@ -26,70 +30,73 @@ const float SH_C3[7] = float[](
         1.445305721320277,
         -0.5900435899266435
 );
-const uint GAUSSIAN_COUNT = 1496336u;
+
 const int BLOCK_X = 16;
 const int BLOCK_Y = 16;
-layout(push_constant) uniform PushConstants {
+
+// ==========================================================
+// 1. 定义 Buffer Reference 物理布局（完全等价于旧版 std430 结构）
+// ==========================================================
+layout(buffer_reference, scalar) readonly  buffer GaussianPositions_Ref { vec4  positions[]; };
+layout(buffer_reference, scalar) readonly  buffer GaussianScales_Ref    { vec4  scales[]; };
+layout(buffer_reference, scalar) readonly  buffer GaussianRotations_Ref { vec4  rotations[]; };
+layout(buffer_reference, scalar) readonly  buffer GaussianOpacities_Ref { float opacities[]; };
+layout(buffer_reference, scalar) readonly  buffer GaussianSH_Ref        { float sh_coefficients[]; };
+
+layout(buffer_reference, scalar) writeonly buffer OutputRadii_Ref       { int   radius[]; };
+layout(buffer_reference, scalar) writeonly buffer OutputDepth_Ref       { float depth[]; };
+layout(buffer_reference, scalar) writeonly buffer OutputRGB_Ref         { vec4  rgb[]; };
+layout(buffer_reference, scalar) writeonly buffer OutputConicOpacity_Ref{ vec4  conicOpacity[]; };
+layout(buffer_reference, scalar) writeonly buffer OutputPointsXY_Ref    { vec2  pointsXY[]; };
+layout(buffer_reference, scalar) writeonly buffer OutputTilesTouched_Ref{ uint  tilesTouched[]; };
+layout(buffer_reference, scalar) writeonly buffer BoundingBox_Ref       { uvec4 bbox[]; };
+
+// ==========================================================
+// 2. 通过 Push Constant 一口气上传原本需要 12 个 Binding 的地址
+// ==========================================================
+layout(push_constant, scalar) uniform PushConstants {
     uint gaussianCount;
     float near;
     float far;
     uint culling;
     int shDegree;
+
+// 12 个裸 64 位 GPU 虚拟地址（Device Address）
+    uint64_t positions_address;
+    uint64_t scales_address;
+    uint64_t rotations_address;
+    uint64_t opacities_address;
+    uint64_t sh_coefficients_address;
+
+    uint64_t radius_address;
+    uint64_t depth_address;
+    uint64_t rgb_address;
+    uint64_t conicOpacity_address;
+    uint64_t pointsXY_address;
+    uint64_t tilesTouched_address;
+    uint64_t bbox_address;
 } pc;
-// Input buffers
-layout(set = 2, binding = 0) readonly buffer GaussianPositions {
-    vec4 positions[];
-};
 
-layout(set = 2, binding = 1) readonly buffer GaussianScales {
-    vec4 scales[];
-};
+// ==========================================================
+// 3. 声明全局作用域指针变量（保留原函数内部公式隐式读取，免改函数签名）
+// ==========================================================
+GaussianPositions_Ref  positions;
+GaussianScales_Ref     scales;
+GaussianRotations_Ref  rotations;
+GaussianOpacities_Ref  opacities;
+GaussianSH_Ref         sh_coefficients;
 
-layout(set = 2, binding = 2) readonly buffer GaussianRotations {
-    vec4 rotations[];
-};
+OutputRadii_Ref        radius;
+OutputDepth_Ref        depth;
+OutputRGB_Ref          rgb;
+OutputConicOpacity_Ref conicOpacity;
+OutputPointsXY_Ref     pointsXY;
+OutputTilesTouched_Ref tilesTouched;
+BoundingBox_Ref        bbox;
 
-layout(set = 2, binding = 3) readonly buffer GaussianOpacities {
-    float opacities[];
-};
-
-layout(set = 2, binding = 4) readonly buffer GaussianSH {
-    float sh_coefficients[];
-};
-// 前面的应该都是 .ply 文件中导入的
-
-// Output buffers
-layout(set = 2, binding = 5) writeonly buffer OutputRadii {
-    int radius[];  // 这里应该是 确实存储的是半径
-};
-
-layout(set = 2, binding = 6) writeonly buffer OuputDepth {
-    float depth[];
-};
-
-layout(set = 2, binding = 7) writeonly buffer OutputRGB {
-    vec4 rgb[];
-};
-
-layout(set = 2, binding = 8) writeonly buffer OutputConicOpacity {
-    vec4 conicOpacity[];
-};
-
-layout(set = 2, binding = 9) writeonly buffer OutputPointsXY {
-    vec2 pointsXY[];
-};
-
-layout(set = 2, binding = 10) writeonly buffer OutputTilesTouched {
-    uint tilesTouched[];
-// 这里是需要送入下一个 compute shader 的内容
-};
-
-layout(set = 2, binding = 11) writeonly buffer BoundingBox {
-    uvec4 bbox[];
-};
-
-
-// Helper functions
+// ==========================================================
+// 4. 核心功能函数（原汁原味复原公式，完全无痛迁移）
+// ==========================================================
 int getSHCoeffCount(int degree) {
     if (degree == 0) return 1;
     if (degree == 1) return 4;
@@ -105,7 +112,7 @@ float ndc2Pix(float ndc, int size) {
 }
 
 bool inFrustum(int idx, out vec3 pView) {
-    vec4 pos = positions[idx];
+    vec4 pos = positions.positions[idx];
     pView = mat3(view) * pos.xyz + view[3].xyz;
 
     // Near plane culling
@@ -119,9 +126,7 @@ bool inFrustum(int idx, out vec3 pView) {
 }
 
 vec3 computeColorFromSH(int idx) {
-
-
-    vec3 pos = positions[idx].xyz;
+    vec3 pos = positions.positions[idx].xyz;
     vec3 dir = normalize(pos - viewPos.xyz);
     //dir.z = -dir.z;
 
@@ -130,9 +135,9 @@ vec3 computeColorFromSH(int idx) {
 
     // SH degree 0 - sh[0]
     vec3 result = SH_C0 * vec3(
-            sh_coefficients[shBase * 3 + 0],
-            sh_coefficients[shBase * 3 + 1],
-            sh_coefficients[shBase * 3 + 2]
+            sh_coefficients.sh_coefficients[shBase * 3 + 0],
+            sh_coefficients.sh_coefficients[shBase * 3 + 1],
+            sh_coefficients.sh_coefficients[shBase * 3 + 2]
     );
 
     if (pc.shDegree > 0) {
@@ -142,17 +147,17 @@ vec3 computeColorFromSH(int idx) {
 
         // SH degree 1 - sh[1], sh[2], sh[3]
         result = result - SH_C1 * y * vec3(
-                sh_coefficients[(shBase + 1) * 3 + 0],
-                sh_coefficients[(shBase + 1) * 3 + 1],
-                sh_coefficients[(shBase + 1) * 3 + 2]
+                sh_coefficients.sh_coefficients[(shBase + 1) * 3 + 0],
+                sh_coefficients.sh_coefficients[(shBase + 1) * 3 + 1],
+                sh_coefficients.sh_coefficients[(shBase + 1) * 3 + 2]
         ) + SH_C1 * z * vec3(
-                sh_coefficients[(shBase + 2) * 3 + 0],
-                sh_coefficients[(shBase + 2) * 3 + 1],
-                sh_coefficients[(shBase + 2) * 3 + 2]
+                sh_coefficients.sh_coefficients[(shBase + 2) * 3 + 0],
+                sh_coefficients.sh_coefficients[(shBase + 2) * 3 + 1],
+                sh_coefficients.sh_coefficients[(shBase + 2) * 3 + 2]
         ) - SH_C1 * x * vec3(
-                sh_coefficients[(shBase + 3) * 3 + 0],
-                sh_coefficients[(shBase + 3) * 3 + 1],
-                sh_coefficients[(shBase + 3) * 3 + 2]
+                sh_coefficients.sh_coefficients[(shBase + 3) * 3 + 0],
+                sh_coefficients.sh_coefficients[(shBase + 3) * 3 + 1],
+                sh_coefficients.sh_coefficients[(shBase + 3) * 3 + 2]
         );
 
         if (pc.shDegree > 1) {
@@ -162,68 +167,68 @@ vec3 computeColorFromSH(int idx) {
             // SH degree 2 - sh[4] through sh[8]
             result = result +
             SH_C2[0] * xy * vec3(
-                    sh_coefficients[(shBase + 4) * 3 + 0],
-                    sh_coefficients[(shBase + 4) * 3 + 1],
-                    sh_coefficients[(shBase + 4) * 3 + 2]
+                    sh_coefficients.sh_coefficients[(shBase + 4) * 3 + 0],
+                    sh_coefficients.sh_coefficients[(shBase + 4) * 3 + 1],
+                    sh_coefficients.sh_coefficients[(shBase + 4) * 3 + 2]
             ) +
             SH_C2[1] * yz * vec3(
-                    sh_coefficients[(shBase + 5) * 3 + 0],
-                    sh_coefficients[(shBase + 5) * 3 + 1],
-                    sh_coefficients[(shBase + 5) * 3 + 2]
+                    sh_coefficients.sh_coefficients[(shBase + 5) * 3 + 0],
+                    sh_coefficients.sh_coefficients[(shBase + 5) * 3 + 1],
+                    sh_coefficients.sh_coefficients[(shBase + 5) * 3 + 2]
             ) +
             SH_C2[2] * (2.0 * zz - xx - yy) * vec3(
-                    sh_coefficients[(shBase + 6) * 3 + 0],
-                    sh_coefficients[(shBase + 6) * 3 + 1],
-                    sh_coefficients[(shBase + 6) * 3 + 2]
+                    sh_coefficients.sh_coefficients[(shBase + 6) * 3 + 0],
+                    sh_coefficients.sh_coefficients[(shBase + 6) * 3 + 1],
+                    sh_coefficients.sh_coefficients[(shBase + 6) * 3 + 2]
             ) +
             SH_C2[3] * xz * vec3(
-                    sh_coefficients[(shBase + 7) * 3 + 0],
-                    sh_coefficients[(shBase + 7) * 3 + 1],
-                    sh_coefficients[(shBase + 7) * 3 + 2]
+                    sh_coefficients.sh_coefficients[(shBase + 7) * 3 + 0],
+                    sh_coefficients.sh_coefficients[(shBase + 7) * 3 + 1],
+                    sh_coefficients.sh_coefficients[(shBase + 7) * 3 + 2]
             ) +
             SH_C2[4] * (xx - yy) * vec3(
-                    sh_coefficients[(shBase + 8) * 3 + 0],
-                    sh_coefficients[(shBase + 8) * 3 + 1],
-                    sh_coefficients[(shBase + 8) * 3 + 2]
+                    sh_coefficients.sh_coefficients[(shBase + 8) * 3 + 0],
+                    sh_coefficients.sh_coefficients[(shBase + 8) * 3 + 1],
+                    sh_coefficients.sh_coefficients[(shBase + 8) * 3 + 2]
             );
 
             if (pc.shDegree > 2) {
                 // SH degree 3 - sh[9] through sh[15]
                 result = result +
                 SH_C3[0] * y * (3.0 * xx - yy) * vec3(
-                        sh_coefficients[(shBase + 9) * 3 + 0],
-                        sh_coefficients[(shBase + 9) * 3 + 1],
-                        sh_coefficients[(shBase + 9) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 9) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 9) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 9) * 3 + 2]
                 ) +
                 SH_C3[1] * xy * z * vec3(
-                        sh_coefficients[(shBase + 10) * 3 + 0],
-                        sh_coefficients[(shBase + 10) * 3 + 1],
-                        sh_coefficients[(shBase + 10) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 10) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 10) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 10) * 3 + 2]
                 ) +
                 SH_C3[2] * y * (4.0 * zz - xx - yy) * vec3(
-                        sh_coefficients[(shBase + 11) * 3 + 0],
-                        sh_coefficients[(shBase + 11) * 3 + 1],
-                        sh_coefficients[(shBase + 11) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 11) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 11) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 11) * 3 + 2]
                 ) +
                 SH_C3[3] * z * (2.0 * zz - 3.0 * xx - 3.0 * yy) * vec3(
-                        sh_coefficients[(shBase + 12) * 3 + 0],
-                        sh_coefficients[(shBase + 12) * 3 + 1],
-                        sh_coefficients[(shBase + 12) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 12) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 12) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 12) * 3 + 2]
                 ) +
                 SH_C3[4] * x * (4.0 * zz - xx - yy) * vec3(
-                        sh_coefficients[(shBase + 13) * 3 + 0],
-                        sh_coefficients[(shBase + 13) * 3 + 1],
-                        sh_coefficients[(shBase + 13) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 13) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 13) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 13) * 3 + 2]
                 ) +
                 SH_C3[5] * z * (xx - yy) * vec3(
-                        sh_coefficients[(shBase + 14) * 3 + 0],
-                        sh_coefficients[(shBase + 14) * 3 + 1],
-                        sh_coefficients[(shBase + 14) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 14) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 14) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 14) * 3 + 2]
                 ) +
                 SH_C3[6] * x * (xx - 3.0 * yy) * vec3(
-                        sh_coefficients[(shBase + 15) * 3 + 0],
-                        sh_coefficients[(shBase + 15) * 3 + 1],
-                        sh_coefficients[(shBase + 15) * 3 + 2]
+                        sh_coefficients.sh_coefficients[(shBase + 15) * 3 + 0],
+                        sh_coefficients.sh_coefficients[(shBase + 15) * 3 + 1],
+                        sh_coefficients.sh_coefficients[(shBase + 15) * 3 + 2]
                 );
             }
         }
@@ -273,8 +278,8 @@ vec3 computeCov2D(vec3 mean, float cov3D_data[6], float tan_fovx, float tan_fovy
 }
 
 void computeCov3D(int idx, float scaleModifier, out float cov3D_out[6]) {
-    vec3 scale = scales[idx].xyz;
-    vec4 rot = rotations[idx];
+    vec3 scale = scales.scales[idx].xyz;
+    vec4 rot = rotations.rotations[idx];
 
     // Scaling matrix
     mat3 S = mat3(
@@ -321,21 +326,32 @@ void main() {
 
 
     if (idx >= pc.gaussianCount) return;
-
+    // 将 64 位整数物理地址从这里赋予全局变量指针以驱动执行
+    positions = GaussianPositions_Ref(pc.positions_address);
+    scales = GaussianScales_Ref(pc.scales_address);
+    rotations = GaussianRotations_Ref(pc.rotations_address);
+    opacities = GaussianOpacities_Ref(pc.opacities_address);
+    sh_coefficients = GaussianSH_Ref(pc.sh_coefficients_address);
+    radius = OutputRadii_Ref(pc.radius_address);
+    depth = OutputDepth_Ref(pc.depth_address);
+    rgb = OutputRGB_Ref(pc.rgb_address);
+    conicOpacity = OutputConicOpacity_Ref(pc.conicOpacity_address);
+    pointsXY = OutputPointsXY_Ref(pc.pointsXY_address);
+    tilesTouched = OutputTilesTouched_Ref(pc.tilesTouched_address);
+    bbox = BoundingBox_Ref(pc.bbox_address);
     int gridX = (int(screen_size.x) + BLOCK_X - 1) / BLOCK_X;
     int gridY = (int(screen_size.y) + BLOCK_Y - 1) / BLOCK_Y;
 
 
-    if (idx < 10) {
-        vec3 scale = scales[idx].xyz;
-        radius[idx] = int(12); // See actual scale values
-    }
+    //    if (idx < 10) { vec3 scale = scales.scales[idx].xyz;
+    //        radius.radius[idx] = int(12);// See actual scale values
+    //    }
 
 
     // Initialize outputs
-    radius[idx] = 0;
-    tilesTouched[idx] = 0;
-    depth[idx] = 0;
+    radius.radius[idx] = 0;
+    tilesTouched.tilesTouched[idx] = 0;
+    depth.depth[idx] = 0.0;
 
     // Frustum culling
     vec3 pView;
@@ -345,7 +361,7 @@ void main() {
     }
 
     // Transform to clip space
-    vec4 pOrig = positions[idx];
+    vec4 pOrig = positions.positions[idx];
     vec4 pHom = projection * view * pOrig;
     float pW = 1.0 / (pHom.w + 0.0000001);
     vec3 pProj = pHom.xyz * pW;
@@ -369,7 +385,6 @@ void main() {
     float lambda1 = mid + sqrt(max(0.1, mid * mid - det));
     float lambda2 = mid - sqrt(max(0.1, mid * mid - det));
     float myRadius = ceil(3.0 * sqrt(max(lambda1, lambda2)));
-
     vec2 pointImage = vec2(
             ndc2Pix(pProj.x, int(screen_size.x)),
             ndc2Pix(pProj.y, int(screen_size.y))
@@ -385,25 +400,27 @@ void main() {
             min(gridY, max(0, int((pointImage.y + myRadius + BLOCK_Y - 1) / BLOCK_Y)))
     );
 
-    bbox[idx] = uvec4(rectMin.x, rectMin.y, rectMax.x, rectMax.y);
+    bbox.bbox[idx] = uvec4(rectMin.x, rectMin.y, rectMax.x, rectMax.y);
 
 
     if ((rectMax.x - rectMin.x) * (rectMax.y - rectMin.y) == 0) return;
 
-
+    // 从球谐系数计算视图方向颜色
     // Compute color from spherical harmonics
     vec3 color = computeColorFromSH(int(idx)); // 问题，这里为什么要计算颜色？
-
-    depth[idx] = -pView.z;
-    radius[idx] = int(myRadius);
-    pointsXY[idx] = pointImage;
-    conicOpacity[idx] = vec4(conic, opacities[idx]);
-    tilesTouched[idx] = uint((rectMax.y - rectMin.y) * (rectMax.x - rectMin.x));
+    // 数据持久化写入内存物理指针地址
+    depth.depth[idx] = -pView.z;
+    radius.radius[idx] = int(myRadius);
+    pointsXY.pointsXY[idx] = pointImage;
+    conicOpacity.conicOpacity[idx] = vec4(conic, opacities.opacities[idx]);
+    tilesTouched.tilesTouched[idx] = uint((rectMax.y - rectMin.y) * (rectMax.x - rectMin.x));
     // 这里来看的话是面积
 
     // Store RGB
-    rgb[idx].xyz = color;
+    // 存储 RGB 数据
+    rgb.rgb[idx].xyz = color;
 }
+
 
 // 上面的部分是预处理
 // preprocess.comp
