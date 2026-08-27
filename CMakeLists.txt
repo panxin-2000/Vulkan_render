@@ -560,6 +560,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_tetrahedron.cpp
         test/convex_hull.cpp
         test/bracket.cpp
+        test/test_QEM.cpp
         test/test_factory.cpp
         test/cut_rod.cpp
         test/test_tree_node.cpp

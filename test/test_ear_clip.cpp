@@ -11,7 +11,6 @@
 #include "base_geometry/half_edge/Half_edges.h"
 #include "trapezoid_graph.h"
 #include "tree_function.h"
-#include "base_event.h"
 
 
 template<typename T>
