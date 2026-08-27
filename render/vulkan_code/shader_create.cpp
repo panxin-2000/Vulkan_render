@@ -126,7 +126,7 @@ std::vector<uint32_t> CompileGlslToSpv(const VKR_shader_paths &shader_paths,
     // options.SetOptimizationLevel(shaderc_optimization_level_performance); // 开启性能优化
 
     std::filesystem::path filePath = filename;
-    std::filesystem::path baseDir  = filePath.parent_path();
+    std::filesystem::path baseDir  = "/Users/panxin/CLionProjects/hello_mac/render/shader/";
 
     options.SetIncluder(std::make_unique<CustomShaderIncluder>(baseDir));
     options.SetGenerateDebugInfo();

@@ -70,6 +70,9 @@ struct opacity_gltf_tag {
 struct Line_tag {
 };
 
+struct ply_3DGS_tag {
+};
+
 struct gltf_tag {
 };
 

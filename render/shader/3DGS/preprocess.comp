@@ -2,6 +2,11 @@
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
+
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
 // Spherical harmonics constants
 #define SH_C0 0.28209479177387814
 const float SH_C1 = 0.4886025119029199;
@@ -29,70 +34,57 @@ layout(push_constant) uniform PushConstants {
     float near;
     float far;
     uint culling;
+    int shDegree;
 } pc;
 // Input buffers
-layout(binding = 1) readonly buffer GaussianPositions {
+layout(set = 2, binding = 0) readonly buffer GaussianPositions {
     vec4 positions[];
 };
 
-layout(binding = 2) readonly buffer GaussianScales {
+layout(set = 2, binding = 1) readonly buffer GaussianScales {
     vec4 scales[];
 };
 
-layout(binding = 3) readonly buffer GaussianRotations {
+layout(set = 2, binding = 2) readonly buffer GaussianRotations {
     vec4 rotations[];
 };
 
-layout(binding = 4) readonly buffer GaussianOpacities {
+layout(set = 2, binding = 3) readonly buffer GaussianOpacities {
     float opacities[];
 };
 
-layout(binding = 5) readonly buffer GaussianSH {
+layout(set = 2, binding = 4) readonly buffer GaussianSH {
     float sh_coefficients[];
 };
 // 前面的应该都是 .ply 文件中导入的
 
-// Camera uniforms
-layout(binding = 6) uniform CameraUniforms {
-    mat4 viewMatrix;
-    mat4 projMatrix;
-    vec4 camPos;
-    float focal_x;
-    float focal_y;
-    float tan_fovx;
-    float tan_fovy;
-    int imageWidth;
-    int imageHeight;
-    int shDegree;
-} camera;
-
 // Output buffers
-layout(binding = 7) writeonly buffer OutputRadii {
+layout(set = 2, binding = 5) writeonly buffer OutputRadii {
     int radius[];  // 这里应该是 确实存储的是半径
 };
 
-layout(binding = 8) writeonly buffer OuputDepth {
+layout(set = 2, binding = 6) writeonly buffer OuputDepth {
     float depth[];
 };
 
-layout(binding = 9) writeonly buffer OutputRGB {
+layout(set = 2, binding = 7) writeonly buffer OutputRGB {
     vec4 rgb[];
 };
 
-layout(binding = 10) writeonly buffer OutputConicOpacity {
+layout(set = 2, binding = 8) writeonly buffer OutputConicOpacity {
     vec4 conicOpacity[];
 };
 
-layout(binding = 11) writeonly buffer OutputPointsXY {
+layout(set = 2, binding = 9) writeonly buffer OutputPointsXY {
     vec2 pointsXY[];
 };
 
-layout(binding = 12) writeonly buffer OutputTilesTouched {
+layout(set = 2, binding = 10) writeonly buffer OutputTilesTouched {
     uint tilesTouched[];
 // 这里是需要送入下一个 compute shader 的内容
 };
 
-layout(binding = 13) writeonly buffer BoundingBox {
+layout(set = 2, binding = 11) writeonly buffer BoundingBox {
     uvec4 bbox[];
 };
 
@@ -114,7 +106,7 @@ float ndc2Pix(float ndc, int size) {
 
 bool inFrustum(int idx, out vec3 pView) {
     vec4 pos = positions[idx];
-    pView = mat3(camera.viewMatrix) * pos.xyz + camera.viewMatrix[3].xyz;
+    pView = mat3(view) * pos.xyz + view[3].xyz;
 
     // Near plane culling
     //if (pView.z <= 0.01) return false;
@@ -122,17 +114,19 @@ bool inFrustum(int idx, out vec3 pView) {
     if (pView.z >= -1 * pc.near) return false;
     if (pView.z < -1 * pc.far) return false;
     // Frustum culling (simplified)
-    vec4 pClip = camera.projMatrix * vec4(pView, 1.0);
+    vec4 pClip = projection * vec4(pView, 1.0);
     return abs(pClip.x) <= pClip.w && abs(pClip.y) <= pClip.w;
 }
 
 vec3 computeColorFromSH(int idx) {
+
+
     vec3 pos = positions[idx].xyz;
-    vec3 dir = normalize(pos - camera.camPos.xyz);
+    vec3 dir = normalize(pos - viewPos.xyz);
     //dir.z = -dir.z;
 
     // Get base index for this Gaussian's SH coefficients
-    int shBase = idx * getSHCoeffCount(camera.shDegree);
+    int shBase = idx * getSHCoeffCount(pc.shDegree);
 
     // SH degree 0 - sh[0]
     vec3 result = SH_C0 * vec3(
@@ -141,7 +135,7 @@ vec3 computeColorFromSH(int idx) {
             sh_coefficients[shBase * 3 + 2]
     );
 
-    if (camera.shDegree > 0) {
+    if (pc.shDegree > 0) {
         float x = dir.x;
         float y = dir.y;
         float z = dir.z;
@@ -161,7 +155,7 @@ vec3 computeColorFromSH(int idx) {
                 sh_coefficients[(shBase + 3) * 3 + 2]
         );
 
-        if (camera.shDegree > 1) {
+        if (pc.shDegree > 1) {
             float xx = x * x, yy = y * y, zz = z * z;
             float xy = x * y, yz = y * z, xz = x * z;
 
@@ -193,7 +187,7 @@ vec3 computeColorFromSH(int idx) {
                     sh_coefficients[(shBase + 8) * 3 + 2]
             );
 
-            if (camera.shDegree > 2) {
+            if (pc.shDegree > 2) {
                 // SH degree 3 - sh[9] through sh[15]
                 result = result +
                 SH_C3[0] * y * (3.0 * xx - yy) * vec3(
@@ -240,13 +234,13 @@ vec3 computeColorFromSH(int idx) {
     return max(result, vec3(0.0));
 }
 
-vec3 computeCov2D(vec3 mean, float cov3D_data[6]) {
+vec3 computeCov2D(vec3 mean, float cov3D_data[6], float tan_fovx, float tan_fovy, float focal_x, float focal_y) {
     // Transform to view space
     vec3 t = mean;
 
     // Clamp to frustum
-    float limx = 1.3 * camera.tan_fovx;
-    float limy = 1.3 * camera.tan_fovy;
+    float limx = 1.3 * tan_fovx;
+    float limy = 1.3 * tan_fovy;
     float txtz = t.x / t.z;
     float tytz = t.y / t.z;
     t.x = clamp(txtz, -limx, limx) * t.z;
@@ -254,13 +248,13 @@ vec3 computeCov2D(vec3 mean, float cov3D_data[6]) {
 
     // Jacobian matrix
     mat3 J = mat3(
-            camera.focal_x / t.z, 0.0, -(camera.focal_x * t.x) / (t.z * t.z),
-            0.0, camera.focal_y / t.z, -(camera.focal_y * t.y) / (t.z * t.z),
+            focal_x / t.z, 0.0, -(focal_x * t.x) / (t.z * t.z),
+            0.0, focal_y / t.z, -(focal_y * t.y) / (t.z * t.z),
             0.0, 0.0, 0.0
     );
 
     // View matrix (upper 3x3)
-    mat3 W = transpose(mat3(camera.viewMatrix));
+    mat3 W = transpose(mat3(view));
     mat3 T = W * J;
 
     mat3 Vrk = mat3(
@@ -318,11 +312,18 @@ void main() {
     //  vkCmdDispatch(commandBuffer, groupX, 1, 1);
 
 
+    float tan_fovx = abs(1.0 / projection[0][0]);
+    float tan_fovy = abs(1.0 / projection[1][1]);
+
+    // 2. 根据当前的屏幕分辨率计算像素焦距 focal_x 和 focal_y
+    float focal_x = float(screen_size.x) / (2.0 * tan_fovx);
+    float focal_y = float(screen_size.y) / (2.0 * tan_fovy);
+
 
     if (idx >= pc.gaussianCount) return;
 
-    int gridX = (camera.imageWidth + BLOCK_X - 1) / BLOCK_X;
-    int gridY = (camera.imageHeight + BLOCK_Y - 1) / BLOCK_Y;
+    int gridX = (int(screen_size.x) + BLOCK_X - 1) / BLOCK_X;
+    int gridY = (int(screen_size.y) + BLOCK_Y - 1) / BLOCK_Y;
 
 
     if (idx < 10) {
@@ -342,10 +343,10 @@ void main() {
     if (pc.culling == 1){
         if (!inFrust) return;
     }
-    
+
     // Transform to clip space
     vec4 pOrig = positions[idx];
-    vec4 pHom = camera.projMatrix * camera.viewMatrix * pOrig;
+    vec4 pHom = projection * view * pOrig;
     float pW = 1.0 / (pHom.w + 0.0000001);
     vec3 pProj = pHom.xyz * pW;
 
@@ -353,8 +354,8 @@ void main() {
     float cov3D_data[6];
     computeCov3D(int(idx), 1.0, cov3D_data);
 
-    // Compute 2D covariance  
-    vec3 cov2D = computeCov2D(pView, cov3D_data);
+    // Compute 2D covariance
+    vec3 cov2D = computeCov2D(pView, cov3D_data, tan_fovx, tan_fovy, focal_x, focal_y);
 
     // Invert covariance (EWA algorithm)
     float det = cov2D.x * cov2D.z - cov2D.y * cov2D.y;
@@ -370,8 +371,8 @@ void main() {
     float myRadius = ceil(3.0 * sqrt(max(lambda1, lambda2)));
 
     vec2 pointImage = vec2(
-            ndc2Pix(pProj.x, camera.imageWidth),
-            ndc2Pix(pProj.y, camera.imageHeight)
+            ndc2Pix(pProj.x, int(screen_size.x)),
+            ndc2Pix(pProj.y, int(screen_size.y))
     );
 
     ivec2 rectMin = ivec2(
@@ -417,6 +418,7 @@ void main() {
 
 // 这里是具体的执行渲染的部分
 // idkeys.comp
+// 为什么需要执行6次呢?
 //     for (uint32_t pass = 0; pass < 6; pass++) {
 //          histogram.comp
 //          radixsort.comp

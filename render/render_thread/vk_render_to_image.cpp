@@ -277,6 +277,9 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
     }
+    // 那么这里是否可以插入 其他的内容呢?
+    //
+
 
 
     // 在这里的时候需要插入 FXAA
