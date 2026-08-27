@@ -2,6 +2,7 @@
 // MIT Licensed
 
 #include "PLYLoader.h"
+#include <Eigen/Eigen>
 
 std::unique_ptr<GaussianBase> PLYLoader::LoadPLY(const std::string &path,
                                                  int &sh_degree) {
@@ -146,23 +147,23 @@ bool PLYLoader::ParseHeader(std::ifstream &file, GaussianBase &data) {
 
 
 inline void Read_ply_position_xyz(std::ifstream &file, GaussianBase &data, size_t i) {
-    file.read(reinterpret_cast<char *>(&data._xyz[i]), sizeof(glm::vec3));
-    data._xyz[i].w = 1.0f;
+    file.read(reinterpret_cast<char *>(&data._xyz[i]), sizeof(Eigen::Vector3f));
+    data._xyz[i].w() = 1.0f;
 }
 
 inline void Read_ply_normal(std::ifstream &file, GaussianBase &data, size_t i) {
-    file.read(reinterpret_cast<char *>(&data._normals[i]), sizeof(glm::vec3));
+    file.read(reinterpret_cast<char *>(&data._normals[i]), sizeof(Eigen::Vector3f));
 }
 
 inline void Read_ply_dc_coeffs(std::ifstream &file, GaussianBase &data, size_t i, const int total_sh_coeffs) {
-    glm::vec3 dc_coeffs;
-    file.read(reinterpret_cast<char *>(&dc_coeffs), sizeof(glm::vec3));
+    Eigen::Vector3f dc_coeffs;
+    file.read(reinterpret_cast<char *>(&dc_coeffs), sizeof(Eigen::Vector3f));
     // Store DC coefficients
     size_t sh_offset = i * total_sh_coeffs;
 
-    data._shCoefficients[sh_offset + 0] = dc_coeffs.x; // f_dc_0
-    data._shCoefficients[sh_offset + 1] = dc_coeffs.y; // f_dc_1
-    data._shCoefficients[sh_offset + 2] = dc_coeffs.z; // f_dc_2
+    data._shCoefficients[sh_offset + 0] = dc_coeffs.x(); // f_dc_0
+    data._shCoefficients[sh_offset + 1] = dc_coeffs.y(); // f_dc_1
+    data._shCoefficients[sh_offset + 2] = dc_coeffs.z(); // f_dc_2
 }
 
 inline void Read_ply_SH(std::ifstream &file, GaussianBase &data, size_t i, const int total_sh_coeffs,
@@ -191,15 +192,19 @@ inline void Read_ply_opacity(std::ifstream &file, GaussianBase &data, size_t i) 
 }
 
 inline void Read_ply_scale(std::ifstream &file, GaussianBase &data, size_t i) {
-    glm::vec3 rawScales;
-    file.read(reinterpret_cast<char *>(&rawScales), sizeof(glm::vec3));
-    data._scales[i] = glm::vec4(glm::exp(rawScales), 0.0f);
+    Eigen::Vector3f rawScales;
+    file.read(reinterpret_cast<char *>(&rawScales), sizeof(Eigen::Vector3f));
+    data._scales[i] = Eigen::Vector4f::Zero();
+    data._scales[i] = Eigen::Vector4f(rawScales.array().exp()[0],
+                                      rawScales.array().exp()[1],
+                                      rawScales.array().exp()[2],
+                                      0.0f);
 }
 
 inline void Read_ply_rot(std::ifstream &file, GaussianBase &data, size_t i) {
-    glm::vec4 rawRotation;
-    file.read(reinterpret_cast<char *>(&rawRotation), sizeof(glm::vec4));
-    data._rotations[i] = glm::normalize(rawRotation);
+    Eigen::Vector4f rawRotation;
+    file.read(reinterpret_cast<char *>(&rawRotation), sizeof(Eigen::Vector4f));
+    data._rotations[i] = rawRotation.normalized();
 }
 
 
