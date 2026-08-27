@@ -32,65 +32,80 @@
 */
 
 #version 460
-#extension GL_GOOGLE_include_directive: enable
-#extension GL_KHR_shader_subgroup_basic: enable
-#extension GL_KHR_shader_subgroup_arithmetic: enable
-#extension GL_KHR_shader_subgroup_ballot: enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_KHR_shader_subgroup_basic : enable
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+// 开启内存物理指针引用支持
+#extension GL_EXT_buffer_reference : enable
+// 开启标量布局，确保紧凑数组的索引和跨步安全一致
+#extension GL_EXT_scalar_block_layout : enable
+
 #ifndef APPLE
 #extension GL_EXT_shader_atomic_int64 : enable
 #endif
 
-#define WORKGROUP_SIZE 256// assert WORKGROUP_SIZE >= RADIX_SORT_BINS
+#define WORKGROUP_SIZE 256 // assert WORKGROUP_SIZE >= RADIX_SORT_BINS
 #define RADIX_SORT_BINS 256U
-#define SUBGROUP_SIZE 32// 32 NVIDIA; 64 AMD
+#define SUBGROUP_SIZE 32 // 32 NVIDIA; 64 AMD
 
-#define BITS 64// sorting uint32_t
+#define BITS 64 // sorting uint32_t
 
 #if BITS == 64
-    #define key_t uint64_t
+#define key_t uint64_t
 #else
-    #define key_t uint
+#define key_t uint
 #endif
 
-layout (local_size_x = WORKGROUP_SIZE) in;
+// ==========================================
+// 1. 定义 Buffer Reference (物理内存指针包装)
+// ==========================================
+layout (buffer_reference, scalar) buffer ElementsIn_Reference {
+key_t g_elements_in[];
+};
 
-layout (push_constant, std430) uniform PushConstants {
+layout (buffer_reference, scalar) buffer ElementsOut_Reference {
+key_t g_elements_out[];
+};
+
+layout (buffer_reference, scalar) buffer PayloadIn_Reference {
+    uint g_payload_in[];
+};
+
+layout (buffer_reference, scalar) buffer PayloadOut_Reference {
+    uint g_payload_out[];
+};
+
+layout (buffer_reference, scalar) buffer Histograms_Reference {
+    uint g_histograms[];
+};
+
+// ==========================================
+// 2. 通过 Push Constant 直接传递所有 Buffer 的物理地址
+// ==========================================
+layout (push_constant, scalar) uniform PushConstants {
     uint g_num_elements;
     uint g_shift;
     uint g_num_workgroups;
     uint g_num_blocks_per_workgroup;
+
+// 完全消除 descriptor sets 绑定，通过物理地址直达内存
+    uint64_t g_elements_in_address;
+    uint64_t g_elements_out_address;
+    uint64_t g_payload_in_address;
+    uint64_t g_payload_out_address;
+    uint64_t g_histograms_address;
 };
 
-layout (std430, set = 0, binding = 0) buffer elements_in {
-    key_t g_elements_in[];
-};
+layout (local_size_x = WORKGROUP_SIZE) in;
 
-layout (std430, set = 0, binding = 1) buffer elements_out {
-    key_t g_elements_out[];
-};
-
-layout (std430, set = 0, binding = 2) buffer payload_in {
-    uint g_payload_in[];
-};
-
-layout (std430, set = 0, binding = 3) buffer payload_out {
-    uint g_payload_out[];
-};
-
-// 看上面的是个内容感觉稍微有点熟悉，感觉应该和 bvh 中的内容应该是差不多
-
-layout (std430, set = 0, binding = 4) buffer histograms {
-// [histogram_of_workgroup_0 | histogram_of_workgroup_1 | ... ]
-    uint g_histograms[];// |g_histograms| = RADIX_SORT_BINS * #WORKGROUPS = RADIX_SORT_BINS * g_num_workgroups
-};
-
-shared uint[RADIX_SORT_BINS / SUBGROUP_SIZE] sums;// subgroup reductions
-shared uint[RADIX_SORT_BINS] global_offsets;// global exclusive scan (prefix sum)
+shared uint[RADIX_SORT_BINS / SUBGROUP_SIZE] sums; // subgroup reductions
+shared uint[RADIX_SORT_BINS] global_offsets;      // global exclusive scan (prefix sum)
 
 struct BinFlags {
 #ifndef APPLE
-    key_t flags[WORKGROUP_SIZE / BITS];
+key_t flags[WORKGROUP_SIZE / BITS];
 #else
     uint flags1[WORKGROUP_SIZE / BITS];
     uint flags2[WORKGROUP_SIZE / BITS];
@@ -105,6 +120,15 @@ void main() {
     uint sID = gl_SubgroupID;
     uint lsID = gl_SubgroupInvocationID;
 
+    // ==========================================
+    // 3. 将 64 位整型物理地址转换为其实例化指针对象
+    // ==========================================
+    ElementsIn_Reference elementsIn = ElementsIn_Reference(g_elements_in_address);
+    ElementsOut_Reference elementsOut = ElementsOut_Reference(g_elements_out_address);
+    PayloadIn_Reference payloadIn = PayloadIn_Reference(g_payload_in_address);
+    PayloadOut_Reference payloadOut = PayloadOut_Reference(g_payload_out_address);
+    Histograms_Reference histograms = Histograms_Reference(g_histograms_address);
+
     uint local_histogram = 0;
     uint prefix_sum = 0;
     uint histogram_count = 0;
@@ -112,7 +136,8 @@ void main() {
     if (lID < RADIX_SORT_BINS) {
         uint count = 0;
         for (uint j = 0; j < g_num_workgroups; j++) {
-            const uint t = g_histograms[RADIX_SORT_BINS * j + lID];
+            // 使用 reference 读取全局直方图
+            const uint t = histograms.g_histograms[RADIX_SORT_BINS * j + lID];
             local_histogram = (j == wID) ? count : local_histogram;
             count += t;
         }
@@ -153,12 +178,13 @@ void main() {
         barrier();
 
         key_t element_in = 0;
-        uint payload_in = 0;
+        uint payload_in_val = 0;
         uint binID = 0;
         uint binOffset = 0;
         if (elementId < g_num_elements) {
-            element_in = g_elements_in[elementId];
-            payload_in = g_payload_in[elementId];
+            // 使用 reference 读取输入数据
+            element_in = elementsIn.g_elements_in[elementId];
+            payload_in_val = payloadIn.g_payload_in[elementId];
             binID = uint(element_in >> g_shift) & uint(RADIX_SORT_BINS - 1);
             // offset for group
             binOffset = global_offsets[binID];
@@ -196,15 +222,17 @@ void main() {
                         const uint partial_count = bitCount(partial_bits1) + bitCount(partial_bits2);
                     #endif
                 #else
-                const uint full_count = bitCount(bits);
-                const uint partial_count = bitCount(bits & (flags_bit - 1));
+                    const uint full_count = bitCount(bits);
+                    const uint partial_count = bitCount(bits & (flags_bit - 1));
                 #endif
                 prefix += (i < flags_bin) ? full_count : 0U;
                 prefix += (i == flags_bin) ? partial_count : 0U;
                 count += full_count;
             }
-            g_elements_out[binOffset + prefix] = element_in;
-            g_payload_out[binOffset + prefix] = payload_in;
+
+            // 使用 reference 写入物理输出地址
+            elementsOut.g_elements_out[binOffset + prefix] = element_in;
+            payloadOut.g_payload_out[binOffset + prefix] = payload_in_val;
             if (prefix == count - 1) {
                 atomicAdd(global_offsets[binID], count);
             }

@@ -1,16 +1,31 @@
 #version 450
-#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+// 必须开启 64 位整型支持
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+// 开启内存物理指针引用支持
+#extension GL_EXT_buffer_reference : require
+// 开启标量布局，确保紧凑数组的索引和跨步安全一致
+#extension GL_EXT_scalar_block_layout : require
 
-layout (std430, set = 0, binding = 0) readonly buffer SortedKeys{
-	uint64_t keys[];
+// ==========================================
+// 1. 定义 Buffer Reference (物理内存指针包装)
+// ==========================================
+layout (buffer_reference, scalar) readonly buffer SortedKeys_Reference {
+    uint64_t keys[];
 };
 
-layout (std430, set = 0, binding = 1) writeonly buffer Ranges{
-	uvec2 ranges[];
+layout (buffer_reference, scalar) writeonly buffer Ranges_Reference {
+    uvec2 ranges[];
 };
 
-layout(push_constant) uniform PushConstants{
-	int numRendered;
+// ==========================================
+// 2. 通过 Push Constant 直接传递所有 64 位物理地址
+// ==========================================
+layout(push_constant, scalar) uniform PushConstants {
+    int numRendered;
+
+// 完全消除描述符绑定，通过地址直达内存
+    uint64_t sortedKeys_address;
+    uint64_t ranges_address;
 };
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
@@ -20,22 +35,32 @@ void main() {
     if (idx >= numRendered) {
         return;
     }
-    
-    uint tileID = uint(keys[idx] >> 32);
-    
+
+    // ==========================================
+    // 3. 将 64 位整数物理地址实例化为可访问的指针对象
+    // ==========================================
+    SortedKeys_Reference sortedKeys = SortedKeys_Reference(sortedKeys_address);
+    Ranges_Reference     ranges     = Ranges_Reference(ranges_address);
+
+    // 读取当前 key 并提取高位 32 位的 tileID
+    uint tileID = uint(sortedKeys.keys[idx] >> 32);
+
     if (idx == 0) {
-        ranges[tileID].x = 0;  // Fixed: use tileID instead of hardcoded 0
+        ranges.ranges[tileID].x = 0;  // Fixed: use tileID instead of hardcoded 0
         return;
     }
-    
-    uint prevTileID = uint((keys[idx-1] >> 32));
-    
+
+    // 读取上一个 key 并提取 tileID
+    uint prevTileID = uint((sortedKeys.keys[idx-1] >> 32));
+
+    // 如果前后两个 key 所属的 tileID 不同，说明在此处发生了 Tile 切换
     if (tileID != prevTileID) {
-        ranges[tileID].x = idx;      // Start of new tile
-        ranges[prevTileID].y = idx - 1;  // End of previous tile
+        ranges.ranges[tileID].x = idx;          // 新 Tile 的起始位置
+        ranges.ranges[prevTileID].y = idx - 1;  // 旧 Tile 的结束位置
     }
-    
-    if (idx == numRendered - 1) {
-        ranges[tileID].y = numRendered;  // End of last tile
+
+    // 如果是最后一个渲染元素，强制闭合当前 Tile 的边界
+    if (idx == uint(numRendered - 1)) {
+        ranges.ranges[tileID].y = uint(numRendered); // 最后一个 Tile 的边界
     }
 }

@@ -1,39 +1,11 @@
-/**
-* VkRadixSort written by Mirco Werner: https://github.com/MircoWerner/VkRadixSort
-* Based on implementation of Intel's Embree: https://github.com/embree/embree/blob/v4.0.0-ploc/kernels/rthwif/builder/gpu/sort.h
-*/
-
-/**
-* This shader is modified from the original to support 64-bit k-v pairs.
-* The license of the original code is as follows:
-
-    MIT License
-
-    Copyright (c) 2023 Mirco Werner
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-*/
-
 #version 460
-#extension GL_GOOGLE_include_directive: enable
-#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+#extension GL_GOOGLE_include_directive : enable
+// 必须开启 64 位整型支持（用于处理指针地址和 64 位 key）
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+// 开启 Buffer Reference 指针引用支持
+#extension GL_EXT_buffer_reference : require
+// 建议开启标量布局，配合 buffer_reference 避免隐式对齐带来的跨步问题
+#extension GL_EXT_scalar_block_layout : require
 
 #define WORKGROUP_SIZE 256 // assert WORKGROUP_SIZE >= RADIX_SORT_BINS
 #define RADIX_SORT_BINS 256U
@@ -41,28 +13,37 @@
 #define BITS 64
 
 #if BITS == 64
-    #define key_t uint64_t
+#define key_t uint64_t
 #else
-    #define key_t uint
+#define key_t uint
 #endif
 
-layout (local_size_x = WORKGROUP_SIZE) in;
+// ==========================================
+// 1. 定义 Buffer Reference (物理内存指针包装)
+// ==========================================
+layout (buffer_reference, scalar) buffer ElementsIn_Reference {
+key_t g_elements_in[];
+};
 
+layout (buffer_reference, scalar) buffer Histograms_Reference {
+    uint g_histograms[];
+};
+
+// ==========================================
+// 2. 通过 Push Constant 直接传递内存物理地址
+// ==========================================
 layout (push_constant, std430) uniform PushConstants {
     uint g_num_elements;
     uint g_shift;
     uint g_num_workgroups;
     uint g_num_blocks_per_workgroup;
+
+// 减少绑定：直接接收 Buffer 的 GPU 虚拟地址（Device Address）
+    uint64_t g_elements_in_address;
+    uint64_t g_histograms_address;
 };
 
-layout (std430, set = 0, binding = 0) buffer elements_in {
-    key_t g_elements_in[];
-};
-
-layout (std430, set = 0, binding = 1) buffer histograms {
-// [histogram_of_workgroup_0 | histogram_of_workgroup_1 | ... ]
-    uint g_histograms[]; // |g_histograms| = RADIX_SORT_BINS * #WORKGROUPS
-};
+layout (local_size_x = WORKGROUP_SIZE) in;
 
 shared uint[RADIX_SORT_BINS] histogram;
 
@@ -71,24 +52,33 @@ void main() {
     uint lID = gl_LocalInvocationID.x;
     uint wID = gl_WorkGroupID.x;
 
-    // initialize histogram
+    // ==========================================
+    // 3. 将 64 位整数地址实例化为可访问的 Buffer 对象
+    // ==========================================
+    ElementsIn_Reference elementsIn = ElementsIn_Reference(g_elements_in_address);
+    Histograms_Reference histograms = Histograms_Reference(g_histograms_address);
+
+    // 初始化共享内存直方图
     if (lID < RADIX_SORT_BINS) {
         histogram[lID] = 0U;
     }
     barrier();
 
+    // 统计各个 Bin 的数量
     for (uint index = 0; index < g_num_blocks_per_workgroup; index++) {
         uint elementId = wID * g_num_blocks_per_workgroup * WORKGROUP_SIZE + index * WORKGROUP_SIZE + lID;
         if (elementId < g_num_elements) {
-            // determine the bin
-            const uint bin = uint(g_elements_in[elementId] >> g_shift) & (RADIX_SORT_BINS - 1);
-            // increment the histogram
+            // 通过 buffer_reference 指针访问输入数据
+            const uint bin = uint(elementsIn.g_elements_in[elementId] >> g_shift) & (RADIX_SORT_BINS - 1);
+            // 递增共享直方图
             atomicAdd(histogram[bin], 1U);
         }
     }
     barrier();
 
+    // 将当前 Workgroup 的统计结果写入到全局直方图 Buffer 中
     if (lID < RADIX_SORT_BINS) {
-        g_histograms[RADIX_SORT_BINS * wID + lID] = histogram[lID];
+        // 通过 buffer_reference 指针访问输出数据
+        histograms.g_histograms[RADIX_SORT_BINS * wID + lID] = histogram[lID];
     }
 }

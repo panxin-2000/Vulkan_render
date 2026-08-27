@@ -1,37 +1,56 @@
 #version 450
-#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+// Required for 64-bit integer addresses
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+// Required for pointer-like physical memory tracking
+#extension GL_EXT_buffer_reference : require
+// Required to guarantee tight/unpadded scalar arrays matching C++ definitions
+#extension GL_EXT_scalar_block_layout : require
 
 #define TILE_WIDTH 16
 #define TILE_HEIGHT 16
 
-layout (std430, set = 0, binding = 0) readonly buffer Ranges {
+// ==========================================
+// 1. Define Buffer Reference Layouts
+// ==========================================
+layout (buffer_reference, scalar) readonly buffer Ranges_Reference {
     uvec2 ranges[];
 };
 
-layout (std430, set = 0, binding = 1) readonly buffer Values {
+layout (buffer_reference, scalar) readonly buffer Values_Reference {
     uint gaussianId[];
 };
 
-layout (std430, set = 0, binding = 2) readonly buffer Rgb {
+layout (buffer_reference, scalar) readonly buffer Rgb_Reference {
     vec3 color[];
 };
 
-layout (std430, set = 0, binding = 3) readonly buffer conicOpacity {
+layout (buffer_reference, scalar) readonly buffer ConicOpacity_Reference {
     vec4 conic[];
 };
 
-layout (std430, set = 0, binding = 4) readonly buffer pointsXY {
+layout (buffer_reference, scalar) readonly buffer PointsXY_Reference {
     vec2 pos2d[];
 };
 
-layout(set = 0, binding = 5) uniform writeonly image2D outputImage;
-
-layout(push_constant) uniform Constants {
+// ==========================================
+// 2. Pass 64-bit Buffer Addresses via Push Constants
+// ==========================================
+layout(push_constant, scalar) uniform Constants {
     uint width;
     uint height;
     uint wireframe;
     float gaussScale;
+
+// Buffer device addresses instead of layout bindings
+    uint64_t ranges_address;
+    uint64_t gaussianId_address;
+    uint64_t color_address;
+    uint64_t conic_address;
+    uint64_t pos2d_address;
 };
+
+// Storage Image stays as a bound asset descriptor since GLSL images do not support buffer_reference
+layout(set = 0, binding = 0) uniform writeonly image2D outputImage;
 
 layout (local_size_x = TILE_WIDTH, local_size_y = TILE_HEIGHT, local_size_z = 1) in;
 
@@ -47,12 +66,21 @@ void main() {
         return;
     }
 
+    // ==========================================
+    // 3. Instantiate Reference Interfaces
+    // ==========================================
+    Ranges_Reference       ranges     = Ranges_Reference(ranges_address);
+    Values_Reference       gaussianId = Values_Reference(gaussianId_address);
+    Rgb_Reference          color      = Rgb_Reference(color_address);
+    ConicOpacity_Reference conic      = ConicOpacity_Reference(conic_address);
+    PointsXY_Reference     pos2d      = PointsXY_Reference(pos2d_address);
+
     uint tiles_width = (width + TILE_WIDTH - 1) / TILE_WIDTH;
     uint tile_id = tileX + tileY * tiles_width;
 
-    // Get range for this tile
-    uint start = ranges[tile_id].x;
-    uint end = ranges[tile_id].y;
+    // Get range for this tile safely via memory references
+    uint start = ranges.ranges[tile_id].x;
+    uint end = ranges.ranges[tile_id].y;
 
     // Initialize accumulation variables
     float Transparency = 1.0f;  // 被理解占比 更合适，
@@ -62,21 +90,22 @@ void main() {
     for (uint i = start; i < end; i++) {
         // Get gaussian index from sorted list
         // 获得 高斯      索引   从  排序好的 list 中
-        uint gauss_idx = gaussianId[i];
+        uint gauss_idx = gaussianId.gaussianId[i];
 
         // Get gaussian properties
-        vec2 xy = pos2d[gauss_idx];      // 拿到 高斯的位置
-        vec2 d = xy - vec2(curr_pixel);  // 获得 当前像素与中心点的偏差
-        vec4 con_o = conic[gauss_idx];   // conix 圆锥
+        vec2 xy = pos2d.pos2d[gauss_idx];   // 拿到 高斯的位置
+        vec2 d = xy - vec2(curr_pixel);     // 获得 当前像素与中心点的偏差
+        vec4 con_o = conic.conic[gauss_idx];// conix 圆锥
+
         float power = -0.5f * (con_o.x * d.x * d.x + con_o.z * d.y * d.y)
-                      - con_o.y * d.x * d.y;
+        - con_o.y * d.x * d.y;
         float alpha = min(0.99f, con_o.w * exp(power));
         // 上面五行需要去看完整的公式
 
         if (wireframe == 1) {
 
             if (length(d) < gaussScale) {
-                vec3 wireColor = color[gauss_idx];
+                vec3 wireColor = color.color[gauss_idx];
                 float wireAlpha = 0.8 * alpha * (gaussScale / length(d));
 
                 Calculate_color = Calculate_color * (1.0 - wireAlpha) + wireColor * wireAlpha;
@@ -105,28 +134,14 @@ void main() {
             break;
         }
 
-
-
-        // Accumulate color
-        vec3 col = color[gauss_idx];
+        // Accumulate color via pointer lookup
+        vec3 col = color.color[gauss_idx];
         Calculate_color += col * alpha * Transparency;
         // 第 i 个高斯贡献的颜色 = 它原本的颜色 * 自身的不透明度 * 前面所有高斯留给它的透光率
         // i 个 相加就能得到最后的结果
         Transparency = test_T;
     }
 
-    // Write final color
-    /*#ifdef APPLE
-    
-    imageStore(outputImage, ivec2(2*curr_pixel.x, 2*curr_pixel.y+1), vec4(C, 1.0f - T));
-    imageStore(outputImage, ivec2(2*curr_pixel.x+1, 2*curr_pixel.y), vec4(C, 1.0f - T));
-    imageStore(outputImage, ivec2(2*curr_pixel.x+1, 2*curr_pixel.y+1), vec4(C, 1.0f - T));
-    imageStore(outputImage, ivec2(2*curr_pixel.x, 2*curr_pixel.y), vec4(C, 1.0f - T));
-
-    #else
-    imageStore(outputImage, ivec2(curr_pixel), vec4(C.rgb, 1.0f - T));
-    #endif*/
-
+    // Write final color back to image
     imageStore(outputImage, ivec2(curr_pixel), vec4(Calculate_color.rgb, 1.0f - Transparency));
-
 }
