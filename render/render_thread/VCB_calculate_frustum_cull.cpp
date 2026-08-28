@@ -30,20 +30,51 @@ void VCB::render_3DGS_preprocess(const entt::entity entity) {
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                            &command_push_const);
         vkCmdDispatch(command_buffer_, ALIGN_256(command_push_const.gaussianCount) / 256, 1, 1);
+        add_barriers({command_push_const.tilesTouched_ptr});
     }
 }
 
 void VCB::render_3DGS_prefixsum(const entt::entity entity) {
-    // VKR_shader_paths temp{
-    //     "", "", "", "3DGS/prefixsum"
-    // };
-    // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
-    //
-    // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
-    //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
-    //                    &command_calculate);
-    // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+    VKR_shader_paths temp{
+        "", "", "", "3DGS/prefixsum"
+    };
+    auto command_shader     = Engine::instance().get_shader_manager().find(temp);
+    auto command_push_const = Render_entt().get<object_3DGS_parameters>(entity);
+
+    uint32_t prefixSumGroups = ALIGN_256(command_push_const.gaussianCount) / 256;
+    uint32_t _numSteps       = static_cast<uint32_t>(std::ceil(std::log2(command_push_const.gaussianCount)));
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+
+    VKR_buffer_ptr result;
+    for (uint32_t step = 0; step <= _numSteps; step++) {
+        // 每次 一半，一半的一半，一直相加
+        struct PushConstants {
+            uint64_t buffer_A_Address; //  command_push_const.tilesTouched_ptr
+            uint64_t buffer_B_Address; //  和上面大小相同的一个 buffer
+            uint32_t step;
+            int32_t numElements;
+            int32_t readFromA;
+        } pushConstants = {
+            command_push_const.tilesTouched_ptr->get_gpu_device_address(),
+            command_push_const.tilesTouched_Prefix_Sum_ptr->get_gpu_device_address(),
+            step,
+            int32_t(command_push_const.gaussianCount),
+            (step % 2) == 0 ? 1 : 0,
+        };
+        // 还是需要确定最后的 输出的结果是那个 buffer 上的内容
+        if (pushConstants.readFromA == 1) {
+            result = command_push_const.tilesTouched_Prefix_Sum_ptr;
+        } else if (pushConstants.readFromA == 0) {
+            result = command_push_const.tilesTouched_ptr;
+        }
+        vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants),
+                           &pushConstants);
+        // 这里确实是将全部的组都运行了一遍
+        vkCmdDispatch(command_buffer_, prefixSumGroups, 1, 1);
+
+        add_barriers({result});
+    }
 }
 
 void VCB::render_3DGS_idkeys(const entt::entity entity) {
@@ -108,6 +139,39 @@ void VCB::render_3DGS_render(const entt::entity entity) {
     //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
     //                    &command_calculate);
     // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+}
+
+
+void VCB::add_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const {
+    std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
+    write_buffer_barriers.reserve(buffer_ptrs.size());
+    for (const auto &buffer_ptr: buffer_ptrs) {
+        write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
+                                            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
+                                            .pNext = nullptr,
+                                            .srcStageMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                                            .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+                                            .dstStageMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                                            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                                            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                            .buffer = buffer_ptr->get_buffer_handle(time_line_),
+                                            .offset = 0,
+                                            .size = VK_WHOLE_SIZE,
+                                        });
+    }
+    VkDependencyInfo barrierDependencyInfo{
+        .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .pNext                    = nullptr,
+        .dependencyFlags          = 0, // 默认填零，需要VR 或其他选项时才需要填
+        .memoryBarrierCount       = 0,
+        .pMemoryBarriers          = nullptr,
+        .bufferMemoryBarrierCount = static_cast<uint32_t>(write_buffer_barriers.size()),
+        .pBufferMemoryBarriers    = write_buffer_barriers.data(),
+        .imageMemoryBarrierCount  = 0,
+        .pImageMemoryBarriers     = nullptr,
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
 
 

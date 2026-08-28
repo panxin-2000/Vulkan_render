@@ -45,7 +45,9 @@ void object_3DGS::add_model(const std::string &file_path) {
     parameters.rgb_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
     parameters.conicOpacity_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
     parameters.pointsXY_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 2);
-    parameters.tilesTouched_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float));
+    parameters.tilesTouched_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(uint32_t));
+    parameters.tilesTouched_Prefix_Sum_ptr =
+            copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(uint32_t));
     parameters.bbox_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
     parameters.update_gpu_addresses();
     logic_update_proxy(entity, parameters);

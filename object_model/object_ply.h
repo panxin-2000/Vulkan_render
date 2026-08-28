@@ -58,6 +58,8 @@ public:
     VKR_buffer_ptr pointsXY_ptr;
     VKR_buffer_ptr tilesTouched_ptr;
     VKR_buffer_ptr bbox_ptr;
+    VKR_buffer_ptr tilesTouched_Prefix_Sum_ptr;
+
 
     void update_gpu_addresses() {
         positions_address       = positions_ptr->get_gpu_device_address();

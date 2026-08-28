@@ -15,11 +15,11 @@ layout (buffer_reference, scalar) buffer Buffer_B_struct {
 
 
 layout(push_constant) uniform Constants {
+    uint64_t buffer_A_Address;
+    uint64_t buffer_B_Address;
     uint step;
     uint numElements;
     uint readFromA;
-    uint64_t buffer_A_Address;
-    uint64_t buffer_B_Address;
 // readFromA 最后一个是为
 };
 

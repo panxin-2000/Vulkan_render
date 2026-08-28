@@ -284,6 +284,7 @@ void render_different_pass(VCB &vcb,
         auto view = Render_entt().view<ply_3DGS_tag>();
         for (const auto entity: view) {
             vcb.render_3DGS_preprocess(entity);
+            vcb.render_3DGS_prefixsum(entity);
         }
     }
 

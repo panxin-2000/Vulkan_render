@@ -145,6 +145,8 @@ public:
 
     void render_3DGS_render(entt::entity entity);
 
+    void add_barriers(const std::vector<VKR_buffer_ptr>& buffer_ptrs) const;
+
     void calculate_frustum_cull(
         const entt::entity entity,
         const FrustumPlanes &frustum_planes,
