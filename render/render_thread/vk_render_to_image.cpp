@@ -280,6 +280,12 @@ void render_different_pass(VCB &vcb,
     // 那么这里是否可以插入 其他的内容呢?
     //
 
+    {
+        auto view = Render_entt().view<ply_3DGS_tag>();
+        for (const auto entity: view) {
+            vcb.render_3DGS_preprocess(entity);
+        }
+    }
 
 
     // 在这里的时候需要插入 FXAA

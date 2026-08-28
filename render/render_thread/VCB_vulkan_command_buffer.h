@@ -133,6 +133,18 @@ public:
     void build_compute_dispatch(entt::entity entity);
 
 
+    void render_3DGS_preprocess(entt::entity entity);
+
+    void render_3DGS_prefixsum(entt::entity entity);
+
+    void render_3DGS_idkeys(entt::entity entity);
+
+    void render_3DGS_histogram_radixsort(entt::entity entity);
+
+    void render_3DGS_tile_boundaries(entt::entity entity);
+
+    void render_3DGS_render(entt::entity entity);
+
     void calculate_frustum_cull(
         const entt::entity entity,
         const FrustumPlanes &frustum_planes,

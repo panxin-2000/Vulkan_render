@@ -15,8 +15,6 @@
 #include "manifold/manifold.h"
 
 
-
-
 void test_single_char() {
     msdfgen::FreetypeHandle *ft = msdfgen::initializeFreetype();
 

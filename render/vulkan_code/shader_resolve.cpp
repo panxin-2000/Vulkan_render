@@ -28,10 +28,13 @@ Shader_data VKR_shader_init(const VKR_shader_paths &shader_paths) {
         shader_data_handle->spv_data_geo = CompileGlslToSpv(shader_paths, shader_paths.geometry_path_,
                                                             shaderc_glsl_geometry_shader);
 
-        shader_data_handle->pipeline_shader_stage_create_infos =
-                find_graphics_shader_module(backend, shader_paths, shader_data_handle);
-        shader_data_handle->computer_shader_stage_create_infos =
-                find_compute_shader_module(backend, shader_paths, shader_data_handle);
+        if (!shader_data_handle->spv_data_vert.empty() && !shader_data_handle->spv_data_frag.empty()) {
+            shader_data_handle->pipeline_shader_stage_create_infos =
+                    find_graphics_shader_module(backend, shader_paths, shader_data_handle);
+        } else {
+            shader_data_handle->computer_shader_stage_create_infos =
+                    find_compute_shader_module(backend, shader_paths, shader_data_handle);
+        }
         shader_data_handle->object_sets_bindings =
                 organize_descriptor_set_and_binding_layouts(shader_paths, shader_data_handle);
         shader_data_handle->shader_key = get_shader_key(shader_paths);

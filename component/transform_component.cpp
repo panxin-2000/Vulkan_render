@@ -63,26 +63,26 @@ void update_primitives_model_box(const entt::entity model_entity) {
         }
         const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
 
-        auto &command_calculate        = Logic_entt().get<GPU_frustum_cull>(model_entity);
-        command_calculate.command_size = primitives.size(); {
+        auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
+        frustum_cull.command_size = primitives.size(); {
             const auto boxes_ptr                = boxes.data();
             auto boxes_size                     = boxes.size() * sizeof(Render_AABB);
             auto boxes_buffer                   = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
-            command_calculate.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
-            command_calculate.AABB_boxes_buffer = boxes_buffer;
+            frustum_cull.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
+            frustum_cull.AABB_boxes_buffer = boxes_buffer;
         } {
             const auto primitives_ptr                 = primitives.data();
             auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
             auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
-            command_calculate.camera_write_buffer     = primitives_buffer;
+            frustum_cull.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
+            frustum_cull.camera_write_buffer     = primitives_buffer;
             // 下面的几行还是需要测试的 , 为什么呢? 因为计算的时候只去算了 是否到绘制, 其他的信息根本没添加或者更改
-            command_calculate.light_write_buffer[0]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.light_write_buffer[1]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.light_write_buffer[2]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            command_calculate.light_write_buffer[3]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[0]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[1]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[2]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[3]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
         }
-        logic_update_proxy(model_entity, command_calculate);
+        logic_update_proxy(model_entity, frustum_cull);
     }
 }
 

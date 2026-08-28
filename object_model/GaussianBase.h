@@ -52,7 +52,7 @@ public:
 
     // Data vectors
     std::vector<Eigen::Vector4f> _xyz;
-    std::vector<Eigen::Vector3f> _normals;
+    std::vector<Eigen::Vector3f> _normals; // 好像并没有使用
     std::vector<float> _shCoefficients;
     std::vector<float> _opacities;
     std::vector<Eigen::Vector4f> _scales;

@@ -30,6 +30,7 @@
 #include "imgui.h"
 #include "input_device_manage.h"
 #include "object_line.h"
+#include "object_ply.h"
 #include "skybox.h"
 
 
@@ -86,6 +87,9 @@ int main(int argc, char *argv[]) {
     box.add_mesh({{1, 1, 1}, {2, 2, 2}});
     box.set_transform();
 
+
+    object_3DGS object_ply_model("3dGS");
+    object_ply_model.add_model("/Users/panxin/Downloads/Rhynocoris/scene.ply");
 
     object_line line("line");
     line.add_B_spline_curve();

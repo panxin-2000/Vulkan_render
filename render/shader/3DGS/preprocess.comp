@@ -7,7 +7,7 @@
 #extension GL_EXT_scalar_block_layout : require
 
 #extension GL_GOOGLE_include_directive : enable
-#include "./../global_shader_common.glsl"
+#include "global_shader_common.glsl"
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
@@ -55,13 +55,6 @@ layout(buffer_reference, scalar) writeonly buffer BoundingBox_Ref       { uvec4 
 // 2. 通过 Push Constant 一口气上传原本需要 12 个 Binding 的地址
 // ==========================================================
 layout(push_constant, scalar) uniform PushConstants {
-    uint gaussianCount;
-    float near;
-    float far;
-    uint culling;
-    int shDegree;
-
-// 12 个裸 64 位 GPU 虚拟地址（Device Address）
     uint64_t positions_address;
     uint64_t scales_address;
     uint64_t rotations_address;
@@ -75,6 +68,13 @@ layout(push_constant, scalar) uniform PushConstants {
     uint64_t pointsXY_address;
     uint64_t tilesTouched_address;
     uint64_t bbox_address;
+
+    float near;
+    float far;
+    uint gaussianCount;
+    uint culling;
+    int shDegree;
+
 } pc;
 
 // ==========================================================

@@ -46,4 +46,13 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
 VKR_buffer_ptr copy_data_to_SSBO_buffer(const void *src, uint64_t size);
 
 
+template<typename T1>
+VKR_buffer_ptr copy_data_to_SSBO_buffer(const std::vector<T1> &data) {
+    const auto primitives_ptr = data.data();
+    auto primitives_size      = data.size() * sizeof(T1);
+    auto primitives_buffer    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+    return primitives_buffer;
+}
+
+
 #endif //HELLO_MAC_UPDATE_PUSH_CONSTANTS_DATA_H
