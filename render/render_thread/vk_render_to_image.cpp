@@ -365,7 +365,13 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
             auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
             Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
         }
+    } {
+        auto view = Render_entt().view<ply_3DGS_tag>();
+        for (const auto entity: view) {
+            render_render_parameter(entity, "parameters", engine.get_global_parameters());
+        }
     }
+
     engine.update_bindless_descriptor_sets_function();
     object_parameter_update();
     descriptor_set_update_function();

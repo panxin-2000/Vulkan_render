@@ -89,6 +89,10 @@ int main(int argc, char *argv[]) {
 
 
     object_3DGS object_ply_model("3dGS");
+    object_ply_model.add_shader_path(VKR_shader_paths{
+                                         "", "", "", "3DGS/preprocess"
+                                     });
+
     object_ply_model.add_model("/Users/panxin/Downloads/Rhynocoris/scene.ply");
 
     object_line line("line");

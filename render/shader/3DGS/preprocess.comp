@@ -7,7 +7,28 @@
 #extension GL_EXT_scalar_block_layout : require
 
 #extension GL_GOOGLE_include_directive : enable
-#include "global_shader_common.glsl"
+#include "commom_function_and_struct.glsl"
+
+
+#define SHADOW_MAP_CASCADE_COUNT 4
+
+layout (set = 0, binding = 0) uniform parameters
+{
+    mat4 view;
+    mat4 projection;
+    mat4 invView;
+    mat4 invProjection;
+    mat4 inv_VP;
+    mat4 cascadeViewProjMat[SHADOW_MAP_CASCADE_COUNT];
+    vec4 frustum_planes[6];
+    vec4 light_frustum_planes[4 * 6];
+    vec3 viewPos; // camPos
+    Light light;
+    vec4 screen_size;
+    SphericalHarmonics SH;
+    float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
+    vec4 pad[6];
+};
 
 layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
 
