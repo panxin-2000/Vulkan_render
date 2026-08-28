@@ -342,8 +342,8 @@ void main() {
     float tan_fovy = abs(1.0 / projection[1][1]);
 
     // 2. 根据当前的屏幕分辨率计算像素焦距 focal_x 和 focal_y
-    float focal_x = float(screen_size.x / 4) / (2.0 * tan_fovx);
-    float focal_y = float(screen_size.y / 4) / (2.0 * tan_fovy);
+    float focal_x = float(screen_size.x / 8) / (2.0 * tan_fovx);
+    float focal_y = float(screen_size.y / 8) / (2.0 * tan_fovy);
 
 
     if (idx >= pc.gaussianCount) return;
@@ -360,8 +360,8 @@ void main() {
     pointsXY = OutputPointsXY_Ref(pc.pointsXY_address);
     tilesTouched = OutputTilesTouched_Ref(pc.tilesTouched_address);
     bbox = BoundingBox_Ref(pc.bbox_address);
-    int gridX = (int(screen_size.x / 4) + BLOCK_X - 1) / BLOCK_X;
-    int gridY = (int(screen_size.y / 4) + BLOCK_Y - 1) / BLOCK_Y;
+    int gridX = (int(screen_size.x / 8) + BLOCK_X - 1) / BLOCK_X;
+    int gridY = (int(screen_size.y / 8) + BLOCK_Y - 1) / BLOCK_Y;
 
 
     //    if (idx < 10) { vec3 scale = scales.scales[idx].xyz;
@@ -377,9 +377,8 @@ void main() {
     // Frustum culling
     vec3 pView;
     bool inFrust = inFrustum(int(idx), pView);
-    if (pc.culling == 1){
-        if (!inFrust) return;
-    }
+    if (!inFrust) return;
+
 
     // Transform to clip space
     vec4 pOrig = positions.positions[idx];
@@ -407,9 +406,15 @@ void main() {
     float lambda2 = mid - sqrt(max(0.1, mid * mid - det));
     float myRadius = ceil(3.0 * sqrt(max(lambda1, lambda2)));
     vec2 pointImage = vec2(
-            ndc2Pix(pProj.x, int(screen_size.x / 4)),
-            ndc2Pix(pProj.y, int(screen_size.y / 4))
+            ndc2Pix(pProj.x, int(screen_size.x / 8)),
+            ndc2Pix(pProj.y, int(screen_size.y / 8))
     );
+    if (opacities.opacities[idx] < 0.005f) {
+        return; // 直接丢弃，不参与后续的 Tile 复制和排序
+    }
+    if (myRadius < 1.0f) {  
+        return;
+    }
 
     ivec2 rectMin = ivec2(
             min(gridX, max(0, int((pointImage.x - myRadius) / BLOCK_X))),
