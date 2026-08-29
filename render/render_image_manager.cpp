@@ -59,7 +59,7 @@ VKR_image_ptr Render_image_manager::get_one_color_image() {
         .height = extent.height,
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
         .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
         .tiling      = VK_IMAGE_TILING_OPTIMAL,
         .mipLevels   = 1,

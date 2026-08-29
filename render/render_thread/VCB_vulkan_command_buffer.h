@@ -79,6 +79,8 @@ public:
 
     void compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image);
 
+    void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
+
     void end_command_buffer();
 
 

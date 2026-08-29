@@ -88,6 +88,32 @@ void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish
     vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
 }
 
+void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image) {
+    VkImageMemoryBarrier2 barrierDrawImage{
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
+        .srcAccessMask = VK_ACCESS_2_NONE,
+        .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+        .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout     = VK_IMAGE_LAYOUT_GENERAL,
+        .image         = compute_write_finish_image->get_image_handle(),
+        .subresourceRange{
+            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel   = 0,
+            .levelCount     = 1,
+            .baseArrayLayer = 0,
+            .layerCount     = 1
+        }
+    };
+    VkDependencyInfo drawImageDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers    = &barrierDrawImage
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+}
+
 void VCB::end_command_buffer() {
     if (query_pool_ != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(command_buffer_,

@@ -290,11 +290,16 @@ void render_different_pass(VCB &vcb,
         }
     } {
         auto view = Render_entt().view<compute_postprocess_tag>();
+        if (!view.empty()) {
+            vcb.compute_write_init_barrier(compute_write_image);
+        }
         for (const auto entity: view) {
             vcb.deal_image(entity, compute_write_image);
         }
-        // vcb.compute_write_finish_barrier(compute_write_image);
-        // vcb.copy_image(compute_write_image, color_image);
+        if (!view.empty()) {
+            vcb.compute_write_finish_barrier(compute_write_image);
+            vcb.copy_image(compute_write_image, color_image);
+        }
     }
 
     // 在这里的时候需要插入 FXAA

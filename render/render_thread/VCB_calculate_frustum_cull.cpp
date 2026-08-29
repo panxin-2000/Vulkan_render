@@ -265,18 +265,25 @@ void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
     } else {
         VkImageBlit blitRegion{};
         // 源范围：你的中转图大小 (0,0) 到 (Width, Height)
-        blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blitRegion.srcOffsets[0]             = {0, 0, 0};
-        blitRegion.srcOffsets[1]             = {
+        blitRegion.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blitRegion.srcSubresource.mipLevel       = 0;
+        blitRegion.srcSubresource.baseArrayLayer = 0;
+        blitRegion.srcSubresource.layerCount     = 1;
+        blitRegion.srcOffsets[0]                 = {0, 0, 0};
+        blitRegion.srcOffsets[1]                 = {
             static_cast<int32_t>(src_image->get_width()),
             static_cast<int32_t>(src_image->get_height()),
             1
         };
 
         // 目标范围：当前交换链的大小 (0,0) 到 (SwapchainWidth, SwapchainHeight)
-        blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blitRegion.dstOffsets[0]             = {0, 0, 0};
-        blitRegion.dstOffsets[1]             = {
+        blitRegion.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        blitRegion.dstSubresource.mipLevel       = 0;
+        blitRegion.dstSubresource.baseArrayLayer = 0;
+        blitRegion.dstSubresource.layerCount     = 1;
+
+        blitRegion.dstOffsets[0] = {0, 0, 0};
+        blitRegion.dstOffsets[1] = {
             static_cast<int32_t>(dst_image->get_width()),
             static_cast<int32_t>(dst_image->get_height()),
             1
