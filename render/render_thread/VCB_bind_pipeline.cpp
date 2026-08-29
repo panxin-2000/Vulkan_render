@@ -46,7 +46,7 @@ void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
 
 
 void VCB::bind_pipeline_update_parameter(entt::entity entity, const Shader_data &shader_data_ref) {
-    auto debug_name = Render_entt().get<Name_component>(entity).name_;
+    // auto debug_name = Render_entt().get<Name_component>(entity).name_;
     if (!shader_data_ref->pipeline_shader_stage_create_infos.empty()) {
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_data_ref->pipeline_t);
         bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_GRAPHICS);

@@ -1,7 +1,10 @@
 #version 450
 
+
+#extension GL_GOOGLE_include_directive : enable
+#include "global_shader_common.glsl"
+
 // 使用 image2D 替代指针。rgba8 是图片的硬件格式
-layout(rgba8, binding = 0) writeonly uniform image2D outTexture;
 
 layout(push_constant) uniform PushConstants {
     float radius;
@@ -12,7 +15,7 @@ void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
 
-    ivec2 texSize = imageSize(outTexture);
+    ivec2 texSize = imageSize(global_compute_Texture);
     uint width = uint(texSize.x);
     uint height = uint(texSize.y);
 
@@ -38,8 +41,8 @@ void main() {
     // 如果在圆的半径以内，涂成红色 (RGBA: 255, 0, 0, 255 -> 0xFF0000FF
     // 注意根据你的机器字节序，通常 0xFF0000FF 对应 RGBA 或者 ABGR)
     if (distance <= radius) {
-        imageStore(outTexture, pixelCoord, vec4(1.0, 0.0, 0.0, 1.0)); // 纯红
+        imageStore(global_compute_Texture, pixelCoord, vec4(1.0, 0.0, 0.0, 1.0)); // 纯红
     } else {
-        imageStore(outTexture, pixelCoord, vec4(0.0, 0.0, 0.0, 1.0)); // 纯黑背景
+        imageStore(global_compute_Texture, pixelCoord, vec4(0.0, 0.0, 0.0, 1.0)); // 纯黑背景
     }
 }

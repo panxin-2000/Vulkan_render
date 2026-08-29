@@ -303,7 +303,7 @@ void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write) {
     };
 
     const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
-    bind_pipeline_update_parameter(entity, shader_data_ref);
+    bind_pipeline_update_parameter(entt::null, shader_data_ref);
 
 
     auto width   = write->get_width();

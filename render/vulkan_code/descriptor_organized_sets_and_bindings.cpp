@@ -318,9 +318,10 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
         tem.stageFlags                   = get_stageFlags(shaderStage); // todo: 有麻烦了，需要带有或逻辑的 stageFlag
         tem.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         if (res.name.find("global") != std::string::npos) {
-            tem.descriptorType                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            tem.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            tem.stageFlags     = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             global_bindings_set[set][binding] = {tem, res.name, "uniform buffer", shaderStage, need_allocate_size};
         } else {
             auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -349,9 +350,10 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         if (res.name.find("global") != std::string::npos) {
-            tem.descriptorType                = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            tem.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            tem.stageFlags     = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             global_bindings_set[set][binding] = {tem, res.name, "storage buffer", shaderStage, 0};
         } else {
             auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -389,12 +391,14 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             }
         }
         if (res.name.find("bindless") != std::string::npos) {
-            auto stageFlag                      = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                      = tem.stageFlags | stageFlag;
+            tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
         } else if (res.name.find("global") != std::string::npos) {
-            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler2D", shaderStage, 0, flag};
         } else {
             auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -412,12 +416,14 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
         if (res.name.find("bindless") != std::string::npos) {
-            auto stageFlag                      = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                      = tem.stageFlags | stageFlag;
+            tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         } else if (res.name.find("global") != std::string::npos) {
-            auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-            tem.stageFlags                    = tem.stageFlags | stageFlag;
+            tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                             VK_SHADER_STAGE_FRAGMENT_BIT |
+                             VK_SHADER_STAGE_COMPUTE_BIT;
             global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         } else {
             auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -436,12 +442,14 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             tem.stageFlags      = get_stageFlags(shaderStage);
             tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
             if (res.name.find("bindless") != std::string::npos) {
-                auto stageFlag                      = find_stageFlag(global_bindings_set, res.name);
-                tem.stageFlags                      = tem.stageFlags | stageFlag;
+                tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                 VK_SHADER_STAGE_FRAGMENT_BIT |
+                                 VK_SHADER_STAGE_COMPUTE_BIT;
                 bindless_bindings_set[set][binding] = {tem, res.name, "uniform image2D", shaderStage, 0};
             } else if (res.name.find("global") != std::string::npos) {
-                auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-                tem.stageFlags                    = tem.stageFlags | stageFlag;
+                tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                 VK_SHADER_STAGE_FRAGMENT_BIT |
+                                 VK_SHADER_STAGE_COMPUTE_BIT;
                 global_bindings_set[set][binding] = {tem, res.name, "uniform image2D", shaderStage, 0};
             } else {
                 auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -462,12 +470,14 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             tem.stageFlags      = get_stageFlags(shaderStage);
             tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             if (res.name.find("bindless") != std::string::npos) {
-                auto stageFlag                      = find_stageFlag(global_bindings_set, res.name);
-                tem.stageFlags                      = tem.stageFlags | stageFlag;
+                tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                 VK_SHADER_STAGE_FRAGMENT_BIT |
+                                 VK_SHADER_STAGE_COMPUTE_BIT;
                 bindless_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
             } else if (res.name.find("global") != std::string::npos) {
-                auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
-                tem.stageFlags                    = tem.stageFlags | stageFlag;
+                tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+                                 VK_SHADER_STAGE_FRAGMENT_BIT |
+                                 VK_SHADER_STAGE_COMPUTE_BIT;
                 global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
             } else {
                 auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
@@ -560,7 +570,7 @@ std::string get_shader_key(const VKR_shader_paths &paths) {
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
     std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
-    std::string temp_compute_path = std::filesystem::path(compute_path).filename().string();
+    std::string temp_compute_path  = std::filesystem::path(compute_path).filename().string();
 
     std::string target = ".spv"; {
         size_t pos = temp_vertex_path.find(target);
