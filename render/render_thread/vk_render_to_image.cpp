@@ -292,17 +292,14 @@ void render_different_pass(VCB &vcb,
             vcb.render_3DGS_idkeys(entity, prefix_sum);
         }
     } {
-        auto view = Render_entt().view<compute_postprocess_tag>();
-        if (!view.empty()) {
-            vcb.compute_write_init_barrier(compute_write_image);
+        vcb.compute_write_init_barrier(compute_write_image); {
+            auto view = Render_entt().view<compute_postprocess_tag>();
+            for (const auto entity: view) {
+                vcb.deal_image(entity, compute_write_image);
+            }
         }
-        for (const auto entity: view) {
-            vcb.deal_image(entity, compute_write_image);
-        }
-        if (!view.empty()) {
-            vcb.compute_write_finish_barrier(compute_write_image);
-            vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
-        }
+        vcb.compute_write_finish_barrier(compute_write_image);
+        vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
     } {
         vcb.begin_rendering_attachment_to_screen(engine.get_current_swap_chain_image(),
                                                  depth_image,
