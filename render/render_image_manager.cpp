@@ -150,17 +150,18 @@ VKR_image_ptr Render_image_manager::get_one_shadow_image() {
 
 VKR_image_ptr Render_image_manager::get_one_compute_write_image() {
     Image_and_view_parameters parameters{};
-    parameters.format = VK_FORMAT_R8G8B8A8_UNORM;
-    parameters.width  = 512;
-    parameters.height = 512;
-    parameters.depth  = 1;
-    parameters.usage  = static_cast<VkImageUsageFlagBits>(
+    const VkExtent2D extent = VK_backend::instance().get_current_extent();
+    parameters.format       = VK_FORMAT_R8G8B8A8_UNORM;
+    parameters.width        = extent.width;
+    parameters.height       = extent.width;
+    parameters.depth        = 1;
+    parameters.usage        = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_STORAGE_BIT |
         VK_IMAGE_USAGE_SAMPLED_BIT |
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
         VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     parameters.aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
-    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL; 
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
     parameters.mipLevels   = 1;
     parameters.arrayLayers = 1;
     parameters.flags       = 0;

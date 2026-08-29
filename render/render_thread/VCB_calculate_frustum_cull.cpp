@@ -310,9 +310,9 @@ void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write) {
     auto height  = write->get_height();
     float radius = 100;
 
-    vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
-                       VK_SHADER_STAGE_COMPUTE_BIT, 0, 4,
-                       &radius);
+    // vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
+    //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 4,
+    //                    &radius);
 
 
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);

@@ -277,6 +277,9 @@ void render_different_pass(VCB &vcb,
             }
         }
         vcb.end_rendering();
+        vcb.current_write_next_read_image({
+                                              color_image
+                                          });
     }
     // 那么这里是否可以插入 其他的内容呢?
     //
@@ -296,32 +299,14 @@ void render_different_pass(VCB &vcb,
         for (const auto entity: view) {
             vcb.deal_image(entity, compute_write_image);
         }
-        // 需要想办法把 FXAA 转移到这里
-        {
-            auto command_shader = engine.get_shader_manager().get_offscreen_to_screen_shader_data();
-            vcb.render_post_deal(command_shader, entt::null);
-        }
-
         if (!view.empty()) {
             vcb.compute_write_finish_barrier(compute_write_image);
-            vcb.copy_image(compute_write_image, color_image);
+            vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
         }
-    }
-
-    // 那么其实有另一个需要解决的问题,全局变量的问题,这个需要解决的, 否则
-    // 在这里的时候需要插入 FXAA
-    {
-        vcb.current_write_next_read_image({
-                                              color_image
-                                          });
-        vcb.begin_rendering_attachment(engine.get_current_swap_chain_image(),
-                                       depth_image,
-                                       VK_ATTACHMENT_LOAD_OP_CLEAR);
-        // 原本TAA在这里,想看看应该如何转移到 compute shader 中
-        {
-            auto command_shader = engine.get_shader_manager().get_offscreen_to_screen_shader_data();
-            vcb.render_post_deal(command_shader, entt::null);
-        } {
+    } {
+        vcb.begin_rendering_attachment_to_screen(engine.get_current_swap_chain_image(),
+                                                 depth_image,
+                                                 VK_ATTACHMENT_LOAD_OP_CLEAR); {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
                 vcb.build_draw_command(entity);

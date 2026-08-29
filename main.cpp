@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
     object_3d postprocess("postprocess");
     postprocess.add_shader_path(VKR_shader_paths{
-                                    "", "", "", "draw_circle"
+                                    "", "", "", "fxaa"
                                 });
     postprocess.add_postprocess();
 

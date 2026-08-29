@@ -126,6 +126,9 @@ public:
         VKR_image_ptr depth,
         VkAttachmentLoadOp depth_loadOp);
 
+    void begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_ptr depth,
+                                              VkAttachmentLoadOp depth_loadOp);
+
 
     void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
                                     VkAttachmentLoadOp depth_loadOp);
@@ -156,7 +159,7 @@ public:
 
     void copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image);
 
-    void deal_image(entt::entity entity,const VKR_image_ptr& write);
+    void deal_image(entt::entity entity, const VKR_image_ptr &write);
 
     void add_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
 
