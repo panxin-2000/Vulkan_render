@@ -77,6 +77,8 @@ public:
 
     void submit_render_queue(Engine &engine);
 
+    void compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image);
+
     void end_command_buffer();
 
 
@@ -139,13 +141,22 @@ public:
 
     void render_3DGS_idkeys(entt::entity entity, const VKR_buffer_ptr &prefix_sum);
 
-    void render_3DGS_histogram_radixsort(entt::entity entity);
+    void render_3DGS_histogram_radixsort(entt::entity entity, VKR_buffer_ptr keys,
+                                         VKR_buffer_ptr histograms,
+                                         VKR_buffer_ptr keysRadix,
+                                         VKR_buffer_ptr values,
+                                         VKR_buffer_ptr valuesRadix
+    );
 
     void render_3DGS_tile_boundaries(entt::entity entity);
 
     void render_3DGS_render(entt::entity entity);
 
-    void add_barriers(const std::vector<VKR_buffer_ptr>& buffer_ptrs) const;
+    void copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image);
+
+    void deal_image(entt::entity entity,const VKR_image_ptr& write);
+
+    void add_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
 
     void calculate_frustum_cull(
         const entt::entity entity,

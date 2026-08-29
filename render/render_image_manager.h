@@ -32,6 +32,8 @@ public:
 
     VKR_image_ptr get_one_shadow_image();
 
+    VKR_image_ptr get_one_compute_write_image();
+
     void create();
 
     VKR_image_ptr get_one_depth_image();

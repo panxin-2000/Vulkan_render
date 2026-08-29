@@ -112,22 +112,74 @@ void VCB::render_3DGS_idkeys(const entt::entity entity, const VKR_buffer_ptr &pr
     vkCmdDispatch(command_buffer_, ALIGN_256(command_push_const.gaussianCount) / 256, 1, 1);
 }
 
-void VCB::render_3DGS_histogram_radixsort(const entt::entity entity) {
-    struct RadixPushConstants {
+/**
+ *
+ * @param entity
+ * @param keys
+ * @param histograms histograms 直方图
+ * @param keysRadix
+ * @param values
+ * @param valuesRadix
+ */
+void VCB::render_3DGS_histogram_radixsort(const entt::entity entity,
+                                          VKR_buffer_ptr keys,
+                                          VKR_buffer_ptr histograms,
+                                          VKR_buffer_ptr keysRadix,
+                                          VKR_buffer_ptr values,
+                                          VKR_buffer_ptr valuesRadix) {
+    struct RadixHistogramPushConstants {
         uint32_t g_num_elements;
         uint32_t g_shift;
         uint32_t g_num_workgroups;
         uint32_t g_num_blocks_per_workgroup;
+
+        uint64_t g_elements_in_address;
+        uint64_t g_histograms_address;
     } radixPC;
 
+    struct RadixSortPushConstants {
+        uint32_t g_num_elements;
+        uint32_t g_shift;
+        uint32_t g_num_workgroups;
+        uint32_t g_num_blocks_per_workgroup;
+        uint64_t g_elements_in_address;
+        uint64_t g_elements_out_address;
+        uint64_t g_payload_in_address;
+        uint64_t g_payload_out_address;
+        uint64_t g_histograms_address;
+    } radix_sort_PC;
+
+    uint32_t numElementsToSort    = 50000000;
+    uint32_t blocks_per_workgroup = 32;
+    uint32_t elementsPerWorkgroup = 256 * blocks_per_workgroup;
+    // WORKGROUP_SIZE * blocks_per_workgroup; // 256 * 32 = 8192
+    uint32_t numWorkgroups =
+            (numElementsToSort + elementsPerWorkgroup - 1) / elementsPerWorkgroup;
+
+
+    radixPC.g_num_elements             = 50000000;
+    radixPC.g_num_workgroups           = numWorkgroups;
+    radixPC.g_num_blocks_per_workgroup = blocks_per_workgroup;
+
+    // Perform 6 passes of radix sort (tiles_ID always can be represented with 2 bits)
 
     for (uint32_t pass = 0; pass < 6; pass++) {
+        radixPC.g_shift = pass * 8;
+
+
         bool isEven = (pass % 2 == 0); {
             VKR_shader_paths temp{
                 "", "", "", "3DGS/histogram"
             };
             auto command_shader = Engine::instance().get_shader_manager().find(temp);
             vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+            if (isEven == false) {
+                radixPC.g_elements_in_address = keys->get_gpu_device_address();       // keys
+                radixPC.g_histograms_address  = histograms->get_gpu_device_address(); // histograms
+            } else {
+                radixPC.g_elements_in_address = keysRadix->get_gpu_device_address();  // keysRadix
+                radixPC.g_histograms_address  = histograms->get_gpu_device_address(); // histograms
+            }
             //
             // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
             //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
@@ -137,6 +189,23 @@ void VCB::render_3DGS_histogram_radixsort(const entt::entity entity) {
             VKR_shader_paths temp{
                 "", "", "", "3DGS/radixsort"
             };
+
+
+            if (isEven == false) {
+                radix_sort_PC.g_elements_in_address  = keys->get_gpu_device_address();        // keys
+                radix_sort_PC.g_elements_out_address = keysRadix->get_gpu_device_address();   // keysRadix
+                radix_sort_PC.g_payload_in_address   = values->get_gpu_device_address();      // values
+                radix_sort_PC.g_payload_out_address  = valuesRadix->get_gpu_device_address(); // valuesRadix
+                radix_sort_PC.g_histograms_address   = histograms->get_gpu_device_address();  // histograms
+            } else {
+                radix_sort_PC.g_elements_in_address  = keysRadix->get_gpu_device_address();   // keysRadix
+                radix_sort_PC.g_elements_out_address = keys->get_gpu_device_address();        // keys
+                radix_sort_PC.g_payload_in_address   = valuesRadix->get_gpu_device_address(); // valuesRadix
+                radix_sort_PC.g_payload_out_address  = values->get_gpu_device_address();      // values
+                radix_sort_PC.g_histograms_address   = histograms->get_gpu_device_address();  // histograms
+            }
+
+
             auto command_shader = Engine::instance().get_shader_manager().find(temp);
             vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
             //
@@ -148,6 +217,10 @@ void VCB::render_3DGS_histogram_radixsort(const entt::entity entity) {
     }
 }
 
+/**
+ * 找出每个 Tile 负责的高斯点的起始索引和结束索引
+ * @param entity
+ */
 void VCB::render_3DGS_tile_boundaries(const entt::entity entity) {
     VKR_shader_paths temp{
         "", "", "", "3DGS/tile_boundaries"
@@ -161,6 +234,7 @@ void VCB::render_3DGS_tile_boundaries(const entt::entity entity) {
     // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
 }
 
+
 void VCB::render_3DGS_render(const entt::entity entity) {
     VKR_shader_paths temp{
         "", "", "", "3DGS/render"
@@ -172,6 +246,69 @@ void VCB::render_3DGS_render(const entt::entity entity) {
     //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
     //                    &command_calculate);
     // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+}
+
+void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
+    if (src_image->get_width() == dst_image->get_width() && src_image->get_height() == dst_image->get_height()) {
+        VkImageCopy copyRegion{
+            .srcSubresource = 0,
+            .srcOffset      = {0, 0, 0},
+            .dstSubresource = 0,
+            .dstOffset      = {0, 0, 0},
+            .extent         = {1280, 720, 1}
+        };
+        vkCmdCopyImage(command_buffer_, src_image->get_image_handle(),
+                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       dst_image->get_image_handle(),
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &copyRegion);
+    } else {
+        VkImageBlit blitRegion{};
+        // 源范围：你的中转图大小 (0,0) 到 (Width, Height)
+        blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blitRegion.srcOffsets[0]             = {0, 0, 0};
+        blitRegion.srcOffsets[1]             = {
+            static_cast<int32_t>(src_image->get_width()),
+            static_cast<int32_t>(src_image->get_height()),
+            1
+        };
+
+        // 目标范围：当前交换链的大小 (0,0) 到 (SwapchainWidth, SwapchainHeight)
+        blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blitRegion.dstOffsets[0]             = {0, 0, 0};
+        blitRegion.dstOffsets[1]             = {
+            static_cast<int32_t>(dst_image->get_width()),
+            static_cast<int32_t>(dst_image->get_height()),
+            1
+        };
+
+        // 🚀 一发 Blit，带上 LINEAR 过滤，大小不一致也能完美适配
+        vkCmdBlitImage(command_buffer_,
+                       src_image->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       dst_image->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &blitRegion, VK_FILTER_LINEAR);
+    }
+}
+
+void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write) {
+    VKR_shader_paths temp{
+        "", "", "", "draw_circle"
+    };
+
+    const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+    bind_pipeline_update_parameter(entity, shader_data_ref);
+
+
+    auto width   = write->get_width();
+    auto height  = write->get_height();
+    float radius = 100;
+
+    vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
+                       VK_SHADER_STAGE_COMPUTE_BIT, 0, 4,
+                       &radius);
+
+
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
 

@@ -73,6 +73,9 @@ struct Line_tag {
 struct ply_3DGS_tag {
 };
 
+struct compute_postprocess_tag {
+};
+
 struct gltf_tag {
 };
 

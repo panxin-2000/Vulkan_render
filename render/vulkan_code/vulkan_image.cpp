@@ -523,3 +523,12 @@ Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr) {
     };
     return texture_parameter;
 }
+
+Texture_parameter create_compute_image2D_texture(const VKR_image_ptr &image_ptr) {
+    Texture_parameter texture_parameter{
+        .image       = image_ptr,
+        .sampler     = VK_NULL_HANDLE,
+        .imageLayout = VK_IMAGE_LAYOUT_GENERAL
+    };
+    return texture_parameter;
+}

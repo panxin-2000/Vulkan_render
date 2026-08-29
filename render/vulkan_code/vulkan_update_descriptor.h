@@ -53,6 +53,16 @@ bool set_render_parameter(sets_map &sets_map_in_for,
                     update_descriptor_write[binding_name]        = temp;
                     return true;
                 }
+            } else if (info.binding_name == binding_name && info.resource_type == "uniform image2D") {
+                if constexpr (std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> >) {
+                    if (binding_data.has_value()) {
+                        Update_descriptor_binding_fixed_temp;
+                        temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                        temp.texture_info                            = {true, binding_data.value()};
+                        update_descriptor_write[binding_name]        = temp;
+                        return true;
+                    }
+                }
             } else if (info.binding_name == binding_name && info.resource_type == "uniform sampler2D") {
                 // using NoRef = std::remove_reference_t<T1>;
                 // 有需要的时候可以去除引用

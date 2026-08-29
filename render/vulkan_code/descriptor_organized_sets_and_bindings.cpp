@@ -270,7 +270,7 @@ void collect_and_sorted_push_constant_resources(const spirv_cross::CompilerGLSL 
             if (shaderStage == "fragment") {
                 push_constant_detail.stageFlags = push_constant_detail.stageFlags | VK_SHADER_STAGE_FRAGMENT_BIT;
             }
-            if (shaderStage == "computer") {
+            if (shaderStage == "compute") {
                 push_constant_detail.stageFlags = push_constant_detail.stageFlags | VK_SHADER_STAGE_COMPUTE_BIT;
             }
         }
@@ -425,6 +425,31 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             sorted_sets_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
         }
     }
+    for (auto &res: resources.storage_images) {
+        auto &type = compiler.get_type(res.type_id);
+        if (type.basetype == spirv_cross::SPIRType::Image) {
+            const uint32_t set = compiler.get_decoration(res.id, spv::DecorationDescriptorSet);
+            uint32_t binding   = compiler.get_decoration(res.id, spv::DecorationBinding);
+            VkDescriptorSetLayoutBinding tem{};;
+            tem.binding         = binding;
+            tem.descriptorCount = 1;
+            tem.stageFlags      = get_stageFlags(shaderStage);
+            tem.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            if (res.name.find("bindless") != std::string::npos) {
+                auto stageFlag                      = find_stageFlag(global_bindings_set, res.name);
+                tem.stageFlags                      = tem.stageFlags | stageFlag;
+                bindless_bindings_set[set][binding] = {tem, res.name, "uniform image2D", shaderStage, 0};
+            } else if (res.name.find("global") != std::string::npos) {
+                auto stageFlag                    = find_stageFlag(global_bindings_set, res.name);
+                tem.stageFlags                    = tem.stageFlags | stageFlag;
+                global_bindings_set[set][binding] = {tem, res.name, "uniform image2D", shaderStage, 0};
+            } else {
+                auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
+                tem.stageFlags                     = tem.stageFlags | stageFlag;
+                sorted_sets_bindings[set][binding] = {tem, res.name, "uniform image2D", shaderStage, 0};
+            }
+        }
+    }
     for (auto &res: resources.separate_images) {
         // layout(binding = 1) uniform texture2D myImage;
         auto &type = compiler.get_type(res.type_id);
@@ -535,7 +560,7 @@ std::string get_shader_key(const VKR_shader_paths &paths) {
     std::string temp_vertex_path   = std::filesystem::path(vertex_path).filename().string();
     std::string temp_fragment_path = std::filesystem::path(fragment_path).filename().string();
     std::string temp_geometry_path = std::filesystem::path(geometry_path).filename().string();
-    std::string temp_computer_path = std::filesystem::path(compute_path).filename().string();
+    std::string temp_compute_path = std::filesystem::path(compute_path).filename().string();
 
     std::string target = ".spv"; {
         size_t pos = temp_vertex_path.find(target);
@@ -553,9 +578,9 @@ std::string get_shader_key(const VKR_shader_paths &paths) {
             temp_geometry_path.erase(pos, target.length());
         }
     } {
-        size_t pos = temp_computer_path.find(target);
-        if (temp_computer_path.size() > 4 && pos != std::string::npos) {
-            temp_computer_path.erase(pos, target.length());
+        size_t pos = temp_compute_path.find(target);
+        if (temp_compute_path.size() > 4 && pos != std::string::npos) {
+            temp_compute_path.erase(pos, target.length());
         }
     }
     return temp_vertex_path + temp_fragment_path + geometry_path + compute_path;
@@ -614,8 +639,8 @@ sets_map organize_descriptor_set_and_binding_layouts(
         print_layout_binding_line(geometry_path);
     }
     if (!compute_path.empty()) {
-        LOG_INFO(g_log(), "--- computer shader ---");
-        read_spv_file(shader_data->spv_data_comp, "computer",
+        LOG_INFO(g_log(), "--- compute shader ---");
+        read_spv_file(shader_data->spv_data_comp, "compute",
                       bindless_set,
                       global_bindings_set,
                       sorted_sets_bindings,

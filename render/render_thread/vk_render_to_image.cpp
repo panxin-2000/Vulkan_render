@@ -23,7 +23,8 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr SSAO_image,
                            VKR_image_ptr blur_SSAO_image,
                            VKR_image_ptr depth_shadow_image,
-                           VKR_image_ptr entity_image
+                           VKR_image_ptr entity_image,
+                           VKR_image_ptr compute_write_image
 ) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
         VkBufferMemoryBarrier2{
@@ -287,8 +288,14 @@ void render_different_pass(VCB &vcb,
             auto prefix_sum = vcb.render_3DGS_prefixsum(entity);
             vcb.render_3DGS_idkeys(entity, prefix_sum);
         }
+    } {
+        auto view = Render_entt().view<compute_postprocess_tag>();
+        for (const auto entity: view) {
+            vcb.deal_image(entity, compute_write_image);
+        }
+        // vcb.compute_write_finish_barrier(compute_write_image);
+        // vcb.copy_image(compute_write_image, color_image);
     }
-
 
     // 在这里的时候需要插入 FXAA
     {
@@ -343,13 +350,17 @@ void destroy_Render_entt() { {
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
-    const auto color_image        = engine.get_image_manager().get_one_color_image();
-    const auto entity_image       = engine.get_image_manager().get_one_entity_image();
-    const auto depth_image        = engine.get_image_manager().get_one_depth_image();
-    const auto depth_AO_image     = engine.get_image_manager().get_one_depth_AO_image();
-    const auto SSAO_image         = engine.get_image_manager().get_one_depth_SSAO_image();
-    const auto depth_shadow_image = engine.get_image_manager().get_one_shadow_image();
-    const auto blur_SSAO_image    = engine.get_image_manager().get_one_depth_SSAO_image(); {
+    const auto color_image                           = engine.get_image_manager().get_one_color_image();
+    const auto entity_image                          = engine.get_image_manager().get_one_entity_image();
+    const auto depth_image                           = engine.get_image_manager().get_one_depth_image();
+    const auto depth_AO_image                        = engine.get_image_manager().get_one_depth_AO_image();
+    const auto SSAO_image                            = engine.get_image_manager().get_one_depth_SSAO_image();
+    const auto depth_shadow_image                    = engine.get_image_manager().get_one_shadow_image();
+    const auto compute_write_image                   = engine.get_image_manager().get_one_compute_write_image();
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
+    // 之后呢? 怎么绑定呢?
+
+    const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
         auto offscreen      = create_2d_texture(color_image);
@@ -366,6 +377,11 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         for (const auto it: view) {
             auto vk_descriptor_set = get_descriptor_sets(it); // 唯一有可能每帧更新的部分
             Render_entt().emplace_or_replace<decltype(vk_descriptor_set)>(it, vk_descriptor_set);
+        }
+    } {
+        auto view = Render_entt().view<compute_postprocess_tag>();
+        for (const auto entity: view) {
+            render_render_parameter(entity, "outTexture", compute_texture);
         }
     } {
         auto view = Render_entt().view<ply_3DGS_tag>();
@@ -389,7 +405,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
     render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
-                          blur_SSAO_image, depth_shadow_image, entity_image);
+                          blur_SSAO_image, depth_shadow_image, entity_image, compute_write_image);
     vcb.end_command_buffer();
 
     vcb.submit_render_queue(engine);

@@ -87,13 +87,18 @@ int main(int argc, char *argv[]) {
     box.add_mesh({{1, 1, 1}, {2, 2, 2}});
     box.set_transform();
 
+    object_3d postprocess("postprocess");
+    postprocess.add_shader_path(VKR_shader_paths{
+                                    "", "", "", "draw_circle"
+                                });
+    postprocess.add_postprocess();
 
-    object_3DGS object_ply_model("3dGS");
-    object_ply_model.add_shader_path(VKR_shader_paths{
-                                         "", "", "", "3DGS/preprocess"
-                                     });
-
-    object_ply_model.add_model("/Users/panxin/Downloads/Rhynocoris/scene.ply");
+    // object_3DGS object_ply_model("3dGS");
+    // object_ply_model.add_shader_path(VKR_shader_paths{
+    //                                      "", "", "", "3DGS/preprocess"
+    //                                  });
+    //
+    // object_ply_model.add_model("/Users/panxin/Downloads/Rhynocoris/scene.ply");
 
     object_line line("line");
     line.add_B_spline_curve();

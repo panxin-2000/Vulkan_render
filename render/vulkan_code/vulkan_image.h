@@ -188,4 +188,6 @@ void discard_image_and_view_map_clean(uint64_t finished_timeline);
 
 Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr);
 
+Texture_parameter create_compute_image2D_texture(const VKR_image_ptr &image_ptr);
+
 #endif //HELLO_MAC_VULKAN_IMAGE_H

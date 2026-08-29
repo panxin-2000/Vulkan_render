@@ -93,6 +93,11 @@ object_3d &object_3d::add_mesh(const AABB_min_max<Point_3> &bounding_box) {
     return *this;
 }
 
+object_3d &object_3d::add_postprocess() {
+    logic_update_add_tag<compute_postprocess_tag>(entity);
+    return *this;
+}
+
 
 object_3d &object_3d::add_sky_box() {
     logic_update_proxy<Name_component>(entity);

@@ -5,7 +5,7 @@
 
 void VCB::reset_current_command_buffer(const uint64_t time_line, VkCommandBuffer command_buffer) {
     command_buffer_ = command_buffer;
-    time_line_ = time_line;
+    time_line_      = time_line;
     VK_CHECK_RESULT_NOT_EXIT(vkResetCommandBuffer(command_buffer_, 0));
 
     VkCommandBufferBeginInfo cbBI{
@@ -60,6 +60,34 @@ void VCB::submit_render_queue(Engine &engine) {
                                                   signal_semaphores);
 }
 
+void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image) {
+    VkImageMemoryBarrier2 barrierDrawImage{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        // 之前是在 COMPUTE 阶段进行的写入
+        .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+        // 下一步是要在 TRANSFER (拷贝) 阶段作为数据源进行读取
+        .dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+        .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+        // 布局从 Compute 的 GENERAL 切换到最适合拷贝的 TRANSFER_SRC_OPTIMAL
+        .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        // ⚠️ 填入你自己的专属中转图 Image 句柄
+        .image = compute_write_finish_image->get_image_handle(),
+        .subresourceRange{
+            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel   = 0, .levelCount = 1,
+            .baseArrayLayer = 0, .layerCount = 1
+        }
+    };
+    VkDependencyInfo drawImageDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers    = &barrierDrawImage
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+}
+
 void VCB::end_command_buffer() {
     if (query_pool_ != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(command_buffer_,
@@ -82,8 +110,9 @@ void VCB::end_command_buffer() {
         .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
     };
     VkDependencyInfo barrierPresentDependencyInfo{
-        .sType                = VK_STRUCTURE_TYPE_DEPENDENCY_INFO, .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &barrierPresent
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers    = &barrierPresent
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierPresentDependencyInfo);
     VK_CHECK_RESULT_NOT_EXIT(vkEndCommandBuffer(command_buffer_)); // 所有 vkCmd 都必须在它 之前

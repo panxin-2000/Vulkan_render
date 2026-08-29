@@ -1,0 +1,45 @@
+#version 450
+
+// 使用 image2D 替代指针。rgba8 是图片的硬件格式
+layout(rgba8, binding = 0) writeonly uniform image2D outTexture;
+
+layout(push_constant) uniform PushConstants {
+    float radius;
+};
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    ivec2 texSize = imageSize(outTexture);
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    // =========================================================
+    // 3. 画圆算法：计算当前像素到屏幕中心的距离
+    // =========================================================
+    float centerX = float(width) / 2.0;
+    float centerY = float(height) / 2.0;
+    // 这里直接给了 最中心 作为
+
+    float dx = float(x) - centerX;
+    float dy = float(y) - centerY;
+    float distance = sqrt(dx * dx + dy * dy);
+
+    // 计算当前像素在一维数组中的索引位置
+    ivec2 pixelCoord = ivec2(x, y); // imageStore 使用 2D 向量作为坐标
+
+    // 如果在圆的半径以内，涂成红色 (RGBA: 255, 0, 0, 255 -> 0xFF0000FF
+    // 注意根据你的机器字节序，通常 0xFF0000FF 对应 RGBA 或者 ABGR)
+    if (distance <= radius) {
+        imageStore(outTexture, pixelCoord, vec4(1.0, 0.0, 0.0, 1.0)); // 纯红
+    } else {
+        imageStore(outTexture, pixelCoord, vec4(0.0, 0.0, 0.0, 1.0)); // 纯黑背景
+    }
+}

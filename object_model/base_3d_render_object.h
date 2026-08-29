@@ -22,6 +22,7 @@ public:
     object_3d &add_mesh(const std::string &mesh_path);
 
     object_3d &add_mesh(const AABB_min_max<Point_3> &bounding_box);
+    object_3d &add_postprocess();
 
     object_3d &add_sky_box();
 

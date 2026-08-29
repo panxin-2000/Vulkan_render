@@ -46,11 +46,14 @@ void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
 
 
 void VCB::bind_pipeline_update_parameter(entt::entity entity, const Shader_data &shader_data_ref) {
-    auto debug_name             = Render_entt().get<Name_component>(entity).name_;
-    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_data_ref->pipeline_t);
-
-
-    bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    auto debug_name = Render_entt().get<Name_component>(entity).name_;
+    if (!shader_data_ref->pipeline_shader_stage_create_infos.empty()) {
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, shader_data_ref->pipeline_t);
+        bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    } else {
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, shader_data_ref->pipeline_t);
+        bind_Proxy_descriptor_sets(entity, shader_data_ref->pipeline_layout, VK_PIPELINE_BIND_POINT_COMPUTE);
+    }
 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
