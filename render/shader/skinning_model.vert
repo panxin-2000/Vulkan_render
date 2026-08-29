@@ -36,12 +36,11 @@ layout (set = 2, binding = 2) readonly buffer render_entity_to_screen {
 
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
-layout (location = 2) out vec4 outShadow_UV;
-layout (location = 3) out vec3 outViewVec;
-layout (location = 4) out vec4 outShadowCoord;
-layout (location = 5) out vec3 outWorldPos;
-layout (location = 6) flat out uint outMaterial_index;
-layout (location = 7) flat out uint outInstance_index;
+layout (location = 2) out vec3 outViewVec;
+layout (location = 3) out vec4 outShadowCoord;
+layout (location = 4) out vec3 outWorldPos;
+layout (location = 5) flat out uint outMaterial_index;
+layout (location = 6) flat out uint outInstance_index;
 
 void main()
 {

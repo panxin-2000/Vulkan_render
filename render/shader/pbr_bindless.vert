@@ -37,13 +37,11 @@ const mat4 biasMat = mat4(
 #if defined(PASS_COLOR)
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
-layout (location = 2) out vec4 outShadow_UV;
-layout (location = 3) out vec3 outViewVec;
-layout (location = 4) out vec4 outShadowCoord;
-layout (location = 5) out vec3 outWorldPos;
-layout (location = 6) flat out uint outMaterial_index;
-layout (location = 7) flat out uint outInstance_index;
-layout (location = 8) flat out uint out_entity;
+layout (location = 2) out vec3 outViewVec;
+layout (location = 3) out vec4 outShadowCoord;
+layout (location = 4) out vec3 outWorldPos;
+layout (location = 5) flat out uint outMaterial_index;
+layout (location = 6) flat out uint outInstance_index;
 
 
 
@@ -62,21 +60,6 @@ void main()
     outNormal = mat3(model_matrix[gl_InstanceIndex]) * inNormal;
     outViewVec = viewPos.xyz - pos.xyz;
 
-    uint cascadeIndex = SHADOW_MAP_CASCADE_COUNT - 1; // 默认是最远的那一层
-
-    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
-        // 因为是负数，Z 轴越大（如 -5.0 > -10.0）代表越近。
-        // 如果物体的 Z 轴比当前分割点还要大，说明它在这个分割点之内的近处！
-        if (view_space_pos.z > cascadeSplits[i]) {
-            cascadeIndex = i;
-            break; // 极其重要：找到了就要立刻退出，否则会被后面的判定覆盖！
-        }
-    }
-
-    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * pos;
-    vec3 shadow_UV = shadowCoord.xyz / shadowCoord.w;
-    outShadow_UV = vec4(shadow_UV.xyz, cascadeIndex);
-    // 比正常的多算一个这个,过去读取阴影贴图 // 还没有给阴影 添加
 }
 
 #elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)

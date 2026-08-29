@@ -38,6 +38,8 @@ void main()
     IndirectCommands command_buffer = IndirectCommands(push_constant.IndirectCommandsAddress);
     bool result = IsAABBInFrustum(push_constant.frustum, AABB_boxes_buffer.aabb_box[idx]);
     if (result == true) {
+//        uint write_index = atomicAdd(draw_count, 1);
+        // // 利用这个独一无二的索引，紧密无缝地写入输出数组
         command_buffer.command[idx].instanceCount = 1;
     } else {
         command_buffer.command[idx].instanceCount = 0;
