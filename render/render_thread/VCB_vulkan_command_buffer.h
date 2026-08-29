@@ -135,9 +135,9 @@ public:
 
     void render_3DGS_preprocess(entt::entity entity);
 
-    void render_3DGS_prefixsum(entt::entity entity);
+    VKR_buffer_ptr render_3DGS_prefixsum(entt::entity entity);
 
-    void render_3DGS_idkeys(entt::entity entity);
+    void render_3DGS_idkeys(entt::entity entity, const VKR_buffer_ptr &prefix_sum);
 
     void render_3DGS_histogram_radixsort(entt::entity entity);
 

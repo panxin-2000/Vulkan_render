@@ -34,7 +34,7 @@ void VCB::render_3DGS_preprocess(const entt::entity entity) {
     }
 }
 
-void VCB::render_3DGS_prefixsum(const entt::entity entity) {
+VKR_buffer_ptr VCB::render_3DGS_prefixsum(const entt::entity entity) {
     VKR_shader_paths temp{
         "", "", "", "3DGS/prefixsum"
     };
@@ -75,52 +75,85 @@ void VCB::render_3DGS_prefixsum(const entt::entity entity) {
 
         add_barriers({result});
     }
+    return result;
 }
 
-void VCB::render_3DGS_idkeys(const entt::entity entity) {
-    // VKR_shader_paths temp{
-    //     "", "", "", "3DGS/idkeys"
-    // };
-    // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+void VCB::render_3DGS_idkeys(const entt::entity entity, const VKR_buffer_ptr &prefix_sum) {
+    VKR_shader_paths temp{
+        "", "", "", "3DGS/idkeys"
+    };
+    auto command_shader = Engine::instance().get_shader_manager().find(temp);
+
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
     //
-    // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
-    //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
-    //                    &command_calculate);
-    // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+    auto command_push_const = Render_entt().get<object_3DGS_parameters>(entity);
+
+    struct PushConstants {
+        uint64_t TilesSum_Address;
+        uint64_t Depths_Address;
+        uint64_t BoundingBox_Address;
+        uint64_t Out_keysUnsorted_Address;
+        uint64_t Out_valuesUnsorted_Address;
+        uint tileX;
+        int nGauss;
+    };
+
+    PushConstants pushconstants;
+    pushconstants.nGauss                     = command_push_const.gaussianCount;
+    pushconstants.TilesSum_Address           = prefix_sum->get_gpu_device_address(); // 需要从上一轮中 读取出来
+    pushconstants.Depths_Address             = command_push_const.depth_address;
+    pushconstants.BoundingBox_Address        = command_push_const.bbox_address;
+    pushconstants.Out_keysUnsorted_Address   = command_push_const.keysUnsorted->get_gpu_device_address();
+    pushconstants.Out_valuesUnsorted_Address = command_push_const.valuesUnsorted->get_gpu_device_address();
+
+    vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+                       VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants),
+                       &pushconstants);
+    vkCmdDispatch(command_buffer_, ALIGN_256(command_push_const.gaussianCount) / 256, 1, 1);
 }
 
-void VCB::render_3DGS_histogram_radixsort(const entt::entity entity) { {
-        // VKR_shader_paths temp{
-        //     "", "", "", "3DGS/histogram"
-        // };
-        // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-        // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
-        //
-        // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
-        //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
-        //                    &command_calculate);
-        // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
-    } {
-        // VKR_shader_paths temp{
-        //     "", "", "", "3DGS/radixsort"
-        // };
-        // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-        // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
-        //
-        // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
-        //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
-        //                    &command_calculate);
-        // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+void VCB::render_3DGS_histogram_radixsort(const entt::entity entity) {
+    struct RadixPushConstants {
+        uint32_t g_num_elements;
+        uint32_t g_shift;
+        uint32_t g_num_workgroups;
+        uint32_t g_num_blocks_per_workgroup;
+    } radixPC;
+
+
+    for (uint32_t pass = 0; pass < 6; pass++) {
+        bool isEven = (pass % 2 == 0); {
+            VKR_shader_paths temp{
+                "", "", "", "3DGS/histogram"
+            };
+            auto command_shader = Engine::instance().get_shader_manager().find(temp);
+            vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+            //
+            // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+            //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
+            //                    &command_calculate);
+            // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+        } {
+            VKR_shader_paths temp{
+                "", "", "", "3DGS/radixsort"
+            };
+            auto command_shader = Engine::instance().get_shader_manager().find(temp);
+            vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+            //
+            // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+            //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
+            //                    &command_calculate);
+            // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+        }
     }
 }
 
 void VCB::render_3DGS_tile_boundaries(const entt::entity entity) {
-    // VKR_shader_paths temp{
-    //     "", "", "", "3DGS/tile_boundaries"
-    // };
-    // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+    VKR_shader_paths temp{
+        "", "", "", "3DGS/tile_boundaries"
+    };
+    auto command_shader = Engine::instance().get_shader_manager().find(temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
     //
     // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
     //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
@@ -129,11 +162,11 @@ void VCB::render_3DGS_tile_boundaries(const entt::entity entity) {
 }
 
 void VCB::render_3DGS_render(const entt::entity entity) {
-    // VKR_shader_paths temp{
-    //     "", "", "", "3DGS/render"
-    // };
-    // auto command_shader = Engine::instance().get_shader_manager().find(temp);
-    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+    VKR_shader_paths temp{
+        "", "", "", "3DGS/render"
+    };
+    auto command_shader = Engine::instance().get_shader_manager().find(temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
     //
     // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
     //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
