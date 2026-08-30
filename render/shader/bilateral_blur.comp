@@ -1,0 +1,71 @@
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+void main()
+{
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    ivec2 texSize = imageSize(global_Blur_SSAO_compute_write);
+    if (x >= uint(texSize.x) || y >= uint(texSize.y)) {
+        return;
+    }
+
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    
+    // ==========================================
+    // 1. 获取中心像素的 Raw AO 和 深度
+    // ==========================================
+    float centerAO = imageLoad(global_SSAO_compute_write, pixel_coords).r;
+
+    // 【新引入】读取中心像素的深度值（假设绑定在 binding = 2 且为单通道浮点）
+    float centerDepth = texelFetch(global_depth, pixel_coords, 0).r;
+    const int blurRange = 4; // 【优化】双边滤波允许你把范围开大（比如 4），不用担心边缘变糊
+    float totalAO = 0.0;
+    float totalWeight = 0.0;
+
+    // 控制深度敏感度的阈值（极其关键，需要根据你的深度范围微调）
+    // 如果你的深度是线性的（0~100米），这个值可以设为 0.1 或 0.2
+    // 如果是非线性深度，边缘处的差值可能极小，这个值需要设得非常小（如 0.005）
+    const float depthThreshold = 0.05;
+
+    for (int offset_x = -blurRange; offset_x <= blurRange; offset_x++)
+    {
+        for (int offset_y = -blurRange; offset_y <= blurRange; offset_y++)
+        {
+            ivec2 neighbor_coords = pixel_coords + ivec2(offset_x, offset_y);
+            neighbor_coords = clamp(neighbor_coords, ivec2(0), texSize - ivec2(1));
+
+            // ==========================================
+            // 2. 读取邻域像素的 AO 和 深度
+            // ==========================================
+            float neighborAO = imageLoad(global_SSAO_compute_write, neighbor_coords).r;
+            float neighborDepth = texelFetch(global_depth, neighbor_coords, 0).r;
+            // ==========================================
+            // 3. 计算双边权重（Bilateral Weight）
+            // ==========================================
+            // 空间距离高斯权重（越远的像素权重越低）
+            float spatialWeight = exp(-float(offset_x * offset_x + offset_y * offset_y) / (2.0 * float(blurRange * blurRange)));
+
+            // 深度相似度权重：深度差越大，权重呈指数级衰减 [1]
+            float depthDiff = abs(centerDepth - neighborDepth);
+            float depthWeight = exp(-depthDiff / depthThreshold);
+
+            // 最终复合权重
+            float weight = spatialWeight * depthWeight;
+
+            // 累加
+            totalAO += neighborAO * weight;
+            totalWeight += weight;
+        }
+    }
+
+    // 防止分母为 0 导致全屏白色或黑色
+    float finalAO = totalAO / (totalWeight + 0.0001);
+
+    imageStore(global_Blur_SSAO_compute_write, pixel_coords, vec4(finalAO, 0.0, 0.0, 0.0));
+}
