@@ -149,7 +149,7 @@ void main()
     // 是否先获取无所谓，编译器会优化
     //
 
-    float AO = texture(global_SSAO, (gl_FragCoord.xy / screen_size.xy)).r;
+    float AO = texture(global_Blur_SSAO, (gl_FragCoord.xy / screen_size.xy)).r;
 
     float roughness = get_Roughness(material[material_pbr_index[material_index]], inUV);
     float metallic = get_Metallic(material[material_pbr_index[material_index]], inUV);

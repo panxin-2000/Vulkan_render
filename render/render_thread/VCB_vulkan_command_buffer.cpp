@@ -88,6 +88,33 @@ void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish
     vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
 }
 
+
+void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_finish_image) {
+    VkImageMemoryBarrier2 barrierDrawImage{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        // 之前是在 COMPUTE 阶段进行的写入
+        .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+        .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+        .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
+        .newLayout     = VK_IMAGE_LAYOUT_GENERAL,
+        // ⚠️ 填入你自己的专属中转图 Image 句柄
+        .image = compute_write_finish_image->get_image_handle(),
+        .subresourceRange{
+            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel   = 0, .levelCount = 1,
+            .baseArrayLayer = 0, .layerCount = 1
+        }
+    };
+    VkDependencyInfo drawImageDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers    = &barrierDrawImage
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+}
+
 void VCB::compute_write_finish_sample_read(const VKR_image_ptr &compute_write_finish_image) {
     VkImageMemoryBarrier2 barrierDrawImage{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,

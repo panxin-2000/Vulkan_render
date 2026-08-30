@@ -192,16 +192,25 @@ void render_different_pass(VCB &vcb,
         //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
 
         // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
-        vcb.compute_write_init_barrier(SSAO_image);
-        VKR_shader_paths SSAO{
-            "", "", "", "SSAO"
-        };
-        auto command_shader = engine.get_shader_manager().find(SSAO);
-        vcb.deal_image(entt::null, compute_write_image, command_shader);
+        vcb.compute_write_init_barrier(SSAO_image); {
+            VKR_shader_paths SSAO{
+                "", "", "", "SSAO"
+            };
+            auto command_shader = engine.get_shader_manager().find(SSAO);
+            vcb.deal_image(entt::null, compute_write_image, command_shader);
+        }
+        vcb.compute_write_finish_same_read(SSAO_image);
+        vcb.compute_write_init_barrier(blur_SSAO_image); {
+            VKR_shader_paths blur{
+                "", "", "", "blur"
+            };
+            auto command_shader = engine.get_shader_manager().find(blur);
+            vcb.deal_image(entt::null, compute_write_image, command_shader);
+        }
 
         // 这里也需要转换布局,从 gen 到 read  sample
         vcb.compute_write_finish_sample_read({
-                                                 SSAO_image
+                                                 blur_SSAO_image
                                              });
     }
     // {
@@ -357,13 +366,13 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
-        auto offscreen                                   = create_2d_texture(color_image);
-        auto depth                                       = create_2d_texture(depth_AO_image);
-        auto SSAO                                        = create_2d_texture(SSAO_image);
-        auto blur_SSAO                                   = create_2d_texture(blur_SSAO_image);
-        auto shadow_texture                              = create_2d_texture(depth_shadow_image);
-        std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
-        std::optional<Texture_parameter> temp_write_SSAO = create_compute_image2D_texture(SSAO_image);
+        auto offscreen       = create_2d_texture(color_image);
+        auto depth           = create_2d_texture(depth_AO_image);
+        auto blur_SSAO       = create_2d_texture(blur_SSAO_image);
+        auto shadow_texture  = create_2d_texture(depth_shadow_image);
+        auto compute_texture = create_compute_image2D_texture(compute_write_image);
+        auto SSAO            = create_compute_image2D_texture(SSAO_image);
+        auto blur_write_SSAO = create_compute_image2D_texture(blur_SSAO_image);
 
         engine.update_global_parameter(offscreen,
                                        SSAO,
@@ -371,7 +380,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                                        blur_SSAO,
                                        shadow_texture,
                                        compute_texture,
-                                       temp_write_SSAO);
+                                       blur_write_SSAO);
         // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
