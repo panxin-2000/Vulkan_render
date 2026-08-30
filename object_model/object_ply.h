@@ -61,8 +61,9 @@ public:
     VKR_buffer_ptr tilesTouched_Prefix_Sum_ptr;
     VKR_buffer_ptr keysUnsorted;
     VKR_buffer_ptr valuesUnsorted;
-
-
+    VKR_buffer_ptr swap_keysUnsorted;
+    VKR_buffer_ptr swap_valuesUnsorted;
+    VKR_buffer_ptr histograms;
 
 
     void update_gpu_addresses() {

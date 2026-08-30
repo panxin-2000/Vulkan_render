@@ -163,9 +163,10 @@ public:
 
     void copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image);
 
-    void deal_image(entt::entity entity, const VKR_image_ptr &write, const std::shared_ptr<vk_shader_data> &shader_data_ref);
+    void deal_image(entt::entity entity, const VKR_image_ptr &write,
+                    const std::shared_ptr<vk_shader_data> &shader_data_ref);
 
-    void add_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
+    void add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
 
     void calculate_frustum_cull(
         const entt::entity entity,

@@ -13,24 +13,19 @@
 
 void VCB::render_3DGS_preprocess(const entt::entity entity) {
     if (Render_entt().all_of<object_3DGS_parameters>(entity)) {
-        VKR_shader_paths temp{
-            "", "", "", "3DGS/preprocess"
-        };
-        auto command_push_const = Render_entt().get<object_3DGS_parameters>(entity);
+        auto &command_push_const    = Render_entt().get<object_3DGS_parameters>(entity);
+        const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+        bind_pipeline_update_parameter(entt::null, shader_data_ref);
 
-        auto command_shader = Engine::instance().get_shader_manager().find(temp);
-
-        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
-
-        bind_Proxy_descriptor_sets(entity,
-                                   command_shader->pipeline_layout,
-                                   VK_PIPELINE_BIND_POINT_COMPUTE);
-
-        vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+        vkCmdPushConstants(command_buffer_, shader_data_ref->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                            &command_push_const);
         vkCmdDispatch(command_buffer_, ALIGN_256(command_push_const.gaussianCount) / 256, 1, 1);
-        add_barriers({command_push_const.tilesTouched_ptr});
+
+        std::vector<VKR_buffer_ptr> temp;
+        temp.push_back(command_push_const.tilesTouched_ptr);
+        temp.push_back(command_push_const.bbox_ptr);
+        add_buffer_write_to_read_barriers(temp);
     }
 }
 
@@ -68,12 +63,12 @@ VKR_buffer_ptr VCB::render_3DGS_prefixsum(const entt::entity entity) {
             result = command_push_const.tilesTouched_ptr;
         }
         vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants),
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, 28,  // 之前的大小设置的不太对导致的问题
                            &pushConstants);
         // 这里确实是将全部的组都运行了一遍
         vkCmdDispatch(command_buffer_, prefixSumGroups, 1, 1);
 
-        add_barriers({result});
+        add_buffer_write_to_read_barriers({result});
     }
     return result;
 }
@@ -110,6 +105,10 @@ void VCB::render_3DGS_idkeys(const entt::entity entity, const VKR_buffer_ptr &pr
                        VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants),
                        &pushconstants);
     vkCmdDispatch(command_buffer_, ALIGN_256(command_push_const.gaussianCount) / 256, 1, 1);
+
+    // Out_keysUnsorted_Address 需要被 转换为读取
+    // Out_valuesUnsorted_Address 需要 转换为读取
+    add_buffer_write_to_read_barriers({command_push_const.keysUnsorted, command_push_const.valuesUnsorted});
 }
 
 /**
@@ -165,9 +164,7 @@ void VCB::render_3DGS_histogram_radixsort(const entt::entity entity,
 
     for (uint32_t pass = 0; pass < 6; pass++) {
         radixPC.g_shift = pass * 8;
-
-
-        bool isEven = (pass % 2 == 0); {
+        bool isEven     = (pass % 2 == 0); {
             VKR_shader_paths temp{
                 "", "", "", "3DGS/histogram"
             };
@@ -184,7 +181,7 @@ void VCB::render_3DGS_histogram_radixsort(const entt::entity entity,
             // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
             //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
             //                    &command_calculate);
-            // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+            vkCmdDispatch(command_buffer_, numWorkgroups, 1, 1);
         } {
             VKR_shader_paths temp{
                 "", "", "", "3DGS/radixsort"
@@ -212,7 +209,7 @@ void VCB::render_3DGS_histogram_radixsort(const entt::entity entity,
             // vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
             //                    VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
             //                    &command_calculate);
-            // vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
+            vkCmdDispatch(command_buffer_, numWorkgroups, 1, 1);
         }
     }
 }
@@ -340,16 +337,16 @@ void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write,
 }
 
 
-void VCB::add_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const {
+void VCB::add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const {
     std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
     write_buffer_barriers.reserve(buffer_ptrs.size());
     for (const auto &buffer_ptr: buffer_ptrs) {
         write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
                                             .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
                                             .pNext = nullptr,
-                                            .srcStageMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+                                            .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                                             .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-                                            .dstStageMask = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+                                            .dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                                             .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
                                             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                                             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
