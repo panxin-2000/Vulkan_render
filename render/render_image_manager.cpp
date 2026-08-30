@@ -117,8 +117,8 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
     Image_and_view_parameters parameters{};
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     parameters.format       = VK_FORMAT_D32_SFLOAT;
-    parameters.width        = extent.width;
-    parameters.height       = extent.height;
+    parameters.width        = extent.width / 2;
+    parameters.height       = extent.height / 2;
     parameters.depth        = 1;
     parameters.usage        = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -172,8 +172,8 @@ VKR_image_ptr Render_image_manager::get_one_depth_SSAO_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{};
     parameters.format = VK_FORMAT_R8_UNORM;
-    parameters.width  = extent.width;
-    parameters.height = extent.height;
+    parameters.width  = extent.width / 2;
+    parameters.height = extent.height / 2;
     parameters.depth  = 1;
     parameters.usage  = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);

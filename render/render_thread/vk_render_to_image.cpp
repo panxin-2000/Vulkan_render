@@ -185,10 +185,8 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_shadow_image});
-    }
-    // CSM
-    {
-        // 这里还是稍微有点问题,其实是可以不要深度的
+    } {
+        //     // 这里还是稍微有点问题,其实是可以不要深度的
         vcb.begin_rendering_attachment(SSAO_image,
                                        depth_image,
                                        VK_ATTACHMENT_LOAD_OP_CLEAR);
@@ -206,23 +204,24 @@ void render_different_pass(VCB &vcb,
         vcb.current_write_next_read_image({
                                               SSAO_image
                                           });
-    } {
-        vcb.begin_rendering_attachment(blur_SSAO_image,
-                                       depth_image,
-                                       VK_ATTACHMENT_LOAD_OP_CLEAR);
-        VKR_shader_paths blur{
-            "full_screen_triangle", "blur", "", "",
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            VK_FORMAT_UNDEFINED,
-            VK_FORMAT_UNDEFINED,
-        };
-        auto command_shader = engine.get_shader_manager().find(blur);
-        vcb.render_post_deal(command_shader, entt::null);
-        vcb.end_rendering();
-        vcb.current_write_next_read_image({
-                                              blur_SSAO_image
-                                          });
     }
+    // {
+    // vcb.begin_rendering_attachment(blur_SSAO_image,
+    // depth_image,
+    // VK_ATTACHMENT_LOAD_OP_CLEAR);
+    // VKR_shader_paths blur{
+    // "full_screen_triangle", "blur", "", "",
+    // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+    // VK_FORMAT_UNDEFINED,
+    // VK_FORMAT_UNDEFINED,
+    // };
+    // auto command_shader = engine.get_shader_manager().find(blur);
+    // vcb.render_post_deal(command_shader, entt::null);
+    // vcb.end_rendering();
+    // vcb.current_write_next_read_image({
+    // blur_SSAO_image
+    // });
+    // }
 
     // 绘制 3d 物体的阶段 pass
     {

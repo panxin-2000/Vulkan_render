@@ -123,7 +123,7 @@ bool Global_parameters::update_directional_light() {
     float farClip            = 0;
     getPerspectiveClips(projection_matrix, nearClip, farClip);
 
-    float clipRange = farClip - nearClip;
+    float clipRange = farClip - nearClip; // 这里需要减小 , 但是呢?
 
     float minZ = nearClip;
     float maxZ = nearClip + clipRange;

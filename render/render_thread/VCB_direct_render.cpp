@@ -71,7 +71,7 @@ void VCB::begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_pt
             .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
             .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            .oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .image         = color->get_image_handle(time_line_),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
@@ -139,7 +139,7 @@ void VCB::begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_pt
     set_pass_scissor(depth->get_width(), depth->get_height());
 }
 
-void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
+void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr,
                                      VkAttachmentLoadOp depth_loadOp) {
     std::vector<VkImageMemoryBarrier2> outputBarriers{
         VkImageMemoryBarrier2{
@@ -152,19 +152,6 @@ void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
             .newLayout     = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .image         = color->get_image_handle(time_line_),
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-        },
-        VkImageMemoryBarrier2{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask  = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-            .srcAccessMask = 0,
-            .dstStageMask  = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED, // 不关心旧布局的内容，丢弃
-            .newLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-            .image         = depth->get_image_handle(time_line_),
-            .subresourceRange{
-                .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1
-            }
         },
     };
     VkDependencyInfo barrierDependencyInfo{
@@ -182,23 +169,7 @@ void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    const VkExtent2D temp_extent = {depth->get_width(), depth->get_height()};
-    VkRenderingAttachmentInfo depthAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
-    VkRenderingAttachmentInfo StencilAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
+    const VkExtent2D temp_extent = {color->get_width(), color->get_height()};
 
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -208,12 +179,12 @@ void VCB::begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
         .layerCount           = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments    = &colorAttachmentInfo,
-        .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
-        .pStencilAttachment   = &StencilAttachmentInfo
+        .pDepthAttachment     = nullptr, // pDepthAttachment 在缩放时有问题。
+        .pStencilAttachment   = nullptr
     };
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
-    set_pass_viewport(depth->get_width(), depth->get_height());
-    set_pass_scissor(depth->get_width(), depth->get_height());
+    set_pass_viewport(color->get_width(), color->get_height());
+    set_pass_scissor(color->get_width(), color->get_height());
 }
 
 void VCB::add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
