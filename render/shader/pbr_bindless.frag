@@ -174,13 +174,13 @@ void main()
     //        }
     //    }
     // Depth compare for shadowing
-    //    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
+    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
 
     float shadow = 0;
     //    if (enablePCF == 1) {
     //        shadow = filterPCF(global_shadow_texture,shadowCoord / shadowCoord.w, cascadeIndex);
     //    } else {
-    //    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
+    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
     //    }
 
 
@@ -224,7 +224,7 @@ void main()
         vec3 specular_contribution = D * V * F;
         direct_light += sun * (diffuse_contribution * (vec3(1.0) - F) + specular_contribution) * dotNL * shadow;
     }
-    vec3 out_color = emissive_color + direct_light + indirect_light;
+    vec3 out_color = emissive_color + direct_light + indirect_light * AO;
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快

@@ -322,12 +322,8 @@ void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
     }
 }
 
-void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write) {
-    VKR_shader_paths temp{
-        "", "", "", "draw_circle"
-    };
-
-    const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+void VCB::deal_image(const entt::entity entity, const VKR_image_ptr &write,
+                     const std::shared_ptr<vk_shader_data> &shader_data_ref) {
     bind_pipeline_update_parameter(entt::null, shader_data_ref);
 
 

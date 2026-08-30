@@ -187,23 +187,22 @@ void render_different_pass(VCB &vcb,
         vcb.current_write_next_read_depth({depth_shadow_image});
     } {
         //     // 这里还是稍微有点问题,其实是可以不要深度的
-        vcb.begin_rendering_attachment(SSAO_image,
-                                       depth_image,
-                                       VK_ATTACHMENT_LOAD_OP_CLEAR);
+        // vcb.begin_rendering_attachment(SSAO_image,
+        //                                depth_image,
+        //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
+
+        // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
+        vcb.compute_write_init_barrier(SSAO_image);
         VKR_shader_paths SSAO{
-            "full_screen_triangle", "SSAO", "", "",
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-            VK_FORMAT_UNDEFINED,
-            VK_FORMAT_UNDEFINED,
+            "", "", "", "SSAO"
         };
-
         auto command_shader = engine.get_shader_manager().find(SSAO);
-        vcb.render_post_deal(command_shader, entt::null);
+        vcb.deal_image(entt::null, compute_write_image, command_shader);
 
-        vcb.end_rendering();
-        vcb.current_write_next_read_image({
-                                              SSAO_image
-                                          });
+        // 这里也需要转换布局,从 gen 到 read  sample
+        vcb.compute_write_finish_sample_read({
+                                                 SSAO_image
+                                             });
     }
     // {
     // vcb.begin_rendering_attachment(blur_SSAO_image,
@@ -294,7 +293,8 @@ void render_different_pass(VCB &vcb,
         vcb.compute_write_init_barrier(compute_write_image); {
             auto view = Render_entt().view<compute_postprocess_tag>();
             for (const auto entity: view) {
-                vcb.deal_image(entity, compute_write_image);
+                const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+                vcb.deal_image(entity, compute_write_image, shader_data_ref);
             }
         }
         vcb.compute_write_finish_barrier(compute_write_image);
@@ -363,8 +363,15 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         auto blur_SSAO                                   = create_2d_texture(blur_SSAO_image);
         auto shadow_texture                              = create_2d_texture(depth_shadow_image);
         std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
+        std::optional<Texture_parameter> temp_write_SSAO = create_compute_image2D_texture(SSAO_image);
 
-        engine.update_global_parameter(offscreen, SSAO, depth, blur_SSAO, shadow_texture, compute_texture);
+        engine.update_global_parameter(offscreen,
+                                       SSAO,
+                                       depth,
+                                       blur_SSAO,
+                                       shadow_texture,
+                                       compute_texture,
+                                       temp_write_SSAO);
         // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();

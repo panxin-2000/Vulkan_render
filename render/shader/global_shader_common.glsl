@@ -49,6 +49,7 @@ layout (set = 1, binding = 4) uniform sampler2D global_depth;
 layout (set = 1, binding = 5) uniform sampler2D global_Blur_SSAO;  // 这里是经过模糊之后的SSAO
 layout (set = 1, binding = 6) uniform sampler2DArray global_shadow_texture;  // 这里是经过模糊之后的SSAO
 layout(rgba8, set = 1, binding = 7)  uniform image2D global_compute_Texture;
+layout (r8, set = 1, binding = 8) uniform image2D global_SSAO_compute_write;       // 这里是第一次输出的结果
 
 float get_roughness(ShaderMaterial material) {
     return material.roughnessFactor;

@@ -397,7 +397,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                                      std::optional<Texture_parameter> depth,
                                      std::optional<Texture_parameter> blur_SSAO,
                                      std::optional<Texture_parameter> shadow_texture,
-                                     std::optional<Texture_parameter> compute_texture) {
+                                     std::optional<Texture_parameter> compute_texture,
+                                     std::optional<Texture_parameter> temp_write_SSAO) {
     auto gltf_shader_data        = shader_manager_.get_gltf_shader_data();
     global_descriptor_sets_index = (global_descriptor_sets_index + 1) % 3;
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
@@ -448,6 +449,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                          "global_shadow_texture", shadow_texture);
     set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_compute_Texture", compute_texture);
+    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                         "global_SSAO_compute_write", temp_write_SSAO);
 
 
     update_global_pbr_parameter(update_global_descriptor_sets);
