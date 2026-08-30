@@ -150,5 +150,7 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
         define_macro_.push_back({"PASS_DEPTH", 1});
     } else if (render_pass_type == Render_Pass_Type::Pickup) {
         define_macro_.push_back({"PASS_PICKUP", 1});
+    }else if (render_pass_type == Render_Pass_Type::RANDOM_color) {
+        define_macro_.push_back({"PASS_RANDOM_TRIANGLE_COLOR", 1});
     }
 }

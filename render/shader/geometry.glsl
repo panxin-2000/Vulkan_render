@@ -37,9 +37,9 @@ highp vec3 faceNormal(highp vec3 dpdx, highp vec3 dpdy) {
 // this creates arifacts around geometry edges.
 // Note: when using the spirv optimizer, this results in much slower execution time because
 //       this whole expression is inlined in the AO loop below.
-highp vec3 computeViewSpaceNormalLowQ(const highp vec3 position) {
-    return faceNormal(dFdx(position), dFdy(position));
-}
+//highp vec3 computeViewSpaceNormalLowQ(const highp vec3 position) {
+//    return faceNormal(dFdx(position), dFdy(position));
+//}
 
 // Compute normals directly from the depth texture, resulting in full resolution normals
 // Note: This is actually as cheap as using derivatives because the texture fetches

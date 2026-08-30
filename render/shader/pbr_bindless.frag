@@ -168,19 +168,19 @@ void main()
     indirect_light = indirect_light_dufuse * c_diffusen;
 
     uint cascadeIndex = 0;
-//    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
-//        if (GetLinearViewDepth() > cascadeSplits[i]) {
-//            cascadeIndex = i + 1;
-//        }
-//    }
+    //    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
+    //        if (GetLinearViewDepth() > cascadeSplits[i]) {
+    //            cascadeIndex = i + 1;
+    //        }
+    //    }
     // Depth compare for shadowing
-    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
+    //    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
 
     float shadow = 0;
     //    if (enablePCF == 1) {
     //        shadow = filterPCF(global_shadow_texture,shadowCoord / shadowCoord.w, cascadeIndex);
     //    } else {
-    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
+    //    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
     //    }
 
 

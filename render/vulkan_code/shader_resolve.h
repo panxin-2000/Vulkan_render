@@ -126,7 +126,8 @@ public:
     enum Render_Pass_Type {
         Depth,
         Color,
-        Pickup
+        Pickup,
+        RANDOM_color
     };
 
 
