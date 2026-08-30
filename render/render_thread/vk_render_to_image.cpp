@@ -295,12 +295,11 @@ void render_different_pass(VCB &vcb,
     {
         auto view = Render_entt().view<ply_3DGS_tag>();
         for (const auto entity: view) {
-
-            // auto command_push_const = Render_entt().get<object_3DGS_parameters>(entity);
+            auto command_push_const = Render_entt().get<object_3DGS_parameters>(entity);
             vcb.render_3DGS_preprocess(entity);
             auto prefix_sum = vcb.render_3DGS_prefixsum(entity);
             vcb.render_3DGS_idkeys(entity, prefix_sum);
-            // vcb.render_3DGS_histogram_radixsort();
+
         }
     } {
         vcb.compute_write_init_barrier(compute_write_image); {

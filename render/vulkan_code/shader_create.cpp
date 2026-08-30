@@ -124,6 +124,7 @@ std::vector<uint32_t> CompileGlslToSpv(const VKR_shader_paths &shader_paths,
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
     // options.SetOptimizationLevel(shaderc_optimization_level_performance); // 开启性能优化
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
 
     std::filesystem::path filePath = filename;
     std::filesystem::path baseDir  = "/Users/panxin/CLionProjects/hello_mac/render/shader/";
