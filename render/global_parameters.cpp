@@ -141,6 +141,24 @@ bool Global_parameters::update_directional_light() {
         cascadeSplits[i] = (d - nearClip) / clipRange;
     }
     // 目的是为零什么? 计算
+
+
+    // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
+    // float k = std::sqrt(tanHalfFOVX * tanHalfFOVX + tanHalfFOVY * tanHalfFOVY); // 视锥体对角线斜率
+    // float k2 = k * k;
+    //
+    // // 最完美的球心 Z 轴位置
+    // float sphereCenterZ = 0.0f;
+    // if (cFar * (1.0f - k2) > cNear) {
+    //     sphereCenterZ = (cFar * (1.0f + k2) + cNear) / 2.0f;
+    // } else {
+    //     sphereCenterZ = cFar;
+    // }
+    //
+    // // 最完美的紧密半径
+    // float radius = std::sqrt((cFar - sphereCenterZ) * (cFar - sphereCenterZ) + cFar * cFar * k2);
+
+
     //
     // Calculate orthographic projection matrix for each cascade
     float lastSplitDist = 0.0;
