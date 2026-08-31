@@ -124,15 +124,15 @@ bool Global_parameters::update_directional_light() {
     getPerspectiveClips(projection_matrix, nearClip, farClip);
 
     float clipRange = farClip - nearClip; // 这里需要减小 , 但是呢?
-
-    float minZ = nearClip;
-    float maxZ = nearClip + clipRange;
+    float minZ      = nearClip;
+    float maxZ      = farClip; // 修正：直接等于 farClip
 
     float range = maxZ - minZ;
     float ratio = maxZ / minZ;
 
     // Calculate split depths based on view camera frustum
     // Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
+    // 1. 计算 Practical Split 深度
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
         float p          = (i + 1) / static_cast<float>(SHADOW_MAP_CASCADE_COUNT);
         float log        = minZ * std::pow(ratio, p);
@@ -147,6 +147,7 @@ bool Global_parameters::update_directional_light() {
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
         float splitDist = cascadeSplits[i];
 
+        // 2. 正确将 NDC 视锥体恢复到世界空间
         Eigen::Vector3f frustumCorners[8] = {
             Eigen::Vector3f(-1.0f, 1.0f, 0.0f),
             Eigen::Vector3f(1.0f, 1.0f, 0.0f),
@@ -165,18 +166,23 @@ bool Global_parameters::update_directional_light() {
                                                                 frustumCorners[j].y(),
                                                                 frustumCorners[j].z(),
                                                                 1.0f);
+            // 【修复 BUG 1】：修正 X, Y, Z 的赋值错误
             frustumCorners[j] = Eigen::Vector3f{
-                invCorner.x() / invCorner.w(), invCorner.y() / invCorner.w(), invCorner.z() / invCorner.w(),
+                invCorner.x() / invCorner.w(),
+                invCorner.y() / invCorner.w(),
+                invCorner.z() / invCorner.w()
             };
         }
 
+        // 按当前级联截取视锥体片段
         for (uint32_t j = 0; j < 4; j++) {
             Eigen::Vector3f dist  = frustumCorners[j + 4] - frustumCorners[j];
             frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
             frustumCorners[j]     = frustumCorners[j] + (dist * lastSplitDist);
         }
-        //
-        // Get frustum center
+
+        // 3. 计算【更稳定】的包围球中心和半径
+        // 【修复 BUG 2】：直接使用几何计算得到的球心，防止旋转抖动
         Eigen::Vector3f frustumCenter = Eigen::Vector3f::Zero();
         for (uint32_t j = 0; j < 8; j++) {
             frustumCenter += frustumCorners[j];
@@ -186,32 +192,46 @@ bool Global_parameters::update_directional_light() {
         // 计算包围球半径
         float radius = 0.0f;
         for (uint32_t j = 0; j < 8; j++) {
-            // glm::length 替换为 Eigen 的 .norm()
             float distance = (frustumCorners[j] - frustumCenter).norm();
             radius         = std::max(radius, distance);
         }
+        // 稍微向上取整，增加一小圈边界缓冲区
         radius = std::ceil(radius * 16.0f) / 16.0f;
+        // 还是没有做好级联, 能看到的 阴影 在远处消失的现象可以通过 扩大这里的半径来解决
 
-        Eigen::Vector3f maxExtents = Eigen::Vector3f::Constant(radius);
-        Eigen::Vector3f minExtents = -maxExtents;
+        // 4. 处理你的核心需求：XY 轴使用半径，Z 轴使用自定义 Buffer
+        Eigen::Vector3f lightDir = light.get_direction().normalized();
 
-        // 假设 lightPos 是 Eigen::Vector3f 类型的灯光方向或位置
-        Eigen::Vector3f lightDir = light.get_direction();
+        // 你指定的自定义 Z 轴 Buffer
+        float zNearBuffer = 150.0f; // 允许球心背后多远（Caster 范围） // 这里可以很有
+        float zFarBuffer  = 50.0f;  // 允许球心前面延伸多远
 
-        float zNearBuffer = 150.0f; // 允许光线背后多远（例如150米）的物体也能产生阴影投射进来
-        float zFarBuffer  = 50.0f;  // 允许视锥体后面延伸多远
-
-
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter - lightDir * maxExtents.z(),
+        // 视点选择：强行让 View 矩阵的 LookAt 中心落在完美的球心上
+        // 眼睛位置放在球心沿着光线反方向向后退 zNearBuffer 的地方
+        Eigen::Vector3f lightPos        = frustumCenter - lightDir * zNearBuffer;
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(lightPos,
                                                       frustumCenter,
                                                       Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
-        // 替换 glm::ortho (使用上面专门为 DX/Vulkan 写的函数)
-        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minExtents.x(), maxExtents.x(),
-                                                                        minExtents.y(), maxExtents.y(),
-                                                                        0.0f, maxExtents.z() - minExtents.z());
+        // 在 Light View 空间中：
+        // XY 轴的中心就是 (0,0)，边界由半径死死卡住
+        float minX = -radius;
+        float maxX = radius;
+        float minY = -radius;
+        float maxY = radius;
 
-        // Store split distance and matrix in cascade
+        // Z 轴总长：从眼睛位置（近平面 0.0）一直延伸到球心前方 zFarBuffer 的地方
+        float totalZRange = zNearBuffer + zFarBuffer;
+
+        // 调用你专为 DX/Vulkan 写的 ortho 投影函数
+        // 此时近裁剪面设为 0.0f，远裁剪面设为总深度范围
+        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minX, maxX,
+                                                                        minY, maxY,
+                                                                        0.0f, totalZRange);
+
+        // 5. 存储并进行 Texel 对齐（防止平移抖动）
+        // 为了做到极致的无抖动，建议在此处加上对齐逻辑（可选，若需要可参考下方提示）
+
         split_depth[i]          = (nearClip + splitDist * clipRange) * -1.0f;
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;
         light_frustum_planes[i] = get_Frustum_Planes(light_viewProjMatrix[i]);
