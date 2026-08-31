@@ -40,7 +40,6 @@ bool Global_parameters::set_sun_light(const Eigen::Vector3f &v3) {
     auto tem = v3;
     tem.normalize();
     light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
-    update_directional_light();
     return true;
 }
 
@@ -167,6 +166,15 @@ std::vector<CascadeSplit> calculateSplits(float totalNear, float totalFar, int n
     return result;
 }
 
+
+/**
+ * @brief 计算视锥体（子级联）的世界空间完美最小包围球心
+ * @param mainViewMatrix 主相机的 View 矩阵
+ * @param mainProjMatrix 主相机的 Projection 矩阵（支持透视投影）
+ * @param n 当前级联的近平面距离 (Near)
+ * @param f 当前级联的远平面距离 (Far)
+ * @return Eigen::Vector3f 最小包围球的世界空间中心坐标
+ */
 Eigen::Vector3f calculateCascadeSphereCenter(
     const Eigen::Matrix4f &mainViewMatrix,
     const Eigen::Matrix4f &mainProjMatrix,
@@ -182,125 +190,57 @@ Eigen::Vector3f calculateCascadeSphereCenter(
     Eigen::Vector3f mainCameraLookDir = -invView.block<3, 1>(0, 2);
     mainCameraLookDir.normalize(); // 确保归一化
 
-    // 2. 从主相机投影矩阵中提取视锥体宽高缩放率
-    float k = 1.0f / std::abs(mainProjMatrix(1, 1)); // 垂直方向 tan(vfov / 2)
-    float m = 1.0f / std::abs(mainProjMatrix(0, 0)); // 水平方向 tan(hfov / 2)
+    float tanHalfVfov = 1.0f / std::abs(mainProjMatrix(1, 1));
+    float tanHalfHfov = 1.0f / std::abs(mainProjMatrix(0, 0));
 
-    // 3. 计算外接球心沿着相机视线方向的偏移距离 D
-    float range    = f - n;
-    float sum      = f + n;
-    float fSquared = f * f;
+    // 几何推导中的关键系数：(tan(vfov/2)^2 + tan(hfov/2)^2)
+    float gauss = tanHalfVfov * tanHalfVfov + tanHalfHfov * tanHalfHfov;
 
-    // 几何推导公式
-    float D = n + (range * 0.5f) + (4.0f * (k * k + m * m) * fSquared - range * range) / (2.0f * sum);
+    float D     = 0.0f;
+    float range = f - n;
+    float sum   = f + n;
 
-    // 4. 计算出完美外接球心的世界坐标
-    Eigen::Vector3f perfectFrustumCenter = mainCameraPos + mainCameraLookDir * D;
+    // 条件判定：如果视锥体开角够大，外接球就是最小包围球
+    if (gauss >= (range / sum)) {
+        // 情况 A：标准外接球公式（通过视锥体全部 8 个顶点）
+        D = 0.5f * sum * (1.0f + gauss);
+    } else {
+        // 情况 B：视锥体过于细长（通常发生在 FoV 很小，或者级联切分得极远时）
+        // 此时强行包裹近平面会导致球体巨大。最优解是球心直接落在远平面中心，向后完美包裹整个视锥
+        D = f;
+    }
 
-    return perfectFrustumCenter;
+    // =================================================================
+    // 4. 计算并返回世界坐标
+    // =================================================================
+    Eigen::Vector3f minimumBoundingCenter = mainCameraPos + mainCameraLookDir * D;
+
+    return minimumBoundingCenter.array().floor(); // 部分方向上有用,部分方向上没有用
 }
 
 
 bool Global_parameters::update_directional_light() {
 #define SHADOW_MAP_CASCADE_COUNT 4
 
-    float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
-
-    float cascadeSplitLambda = 0.95f;
-    float nearClip           = 0;
-    float farClip            = 0;
+    float nearClip = 0;
+    float farClip  = 0;
     getPerspectiveClips(projection_matrix, nearClip, farClip);
 
-    float clipRange = farClip - nearClip; // 这里需要减小 , 但是呢?
-    float minZ      = nearClip;
-    float maxZ      = farClip; // 修正：直接等于 farClip
-
-    float range = maxZ - minZ;
-    float ratio = maxZ / minZ;
-
-    // Calculate split depths based on view camera frustum
-    // Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-    // 1. 计算 Practical Split 深度
-    for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
-        float p          = (i + 1) / static_cast<float>(SHADOW_MAP_CASCADE_COUNT);
-        float log        = minZ * std::pow(ratio, p);
-        float uniform    = minZ + range * p;
-        float d          = cascadeSplitLambda * (log - uniform) + uniform;
-        cascadeSplits[i] = (d - nearClip) / clipRange;
-    }
-    // 目的是为零什么? 计算
 
     auto cascades = calculateSplits(nearClip, farClip, SHADOW_MAP_CASCADE_COUNT);
-
     // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
-    // float k = std::sqrt(tanHalfFOVX * tanHalfFOVX + tanHalfFOVY * tanHalfFOVY); // 视锥体对角线斜率
-    // float k2 = k * k;
-    //
-    // // 最完美的球心 Z 轴位置
-    // float sphereCenterZ = 0.0f;
-    // if (cFar * (1.0f - k2) > cNear) {
-    //     sphereCenterZ = (cFar * (1.0f + k2) + cNear) / 2.0f;
-    // } else {
-    //     sphereCenterZ = cFar;
-    // }
-    //
-    // // 最完美的紧密半径
-    // float radius = std::sqrt((cFar - sphereCenterZ) * (cFar - sphereCenterZ) + cFar * cFar * k2);
 
-
-    //
-    // Calculate orthographic projection matrix for each cascade
-    float lastSplitDist = 0.0;
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
-        float splitDist = cascadeSplits[i];
-
-        // 2. 正确将 NDC 视锥体恢复到世界空间
-        Eigen::Vector3f frustumCorners[8] = {
-            Eigen::Vector3f(-1.0f, 1.0f, 0.0f),
-            Eigen::Vector3f(1.0f, 1.0f, 0.0f),
-            Eigen::Vector3f(1.0f, -1.0f, 0.0f),
-            Eigen::Vector3f(-1.0f, -1.0f, 0.0f),
-            Eigen::Vector3f(-1.0f, 1.0f, 1.0f),
-            Eigen::Vector3f(1.0f, 1.0f, 1.0f),
-            Eigen::Vector3f(1.0f, -1.0f, 1.0f),
-            Eigen::Vector3f(-1.0f, -1.0f, 1.0f),
-        };
-
-        // Project frustum corners into world space
-        // glm::mat4 invCam = glm::inverse(camera.matrices.perspective * camera.matrices.view);
-        for (uint32_t j = 0; j < 8; j++) {
-            Eigen::Vector4f invCorner = invVP * Eigen::Vector4f(frustumCorners[j].x(),
-                                                                frustumCorners[j].y(),
-                                                                frustumCorners[j].z(),
-                                                                1.0f);
-            // 【修复 BUG 1】：修正 X, Y, Z 的赋值错误
-            frustumCorners[j] = Eigen::Vector3f{
-                invCorner.x() / invCorner.w(),
-                invCorner.y() / invCorner.w(),
-                invCorner.z() / invCorner.w()
-            };
-        }
-
-        // 按当前级联截取视锥体片段
-        for (uint32_t j = 0; j < 4; j++) {
-            Eigen::Vector3f dist  = frustumCorners[j + 4] - frustumCorners[j];
-            frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
-            frustumCorners[j]     = frustumCorners[j] + (dist * lastSplitDist);
-        }
-
-        // 3. 计算【更稳定】的包围球中心和半径
-        // 【修复 BUG 2】：直接使用几何计算得到的球心，防止旋转抖动
-        Eigen::Vector3f frustumCenter = Eigen::Vector3f::Zero();
-        for (uint32_t j = 0; j < 8; j++) {
-            frustumCenter += frustumCorners[j];
-        }
-        frustumCenter /= 8.0f;
+        Eigen::Vector3f frustumCenter = calculateCascadeSphereCenter(view_matrix,
+                                                                     projection_matrix,
+                                                                     cascades[i].nearPlane,
+                                                                     cascades[i].farPlane);
 
         // 计算包围球半径
         float radius = calculateCascadeRadiusFromProj(projection_matrix, cascades[i].nearPlane, cascades[i].farPlane);
         // 计算“常数级联半径”  能确保半径 不再 变化
 
-
+        radius = radius * 1.25; // 不知道为什么需要放大一点点,好像有一点不同 ,
         // frustumCenter 的平滑移动是导致抖动的“罪魁祸首”（诱因），
         // 而 radius（半径）如果没有锁死，则是放大这种抖动的“帮凶”
 
@@ -316,32 +256,15 @@ bool Global_parameters::update_directional_light() {
                                                       Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
 
-        float minX      = -radius;
-        float maxX      = +radius;
-        float minY      = -radius;
-        float maxY      = +radius;
-        float nearPlane = -radius - zNearBuffer;
-        float farPlane  = +radius + zFarBuffer;
-
-
-        // 在 Light View 空间中：
-        // XY 轴的中心就是 (0,0)，边界由半径死死卡住
-
-        // Z 轴总长：从眼睛位置（近平面 0.0）一直延伸到球心前方 zFarBuffer 的地方
-        float totalZRange = zNearBuffer + zFarBuffer;
-
         // 调用你专为 DX/Vulkan 写的 ortho 投影函数
         // 此时近裁剪面设为 0.0f，远裁剪面设为总深度范围
-        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minX, maxX,
-                                                                        minY, maxY,
-                                                                        nearPlane, farPlane);
+        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(-radius, +radius,
+                                                                        -radius, +radius,
+                                                                        -radius - zNearBuffer,
+                                                                        +radius + zFarBuffer);
 
-        // 5. 存储并进行 Texel 对齐（防止平移抖动）
-        // 为了做到极致的无抖动，建议在此处加上对齐逻辑（可选，若需要可参考下方提示）
-
-        split_depth[i]          = (nearClip + splitDist * clipRange) * 1.0f;
+        split_depth[i]          = cascades[i].farPlane;
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;
         light_frustum_planes[i] = get_Frustum_Planes(light_viewProjMatrix[i]);
-        lastSplitDist           = cascadeSplits[i];
     }
 }
