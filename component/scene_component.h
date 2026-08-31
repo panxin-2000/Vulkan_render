@@ -62,6 +62,7 @@ inline void add_recursion_function_to_children(const entt::entity entity,
 inline void add_recursion_function_to_itself_children(const entt::entity entity,
                                                       const std::function<void(entt::entity entity)> &lambda) {
     if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {
+        lambda(entity);
         for (const entt::entity child: temp->get_children()) {
             lambda(child);
             add_recursion_function_to_children(child, lambda);
