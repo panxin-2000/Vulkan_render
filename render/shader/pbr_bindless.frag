@@ -81,10 +81,9 @@ vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inU
 
 }
 
-float textureProj(const highp sampler2DArray shadow_texture, vec4 shadowCoord, vec2 offset, uint cascadeIndex)
+float textureProj(const highp sampler2DArray shadow_texture, vec4 shadowCoord, vec2 offset, uint cascadeIndex, float bias)
 {
     float shadow = 1.0;
-    float bias = 0.001;
 
     if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
         float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
@@ -98,7 +97,7 @@ float textureProj(const highp sampler2DArray shadow_texture, vec4 shadowCoord, v
 
 }
 
-float filterPCF(const highp sampler2DArray shadow_texture, vec4 sc, uint cascadeIndex)
+float filterPCF(const highp sampler2DArray shadow_texture, vec4 sc, uint cascadeIndex, float bias)
 {
     ivec2 texDim = textureSize(shadow_texture, 0).xy;
     float scale = 0.75;
@@ -111,7 +110,7 @@ float filterPCF(const highp sampler2DArray shadow_texture, vec4 sc, uint cascade
 
     for (int x = -range; x <= range; x++) {
         for (int y = -range; y <= range; y++) {
-            shadowFactor += textureProj(shadow_texture, sc, vec2(dx * x, dy * y), cascadeIndex);
+            shadowFactor += textureProj(shadow_texture, sc, vec2(dx * x, dy * y), cascadeIndex, bias);
             count++;
         }
     }
@@ -143,6 +142,57 @@ const mat4 biasMat = mat4(
         0.5, 0.5, 0.0, 1.0);
 
 
+
+float get_shadow(const highp sampler2DArray shadow_texture, vec3 normal, vec3 lightDir, vec3  WorldPos){
+
+    // Depth compare for shadowing // Clip Space
+    vec4 view_pos = view * vec4(inWorldPos, 1.0);
+    float viewDepth = -view_pos.z;
+
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
+    //    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    uint cascadeIndex = 0;
+
+
+    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT; ++i) {
+        if (viewDepth > cascadeSplits[i]) {
+            cascadeIndex = i + 1;
+        }
+    }
+    //    bias *= (10.0 / cascadeSplits[cascadeIndex]);
+
+    float currentSplit = cascadeSplits[cascadeIndex];
+    uint prev = (cascadeIndex == 0) ? 0 : cascadeIndex - 1;
+
+    float prevSplit = (cascadeIndex == 0) ? 0.0 : cascadeSplits[cascadeIndex - 1];
+
+    float blendBand = (currentSplit - prevSplit) * 0.1;
+    float blendDist = currentSplit - viewDepth;
+
+    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
+
+    // NDC 空间 shadowCoord / shadowCoord.w
+    float shadow = 0;
+    //    if (enablePCF == 1) {
+    shadow = filterPCF(shadow_texture, shadowCoord / shadowCoord.w, cascadeIndex, bias);
+    //    } else {
+    //    shadow = textureProj(shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
+    //    }
+
+
+    // 4. 如果在边界内，且存在下一层级，则进行混合采样
+    if (blendDist < blendBand && cascadeIndex < 3) {
+        // 计算混合权重 (0.0 完全属于当前层，1.0 完全属于下一层)
+        float alpha = 1.0 - (blendDist / blendBand);
+        vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex + 1] * vec4(inWorldPos, 1.0);
+        float  shadowNext = filterPCF(shadow_texture, shadowCoord / shadowCoord.w, cascadeIndex + 1, bias);
+        // 线性混合两层阴影结果
+        return mix(shadow, shadowNext, alpha);
+    }
+
+    return shadow;
+}
+
 void main()
 {
 
@@ -166,39 +216,7 @@ void main()
     vec3 indirect_light = vec3(0.0f);
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
     indirect_light = indirect_light_dufuse * c_diffusen;
-
-    // Depth compare for shadowing // Clip Space
-    vec4 view_pos = view * vec4(inWorldPos, 1.0);
-    float viewDepth = -view_pos.z;
-
-    float result = 0;
-    uint cascadeIndex = 0;
-    if (viewDepth > 0 && viewDepth > cascadeSplits.x) {
-        cascadeIndex = 1;
-        result = 0.25;
-    }
-    if (viewDepth > cascadeSplits.x && viewDepth > cascadeSplits.y) {
-        cascadeIndex = 2;
-        result = 0.5;
-    }
-    if (viewDepth > cascadeSplits.y && viewDepth > cascadeSplits.z) {
-        cascadeIndex = 3;
-        result = 0.75;
-    }
-
-    vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
-
-
-    // NDC 空间 shadowCoord / shadowCoord.w
-    float shadow = 0;
-    //    if (enablePCF == 1) {
-    shadow = filterPCF(global_shadow_texture, shadowCoord / shadowCoord.w, cascadeIndex);
-    //    } else {
-    //    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
-    //    }
-
-
-    //    float shadow = textureProj(global_shadow_texture, inShadow_UV.xyz, vec2(0, 0), uint(inShadow_UV.w));
+    float shadow = get_shadow(global_shadow_texture, N, -normalize(light.rotate.xyz), inWorldPos);
 
     for (uint i = 0; i < 1; i++) {
         vec3 L;
