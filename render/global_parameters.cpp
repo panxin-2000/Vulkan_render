@@ -216,7 +216,11 @@ bool Global_parameters::update_directional_light() {
         }
         // 稍微向上取整，增加一小圈边界缓冲区
         radius = std::ceil(radius * 16.0f) / 16.0f;
-        // 还是没有做好级联, 能看到的 阴影 在远处消失的现象可以通过 扩大这里的半径来解决
+        // 计算“常数级联半径”  能确保半径 不再 变化
+
+
+        // frustumCenter 的平滑移动是导致抖动的“罪魁祸首”（诱因），
+        // 而 radius（半径）如果没有锁死，则是放大这种抖动的“帮凶”
 
         // 4. 处理你的核心需求：XY 轴使用半径，Z 轴使用自定义 Buffer
         Eigen::Vector3f lightDir = light.get_direction().normalized();
@@ -225,19 +229,21 @@ bool Global_parameters::update_directional_light() {
         float zNearBuffer = 150.0f; // 允许球心背后多远（Caster 范围） // 这里可以很有
         float zFarBuffer  = 50.0f;  // 允许球心前面延伸多远
 
-        // 视点选择：强行让 View 矩阵的 LookAt 中心落在完美的球心上
-        // 眼睛位置放在球心沿着光线反方向向后退 zNearBuffer 的地方
-        Eigen::Vector3f lightPos        = frustumCenter - lightDir * zNearBuffer;
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(lightPos,
-                                                      frustumCenter,
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter,
+                                                      frustumCenter + lightDir,
                                                       Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+
+
+        float minX      = -radius;
+        float maxX      = +radius;
+        float minY      = -radius;
+        float maxY      = +radius;
+        float nearPlane = -radius - zNearBuffer;
+        float farPlane  = +radius + zFarBuffer;
+
 
         // 在 Light View 空间中：
         // XY 轴的中心就是 (0,0)，边界由半径死死卡住
-        float minX = -radius;
-        float maxX = radius;
-        float minY = -radius;
-        float maxY = radius;
 
         // Z 轴总长：从眼睛位置（近平面 0.0）一直延伸到球心前方 zFarBuffer 的地方
         float totalZRange = zNearBuffer + zFarBuffer;
@@ -246,7 +252,7 @@ bool Global_parameters::update_directional_light() {
         // 此时近裁剪面设为 0.0f，远裁剪面设为总深度范围
         Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minX, maxX,
                                                                         minY, maxY,
-                                                                        0.0f, totalZRange);
+                                                                        nearPlane, farPlane);
 
         // 5. 存储并进行 Texel 对齐（防止平移抖动）
         // 为了做到极致的无抖动，建议在此处加上对齐逻辑（可选，若需要可参考下方提示）
