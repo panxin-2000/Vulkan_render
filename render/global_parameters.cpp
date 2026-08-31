@@ -114,6 +114,75 @@ eigenOrthoDX_FlipY_StandardZ(float left, float right, float bottom, float top, f
 }
 
 
+
+struct CascadeSplit {
+    float nearPlane;
+    float farPlane;
+};
+
+std::vector<CascadeSplit> calculateSplits(float totalNear, float totalFar, int numCascades, float lambda = 0.95f) {
+    std::vector<float> splitDistances(numCascades + 1);
+    splitDistances[0]           = totalNear;
+    splitDistances[numCascades] = totalFar;
+
+
+    // 核心 PSSM / Practical Split Scheme 公式
+    for (int i = 1; i < numCascades; ++i) {
+        float f            = (i) / static_cast<float>(numCascades);
+        float logSplit     = totalNear * std::pow(totalFar / totalNear, f);
+        float uniformSplit = totalNear + (totalFar - totalNear) * f;
+        splitDistances[i]  = lambda * logSplit + (1.0f - lambda) * uniformSplit;
+    }
+
+    // splitDistances[i]  = splitDistances[i - 1] + (lambda * logSplit + (1.0f - lambda) * uniformSplit) * (
+    //                      totalFar - totalNear);
+
+    // 转换为你的函数所需要的每一份的 [n, f]
+    std::vector<CascadeSplit> result;
+    for (int i = 0; i < numCascades; ++i) {
+        CascadeSplit split;
+        split.nearPlane = splitDistances[i];
+        split.farPlane  = splitDistances[i + 1];
+        result.push_back(split);
+    }
+
+    return result;
+}
+
+Eigen::Vector3f calculateCascadeSphereCenter(
+    const Eigen::Matrix4f &mainViewMatrix,
+    const Eigen::Matrix4f &mainProjMatrix,
+    float n, float f) {
+    // 1. 从主相机 View 矩阵中逆向提取相机的世界位置和朝向
+    Eigen::Matrix4f invView = mainViewMatrix.inverse();
+
+    // 逆矩阵的第四列前三个分量就是相机在世界空间的 Position
+    Eigen::Vector3f mainCameraPos = invView.block<3, 1>(0, 3);
+
+    // 逆矩阵的第三列（Z轴）取反，就是相机在世界空间的正前方向量 (Look Direction)
+    // 注：如果是右手坐标系，相机看向 -Z，所以逆矩阵的第三列向量指向相机背后，我们需要取负号得到向前向量
+    Eigen::Vector3f mainCameraLookDir = -invView.block<3, 1>(0, 2);
+    mainCameraLookDir.normalize(); // 确保归一化
+
+    // 2. 从主相机投影矩阵中提取视锥体宽高缩放率
+    float k = 1.0f / std::abs(mainProjMatrix(1, 1)); // 垂直方向 tan(vfov / 2)
+    float m = 1.0f / std::abs(mainProjMatrix(0, 0)); // 水平方向 tan(hfov / 2)
+
+    // 3. 计算外接球心沿着相机视线方向的偏移距离 D
+    float range    = f - n;
+    float sum      = f + n;
+    float fSquared = f * f;
+
+    // 几何推导公式
+    float D = n + (range * 0.5f) + (4.0f * (k * k + m * m) * fSquared - range * range) / (2.0f * sum);
+
+    // 4. 计算出完美外接球心的世界坐标
+    Eigen::Vector3f perfectFrustumCenter = mainCameraPos + mainCameraLookDir * D;
+
+    return perfectFrustumCenter;
+}
+
+
 bool Global_parameters::update_directional_light() {
 #define SHADOW_MAP_CASCADE_COUNT 4
 
