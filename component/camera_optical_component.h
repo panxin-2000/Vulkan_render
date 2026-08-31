@@ -60,7 +60,7 @@ private:
     float fovy_radians_        = 45.0f;
     float aspect_              = 1.0f;
     float zNear_               = 0.1f;
-    float zFar_                = 1000.0f;
+    float zFar_                = 200.0f;
     float xmag_                = 1.0f;
     float ymag_                = 1.0f;
     bool perspective_          = true;
@@ -76,7 +76,7 @@ public:
     }
 
     camera_optical_component(const float fovy_radians, const float zNear,
-                             const float aspect = 1.0f, const float zFar = 1000.0f) {
+                             const float aspect = 1.0f, const float zFar = 200.0f) {
         fovy_radians_ = fovy_radians;
         zNear_        = zNear;
         zFar_         = zFar;
