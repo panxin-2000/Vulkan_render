@@ -114,11 +114,29 @@ eigenOrthoDX_FlipY_StandardZ(float left, float right, float bottom, float top, f
 }
 
 
-
 struct CascadeSplit {
     float nearPlane;
     float farPlane;
 };
+
+
+float calculateCascadeRadiusFromProj(const Eigen::Matrix4f &mainProjMatrix, float n, float f) {
+    // 1. 从主相机投影矩阵中直接提取视锥体的缩放率
+    // 注意：Eigen 的矩阵索引是 (row, col)。
+    // 如果你的投影矩阵经过了特殊的 FlipY，或者有些管线在 P(1,1) 取了负号，请取绝对值 std::abs
+    float k = 1.0f / std::abs(mainProjMatrix(1, 1)); // 对应垂直 tan(vfov / 2)
+    float m = 1.0f / std::abs(mainProjMatrix(0, 0)); // 对应水平 tan(hfov / 2)
+
+    // 2. 核心常数半径几何公式
+    float range    = f - n;
+    float fSquared = f * f;
+
+    // 计算视锥体完美的最小外接球半径
+    float radius = 0.5f * std::sqrt(range * range + 4.0f * (k * k + m * m) * fSquared);
+
+    return radius;
+}
+
 
 std::vector<CascadeSplit> calculateSplits(float totalNear, float totalFar, int numCascades, float lambda = 0.95f) {
     std::vector<float> splitDistances(numCascades + 1);
@@ -212,6 +230,7 @@ bool Global_parameters::update_directional_light() {
     }
     // 目的是为零什么? 计算
 
+    auto cascades = calculateSplits(nearClip, farClip, SHADOW_MAP_CASCADE_COUNT);
 
     // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
     // float k = std::sqrt(tanHalfFOVX * tanHalfFOVX + tanHalfFOVY * tanHalfFOVY); // 视锥体对角线斜率
@@ -278,13 +297,7 @@ bool Global_parameters::update_directional_light() {
         frustumCenter /= 8.0f;
 
         // 计算包围球半径
-        float radius = 0.0f;
-        for (uint32_t j = 0; j < 8; j++) {
-            float distance = (frustumCorners[j] - frustumCenter).norm();
-            radius         = std::max(radius, distance);
-        }
-        // 稍微向上取整，增加一小圈边界缓冲区
-        radius = std::ceil(radius * 16.0f) / 16.0f;
+        float radius = calculateCascadeRadiusFromProj(projection_matrix, cascades[i].nearPlane, cascades[i].farPlane);
         // 计算“常数级联半径”  能确保半径 不再 变化
 
 
