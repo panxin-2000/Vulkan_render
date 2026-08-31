@@ -40,6 +40,7 @@ bool Global_parameters::set_sun_light(const Eigen::Vector3f &v3) {
     auto tem = v3;
     tem.normalize();
     light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
+    update_directional_light();
     return true;
 }
 

@@ -358,13 +358,14 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
 
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
-        ImGui::SliderFloat("light pos x", &world_light_pos.x, -1.0f, 1.0f);
-        ImGui::SliderFloat("light pos y", &world_light_pos.y, -1.0f, 1.0f);
-        ImGui::SliderFloat("light pos z", &world_light_pos.z, -1.0f, 1.0f);
-        Engine::instance().get_global_parameters().set_sun_light({
-                                                                     world_light_pos.x, world_light_pos.y,
-                                                                     world_light_pos.z
-                                                                 });
+
+        if (ImGui::SliderFloat3("light pos x y z", &world_light_pos.x, -1.0f, 1.0f)) {
+            Engine::instance().get_global_parameters().set_sun_light({
+                                                                         world_light_pos.x, world_light_pos.y,
+                                                                         world_light_pos.z
+                                                                     });
+        }
+
         //
         {
             bool bistro = false;

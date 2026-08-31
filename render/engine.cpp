@@ -434,7 +434,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     shCoefficients[8] *= 0.546274f;
 
 
-    global_parameters_.update_directional_light();
+
     set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
     set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
