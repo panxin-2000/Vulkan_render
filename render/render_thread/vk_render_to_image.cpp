@@ -305,6 +305,7 @@ void render_different_pass(VCB &vcb,
             vcb.render_3DGS_idkeys(entity, prefix_sum);
         }
     } {
+        // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出
         vcb.compute_write_init_barrier(compute_write_image); {
             auto view = Render_entt().view<compute_postprocess_tag>();
             for (const auto entity: view) {

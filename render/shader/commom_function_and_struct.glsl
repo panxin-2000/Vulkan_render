@@ -21,6 +21,35 @@ struct Frustum {
 #define PREVENT_DIV0(n, d, magic)   ((n) / (d))
 #endif
 
+// ACES 色调映射
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+// Filmic 胶片感色调映射
+vec3 FilmicHejlTonemap(vec3 x) {
+    vec3 max_x = max(vec3(0.0), x - vec3(0.004)); // 防止暗部溢出
+    // 该公式内部已经将分母和分子配平，天然完美对齐了 1.0 白点
+    return (max_x * (6.2 * max_x + vec3(0.5))) / (max_x * (6.2 * max_x + vec3(1.7)) + vec3(0.06));
+}
+
+//Reinhard 色调映射 (最经典的线性拉伸压缩)
+// 1. 标准 Reinhard 算法
+vec3 ReinhardTonemap(vec3 x) {
+    return x / (vec3(1.0) + x);
+}
+
+// 2. 改进版 Reinhard (支持指定白点 W，超过 W 强行截断为纯白)
+vec3 ReinhardTonemapExtended(vec3 x, float whitePoint) {
+    vec3 numerator = x * (vec3(1.0) + (x / (whitePoint * whitePoint)));
+    return numerator / (vec3(1.0) + x);
+}
+
 // From http://filmicworlds.com/blog/filmic-tonemapping-operators/
 vec3 Uncharted2Tonemap(vec3 color)
 {
@@ -44,7 +73,9 @@ vec3 Uncharted2Tonemap(vec3 color)
 vec4 tonemap(vec4 color, float exposure, float gamma)
 {
     vec3 outcol = Uncharted2Tonemap(color.rgb * exposure);
+    // 计算白点修正值，确保输入为 W 时的亮度能完美映射为 1.0
     outcol = outcol * (1.0f / Uncharted2Tonemap(vec3(11.2f)));
+    //选择 11.2f 是 真实的物理世界亮度以及电影胶片曲线反复调试出来的“白点阀值（Linear White Point）”
     return vec4(pow(outcol, vec3(1.0f / gamma)), color.a);
 }
 
@@ -867,6 +898,77 @@ vec4 RandomSequence_GenerateSample4D(inout RandomSequence RandSequence)
 // Index must be a value in [0,Num), Num should be >0
 //FRandomSequence Split(uint Index, uint Num);
 
+vec4 lookup(in vec4 textureColor, in sampler2D lookupTable) {
+    #ifndef LUT_NO_CLAMP
+    textureColor = clamp(textureColor, 0.0, 1.0);
+    #endif
+
+    // Vulkan 中直接使用标准 float，去除 OpenGL ES 的 mediump 关键字
+    float blueColor = textureColor.b * 63.0;
+
+    vec2 quad1;
+    quad1.y = floor(floor(blueColor) / 8.0);
+    quad1.x = floor(blueColor) - (quad1.y * 8.0);
+
+    vec2 quad2;
+    quad2.y = floor(ceil(blueColor) / 8.0);
+    quad2.x = ceil(blueColor) - (quad2.y * 8.0);
+
+    vec2 texPos1;
+    texPos1.x = (quad1.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * textureColor.r);
+    texPos1.y = (quad1.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * textureColor.g);
+
+    #ifdef LUT_FLIP_Y
+    texPos1.y = 1.0 - texPos1.y;
+    #endif
+
+    vec2 texPos2;
+    texPos2.x = (quad2.x * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * textureColor.r);
+    texPos2.y = (quad2.y * 0.125) + 0.5 / 512.0 + ((0.125 - 1.0 / 512.0) * textureColor.g);
+
+    #ifdef LUT_FLIP_Y
+    texPos2.y = 1.0 - texPos2.y;
+    #endif
+
+    // 关键修改：将 texture2D 升级为符合 Vulkan 标准的 texture
+    vec4 newColor1 = texture(lookupTable, texPos1);
+    vec4 newColor2 = texture(lookupTable, texPos2);
+
+    vec4 newColor = mix(newColor1, newColor2, fract(blueColor));
+    return newColor;
+}
+
+// 适用于 256x16 的长条形 LUT 采样 (16³ 尺寸)
+vec3 ColorLookup2DSRGB(sampler2D lutTex, vec3 uvw)
+{
+    // lutSize 是 16.0
+    float lutSize = 16.0;
+
+    // 1. 将 0~1 的 B 通道重新映射到 0 ~ 15 的切片索引范围
+    float rwb = uvw.z * (lutSize - 1.0);
+
+    // 2. 边缘对齐与微调 (防止色彩越界串线)
+    float uOffset = 1.0 / (256.0);
+    float vOffset = 1.0 / (16.0);
+
+    // 3. 计算在当前单张切片内的 R 和 G 归一化内聚坐标
+    vec2 quadUV;
+    quadUV.x = uvw.x * (1.0 / lutSize - uOffset) + (uOffset * 0.5);
+    quadUV.y = uvw.y * (1.0 - vOffset) + (vOffset * 0.5);
+
+    // 4. 加上 B 轴切片带来的横向 X 轴位移
+    float zSliceLow = floor(rwb);
+    float zSliceHigh = ceil(rwb);
+
+    vec2 uvLow = vec2(quadUV.x + zSliceLow / lutSize, quadUV.y);
+    vec2 uvHigh = vec2(quadUV.x + zSliceHigh / lutSize, quadUV.y);
+
+    // 5. 采样并按蓝色残差插值
+    vec3 colorLow = texture(lutTex, uvLow).rgb;
+    vec3 colorHigh = texture(lutTex, uvHigh).rgb;
+
+    return mix(colorLow, colorHigh, fract(rwb));
+}
 
 
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

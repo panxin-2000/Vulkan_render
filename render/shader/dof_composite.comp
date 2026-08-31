@@ -1,0 +1,23 @@
+#version 430 core
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(rgba16f, binding = 0) uniform readonly  image2D inputSceneImg; // 原始清晰 HDR 场景画面
+layout(rgba16f, binding = 1) uniform readonly  image2D blurredSceneImg;// Pass 1 产生的模糊中间纹理
+layout(rgba16f, binding = 2) uniform writeonly image2D finalOutputImg; // 最终输出的目标屏幕纹理
+
+void main() {
+    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 imgSize    = imageSize(inputSceneImg);
+
+    if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
+
+    vec4 sharpData = imageLoad(inputSceneImg, texelCoord);
+    vec4 blurData  = imageLoad(blurredSceneImg, texelCoord);
+
+    float coc = blurData.a; // 从 Alpha 通道中提取刚才算好的 CoC 强度
+
+    // 在清晰和模糊像素之间根据 CoC 混合出最终色彩
+    vec3 finalColor = mix(sharpData.rgb, blurData.rgb, coc);
+
+    imageStore(finalOutputImg, texelCoord, vec4(finalColor, 1.0));
+}

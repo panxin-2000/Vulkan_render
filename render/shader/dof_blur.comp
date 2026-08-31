@@ -1,0 +1,85 @@
+#version 430 core
+
+// 以 16x16 的局部工作组（Workgroup）为单位处理像素
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// 输入与输出图像
+layout(rgba16f, binding = 0) uniform readonly  image2D inputSceneImg; // 原始清晰 HDR 场景画面
+layout(r32f,    binding = 1) uniform readonly  image2D depthImg;      // 非线性深度图
+layout(rgba16f, binding = 2) uniform writeonly image2D outputBlurImg; // 模糊结果输出纹理
+
+// 统一变量 (Uniforms)
+uniform float focusDistance; // 焦距（焦点到相机的米数）
+uniform float focusRange;    // 焦深（在此范围内的物体完全清晰）
+uniform float maxBlurRadius; // 屏幕空间最大模糊半径（像素单位）
+uniform float zNear;         // 相机投影近平面
+uniform float zFar;          // 相机投影远平面
+
+#define GOLDEN_ANGLE 2.39996323 // 黄金角度（弧度制），用于构建完美的圆形光圈焦外 (Bokeh)
+#define MAX_SAMPLES 24          // 采样次数，Compute Shader 下由于高速缓存机制，24次即可获得极高画质
+
+// 从非线性深度图重建线性深度（单位：米）
+float getLinearDepth(ivec2 texelCoord) {
+    float z = imageLoad(depthImg, texelCoord).r;
+    return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
+}
+
+void main() {
+    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 imgSize    = imageSize(inputSceneImg);
+
+    // 边界保护，防止超出屏幕分辨率范围
+    if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
+
+    // 1. 计算线性深度与弥散圆（CoC - Circle of Confusion）大小
+    float currentDepth = getLinearDepth(texelCoord);
+    float coc = 0.0;
+
+    if (currentDepth < focusDistance - focusRange) {
+        // 前景模糊 (近处的物体)
+        coc = ((focusDistance - focusRange) - currentDepth) / (focusDistance - focusRange - zNear);
+    } else if (currentDepth > focusDistance + focusRange) {
+        // 背景模糊 (远处的物体)
+        coc = (currentDepth - (focusDistance + focusRange)) / (zFar - (focusDistance + focusRange));
+    }
+    // 限制范围在 0.0 (绝对清晰) 到 1.0 (极度模糊) 之间
+    coc = clamp(coc, 0.0, 1.0);
+
+    // 2. 性能优化：对于完全清晰的像素进行早期退出（Early out），节省算力
+    if (coc < 0.01) {
+        vec4 sharpColor = imageLoad(inputSceneImg, texelCoord);
+        imageStore(outputBlurImg, texelCoord, sharpColor);
+        return;
+    }
+
+    // 3. 基于黄金螺旋（Golden Spiral）的多重采样模糊
+    float currentRadius = coc * maxBlurRadius;
+    vec3 colorSum = vec3(0.0);
+    float weightSum = 0.0;
+
+    for (int i = 0; i < MAX_SAMPLES; i++) {
+        // 随着循环，采样点沿螺旋向外扩散
+        float r = sqrt(float(i + 0.5)) / sqrt(float(MAX_SAMPLES));
+        float theta = float(i) * GOLDEN_ANGLE;
+
+        // 计算屏幕像素单位的径向偏移量
+        ivec2 offset = ivec2(cos(theta) * r * currentRadius, sin(theta) * r * currentRadius);
+        ivec2 sampleCoord = clamp(texelCoord + offset, ivec2(0), imgSize - ivec2(1));
+
+        vec3 sampleColor = imageLoad(inputSceneImg, sampleCoord).rgb;
+        float sampleDepth = getLinearDepth(sampleCoord);
+
+        // 💡 关键权重优化：防止前背景颜色错误相互渗透（边缘伪影修复）
+        float weight = 1.0;
+        if (sampleDepth < currentDepth && coc < 0.5) {
+            weight = 0.1;
+        }
+
+        colorSum += sampleColor * weight;
+        weightSum += weight;
+    }
+
+    // 4. 将模糊后的 RGB 结果输出，并将当前像素的 CoC 写入 Alpha 通道留给 Pass 2 使用
+    vec3 finalBlurColor = colorSum / max(weightSum, 0.0001);
+    imageStore(outputBlurImg, texelCoord, vec4(finalBlurColor, coc));
+}
