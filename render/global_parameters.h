@@ -22,8 +22,8 @@ public:
     Eigen::Vector4f world_camera_pos;
     Light light;
     Eigen::Vector4f screen_size;
-    std::array<Eigen::Array4f, 9> shCoefficients;
     float split_depth[4];
+    std::array<Eigen::Array4f, 9> shCoefficients;
 
     bool set_projection_matrix(const Eigen::Matrix4f &matrix);
 

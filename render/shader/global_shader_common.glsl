@@ -30,8 +30,8 @@ layout (set = 1, binding = 0) uniform global_parameters
     vec3 viewPos; // camPos
     Light light;
     vec4 screen_size;
+    vec4 cascadeSplits;
     SphericalHarmonics SH;
-    float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
     vec4 pad[6];
 };
 

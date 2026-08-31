@@ -232,7 +232,7 @@ bool Global_parameters::update_directional_light() {
         // 5. 存储并进行 Texel 对齐（防止平移抖动）
         // 为了做到极致的无抖动，建议在此处加上对齐逻辑（可选，若需要可参考下方提示）
 
-        split_depth[i]          = (nearClip + splitDist * clipRange) * -1.0f;
+        split_depth[i]          = (nearClip + splitDist * clipRange) * 1.0f;
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;
         light_frustum_planes[i] = get_Frustum_Planes(light_viewProjMatrix[i]);
         lastSplitDist           = cascadeSplits[i];

@@ -84,7 +84,7 @@ vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inU
 float textureProj(const highp sampler2DArray shadow_texture, vec4 shadowCoord, vec2 offset, uint cascadeIndex)
 {
     float shadow = 1.0;
-    float bias = 0.005;
+    float bias = 0.001;
 
     if (shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
         float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
@@ -167,15 +167,29 @@ void main()
     vec3 indirect_light_dufuse = Irradiance_SphericalHarmonics(N, SH);
     indirect_light = indirect_light_dufuse * c_diffusen;
 
+    // Depth compare for shadowing // Clip Space
+    vec4 view_pos = view * vec4(inWorldPos, 1.0);
+    float viewDepth = -view_pos.z;
+
+    float result = 0;
     uint cascadeIndex = 0;
-    //    for (uint i = 0; i < SHADOW_MAP_CASCADE_COUNT - 1; ++i) {
-    //        if (GetLinearViewDepth() > cascadeSplits[i]) {
-    //            cascadeIndex = i + 1;
-    //        }
-    //    }
-    // Depth compare for shadowing
+    if (viewDepth > 0 && viewDepth > cascadeSplits.x) {
+        cascadeIndex = 1;
+        result = 0.25;
+    }
+    if (viewDepth > cascadeSplits.x && viewDepth > cascadeSplits.y) {
+        cascadeIndex = 2;
+        result = 0.5;
+    }
+    if (viewDepth > cascadeSplits.y && viewDepth > cascadeSplits.z) {
+        cascadeIndex = 3;
+        result = 0.75;
+    }
+
     vec4 shadowCoord = biasMat * cascadeViewProjMat[cascadeIndex] * vec4(inWorldPos, 1.0);
 
+
+    // NDC 空间 shadowCoord / shadowCoord.w
     float shadow = 0;
     //    if (enablePCF == 1) {
     shadow = filterPCF(global_shadow_texture, shadowCoord / shadowCoord.w, cascadeIndex);
