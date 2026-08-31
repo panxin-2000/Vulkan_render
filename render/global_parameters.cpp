@@ -140,6 +140,7 @@ bool Global_parameters::update_directional_light() {
         float d          = cascadeSplitLambda * (log - uniform) + uniform;
         cascadeSplits[i] = (d - nearClip) / clipRange;
     }
+    // 目的是为零什么? 计算
     //
     // Calculate orthographic projection matrix for each cascade
     float lastSplitDist = 0.0;
@@ -165,7 +166,7 @@ bool Global_parameters::update_directional_light() {
                                                                 frustumCorners[j].z(),
                                                                 1.0f);
             frustumCorners[j] = Eigen::Vector3f{
-                invCorner.x() / invCorner.w(), invCorner.x() / invCorner.w(), invCorner.x() / invCorner.w(),
+                invCorner.x() / invCorner.w(), invCorner.y() / invCorner.w(), invCorner.z() / invCorner.w(),
             };
         }
 
@@ -174,13 +175,13 @@ bool Global_parameters::update_directional_light() {
             frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
             frustumCorners[j]     = frustumCorners[j] + (dist * lastSplitDist);
         }
-
+        //
+        // Get frustum center
         Eigen::Vector3f frustumCenter = Eigen::Vector3f::Zero();
         for (uint32_t j = 0; j < 8; j++) {
             frustumCenter += frustumCorners[j];
         }
         frustumCenter /= 8.0f;
-
 
         // 计算包围球半径
         float radius = 0.0f;
@@ -191,96 +192,24 @@ bool Global_parameters::update_directional_light() {
         }
         radius = std::ceil(radius * 16.0f) / 16.0f;
 
+        Eigen::Vector3f maxExtents = Eigen::Vector3f::Constant(radius);
+        Eigen::Vector3f minExtents = -maxExtents;
 
+        // 假设 lightPos 是 Eigen::Vector3f 类型的灯光方向或位置
         Eigen::Vector3f lightDir = light.get_direction();
 
-
-        // 1. 灯光视矩阵：初次建立，将相机放在视锥体中心 frustumCenter，朝向光线方向
-        // 这步的唯一目的：确定方向，让灯光空间的 Z 轴与光线方向（lightDir）完美对齐！
-        Eigen::Vector3f lightViewPos    = frustumCenter;
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(lightViewPos, frustumCenter + lightDir,
-                                                      Eigen::Vector3f(0.0f, 1.0f, 0.0f));
-
-        // 2. 将视锥体的 8 个顶点转换到这个基础灯光空间中，寻找最紧凑的边界
-        float minX = std::numeric_limits<float>::max();
-        float maxX = std::numeric_limits<float>::lowest();
-        float minY = std::numeric_limits<float>::max();
-        float maxY = std::numeric_limits<float>::lowest();
-        float minZ = std::numeric_limits<float>::max();
-        float maxZ = std::numeric_limits<float>::lowest();
-
-        for (uint32_t j = 0; j < 8; j++) {
-            Eigen::Vector4f posLightSpace = lightViewMatrix * Eigen::Vector4f(frustumCorners[j].x(),
-                                                                              frustumCorners[j].y(),
-                                                                              frustumCorners[j].z(), 1.0f);
-            minX = std::min(minX, posLightSpace.x());
-            maxX = std::max(maxX, posLightSpace.x());
-            minY = std::min(minY, posLightSpace.y());
-            maxY = std::max(maxY, posLightSpace.y());
-            minZ = std::min(minZ, posLightSpace.z()); // 视锥体距离光源最近的点
-            maxZ = std::max(maxZ, posLightSpace.z()); // 视锥体距离光源最远的点
-        }
-
-
-        // 1. 确定你的 Vulkan 阴影贴图分辨率 (例如 2048x2048)
-        float shadowMapResolution = 2048.0f;
-
-        float fixedSize = 2.0f * radius;
-
-        // 重新计算基于圆心对齐的紧凑中心
-        float centerX = (minX + maxX) * 0.5f;
-        float centerY = (minY + maxY) * 0.5f;
-
-        // 建立恒定大小的临时边界
-        minX = centerX - radius;
-        maxX = centerX + radius;
-        minY = centerY - radius;
-        maxY = centerY + radius;
-
-        // 然后运行上面的 Texel Snapping (单像素大小现在变成了固定的 fixedSize / shadowMapResolution)
-        float texelSize = fixedSize / shadowMapResolution;
-        minX            = std::floor(minX / texelSize) * texelSize;
-        minY            = std::floor(minY / texelSize) * texelSize;
-        maxX            = minX + fixedSize;
-        maxY            = minY + fixedSize;
-
-
-        // 3. 🎯 核心改变：自定义 Z 轴的“远程遮挡物捕捉范围”
-        // 此时以 frustumCenter 为原点，光线背后（即玩家身后）的物体在灯光空间中是负 Z 方向。
-        // 我们可以把 Near 缓冲区调得很大，从而把身后非常遥远的巨大建筑也装进阴影相机里！
         float zNearBuffer = 150.0f; // 允许光线背后多远（例如150米）的物体也能产生阴影投射进来
         float zFarBuffer  = 50.0f;  // 允许视锥体后面延伸多远
 
-        // 计算绝对的灯光空间 Z 轴边界
-        float orthographicNearZ = minZ - zNearBuffer;
-        float orthographicFarZ  = maxZ + zFarBuffer;
 
-        // 计算总的深度范围（也就是你的正交包围盒在光线方向上的总长度）
-        float totalDepthRange = orthographicFarZ - orthographicNearZ;
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter - lightDir * maxExtents.z(),
+                                                      frustumCenter,
+                                                      Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
-        // 4. 构建你的专属 DirectX/Vulkan 正交投影矩阵
-        // 因为你的函数格式固定了近平面传入 0.0f，远平面传入总跨度，所以我们直接传 totalDepthRange
-        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(
-                                                                        minX,           // Left
-                                                                        maxX,           // Right
-                                                                        minY,           // Bottom
-                                                                        maxY,           // Top
-                                                                        0.0f,           // 函数期望的相对近平面 0
-                                                                        totalDepthRange // 函数期望的相对远平面（总深度）
-                                                                       );
-        // 🔥 关键的一步补偿：因为我们在正交矩阵里把近平面 offset 到了 0，
-        // 我们必须在物理空间中，把灯光相机的位置（lightViewMatrix）沿着光线反方向往后退 orthographicNearZ 的距离！
-        // 这样才能保证现实世界中的物体在投影时，坐标能和正交矩阵的 [0, totalDepthRange] 严格对齐。
-        // 1. 明确定义你想要相机往后退多少距离（绝对值）
-        // 此时以 frustumCenter 为基准，minZ 是负数，所以 -minZ 就是它到中心的绝对距离
-        float backDistance = std::abs(minZ) + zNearBuffer;
-
-        // 2. 🎯 正确且直观的坐标计算：
-        // 要让相机后退，必须【减去】光线方向（逆着光线走）
-        Eigen::Vector3f adjustedLightPos = frustumCenter - lightDir * backDistance;
-        // 3. 重新建立最终的视矩阵
-        // 相机位置在 adjustedLightPos，朝向依然顺着光线方向
-        lightViewMatrix = eigenLookAt(adjustedLightPos, adjustedLightPos + lightDir, Eigen::Vector3f(0.0f, 1.0f, 0.0f));
+        // 替换 glm::ortho (使用上面专门为 DX/Vulkan 写的函数)
+        Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(minExtents.x(), maxExtents.x(),
+                                                                        minExtents.y(), maxExtents.y(),
+                                                                        0.0f, maxExtents.z() - minExtents.z());
 
         // Store split distance and matrix in cascade
         split_depth[i]          = (nearClip + splitDist * clipRange) * -1.0f;

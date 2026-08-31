@@ -180,6 +180,10 @@ void render_different_pass(VCB &vcb,
                                   VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &temp);
                 // 现在绑定的管线是有问题的,
                 vcb.default_status();
+                PipelineRasterizationState temp_state;
+                temp_state.cullMode_ = VK_CULL_MODE_FRONT_BIT;
+                temp_state.write_commands(vcb.get_command_buffer());
+
                 vcb.DrawIndexedIndirect(entity, command_calculate.command_size,
                                         command_calculate.light_write_buffer[temp]);
             }
@@ -299,7 +303,6 @@ void render_different_pass(VCB &vcb,
             vcb.render_3DGS_preprocess(entity);
             auto prefix_sum = vcb.render_3DGS_prefixsum(entity);
             vcb.render_3DGS_idkeys(entity, prefix_sum);
-
         }
     } {
         vcb.compute_write_init_barrier(compute_write_image); {

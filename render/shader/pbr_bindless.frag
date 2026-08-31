@@ -178,9 +178,9 @@ void main()
 
     float shadow = 0;
     //    if (enablePCF == 1) {
-    //        shadow = filterPCF(global_shadow_texture,shadowCoord / shadowCoord.w, cascadeIndex);
+    shadow = filterPCF(global_shadow_texture, shadowCoord / shadowCoord.w, cascadeIndex);
     //    } else {
-    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
+    //    shadow = textureProj(global_shadow_texture, shadowCoord / shadowCoord.w, vec2(0.0), cascadeIndex);
     //    }
 
 
