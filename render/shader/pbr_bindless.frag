@@ -253,8 +253,7 @@ void main()
 
     #if defined(DISTANCE_FOG)
     float distance = length(viewPos.xyz - inWorldPos.xyz);
-    float fogFactor = get_fog_factor(distance, 20, 200, 0.03, 1);
-    vec4 fogColor = vec4(0.7, 0.7, 0.7, 1.0);
+    float fogFactor = get_fog_factor(distance, fogStart, fogEnd, fogDensity, fogType);
     out_color = mix(fogColor.rgb, out_color.rgb, fogFactor);
     #endif
 

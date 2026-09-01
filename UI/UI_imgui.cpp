@@ -359,6 +359,16 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
 
+        ImGui::SliderFloat("fog_start",
+                           &Engine::instance().get_global_parameters().get_fog_start(), 0.0f, 1000.0f);
+        ImGui::SliderFloat("fog_end",
+                           &Engine::instance().get_global_parameters().get_fog_end(), 0.0f, 1000.0f);
+        ImGui::SliderFloat("fog_density",
+                           &Engine::instance().get_global_parameters().get_fog_density(), 0.0f, 1.0f);
+        ImGui::SliderInt("fog_type",
+                         (int *) &Engine::instance().get_global_parameters().get_fog_type(), 0, 2);
+        ImGui::SliderFloat3("fog_color",
+                            Engine::instance().get_global_parameters().get_fog_color().data(), 0.0f, 1.0f);
         ImGui::SliderFloat("camera_vignette_intensity",
                            &Engine::instance().get_global_parameters().get_camera_vignette_intensity(), 0.0f,
                            1.0f);

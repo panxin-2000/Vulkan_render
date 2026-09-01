@@ -1157,6 +1157,26 @@ float get_noise_v2(uvec2 p, uint time_seed) {
     return float(v.x) * (1.0 / 4294967295.0);
 }
 
+/**
+ * 全通用 Vulkan 深度线性化函数
+ * @param depth        从 Vulkan 深度图中采样出来的非线性 depth 值 [0, 1]
+ * @param Projection   C++ 端传进来的原始投影矩阵（不管是常规还是 Reversed-Z，一网打尽）
+ * @return             返回绝对真实的 View Space 垂直物理距离（米）
+ */
+float linearize_depth_vulkan_universal(float depth, mat4 Projection) {
+    // 直接提取矩阵中掌管 NDC 到 ViewSpace 深度缩放与偏移的两大核心系数
+    float P22 = Projection[2][2];
+    float P32 = Projection[3][2];
+    // 不管是常规 Z 还是 Reversed-Z，甚至包括“无限远景 Reversed-Z”，
+    // 它们在代数化简后，在 GPU 硬件层面全都能完美收敛到这个极简的分式中！
+    return P32 / (depth - P22);
+}
+
+float linearize_depth_vulkan(sampler2D depthImg, ivec2 texelCoord, mat4 Projection) {
+    // 现代 Vulkan [0, 1] 深度对应的标准线性化公式
+    float z = texelFetch(depthImg, texelCoord, 0).r;
+    return linearize_depth_vulkan_universal(z, Projection);
+}
 
 
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

@@ -1,142 +1,23 @@
-#version 450
+#version 430 core
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(rgba16f, binding = 0) uniform readonly  image2D inputSceneImg; // 原始清晰 HDR 场景画面
 layout(rgba16f, binding = 1) uniform readonly  image2D blurredSceneImg;// Pass 1 产生的模糊中间纹理
 layout(rgba16f, binding = 2) uniform writeonly image2D finalOutputImg; // 最终输出的目标屏幕纹理
 
-
-#extension GL_GOOGLE_include_directive: enable
-#include "commom_function_and_struct.glsl"
-
-
-
-#define TILE_SIZE 16
-#define APR_SIZE 4 // 允许的最大色差偏移像素半径
-#define SHARED_SIZE (TILE_SIZE + APR_SIZE * 2) // 24
-
-// CU 内部的高速暂存小 buffer
-shared vec3 localPixels[SHARED_SIZE][SHARED_SIZE];
-
-// 绑定 0：主场景图（既读又写）
-layout(binding = 0, rgba8) uniform image2D sceneTex;
-
-layout(binding = 1) uniform CAParams {
-    float rOffset;
-    float bOffset;
-} params;
-
-
-
-/**
- * LdsCooperativeLoad
- * @param TILE_SZ          线程组大小（16）
- * @param SH_SZ            LDS 数组总大小（24）
- * @param APR_SZ           边缘填充半径（4）
- * @param G_START          当前 WorkGroup 的起始像素坐标 (ivec2)
- * @param L_COORD          当前线程的局部坐标 (ivec2)
- * @param IMG_SZ           图像的总尺寸 (ivec2)
- * @param WRITE_STATEMENT  🔥 核心：外部传入的完整赋值操作语句
- *                         宏内部会暴露三个可用变量：
- *                         - sharedX, sharedY: 当前写入的 LDS 数组下标
- *                         - loadGCoord: 当前读取的全局屏幕像素坐标
- */
-#define LdsCooperativeLoad(TILE_SZ, SH_SZ, APR_SZ, G_START, L_COORD, IMG_SZ, WRITE_STATEMENT) \
-    { \
-        const int TOTAL_PIXELS = (SH_SZ) * (SH_SZ); \
-        const int TOTAL_THREADS = (TILE_SZ) * (TILE_SZ); \
-        int linearThreadId = (L_COORD).y * (TILE_SZ) + (L_COORD).x; \
- for (int i = linearThreadId; i < TOTAL_PIXELS; i += TOTAL_THREADS) { \
-            int sharedY = i / (SH_SZ); \
-            int sharedX = i % (SH_SZ); \
-            ivec2 loadGCoord = (G_START) - ivec2(APR_SZ) + ivec2(sharedX, sharedY); \
-            loadGCoord = clamp(loadGCoord, ivec2(0), (IMG_SZ) - 1); \
-            /* 🔥 直接注入整行语句，内部变量名称必须严格对应 */ \
-            WRITE_STATEMENT; \
- } \
-        memoryBarrierShared(); \
-        barrier(); \
- }
-
-
-
 void main() {
-    ivec2 globalCoord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 localCoord = ivec2(gl_LocalInvocationID.xy);
-    ivec2 groupStart = ivec2(gl_WorkGroupID.xy) * TILE_SIZE;
-    ivec2 imgSize = imageSize(sceneTex);
+    ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 imgSize    = imageSize(inputSceneImg);
 
+    if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
 
-    LdsCooperativeLoad(TILE_SIZE, SHARED_SIZE, APR_SIZE, groupStart, localCoord, imgSize,
-    { \
-            vec4 sharp = imageLoad(inputSceneImg, loadGCoord); \
-            vec4 blur  = imageLoad(blurredSceneImg, loadGCoord); \
-            localFinalPixels[sharedY][sharedX] = mix(sharp.rgb, blur.rgb, blur.a); \
-        }
-    );
+    vec4 sharpData = imageLoad(inputSceneImg, texelCoord);
+    vec4 blurData  = imageLoad(blurredSceneImg, texelCoord);
 
-    // 如果当前线程超出了屏幕有效范围，不参与计算，但它刚才必须帮忙搬砖（所以 return 放在 barrier 后面）
-    if (globalCoord.x >= imgSize.x || globalCoord.y >= imgSize.y) return;
+    float coc = blurData.a; // 从 Alpha 通道中提取刚才算好的 CoC 强度
 
-    // ----------------------------------------------------------------
-    // 2. 计算基于 LDS 坐标系的浮点数偏移
-    // ----------------------------------------------------------------
-    vec2 uv = (vec2(globalCoord) + 0.5) / vec2(imgSize);
-    vec2 dir = uv - 0.5;
-    float dist = length(dir);
+    // 在清晰和模糊像素之间根据 CoC 混合出最终色彩
+    vec3 finalColor = mix(sharpData.rgb, blurData.rgb, coc);
 
-    // 计算红蓝通道在屏幕上的【浮点数像素偏移量】
-    vec2 offsetR = dir * dist * params.rOffset * vec2(imgSize);
-    vec2 offsetB = dir * dist * params.bOffset * vec2(imgSize);
-
-    // 映射到 LDS（localPixels）内的虚拟浮点坐标
-    // 当前线程在本地数组的中心像素坐标是 localCoord + APR_SIZE
-    vec2 localCenter = vec2(localCoord) + vec2(APR_SIZE);
-    vec2 localPosR = localCenter + offsetR;
-    vec2 localPosB = localCenter + offsetB;
-    vec2 localPosG = localCenter; // 绿光保持原位
-
-    // ----------------------------------------------------------------
-    // 3. 🔥 核心：手动对 LDS 数组进行双线性插值采样
-    // ----------------------------------------------------------------
-
-    // --- 采样红色通道 ---
-    vec2 fR = localPosR - floor(localPosR); // 计算浮点权重
-    ivec2 baseR = ivec2(floor(localPosR));  // 左上角整数坐标
-    // 限制在 LDS 数组安全范围内 [0, 23]
-    baseR = clamp(baseR, ivec2(0), ivec2(SHARED_SIZE - 2));
-
-    float r00 = localPixels[baseR.y][baseR.x].r;
-    float r10 = localPixels[baseR.y][baseR.x + 1].r;
-    float r01 = localPixels[baseR.y + 1][baseR.x].r;
-    float r11 = localPixels[baseR.y + 1][baseR.x + 1].r;
-    float r = mix(mix(r00, r10, fR.x), mix(r01, r11, fR.x), fR.y);
-
-    // --- 采样绿色通道（绿光没偏移，直接读整数坐标，省去插值开销） ---
-    ivec2 baseG = ivec2(localPosG);
-    float g = localPixels[baseG.y][baseG.x].g;
-
-    // --- 采样蓝色通道 ---
-    vec2 fB = localPosB - floor(localPosB);
-    ivec2 baseB = ivec2(floor(localPosB));
-    baseB = clamp(baseB, ivec2(0), ivec2(SHARED_SIZE - 2));
-
-    float b00 = localPixels[baseB.y][baseB.x].b;
-    float b10 = localPixels[baseB.y][baseB.x + 1].b;
-    float b01 = localPixels[baseB.y + 1][baseB.x].b;
-    float b11 = localPixels[baseB.y + 1][baseB.x + 1].b;
-    float b = mix(mix(b00, b10, fB.x), mix(b01, b11, fB.x), fB.y);
-
-    // ----------------------------------------------------------------
-    // 4. 写回
-    // ----------------------------------------------------------------
-    // 🔥 第二次同步：确保所有线程都【读完】了 LDS，才能开始写入显存。
-    // 否则跑得快的线程会直接修改显存，导致其他正好在看边界像素的线程读到脏数据。
-    barrier();
-
-    vec4 final_color = tonemap(vec4(r, g, b, 1.0), 2.0, 2.2);
-
-
-
-    imageStore(sceneTex, globalCoord, vec4(r, g, b, 1.0));
+    imageStore(finalOutputImg, texelCoord, vec4(finalColor, 1.0));
 }

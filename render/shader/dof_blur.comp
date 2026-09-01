@@ -3,36 +3,31 @@
 // 以 16x16 的局部工作组（Workgroup）为单位处理像素
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-// 输入与输出图像
-layout(rgba16f, binding = 0) uniform readonly  image2D inputSceneImg; // 原始清晰 HDR 场景画面
-layout(r32f,    binding = 1) uniform readonly  image2D depthImg;      // 非线性深度图
-layout(rgba16f, binding = 2) uniform writeonly image2D outputBlurImg; // 模糊结果输出纹理
 
-// 统一变量 (Uniforms)
-uniform float focusDistance; // 焦距（焦点到相机的米数）
-uniform float focusRange;    // 焦深（在此范围内的物体完全清晰）
-uniform float maxBlurRadius; // 屏幕空间最大模糊半径（像素单位）
-uniform float zNear;         // 相机投影近平面
-uniform float zFar;          // 相机投影远平面
+layout(rgba16f, binding = 2) uniform writeonly image2D outputBlurImg; // 模糊结果输出纹理 // 这里还是需要做一点更改的
 
 #define GOLDEN_ANGLE 2.39996323 // 黄金角度（弧度制），用于构建完美的圆形光圈焦外 (Bokeh)
 #define MAX_SAMPLES 24          // 采样次数，Compute Shader 下由于高速缓存机制，24次即可获得极高画质
 
-// 从非线性深度图重建线性深度（单位：米）
-float getLinearDepth(ivec2 texelCoord) {
-    float z = imageLoad(depthImg, texelCoord).r;
-    return (2.0 * zNear * zFar) / (zFar + zNear - z * (zFar - zNear));
-}
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 imgSize    = imageSize(inputSceneImg);
+    ivec2 imgSize = textureSize(global_offscreen, 0).xy;
 
-    // 边界保护，防止超出屏幕分辨率范围
+    float A = projection[2][2];
+    float B = projection[2][3];
+
+    float zNear = B / A;
+    float zFar = B / (A + 1.0f);
+
     if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
 
     // 1. 计算线性深度与弥散圆（CoC - Circle of Confusion）大小
-    float currentDepth = getLinearDepth(texelCoord);
+    float currentDepth = linearize_depth_vulkan(global_depth, texelCoord, projection);
     float coc = 0.0;
 
     if (currentDepth < focusDistance - focusRange) {
@@ -47,8 +42,8 @@ void main() {
 
     // 2. 性能优化：对于完全清晰的像素进行早期退出（Early out），节省算力
     if (coc < 0.01) {
-        vec4 sharpColor = imageLoad(inputSceneImg, texelCoord);
-        imageStore(outputBlurImg, texelCoord, sharpColor);
+        vec4 sharpColor = texelFetch(global_offscreen, texelCoord, 0);
+        imageStore(outputBlurImg, texelCoord, vec4(sharpColor.rgb, coc));
         return;
     }
 
@@ -66,8 +61,8 @@ void main() {
         ivec2 offset = ivec2(cos(theta) * r * currentRadius, sin(theta) * r * currentRadius);
         ivec2 sampleCoord = clamp(texelCoord + offset, ivec2(0), imgSize - ivec2(1));
 
-        vec3 sampleColor = imageLoad(inputSceneImg, sampleCoord).rgb;
-        float sampleDepth = getLinearDepth(sampleCoord);
+        vec3 sampleColor = texelFetch(global_offscreen, sampleCoord, 0).rgb;
+        float sampleDepth = linearize_depth_vulkan(global_depth, sampleCoord, projection);
 
         // 💡 关键权重优化：防止前背景颜色错误相互渗透（边缘伪影修复）
         float weight = 1.0;
