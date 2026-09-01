@@ -359,6 +359,9 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGui::SliderFloat("float", &f, 0.0f, 1.0f);              // Edit 1 float using a slider from 0.0f to 1.0f
         ImGui::ColorEdit3("clear color", (float *) &clear_color); // Edit 3 floats representing a color
 
+        ImGuiIO &io = ImGui::GetIO();
+        Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
+
         ImGui::SliderFloat("fog_start",
                            &Engine::instance().get_global_parameters().get_fog_start(), 0.0f, 1000.0f);
         ImGui::SliderFloat("fog_end",

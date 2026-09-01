@@ -30,12 +30,13 @@ layout (set = 1, binding = 0) uniform global_parameters
     vec3 viewPos; // camPos
     Light light;
     vec4 screen_size;
+    vec4 mouse_position;
     vec4 cascadeSplits;
     float film_grain_intensity;
     float camera_vignette_smoothness;
     float camera_vignette_intensity;
     uint render_timeline;
-    float focusDistance; // 焦距（焦点到相机的米数）
+    float focusDistance_notuse; // 焦距（焦点到相机的米数）  通过 鼠标来 读取深度贴图读取
     float focusRange;    // 焦深（在此范围内的物体完全清晰）
     float maxBlurRadius; // 屏幕空间最大模糊半径（像素单位）
     float pad0;
@@ -43,7 +44,7 @@ layout (set = 1, binding = 0) uniform global_parameters
     float fogEnd;
     float fogDensity;
     uint fogType;
-    vec4 fogColor ;
+    vec4 fogColor;
 
     SphericalHarmonics SH;
     vec4 pad[6];

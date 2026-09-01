@@ -104,6 +104,7 @@ public:
     Eigen::Vector4f world_camera_pos;
     Light light;
     Eigen::Vector4f screen_size;
+    Eigen::Vector4f mouse_position = Eigen::Vector4f::Zero();
     float split_depth[4];
     float film_grain_intensity       = 0.2f;
     float camera_vignette_smoothness = 0.2f;
@@ -154,6 +155,12 @@ public:
     bool update_DoF_Params() {
         // 下面的距离 需要通过鼠标来获得了
         DoFParams = CalculateDoFParams(20, screen_size.x(), projection_matrix);
+        return true;
+    }
+
+    bool set_mouse_position(const float x, const float y) {
+        mouse_position.x() = x;
+        mouse_position.y() = y;
         return true;
     }
 

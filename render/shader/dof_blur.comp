@@ -28,15 +28,16 @@ void main() {
 
     // 1. 计算线性深度与弥散圆（CoC - Circle of Confusion）大小
     float currentDepth = linearize_depth_vulkan(global_depth, texelCoord, projection);
-    float coc = 0.0;
+    float  focusDistance = linearize_depth_vulkan(global_depth, ivec2(mouse_position.xy), projection);
 
-    if (currentDepth < focusDistance - focusRange) {
-        // 前景模糊 (近处的物体)
-        coc = ((focusDistance - focusRange) - currentDepth) / (focusDistance - focusRange - zNear);
-    } else if (currentDepth > focusDistance + focusRange) {
-        // 背景模糊 (远处的物体)
-        coc = (currentDepth - (focusDistance + focusRange)) / (zFar - (focusDistance + focusRange));
-    }
+    // 1. 计算当前深度与对焦点的距离差
+    float delta = currentDepth - focusDistance;
+
+    // 2. 一个公式搞定 CoC (无需 if-else)
+    float coc = (delta > 0.0)
+    ? max(delta - focusRange, 0.0) / max(zFar - focusDistance - focusRange, 0.0001)
+    : max(-delta - focusRange, 0.0) / max(focusDistance - focusRange - zNear, 0.0001);
+
     // 限制范围在 0.0 (绝对清晰) 到 1.0 (极度模糊) 之间
     coc = clamp(coc, 0.0, 1.0);
 
