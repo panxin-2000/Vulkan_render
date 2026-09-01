@@ -70,10 +70,19 @@ void main() {
 
     // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
     // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
-    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, 0.4, 0.2);
+    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, camera_vignette_intensity, camera_vignette_smoothness);
 
 
+    {
+        float noise = get_noise_v2(uvec2(inUV * texSize), render_timeline);
+        float grainShift = noise - 0.5; // 重映射到 [-0.5, 0.5]
 
+        float luma = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
+        float lumaMask = 4.0 * luma * (1.0 - luma);
+        lumaMask = clamp(lumaMask, 0.0, 1.0);
+        float offset = film_grain_intensity * grainShift * lumaMask;
+        finalColor = finalColor * (1.0 + offset);
+    }
     // 场景原始渲染（HDR Color）
     // 不透明度雾效（Distance Fog） —— （我们之前写的 Compute 雾就在这里）
 

@@ -23,7 +23,25 @@ public:
     Light light;
     Eigen::Vector4f screen_size;
     float split_depth[4];
+    float film_grain_intensity       = 0.2f;
+    float camera_vignette_smoothness = 0.2f;
+    float camera_vignette_intensity  = 0.4f;
+    uint32_t render_timeline;
     std::array<Eigen::Array4f, 9> shCoefficients;
+
+    float &get_camera_vignette_smoothness() {
+        return camera_vignette_smoothness;
+    }
+
+    float &get_camera_vignette_intensity() {
+        return camera_vignette_intensity;
+    }
+
+    float &get_film_grain_intensity() {
+        return film_grain_intensity;
+    }
+
+    bool set_render_timeline(const uint32_t &timeline);
 
     bool set_projection_matrix(const Eigen::Matrix4f &matrix);
 

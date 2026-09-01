@@ -1119,4 +1119,44 @@ float get_fog_factor(float distance, float fogStart, float fogEnd, float density
 }
 
 
+float get_noise_iq(uvec2 p, uint time_seed) {
+    // 混入时间做种子
+    uint qx = p.x ^ time_seed;
+    uint qy = p.y ^ time_seed;
+    // 经典的异或位移打散
+    uint hx = qx * 1103515245u;
+    uint hy = qy * 1103515245u;
+
+    hx = (hx ^ (hx >> 15u)) * 1103515245u;
+    hy = (hy ^ (hy >> 15u)) * 1103515245u;
+
+    uint h = hx ^ hy;
+    return float(h ^ (h >> 16u)) * (1.0 / 4294967295.0);
+}
+
+float get_noise_v2(uvec2 p, uint time_seed) {
+    // 1. 🔥 将 2D 屏幕坐标与时间种子混合为一个 3D 整数向量
+    uvec3 v = uvec3(p, time_seed);
+
+    // 2. 🔥 大厂标准的多级“三向交叉乘法 ＋ 异或折叠” (PCG/Murmur3 的核心变种)
+    // 强制让时间种子的变化直接以高频乘法的形式扩散到空间坐标的每一个 Bit 上
+    v = v * 1664525u + 1013904223u;
+
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+
+    // 中间插入右移异或，将高位的随机性强行灌入低位
+    v ^= v >> 16u;
+
+    v.x += v.y * v.z;
+    v.y += v.z * v.x;
+    v.z += v.x * v.y;
+
+    // 3. 映射到 [0.0, 1.0] 的浮点数
+    return float(v.x) * (1.0 / 4294967295.0);
+}
+
+
+
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

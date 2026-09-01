@@ -4,6 +4,11 @@
 
 #include "global_parameters.h"
 
+bool Global_parameters::set_render_timeline(const uint32_t &timeline) {
+    render_timeline++;
+    return true;
+}
+
 bool Global_parameters::set_projection_matrix(const Eigen::Matrix4f &matrix) {
     projection_matrix = matrix;
     return true;
