@@ -87,11 +87,6 @@ int main(int argc, char *argv[]) {
     box.add_mesh({{1, 1, 1}, {2, 2, 2}});
     box.set_transform();
 
-    object_3d postprocess("postprocess");
-    postprocess.add_shader_path(VKR_shader_paths{
-                                    "", "", "", "fxaa"
-                                });
-    postprocess.add_postprocess();
 
 
     object_line line("line");

@@ -306,13 +306,35 @@ void render_different_pass(VCB &vcb,
         }
     } {
         // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出
+
+        // 景深（Depth of Field）绽放（Bloom）镜片炫光（Lens Flare）
+        // 镜头色差（Chromatic Aberration） —— （在这里引入通道颜色位移）
+        // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
+
+
         vcb.compute_write_init_barrier(compute_write_image); {
-            auto view = Render_entt().view<compute_postprocess_tag>();
-            for (const auto entity: view) {
-                const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
-                vcb.deal_image(entity, compute_write_image, shader_data_ref);
-            }
+            VKR_shader_paths fxaa{
+                "", "", "", "dof_blur"
+            };
+            auto compute_shader         = engine.get_shader_manager().find(fxaa);
+            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
+            vcb.deal_image(entt::null, compute_write_image, compute_shader);
+        } {
+            VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
+                "", "", "", "dof_composite"
+            };
+            auto compute_shader         = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
+            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
+            vcb.deal_image(entt::null, compute_write_image, compute_shader);
+        } {
+            VKR_shader_paths fxaa{
+                "", "", "", "fxaa"
+            };
+            auto compute_shader         = engine.get_shader_manager().find(fxaa);
+            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
+            vcb.deal_image(entt::null, compute_write_image, compute_shader);
         }
+
         vcb.compute_write_finish_barrier(compute_write_image);
         vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
     } {

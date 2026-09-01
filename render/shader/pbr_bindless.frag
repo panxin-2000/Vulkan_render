@@ -19,6 +19,7 @@ layout (set = 3, binding = 0) readonly buffer model_material_parameters {
     uint material_pbr_index[];
 };
 
+#define DISTANCE_FOG 1
 
 #if defined(PASS_COLOR)
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
@@ -257,6 +258,13 @@ void main()
         direct_light += sun * (diffuse_contribution * (vec3(1.0) - F) + specular_contribution) * dotNL * shadow;
     }
     vec3 out_color = emissive_color + direct_light + indirect_light * AO;
+
+    #if defined(DISTANCE_FOG)
+    float distance = length(viewPos.xyz - inWorldPos.xyz);
+    float fogFactor = get_fog_factor(distance, 20, 200, 0.03, 1);
+    vec4 fogColor = vec4(0.7, 0.7, 0.7, 1.0);
+    vec3 out_color = mix(fogColor.rgb, out_color.rgb, fogFactor);
+    #endif
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快

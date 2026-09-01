@@ -98,22 +98,29 @@ void main() {
 
     // 4. 计算距离 (计算到相机的实际直线距离，或者只用深度 Z 轴距离)
     // 方案 A：直线距离（更真实）
-    float distance = length(viewPos.xyz);
-    // 方案 B：垂直距离（传统平截头体雾）
-    // float distance = abs(viewPos.z);
 
-    // 5. 根据类型计算雾的因子 (Fog Factor: 0 = 全雾, 1 = 无雾)
-    float fogFactor = get_fog_factor(
-            distance,
-            20,
-            200,
-            0.03,
-            1
-    );
-    vec4 fogColor = vec4(0.7, 0.7, 0.7, 1.0);
+    // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
+    // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
+    finalColor = apply_vignette(finalColor, inUV, 0.4, 0.2);
 
-    // 6. 读取原本的屏幕颜色，与雾进行混合
-    vec3 finalColor = mix(fogColor.rgb, fxaa_result.rgb, fogFactor);
+
+
+    // 场景原始渲染（HDR Color）
+    // 不透明度雾效（Distance Fog） —— （我们之前写的 Compute 雾就在这里）
+
+    // 景深（Depth of Field）绽放（Bloom）镜片炫光（Lens Flare）
+    // 镜头色差（Chromatic Aberration） —— （在这里引入通道颜色位移）
+    // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
+
+    // FXAA / TAA（抗锯齿）/ Super Resolution  —— （在最终的 LDR 图像上平滑包括色差在内的所有边缘）
+
+    // Unsharp Mask（反遮罩锐化/俗称“锐化”）
+    // 必须放在后处理管线的极后期——通常在 TAA/FXAA（抗锯齿）之后，
+    // 镜头暗角（Vignette）和胶片颗粒（Film Grain）之前
+
+    // 镜头暗角（Vignette） ——（暗角对边缘平滑度没有影响，通常作为最外层罩子）
+    // 胶片颗粒（Film Grain）
+    // 最终输出（To Screen / Present）
 
 
     imageStore(global_compute_Texture, pixelCoord, vec4(finalColor, fxaa_result.a)); // 纯红

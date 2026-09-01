@@ -979,5 +979,113 @@ vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
     return vec3(x, y, z) / w;
 }
 
+/**
+ * 计算暗角因子
+ * @param uv           当前像素的归一化 UV 坐标 [0, 1]
+ * @param intensity    暗角强度（通常 0.5 - 2.0）
+ * @param smoothness   边缘平滑度（通常 0.1 - 1.0）
+ * @return             颜色的缩放系数（乘到原颜色上）
+ */
+vec3 apply_vignette(vec3 color, vec2 uv, float intensity, float smoothness) {
+    // 1. 将 UV 转换到 [-0.5, 0.5] 空间（中心点为 0）
+    vec2 d = (uv - 0.5) * 2.0;
+
+    // 2. 计算当前点到中心的距离平方（或者四次方，让中心更亮）
+    float dist = dot(d, d);
+
+    // 3. 使用 smoothstep 计算暗角衰减
+    float vignette = smoothstep(1.0, smoothness, dist * intensity);
+
+    // 4. 混合原图颜色
+    return color * vignette;
+}
+
+
+/**
+ * 计算镜头色差 / 色散效果
+ * @param sceneTex     输入的场景原始颜色纹理
+ * @param texSampler   采样器
+ * @param uv           当前像素的归一化 UV 坐标 [0.0, 1.0]
+ * @param rOffset      红光偏移系数（通常为正数，如 0.005）
+ * @param bOffset      蓝光偏移系数（通常为负数，如 -0.005）
+ * @return             计算色差后的 RGB 颜色值
+ */
+vec3 apply_chromatic_aberration(sampler2D sceneTex, vec2 uv, float rOffset, float bOffset) {
+    // 1. 计算当前点到屏幕中心的向量和距离（边缘处色散越严重）
+    vec2 dir = uv - 0.5;
+    float dist = length(dir);
+
+    // 2. 根据到中心的距离，对红蓝通道进行不同程度的 UV 偏移
+    vec2 uvR = uv + dir * (dist * rOffset);
+    vec2 uvG = uv; // 绿光折射率居中，作为基准保持不动
+    vec2 uvB = uv + dir * (dist * bOffset);
+
+    // 3. 分通道采样纹理并组合
+    float r = texture(sceneTex, uvR).r;
+    float g = texture(sceneTex, uvG).g;
+    float b = texture(sceneTex, uvB).b;
+
+    return vec3(r, g, b);
+}
+
+/**
+ * 手动对 image2D 进行双线性插值采样
+ * @param img     输入的 image2D
+ * @param uv      归一化的浮点数 UV 坐标 [0.0, 1.0]
+ * @return        插值后的 vec4 颜色
+ */
+vec4 texture_image2d_bilinear(image2D img, vec2 uv) {
+    vec2 imgSize = vec2(imageSize(img));
+
+    // 1. 将 0-1 的 UV 映射到 0-Size 的像素坐标空间
+    // 减去 0.5 是因为像素中心在 (0.5, 0.5)
+    vec2 texelCoord = uv * imgSize - 0.5;
+
+    // 2. 找到左上角最近的整数像素坐标
+    ivec2 baseCoord = ivec2(floor(texelCoord));
+
+    // 3. 计算浮点数权重（当前点距离左上角像素中心的距离）
+    vec2 f = frac(texelCoord); // 部分 GLSL 环境若无 frac 可用 texelCoord - floor(texelCoord)
+
+    // 4. 边界处理：防止 ivec2 + 1 溢出图像边界
+    ivec2 maxCoord = ivec2(imgSize) - 1;
+    ivec2 c00 = clamp(baseCoord, ivec2(0), maxCoord);
+    ivec2 c10 = clamp(baseCoord + ivec2(1, 0), ivec2(0), maxCoord);
+    ivec2 c01 = clamp(baseCoord + ivec2(0, 1), ivec2(0), maxCoord);
+    ivec2 c11 = clamp(baseCoord + ivec2(1, 1), ivec2(0), maxCoord);
+
+    // 5. 读取邻域 4 个像素的颜色
+    vec4 p00 = imageLoad(img, c00);
+    vec4 p10 = imageLoad(img, c10);
+    vec4 p01 = imageLoad(img, c01);
+    vec4 p11 = imageLoad(img, c11);
+
+    // 6. 进行双线性插值（先水平，再垂直）
+    vec4 row0 = mix(p00, p10, f.x);
+    vec4 row1 = mix(p01, p11, f.x);
+    return mix(row0, row1, f.y);
+}
+
+/**
+ * 基于 image2D 的镜头色差计算
+ */
+vec3 apply_chromatic_aberration_image(image2D sceneTex, vec2 uv, float rOffset, float bOffset) {
+    vec2 dir = uv - 0.5;
+    float dist = length(dir);
+
+    // 根据到中心的距离，对红蓝通道进行不同程度的 UV 偏移
+    vec2 uvR = uv + dir * (dist * rOffset);
+    vec2 uvG = uv;
+    vec2 uvB = uv + dir * (dist * bOffset);
+
+    // 调用上面实现的手动双线性采样
+    float r = texture_image2d_bilinear(sceneTex, uvR).r;
+    float g = texture_image2d_bilinear(sceneTex, uvG).g;
+    float b = texture_image2d_bilinear(sceneTex, uvB).b;
+
+    return vec3(r, g, b);
+}
+
+
 
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED
