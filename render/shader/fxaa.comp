@@ -14,8 +14,43 @@
 // --- 第二步：引入 NVIDIA 官方头文件 ---
 #include "Fxaa3_11.h"
 
+#include "depthUtils.glsl"
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+/**
+ * 计算雾的混合因子
+ * @param distance   像素到相机的实际距离（或垂直深度）
+ * @param fogStart   线性雾起始距离
+ * @param fogEnd     线性雾结束距离
+ * @param density    指数雾的密度系数  density (雾密度，即 fogColor.a)：通常是一个非常小的正数。
+ *                       清晨/薄雾 (Light Mist)：0.005 到 0.01
+ *                       普通大世界 (Standard World)：0.015 到 0.03
+ *                       浓雾/大烟雾 (Heavy Fog)：0.05 到 0.1
+ * @param fogType    0: 线性雾, 1: 指数雾, 2: 指数平方雾
+ * @return           返回 [0.0, 1.0] 之间的因子。0.0 表示完全被雾覆盖，1.0 表示没有雾。
+ */
+float get_fog_factor(float distance, float fogStart, float fogEnd, float density, uint fogType) {
+    float fogFactor = 1.0;
+
+    if (fogType == 0) {
+        // 线性雾 (Linear Fog)
+        fogFactor = (fogEnd - distance) / (fogEnd - fogStart);
+    }
+    else if (fogType == 1) {
+        // 指数雾 (Exponential Fog)
+        fogFactor = exp(-density * distance);
+    }
+    else if (fogType == 2) {
+        // 指数平方雾 (Exponential Squared Fog)
+        fogFactor = exp(-pow(density * distance, 2.0));
+    }
+
+    // 强制限制在 [0.0, 1.0] 范围内，防止距离超出范围时计算出负数或大于 1 的值
+    return clamp(fogFactor, 0.0, 1.0);
+}
+
 
 
 void main() {
@@ -36,7 +71,7 @@ void main() {
     vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
 
 
-    vec4 result = FxaaPixelShader(
+    vec4 fxaa_result = FxaaPixelShader(
             inUV, // pos: 当前像素的 UV 坐标
             vec4(0.0), // fxaaConsolePosPos: 主机专用，PC 填 0
             global_offscreen, // tex: 绑定的纹理结构体
@@ -54,5 +89,32 @@ void main() {
             0.0, // fxaaConsoleEdgeThresholdMin: 主机专用
             vec4(0.0)                   // fxaaConsole360ConstDir: 主机专用
     );
-    imageStore(global_compute_Texture, pixelCoord, result); // 纯红
+
+
+
+    highp float depth = sampleDepth(global_depth, inUV, 0.0);
+    vec3 viewPos = get_view_pos(inUV, depth, invProjection);
+
+
+    // 4. 计算距离 (计算到相机的实际直线距离，或者只用深度 Z 轴距离)
+    // 方案 A：直线距离（更真实）
+    float distance = length(viewPos.xyz);
+    // 方案 B：垂直距离（传统平截头体雾）
+    // float distance = abs(viewPos.z);
+
+    // 5. 根据类型计算雾的因子 (Fog Factor: 0 = 全雾, 1 = 无雾)
+    float fogFactor = get_fog_factor(
+            distance,
+            20,
+            200,
+            0.03,
+            1
+    );
+    vec4 fogColor = vec4(0.7, 0.7, 0.7, 1.0);
+
+    // 6. 读取原本的屏幕颜色，与雾进行混合
+    vec3 finalColor = mix(fogColor.rgb, fxaa_result.rgb, fogFactor);
+
+
+    imageStore(global_compute_Texture, pixelCoord, vec4(finalColor, fxaa_result.a)); // 纯红
 }

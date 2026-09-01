@@ -970,5 +970,14 @@ vec3 ColorLookup2DSRGB(sampler2D lutTex, vec3 uvw)
     return mix(colorLow, colorHigh, fract(rwb));
 }
 
+vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
+    vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
+    float x = invProjection[0][0] * clipPos.x;
+    float y = invProjection[1][1] * clipPos.y;
+    float z = invProjection[2][2] * clipPos.z + invProjection[3][2];
+    float w = invProjection[2][3] * clipPos.z + invProjection[3][3];
+    return vec3(x, y, z) / w;
+}
+
 
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

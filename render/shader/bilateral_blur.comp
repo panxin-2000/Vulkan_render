@@ -5,6 +5,8 @@
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
+const float kernel1D[5] = float[](0.0625, 0.25, 0.375, 0.25, 0.0625);
+
 void main()
 {
     uint x = gl_GlobalInvocationID.x;
@@ -50,6 +52,7 @@ void main()
             // ==========================================
             // 空间距离高斯权重（越远的像素权重越低）
             float spatialWeight = exp(-float(offset_x * offset_x + offset_y * offset_y) / (2.0 * float(blurRange * blurRange)));
+//            float spatialWeight = kernel1D[offset_x + 2] * kernel1D[offset_y + 2];
 
             // 深度相似度权重：深度差越大，权重呈指数级衰减 [1]
             float depthDiff = abs(centerDepth - neighborDepth);
