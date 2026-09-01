@@ -1045,7 +1045,7 @@ vec4 texture_image2d_bilinear(image2D img, vec2 uv) {
     ivec2 baseCoord = ivec2(floor(texelCoord));
 
     // 3. 计算浮点数权重（当前点距离左上角像素中心的距离）
-    vec2 f = frac(texelCoord); // 部分 GLSL 环境若无 frac 可用 texelCoord - floor(texelCoord)
+    vec2 f = texelCoord - floor(texelCoord); // 部分 GLSL 环境若无 frac 可用 texelCoord - floor(texelCoord)
 
     // 4. 边界处理：防止 ivec2 + 1 溢出图像边界
     ivec2 maxCoord = ivec2(imgSize) - 1;
@@ -1086,6 +1086,37 @@ vec3 apply_chromatic_aberration_image(image2D sceneTex, vec2 uv, float rOffset, 
     return vec3(r, g, b);
 }
 
+/**
+ * 计算雾的混合因子
+ * @param distance   像素到相机的实际距离（或垂直深度）
+ * @param fogStart   线性雾起始距离
+ * @param fogEnd     线性雾结束距离
+ * @param density    指数雾的密度系数  density (雾密度，即 fogColor.a)：通常是一个非常小的正数。
+ *                       清晨/薄雾 (Light Mist)：0.005 到 0.01
+ *                       普通大世界 (Standard World)：0.015 到 0.03
+ *                       浓雾/大烟雾 (Heavy Fog)：0.05 到 0.1
+ * @param fogType    0: 线性雾, 1: 指数雾, 2: 指数平方雾
+ * @return           返回 [0.0, 1.0] 之间的因子。0.0 表示完全被雾覆盖，1.0 表示没有雾。
+ */
+float get_fog_factor(float distance, float fogStart, float fogEnd, float density, uint fogType) {
+    float fogFactor = 1.0;
+
+    if (fogType == 0) {
+        // 线性雾 (Linear Fog)
+        fogFactor = (fogEnd - distance) / (fogEnd - fogStart);
+    }
+    else if (fogType == 1) {
+        // 指数雾 (Exponential Fog)
+        fogFactor = exp(-density * distance);
+    }
+    else if (fogType == 2) {
+        // 指数平方雾 (Exponential Squared Fog)
+        fogFactor = exp(-pow(density * distance, 2.0));
+    }
+
+    // 强制限制在 [0.0, 1.0] 范围内，防止距离超出范围时计算出负数或大于 1 的值
+    return clamp(fogFactor, 0.0, 1.0);
+}
 
 
 #endif // COMMOM_FUNCTION_AND_STRUCT_INCLUDED

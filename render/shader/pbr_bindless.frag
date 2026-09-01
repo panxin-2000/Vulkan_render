@@ -125,14 +125,6 @@ float GetLinearViewDepth()
     return z / w;
 }
 
-vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
-    vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
-    float x = invProjection[0][0] * clipPos.x;
-    float y = invProjection[1][1] * clipPos.y;
-    float z = invProjection[2][2] * clipPos.z + invProjection[3][2];
-    float w = invProjection[2][3] * clipPos.z + invProjection[3][3];
-    return vec3(x, y, z) / w;
-}
 
 
 
@@ -263,7 +255,7 @@ void main()
     float distance = length(viewPos.xyz - inWorldPos.xyz);
     float fogFactor = get_fog_factor(distance, 20, 200, 0.03, 1);
     vec4 fogColor = vec4(0.7, 0.7, 0.7, 1.0);
-    vec3 out_color = mix(fogColor.rgb, out_color.rgb, fogFactor);
+    out_color = mix(fogColor.rgb, out_color.rgb, fogFactor);
     #endif
 
     outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);

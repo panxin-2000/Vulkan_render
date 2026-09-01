@@ -313,25 +313,22 @@ void render_different_pass(VCB &vcb,
 
 
         vcb.compute_write_init_barrier(compute_write_image); {
-            VKR_shader_paths fxaa{
-                "", "", "", "dof_blur"
-            };
-            auto compute_shader         = engine.get_shader_manager().find(fxaa);
-            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
-            vcb.deal_image(entt::null, compute_write_image, compute_shader);
+            // VKR_shader_paths fxaa{
+            // "", "", "", "dof_blur"
+            // };
+            // auto compute_shader         = engine.get_shader_manager().find(fxaa);
+            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
-            VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
-                "", "", "", "dof_composite"
-            };
-            auto compute_shader         = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
-            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
-            vcb.deal_image(entt::null, compute_write_image, compute_shader);
+            // VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
+            // "", "", "", "dof_composite"
+            // };
+            // auto compute_shader         = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
+            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
             VKR_shader_paths fxaa{
                 "", "", "", "fxaa"
             };
-            auto compute_shader         = engine.get_shader_manager().find(fxaa);
-            const auto &shader_data_ref = Render_entt().get<Shader_data>(entt::null);
+            auto compute_shader = engine.get_shader_manager().find(fxaa);
             vcb.deal_image(entt::null, compute_write_image, compute_shader);
         }
 

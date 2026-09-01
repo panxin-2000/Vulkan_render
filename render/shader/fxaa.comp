@@ -19,37 +19,6 @@
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
-/**
- * 计算雾的混合因子
- * @param distance   像素到相机的实际距离（或垂直深度）
- * @param fogStart   线性雾起始距离
- * @param fogEnd     线性雾结束距离
- * @param density    指数雾的密度系数  density (雾密度，即 fogColor.a)：通常是一个非常小的正数。
- *                       清晨/薄雾 (Light Mist)：0.005 到 0.01
- *                       普通大世界 (Standard World)：0.015 到 0.03
- *                       浓雾/大烟雾 (Heavy Fog)：0.05 到 0.1
- * @param fogType    0: 线性雾, 1: 指数雾, 2: 指数平方雾
- * @return           返回 [0.0, 1.0] 之间的因子。0.0 表示完全被雾覆盖，1.0 表示没有雾。
- */
-float get_fog_factor(float distance, float fogStart, float fogEnd, float density, uint fogType) {
-    float fogFactor = 1.0;
-
-    if (fogType == 0) {
-        // 线性雾 (Linear Fog)
-        fogFactor = (fogEnd - distance) / (fogEnd - fogStart);
-    }
-    else if (fogType == 1) {
-        // 指数雾 (Exponential Fog)
-        fogFactor = exp(-density * distance);
-    }
-    else if (fogType == 2) {
-        // 指数平方雾 (Exponential Squared Fog)
-        fogFactor = exp(-pow(density * distance, 2.0));
-    }
-
-    // 强制限制在 [0.0, 1.0] 范围内，防止距离超出范围时计算出负数或大于 1 的值
-    return clamp(fogFactor, 0.0, 1.0);
-}
 
 
 
@@ -101,7 +70,7 @@ void main() {
 
     // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
     // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
-    finalColor = apply_vignette(finalColor, inUV, 0.4, 0.2);
+    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, 0.4, 0.2);
 
 
 
