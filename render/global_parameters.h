@@ -110,7 +110,10 @@ public:
     float camera_vignette_smoothness = 0.2f;
     float camera_vignette_intensity  = 0.4f;
     uint32_t render_timeline;
-    TechnicalDoFParams DoFParams;
+    float aperture          = 1.8;             // 光圈大小 (控制虚化强度)
+    float focalLength       = 50.0f / 1000.0f; // 镜头焦距 (控制视野和虚化程度)
+    float sensorWidthMeters = 0.035;           // 全画幅 35mm  输入值 0.035
+    float MaxBlurPixels;
     float fogStart           = 50;
     float fogEnd             = 200;
     float fogDensity         = 0.015;
@@ -154,7 +157,7 @@ public:
 
     bool update_DoF_Params() {
         // 下面的距离 需要通过鼠标来获得了
-        DoFParams = CalculateDoFParams(20, screen_size.x(), projection_matrix);
+        // DoFParams = CalculateDoFParams(20, screen_size.x(), projection_matrix);
         return true;
     }
 

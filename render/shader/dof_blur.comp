@@ -14,67 +14,45 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 imgSize = textureSize(global_offscreen, 0).xy;
-
-    float A = projection[2][2];
-    float B = projection[2][3];
-
-    float zNear = B / A;
-    float zFar = B / (A + 1.0f);
-
+    ivec2 imgSize = imageSize(global_dof_BlurImg).xy;
     if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
-
-    // 1. 计算线性深度与弥散圆（CoC - Circle of Confusion）大小
-    float currentDepth = linearize_depth_vulkan(global_depth, texelCoord, projection);
-    float  focusDistance = linearize_depth_vulkan(global_depth, ivec2(mouse_position.xy), projection);
-
-    // 1. 计算当前深度与对焦点的距离差
-    float delta = currentDepth - focusDistance;
-
-    // 2. 一个公式搞定 CoC (无需 if-else)
-    float coc = (delta > 0.0)
-    ? max(delta - focusRange, 0.0) / max(zFar - focusDistance - focusRange, 0.0001)
-    : max(-delta - focusRange, 0.0) / max(focusDistance - focusRange - zNear, 0.0001);
-
-    // 限制范围在 0.0 (绝对清晰) 到 1.0 (极度模糊) 之间
-    coc = clamp(coc, 0.0, 1.0);
-
-    // coc 算出来的可能是有问题的,
-    // 2. 性能优化：对于完全清晰的像素进行早期退出（Early out），节省算力
-    if (coc < 0.01) {
-        vec4 sharpColor = texelFetch(global_offscreen, texelCoord, 0);
-        imageStore(global_dof_BlurImg, texelCoord, vec4(sharpColor.rgb, coc));
+    vec2 inUV = (vec2(texelCoord) + 0.5) / imgSize;
+    float z = textureLod(global_depth, (inUV), 0).r;
+    float currentDepth = abs(get_view_pos(inUV, z, invProjection).z);
+    vec2 focus_UV = mouse_position.xy / imgSize;
+    float focus_z = textureLod(global_depth, (focus_UV), 0).r;
+    float focus_Depth = abs(get_view_pos(focus_UV, focus_z, invProjection).z);
+    float cocRadius = abs(currentDepth - focus_Depth) / currentDepth *
+    (focalLength * focalLength / (aperture * (focus_Depth - focalLength)));
+    float cocInPixels = (cocRadius * screen_size.x / sensorWidthMeters);
+    vec4 sharpColor = texelFetch(global_offscreen, texelCoord, 0);
+    if (cocInPixels < 0.5) {
+        imageStore(global_dof_BlurImg, texelCoord, vec4(sharpColor.xyz, 0));
         return;
     }
-
-    // 3. 基于黄金螺旋（Golden Spiral）的多重采样模糊
-    float currentRadius = coc * maxBlurRadius;
+    float finalAlphaCoC = clamp(cocInPixels / MaxBlurPixels, 0.0, 1.0);
+    float currentRadius = min(cocInPixels, MaxBlurPixels);
     vec3 colorSum = vec3(0.0);
     float weightSum = 0.0;
-
     for (int i = 0; i < MAX_SAMPLES; i++) {
         // 随着循环，采样点沿螺旋向外扩散
         float r = sqrt(float(i + 0.5)) / sqrt(float(MAX_SAMPLES));
         float theta = float(i) * GOLDEN_ANGLE;
-
-        // 计算屏幕像素单位的径向偏移量
         ivec2 offset = ivec2(cos(theta) * r * currentRadius, sin(theta) * r * currentRadius);
         ivec2 sampleCoord = clamp(texelCoord + offset, ivec2(0), imgSize - ivec2(1));
-
         vec3 sampleColor = texelFetch(global_offscreen, sampleCoord, 0).rgb;
-        float sampleDepth = linearize_depth_vulkan(global_depth, sampleCoord, projection);
-
-        // 💡 关键权重优化：防止前背景颜色错误相互渗透（边缘伪影修复）
+        vec2 sample_depth_UV = (vec2(sampleCoord) + 0.5) / imgSize;
+        float sample_z = textureLod(global_depth, (sample_depth_UV), 0).r;
+        float sampleDepth = abs(get_view_pos(sample_depth_UV, sample_z, invProjection).z);
         float weight = 1.0;
-        if (sampleDepth < currentDepth && coc < 0.5) {
+        if (sampleDepth < currentDepth && finalAlphaCoC < 0.3) {
             weight = 0.1;
         }
-
         colorSum += sampleColor * weight;
         weightSum += weight;
     }
-
     // 4. 将模糊后的 RGB 结果输出，并将当前像素的 CoC 写入 Alpha 通道留给 Pass 2 使用
     vec3 finalBlurColor = colorSum / max(weightSum, 0.0001);
-    imageStore(global_dof_BlurImg, texelCoord, vec4(finalBlurColor, coc));
+    vec3 finalBlendedColor = mix(sharpColor.rgb, finalBlurColor, finalAlphaCoC);
+    imageStore(global_dof_BlurImg, texelCoord, vec4(finalBlendedColor, 1.0));
 }

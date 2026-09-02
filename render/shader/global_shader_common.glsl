@@ -36,10 +36,10 @@ layout (set = 1, binding = 0) uniform global_parameters
     float camera_vignette_smoothness;
     float camera_vignette_intensity;
     uint render_timeline;
-    float focusDistance_notuse; // 焦距（焦点到相机的米数）  通过 鼠标来 读取深度贴图读取
-    float focusRange;    // 焦深（在此范围内的物体完全清晰）
-    float maxBlurRadius; // 屏幕空间最大模糊半径（像素单位）
-    float pad0;
+    float aperture;          // 光圈大小 (控制虚化强度)
+    float focalLength;       // 镜头焦距 (控制视野和虚化程度)
+    float sensorWidthMeters; // 全画幅 35mm  输入值 0.035
+    float MaxBlurPixels;
     float fogStart;
     float fogEnd;
     float fogDensity;

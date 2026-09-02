@@ -970,6 +970,7 @@ vec3 ColorLookup2DSRGB(sampler2D lutTex, vec3 uvw)
     return mix(colorLow, colorHigh, fract(rwb));
 }
 
+// Z 值是负数
 vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
     vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
     float x = invProjection[0][0] * clipPos.x;
@@ -1161,7 +1162,7 @@ float get_noise_v2(uvec2 p, uint time_seed) {
  * 全通用 Vulkan 深度线性化函数
  * @param depth        从 Vulkan 深度图中采样出来的非线性 depth 值 [0, 1]
  * @param Projection   C++ 端传进来的原始投影矩阵（不管是常规还是 Reversed-Z，一网打尽）
- * @return             返回绝对真实的 View Space 垂直物理距离（米）
+ * @return             返回绝对真实的 View Space 垂直物理距离（米） Position.z 是一个负数
  */
 float linearize_depth_vulkan_universal(float depth, mat4 Projection) {
     // 直接提取矩阵中掌管 NDC 到 ViewSpace 深度缩放与偏移的两大核心系数
