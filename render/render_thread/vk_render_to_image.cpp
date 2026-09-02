@@ -25,7 +25,8 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr blur_SSAO_image,
                            VKR_image_ptr depth_shadow_image,
                            VKR_image_ptr entity_image,
-                           VKR_image_ptr compute_write_image
+                           VKR_image_ptr compute_write_image,
+                           VKR_image_ptr compute_dof_blur_image
 ) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
         VkBufferMemoryBarrier2{
@@ -312,12 +313,13 @@ void render_different_pass(VCB &vcb,
         // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
 
 
-        vcb.compute_write_init_barrier(compute_write_image); {
-            // VKR_shader_paths dof_blur{
-            // "", "", "", "dof_blur"
-            // };
-            // auto compute_shader = engine.get_shader_manager().find(dof_blur);
-            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
+        vcb.compute_write_init_barrier(compute_write_image);
+        vcb.compute_write_init_barrier(compute_dof_blur_image); {
+            VKR_shader_paths dof_blur{
+                "", "", "", "dof_blur"
+            };
+            auto compute_shader = engine.get_shader_manager().find(dof_blur);
+            vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
             // VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
             // "", "", "", "dof_composite"
@@ -380,13 +382,14 @@ void destroy_Render_entt() { {
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
-    const auto color_image         = engine.get_image_manager().get_one_color_image();
-    const auto entity_image        = engine.get_image_manager().get_one_entity_image();
-    const auto depth_image         = engine.get_image_manager().get_one_depth_image();
-    const auto depth_AO_image      = engine.get_image_manager().get_one_depth_AO_image();
-    const auto SSAO_image          = engine.get_image_manager().get_one_depth_SSAO_image();
-    const auto depth_shadow_image  = engine.get_image_manager().get_one_shadow_image();
-    const auto compute_write_image = engine.get_image_manager().get_one_compute_write_image();
+    const auto color_image            = engine.get_image_manager().get_one_color_image();
+    const auto entity_image           = engine.get_image_manager().get_one_entity_image();
+    const auto depth_image            = engine.get_image_manager().get_one_depth_image();
+    const auto depth_AO_image         = engine.get_image_manager().get_one_depth_AO_image();
+    const auto SSAO_image             = engine.get_image_manager().get_one_depth_SSAO_image();
+    const auto depth_shadow_image     = engine.get_image_manager().get_one_shadow_image();
+    const auto compute_write_image    = engine.get_image_manager().get_one_compute_write_image();
+    const auto compute_dof_blur_image = engine.get_image_manager().get_one_compute_write_image();
     // 之后呢? 怎么绑定呢?
 
     const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
@@ -399,6 +402,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         auto compute_texture = create_compute_image2D_texture(compute_write_image);
         auto SSAO            = create_compute_image2D_texture(SSAO_image);
         auto blur_write_SSAO = create_compute_image2D_texture(blur_SSAO_image);
+        auto dof_blur        = create_compute_image2D_texture(compute_dof_blur_image);
 
         engine.update_global_parameter(offscreen,
                                        SSAO,
@@ -406,7 +410,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                                        blur_SSAO,
                                        shadow_texture,
                                        compute_texture,
-                                       blur_write_SSAO);
+                                       blur_write_SSAO,
+                                       dof_blur);
         // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
@@ -433,7 +438,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
     render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
-                          blur_SSAO_image, depth_shadow_image, entity_image, compute_write_image);
+                          blur_SSAO_image, depth_shadow_image, entity_image, compute_write_image,
+                          compute_dof_blur_image);
     vcb.end_command_buffer();
 
     vcb.submit_render_queue(engine);

@@ -1,10 +1,8 @@
-#version 430 core
+#version 450 core
 
 // 以 16x16 的局部工作组（Workgroup）为单位处理像素
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-
-layout(rgba16f, binding = 2) uniform writeonly image2D outputBlurImg; // 模糊结果输出纹理 // 这里还是需要做一点更改的
 
 #define GOLDEN_ANGLE 2.39996323 // 黄金角度（弧度制），用于构建完美的圆形光圈焦外 (Bokeh)
 #define MAX_SAMPLES 24          // 采样次数，Compute Shader 下由于高速缓存机制，24次即可获得极高画质
@@ -41,10 +39,11 @@ void main() {
     // 限制范围在 0.0 (绝对清晰) 到 1.0 (极度模糊) 之间
     coc = clamp(coc, 0.0, 1.0);
 
+    // coc 算出来的可能是有问题的,
     // 2. 性能优化：对于完全清晰的像素进行早期退出（Early out），节省算力
     if (coc < 0.01) {
         vec4 sharpColor = texelFetch(global_offscreen, texelCoord, 0);
-        imageStore(outputBlurImg, texelCoord, vec4(sharpColor.rgb, coc));
+        imageStore(global_dof_BlurImg, texelCoord, vec4(sharpColor.rgb, coc));
         return;
     }
 
@@ -77,5 +76,5 @@ void main() {
 
     // 4. 将模糊后的 RGB 结果输出，并将当前像素的 CoC 写入 Alpha 通道留给 Pass 2 使用
     vec3 finalBlurColor = colorSum / max(weightSum, 0.0001);
-    imageStore(outputBlurImg, texelCoord, vec4(finalBlurColor, coc));
+    imageStore(global_dof_BlurImg, texelCoord, vec4(finalBlurColor, coc));
 }

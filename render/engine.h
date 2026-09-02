@@ -183,7 +183,8 @@ public:
                                  std::optional<Texture_parameter> blur_SSAO,
                                  std::optional<Texture_parameter> shadow_texture,
                                  std::optional<Texture_parameter> compute_texture,
-                                 std::optional<Texture_parameter> blur_write_SSAO);
+                                 std::optional<Texture_parameter> blur_write_SSAO,
+                                 std::optional<Texture_parameter> dof_blur);
 
     FrustumPlanes get_frustum_planes() const {
         return global_parameters_.frustum_planes;
