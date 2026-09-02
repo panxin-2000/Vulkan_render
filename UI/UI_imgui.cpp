@@ -362,6 +362,15 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGuiIO &io = ImGui::GetIO();
         Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
 
+        ImGui::SliderFloat("aperture",
+                           &Engine::instance().get_global_parameters().get_aperture(), 0.95f, 22.0f);
+        ImGui::SliderFloat("sensor_width",
+                           &Engine::instance().get_global_parameters().get_sensor_width(), 0.0f, 1.0f);
+        ImGui::SliderFloat("focal_length",
+                           &Engine::instance().get_global_parameters().get_focal_length(), 0.0120f, 2.0f);
+        ImGui::SliderFloat("maxBlurPixels",
+                           &Engine::instance().get_global_parameters().get_maxBlurPixels(), 0.0f, 1000.0f);
+
         ImGui::SliderFloat("fog_start",
                            &Engine::instance().get_global_parameters().get_fog_start(), 0.0f, 1000.0f);
         ImGui::SliderFloat("fog_end",

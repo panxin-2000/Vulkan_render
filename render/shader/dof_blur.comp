@@ -55,4 +55,22 @@ void main() {
     vec3 finalBlurColor = colorSum / max(weightSum, 0.0001);
     vec3 finalBlendedColor = mix(sharpColor.rgb, finalBlurColor, finalAlphaCoC);
     imageStore(global_dof_BlurImg, texelCoord, vec4(finalBlendedColor, 1.0));
+
+    // 拒绝原图插值，使用最大 CoC 覆盖（Pass 分离）：
+    // 不要在当前像素用自己的 finalAlphaCoC 去和原图做 mix。
+    // 而是把所有像素的模糊结果单独输出到一张全模糊图（Pass 1），
+    // 接着在 Pass 2 中，比较当前像素的清晰深度和周围像素的 CoC，
+    // 谁的模糊圆能盖到当前像素，就用谁的权重。
+    // 这样，前景大模糊圆就能完美、硬朗地斩断背景的清晰边缘。
+    // 你一针见血地指出了当前图形学“收集式（Gather）”景深最核心的致命缺陷——能量淡化（Energy Dilution）与亮度坍塌。
+    // 物理世界中，一个像素宽的强光点（比如亮度为 10 的路灯）失焦扩散成一个半径为 10 像素的圆盘。
+    // 虽然面积变大了，但其总能量保持不变。
+
+    // 如果你在玩《赛博朋克2077》或最新的 3D 大作，你会发现它们的夜景光斑简直完美。
+    // 因为它们在底层放弃了单纯的 Gather 收集，而是采用混合管线：
+    // 基础模糊（Gather Pass）：用你目前的螺旋采样代码，处理正常的、非高光的场景，把它们揉碎模糊。
+    // 高光分离（Extract Pass）：单独跑一个超轻量的 Compute Shader，把屏幕上亮度超过临界值（比如 luma > 1.0）的像素挑出来，
+    // 将其位置和亮度存入一个动态缓冲区。光斑绘制（Scatter Pass）：使用 Vulkan 的点精灵（vkCmdDraw / Point Sprites） 或 实例化（Instancing），
+    // 将每一个挑出来的高亮点直接在屏幕上画成一个真正的 2D 圆形粒子面片（贴上漂亮的、带有外圈亮边的物理光斑纹理）。
+    // 这种光斑不论怎么放大，由于是纯数学粒子绘制，不仅完全不失真、不失能，而且亮度永远维持在最高峰。
 }

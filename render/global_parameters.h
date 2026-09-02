@@ -110,10 +110,13 @@ public:
     float camera_vignette_smoothness = 0.2f;
     float camera_vignette_intensity  = 0.4f;
     uint32_t render_timeline;
+    // 镜头相关参数
     float aperture          = 1.8;             // 光圈大小 (控制虚化强度)
     float focalLength       = 50.0f / 1000.0f; // 镜头焦距 (控制视野和虚化程度)
     float sensorWidthMeters = 0.035;           // 全画幅 35mm  输入值 0.035
-    float MaxBlurPixels;
+    float maxBlurPixels     = 24;
+
+    // 距离雾相关参数
     float fogStart           = 50;
     float fogEnd             = 200;
     float fogDensity         = 0.015;
@@ -122,6 +125,22 @@ public:
     std::array<Eigen::Array4f, 9> shCoefficients;
 
     // PhysicalCameraParams CameraParams; //
+    float &get_aperture() {
+        return aperture;
+    }
+
+    float &get_sensor_width() {
+        return sensorWidthMeters;
+    }
+
+    float &get_focal_length() {
+        return focalLength;
+    }
+
+    float &get_maxBlurPixels() {
+        return maxBlurPixels;
+    }
+
 
     float &get_fog_start() {
         return fogStart;
