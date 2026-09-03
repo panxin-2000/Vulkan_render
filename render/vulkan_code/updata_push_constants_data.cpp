@@ -53,7 +53,6 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
  * 一个需要注意的地方是 原本资源想要放置在哪里必须确定好，最后放置在哪里也是需要确定好的
  * 一个是负责具体复制的函数，
  * 另一个是复制完成之后资源是否需要释放的函数
- * @param entity
  * @param src
  * @param size
  */
