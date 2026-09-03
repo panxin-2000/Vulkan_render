@@ -80,6 +80,10 @@ void main() {
         float offset = 0.2f * grainShift * lumaMask;
         finalColor = finalColor * (1.0 + offset);
     }
+
+    // 场景原始渲染 -> 不透明度雾效 -> TAA -> 景深 -> 运动模糊 -> Bloom -> 镜头色差 -> 色调映射与色彩校正 -> Unsharp Mask -> 镜头暗角 -> 胶片颗粒 -> 最终输出
+    // 场景原始渲染 -> 不透明度雾效 -> 景深  -> Bloom -> 镜头色差 -> 色调映射与色彩校正 -> 画面放大一倍 -> FXAA ->  Unsharp Mask -> 镜头暗角 -> 胶片颗粒 -> 最终输出
+    // 场景原始渲染 -> 不透明度雾效 ->  Super Resolution -> Bloom -> 镜头色差 -> 色调映射与色彩校正 ->  Unsharp Mask -> 镜头暗角 -> 胶片颗粒 -> 最终输出
     // 场景原始渲染（HDR Color）
     // 不透明度雾效（Distance Fog） —— （我们之前写的 Compute 雾就在这里）
 
@@ -97,6 +101,7 @@ void main() {
     // 胶片颗粒（Film Grain）
     // 最终输出（To Screen / Present）
 
+    // 把放大放置在 色调映射（Tone Mapping）之后、FXAA 之前
 
     imageStore(out_texture, pixelCoord, vec4(finalColor, fxaa_result.a));
 }

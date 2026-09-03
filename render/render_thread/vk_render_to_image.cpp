@@ -315,43 +315,10 @@ void render_different_pass(VCB &vcb,
 
         vcb.compute_write_init_barrier(compute_write_image);
         vcb.compute_write_init_barrier(compute_dof_blur_image); {
-            // VKR_shader_paths dof_blur{
-            //     "", "", "", "dof_blur"
-            // };
-            // auto compute_shader = engine.get_shader_manager().find(dof_blur);
-            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
-            // VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
-            // "", "", "", "dof_composite"
-            // };
-            // auto compute_shader         = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
-            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
-            VKR_shader_paths fxaa{
-                "", "", "", "fxaa"
-            };
-            auto compute_shader                              = engine.get_shader_manager().find(fxaa);
-            std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
-            std::optional<Texture_parameter> offscreen       = create_2d_texture(color_image);
-
-            shader_need_parameter parameter; {
-                set_render_parameter(compute_shader->object_sets_bindings,
-                                     parameter.update_object_descriptor_sets, "input_texture",
-                                     offscreen);
-                set_render_parameter(compute_shader->object_sets_bindings,
-                                     parameter.update_object_descriptor_sets, "out_texture",
-                                     compute_texture);
-                allocate_descriptor_sets(parameter, compute_shader);
-                update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
-            }
-            vkCmdBindPipeline(vcb.get_command_buffer(), VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
-            vcb.bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
-                                           VK_PIPELINE_BIND_POINT_COMPUTE);
-            auto width  = compute_texture->image->get_width();
-            auto height = compute_texture->image->get_height();
-            vkCmdDispatch(vcb.get_command_buffer(), ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
         }
-
+        vcb.fxaa(engine, color_image, compute_write_image );
         vcb.compute_write_finish_barrier(compute_write_image);
         vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
     } {

@@ -3,6 +3,8 @@
 //
 #include "VCB_vulkan_command_buffer.h"
 
+#include "shader_component.h"
+
 void VCB::reset_current_command_buffer(const uint64_t time_line, VkCommandBuffer command_buffer) {
     command_buffer_ = command_buffer;
     time_line_      = time_line;
@@ -142,6 +144,85 @@ void VCB::compute_write_finish_sample_read(const VKR_image_ptr &compute_write_fi
     };
     vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
 }
+
+void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths dof_blur{
+        "", "", "", "dof_blur"
+    };
+    auto compute_shader                              = engine.get_shader_manager().find(dof_blur);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    std::optional<Texture_parameter> offscreen       = create_2d_texture(input_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "input_texture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "out_texture",
+                         compute_texture);
+    allocate_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = compute_texture->image->get_width();
+    auto height = compute_texture->image->get_height();
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
+void VCB::fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths fxaa{
+        "", "", "", "fxaa"
+    };
+    auto compute_shader                              = engine.get_shader_manager().find(fxaa);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    std::optional<Texture_parameter> offscreen       = create_2d_texture(input_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "input_texture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "out_texture",
+                         compute_texture);
+    allocate_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = compute_texture->image->get_width();
+    auto height = compute_texture->image->get_height();
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
+void VCB::dof_composite(Engine &engine,
+                        VKR_image_ptr dof_image,
+                        VKR_image_ptr color_image,
+                        VKR_image_ptr compute_write_image) {
+    VKR_shader_paths dof_Chromatic_Aberration_tone_mapping{
+        "", "", "", "dof_composite"
+    };
+    auto compute_shader = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
+    std::optional<Texture_parameter> offscreen = create_2d_texture(color_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "input_texture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "out_texture",
+                         compute_texture);
+    allocate_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = compute_texture->image->get_width();
+    auto height = compute_texture->image->get_height();
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
 
 void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image) {
     VkImageMemoryBarrier2 barrierDrawImage{

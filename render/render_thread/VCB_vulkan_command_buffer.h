@@ -83,6 +83,13 @@ public:
 
     void compute_write_finish_sample_read(const VKR_image_ptr &compute_write_finish_image);
 
+    void dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
+    void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
+    void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
+                       VKR_image_ptr compute_write_image);
+
     void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
 
     void end_command_buffer();
