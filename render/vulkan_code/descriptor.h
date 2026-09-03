@@ -66,6 +66,6 @@ allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
                          std::vector<VkDescriptorSetLayout> descriptor_set_layouts,
                          const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
 
+void discard_descriptor_set_map_clean(uint64_t current_timeline);
 
-void discard_descriptor_set_map_clean();
 #endif //HOWTOVULKAN_DESCRIPTOR_H

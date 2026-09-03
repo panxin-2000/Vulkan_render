@@ -316,6 +316,7 @@ void Engine::destroy() {
     destroy_render_image();
     // 需要强制清除
     constexpr uint64_t finished_timeline = std::numeric_limits<uint64_t>::max();
+    discard_descriptor_set_map_clean(finished_timeline);
     discard_buffer_map_clean(finished_timeline);
     discard_image_and_view_map_clean(finished_timeline);
 

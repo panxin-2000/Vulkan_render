@@ -74,6 +74,11 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
 
     bool need_allocate = false;
     for (int i = 0; i < descriptor_set_layouts.size(); i++) {
+        size_t num = layout_and_set_map.count(descriptor_set_layouts.at(i));
+        if (num <= 1) {
+            need_allocate = true;
+            break;
+        }
         auto it = layout_and_set_map.find(descriptor_set_layouts.at(i));
         if (it != layout_and_set_map.end()) {
             descriptor_sets.at(i) = it->second;
@@ -134,6 +139,7 @@ DescriptorSet_detail::~DescriptorSet_detail() {
 
 
 void discard_descriptor_set_map_clean(uint64_t current_timeline) {
+    layout_and_set_map.clear(); // 什么时候清理掉的? 应该只是将 pool 删除了 ,就没有警告了
     // auto &backend = VK_backend::get();
     // for (auto it = discard_descriptor_set_map.begin(); it != discard_descriptor_set_map.end(); /* 后面不加 ++ */) {
     //     const auto &[descriptor_set, timeline] = *it;

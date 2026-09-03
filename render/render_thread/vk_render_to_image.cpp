@@ -334,8 +334,7 @@ void render_different_pass(VCB &vcb,
             std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(compute_write_image);
             std::optional<Texture_parameter> offscreen       = create_2d_texture(color_image);
 
-            static shader_need_parameter parameter;
-            if (parameter.update_object_descriptor_sets.empty()) {
+            shader_need_parameter parameter; {
                 set_render_parameter(compute_shader->object_sets_bindings,
                                      parameter.update_object_descriptor_sets, "input_texture",
                                      offscreen);

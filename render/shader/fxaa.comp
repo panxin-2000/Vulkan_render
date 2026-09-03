@@ -98,5 +98,5 @@ void main() {
     // 最终输出（To Screen / Present）
 
 
-    imageStore(out_texture, pixelCoord, vec4(finalColor, fxaa_result.a)); 
+    imageStore(out_texture, pixelCoord, vec4(finalColor, fxaa_result.a));
 }
