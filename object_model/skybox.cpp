@@ -21,8 +21,17 @@ void add_skybox_entity() {
 
         auto texture                                    = create_skybox_texture_all(paths);
         std::optional<Texture_parameter> sampler_skybox = texture;
-        create_object_3d("skybox")
-                .add_sky_box()
-                .add_render_parameter("sampler_skybox", sampler_skybox);
+
+        auto result = create_object_3d("skybox");
+
+        result.add_shader_path(VKR_shader_paths{
+                                   "skybox", "skybox", "", "",
+                                   VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                   VK_backend::instance().get_depth_format(),
+                                   VK_backend::instance().get_depth_format(),
+                                   VKR_shader_paths::Render_Pass_Type::Color
+                               });
+        result.add_sky_box();
+        result.add_render_parameter("sampler_skybox", sampler_skybox);
     }
 }

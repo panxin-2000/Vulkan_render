@@ -101,10 +101,6 @@ object_3d &object_3d::add_postprocess() {
 
 object_3d &object_3d::add_sky_box() {
     logic_update_proxy<Name_component>(entity);
-    add_shader(entity,
-               "skybox",
-               "skybox",
-               "", "");
     add_box_data(entity);
     const auto mesh = get_VKR_mesh(entity);
     auto primitives = create_primitives(entity);

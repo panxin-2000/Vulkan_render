@@ -5,6 +5,7 @@
 
 #include "Shader_manager.h"
 #include "shader_resolve.h"
+#include "vulkan_backend.h"
 
 
 void Shader_manager::destroy() {
@@ -16,8 +17,8 @@ VKR_shader_paths get_gltf_shader_path() {
     return VKR_shader_paths{
         "pbr_bindless", "pbr_bindless", "", "",
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        VK_FORMAT_UNDEFINED,
-        VK_FORMAT_UNDEFINED,
+        VK_backend::instance().get_depth_format(),
+        VK_backend::instance().get_depth_format(),
         VKR_shader_paths::Render_Pass_Type::Color
     };
 }
@@ -26,8 +27,8 @@ VKR_shader_paths get_skinning_shader_path() {
     return VKR_shader_paths{
         "skinning_model", "pbr_bindless", "", "",
         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        VK_FORMAT_UNDEFINED,
-        VK_FORMAT_UNDEFINED,
+        VK_backend::instance().get_depth_format(),
+        VK_backend::instance().get_depth_format(),
         VKR_shader_paths::Render_Pass_Type::Color
     };
 }

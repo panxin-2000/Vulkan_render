@@ -74,6 +74,32 @@ void VCB::build_draw_command(entt::entity entity) {
     }
 }
 
+void VCB::build_draw_command_UI(entt::entity entity) {
+    const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+
+    bind_pipeline_update_parameter(entity, shader_data_ref);
+
+    const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
+    const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);
+    const auto render_states = Render_entt().try_get<std::vector<VKR_Render_state> >(entity);
+
+    if (!primitives.empty() && render_states != nullptr && !render_states->empty()) {
+        draw(mesh_data, primitives, render_states);
+    } else if (!primitives.empty() && render_states == nullptr) {
+        VKR_Render_state temp;
+        temp.set_depthTest_disable();
+        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+
+        draw(mesh_data, primitives, render_states);
+    } else {
+        // 为空并且有一个deferred 标记 // todo: 标记判断
+        if (Render_entt().any_of<deferred_pass_tag>(entity))
+            vkCmdDraw(command_buffer_, 3, 1, 0, 0);
+        if (Render_entt().any_of<UI_2D_tag>(entity))
+            vkCmdDraw(command_buffer_, 4, 1, 0, 0);
+    }
+}
+
 
 void VCB::DrawIndexedIndirect(entt::entity entity,
                               uint32_t command_size, VKR_buffer_ptr read_buffer) {

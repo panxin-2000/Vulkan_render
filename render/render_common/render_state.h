@@ -22,6 +22,12 @@ public:
         pipelineRasterizationState.frontFace_ = frontFace;
     }
 
+
+    void set_depthTest_disable() {
+        pipelineDynamicState.depthTestEnable  = VK_FALSE;
+        pipelineDynamicState.depthWriteEnable = VK_FALSE;
+    }
+
     /**
      *
      * @param cullMode VK_CULL_MODE_BACK_BIT / VK_CULL_MODE_FRONT_BIT / VK_CULL_MODE_FRONT_AND_BACK / VK_CULL_MODE_NONE

@@ -87,6 +87,7 @@ UI_Button &UI_Button::set_round_box(float min_x,
     VKR_Render_state render_state;
     render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
     render_state.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+    render_state.set_depthTest_disable();
     render_states.push_back(render_state);
     logic_update_proxy(entity, render_states);
 

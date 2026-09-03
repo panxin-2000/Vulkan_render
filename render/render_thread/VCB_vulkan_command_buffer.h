@@ -113,6 +113,8 @@ public:
 
     void build_draw_command(entt::entity entity);
 
+    void build_draw_command_UI(entt::entity entity);
+
 
     void render_post_deal(std::shared_ptr<vk_shader_data> command_shader, entt::entity entity) {
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, command_shader->pipeline_t);

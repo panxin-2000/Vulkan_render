@@ -155,6 +155,7 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
                         render_state.scissor.extent.height = (uint32_t) (clip_max.y - clip_min.y);
                         render_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
                         render_state.set_VkCullModeFlags(VK_CULL_MODE_NONE);
+                        render_state.set_depthTest_disable();
 
                         vkr_primitive.indexCount    = pcmd->ElemCount;
                         vkr_primitive.instanceCount = 1;

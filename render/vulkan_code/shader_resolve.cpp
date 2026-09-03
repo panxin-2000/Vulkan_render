@@ -137,13 +137,13 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
     if (!compute_path.empty())
         compute_path_ = SHADER_BASE_DIR + compute_path + ".comp";
     topology_ = topology;
-    if (depthAttachmentFormat == VK_FORMAT_UNDEFINED && stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
-        depthAttachmentFormat_   = VK_backend::instance().get_depth_format();
-        stencilAttachmentFormat_ = VK_backend::instance().get_depth_format();
-    } else {
-        depthAttachmentFormat_   = depthAttachmentFormat;
-        stencilAttachmentFormat_ = stencilAttachmentFormat;
-    }
+    // if (depthAttachmentFormat == VK_FORMAT_UNDEFINED && stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
+    //     depthAttachmentFormat_   = VK_backend::instance().get_depth_format();
+    //     stencilAttachmentFormat_ = VK_backend::instance().get_depth_format();
+    // } else {
+    depthAttachmentFormat_   = depthAttachmentFormat;
+    stencilAttachmentFormat_ = stencilAttachmentFormat;
+    // }
     if (render_pass_type == Render_Pass_Type::Color) {
         define_macro_.push_back({"PASS_COLOR", 1});
     } else if (render_pass_type == Render_Pass_Type::Depth) {

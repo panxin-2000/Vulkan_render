@@ -310,22 +310,22 @@ void render_different_pass(VCB &vcb,
                                                  VK_ATTACHMENT_LOAD_OP_LOAD); {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.build_draw_command_UI(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_render_text>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.build_draw_command_UI(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.build_draw_command_UI(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.build_draw_command_UI(entity);
             }
         }
         vcb.end_rendering();

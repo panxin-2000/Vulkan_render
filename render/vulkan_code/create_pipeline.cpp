@@ -126,6 +126,13 @@ VkPipeline create_graphics_pipeline(VK_backend &backend, vk_shader_data &data) {
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL
     };
+    if (data.depthAttachmentFormat == VK_FORMAT_UNDEFINED) {
+        depthStencilState.depthTestEnable = VK_FALSE;
+    }
+    if (data.stencilAttachmentFormat == VK_FORMAT_UNDEFINED) {
+        depthStencilState.depthWriteEnable = VK_FALSE;
+    }
+
     /******************************** 动态状态 **********************************/
 
 
