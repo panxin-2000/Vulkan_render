@@ -203,7 +203,7 @@ void render_different_pass(VCB &vcb,
         vcb.compute_write_finish_same_read(SSAO_image);
 
         vcb.compute_write_init_barrier(blur_SSAO_image);
-        // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image);
+        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image);
         vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
     // {

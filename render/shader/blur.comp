@@ -1,9 +1,7 @@
 #version 450
-#extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-layout (set = 0, binding = 0) uniform sampler2D input_texture;
+layout (r8, set = 0, binding = 0) uniform image2D input_texture;
 layout (r8, set = 0, binding = 1) uniform image2D out_texture;
 
 void main()
@@ -33,7 +31,7 @@ void main()
 
             neighbor_coords = clamp(neighbor_coords, ivec2(0), texSize - ivec2(1));
 
-            result += texelFetch(input_texture, neighbor_coords, 0).r;
+            result += imageLoad(input_texture, neighbor_coords).r;
             n++;
         }
     }
