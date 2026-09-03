@@ -30,30 +30,35 @@ void update_bindings_to_descriptor_sets(const entt::entity entity) {
 }
 
 
+void allocate_descriptor_sets(shader_need_parameter &vk_s_d_s, const Shader_data &shader_ref) {
+    auto &handle    = VK_backend::instance();
+    auto sets_flags = create_descriptor_sets_flags(handle,
+                                                   shader_ref->object_sets_bindings);
+    vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
+                                                               shader_ref->object_descriptor_sets_layout,
+                                                               {});
+    if (vk_s_d_s.object_descriptor_sets.empty()) {
+        Engine::instance().allocate_descriptor_pool();
+        vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
+                                                                   shader_ref->object_descriptor_sets_layout,
+                                                                   {});
+    }
+    assert(!vk_s_d_s.object_descriptor_sets.empty()); // 然后怎么打印实体的名称呢？
+}
+
 void allocate_descriptor_sets(const entt::entity entity) {
     // 这里就全部都是 渲染 某个物体时会 变更的数据了
     // 需要根据是全局还是物体单独的来进行创建了，全局的就获取全局的 descriptor_sets , 然后
-    auto &handle = VK_backend::instance();
     if (const auto shader_ptr = Render_entt().try_get<Shader_data>(entity)) {
         auto shader_ref = *shader_ptr;
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
         if (!shader_ref->object_descriptor_sets_layout.empty()) {
-            auto sets_flags = create_descriptor_sets_flags(handle,
-                                                           shader_ref->object_sets_bindings);
-            vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
-                                                                       shader_ref->object_descriptor_sets_layout,
-                                                                       {});
-            if (vk_s_d_s.object_descriptor_sets.empty()) {
-                Engine::instance().allocate_descriptor_pool();
-                vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
-                                                                           shader_ref->object_descriptor_sets_layout,
-                                                                           {});
-            }
-            assert(!vk_s_d_s.object_descriptor_sets.empty()); // 然后怎么打印实体的名称呢？
+            allocate_descriptor_sets(vk_s_d_s, shader_ref);
         }
     }
 }
+
 
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity) {
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
@@ -195,4 +200,3 @@ void descriptor_set_update_function() {
         Render_entt().remove<descriptor_set_update>(it);
     }
 }
-

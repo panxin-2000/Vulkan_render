@@ -166,6 +166,8 @@ bool set_push_constant_parameter(const entt::entity entity, const std::string &b
     return true;
 }
 
+void allocate_descriptor_sets(shader_need_parameter &vk_s_d_s, const Shader_data &shader_ref);
+
 void allocate_descriptor_sets(const entt::entity entity);
 
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity);

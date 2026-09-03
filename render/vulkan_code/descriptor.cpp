@@ -125,7 +125,7 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
 
 DescriptorSet_detail::~DescriptorSet_detail() {
     std::lock_guard<std::mutex> lock(discard_descriptor_set_map_mutex);
-    discard_descriptor_set_map[descriptor_set_] = timeline_;
+    discard_descriptor_set_map[descriptor_set_] = timeline_ + 2;
     layout_and_set_map.insert({descriptor_layout_, descriptor_set_});
     descriptor_set_    = VK_NULL_HANDLE;
     descriptor_layout_ = VK_NULL_HANDLE;

@@ -193,6 +193,10 @@ public:
                                     VkPipelineLayout pipeline_layout,
                                     VkPipelineBindPoint bind_point);
 
+    void bind_Proxy_descriptor_sets(Proxy_descriptor_sets vk_descriptor_sets,
+                                    VkPipelineLayout pipeline_layout,
+                                    VkPipelineBindPoint bind_point);
+
     void bind_pipeline_update_parameter(entt::entity entity, const Shader_data &shader_data_ref);
 
     void gpu_log_label_info(const std::string &label) {

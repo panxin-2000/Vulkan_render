@@ -60,11 +60,7 @@ struct Update_descriptor_binding {
 
 
 struct shader_need_parameter {
-    // std::vector<DescriptorSet_ptr> bindless_descriptor_sets; // descriptor_set 的 共享指针保存点
-    // std::vector<DescriptorSet_ptr> global_descriptor_sets;   // descriptor_set 的 共享指针保存点
     std::vector<DescriptorSet_ptr> object_descriptor_sets; // descriptor_set 的 共享指针保存点
-    // std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets;
-    // std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
 };
 

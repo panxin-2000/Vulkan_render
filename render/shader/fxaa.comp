@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
+#include "commom_function_and_struct.glsl"
 
 
 #define texture2D(t, uv)              texture(t, uv)
@@ -14,18 +14,21 @@
 // --- 第二步：引入 NVIDIA 官方头文件 ---
 #include "Fxaa3_11.h"
 
-#include "depthUtils.glsl"
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
+layout (set = 0, binding = 0) uniform sampler2D input_texture;
+layout(rgba8, set = 0, binding = 1) uniform image2D out_texture;
 
 
 
 void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
-    ivec2 texSize = imageSize(global_compute_Texture);
+    ivec2 texSize = imageSize(out_texture);
+
+    vec2 screen_size = textureSize(input_texture, 0);
     uint width = uint(texSize.x);
     uint height = uint(texSize.y);
 
@@ -43,9 +46,9 @@ void main() {
     vec4 fxaa_result = FxaaPixelShader(
             inUV, // pos: 当前像素的 UV 坐标
             vec4(0.0), // fxaaConsolePosPos: 主机专用，PC 填 0
-            global_offscreen, // tex: 绑定的纹理结构体
-            global_offscreen, // fxaaConsole360TexLuma: 远古 Xbox360 专用，同上
-            global_offscreen, // fxaaConsole360TexChroma: 同上
+            input_texture, // tex: 绑定的纹理结构体
+            input_texture, // fxaaConsole360TexLuma: 远古 Xbox360 专用，同上
+            input_texture, // fxaaConsole360TexChroma: 同上
             1.0 / screen_size.xy, // fxaaQualityRcpFrame: 核心！1.0 / 屏幕分辨率
             vec4(0.0), // fxaaConsoleRcpFrameOpt: 主机专用，填 0
             vec4(0.0), // fxaaConsoleRcpFrameOpt2: 主机专用，填 0
@@ -59,28 +62,22 @@ void main() {
             vec4(0.0)                   // fxaaConsole360ConstDir: 主机专用
     );
 
-
-
-    highp float depth = sampleDepth(global_depth, inUV, 0.0);
-    vec3 viewPos = get_view_pos(inUV, depth, invProjection);
-
-
     // 4. 计算距离 (计算到相机的实际直线距离，或者只用深度 Z 轴距离)
     // 方案 A：直线距离（更真实）
 
     // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
     // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
-    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, camera_vignette_intensity, camera_vignette_smoothness);
+    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, 0.4, 0.2);
 
 
     {
-        float noise = get_noise_v2(uvec2(inUV * texSize), render_timeline);
+        float noise = get_noise_v2(uvec2(inUV * texSize), 4);
         float grainShift = noise - 0.5; // 重映射到 [-0.5, 0.5]
 
         float luma = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
         float lumaMask = 4.0 * luma * (1.0 - luma);
         lumaMask = clamp(lumaMask, 0.0, 1.0);
-        float offset = film_grain_intensity * grainShift * lumaMask;
+        float offset = 0.2f * grainShift * lumaMask;
         finalColor = finalColor * (1.0 + offset);
     }
     // 场景原始渲染（HDR Color）
@@ -101,5 +98,5 @@ void main() {
     // 最终输出（To Screen / Present）
 
 
-    imageStore(global_compute_Texture, pixelCoord, vec4(finalColor, fxaa_result.a)); // 纯红
+    imageStore(out_texture, pixelCoord, vec4(finalColor, fxaa_result.a)); 
 }
