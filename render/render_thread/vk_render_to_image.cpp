@@ -314,10 +314,7 @@ void render_different_pass(VCB &vcb,
 
 
         vcb.compute_write_init_barrier(compute_write_image);
-        vcb.compute_write_init_barrier(compute_dof_blur_image); {
-        } {
-        } {
-        }
+        vcb.compute_write_init_barrier(compute_dof_blur_image);
         vcb.fxaa(engine, color_image, compute_write_image);
         vcb.compute_write_finish_barrier(compute_write_image);
         vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());

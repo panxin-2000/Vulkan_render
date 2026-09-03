@@ -172,6 +172,8 @@ void allocate_descriptor_sets(const entt::entity entity);
 
 Proxy_descriptor_sets get_descriptor_sets(const entt::entity entity);
 
+Proxy_descriptor_sets get_descriptor_sets(const shader_need_parameter &vk_s_d_s, const Shader_data &shader_temp);
+
 Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity);
 
 

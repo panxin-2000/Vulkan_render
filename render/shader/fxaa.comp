@@ -1,6 +1,6 @@
 #version 450
 #extension GL_GOOGLE_include_directive: enable
-#include "commom_function_and_struct.glsl"
+#include "global_shader_common.glsl"
 
 
 #define texture2D(t, uv)              texture(t, uv)
@@ -18,8 +18,8 @@
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
-layout (set = 0, binding = 0) uniform sampler2D input_texture;
-layout(rgba8, set = 0, binding = 1) uniform image2D out_texture;
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout(rgba8, set = 2, binding = 1) uniform image2D out_texture;
 
 
 
@@ -67,17 +67,16 @@ void main() {
 
     // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
     // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
-    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, 0.4, 0.2);
-
-
+    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, camera_vignette_intensity, camera_vignette_smoothness);
+    // 模拟胶片
     {
-        float noise = get_noise_v2(uvec2(inUV * texSize), 4);
+        float noise = get_noise_v2(uvec2(inUV * texSize), render_timeline);
         float grainShift = noise - 0.5; // 重映射到 [-0.5, 0.5]
 
         float luma = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
         float lumaMask = 4.0 * luma * (1.0 - luma);
         lumaMask = clamp(lumaMask, 0.0, 1.0);
-        float offset = 0.2f * grainShift * lumaMask;
+        float offset = film_grain_intensity * grainShift * lumaMask;
         finalColor = finalColor * (1.0 + offset);
     }
 

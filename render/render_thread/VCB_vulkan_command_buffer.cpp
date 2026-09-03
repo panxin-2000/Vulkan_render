@@ -186,9 +186,11 @@ void VCB::fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
                          parameter.update_object_descriptor_sets, "out_texture",
                          compute_texture);
     allocate_descriptor_sets(parameter, compute_shader);
-    update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
+    auto temp = get_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
-    bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
+    // parameter.object_descriptor_sets 需要去确认 或者说需要更新
+    bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
                                VK_PIPELINE_BIND_POINT_COMPUTE);
     auto width  = compute_texture->image->get_width();
     auto height = compute_texture->image->get_height();
