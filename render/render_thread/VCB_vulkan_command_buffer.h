@@ -85,6 +85,10 @@ public:
 
     void dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
+    void SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
+    void blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
     void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,

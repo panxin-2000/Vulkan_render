@@ -198,26 +198,13 @@ void render_different_pass(VCB &vcb,
         //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
 
         // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
-        vcb.compute_write_init_barrier(SSAO_image); {
-            VKR_shader_paths SSAO{
-                "", "", "", "SSAO"
-            };
-            auto command_shader = engine.get_shader_manager().find(SSAO);
-            vcb.deal_image(entt::null, compute_write_image, command_shader);
-        }
+        vcb.compute_write_init_barrier(SSAO_image);
+        vcb.SSAO(engine, depth_AO_image, SSAO_image);
         vcb.compute_write_finish_same_read(SSAO_image);
-        vcb.compute_write_init_barrier(blur_SSAO_image); {
-            VKR_shader_paths blur{
-                "", "", "", "blur"
-            };
-            auto command_shader = engine.get_shader_manager().find(blur);
-            vcb.deal_image(entt::null, compute_write_image, command_shader);
-        }
 
-        // 这里也需要转换布局,从 gen 到 read  sample
-        vcb.compute_write_finish_sample_read({
-                                                 blur_SSAO_image
-                                             });
+        vcb.compute_write_init_barrier(blur_SSAO_image);
+        // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image);
+        vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
     // {
     // vcb.begin_rendering_attachment(blur_SSAO_image,

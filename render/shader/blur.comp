@@ -3,7 +3,8 @@
 #include "global_shader_common.glsl"
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
-
+layout (set = 0, binding = 0) uniform sampler2D input_texture;
+layout (r8, set = 0, binding = 1) uniform image2D out_texture;
 
 void main()
 {
@@ -11,7 +12,7 @@ void main()
     uint y = gl_GlobalInvocationID.y;
 
     // 以 global_SSAO 为输出, 以输出 的 大小,转换出应该采样的 UV
-    ivec2 texSize = imageSize(global_Blur_SSAO_compute_write);
+    ivec2 texSize = imageSize(out_texture);
     uint width = uint(texSize.x);
     uint height = uint(texSize.y);
     // 越界检查
@@ -32,10 +33,10 @@ void main()
 
             neighbor_coords = clamp(neighbor_coords, ivec2(0), texSize - ivec2(1));
 
-            result += imageLoad(global_SSAO_compute_write, neighbor_coords).r;
+            result += texelFetch(input_texture, neighbor_coords, 0).r;
             n++;
         }
     }
-    imageStore(global_Blur_SSAO_compute_write, pixel_coords,
+    imageStore(out_texture, pixel_coords,
             vec4(result / (float(n)), 0.0, 0.0, 0.0));
 }
