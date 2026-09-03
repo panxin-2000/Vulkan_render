@@ -119,6 +119,15 @@ public:
         return ptr->get_index();
     }
 
+    bool operator==(std::nullptr_t) const noexcept {
+        return ptr == nullptr;
+    }
+
+    // 允许与 nullptr 进行 != 比较 （完美解决你的报错）
+    bool operator!=(std::nullptr_t) const noexcept {
+        return ptr != nullptr;
+    }
+
 
     explicit operator bool() const noexcept {
         return ptr != nullptr;

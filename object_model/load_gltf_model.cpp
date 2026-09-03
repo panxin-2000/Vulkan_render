@@ -716,7 +716,6 @@ auto load_texture_info(const std::filesystem::path &path,
             auto image     = model.images[texture.basisuImageIndex.value()];
             auto image_ptr = load_ktx(path, model, image);
             auto result    = create_2d_texture(image_ptr);
-            Engine::instance().add_bindless_texture(result);
             return result;
         } else if (texture.ddsImageIndex.has_value() &&
                    texture.ddsImageIndex.value() <= model.images.size()) {
@@ -745,7 +744,6 @@ auto load_texture_info(const std::filesystem::path &path,
             auto image   = model.images[texture.imageIndex.value()];
             auto picture = loadImage(path, model, image);
             auto result  = create_2d_texture(picture);
-            Engine::instance().add_bindless_texture(result);
             return result;
         }
     }
@@ -759,66 +757,88 @@ void load_materials(std::vector<uint32_t> &material_indices,
     auto &pbr_manager = Engine::instance().get_pbr_manager();
     std::vector<std::pair<PBR_component, PBR_Texture_ptr> > result;
     result.resize(model.materials.size());
-
     // 现在下面的代码可以并行执行了
-    for (uint32_t i = 0; i < model.materials.size(); ++i) {
-        const auto &material = model.materials[i];
-        PBR_component pbr;
-        PBR_Texture_ptr ptr;
-        pbr.alphaCutoff        = material.alphaCutoff;
-        pbr.doubleSided        = material.doubleSided;
-        pbr.alphaMode          = static_cast<uint32_t>(material.alphaMode);
-        pbr.baseColorFactor_.R = material.pbrData.baseColorFactor[0];
-        pbr.baseColorFactor_.G = material.pbrData.baseColorFactor[1];
-        pbr.baseColorFactor_.B = material.pbrData.baseColorFactor[2];
-        pbr.emissiveFactor_.R  = material.emissiveFactor[0];
-        pbr.emissiveFactor_.G  = material.emissiveFactor[1];
-        pbr.emissiveFactor_.B  = material.emissiveFactor[2];
-        pbr.metallicFactor_    = material.pbrData.metallicFactor;
-        pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
-        // pbr.ior                = material.ior;
-        if (material.occlusionTexture.has_value() && material.pbrData.metallicRoughnessTexture.has_value()) {
-            if (material.occlusionTexture.value().textureIndex ==
-                material.pbrData.metallicRoughnessTexture.value().textureIndex) {
-                pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
-                auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
-                pbr.ORM_Texture         = texture.image.get_index();
-                ptr.ORM_Texture         = texture;
-            } else {
-                auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
-                pbr.ORM_Texture = texture.image.get_index();
-                ptr.ORM_Texture = texture;
-                // 否则的话,就需要 想办法合并两个通道的 内容 了
-            }
-        } else if (material.occlusionTexture.has_value()) {
-            pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
-            auto texture            = load_texture_info(path, model, material.occlusionTexture.value());
-            pbr.ORM_Texture         = texture.image.get_index();
-            ptr.ORM_Texture         = texture;
-        } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
-            auto texture    = load_texture_info(path, model, material.pbrData.metallicRoughnessTexture.value());
-            pbr.ORM_Texture = texture.image.get_index();
-            ptr.ORM_Texture = texture;
-        }
-        if (material.normalTexture.has_value()) {
-            auto texture      = load_texture_info(path, model, material.normalTexture.value());
-            pbr.normalTexture = texture.image.get_index();
-            ptr.normalTexture = texture;
-        }
-        if (material.emissiveTexture.has_value()) {
-            auto texture        = load_texture_info(path, model, material.emissiveTexture.value());
-            pbr.emissiveTexture = texture.image.get_index();
-            ptr.emissiveTexture = texture;
-        }
-        if (material.pbrData.baseColorTexture.has_value()) {
-            auto texture         = load_texture_info(path, model, material.pbrData.baseColorTexture.value());
-            pbr.baseColorTexture = texture.image.get_index();
-            ptr.baseColorTexture = texture;
-        }
-        result[i] = {pbr, ptr};
-    }
-
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, result.size()),
+                      [&](const tbb::blocked_range<size_t> &r) {
+                          // 注意：这里的 r 是大区间被拆分后的一小段区间
+                          // 必须使用 r.begin() 和 r.end()，绝对不能用 0 和 N
+                          for (size_t i = r.begin(); i != r.end(); ++i) {
+                              const auto &material = model.materials[i];
+                              PBR_component pbr;
+                              PBR_Texture_ptr ptr;
+                              pbr.alphaCutoff        = material.alphaCutoff;
+                              pbr.doubleSided        = material.doubleSided;
+                              pbr.alphaMode          = static_cast<uint32_t>(material.alphaMode);
+                              pbr.baseColorFactor_.R = material.pbrData.baseColorFactor[0];
+                              pbr.baseColorFactor_.G = material.pbrData.baseColorFactor[1];
+                              pbr.baseColorFactor_.B = material.pbrData.baseColorFactor[2];
+                              pbr.emissiveFactor_.R  = material.emissiveFactor[0];
+                              pbr.emissiveFactor_.G  = material.emissiveFactor[1];
+                              pbr.emissiveFactor_.B  = material.emissiveFactor[2];
+                              pbr.metallicFactor_    = material.pbrData.metallicFactor;
+                              pbr.roughnessFactor_   = material.pbrData.roughnessFactor;
+                              // pbr.ior                = material.ior;
+                              if (material.occlusionTexture.has_value() && material.pbrData.metallicRoughnessTexture
+                                  .has_value()) {
+                                  if (material.occlusionTexture.value().textureIndex ==
+                                      material.pbrData.metallicRoughnessTexture.value().textureIndex) {
+                                      pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+                                      auto texture            = load_texture_info(path, model,
+                                                                       material.occlusionTexture.value());
+                                      pbr.ORM_Texture = texture.image.get_index();
+                                      ptr.ORM_Texture = texture;
+                                  } else {
+                                      auto texture = load_texture_info(path, model,
+                                                                       material.pbrData.metallicRoughnessTexture.
+                                                                       value());
+                                      pbr.ORM_Texture = texture.image.get_index();
+                                      ptr.ORM_Texture = texture;
+                                      // 否则的话,就需要 想办法合并两个通道的 内容 了
+                                  }
+                              } else if (material.occlusionTexture.has_value()) {
+                                  pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
+                                  auto texture = load_texture_info(path, model, material.occlusionTexture.value());
+                                  pbr.ORM_Texture = texture.image.get_index();
+                                  ptr.ORM_Texture = texture;
+                              } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
+                                  auto texture = load_texture_info(path, model,
+                                                                   material.pbrData.metallicRoughnessTexture.
+                                                                   value());
+                                  pbr.ORM_Texture = texture.image.get_index();
+                                  ptr.ORM_Texture = texture;
+                              }
+                              if (material.normalTexture.has_value()) {
+                                  auto texture      = load_texture_info(path, model, material.normalTexture.value());
+                                  pbr.normalTexture = texture.image.get_index();
+                                  ptr.normalTexture = texture;
+                              }
+                              if (material.emissiveTexture.has_value()) {
+                                  auto texture = load_texture_info(path, model, material.emissiveTexture.value());
+                                  pbr.emissiveTexture = texture.image.get_index();
+                                  ptr.emissiveTexture = texture;
+                              }
+                              if (material.pbrData.baseColorTexture.has_value()) {
+                                  auto texture = load_texture_info(path, model,
+                                                                   material.pbrData.baseColorTexture.value());
+                                  pbr.baseColorTexture = texture.image.get_index();
+                                  ptr.baseColorTexture = texture;
+                              }
+                              result[i] = {pbr, ptr};
+                          }
+                      });
     for (const auto &pair: result) {
+        if (pair.second.baseColorTexture.image != nullptr) {
+            Engine::instance().add_bindless_texture(pair.second.baseColorTexture);
+        }
+        if (pair.second.normalTexture.image != nullptr) {
+            Engine::instance().add_bindless_texture(pair.second.normalTexture);
+        }
+        if (pair.second.emissiveTexture.image != nullptr) {
+            Engine::instance().add_bindless_texture(pair.second.emissiveTexture);
+        }
+        if (pair.second.ORM_Texture.image != nullptr) {
+            Engine::instance().add_bindless_texture(pair.second.ORM_Texture);
+        }
         auto material_index = pbr_manager.push(pair.first, pair.second);
         material_indices.push_back(material_index);
     }
