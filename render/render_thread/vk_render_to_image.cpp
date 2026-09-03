@@ -327,11 +327,11 @@ void render_different_pass(VCB &vcb,
             // auto compute_shader         = engine.get_shader_manager().find(dof_Chromatic_Aberration_tone_mapping);
             // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         } {
-            VKR_shader_paths fxaa{
-                "", "", "", "fxaa"
-            };
-            auto compute_shader = engine.get_shader_manager().find(fxaa);
-            vcb.deal_image(entt::null, compute_write_image, compute_shader);
+            // VKR_shader_paths fxaa{
+            //     "", "", "", "fxaa"
+            // };
+            // auto compute_shader = engine.get_shader_manager().find(fxaa);
+            // vcb.deal_image(entt::null, compute_write_image, compute_shader);
         }
 
         vcb.compute_write_finish_barrier(compute_write_image);

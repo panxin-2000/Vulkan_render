@@ -361,7 +361,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
 
         ImGuiIO &io = ImGui::GetIO();
         Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
-
+        ImGui::Text("MousePos: %.2f, %.2f", io.MousePos.x, io.MousePos.y);
         ImGui::SliderFloat("aperture",
                            &Engine::instance().get_global_parameters().get_aperture(), 0.95f, 22.0f);
         ImGui::SliderFloat("sensor_width",

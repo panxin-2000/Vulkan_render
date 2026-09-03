@@ -14,11 +14,13 @@ layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 void main() {
     ivec2 texelCoord = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 imgSize = imageSize(global_dof_BlurImg).xy;
+    ivec2 imgSize = imageSize(global_compute_Texture).xy;
     if (texelCoord.x >= imgSize.x || texelCoord.y >= imgSize.y) return;
+
     vec2 inUV = (vec2(texelCoord) + 0.5) / imgSize;
     float z = textureLod(global_depth, (inUV), 0).r;
     float currentDepth = abs(get_view_pos(inUV, z, invProjection).z);
+
     vec2 focus_UV = mouse_position.xy / imgSize;
     float focus_z = textureLod(global_depth, (focus_UV), 0).r;
     float focus_Depth = abs(get_view_pos(focus_UV, focus_z, invProjection).z);
@@ -27,7 +29,7 @@ void main() {
     float cocInPixels = (cocRadius * screen_size.x / sensorWidthMeters);
     vec4 sharpColor = texelFetch(global_offscreen, texelCoord, 0);
     if (cocInPixels < 0.5) {
-        imageStore(global_dof_BlurImg, texelCoord, vec4(sharpColor.xyz, 0));
+        imageStore(global_compute_Texture, texelCoord, vec4(sharpColor.xyz, 0));
         return;
     }
     float finalAlphaCoC = clamp(cocInPixels / MaxBlurPixels, 0.0, 1.0);
@@ -54,7 +56,7 @@ void main() {
     // 4. 将模糊后的 RGB 结果输出，并将当前像素的 CoC 写入 Alpha 通道留给 Pass 2 使用
     vec3 finalBlurColor = colorSum / max(weightSum, 0.0001);
     vec3 finalBlendedColor = mix(sharpColor.rgb, finalBlurColor, finalAlphaCoC);
-    imageStore(global_dof_BlurImg, texelCoord, vec4(finalBlendedColor, 1.0));
+    imageStore(global_compute_Texture, texelCoord, vec4(finalBlendedColor, 1.0));
 
     // 拒绝原图插值，使用最大 CoC 覆盖（Pass 分离）：
     // 不要在当前像素用自己的 finalAlphaCoC 去和原图做 mix。

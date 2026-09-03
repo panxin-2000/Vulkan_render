@@ -105,23 +105,7 @@ void VCB::begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_pt
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
     };
-    const VkExtent2D temp_extent = {depth->get_width(), depth->get_height()};
-    VkRenderingAttachmentInfo depthAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
-    VkRenderingAttachmentInfo StencilAttachmentInfo{
-        .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .imageView   = depth->get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
-    };
+    const VkExtent2D temp_extent = {color->get_width(), color->get_height()};
 
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
@@ -131,8 +115,8 @@ void VCB::begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_pt
         .layerCount           = 1,
         .colorAttachmentCount = 1,
         .pColorAttachments    = &colorAttachmentInfo,
-        .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。
-        .pStencilAttachment   = &StencilAttachmentInfo
+        .pDepthAttachment     = nullptr, // pDepthAttachment 在缩放时有问题。
+        .pStencilAttachment   = nullptr
     };
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
     set_pass_viewport(depth->get_width(), depth->get_height());
