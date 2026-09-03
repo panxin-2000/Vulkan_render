@@ -108,25 +108,7 @@ Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
                                global_descriptor_sets.end());
     } else if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<Shader_data>(entity)) {
-            if (!(*shader_temp)->global_descriptor_sets_layout.empty()) {
-                auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
-                auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
-                // 这里清理的原因是 不应该在这里写入
-                descriptor_sets.reserve(bindless_descriptor_sets.size() +
-                                        global_descriptor_sets.size() +
-                                        vk_s_d_s->object_descriptor_sets.size());
-                descriptor_sets.insert(descriptor_sets.end(),
-                                       bindless_descriptor_sets.begin(),
-                                       bindless_descriptor_sets.end());
-                descriptor_sets.insert(descriptor_sets.end(),
-                                       global_descriptor_sets.begin(),
-                                       global_descriptor_sets.end());
-                descriptor_sets.insert(descriptor_sets.end(),
-                                       vk_s_d_s->object_descriptor_sets.begin(),
-                                       vk_s_d_s->object_descriptor_sets.end());
-            } else {
-                return vk_s_d_s->object_descriptor_sets;
-            }
+            return get_descriptor_sets(*vk_s_d_s, *shader_temp);
         }
     }
     return descriptor_sets;
