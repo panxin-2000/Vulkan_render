@@ -318,13 +318,12 @@ void render_different_pass(VCB &vcb,
         } {
         } {
         }
-        vcb.fxaa(engine, color_image, compute_write_image );
+        vcb.fxaa(engine, color_image, compute_write_image);
         vcb.compute_write_finish_barrier(compute_write_image);
         vcb.copy_image(compute_write_image, engine.get_current_swap_chain_image());
     } {
         vcb.begin_rendering_attachment_to_screen(engine.get_current_swap_chain_image(),
-                                                 depth_image,
-                                                 VK_ATTACHMENT_LOAD_OP_CLEAR); {
+                                                 VK_ATTACHMENT_LOAD_OP_LOAD); {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
                 vcb.build_draw_command(entity);

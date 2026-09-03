@@ -137,8 +137,8 @@ public:
         VKR_image_ptr depth,
         VkAttachmentLoadOp depth_loadOp);
 
-    void begin_rendering_attachment_to_screen(VKR_image_ptr color, VKR_image_ptr depth,
-                                              VkAttachmentLoadOp depth_loadOp);
+    void begin_rendering_attachment_to_screen(VKR_image_ptr color,
+                                              VkAttachmentLoadOp color_loadOp);
 
 
     void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
