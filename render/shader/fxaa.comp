@@ -49,13 +49,13 @@ void main() {
             input_texture, // tex: 绑定的纹理结构体
             input_texture, // fxaaConsole360TexLuma: 远古 Xbox360 专用，同上
             input_texture, // fxaaConsole360TexChroma: 同上
-            1.0 / screen_size.xy, // fxaaQualityRcpFrame: 核心！1.0 / 屏幕分辨率
+            1.0 / texSize.xy, // fxaaQualityRcpFrame: 核心！1.0 / 屏幕分辨率
             vec4(0.0), // fxaaConsoleRcpFrameOpt: 主机专用，填 0
             vec4(0.0), // fxaaConsoleRcpFrameOpt2: 主机专用，填 0
             vec4(0.0), // fxaaConsole360RcpFrameOpt2: 主机专用，填 0
-            0.75, // fxaaQualitySubpix: 子像素过滤程度 (0.0~1.0)
-            0.166, // fxaaQualityEdgeThreshold: 边缘检测阈值
-            0.0833, // fxaaQualityEdgeThresholdMin: 暗部裁剪阈值
+            fxaaQualitySubpix, // fxaaQualitySubpix: 子像素过滤程度 (0.0~1.0)
+            fxaaQualityEdgeThreshold, // fxaaQualityEdgeThreshold: 边缘检测阈值
+            fxaaQualityEdgeThresholdMin, // fxaaQualityEdgeThresholdMin: 暗部裁剪阈值
             0.0, // fxaaConsoleEdgeSharpness: 主机专用
             0.0, // fxaaConsoleEdgeThreshold: 主机专用
             0.0, // fxaaConsoleEdgeThresholdMin: 主机专用

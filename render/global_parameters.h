@@ -117,12 +117,31 @@ public:
     float maxBlurPixels     = 24;
 
     // 距离雾相关参数
-    float fogStart           = 50;
-    float fogEnd             = 200;
-    float fogDensity         = 0.015;
-    uint fogType             = 1; // fogType == 0  线性雾   fogType == 1  指数雾 fogType == 2  指数平方雾
+    float fogStart   = 50;
+    float fogEnd     = 200;
+    float fogDensity = 0.015;
+    uint fogType     = 1; // fogType == 0  线性雾   fogType == 1  指数雾 fogType == 2  指数平方雾
+
+    float fxaaQualitySubpix           = 0.75;
+    float fxaaQualityEdgeThreshold    = 0.166;
+    float fxaaQualityEdgeThresholdMin = 0.0833;
+    float fxaa_pad                    = 0;
+
     Eigen::Vector4f fogColor = Eigen::Vector4f(0.7, 0.7, 0.7, 1.0);
     std::array<Eigen::Array4f, 9> shCoefficients;
+
+
+    float &get_fxaaQualitySubpix() {
+        return fxaaQualitySubpix;
+    }
+
+    float &get_fxaaQualityEdgeThreshold() {
+        return fxaaQualityEdgeThreshold;
+    }
+
+    float &get_fxaaQualityEdgeThresholdMin() {
+        return fxaaQualityEdgeThresholdMin;
+    }
 
     // PhysicalCameraParams CameraParams; //
     float &get_aperture() {

@@ -44,6 +44,11 @@ layout (set = 1, binding = 0) uniform global_parameters
     float fogEnd;
     float fogDensity;
     uint fogType;
+    float fxaaQualitySubpix;
+    float fxaaQualityEdgeThreshold;
+    float fxaaQualityEdgeThresholdMin;
+    float fxaa_pad;
+
     vec4 fogColor;
 
     SphericalHarmonics SH;
