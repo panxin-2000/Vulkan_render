@@ -18,5 +18,5 @@ void main()
     outUVW = inPos;
     vec4 pos = projection * viewNoTranslation * vec4(inPos.xyz, 1.0);
     // 上面这一行比正常的少了一个矩阵
-    gl_Position = pos.xyww;
+    gl_Position = vec4(pos.xy, 0, pos.w);
 }

@@ -90,7 +90,7 @@ float textureProj(const highp sampler2DArray shadow_texture, vec4 shadowCoord, v
         float dist = texture(shadow_texture, vec3(shadowCoord.st + offset, cascadeIndex)).r;
         // 如果从光源看过去的最近距离 dist，小于当前像素的距离 shadowCoord.z，说明前面有物体挡住了光
         // 下面新加的这一行是有用的
-        if (shadowCoord.w > 0 && dist < shadowCoord.z - bias) {
+        if (dist > shadowCoord.z + bias) {
             shadow = 0.0f;
         }
     }

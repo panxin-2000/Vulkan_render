@@ -111,6 +111,10 @@ eigenOrthoDX_FlipY_StandardZ(float left, float right, float bottom, float top, f
     mat(2, 2) = 1.0f / (zNear - zFar);
     mat(2, 3) = zNear / (zNear - zFar);
 
+    // mat(2, 2) = 1.0f / (zFar - zNear);
+    // mat(2, 3) = zNear / (zFar - zNear);
+
+
     // W 轴
     mat(3, 3) = 1.0f;
 
@@ -232,7 +236,7 @@ bool Global_parameters::update_directional_light() {
     getPerspectiveClips(projection_matrix, nearClip, farClip);
 
 
-    auto cascades = calculateSplits(nearClip, farClip, SHADOW_MAP_CASCADE_COUNT);
+    auto cascades = calculateSplits(farClip, nearClip, SHADOW_MAP_CASCADE_COUNT);
     // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
 
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
@@ -265,8 +269,8 @@ bool Global_parameters::update_directional_light() {
         // 此时近裁剪面设为 0.0f，远裁剪面设为总深度范围
         Eigen::Matrix4f lightOrthoMatrix = eigenOrthoDX_FlipY_StandardZ(-radius, +radius,
                                                                         -radius, +radius,
-                                                                        -radius - zNearBuffer,
-                                                                        +radius + zFarBuffer);
+                                                                        +radius + zFarBuffer,
+                                                                        -radius - zNearBuffer);
 
         split_depth[i]          = cascades[i].farPlane;
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;

@@ -39,11 +39,11 @@ inline Eigen::Matrix4f vulkan_projection(float fovy_radians, float aspect, float
 
     // 第三列：控制 Z 轴深度映射及 W 分量
     // 映射 [zNear, zFar] 到 [0, 1]
-    projection(2, 2) = zFar / (zNear - zFar);
+    projection(2, 2) = zNear / (zFar - zNear);
     projection(3, 2) = -1.0f; // 用于透视除法
 
     // 第四列：控制 Z 轴平移
-    projection(2, 3) = -(zFar * zNear) / (zFar - zNear);
+    projection(2, 3) = (zFar * zNear) / (zFar - zNear);
 
     return projection;
 }
@@ -59,7 +59,7 @@ class camera_optical_component {
 private:
     float fovy_radians_        = 45.0f;
     float aspect_              = 1.0f;
-    float zNear_               = 0.1f;
+    float zNear_               = 1.0f;
     float zFar_                = 200.0f;
     float xmag_                = 1.0f;
     float ymag_                = 1.0f;

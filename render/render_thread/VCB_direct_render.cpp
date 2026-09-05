@@ -40,7 +40,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
+        .clearValue  = {.depthStencil = {0.0f, 0}}
     };
 
     // 多个附件的长宽必须相等

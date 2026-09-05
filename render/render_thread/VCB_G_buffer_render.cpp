@@ -93,7 +93,7 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
+        .clearValue  = {.depthStencil = {0.0f, 0}}
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -101,7 +101,7 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
         .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        .clearValue  = {.depthStencil = {1.0f, 0}}
+        .clearValue  = {.depthStencil = {0.0f, 0}}
     };
 
     VkRenderingInfo renderingInfo{

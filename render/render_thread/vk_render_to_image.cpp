@@ -167,7 +167,7 @@ void render_different_pass(VCB &vcb,
             for (uint i = 0; i < 4; ++i) {
                 VkClearAttachment clearAttachment{};
                 clearAttachment.aspectMask              = VK_IMAGE_ASPECT_DEPTH_BIT;
-                clearAttachment.clearValue.depthStencil = {1.0f, 0}; // 刷成最远
+                clearAttachment.clearValue.depthStencil = {0.0f, 0}; // 刷成最远
 
                 VkClearRect clearRect{};
                 clearRect.rect.offset    = {0, 0};

@@ -20,9 +20,9 @@ struct PipelineDynamicState {
     // VK_DYNAMIC_STATE_STENCIL_REFERENCE
 
 
-    VkBool32 depthTestEnable   = VK_TRUE;                     // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
-    VkBool32 depthWriteEnable  = VK_TRUE;                     // VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE
-    VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL; // VK_DYNAMIC_STATE_DEPTH_COMPARE_OP
+    VkBool32 depthTestEnable   = VK_TRUE;                        // VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE
+    VkBool32 depthWriteEnable  = VK_TRUE;                        // VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE
+    VkCompareOp depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL; // VK_DYNAMIC_STATE_DEPTH_COMPARE_OP
 
     VkBool32 depthBoundsTestEnable = VK_FALSE; // VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE
     float minDepthBounds           = 0.0f;     // VK_DYNAMIC_STATE_DEPTH_BOUNDS
