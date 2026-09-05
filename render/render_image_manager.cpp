@@ -54,7 +54,7 @@ VKR_image_ptr Render_image_manager::get_one_normal_image() {
 VKR_image_ptr Render_image_manager::get_one_color_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{
-        .format = VK_FORMAT_B8G8R8A8_SRGB,
+        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
         .width  = extent.width / 2,
         .height = extent.height / 2,
         .depth  = 1,
@@ -151,7 +151,7 @@ VKR_image_ptr Render_image_manager::get_one_shadow_image() {
 VKR_image_ptr Render_image_manager::get_one_compute_write_image() {
     Image_and_view_parameters parameters{};
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
-    parameters.format       = VK_FORMAT_R8G8B8A8_UNORM;
+    parameters.format       = VK_FORMAT_R16G16B16A16_SFLOAT;
     parameters.width        = extent.width / 2;
     parameters.height       = extent.height / 2;
     parameters.depth        = 1;

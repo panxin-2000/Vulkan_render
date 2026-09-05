@@ -10,7 +10,7 @@ layout (set = 2, binding = 3) uniform sampler2D samplerBaseColor;
 
 layout (location = 0) in vec2 inUV;
 
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 
 layout (set = 2, std140, binding = 4) readonly buffer light_buffer {
@@ -59,6 +59,6 @@ void main()
     vec3 specular = pow(max(dot(N, H), 0.0), 32.0) * vec3(0.75); // 计算 N 和 H 的夹角
 
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
-    //    outFragColor_B8G8R8A8_SRGB = vec4(normal.rgb, 1.0);
+    outFragColor_R16G16B16A16_SFLOAT = vec4((ambient + diffuse) * Base_color.rgb + specular, 1.0);
+    //    outFragColor_R16G16B16A16_SFLOAT = vec4(normal.rgb, 1.0);
 }

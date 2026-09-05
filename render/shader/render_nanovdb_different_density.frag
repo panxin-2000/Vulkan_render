@@ -5,7 +5,7 @@
 
 
 
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 layout (set = 2, binding = 0) uniform model_4x4
 {
@@ -131,10 +131,10 @@ void main() {
     //    pnanovdb_uint32_t grid_count = pnanovdb_grid_get_grid_count(VdbSampler.GridBuffer, VdbSampler.Grid);
     //    if (grid_count > pnanovdb_uint32_t(1)) {
     //        vec3 volume_color = vec3(1.0, 1.0, 1.0);
-    //        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1);
+    //        outFragColor_R16G16B16A16_SFLOAT = vec4(volume_color, 1);
     //    }
     //    else {
-    //        outFragColor_B8G8R8A8_SRGB = vec4(0.5, 0, 0, 0.5);
+    //        outFragColor_R16G16B16A16_SFLOAT = vec4(0.5, 0, 0, 0.5);
     //        // 不相交的时候就忽略当前像素的颜色
     //    }
     // HDDA 必须在索引空间（Index Space）运行
@@ -154,10 +154,10 @@ void main() {
                                                 direction_index,
                                                 t_max - t_min,
                                                 light_direction, T, 0.1);  // AABB 包围盒的对角线长度 ，单步的距离
-        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
+        outFragColor_R16G16B16A16_SFLOAT = vec4(volume_color, 1 - T);
         //
     } else {
-        outFragColor_B8G8R8A8_SRGB = vec4(0.5, 0, 0, 0.5);
+        outFragColor_R16G16B16A16_SFLOAT = vec4(0.5, 0, 0, 0.5);
         // 不相交的时候就忽略当前像素的颜色
     }
 }

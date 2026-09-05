@@ -14,7 +14,7 @@ layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 inLightVec;
 layout (location = 3) in vec3 inViewVec;
 
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 
 void main()
@@ -35,5 +35,5 @@ void main()
     vec3 ambient = vec3(0.1);
     vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
     vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
-    outFragColor_B8G8R8A8_SRGB = vec4((ambient + diffuse) * baseColor.rgb + specular, 1.0);
+    outFragColor_R16G16B16A16_SFLOAT = vec4((ambient + diffuse) * baseColor.rgb + specular, 1.0);
 }

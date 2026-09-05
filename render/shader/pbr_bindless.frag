@@ -22,7 +22,7 @@ layout (set = 3, binding = 0) readonly buffer model_material_parameters {
 #define DISTANCE_FOG 1
 
 #if defined(PASS_COLOR)
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
@@ -257,7 +257,7 @@ void main()
     out_color = mix(fogColor.rgb, out_color.rgb, fogFactor);
     #endif
 
-    outFragColor_B8G8R8A8_SRGB = vec4(out_color, 1.0);
+    outFragColor_R16G16B16A16_SFLOAT = vec4(out_color, 1.0);
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }
 
@@ -280,11 +280,11 @@ void main()
 
 #elif defined(PASS_RANDOM_TRIANGLE_COLOR)
 
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 void main()
 {
-    outFragColor_B8G8R8A8_SRGB = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
+    outFragColor_R16G16B16A16_SFLOAT = vec4(hash(gl_PrimitiveID + 1), hash(gl_PrimitiveID + 2), hash(gl_PrimitiveID + 3), 1.0);
 }
 
 #endif

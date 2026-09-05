@@ -19,7 +19,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
 layout (set = 2, binding = 0) uniform sampler2D input_texture;
-layout(rgba8, set = 2, binding = 1) uniform image2D out_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
 
 
 

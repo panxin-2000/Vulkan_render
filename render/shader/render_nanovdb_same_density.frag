@@ -5,7 +5,7 @@
 
 
 
-layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
+layout (location = 0) out vec4 outFragColor_R16G16B16A16_SFLOAT;
 
 layout (set = 2, binding = 0) uniform model_4x4
 {
@@ -171,7 +171,7 @@ void main() {
                                                     t_max - t_hit);  // AABB 包围盒的对角线长度 ，单步的距离
         float T = exp(-distance_value * sigma_a);
         vec3 volume_color = vec3(1.0, 1.0, 1.0);
-        outFragColor_B8G8R8A8_SRGB = vec4(volume_color, 1 - T);
+        outFragColor_R16G16B16A16_SFLOAT = vec4(volume_color, 1 - T);
     } else {
         discard;
         // 不相交的时候就忽略当前像素的颜色
