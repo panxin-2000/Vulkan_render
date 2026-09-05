@@ -99,6 +99,23 @@ Eigen::Matrix4f perspective(float fovy, float aspect, float zNear, float zFar) {
     return transform;
 }
 
+bool is_linear_depth(Eigen::Matrix4f projection_matrix, float depth) {
+    float depth_temp = 0.5;
+    float z          = projection_matrix(2, 2) * depth_temp +
+              projection_matrix(2, 3);
+    float w = projection_matrix(3, 2) * depth_temp +
+              projection_matrix(3, 3);
+    float depth_temp_0 = z / w;
+
+
+    float P22 = projection_matrix(2, 2);
+    float P23 = projection_matrix(2, 3); // 注意是 (2,3) 不是 (3,2)
+
+    // 标准透视投影的反推公式 (针对标准 OpenGL/Vulkan 稍有符号差异，但形式固定)
+    float linear_z = P23 / (-depth_temp - P22);
+    EXPECT_EQ(linear_z, depth_temp_0);
+}
+
 
 // 正交抄出来了，但是没有继续做测试
 Eigen::Matrix4f Orthographic_Projection(float fovy, float aspect, float zNear, float zFar) {
