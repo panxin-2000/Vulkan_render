@@ -34,6 +34,8 @@ public:
 
     VKR_image_ptr get_one_compute_write_image();
 
+    VKR_image_ptr get_one_post_process_finish_image();
+
     void create();
 
     VKR_image_ptr get_one_depth_image();

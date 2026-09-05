@@ -219,8 +219,8 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
     // parameter.object_descriptor_sets 需要去确认 或者说需要更新
     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
                                VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto width  = compute_texture->image->get_width();
-    auto height = compute_texture->image->get_height();
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
@@ -246,9 +246,36 @@ void VCB::fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
     // parameter.object_descriptor_sets 需要去确认 或者说需要更新
     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
                                VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto width  = compute_texture->image->get_width();
-    auto height = compute_texture->image->get_height();
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
+void VCB::CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths fxaa{
+        "", "", "", "CAS_shader"
+    };
+    auto compute_shader                              = engine.get_shader_manager().find(fxaa);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    std::optional<Texture_parameter> offscreen       = create_compute_image2D_texture(input_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "imgSrc",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "imgDst",
+                         compute_texture);
+    allocate_descriptor_sets(parameter, compute_shader);
+    auto temp = get_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    // parameter.object_descriptor_sets 需要去确认 或者说需要更新
+    bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_8(height) / 8, 1);
 }
 
 void VCB::dof_composite(Engine &engine,

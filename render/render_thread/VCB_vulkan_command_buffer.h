@@ -91,6 +91,8 @@ public:
 
     void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
+    void CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 

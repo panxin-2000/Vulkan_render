@@ -67,18 +67,18 @@ void main() {
 
     // 电影感/戏剧感（Cinematic）：Intensity = 0.4, Smoothness = 0.2
     // 暗角范围大，但极其温柔，视线自然聚焦在屏幕中央
-    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, camera_vignette_intensity, camera_vignette_smoothness);
-    // 模拟胶片
-    {
-        float noise = get_noise_v2(uvec2(inUV * texSize), render_timeline);
-        float grainShift = noise - 0.5; // 重映射到 [-0.5, 0.5]
-
-        float luma = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
-        float lumaMask = 4.0 * luma * (1.0 - luma);
-        lumaMask = clamp(lumaMask, 0.0, 1.0);
-        float offset = film_grain_intensity * grainShift * lumaMask;
-        finalColor = finalColor * (1.0 + offset);
-    }
+    //    vec3 finalColor = apply_vignette(fxaa_result.rgb, inUV, camera_vignette_intensity, camera_vignette_smoothness);
+    //    // 模拟胶片
+    //    {
+    //        float noise = get_noise_v2(uvec2(inUV * texSize), render_timeline);
+    //        float grainShift = noise - 0.5; // 重映射到 [-0.5, 0.5]
+    //
+    //        float luma = dot(finalColor, vec3(0.2126, 0.7152, 0.0722));
+    //        float lumaMask = 4.0 * luma * (1.0 - luma);
+    //        lumaMask = clamp(lumaMask, 0.0, 1.0);
+    //        float offset = film_grain_intensity * grainShift * lumaMask;
+    //        finalColor = finalColor * (1.0 + offset);
+    //    }
 
     // 场景原始渲染 -> 不透明度雾效 -> TAA -> 景深 -> 运动模糊 -> Bloom -> 镜头色差 -> 色调映射与色彩校正 -> Unsharp Mask -> 镜头暗角 -> 胶片颗粒 -> 最终输出
     // 场景原始渲染 -> 不透明度雾效 -> 景深  -> Bloom -> 镜头色差 -> 色调映射与色彩校正 -> 画面放大一倍 -> FXAA ->  Unsharp Mask -> 镜头暗角 -> 胶片颗粒 -> 最终输出
@@ -102,5 +102,5 @@ void main() {
 
     // 把放大放置在 色调映射（Tone Mapping）之后、FXAA 之前
 
-    imageStore(out_texture, pixelCoord, vec4(finalColor, fxaa_result.a));
+    imageStore(out_texture, pixelCoord, vec4(fxaa_result));
 }

@@ -168,6 +168,27 @@ VKR_image_ptr Render_image_manager::get_one_compute_write_image() {
     return find(parameters);
 }
 
+VKR_image_ptr Render_image_manager::get_one_post_process_finish_image() {
+    Image_and_view_parameters parameters{};
+    const VkExtent2D extent = VK_backend::instance().get_current_extent();
+    parameters.format       = VK_FORMAT_R16G16B16A16_SFLOAT;
+    parameters.width        = extent.width;
+    parameters.height       = extent.height;
+    parameters.depth        = 1;
+    parameters.usage        = static_cast<VkImageUsageFlagBits>(
+        VK_IMAGE_USAGE_STORAGE_BIT |
+        VK_IMAGE_USAGE_SAMPLED_BIT |
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    parameters.aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels   = 1;
+    parameters.arrayLayers = 1;
+    parameters.flags       = 0;
+    return find(parameters);
+}
+
+
 VKR_image_ptr Render_image_manager::get_one_depth_SSAO_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{};
