@@ -22,18 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-layout(set=0,binding=0) uniform const_buffer
-{
-    uvec4 const0;
-    uvec4 const1;
-};
+layout(set = 0, binding = 0, rgba16f) uniform image2D imgSrc;
 
-layout(set=0,binding=1,rgba16) uniform image2D imgSrc;
-
-layout(set=0,binding=2,rgba16) uniform image2D imgDst;
+layout(set = 0, binding = 1, rgba16f) uniform image2D imgDst;
 
 #define A_GPU 1
 #define A_GLSL 1
+//#define CAS_SAMPLE_FP16 1
 
 #if CAS_SAMPLE_FP16
 
@@ -48,33 +43,44 @@ layout(set=0,binding=2,rgba16) uniform image2D imgDst;
 
 AH3 CasLoadH(ASW2 p)
 {
-    return AH3(imageLoad(imgSrc,ASU2(p)).rgb);
+    return AH3(imageLoad(imgSrc, ASU2(p)).rgb);
 }
 
 // Lets you transform input from the load into a linear color space between 0 and 1. See ffx_cas.h
 // In this case, our input is already linear and between 0 and 1
-void CasInputH(inout AH2 r, inout AH2 g, inout AH2 b) {}
+void CasInputH(inout AH2 r, inout AH2 g, inout AH2 b) { }
 
 #else
 
 AF3 CasLoad(ASU2 p)
 {
-    return imageLoad(imgSrc,p).rgb;
+    return imageLoad(imgSrc, p).rgb;
 }
 
 // Lets you transform input from the load into a linear color space between 0 and 1. See ffx_cas.h
 // In this case, our input is already linear and between 0 and 1
-void CasInput(inout AF1 r, inout AF1 g, inout AF1 b) {}
+void CasInput(inout AF1 r, inout AF1 g, inout AF1 b) { }
 
 #endif
 
 #include "ffx_cas.h"
 
-layout(local_size_x=64) in;
+layout(local_size_x = 64) in; // 不清楚为什么这里要写 64
 void main()
 {
-    // Do remapping of local xy in workgroup for a more PS-like swizzle pattern.
-    AU2 gxy = ARmp8x8(gl_LocalInvocationID.x)+AU2(gl_WorkGroupID.x<<4u,gl_WorkGroupID.y<<4u);
+
+    uvec4 const0;
+    uvec4 const1;
+    ivec2 imgSrc_Size = imageSize(imgSrc);
+    ivec2 imgDst_Size = imageSize(imgDst);
+
+
+    CasSetup(const0, const1,
+            0.0f,             // Sharpness tuning knob (0.0 to 1.0).
+            imgSrc_Size.x, imgSrc_Size.y,  // Example input size.
+            imgDst_Size.x, imgDst_Size.y);
+    // Do remapping of localxy in workgroup for a more PS-like swizzle pattern.
+    AU2 gxy = ARmp8x8(gl_LocalInvocationID.x) + AU2(gl_WorkGroupID.x << 4u, gl_WorkGroupID.y << 4u);
 
     bool sharpenOnly;
     #if CAS_SAMPLE_SHARPEN_ONLY
@@ -86,20 +92,21 @@ void main()
     #if CAS_SAMPLE_FP16
 
     // Filter.
-    AH4 c0,c1;
+    AH4 c0, c1;
     AH2 cR, cG, cB;
 
     CasFilterH(cR, cG, cB, gxy, const0, const1, sharpenOnly);
     CasDepack(c0, c1, cR, cG, cB);
     imageStore(imgDst, ASU2(gxy), AF4(c0));
-    imageStore(imgDst, ASU2(gxy)+ASU2(8,0), AF4(c1));
-    gxy.y+=8u;
+    imageStore(imgDst, ASU2(gxy) + ASU2(8, 0), AF4(c1));
+    gxy.y += 8u;
 
     CasFilterH(cR, cG, cB, gxy, const0, const1, sharpenOnly);
     CasDepack(c0, c1, cR, cG, cB);
     imageStore(imgDst, ASU2(gxy), AF4(c0));
-    imageStore(imgDst, ASU2(gxy)+ASU2(8,0), AF4(c1));
+    imageStore(imgDst, ASU2(gxy) + ASU2(8, 0), AF4(c1));
 
+    // 1 个线程，计算 2 个像素 
     #else
 
     // Filter.
