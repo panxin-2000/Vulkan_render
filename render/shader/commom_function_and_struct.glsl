@@ -1167,7 +1167,7 @@ float get_noise_v2(uvec2 p, uint time_seed) {
 float linearize_depth_vulkan_universal(float depth, mat4 Projection) {
     // 直接提取矩阵中掌管 NDC 到 ViewSpace 深度缩放与偏移的两大核心系数
     float P22 = Projection[2][2];
-    float P32 = Projection[3][2];
+    float P32 = Projection[2][3];
     // 不管是常规 Z 还是 Reversed-Z，甚至包括“无限远景 Reversed-Z”，
     // 它们在代数化简后，在 GPU 硬件层面全都能完美收敛到这个极简的分式中！
     return P32 / (depth - P22);
