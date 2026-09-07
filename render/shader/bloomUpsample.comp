@@ -1,0 +1,82 @@
+#version 450
+// 假设你使用的是标准的 16x16 线程组，可根据实际运行效率调整
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// --- 对应原本的材质 parameters 声明 ---
+layout(binding = 0) uniform sampler2D materialParams_source;
+
+// Filament 的 resolution 通常结构为：
+// x: width, y: height, z: 1.0/width, w: 1.0/height (即 texelSize)
+layout(std140, binding = 1) uniform MaterialParams {
+    highp vec4 resolution;
+} materialParams;
+
+// 目标输出图像
+layout(rgba16f, binding = 2) writeonly uniform image2D out_texture;
+
+// 模拟原引擎的质量级别控制，你可以通过宏定义或直接写死来选择分支
+#define FILAMENT_QUALITY_HIGH 2
+#define FILAMENT_QUALITY 2 // 设为 HIGH 级别
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    // 获取目标图像尺寸（与 materialParams.resolution.xy 对应）
+    ivec2 texSize = imageSize(out_texture);
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    // 【核心替换】将原本的 variable_vertex.xy 替换为当前像素中心的 UV 坐标
+    highp vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+
+    vec3 finalColor = vec3(0.0);
+
+    #if FILAMENT_QUALITY < FILAMENT_QUALITY_HIGH
+    // ----------------------------------------------------
+    // 低/中画质分支：双线性 4 采样双向线性插值滤波
+    // ----------------------------------------------------
+    highp vec4 d = vec4(materialParams.resolution.zw, -materialParams.resolution.zw) * 0.5;
+
+    vec3 c;
+    c  = textureLod(materialParams_source, uv + d.zw, 0.0).rgb;
+    c += textureLod(materialParams_source, uv + d.xw, 0.0).rgb;
+    c += textureLod(materialParams_source, uv + d.xy, 0.0).rgb;
+    c += textureLod(materialParams_source, uv + d.zy, 0.0).rgb;
+
+    finalColor = c * 0.25;
+
+    #else
+    // ----------------------------------------------------
+    // 高画质分支：Jimenez 2014 经典 9 采样帐篷滤波（Tent Filter）
+    // ----------------------------------------------------
+    const float radius = 1.0;
+    highp vec4 d = vec4(materialParams.resolution.zw, -materialParams.resolution.zw) * radius;
+
+    vec3 c0, c1;
+    // 4 个对角线采样
+    c0  = textureLod(materialParams_source, uv + d.zw, 0.0).rgb;
+    c0 += textureLod(materialParams_source, uv + d.xw, 0.0).rgb;
+    c0 += textureLod(materialParams_source, uv + d.xy, 0.0).rgb;
+    c0 += textureLod(materialParams_source, uv + d.zy, 0.0).rgb;
+    // 中心点采样（权重为 4）
+    c0 += 4.0 * textureLod(materialParams_source, uv, 0.0).rgb;
+
+    // 4 个十字形方向采样
+    c1  = textureLod(materialParams_source, uv + vec2(d.z,  0.0), 0.0).rgb;
+    c1 += textureLod(materialParams_source, uv + vec2(0.0,  d.w), 0.0).rgb;
+    c1 += textureLod(materialParams_source, uv + vec2(d.x,  0.0), 0.0).rgb;
+    c1 += textureLod(materialParams_source, uv + vec2( 0.0, d.y), 0.0).rgb;
+
+    // 最终加权平均 (c0 的总权重是 4+4=8，c1 的总权重是 4*2=8，总计 16)
+    finalColor = (c0 + 2.0 * c1) * (1.0 / 16.0);
+    #endif
+
+    // 将计算出的上采样（Upsample）颜色写入目标纹理
+    imageStore(out_texture, ivec2(x, y), vec4(finalColor, 1.0));
+}

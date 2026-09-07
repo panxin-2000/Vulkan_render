@@ -1,0 +1,97 @@
+// 每次 后面的面积都是原本面积的 二分之一
+
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
+
+
+
+highp float max3(vec3 v) {
+    return max(v.x, max(v.y, v.z));
+}
+
+
+//觉得画面辉光（Bloom）连成死白一片，缺乏细节：尝试增大该值（例如从 0.1 调到 0.3）
+//觉得画面太闷，高光不够亮、没有冲击力：尝试减小该值（例如从 0.1 调到 0.02）
+void threshold(inout vec3 c, float invHighlight) {
+    // 过滤掉所有亮度低于 1.0 的部分
+    c = max(vec3(0.0), c - 1.0);
+
+    // 压制所有高于 1.0 的高亮部分
+    highp float f = max3(c);
+    c *= 1.0 / (1.0 + f * invHighlight);
+}
+
+
+layout (push_constant) uniform PushConstant {
+    float threshold;
+    float fireflies;
+    float invHighlight;
+    float lod;
+} materialParams_source;
+
+
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    ivec2 texSize = imageSize(out_texture);
+
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+
+    // 【关键修改】将线程 ID 转换为当前像素中心点对应的全屏归一化 UV 坐标
+
+    highp vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    highp vec2 size = vec2(1.0) / vec2(textureSize(input_texture, 0));
+
+
+    float o = 1.5 + 0.261629;
+    float wa = 7.46602 / 32.0;
+    float wb = 1.0 - wa * 2.0;
+    float wab = wa * wb;
+    float waa = wa * wa;
+    float wbb = wb * wb;
+
+    size *= o;
+
+    vec3 c = textureLod(input_texture, uv + vec2(0.0), 0.0).rgb;
+    vec3 l = textureLod(input_texture, uv + vec2(-size.x, 0.0), 0.0).rgb;
+    vec3 r = textureLod(input_texture, uv + vec2(size.x, 0.0), 0.0).rgb;
+    vec3 b = textureLod(input_texture, uv + vec2(0.0, -size.y), 0.0).rgb;
+    vec3 t = textureLod(input_texture, uv + vec2(0.0, size.y), 0.0).rgb;
+    vec3 lb = textureLod(input_texture, uv + vec2(-size.x, -size.y), 0.0).rgb;
+    vec3 rb = textureLod(input_texture, uv + vec2(size.x, -size.y), 0.0).rgb;
+    vec3 lt = textureLod(input_texture, uv + vec2(-size.x, size.y), 0.0).rgb;
+    vec3 rt = textureLod(input_texture, uv + vec2(size.x, size.y), 0.0).rgb;
+
+
+    vec3 color = (c * wbb +
+    (l * wab +
+    (r * wab +
+    (b * wab +
+    (t * wab +
+    (lb * waa +
+    (rb * waa +
+    (lt * waa +
+    (rt * waa)))))))));
+
+
+    ivec2 icoord = ivec2(gl_GlobalInvocationID.xy);
+
+    //Mipmap 层级 和  Layer( 纹理数组（Texture Array）、3D 纹理 或 天空盒（CubeMap） ) 是不一致的
+    imageStore(out_texture, icoord, vec4(c, 0));
+}
+

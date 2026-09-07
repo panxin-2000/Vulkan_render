@@ -1,0 +1,110 @@
+// 每次 后面的面积都是原本面积的 二分之一
+
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
+
+
+
+highp float max3(vec3 v) {
+    return max(v.x, max(v.y, v.z));
+}
+
+
+//觉得画面辉光（Bloom）连成死白一片，缺乏细节：尝试增大该值（例如从 0.1 调到 0.3）
+//觉得画面太闷，高光不够亮、没有冲击力：尝试减小该值（例如从 0.1 调到 0.02）
+void threshold(inout vec3 c, float invHighlight) {
+    // 过滤掉所有亮度低于 1.0 的部分
+    c = max(vec3(0.0), c - 1.0);
+
+    // 压制所有高于 1.0 的高亮部分
+    highp float f = max3(c);
+    c *= 1.0 / (1.0 + f * invHighlight);
+}
+
+
+layout (push_constant) uniform PushConstant {
+    float threshold;
+    float fireflies;
+    float invHighlight;
+    float lod;
+} materialParams_source;
+
+
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    ivec2 texSize = imageSize(out_texture);
+
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+
+    // 【关键修改】将线程 ID 转换为当前像素中心点对应的全屏归一化 UV 坐标
+    highp vec2 screenUV = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+
+    // 获取输入纹理的 LOD 层级大小与纹素大小
+    highp int currentLOD = int(materialParams_source.lod);
+    highp vec2 size = vec2(textureSize(input_texture, currentLOD));
+    highp vec2 texelSize = vec2(1.0) / size;
+
+    // Castaño, 2013, "Shadow Mapping Summary Part 1"
+    // 3x3 gaussian filter with 4 linear samples
+
+    // 【关键修改】使用计算出的 screenUV 替换原来的 variable_vertex.xy
+
+    // Castaño, 2013, "Shadow Mapping Summary Part 1"
+    // 3x3 gaussian filter with 4 linear samples
+    vec2 offset = vec2(0.5);
+    highp vec2 uv = (screenUV * size) + offset;
+    highp vec2 base = (floor(uv) - offset) * texelSize;
+    highp vec2 st = fract(uv);
+    vec2 uw = vec2(3.0 - 2.0 * st.x, 1.0 + 2.0 * st.x);
+    vec2 vw = vec2(3.0 - 2.0 * st.y, 1.0 + 2.0 * st.y);
+    highp vec2 u = vec2((2.0 - st.x) / uw.x - 1.0, st.x / uw.y + 1.0) * texelSize.x;
+    highp vec2 v = vec2((2.0 - st.y) / vw.x - 1.0, st.y / vw.y + 1.0) * texelSize.y;
+    vec3 c0 = textureLod(input_texture, base + vec2(u.x, v.x), materialParams_source.lod).rgb;
+    vec3 c1 = textureLod(input_texture, base + vec2(u.y, v.x), materialParams_source.lod).rgb;
+    vec3 c2 = textureLod(input_texture, base + vec2(u.x, v.y), materialParams_source.lod).rgb;
+    vec3 c3 = textureLod(input_texture, base + vec2(u.y, v.y), materialParams_source.lod).rgb;
+
+    float w0 = uw.x * vw.x * (1.0 / 16.0);
+    float w1 = uw.y * vw.x * (1.0 / 16.0);
+    float w2 = uw.x * vw.y * (1.0 / 16.0);
+    float w3 = uw.y * vw.y * (1.0 / 16.0);
+
+    if (materialParams_source.fireflies > 0.0) {
+        w0 /= (1.0 + max3(c0));
+        w1 /= (1.0 + max3(c1));
+        w2 /= (1.0 + max3(c2));
+        w3 /= (1.0 + max3(c3));
+        float w = 1.0 / (w0 + w1 + w2 + w3);
+        w0 *= w;
+        w1 *= w;
+        w2 *= w;
+        w3 *= w;
+    }
+
+    vec3 c = c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3;
+
+    if (materialParams_source.threshold > 0.0) {
+        threshold(c, materialParams_source.invHighlight);
+    }
+
+    ivec2 icoord = ivec2(gl_GlobalInvocationID.xy);
+
+    //Mipmap 层级 和  Layer( 纹理数组（Texture Array）、3D 纹理 或 天空盒（CubeMap） ) 是不一致的
+    imageStore(out_texture, icoord, vec4(c, 0));
+}

@@ -1,0 +1,38 @@
+//    void postProcess(inout PostProcessInputs postProcess) {
+//        ivec2 icoord = ivec2(gl_FragCoord.xy);
+//        postProcess.depth = texelFetch(materialParams_depth,
+//                2 * icoord + ivec2(icoord.y & 1, icoord.x & 1), 0).r;
+//    }
+
+// 每次 后面的面积都是原本面积的 二分之一
+
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#include "global_shader_common.glsl"
+
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+    ivec2 texSize = imageSize(out_texture);
+
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    //        ivec2 icoord = ivec2(gl_FragCoord.xy);
+    //        postProcess.depth = texelFetch(materialParams_depth,
+    //                2 * icoord + ivec2(icoord.y & 1, icoord.x & 1), 0).r;
+
+    ivec2 icoord = ivec2(gl_GlobalInvocationID.xy);
+    float depth = texelFetch(input_texture, 2 * icoord + ivec2(icoord.y & 1, icoord.x & 1), 0).r;
+    imageStore(out_texture, icoord, vec4(depth, 0, 0, 0));
+}
