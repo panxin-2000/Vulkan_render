@@ -1,0 +1,75 @@
+#version 450
+// 建议使用 16x16 线程组，可根据你的硬件情况调整优化
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// --- 对应原本的材质 parameters 声明 ---
+layout(binding = 0) uniform sampler2D materialParams_source;
+
+// 目标输出图像（降采样后的低分辨率纹理）
+layout(rgba16f, binding = 1) writeonly uniform image2D out_texture;
+
+// --- 辅助函数：计算 4 个采样点的平均值 ---
+vec3 box4x4(vec3 s0, vec3 s1, vec3 s2, vec3 s3) {
+    return (s0 + s1 + s2 + s3) * 0.25;
+}
+
+void main() {
+    uint x = gl_GlobalInvocationID.x;
+    uint y = gl_GlobalInvocationID.y;
+
+    // 获取目标图像（输出端）的分辨率
+    ivec2 texSize = imageSize(out_texture);
+    uint width = uint(texSize.x);
+    uint height = uint(texSize.y);
+
+    // 越界检查
+    if (x >= width || y >= height) {
+        return;
+    }
+
+    // 【核心替换】将原本的 variable_vertex.xy 替换为当前像素中心的归一化 UV 坐标
+    highp vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+
+    // --- 13 次双线性硬件采样逻辑 ---
+    // 依据 Jimenez 2014 的设计，所有偏移都是在输入纹理空间（Source Space）内以像素为单位进行的。
+    // GLSL 内置的 textureLodOffset 完美契合这一特性，其偏移量直接采用整数 ivec2 即可。
+
+    vec3 c = textureLod(materialParams_source, uv, 0.0).rgb;
+
+    // 内圈 4 个对角像素偏移采样 (1个像素偏移)
+    vec3 lt  = textureLodOffset(materialParams_source, uv, 0.0, ivec2(-1, -1)).rgb;
+    vec3 rt  = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 1, -1)).rgb;
+    vec3 rb  = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 1,  1)).rgb;
+    vec3 lb  = textureLodOffset(materialParams_source, uv, 0.0, ivec2(-1,  1)).rgb;
+
+    // 外圈 4 个对角像素偏移采样 (2个像素偏移)
+    vec3 lt2 = textureLodOffset(materialParams_source, uv, 0.0, ivec2(-2, -2)).rgb;
+    vec3 rt2 = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 2, -2)).rgb;
+    vec3 rb2 = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 2,  2)).rgb;
+    vec3 lb2 = textureLodOffset(materialParams_source, uv, 0.0, ivec2(-2,  2)).rgb;
+
+    // 十字形 4 个方向边缘采样 (2个像素偏移)
+    vec3 l   = textureLodOffset(materialParams_source, uv, 0.0, ivec2(-2,  0)).rgb;
+    vec3 t   = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 0, -2)).rgb;
+    vec3 r   = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 2,  0)).rgb;
+    vec3 b   = textureLodOffset(materialParams_source, uv, 0.0, ivec2( 0,  2)).rgb;
+
+    // --- 融合 5 个 4x4 的盒状滤波器 ---
+    vec3 c0, c1;
+
+    // 中心区域盒状滤波
+    c0  = box4x4(lt, rt, rb, lb);
+
+    // 四角外围扩展的四个盒状滤波
+    c1  = box4x4(c, l, t, lt2);
+    c1 += box4x4(c, r, t, rt2);
+    c1 += box4x4(c, r, b, rb2);
+    c1 += box4x4(c, l, b, lb2);
+
+    // 计算五组滤波器的最终加权平均值值
+    // c0 权重为 0.5，c1 里的 4 组权重各为 0.125（合计 0.5），两者之和为 1.0 归一化。
+    vec3 finalColor = c0 * 0.5 + c1 * 0.125;
+
+    // 将计算好的 Jimenez 降采样颜色写入目标纹理
+    imageStore(out_texture, ivec2(x, y), vec4(finalColor, 1.0));
+}
