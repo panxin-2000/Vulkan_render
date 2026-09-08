@@ -1,0 +1,29 @@
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#include "commom_function_and_struct.glsl"
+
+
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
+
+
+
+void main() {
+    ivec2 texSize = imageSize(out_texture);
+    if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
+        return;
+    }
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
+
+
+    vec4 color = texture(input_texture, inUV);
+    vec4 final_color = tonemap(color, 1.0);
+
+
+    imageStore(out_texture, pixel_coords, final_color);
+}
