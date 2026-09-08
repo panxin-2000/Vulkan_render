@@ -278,6 +278,111 @@ void VCB::CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_8(height) / 8, 1);
 }
 
+
+#define A_CPU
+#include "./../shader/ffx_a.h"
+#include "./../shader/ffx_fsr1.h"
+
+struct FSRConstants {
+    Eigen::Vector4f Const0;
+    Eigen::Vector4f Const1;
+    Eigen::Vector4f Const2;
+    Eigen::Vector4f Const3;
+};
+
+
+void VCB::FSR1_EASU(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths easu{
+        "", "", "", "fsr_1_pass"
+    };
+    easu.add_define_macro("SAMPLE_EASU", 1);
+    easu.add_define_macro("SAMPLE_RCAS", 0);
+    auto compute_shader = engine.get_shader_manager().find(easu);
+
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    // 下面一行不对, 还需要
+    std::optional<Texture_parameter> offscreen = create_2d_texture(input_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "InputTexture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "OutputTexture",
+                         compute_texture);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "InputSampler",
+                         offscreen);
+    allocate_descriptor_sets(parameter, compute_shader);
+    auto temp = get_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    // parameter.object_descriptor_sets 需要去确认 或者说需要更新
+    bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
+
+
+    FSRConstants consts = {};
+    FsrEasuCon(reinterpret_cast<AU1 *>(&consts.Const0),
+               reinterpret_cast<AU1 *>(&consts.Const1),
+               reinterpret_cast<AU1 *>(&consts.Const2),
+               reinterpret_cast<AU1 *>(&consts.Const3),
+               static_cast<AF1>(input_image->get_width()),
+               static_cast<AF1>(input_image->get_height()),
+               static_cast<AF1>(input_image->get_width()),
+               static_cast<AF1>(input_image->get_height()),
+               static_cast<AF1>(out_image->get_width()),
+               static_cast<AF1>(out_image->get_height()));
+
+    PushConstants(compute_shader->pipeline_layout,
+                  VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(FSRConstants), &consts);
+
+
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
+void VCB::FSR1_RCAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths rcas{
+        "", "", "", "fsr_1_pass"
+    };
+    rcas.add_define_macro("SAMPLE_EASU", 0);
+    rcas.add_define_macro("SAMPLE_RCAS", 1);
+    auto compute_shader                              = engine.get_shader_manager().find(rcas);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    std::optional<Texture_parameter> offscreen       = create_2d_texture(input_image);
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "InputTexture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "OutputTexture",
+                         compute_texture);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "InputSampler",
+                         offscreen);
+    allocate_descriptor_sets(parameter, compute_shader);
+    auto temp = get_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    // parameter.object_descriptor_sets 需要去确认 或者说需要更新
+    bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
+
+    FSRConstants consts   = {};
+    float rcasAttenuation = 0.25f;
+    FsrRcasCon(reinterpret_cast<AU1 *>(&consts.Const0), rcasAttenuation);
+
+    PushConstants(compute_shader->pipeline_layout,
+                  VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(FSRConstants), &consts);
+
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
 void VCB::dof_composite(Engine &engine,
                         VKR_image_ptr dof_image,
                         VKR_image_ptr color_image,

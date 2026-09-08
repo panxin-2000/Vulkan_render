@@ -10,7 +10,7 @@
 void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &update_descriptor_sets,
                             const std::vector<DescriptorSet_ptr> &descriptor_sets) {
     const auto &vk_backend = VK_backend::instance();
-    char stack_memory_pool[1024];
+    char stack_memory_pool[1024 * 2];
     std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
     std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
@@ -42,6 +42,7 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
                 allocate(sizeof(VkDescriptorImageInfo)));
             *image_info                             = binding_update.texture_info.second.get_descriptor_image_info();
             descriptor_write_bindings[i].pImageInfo = image_info;
+            //
         } else if (binding_update.TexelBufferView.first) {
             descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
         }

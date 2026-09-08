@@ -26,7 +26,8 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr depth_shadow_image,
                            VKR_image_ptr entity_image,
                            VKR_image_ptr fxaa_result,
-                           VKR_image_ptr CAS_result,
+                           VKR_image_ptr EASU_result,
+                           VKR_image_ptr RCAS_result,
                            VKR_image_ptr compute_dof_blur_image
 ) {
     std::array<VkBufferMemoryBarrier2, 1> write_buffer{
@@ -146,7 +147,24 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_AO_image});
+        // 之后还需要执行什么操作呢?  进行采样
+    } {
+        //     // 这里还是稍微有点问题,其实是可以不要深度的
+        // vcb.begin_rendering_attachment(SSAO_image,
+        //                                depth_image,
+        //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
+
+        // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
+        vcb.compute_write_init_barrier(SSAO_image);
+        vcb.SSAO(engine, depth_AO_image, SSAO_image);
+        vcb.compute_write_finish_same_read(SSAO_image);
+
+        vcb.compute_write_init_barrier(blur_SSAO_image);
+        // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
+        vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
+
+
     // CSM  当然了,这里还是有一个问题, 最好能不需要渲染全部的,
     {
         vcb.begin_rendering_depth_attachment(depth_shadow_image,
@@ -192,20 +210,6 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.current_write_next_read_depth({depth_shadow_image});
-    } {
-        //     // 这里还是稍微有点问题,其实是可以不要深度的
-        // vcb.begin_rendering_attachment(SSAO_image,
-        //                                depth_image,
-        //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
-
-        // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
-        vcb.compute_write_init_barrier(SSAO_image);
-        vcb.SSAO(engine, depth_AO_image, SSAO_image);
-        vcb.compute_write_finish_same_read(SSAO_image);
-
-        vcb.compute_write_init_barrier(blur_SSAO_image);
-        // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
-        vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
     // {
     // vcb.begin_rendering_attachment(blur_SSAO_image,
@@ -301,14 +305,23 @@ void render_different_pass(VCB &vcb,
         // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
 
 
+        vcb.compute_write_init_barrier(compute_dof_blur_image); // 忘记这里是什么了
+
         vcb.compute_write_init_barrier(fxaa_result);
-        vcb.compute_write_init_barrier(compute_dof_blur_image);
         vcb.fxaa(engine, color_image, fxaa_result);
-        vcb.compute_write_init_barrier(CAS_result);
         vcb.compute_write_finish_same_read(fxaa_result);
-        vcb.CAS(engine, fxaa_result, CAS_result);
-        vcb.compute_write_finish_barrier(CAS_result);
-        vcb.copy_image(CAS_result, engine.get_current_swap_chain_image());
+
+
+        vcb.compute_write_init_barrier(EASU_result);
+        vcb.FSR1_EASU(engine, fxaa_result, EASU_result);
+        vcb.compute_write_finish_same_read(EASU_result);
+
+
+        vcb.compute_write_init_barrier(RCAS_result);
+        vcb.FSR1_RCAS(engine, EASU_result, RCAS_result);
+        vcb.compute_write_finish_barrier(RCAS_result);
+
+        vcb.copy_image(RCAS_result, engine.get_current_swap_chain_image());
     } {
         vcb.begin_rendering_attachment_to_screen(engine.get_current_swap_chain_image(),
                                                  VK_ATTACHMENT_LOAD_OP_LOAD); {
@@ -361,7 +374,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const auto SSAO_image             = engine.get_image_manager().get_one_depth_SSAO_image();
     const auto depth_shadow_image     = engine.get_image_manager().get_one_shadow_image();
     const auto fxaa_result            = engine.get_image_manager().get_one_compute_write_image();
-    const auto CAS_result             = engine.get_image_manager().get_one_post_process_finish_image();
+    const auto RCAS_result            = engine.get_image_manager().get_one_post_process_finish_image();
+    const auto EASU_result            = engine.get_image_manager().get_one_post_process_finish_image();
     const auto compute_dof_blur_image = engine.get_image_manager().get_one_compute_write_image();
     // 之后呢? 怎么绑定呢?
 
@@ -412,7 +426,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     vcb.reset_current_command_buffer(time_line, command_buffer);
     render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
                           blur_SSAO_image, depth_shadow_image, entity_image, fxaa_result,
-                          CAS_result,
+                          EASU_result,
+                          RCAS_result,
                           compute_dof_blur_image);
     vcb.end_command_buffer();
 
