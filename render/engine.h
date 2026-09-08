@@ -178,13 +178,9 @@ public:
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
 
     void update_global_parameter(std::optional<Texture_parameter> offscreen,
-                                 std::optional<Texture_parameter> SSAO,
                                  std::optional<Texture_parameter> depth,
                                  std::optional<Texture_parameter> blur_SSAO,
-                                 std::optional<Texture_parameter> shadow_texture,
-                                 std::optional<Texture_parameter> compute_texture,
-                                 std::optional<Texture_parameter> blur_write_SSAO,
-                                 std::optional<Texture_parameter> dof_blur);
+                                 std::optional<Texture_parameter> shadow_texture);
 
     FrustumPlanes get_frustum_planes() const {
         return global_parameters_.frustum_planes;

@@ -155,13 +155,13 @@ void render_different_pass(VCB &vcb,
         //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
 
         // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
-        vcb.compute_write_init_barrier(SSAO_image);
-        vcb.SSAO(engine, depth_AO_image, SSAO_image);
-        vcb.compute_write_finish_same_read(SSAO_image);
-
         vcb.compute_write_init_barrier(blur_SSAO_image);
-        // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
-        vcb.compute_write_finish_sample_read({blur_SSAO_image});
+        vcb.SSAO(engine, depth_AO_image, blur_SSAO_image);
+        vcb.compute_write_finish_same_read(blur_SSAO_image);
+
+        // vcb.compute_write_init_barrier(blur_SSAO_image);
+        // // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
+        // vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
 
 
@@ -382,23 +382,15 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const auto blur_SSAO_image = engine.get_image_manager().get_one_depth_SSAO_image(); {
         std::unique_lock<std::mutex> lock(mtx);
 
-        auto offscreen       = create_2d_texture(color_image);
-        auto depth           = create_2d_texture(depth_AO_image);
-        auto blur_SSAO       = create_2d_texture(blur_SSAO_image);
-        auto shadow_texture  = create_2d_texture(depth_shadow_image);
-        auto compute_texture = create_compute_image2D_texture(fxaa_result);
-        auto SSAO            = create_compute_image2D_texture(SSAO_image);
-        auto blur_write_SSAO = create_compute_image2D_texture(blur_SSAO_image);
-        auto dof_blur        = create_compute_image2D_texture(compute_dof_blur_image);
+        auto offscreen      = create_2d_texture(color_image);
+        auto depth          = create_2d_texture(depth_AO_image);
+        auto blur_SSAO      = create_2d_texture(blur_SSAO_image);
+        auto shadow_texture = create_2d_texture(depth_shadow_image);
 
         engine.update_global_parameter(offscreen,
-                                       SSAO,
                                        depth,
                                        blur_SSAO,
-                                       shadow_texture,
-                                       compute_texture,
-                                       blur_write_SSAO,
-                                       dof_blur);
+                                       shadow_texture);
         // 这里的好消息是 什么？ 这里可以申请；
         // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
         vk_render_queue::instance().execute_update_lambda();
