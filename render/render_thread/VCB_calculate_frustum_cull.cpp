@@ -252,29 +252,7 @@ void VCB::render_3DGS_render(const entt::entity entity) {
 }
 
 void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
-    VkImageMemoryBarrier2 barrierDrawImage{
-        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
-        .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .image         = dst_image->get_image_handle(),
-        .subresourceRange{
-            .aspectMask     = dst_image->get_aspectMask(),
-            .baseMipLevel   = 0,
-            .levelCount     = 1,
-            .baseArrayLayer = 0,
-            .layerCount     = 1
-        }
-    };
-    VkDependencyInfo drawImageDependencyInfo{
-        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers    = &barrierDrawImage
-    };
-    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+    add_image_barrier(dst_image, blank_stage, transfer_write_dsr);
     VkImageBlit blitRegion{};
     // 源范围：你的中转图大小 (0,0) 到 (Width, Height)
     blitRegion.srcSubresource.aspectMask     = src_image->get_aspectMask();

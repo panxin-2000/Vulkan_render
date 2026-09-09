@@ -149,33 +149,9 @@ void render_different_pass(VCB &vcb,
         vcb.end_rendering();
 
 
-        // vcb.current_write_next_read_depth({depth_AO_image});
-        {
-            VkImageMemoryBarrier2 barrierDrawImage{
-                .sType        = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
-                                VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-                .srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                      // 允许着色器读取
-                .oldLayout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, // 渲染时布局
-                .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,         // 读取时布局
-                .image         = depth_AO_image->get_image_handle(),
-                .subresourceRange{
-                    .aspectMask     = depth_AO_image->get_aspectMask(),
-                    .baseMipLevel   = 0,
-                    .levelCount     = 1,
-                    .baseArrayLayer = 0,
-                    .layerCount     = 1
-                }
-            };
-            VkDependencyInfo drawImageDependencyInfo{
-                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers    = &barrierDrawImage
-            };
-            vkCmdPipelineBarrier2(vcb.get_command_buffer(), &drawImageDependencyInfo);
-        }
+        vcb.add_image_barrier(depth_AO_image,
+                              depth_write_frag,
+                              compute_read_sampler2D);
         // 这里需要什么呢?  // depth_AO_image 中复制到 depth_AO_copy_image ,
         // 之后 进行降采样以及 上采样
         // 不能直接搬运,可以通过一个shader 来执行转换
@@ -261,7 +237,9 @@ void render_different_pass(VCB &vcb,
             }
         }
         vcb.end_rendering();
-        vcb.current_write_next_read_depth({depth_shadow_image});
+        vcb.add_image_barrier(depth_shadow_image,
+                              depth_write_frag,
+                              frag_read_sampler2d);
     }
     // {
     // vcb.begin_rendering_attachment(blur_SSAO_image,

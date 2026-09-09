@@ -114,7 +114,8 @@ public:
 #define  transfer_read_src VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 #define  transfer_write_dsr  VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 #define  fragment_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-#define  FRAGMENT_READ_sampler2D
+#define  depth_write_frag  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+#define  frag_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     /**
      *  blank_stage / compute_write_image2D /
      * @param image
@@ -143,8 +144,6 @@ public:
         const std::vector<VKR_image_ptr> &color,
         const VKR_image_ptr &depth, VkAttachmentLoadOp depth_loadOp);
 
-    void current_write_next_read_depth(
-        const std::vector<VKR_image_ptr> &images);
 
     void current_write_next_read_image(
         const std::vector<VKR_image_ptr> &images);
