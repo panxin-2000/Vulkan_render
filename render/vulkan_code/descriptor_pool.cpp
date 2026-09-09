@@ -19,6 +19,8 @@ VkDescriptorPool init_current_descriptor_pool() {
     static constexpr uint32_t POOL_SIZE_STORAGE_IMAGE          = 2500;
     static constexpr uint32_t POOL_SIZE_COMBINED_IMAGE_SAMPLER = 2500;
     static constexpr uint32_t POOL_SIZE_UNIFORM_BUFFER         = 500;
+    static constexpr uint32_t POOL_SIZE_SAMPLED_IMAGE          = 500;
+    static constexpr uint32_t POOL_SIZE_SAMPLED                = 500;
     static constexpr uint32_t POOL_SIZE_UNIFORM_TEXEL_BUFFER   = 100;
     static constexpr uint32_t POOL_SIZE_INPUT_ATTACHMENT       = 100;
 
@@ -27,6 +29,8 @@ VkDescriptorPool init_current_descriptor_pool() {
         {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, POOL_SIZE_STORAGE_IMAGE},
         {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, POOL_SIZE_COMBINED_IMAGE_SAMPLER},
         {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, POOL_SIZE_UNIFORM_BUFFER},
+        {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, POOL_SIZE_SAMPLED_IMAGE},
+        {VK_DESCRIPTOR_TYPE_SAMPLER, POOL_SIZE_SAMPLED},
         {VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, POOL_SIZE_UNIFORM_TEXEL_BUFFER},
         {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, POOL_SIZE_INPUT_ATTACHMENT}
     };

@@ -358,6 +358,7 @@ void VK_backend::create_device() {
     VkPhysicalDeviceVulkan12Features enabledVk12Features{
         .sType                                        = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext                                        = &enabledVk1Features,
+        .shaderFloat16                                = true,
         .shaderInt8                                   = true,
         .descriptorIndexing                           = true,
         .shaderSampledImageArrayNonUniformIndexing    = true,
@@ -387,6 +388,7 @@ void VK_backend::create_device() {
         .samplerAnisotropy                      = VK_TRUE,
         .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
         .shaderInt64                            = VK_TRUE,
+        .shaderInt16                            = VK_TRUE,
     };
 
 
