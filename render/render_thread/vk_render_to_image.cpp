@@ -180,7 +180,13 @@ void render_different_pass(VCB &vcb,
         // 之后 进行降采样以及 上采样
         // 不能直接搬运,可以通过一个shader 来执行转换
 
-        vcb.compute_write_init_barrier(depth_AO_copy_image);
+        // vcb.compute_write_init_barrier(depth_AO_copy_image);
+        vcb.add_image_barrier(depth_AO_copy_image,
+                              blank_stage,
+                              compute_write_image2D,
+                              0,
+                              depth_AO_copy_image->get_mipLevels());
+
         vcb.only_image_compute(engine, depth_AO_image, depth_AO_copy_image, "copy_from_depth_to_AO");
 
         // depth_down_sample.comp , 需要执行一次这个

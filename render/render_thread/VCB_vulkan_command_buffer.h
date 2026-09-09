@@ -108,6 +108,32 @@ public:
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 
+#define  blank_stage VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_IMAGE_LAYOUT_UNDEFINED
+#define  compute_write_image2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_GENERAL
+#define  compute_read_sampler2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+#define  transfer_read_src VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+#define  transfer_write_dsr  VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+#define  fragment_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+#define  FRAGMENT_READ_sampler2D
+    /**
+     *  blank_stage / compute_write_image2D /
+     * @param image
+     * @param srcStageMask
+     * @param srcAccessMask
+     * @param oldLayout
+     * @param dstStageMask
+     * @param dstAccessMask
+     * @param newLayout
+     */
+    void add_image_barrier(const VKR_image_ptr &image, VkPipelineStageFlags srcStageMask, VkAccessFlags srcAccessMask,
+                           VkImageLayout oldLayout, VkPipelineStageFlags dstStageMask, VkAccessFlags dstAccessMask,
+                           VkImageLayout newLayout,
+                           uint32_t baseMipLevel   = 0,
+                           uint32_t levelCount     = 1,
+                           uint32_t baseArrayLayer = 0,
+                           uint32_t layerCount     = 1
+    );
+
     void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
 
     void end_command_buffer();

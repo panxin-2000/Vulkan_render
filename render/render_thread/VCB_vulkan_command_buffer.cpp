@@ -63,84 +63,16 @@ void VCB::submit_render_queue(Engine &engine) {
 }
 
 void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image) {
-    VkImageMemoryBarrier2 barrierDrawImage{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        // 之前是在 COMPUTE 阶段进行的写入
-        .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-        .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-        // 下一步是要在 TRANSFER (拷贝) 阶段作为数据源进行读取
-        .dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
-        // 布局从 Compute 的 GENERAL 切换到最适合拷贝的 TRANSFER_SRC_OPTIMAL
-        .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        // ⚠️ 填入你自己的专属中转图 Image 句柄
-        .image = compute_write_finish_image->get_image_handle(),
-        .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel   = 0, .levelCount = 1,
-            .baseArrayLayer = 0, .layerCount = 1
-        }
-    };
-    VkDependencyInfo drawImageDependencyInfo{
-        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers    = &barrierDrawImage
-    };
-    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+    add_image_barrier(compute_write_finish_image, compute_write_image2D, transfer_read_src);
 }
 
 
 void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_finish_image) {
-    VkImageMemoryBarrier2 barrierDrawImage{
-        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-        .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-        .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-        .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-        .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
-        .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .image         = compute_write_finish_image->get_image_handle(),
-        .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel   = 0, .levelCount = 1,
-            .baseArrayLayer = 0, .layerCount = 1
-        }
-    };
-    VkDependencyInfo drawImageDependencyInfo{
-        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers    = &barrierDrawImage
-    };
-    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+    add_image_barrier(compute_write_finish_image, compute_write_image2D, compute_read_sampler2D);
 }
 
 void VCB::compute_write_finish_sample_read(const VKR_image_ptr &compute_write_finish_image) {
-    VkImageMemoryBarrier2 barrierDrawImage{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        // 之前是在 COMPUTE 阶段进行的写入
-        .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-        .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-        // 下一步是要在 TRANSFER (拷贝) 阶段作为数据源进行读取
-        .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, // 下一阶段：后处理片元着色器
-        .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,             // 允许着色器读取
-        // 布局从 Compute 的 GENERAL 切换到最适合拷贝的 TRANSFER_SRC_OPTIMAL
-        .oldLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        // ⚠️ 填入你自己的专属中转图 Image 句柄
-        .image = compute_write_finish_image->get_image_handle(),
-        .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel   = 0, .levelCount = 1,
-            .baseArrayLayer = 0, .layerCount = 1
-        }
-    };
-    VkDependencyInfo drawImageDependencyInfo{
-        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers    = &barrierDrawImage
-    };
-    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+    add_image_barrier(compute_write_finish_image, compute_write_image2D, fragment_read_sampler2d);
 }
 
 void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
@@ -435,30 +367,10 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
     for (uint32_t i = 1; i < parameters.mipLevels; i++) {
         // 初始化将要写入的每一层
         {
-            VkImageMemoryBarrier2 barrierDrawImage{
-                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
-                .srcAccessMask = VK_ACCESS_2_NONE,
-
-                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-
-                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-
-                .image = image_ptr->get_image_handle(),
-                .subresourceRange{
-                    .aspectMask     = parameters.aspectMask,
-                    .baseMipLevel   = i, .levelCount = 1,
-                    .baseArrayLayer = 0, .layerCount = 1
-                }
-            };
-            VkDependencyInfo drawImageDependencyInfo{
-                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers    = &barrierDrawImage
-            };
-            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+            add_image_barrier(image_ptr,
+                              blank_stage,
+                              compute_write_image2D,
+                              i);
         }
         // 执行每一层的计算
         // {
@@ -489,27 +401,10 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
         // }
         // 执行计算完成之后的转换
         {
-            VkImageMemoryBarrier2 barrierDrawImage{
-                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-                .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
-                .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .image         = image_ptr->get_image_handle(),
-                .subresourceRange{
-                    .aspectMask     = parameters.aspectMask,
-                    .baseMipLevel   = i, .levelCount = 1,
-                    .baseArrayLayer = 0, .layerCount = 1
-                }
-            };
-            VkDependencyInfo drawImageDependencyInfo{
-                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers    = &barrierDrawImage
-            };
-            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+            add_image_barrier(image_ptr,
+                              compute_write_image2D,
+                              compute_read_sampler2D,
+                              i);
         }
     }
 }
@@ -528,30 +423,10 @@ void VCB::up_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::st
     for (uint32_t i = 1; i < parameters.mipLevels; i++) {
         // 初始化将要写入的每一层
         {
-            VkImageMemoryBarrier2 barrierDrawImage{
-                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
-                .srcAccessMask = VK_ACCESS_2_NONE,
-
-                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-
-                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-
-                .image = image_ptr->get_image_handle(),
-                .subresourceRange{
-                    .aspectMask     = parameters.aspectMask,
-                    .baseMipLevel   = i, .levelCount = 1,
-                    .baseArrayLayer = 0, .layerCount = 1
-                }
-            };
-            VkDependencyInfo drawImageDependencyInfo{
-                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers    = &barrierDrawImage
-            };
-            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+            add_image_barrier(image_ptr,
+                              blank_stage,
+                              compute_write_image2D,
+                              i);
         }
         // 执行每一层的计算
         // {
@@ -582,27 +457,10 @@ void VCB::up_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::st
         // }
         // 执行计算完成之后的转换
         {
-            VkImageMemoryBarrier2 barrierDrawImage{
-                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
-                .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
-                .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .image         = image_ptr->get_image_handle(),
-                .subresourceRange{
-                    .aspectMask     = parameters.aspectMask,
-                    .baseMipLevel   = i, .levelCount = 1,
-                    .baseArrayLayer = 0, .layerCount = 1
-                }
-            };
-            VkDependencyInfo drawImageDependencyInfo{
-                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-                .imageMemoryBarrierCount = 1,
-                .pImageMemoryBarriers    = &barrierDrawImage
-            };
-            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+            add_image_barrier(image_ptr,
+                              compute_write_image2D,
+                              compute_read_sampler2D,
+                              i);
         }
     }
 }
@@ -674,22 +532,32 @@ void VCB::dof_composite(Engine &engine,
 }
 
 
-void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image) {
+void VCB::add_image_barrier(const VKR_image_ptr &image,
+                            const VkPipelineStageFlags srcStageMask,
+                            const VkAccessFlags srcAccessMask,
+                            const VkImageLayout oldLayout,
+                            const VkPipelineStageFlags dstStageMask,
+                            const VkAccessFlags dstAccessMask,
+                            const VkImageLayout newLayout,
+                            const uint32_t baseMipLevel,
+                            const uint32_t levelCount,
+                            const uint32_t baseArrayLayer,
+                            const uint32_t layerCount) {
     VkImageMemoryBarrier2 barrierDrawImage{
         .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
-        .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-        .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-        .oldLayout     = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout     = VK_IMAGE_LAYOUT_GENERAL,
-        .image         = compute_write_finish_image->get_image_handle(),
+        .srcStageMask  = srcStageMask,
+        .srcAccessMask = srcAccessMask,
+        .dstStageMask  = dstStageMask,
+        .dstAccessMask = dstAccessMask,
+        .oldLayout     = oldLayout,
+        .newLayout     = newLayout,
+        .image         = image->get_image_handle(),
         .subresourceRange{
-            .aspectMask     = compute_write_finish_image->get_aspectMask(),
-            .baseMipLevel   = 0,
-            .levelCount     = compute_write_finish_image->get_mipLevels(),
-            .baseArrayLayer = 0,
-            .layerCount     = compute_write_finish_image->get_arrayLayers()
+            .aspectMask     = image->get_aspectMask(),
+            .baseMipLevel   = baseMipLevel,
+            .levelCount     = levelCount,
+            .baseArrayLayer = baseArrayLayer,
+            .layerCount     = layerCount
         }
     };
     VkDependencyInfo drawImageDependencyInfo{
@@ -698,6 +566,10 @@ void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_i
         .pImageMemoryBarriers    = &barrierDrawImage
     };
     vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+}
+
+void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image) {
+    add_image_barrier(compute_write_finish_image, blank_stage, compute_write_image2D);
 }
 
 void VCB::end_command_buffer() {
