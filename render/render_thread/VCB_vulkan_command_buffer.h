@@ -89,7 +89,8 @@ public:
 
     void blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
-    void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+    void only_image_compute(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image,
+                            const std::string &compute_path);
 
     void down_sample(Engine &engine, VKR_image_ptr image_ptr,
                      const std::string &compute_path);

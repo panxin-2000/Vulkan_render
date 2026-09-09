@@ -51,6 +51,10 @@ public:
         return parameters_.arrayLayers;
     }
 
+    uint32_t get_aspectMask() const {
+        return parameters_.aspectMask;
+    }
+
     uint32_t get_mipLevels() const {
         return parameters_.mipLevels;
     }

@@ -222,9 +222,10 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
-void VCB::fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+void VCB::only_image_compute(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image,
+                             const std::string &compute_path) {
     VKR_shader_paths fxaa{
-        "", "", "", "fxaa"
+        "", "", "", compute_path
     };
     auto compute_shader                              = engine.get_shader_manager().find(fxaa);
     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
@@ -684,11 +685,11 @@ void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_i
         .newLayout     = VK_IMAGE_LAYOUT_GENERAL,
         .image         = compute_write_finish_image->get_image_handle(),
         .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+            .aspectMask     = compute_write_finish_image->get_aspectMask(),
             .baseMipLevel   = 0,
-            .levelCount     = 1,
+            .levelCount     = compute_write_finish_image->get_mipLevels(),
             .baseArrayLayer = 0,
-            .layerCount     = 1
+            .layerCount     = compute_write_finish_image->get_arrayLayers()
         }
     };
     VkDependencyInfo drawImageDependencyInfo{

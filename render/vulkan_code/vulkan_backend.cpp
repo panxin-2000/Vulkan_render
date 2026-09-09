@@ -506,7 +506,7 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     parameters.height      = extent.height;
     parameters.depth       = 1;
     parameters.usage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
     parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
     parameters.mipLevels   = 1;
     parameters.arrayLayers = 1;

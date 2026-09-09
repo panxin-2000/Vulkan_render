@@ -262,7 +262,7 @@ void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
         .newLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         .image         = dst_image->get_image_handle(),
         .subresourceRange{
-            .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+            .aspectMask     = dst_image->get_aspectMask(),
             .baseMipLevel   = 0,
             .levelCount     = 1,
             .baseArrayLayer = 0,
@@ -277,7 +277,7 @@ void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
     vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
     VkImageBlit blitRegion{};
     // 源范围：你的中转图大小 (0,0) 到 (Width, Height)
-    blitRegion.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.srcSubresource.aspectMask     = src_image->get_aspectMask();
     blitRegion.srcSubresource.mipLevel       = 0;
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount     = 1;
@@ -289,7 +289,7 @@ void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
     };
 
     // 目标范围：当前交换链的大小 (0,0) 到 (SwapchainWidth, SwapchainHeight)
-    blitRegion.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    blitRegion.dstSubresource.aspectMask     = dst_image->get_aspectMask();
     blitRegion.dstSubresource.mipLevel       = 0;
     blitRegion.dstSubresource.baseArrayLayer = 0;
     blitRegion.dstSubresource.layerCount     = 1;
