@@ -91,6 +91,11 @@ public:
 
     void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
+    void down_sample(Engine &engine, VKR_image_ptr image_ptr,
+                     const std::string &compute_path);
+
+    void up_sample(Engine &engine, VKR_image_ptr image_ptr, const std::string &compute_path);
+
     void tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
     void CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);

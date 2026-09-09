@@ -51,6 +51,10 @@ public:
         return parameters_.arrayLayers;
     }
 
+    uint32_t get_mipLevels() const {
+        return parameters_.mipLevels;
+    }
+
     [[nodiscard]] uint32_t get_index() const {
         return index_;
     }
@@ -182,6 +186,18 @@ struct Texture_parameter {
 void simple_mipmap(const VkCommandBuffer commandBuffer,
                    const VKR_image_ptr image_ptr,
                    const Image_and_view_parameters &parameters);
+
+
+void transition_image(const VkCommandBuffer commandBuffer,
+                      const VkImage image,
+                      const uint32_t baseMipLevel,
+                      const VkImageLayout oldLayout,
+                      const VkImageLayout newLayout,
+                      const VkAccessFlags srcAccessMask,
+                      const VkAccessFlags dstAccessMask,
+                      const VkPipelineStageFlags srcStageMask,
+                      const VkPipelineStageFlags dstStageMask);
+
 
 VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
                                          std::function<void(void *)> mem_copy_callback);

@@ -21,7 +21,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
             .image         = depth->get_image_handle(time_line_),
             .subresourceRange{
                 .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-                .levelCount = 1,
+                .levelCount = depth->get_mipLevels(),
                 .layerCount = depth->get_arrayLayers(),
             }
         },

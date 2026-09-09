@@ -119,16 +119,33 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
     parameters.format       = VK_FORMAT_D32_SFLOAT;
     parameters.width        = extent.width / 2;
     parameters.height       = extent.height / 2;
+    parameters.depth        = 1;
+    parameters.usage        = static_cast<VkImageUsageFlagBits>(
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+        VK_IMAGE_USAGE_SAMPLED_BIT);
+    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
+    parameters.mipLevels   = 1;
+    parameters.arrayLayers = 1;
+    parameters.flags       = 0;
+
+    return find(parameters);
+}
+
+
+VKR_image_ptr Render_image_manager::get_one_depth_AO_copy_image() {
+    Image_and_view_parameters parameters{};
+    const VkExtent2D extent = VK_backend::instance().get_current_extent();
+    parameters.format       = VK_FORMAT_R32_SFLOAT;
+    parameters.width        = extent.width / 2;
+    parameters.height       = extent.height / 2;
 
 
     parameters.depth = 1;
-    parameters.usage = static_cast<VkImageUsageFlagBits>(
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-        VK_IMAGE_USAGE_SAMPLED_BIT |
-        VK_IMAGE_USAGE_STORAGE_BIT |
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT;
+    parameters.usage = static_cast<VkImageUsageFlagBits>(VK_IMAGE_USAGE_STORAGE_BIT |
+                                                         VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                                         VK_IMAGE_USAGE_SAMPLED_BIT);
+    parameters.aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT;
     parameters.tiling      = VK_IMAGE_TILING_OPTIMAL;
     parameters.mipLevels   = 1;
     parameters.arrayLayers = 1;
@@ -137,6 +154,7 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_image() {
 
     return find(parameters);
 }
+
 
 VKR_image_ptr Render_image_manager::get_one_shadow_image() {
     Image_and_view_parameters parameters{};

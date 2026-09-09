@@ -21,6 +21,7 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr color_image,
                            VKR_image_ptr depth_image,
                            VKR_image_ptr depth_AO_image,
+                           VKR_image_ptr depth_AO_copy_image,
                            VKR_image_ptr SSAO_image,
                            VKR_image_ptr blur_SSAO_image,
                            VKR_image_ptr depth_shadow_image,
@@ -150,7 +151,11 @@ void render_different_pass(VCB &vcb,
 
         vcb.current_write_next_read_depth({depth_AO_image});
 
-        simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
+        // 这里需要什么呢?  // depth_AO_image 中复制到 depth_AO_copy_image ,
+        // 之后 进行降采样以及 上采样
+
+        // vcb.down_sample(engine, depth_AO_copy_image, "fxaa");
+        // simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
         // 这里大概需要需要生成 Mipmap
         // 其实搞好能够用于 SSAO
@@ -376,6 +381,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const auto entity_image           = engine.get_image_manager().get_one_entity_image();
     const auto depth_image            = engine.get_image_manager().get_one_depth_image();
     const auto depth_AO_image         = engine.get_image_manager().get_one_depth_AO_image();
+    const auto depth_AO_copy_image    = engine.get_image_manager().get_one_depth_AO_copy_image();
     const auto SSAO_image             = engine.get_image_manager().get_one_depth_SSAO_image();
     const auto depth_shadow_image     = engine.get_image_manager().get_one_shadow_image();
     const auto fxaa_result            = engine.get_image_manager().get_one_compute_write_image();
@@ -421,7 +427,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
-    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, SSAO_image,
+    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, depth_AO_copy_image, SSAO_image,
                           blur_SSAO_image, depth_shadow_image, entity_image, fxaa_result,
                           EASU_result,
                           RCAS_result,

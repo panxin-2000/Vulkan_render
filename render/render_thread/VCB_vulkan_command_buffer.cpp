@@ -93,8 +93,7 @@ void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish
 
 void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_finish_image) {
     VkImageMemoryBarrier2 barrierDrawImage{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        // 之前是在 COMPUTE 阶段进行的写入
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
         .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
         .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
         .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
@@ -420,6 +419,192 @@ struct tone_mapping_Constants {
     Eigen::Vector4f Const0[24];
 };
 
+
+void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::string &compute_path) {
+    const Image_and_view_parameters &parameters = image_ptr->get_parameters();
+    int32_t mipWidth                            = parameters.width;
+    int32_t mipHeight                           = parameters.height;
+    VKR_shader_paths down_sample{
+        "", "", "", compute_path
+    };
+    auto compute_shader = engine.get_shader_manager().find(down_sample);
+
+    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+
+    for (uint32_t i = 1; i < parameters.mipLevels; i++) {
+        // 初始化将要写入的每一层
+        {
+            VkImageMemoryBarrier2 barrierDrawImage{
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
+                .srcAccessMask = VK_ACCESS_2_NONE,
+
+                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+
+                .image = image_ptr->get_image_handle(),
+                .subresourceRange{
+                    .aspectMask     = parameters.aspectMask,
+                    .baseMipLevel   = i, .levelCount = 1,
+                    .baseArrayLayer = 0, .layerCount = 1
+                }
+            };
+            VkDependencyInfo drawImageDependencyInfo{
+                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers    = &barrierDrawImage
+            };
+            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+        }
+        // 执行每一层的计算
+        // {
+        //     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(image_ptr);
+        //     std::optional<Texture_parameter> offscreen       = create_2d_texture(image_ptr);
+        //
+        //     // 逻辑还是看起来都差不多 , 但是最好能再上面的时候添加一个 总的汇总
+        //     shader_need_parameter parameter;
+        //     set_render_parameter(compute_shader->object_sets_bindings,
+        //                          parameter.update_object_descriptor_sets, "InputTexture",
+        //                          offscreen);
+        //     set_render_parameter(compute_shader->object_sets_bindings,
+        //                          parameter.update_object_descriptor_sets, "OutputTexture",
+        //                          compute_texture);
+        //     allocate_descriptor_sets(parameter, compute_shader);
+        //     auto temp = get_descriptor_sets(parameter, compute_shader);
+        //     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+        //     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+        //                                VK_PIPELINE_BIND_POINT_COMPUTE);
+        //
+        //     auto width  = mipWidth > 1 ? mipWidth / 2 : 1;
+        //     auto height = mipHeight > 1 ? mipHeight / 2 : 1;
+        //
+        //     // 还需要创建多个 view , 之后再上传,之后 还需要清理掉
+        //     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+        //     if (mipWidth > 1) mipWidth /= 2;
+        //     if (mipHeight > 1) mipHeight /= 2;
+        // }
+        // 执行计算完成之后的转换
+        {
+            VkImageMemoryBarrier2 barrierDrawImage{
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .image         = image_ptr->get_image_handle(),
+                .subresourceRange{
+                    .aspectMask     = parameters.aspectMask,
+                    .baseMipLevel   = i, .levelCount = 1,
+                    .baseArrayLayer = 0, .layerCount = 1
+                }
+            };
+            VkDependencyInfo drawImageDependencyInfo{
+                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers    = &barrierDrawImage
+            };
+            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+        }
+    }
+}
+
+void VCB::up_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::string &compute_path) {
+    const Image_and_view_parameters &parameters = image_ptr->get_parameters();
+    int32_t mipWidth                            = parameters.width;
+    int32_t mipHeight                           = parameters.height;
+    VKR_shader_paths down_sample{
+        "", "", "", compute_path
+    };
+    auto compute_shader = engine.get_shader_manager().find(down_sample);
+
+    // vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+
+    for (uint32_t i = 1; i < parameters.mipLevels; i++) {
+        // 初始化将要写入的每一层
+        {
+            VkImageMemoryBarrier2 barrierDrawImage{
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask  = VK_PIPELINE_STAGE_2_NONE,
+                .srcAccessMask = VK_ACCESS_2_NONE,
+
+                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+
+                .image = image_ptr->get_image_handle(),
+                .subresourceRange{
+                    .aspectMask     = parameters.aspectMask,
+                    .baseMipLevel   = i, .levelCount = 1,
+                    .baseArrayLayer = 0, .layerCount = 1
+                }
+            };
+            VkDependencyInfo drawImageDependencyInfo{
+                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers    = &barrierDrawImage
+            };
+            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+        }
+        // 执行每一层的计算
+        // {
+        //     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(image_ptr);
+        //     std::optional<Texture_parameter> offscreen       = create_2d_texture(image_ptr);
+        //
+        //     // 逻辑还是看起来都差不多 , 但是最好能再上面的时候添加一个 总的汇总
+        //     shader_need_parameter parameter;
+        //     set_render_parameter(compute_shader->object_sets_bindings,
+        //                          parameter.update_object_descriptor_sets, "InputTexture",
+        //                          offscreen);
+        //     set_render_parameter(compute_shader->object_sets_bindings,
+        //                          parameter.update_object_descriptor_sets, "OutputTexture",
+        //                          compute_texture);
+        //     allocate_descriptor_sets(parameter, compute_shader);
+        //     auto temp = get_descriptor_sets(parameter, compute_shader);
+        //     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+        //     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+        //                                VK_PIPELINE_BIND_POINT_COMPUTE);
+        //
+        //     auto width  = mipWidth > 1 ? mipWidth / 2 : 1;
+        //     auto height = mipHeight > 1 ? mipHeight / 2 : 1;
+        //
+        //     // 还需要创建多个 view , 之后再上传,之后 还需要清理掉
+        //     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+        //     if (mipWidth > 1) mipWidth /= 2;
+        //     if (mipHeight > 1) mipHeight /= 2;
+        // }
+        // 执行计算完成之后的转换
+        {
+            VkImageMemoryBarrier2 barrierDrawImage{
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .srcStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
+                .dstStageMask  = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
+                .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
+                .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                .image         = image_ptr->get_image_handle(),
+                .subresourceRange{
+                    .aspectMask     = parameters.aspectMask,
+                    .baseMipLevel   = i, .levelCount = 1,
+                    .baseArrayLayer = 0, .layerCount = 1
+                }
+            };
+            VkDependencyInfo drawImageDependencyInfo{
+                .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers    = &barrierDrawImage
+            };
+            vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+        }
+    }
+}
 
 void VCB::tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
     VKR_shader_paths tone_mapping{
