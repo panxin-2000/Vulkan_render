@@ -305,17 +305,19 @@ void render_different_pass(VCB &vcb,
         // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
 
 
+
+
         vcb.compute_write_init_barrier(compute_dof_blur_image); // 忘记这里是什么了
+
+
 
         vcb.compute_write_init_barrier(fxaa_result);
         vcb.fxaa(engine, color_image, fxaa_result);
         vcb.compute_write_finish_same_read(fxaa_result);
 
-
         vcb.compute_write_init_barrier(EASU_result);
         vcb.FSR1_EASU(engine, fxaa_result, EASU_result);
         vcb.compute_write_finish_same_read(EASU_result);
-
 
         vcb.compute_write_init_barrier(RCAS_result);
         vcb.FSR1_RCAS(engine, EASU_result, RCAS_result);

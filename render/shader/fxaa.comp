@@ -89,6 +89,7 @@ void main() {
     // 景深（Depth of Field）绽放（Bloom）镜片炫光（Lens Flare）
     // 镜头色差（Chromatic Aberration） —— （在这里引入通道颜色位移）
     // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
+    // 在现代电影级渲染管线（如 Filament、Unreal Engine 5、ACES）中，标准的做法是“先色彩校正，再色调映射”；并且色彩校正确实是在线性空间（或对数线性空间）中进行的。
 
     // FXAA / TAA（抗锯齿）/ Super Resolution  —— （在最终的 LDR 图像上平滑包括色差在内的所有边缘）
 
