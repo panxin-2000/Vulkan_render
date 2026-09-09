@@ -91,6 +91,8 @@ public:
 
     void fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
+    void tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+
     void CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
     void FSR1_EASU(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);

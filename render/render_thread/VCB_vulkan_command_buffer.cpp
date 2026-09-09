@@ -101,7 +101,7 @@ void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_fini
         .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,
         .oldLayout     = VK_IMAGE_LAYOUT_GENERAL,
         .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .image = compute_write_finish_image->get_image_handle(),
+        .image         = compute_write_finish_image->get_image_handle(),
         .subresourceRange{
             .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
             .baseMipLevel   = 0, .levelCount = 1,
@@ -250,6 +250,7 @@ void VCB::fxaa(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
+
 void VCB::CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
     VKR_shader_paths fxaa{
         "", "", "", "CAS_shader"
@@ -281,6 +282,39 @@ void VCB::CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image
 #define A_CPU
 #include "./../shader/ffx_a.h"
 #include "./../shader/ffx_fsr1.h"
+
+
+void LpmSetupOut(AU1 i,inAU4 v, AU1 *address) {
+    address[i * 4 + 0] = v[0];
+    address[i * 4 + 1] = v[1];
+    address[i * 4 + 2] = v[2];
+    address[i * 4 + 3] = v[3];
+}
+
+#include "./../shader/ffx_lpm.h"
+
+
+class LpmConfigGenerator {
+private:
+    // 核心：保存当前外部传入的局部内存地址指针
+    AU1 ctl[24 * 4];
+
+public:
+    void *init() {
+        varAF3(saturation) = initAF3(0.0, 0.0, 0.0);
+        varAF3(crosstalk)  = initAF3(1.0, 1.0/2.0, 1.0/32.0);
+        LpmSetup(
+                 false, LPM_CONFIG_709_709, LPM_COLORS_709_709, // <-- Using the LPM_ prefabs to make inputs easier.
+                 0.0,                                           // softGap
+                 256.0,                                         // hdrMax
+                 8.0,                                           // exposure
+                 0.25,                                          // contrast
+                 1.0,                                           // shoulder contrast
+                 saturation, crosstalk, ctl);
+        return ctl;
+    }
+};
+
 
 struct FSRConstants {
     Eigen::Vector4f Const0;
@@ -381,6 +415,49 @@ void VCB::FSR1_RCAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
 
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
+
+struct tone_mapping_Constants {
+    Eigen::Vector4f Const0[24];
+};
+
+
+void VCB::tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+    VKR_shader_paths tone_mapping{
+        "", "", "", "tone_mapping"
+    };
+    auto compute_shader                              = engine.get_shader_manager().find(tone_mapping);
+    std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
+    std::optional<Texture_parameter> offscreen       = create_2d_texture(input_image);
+
+    LpmConfigGenerator config_gen;
+    auto address = config_gen.init();
+
+
+    shader_need_parameter parameter;
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "input_texture",
+                         offscreen);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "out_texture",
+                         compute_texture);
+    set_render_parameter(compute_shader->object_sets_bindings,
+                         parameter.update_object_descriptor_sets, "tone_parameters",
+                         config_gen);
+    allocate_descriptor_sets(parameter, compute_shader);
+    auto temp = get_descriptor_sets(parameter, compute_shader);
+    update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+    vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+    // parameter.object_descriptor_sets 需要去确认 或者说需要更新
+    bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                               VK_PIPELINE_BIND_POINT_COMPUTE);
+
+
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
+
+    vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+}
+
 
 void VCB::dof_composite(Engine &engine,
                         VKR_image_ptr dof_image,

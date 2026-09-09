@@ -11,6 +11,24 @@ layout (set = 2, binding = 0) uniform sampler2D input_texture;
 layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
 
 
+#define A_GLSL 1
+#define A_GPU 1
+#include "ffx_a.h"
+
+
+layout (set = 0, binding = 0) uniform tone_parameters
+{
+    AU4 lpm[24];  // uvec4 lpm[24]
+}constant;
+
+
+AU4 LpmFilterCtl(AU1 i){ return constant.lpm[i]; }
+
+
+//  // Define LPM_NO_SETUP before the "ffx_lpm.h" include if not using LpmSetup() on the GPU.
+#define LPM_NO_SETUP 1
+#include "ffx_lpm.h"
+
 
 void main() {
     ivec2 texSize = imageSize(out_texture);
@@ -22,8 +40,49 @@ void main() {
 
 
     vec4 color = texture(input_texture, inUV);
-    vec4 final_color = tonemap(color, 1.0);
+    // 物理光照计算（灯光）保持在 Scene-Linear Rec.709 空间；而调色（LUT）和色调映射（LPM）才去适配大色域
+    // 因为世界上 99% 的物理光照公式、天空盒资产（HDRi 贴图）、材质纹理（Albedo 贴图）全部都是基于 Rec.709 / sRGB 物理基准制作和校准的
+
+    // 如果你在写一个写实风格、追求好莱坞叙事感、黑暗深邃的 3A 渲染器，直接用 ACES 拟合曲线，它能一秒给你的光照带来质的飞跃；
+    // 如果你在写一个色彩丰富鲜艳、现代数字感强烈、或者需要支持各种 FreeSync 硬件深度联动的项目，选择 AMD LPM 是更科学的做法。
+
+    // 灯光阶段：在普通的场景线性空间（Scene-Linear 709）下正常算灯光，算出来的超亮 HDR 数据丢进 RGBA16F。
+
+    // 色彩空间的真正危机：不在于亮度强度，而在于“色度偏色”
+    // 如果你直接拿这个 709 的比例去查一个为 P3 或 2020 设计的 .cube 调色表，亮度强度确实不会出错，但颜色会偏色（色相漂移）！
+    // 因为 P3 和 2020 的红色、绿色比 709 更加浓郁，相同的坐标在不同的 LUT 里会索引到不同的艺术风格。
+    // // 1. 从 709 灯光阶段拿到的物理线性 HDR 颜色（包含超高强度的数字）
+    //vec3 color709 = texture(u_screenTexture, v_uv).rgb;
+    //
+    //// 2. 核心拯救步骤：在线性空间下，用矩阵把 709 的颜色换算为 2020 空间的颜色比例
+    //// 这个矩阵乘法是纯线性的，完全不会破坏原本的灯光强度和能量守恒！
+    //    const mat3 mat3_Rec709_to_Rec2020 = mat3(
+    //            0.6274040, 0.0590058, 0.0160451,  // 第一列 (对应 R 变换系数)
+    //            0.3292829, 0.8681050, 0.0715367,  // 第二列 (对应 G 变换系数)
+    //            0.0433131, 0.0728892, 0.9124182   // 第三列 (对应 B 变换系数)
+    //    );
+
+    //vec3 color2020 = mat3_Rec709_to_Rec2020 * color709;
+    //
+    //// 3. 此时，你的颜色不仅强度完美保留，而且其 RGB 比例已经完全适配了 2020 空间！
+    //// 4. 这时候再放心地调用 LogC 压缩，去采样你的 .cube 3D LUT
+    //vec3 lutCoord = linear_to_LogC(color2020);
+    //vec3 gradedColor = colorGrade3D(u_lutTexture, lutCoord);
+
+    // 在 Filament 的片元着色器（GLSL）中，确实完全找不到类似 mat3_Rec709_to_Rec2020 的矩阵乘法。
+    // 你没有看错，因为 Filament 把这个色域转换矩阵偷偷藏在了 CPU 端，在生成（Baking）LUT 纹理的那一瞬间，就已经把矩阵乘法做掉了
+
+    // 色彩校正阶段：在进入 .cube (3D LUT) 之前，利用 linear_to_LogC 的对数公式，顺便把颜色空间扩展转入 P3 或 2020。
+    // 色调映射阶段：最后由 LpmFilter 统一兜底，平滑输出给 R8G8B8A8_srgb。
 
 
-    imageStore(out_texture, pixel_coords, final_color);
+    // 输入源的极限在哪里（由 WORKING COLOR SPACE 决定：P3 的边界和 2020 的边界完全不同
+    // 输出目标的极限在哪里（由 OUTPUT COLOR SPACE 决定：这里是 709 的边界）
+    // 有了这两个绝对坐标，LPM 内部的数学公式才能精确地计算出：应该用多大的力度，把这个大空间里的颜色平滑地向内“挤压”到 709 空间的合法边缘。
+    LpmFilter(color.r, color.g, color.b, false, LPM_CONFIG_709_709);
+
+    //    vec4 final_color = tonemap(color, 1.0);
+
+
+    imageStore(out_texture, pixel_coords, color);
 }

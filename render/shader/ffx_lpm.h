@@ -276,6 +276,7 @@ A_STATIC void LpmColRgbToXyz(outAF3 ox,outAF3 oy,outAF3 oz,inAF2 r,inAF2 g,inAF2
 #ifdef LPM_NO_SETUP
  A_STATIC void LpmSetupOut(AU1 i,inAU4 v){}
 #endif
+#ifdef A_CPU
 //------------------------------------------------------------------------------------------------------------------------------
 // Output goes to the user-defined LpmSetupOut() function.
 A_STATIC void LpmSetup(
@@ -299,7 +300,7 @@ AF1 exposure, // Number of stops between 'hdrMax' and 18% mid-level on input.
 AF1 contrast, // Input range {0.0 (no extra contrast) to 1.0 (maximum contrast)}.
 AF1 shoulderContrast, // Shoulder shaping, 1.0 = no change (fast path).
 inAF3 saturation, // A per channel adjustment, use <0 decrease, 0=no change, >0 increase.
-inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zero.
+inAF3 crosstalk,AU1  * address){ // One channel must be 1.0, the rest can be <= 1.0 but not zero.
 //-----------------------------------------------------------------------------------------------------------------------------
  // Contrast needs to be 1.0 based for no contrast.
  contrast+=AF1_(1.0);
@@ -390,61 +391,61 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map0[1]=AU1_AF1(saturation[1]);
  map0[2]=AU1_AF1(saturation[2]);
  map0[3]=AU1_AF1(contrast);
- LpmSetupOut(0,map0);
+ LpmSetupOut(0,map0,address);
  varAU4(map1);
  map1[0]=AU1_AF1(toneScaleBias[0]);
  map1[1]=AU1_AF1(toneScaleBias[1]);
  map1[2]=AU1_AF1(lumaT[0]);
  map1[3]=AU1_AF1(lumaT[1]);
- LpmSetupOut(1,map1);
+ LpmSetupOut(1,map1,address);
  varAU4(map2);
  map2[0]=AU1_AF1(lumaT[2]);
  map2[1]=AU1_AF1(crosstalk[0]);
  map2[2]=AU1_AF1(crosstalk[1]);
  map2[3]=AU1_AF1(crosstalk[2]);
- LpmSetupOut(2,map2);
+ LpmSetupOut(2,map2,address);
  varAU4(map3);
  map3[0]=AU1_AF1(rcpLumaT[0]);
  map3[1]=AU1_AF1(rcpLumaT[1]);
  map3[2]=AU1_AF1(rcpLumaT[2]);
  map3[3]=AU1_AF1(con2R[0]);
- LpmSetupOut(3,map3);
+ LpmSetupOut(3,map3,address);
  varAU4(map4);
  map4[0]=AU1_AF1(con2R[1]);
  map4[1]=AU1_AF1(con2R[2]);
  map4[2]=AU1_AF1(con2G[0]);
  map4[3]=AU1_AF1(con2G[1]);
- LpmSetupOut(4,map4);
+ LpmSetupOut(4,map4,address);
  varAU4(map5);
  map5[0]=AU1_AF1(con2G[2]);
  map5[1]=AU1_AF1(con2B[0]);
  map5[2]=AU1_AF1(con2B[1]);
  map5[3]=AU1_AF1(con2B[2]);
- LpmSetupOut(5,map5);
+ LpmSetupOut(5,map5,address);
  varAU4(map6);
  map6[0]=AU1_AF1(shoulderContrast);
  map6[1]=AU1_AF1(lumaW[0]);
  map6[2]=AU1_AF1(lumaW[1]);
  map6[3]=AU1_AF1(lumaW[2]);
- LpmSetupOut(6,map6);
+ LpmSetupOut(6,map6,address);
  varAU4(map7);
  map7[0]=AU1_AF1(softGap2[0]);
  map7[1]=AU1_AF1(softGap2[1]);
  map7[2]=AU1_AF1(conR[0]);
  map7[3]=AU1_AF1(conR[1]);
- LpmSetupOut(7,map7);
+ LpmSetupOut(7,map7,address);
  varAU4(map8);
  map8[0]=AU1_AF1(conR[2]);
  map8[1]=AU1_AF1(conG[0]);
  map8[2]=AU1_AF1(conG[1]);
  map8[3]=AU1_AF1(conG[2]);
- LpmSetupOut(8,map8);
+ LpmSetupOut(8,map8,address);
  varAU4(map9);
  map9[0]=AU1_AF1(conB[0]);
  map9[1]=AU1_AF1(conB[1]);
  map9[2]=AU1_AF1(conB[2]);
  map9[3]=AU1_(0);
- LpmSetupOut(9,map9);
+ LpmSetupOut(9,map9,address);
 //-----------------------------------------------------------------------------------------------------------------------------
  // Packed 16-bit part of control block.
  varAU4(map16);varAF2(map16x);varAF2(map16y);varAF2(map16z);varAF2(map16w);
@@ -460,7 +461,7 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map16[1]=AU1_AH2_AF2(map16y);
  map16[2]=AU1_AH2_AF2(map16z);
  map16[3]=AU1_AH2_AF2(map16w);
- LpmSetupOut(16,map16);
+ LpmSetupOut(16,map16,address);
  varAU4(map17);varAF2(map17x);varAF2(map17y);varAF2(map17z);varAF2(map17w);
  map17x[0]=lumaT[2];
  map17x[1]=crosstalk[0];
@@ -474,7 +475,7 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map17[1]=AU1_AH2_AF2(map17y);
  map17[2]=AU1_AH2_AF2(map17z);
  map17[3]=AU1_AH2_AF2(map17w);
- LpmSetupOut(17,map17);
+ LpmSetupOut(17,map17,address);
  varAU4(map18);varAF2(map18x);varAF2(map18y);varAF2(map18z);varAF2(map18w);
  map18x[0]=con2R[1];
  map18x[1]=con2R[2];
@@ -488,7 +489,7 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map18[1]=AU1_AH2_AF2(map18y);
  map18[2]=AU1_AH2_AF2(map18z);
  map18[3]=AU1_AH2_AF2(map18w);
- LpmSetupOut(18,map18);
+ LpmSetupOut(18,map18,address);
  varAU4(map19);varAF2(map19x);varAF2(map19y);varAF2(map19z);varAF2(map19w);
  map19x[0]=shoulderContrast;
  map19x[1]=lumaW[0];
@@ -502,7 +503,7 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map19[1]=AU1_AH2_AF2(map19y);
  map19[2]=AU1_AH2_AF2(map19z);
  map19[3]=AU1_AH2_AF2(map19w);
- LpmSetupOut(19,map19);
+ LpmSetupOut(19,map19,address);
  varAU4(map20);varAF2(map20x);varAF2(map20y);varAF2(map20z);varAF2(map20w);
  map20x[0]=conR[2];
  map20x[1]=conG[0];
@@ -516,7 +517,9 @@ inAF3 crosstalk){ // One channel must be 1.0, the rest can be <= 1.0 but not zer
  map20[1]=AU1_AH2_AF2(map20y);
  map20[2]=AU1_AH2_AF2(map20z);
  map20[3]=AU1_AH2_AF2(map20w);
- LpmSetupOut(20,map20);}
+ LpmSetupOut(20,map20,address);}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //_____________________________________________________________/\_______________________________________________________________
