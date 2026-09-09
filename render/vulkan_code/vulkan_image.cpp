@@ -64,6 +64,63 @@ void transition_image(const VkCommandBuffer commandBuffer,
 }
 
 
+void simple_mipmap(const VkCommandBuffer commandBuffer,
+                   const VKR_image_ptr image_ptr,
+                   const Image_and_view_parameters &parameters) {
+    int32_t mipWidth  = parameters.width;
+    int32_t mipHeight = parameters.height;
+
+    for (uint32_t i = 1; i < parameters.mipLevels; i++) {
+        transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
+                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         VK_ACCESS_TRANSFER_WRITE_BIT,
+                         VK_ACCESS_TRANSFER_READ_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0]                 = {0, 0, 0};
+        blit.srcOffsets[1]                 = {mipWidth, mipHeight, 1};
+        blit.srcSubresource.aspectMask     = parameters.aspectMask;
+        blit.srcSubresource.mipLevel       = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount     = 1;
+        blit.dstOffsets[0]                 = {0, 0, 0};
+        blit.dstOffsets[1]                 = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+        blit.dstSubresource.aspectMask     = parameters.aspectMask;
+        blit.dstSubresource.mipLevel       = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount     = 1;
+
+        vkCmdBlitImage(commandBuffer,
+                       image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &blit,
+                       VK_FILTER_LINEAR);
+
+        transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                         VK_ACCESS_TRANSFER_READ_BIT,
+                         VK_ACCESS_SHADER_READ_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+        if (mipWidth > 1) mipWidth /= 2;
+        if (mipHeight > 1) mipHeight /= 2;
+    }
+
+    transition_image(commandBuffer, image_ptr->get_image_handle(), parameters.mipLevels - 1,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                     VK_ACCESS_TRANSFER_WRITE_BIT,
+                     VK_ACCESS_SHADER_READ_BIT,
+                     VK_PIPELINE_STAGE_TRANSFER_BIT,
+                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+};
+
+
 void generateMipmaps(VK_backend &handle, const VKR_image_ptr image_ptr,
                      const Image_and_view_parameters &parameters) {
     VkFormatProperties formatProperties;
@@ -73,57 +130,7 @@ void generateMipmaps(VK_backend &handle, const VKR_image_ptr image_ptr,
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
-        int32_t mipWidth  = parameters.width;
-        int32_t mipHeight = parameters.height;
-
-        for (uint32_t i = 1; i < parameters.mipLevels; i++) {
-            transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             VK_ACCESS_TRANSFER_WRITE_BIT,
-                             VK_ACCESS_TRANSFER_READ_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-            VkImageBlit blit{};
-            blit.srcOffsets[0] = {0, 0, 0};
-            blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
-            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.srcSubresource.mipLevel = i - 1;
-            blit.srcSubresource.baseArrayLayer = 0;
-            blit.srcSubresource.layerCount = 1;
-            blit.dstOffsets[0] = {0, 0, 0};
-            blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
-            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            blit.dstSubresource.mipLevel = i;
-            blit.dstSubresource.baseArrayLayer = 0;
-            blit.dstSubresource.layerCount = 1;
-
-            vkCmdBlitImage(commandBuffer,
-                           image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           image_ptr->get_image_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           1, &blit,
-                           VK_FILTER_LINEAR);
-
-            transition_image(commandBuffer, image_ptr->get_image_handle(), i - 1,
-                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                             VK_ACCESS_TRANSFER_READ_BIT,
-                             VK_ACCESS_SHADER_READ_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-            if (mipWidth > 1) mipWidth /= 2;
-            if (mipHeight > 1) mipHeight /= 2;
-        }
-
-        transition_image(commandBuffer, image_ptr->get_image_handle(), parameters.mipLevels - 1,
-                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                         VK_ACCESS_TRANSFER_WRITE_BIT,
-                         VK_ACCESS_SHADER_READ_BIT,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT,
-                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        simple_mipmap(commandBuffer, image_ptr, parameters);
     };
     Command_submit_manager::add_execute_function(execute_function);
 }

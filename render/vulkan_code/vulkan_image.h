@@ -35,6 +35,10 @@ public:
         index_ = get_one_bindless_index();
     }
 
+    const Image_and_view_parameters &get_parameters() const {
+        return parameters_;
+    }
+
     uint32_t get_width() const {
         return parameters_.width;
     }
@@ -174,6 +178,10 @@ struct Texture_parameter {
         return temp;
     }
 };
+
+void simple_mipmap(const VkCommandBuffer commandBuffer,
+                   const VKR_image_ptr image_ptr,
+                   const Image_and_view_parameters &parameters);
 
 VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
                                          std::function<void(void *)> mem_copy_callback);

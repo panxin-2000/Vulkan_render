@@ -146,8 +146,14 @@ void render_different_pass(VCB &vcb,
             vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
         }
         vcb.end_rendering();
+
+
         vcb.current_write_next_read_depth({depth_AO_image});
+
+        simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
+        // 这里大概需要需要生成 Mipmap
+        // 其实搞好能够用于 SSAO
     } {
         //     // 这里还是稍微有点问题,其实是可以不要深度的
         // vcb.begin_rendering_attachment(SSAO_image,
@@ -305,10 +311,7 @@ void render_different_pass(VCB &vcb,
         // 色调映射与色彩校正（Tone Mapping & Color Grading） —— （将 HDR 转换为 LDR）
 
 
-
-
         vcb.compute_write_init_barrier(compute_dof_blur_image); // 忘记这里是什么了
-
 
 
         vcb.compute_write_init_barrier(fxaa_result);
