@@ -97,7 +97,6 @@ void render_different_pass(VCB &vcb,
     // 之后再是什么呢？ 看看如何将这部分的计算放到GPU中计算
 
     // vcb.end_rendering();
-    // vcb.shadow_pass_barrier();
     // }
     // }
 

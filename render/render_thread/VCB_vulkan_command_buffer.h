@@ -25,6 +25,7 @@ struct G_buffer_image_index {
 #define  image_barrier_depth_read_write  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 #define  image_barrier_frag_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 #define  image_barrier_frag_write_color  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+#define  image_barrier_present_src_khr  VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 
 
 inline VkImageMemoryBarrier2 init_image_memory_barrier(const VKR_image_ptr &image,
@@ -183,7 +184,6 @@ public:
     void current_write_next_read_image(
         const std::vector<VKR_image_ptr> &images);
 
-    void shadow_pass_barrier();
 
     void build_draw_command(entt::entity entity);
 
@@ -219,7 +219,6 @@ public:
 
     void begin_rendering_attachment_to_screen(VKR_image_ptr color,
                                               VkAttachmentLoadOp color_loadOp);
-
 
 
     void add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,

@@ -68,11 +68,13 @@ void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish
 
 
 void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D, image_barrier_compute_read_sampler2D);
+    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D,
+                      image_barrier_compute_read_sampler2D);
 }
 
 void VCB::compute_write_finish_sample_read(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D, image_barrier_fragment_read_sampler2d);
+    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D,
+                      image_barrier_fragment_read_sampler2d);
 }
 
 void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
@@ -582,17 +584,10 @@ void VCB::end_command_buffer() {
     }
     gpu_log_label_info("结束记录时间");
 
-    VkImageMemoryBarrier2 barrierPresent{
-        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dstAccessMask = 0,
-        .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .newLayout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .image         = Engine::instance().get_current_swap_chain_image()->get_image_handle(),
-        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1}
-    };
+    auto barrierPresent = init_image_memory_barrier(Engine::instance().get_current_swap_chain_image(),
+                                                    image_barrier_frag_write_color,
+                                                    image_barrier_present_src_khr
+                                                   );
     VkDependencyInfo barrierPresentDependencyInfo{
         .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
         .imageMemoryBarrierCount = 1,
