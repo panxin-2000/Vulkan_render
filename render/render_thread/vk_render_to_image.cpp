@@ -150,16 +150,16 @@ void render_different_pass(VCB &vcb,
 
 
         vcb.add_image_barrier(depth_AO_image,
-                              depth_write_frag,
-                              compute_read_sampler2D);
+                              image_barrier_depth_write,
+                              image_barrier_compute_read_sampler2D);
         // 这里需要什么呢?  // depth_AO_image 中复制到 depth_AO_copy_image ,
         // 之后 进行降采样以及 上采样
         // 不能直接搬运,可以通过一个shader 来执行转换
 
         // vcb.compute_write_init_barrier(depth_AO_copy_image);
         vcb.add_image_barrier(depth_AO_copy_image,
-                              blank_stage,
-                              compute_write_image2D,
+                              image_barrier_blank_stage,
+                              image_barrier_compute_write_image2D,
                               0,
                               depth_AO_copy_image->get_mipLevels());
 
@@ -238,8 +238,8 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
         vcb.add_image_barrier(depth_shadow_image,
-                              depth_write_frag,
-                              frag_read_sampler2d);
+                              image_barrier_depth_write,
+                              image_barrier_frag_read_sampler2d);
     }
     // {
     // vcb.begin_rendering_attachment(blur_SSAO_image,

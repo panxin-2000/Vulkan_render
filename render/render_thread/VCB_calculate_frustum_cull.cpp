@@ -252,7 +252,7 @@ void VCB::render_3DGS_render(const entt::entity entity) {
 }
 
 void VCB::copy_image(VKR_image_ptr src_image, VKR_image_ptr dst_image) {
-    add_image_barrier(dst_image, blank_stage, transfer_write_dsr);
+    add_image_barrier(dst_image, image_barrier_blank_stage, image_barrier_transfer_write_dsr);
     VkImageBlit blitRegion{};
     // 源范围：你的中转图大小 (0,0) 到 (Width, Height)
     blitRegion.srcSubresource.aspectMask     = src_image->get_aspectMask();

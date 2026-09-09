@@ -63,16 +63,16 @@ void VCB::submit_render_queue(Engine &engine) {
 }
 
 void VCB::compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, compute_write_image2D, transfer_read_src);
+    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D, image_barrier_transfer_read_src);
 }
 
 
 void VCB::compute_write_finish_same_read(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, compute_write_image2D, compute_read_sampler2D);
+    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D, image_barrier_compute_read_sampler2D);
 }
 
 void VCB::compute_write_finish_sample_read(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, compute_write_image2D, fragment_read_sampler2d);
+    add_image_barrier(compute_write_finish_image, image_barrier_compute_write_image2D, image_barrier_fragment_read_sampler2d);
 }
 
 void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
@@ -368,8 +368,8 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
         // 初始化将要写入的每一层
         {
             add_image_barrier(image_ptr,
-                              blank_stage,
-                              compute_write_image2D,
+                              image_barrier_blank_stage,
+                              image_barrier_compute_write_image2D,
                               i);
         }
         // 执行每一层的计算
@@ -402,8 +402,8 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
         // 执行计算完成之后的转换
         {
             add_image_barrier(image_ptr,
-                              compute_write_image2D,
-                              compute_read_sampler2D,
+                              image_barrier_compute_write_image2D,
+                              image_barrier_compute_read_sampler2D,
                               i);
         }
     }
@@ -424,8 +424,8 @@ void VCB::up_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::st
         // 初始化将要写入的每一层
         {
             add_image_barrier(image_ptr,
-                              blank_stage,
-                              compute_write_image2D,
+                              image_barrier_blank_stage,
+                              image_barrier_compute_write_image2D,
                               i);
         }
         // 执行每一层的计算
@@ -458,8 +458,8 @@ void VCB::up_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::st
         // 执行计算完成之后的转换
         {
             add_image_barrier(image_ptr,
-                              compute_write_image2D,
-                              compute_read_sampler2D,
+                              image_barrier_compute_write_image2D,
+                              image_barrier_compute_read_sampler2D,
                               i);
         }
     }
@@ -569,7 +569,7 @@ void VCB::add_image_barrier(const VKR_image_ptr &image,
 }
 
 void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image) {
-    add_image_barrier(compute_write_finish_image, blank_stage, compute_write_image2D);
+    add_image_barrier(compute_write_finish_image, image_barrier_blank_stage, image_barrier_compute_write_image2D);
 }
 
 void VCB::end_command_buffer() {

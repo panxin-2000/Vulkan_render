@@ -123,33 +123,16 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
 }
 
 
-
 void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images) {
     std::vector<VkImageMemoryBarrier2> outputBarriers;
     outputBarriers.reserve(images.size());
 
     for (const auto &image: images) {
-        VkImageMemoryBarrier2 tempBarrier{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, // 等待颜色输出完成
-            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,          // 确保写入缓存刷新
-            .dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,         // 下一阶段：后处理片元着色器
-            .dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT,                     // 允许着色器读取
-            .oldLayout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        // 渲染时布局
-            .newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,        // 读取时布局
-
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .image               = image->get_image_handle(),
-            .subresourceRange    = {
-                .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel   = 0,
-                .levelCount     = 1,
-                .baseArrayLayer = 0,
-                .layerCount     = 1
-            }
-        };
-        outputBarriers.push_back(tempBarrier);
+        auto temp = init_image_memory_barrier(image,
+                                              image_barrier_frag_write_color,
+                                              image_barrier_frag_read_sampler2d
+                                             );
+        outputBarriers.push_back(temp);
     }
     const VkDependencyInfo barrierDependencyInfo{
         .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,

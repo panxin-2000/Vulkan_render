@@ -15,6 +15,48 @@ struct G_buffer_image_index {
     uint32_t baseColor_image_index;
 };
 
+#define  image_barrier_blank_stage VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_IMAGE_LAYOUT_UNDEFINED
+#define  image_barrier_compute_write_image2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_GENERAL
+#define  image_barrier_compute_read_sampler2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+#define  image_barrier_transfer_read_src VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+#define  image_barrier_transfer_write_dsr  VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+#define  image_barrier_fragment_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+#define  image_barrier_depth_write  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+#define  image_barrier_depth_read_write  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+#define  image_barrier_frag_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+#define  image_barrier_frag_write_color  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL
+
+
+inline VkImageMemoryBarrier2 init_image_memory_barrier(const VKR_image_ptr &image,
+                                                       VkPipelineStageFlags srcStageMask,
+                                                       VkAccessFlags srcAccessMask,
+                                                       VkImageLayout oldLayout,
+                                                       VkPipelineStageFlags dstStageMask,
+                                                       VkAccessFlags dstAccessMask,
+                                                       VkImageLayout newLayout,
+                                                       uint32_t baseMipLevel   = 0,
+                                                       uint32_t levelCount     = 1,
+                                                       uint32_t baseArrayLayer = 0,
+                                                       uint32_t layerCount     = 1) {
+    VkImageMemoryBarrier2 barrierDrawImage{
+        .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask  = srcStageMask,
+        .srcAccessMask = srcAccessMask,
+        .dstStageMask  = dstStageMask,
+        .dstAccessMask = dstAccessMask,
+        .oldLayout     = oldLayout,
+        .newLayout     = newLayout,
+        .image         = image->get_image_handle(),
+        .subresourceRange{
+            .aspectMask     = image->get_aspectMask(),
+            .baseMipLevel   = baseMipLevel,
+            .levelCount     = levelCount,
+            .baseArrayLayer = baseArrayLayer,
+            .layerCount     = layerCount
+        }
+    };
+    return barrierDrawImage;
+}
 
 class VCB {
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
@@ -108,14 +150,7 @@ public:
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 
-#define  blank_stage VK_PIPELINE_STAGE_2_NONE,VK_ACCESS_2_NONE,VK_IMAGE_LAYOUT_UNDEFINED
-#define  compute_write_image2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_WRITE_BIT,VK_IMAGE_LAYOUT_GENERAL
-#define  compute_read_sampler2D VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-#define  transfer_read_src VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-#define  transfer_write_dsr  VK_PIPELINE_STAGE_2_TRANSFER_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-#define  fragment_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-#define  depth_write_frag  VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-#define  frag_read_sampler2d  VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+
     /**
      *  blank_stage / compute_write_image2D /
      * @param image
@@ -185,9 +220,6 @@ public:
     void begin_rendering_attachment_to_screen(VKR_image_ptr color,
                                               VkAttachmentLoadOp color_loadOp);
 
-
-    void begin_rendering_attachment(VKR_image_ptr color, VKR_image_ptr depth,
-                                    VkAttachmentLoadOp depth_loadOp);
 
 
     void add_one_indirect_draw_barrier(VkBuffer buffer, VkDeviceSize size,
