@@ -85,8 +85,8 @@ struct ShaderMaterial {
 
 
 struct AABB_box {
-    vec4 centroid_points;
-    vec4 direction_intervals;
+    vec4 centroid_points;     // 最后一个值为零
+    vec4 direction_intervals; // 最后一个值为一
 };
 
 
