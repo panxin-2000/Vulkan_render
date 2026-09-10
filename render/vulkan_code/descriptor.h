@@ -8,23 +8,42 @@
 #include <volk.h>
 #include <vector>
 
+struct VkDescriptorSet_timeline {
+    VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
+    uint64_t timeline_              = 0;
+
+    [[nodiscard]] VkDescriptorSet get_descriptor_set() const { return descriptor_set_; }
+
+    [[nodiscard]] uint64_t get_timeline() const { return timeline_; }
+
+    void clean() {
+        descriptor_set_ = VK_NULL_HANDLE;
+        timeline_       = 0;
+    }
+};
+
 class DescriptorSet_detail : public NonCopyable {
 public:
-    VkDescriptorSet descriptor_set_          = VK_NULL_HANDLE;
     VkDescriptorSetLayout descriptor_layout_ = VK_NULL_HANDLE;
-    uint64_t timeline_                       = 0;
+    VkDescriptorSet_timeline descriptorSet_timeline;
+
+
+    [[nodiscard]] VkDescriptorSet get_descriptor_set() const { return descriptorSet_timeline.get_descriptor_set(); }
+
+    [[nodiscard]] uint64_t get_timeline() const { return descriptorSet_timeline.get_timeline(); }
+
 
     DescriptorSet_detail(const VkDescriptorSet &descriptor_set, const VkDescriptorSetLayout &layout) {
-        descriptor_set_    = descriptor_set;
-        descriptor_layout_ = layout;
+        descriptorSet_timeline.descriptor_set_ = descriptor_set;
+        descriptor_layout_                     = layout;
     }
 
     //  根据timeline 选择合适的时间释放
     ~DescriptorSet_detail();
 
     VkDescriptorSet get_descriptor_set(const uint64_t timeline = 0) {
-        if (timeline > timeline_) timeline_ = timeline;
-        return descriptor_set_;
+        if (timeline > descriptorSet_timeline.timeline_) descriptorSet_timeline.timeline_ = timeline;
+        return descriptorSet_timeline.descriptor_set_;
     }
 };
 
@@ -59,12 +78,14 @@ auto variable_descriptor(const uint32_t binding_less_size,
  * @param descriptorPool
  * @param descriptor_set_layouts 由 glsl 文件描述的单个 set = 0
  * @param binding_flags
+ * @param timeline
  * @return
  */
 Proxy_descriptor_sets
 allocate_descriptor_sets(const VkDescriptorPool &descriptorPool,
                          std::vector<VkDescriptorSetLayout> descriptor_set_layouts,
-                         const std::vector<VkDescriptorBindingFlags> &binding_flags = {});
+                         const std::vector<VkDescriptorBindingFlags> &binding_flags = {},
+                         uint64_t timeline                                          = 0);
 
 void discard_descriptor_set_map_clean(uint64_t current_timeline);
 

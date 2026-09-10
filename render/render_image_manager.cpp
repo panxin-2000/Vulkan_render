@@ -150,7 +150,7 @@ VKR_image_ptr Render_image_manager::get_one_depth_AO_copy_image() {
     parameters.mipLevels   = 1;
     parameters.arrayLayers = 1;
     parameters.flags       = 0;
-    parameters.set_mip_levels(); // 可以直接调用这个函数
+    parameters.set_mip_levels(32.0f); // 可以直接调用这个函数
 
     return find(parameters);
 }

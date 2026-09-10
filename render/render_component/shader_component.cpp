@@ -30,18 +30,18 @@ void update_bindings_to_descriptor_sets(const entt::entity entity) {
 }
 
 
-void allocate_descriptor_sets(shader_need_parameter &vk_s_d_s, const Shader_data &shader_ref) {
+void allocate_descriptor_sets(shader_need_parameter &vk_s_d_s, const Shader_data &shader_ref, uint64_t timeline) {
     auto &handle    = VK_backend::instance();
     auto sets_flags = create_descriptor_sets_flags(handle,
                                                    shader_ref->object_sets_bindings);
     vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
                                                                shader_ref->object_descriptor_sets_layout,
-                                                               {});
+                                                               {}, timeline);
     if (vk_s_d_s.object_descriptor_sets.empty()) {
         Engine::instance().allocate_descriptor_pool();
         vk_s_d_s.object_descriptor_sets = allocate_descriptor_sets(Engine::instance().get_descriptor_pool(),
                                                                    shader_ref->object_descriptor_sets_layout,
-                                                                   {});
+                                                                   {}, timeline);
     }
     assert(!vk_s_d_s.object_descriptor_sets.empty()); // 然后怎么打印实体的名称呢？
 }
@@ -54,7 +54,7 @@ void allocate_descriptor_sets(const entt::entity entity) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
         if (!shader_ref->object_descriptor_sets_layout.empty()) {
-            allocate_descriptor_sets(vk_s_d_s, shader_ref);
+            allocate_descriptor_sets(vk_s_d_s, shader_ref);  // 这里的问题还没有解决掉
         }
     }
 }

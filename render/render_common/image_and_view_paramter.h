@@ -21,8 +21,18 @@ struct Image_and_view_parameters {
     VkImageCreateFlags flags; // sky_box 会使用
 
 
-    void set_mip_levels() {
-        mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+    void set_mip_levels(float min_size = 1.0f) {
+        // 1. 如果初始尺寸就有任意一边 <= 32，直接判定为 1 级
+        if (width <= 32 || height <= 32) {
+            mipLevels = 1;
+            return;
+        }
+        // 2. 找到较短的那条边作为“瓶颈瓶颈”
+        uint32_t min_dim = std::min(width, height);
+
+        // 3. 一行代码直接算出允许缩放的层数
+        // min_dim / 32.0 算出需要缩小的比例，用 log2 算出需要下采样的步数，再向上取整 (ceil)
+        mipLevels = static_cast<uint32_t>(std::ceil(std::log2(static_cast<double>(min_dim) / min_size))) + 1;
     }
 
     template<typename H>
