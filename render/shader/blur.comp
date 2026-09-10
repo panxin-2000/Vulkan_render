@@ -14,6 +14,8 @@ layout (r8, set = 0, binding = 1) uniform image2D output_texture;
 #define METHOD_7TAP_GAUSS_VERT 5
 #define METHOD_3x3_TAP_GAUSS 6
 #define METHOD_3x3_TAP_GAUSS_4_time 7
+#define METHOD_5x5_TAP_GAUSS 8
+#define METHOD_5x5_TAP_GAUSS_9_time 8
 
 #ifndef METHOD
 #define METHOD METHOD_3x3_TAP_GAUSS
@@ -149,6 +151,79 @@ void main()
     color += textureLod(input_texture, baseUV + vec2(-offset, +offset) * invInputSize, 0.0) * weight;
     color += textureLod(input_texture, baseUV + vec2(+offset, +offset) * invInputSize, 0.0) * weight;
 
+    #elif METHOD == METHOD_5x5_TAP_GAUSS
+
+
+    // 标准 5x5 高斯矩阵分布 (总和 256):
+    //  1   4   6   4   1
+    //  4  16  24  16   4
+    //  6  24  36  24   6
+    //  4  16  24  16   4
+    //  1   4   6   4   1
+
+    // ==========================================
+    // 1. 25 次采样的归一化权重常量 (除以 256.0)
+    // ==========================================
+    const float w00 = 1.0 / 256.0;   const float w01 = 4.0 / 256.0;   const float w02 = 6.0 / 256.0;   const float w03 = 4.0 / 256.0;   const float w04 = 1.0 / 256.0;
+    const float w10 = 4.0 / 256.0;   const float w11 = 16.0 / 256.0;  const float w12 = 24.0 / 256.0;  const float w13 = 16.0 / 256.0;  const float w14 = 4.0 / 256.0;
+    const float w20 = 6.0 / 256.0;   const float w21 = 24.0 / 256.0;  const float w22 = 36.0 / 256.0;  const float w23 = 24.0 / 256.0;  const float w24 = 6.0 / 256.0;
+    const float w30 = 4.0 / 256.0;   const float w31 = 16.0 / 256.0;  const float w32 = 24.0 / 256.0;  const float w33 = 16.0 / 256.0;  const float w34 = 4.0 / 256.0;
+    const float w40 = 1.0 / 256.0;   const float w41 = 4.0 / 256.0;   const float w42 = 6.0 / 256.0;   const float w43 = 4.0 / 256.0;   const float w44 = 1.0 / 256.0;
+
+    // ==========================================
+    // 2. 25 个像素网格的整型偏移量 (ivec2)
+    // ==========================================
+    const ivec2 uv_00 = ivec2(-2, -2); const ivec2 uv_01 = ivec2(-1, -2); const ivec2 uv_02 = ivec2(0, -2); const ivec2 uv_03 = ivec2(1, -2); const ivec2 uv_04 = ivec2(2, -2);
+    const ivec2 uv_10 = ivec2(-2, -1); const ivec2 uv_11 = ivec2(-1, -1); const ivec2 uv_12 = ivec2(0, -1); const ivec2 uv_13 = ivec2(1, -1); const ivec2 uv_14 = ivec2(2, -1);
+    const ivec2 uv_20 = ivec2(-2, 0);  const ivec2 uv_21 = ivec2(-1, 0);  const ivec2 uv_22 = ivec2(0, 0);  const ivec2 uv_23 = ivec2(1, 0);  const ivec2 uv_24 = ivec2(2, 0);
+    const ivec2 uv_30 = ivec2(-2, 1);  const ivec2 uv_31 = ivec2(-1, 1);  const ivec2 uv_32 = ivec2(0, 1);  const ivec2 uv_33 = ivec2(1, 1);  const ivec2 uv_34 = ivec2(2, 1);
+    const ivec2 uv_40 = ivec2(-2, 2);  const ivec2 uv_41 = ivec2(-1, 2);  const ivec2 uv_42 = ivec2(0, 2);  const ivec2 uv_43 = ivec2(1, 2);  const ivec2 uv_44 = ivec2(2, 2);
+
+    // ==========================================
+    // 3. 暴力执行 25 次硬件纹理采样并叠加
+    // ==========================================
+    // 第 0 行
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_00) * w00;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_01) * w01;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_02) * w02;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_03) * w03;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_04) * w04;
+
+    // 第 1 行
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_10) * w10;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_11) * w11;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_12) * w12;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_13) * w13;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_14) * w14;
+
+    // 第 2 行 (中心行)
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_20) * w20;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_21) * w21;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_22) * w22; // 真正的中心像素
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_23) * w23;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_24) * w24;
+
+    // 第 3 行
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_30) * w30;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_31) * w31;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_32) * w32;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_33) * w33;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_34) * w34;
+
+    // 第 4 行
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_40) * w40;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_41) * w41;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_42) * w42;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_43) * w43;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_44) * w44;
+
+    #elif METHOD == METHOD_5x5_TAP_GAUSS_9_time
+
+    // [ 1   4 ]   6  [ 4   1 ]   //   1   4   [ 6 ]     4   1      //  1   4   6   4   1
+    // [ 4  16 ]  24  [ 16  4 ]   //   4  16   [ 24 ]   16   4      //  4  16  24  16   4
+    //   6  24    36    24   6    // [ 6  24 ]   36   [ 24   6 ]    //  6  24  [36]  24   6
+    // [ 4  16 ]  24  [ 16   4 ]  //   4  16   [ 24 ]   16   4      //  4  16  24  16   4
+    // [ 1   4 ]   6  [ 4   1 ]   //   1   4   [ 6 ]     4   1      //  1   4   6   4   1
 
     #endif
     imageStore(output_texture, pixel_coords, color);
