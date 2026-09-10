@@ -13,6 +13,7 @@ layout (r8, set = 0, binding = 1) uniform image2D output_texture;
 #define METHOD_5TAP_GAUSS_VERT 4
 #define METHOD_7TAP_GAUSS_VERT 5
 #define METHOD_3x3_TAP_GAUSS 6
+#define METHOD_3x3_TAP_GAUSS_4_time 7
 
 #ifndef METHOD
 #define METHOD METHOD_3x3_TAP_GAUSS
@@ -25,18 +26,15 @@ void main()
     if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
         return;
     }
-    vec2 vUV = (vec2(pixel_coords) + 0.5) / texSize;
-
-
-
+    vec2 baseUV = (vec2(pixel_coords) + 0.5) / texSize;
 
     vec4 color = vec4(0.0);
     #if METHOD == METHOD_3TAP_GAUSS_HORIZ
     const float w0 = 0.25;
     const float w1 = 0.5;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, 0)) * w0;
-    color += textureLod(input_texture, vUV, 0.0) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, 0)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-1, 0)) * w0;
+    color += textureLod(input_texture, baseUV, 0.0) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+1, 0)) * w0;
     #elif METHOD == METHOD_5TAP_GAUSS_HORIZ
     const float w0 = 0.07142857;
     const float w1 = 0.14285;
@@ -45,29 +43,29 @@ void main()
     const float W0 = w0 * weight;
     const float W1 = w1 * weight;
     const float W2 = w2 * weight;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-2, 0)) * W0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, 0)) * W1;
-    color += textureLod(input_texture, vUV, 0.0) * W2;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, 0)) * W1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+2, 0)) * W0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-2, 0)) * W0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-1, 0)) * W1;
+    color += textureLod(input_texture, baseUV, 0.0) * W2;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+1, 0)) * W1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+2, 0)) * W0;
     #elif METHOD == METHOD_7TAP_GAUSS_HORIZ
     const float w0 = 0.03007964045641579;
     const float w1 = 0.10496581333665146;
     const float w2 = 0.22226040083356216;
     const float w3 = 0.2853882907467413;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-3, 0)) * w0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-2, 0)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, 0)) * w2;
-    color += textureLod(input_texture, vUV, 0.0) * w3;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, 0)) * w2;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+2, 0)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+3, 0)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-3, 0)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-2, 0)) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(-1, 0)) * w2;
+    color += textureLod(input_texture, baseUV, 0.0) * w3;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+1, 0)) * w2;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+2, 0)) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(+3, 0)) * w0;
     #elif METHOD == METHOD_3TAP_GAUSS_VERT
     const float w0 = 0.25;
     const float w1 = 0.5;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -1)) * w0;
-    color += textureLod(input_texture, vUV, 0.0) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +1)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -1)) * w0;
+    color += textureLod(input_texture, baseUV, 0.0) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +1)) * w0;
     #elif METHOD == METHOD_5TAP_GAUSS_VERT
     const float w0 = 0.07142857;
     const float w1 = 0.14285;
@@ -76,36 +74,82 @@ void main()
     const float W0 = w0 * weight;
     const float W1 = w1 * weight;
     const float W2 = w2 * weight;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -2)) * W0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -1)) * W1;
-    color += textureLod(input_texture, vUV, 0.0) * W2;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +1)) * W1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +2)) * W0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -2)) * W0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -1)) * W1;
+    color += textureLod(input_texture, baseUV, 0.0) * W2;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +1)) * W1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +2)) * W0;
     #elif METHOD == METHOD_7TAP_GAUSS_VERT
     const float w0 = 0.03007964045641579;
     const float w1 = 0.10496581333665146;
     const float w2 = 0.22226040083356216;
     const float w3 = 0.2853882907467413;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -3)) * w0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -2)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, -1)) * w2;
-    color += textureLod(input_texture, vUV, 0.0) * w3;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +1)) * w2;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +2)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(0, +3)) * w0;
-    #elif METHOD == METHOD_3x3_TAP_GAUSS
-    const float w0 = 0.0625;
-    const float w1 = 0.125;
-    const float w2 = 0.25;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, -1)) * w0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+0, -1)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, -1)) * w0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, +0)) * w1;
-    color += textureLod(input_texture, vUV, 0.0) * w2;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, +0)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(-1, +1)) * w0;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+0, +1)) * w1;
-    color += textureLodOffset(input_texture, vUV, 0.0, ivec2(+1, +1)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -3)) * w0;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -2)) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, -1)) * w2;
+    color += textureLod(input_texture, baseUV, 0.0) * w3;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +1)) * w2;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +2)) * w1;
+    color += textureLodOffset(input_texture, baseUV, 0.0, ivec2(0, +3)) * w0;
+    #elif METHOD == METHOD_3x3_TAP_GAUSS  // TAP 是采样的意思
+
+    const float w00 = 0.0625;     const float w01 = 0.125;    const float w02 = 0.0625;
+    const float w10 = 0.125;      const float w11 = 0.25;     const float w12 = 0.125;
+    const float w20 = 0.0625;     const float w21 = 0.125;    const float w22 = 0.0625;
+
+    const ivec2 uv_00 = ivec2(-1, -1);     const ivec2 uv_01 = ivec2(+0, -1);    const ivec2 uv_02 = ivec2(+1, -1);
+    const ivec2 uv_10 = ivec2(-1, +0);     const ivec2 uv_11 = ivec2(0, +0);     const ivec2 uv_12 = ivec2(+1, +0);
+    const ivec2 uv_20 = ivec2(-1, +1);     const ivec2 uv_21 = ivec2(+0, +1);    const ivec2 uv_22 = ivec2(+1, +1);
+    //  1  2  1        //  1/16  2/16  1/16     //  0.0625  0.125  0.0625
+    //  2  4  2 -> 16  //  2/16  4/16  2/16  -> //  0.125   0.25   0.125
+    //  1  2  1        //  1/16  2/16  1/16     //  0.0625  0.125  0.0625
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_00) * w00;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_10) * w10;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_20) * w20;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_01) * w01;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_11) * w11;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_21) * w21;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_02) * w02;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_12) * w12;
+    color += textureLodOffset(input_texture, baseUV, 0.0, uv_22) * w22;
+
+    #elif METHOD == METHOD_3x3_TAP_GAUSS_4_time
+
+    //  1  2  1        //  1/16  2/16  1/16     //  0.0625  0.125  0.0625
+    //  2  4  2 -> 16  //  2/16  4/16  2/16  -> //  0.125   0.25   0.125
+    //  1  2  1        //  1/16  2/16  1/16     //  0.0625  0.125  0.0625
+
+    //  A  B  C            //  A  B          //     B     C      //                  //
+    //  D  E  F  -> 4次采样 //  D  E          //     E     F      //    D   E         //     E    F
+    //  G  H  I            //                //                  //    G   H         //     H    I
+
+    //  A  B  C            //  0.25  0.25    //     0.25  0.25   //                  //
+    //  D  E  F  -> 4次采样 //  0.25  0.25    //     0.25  0.25   //  0.25  0.25      //     0.25  0.25
+    //  G  H  I            //                //                  //  0.25  0.25      //     0.25  0.25
+
+    //  A  B  C            //  0.25  0.25    //     0.25  0.25   //                  //
+    //  D  E  F  -> 4次采样 //  0.25  0.25    //     0.25  0.25   //  0.25  0.25      //     0.25  0.25
+    //  G  H  I            //                //                  //  0.25  0.25      //     0.25  0.25
+
+    //  A  B  C            //  0.0625  0.0625  0  //  0  0.0625  0.0625   //  0       0       0  // 0   0       0
+    //  D  E  F  -> 4次采样 //  0.0625  0.0625  0  //  0  0.0625  0.0625   //  0.0625  0.0625  0  // 0   0.0625  0.0625
+    //  G  H  I            //  0       0       0  //  0  0       0        //  0.0625  0.0625  0  // 0   0.0625  0.0625
+
+    //  A*1   B*2   C*1    //  0.0625  0.125  0.0625
+    //  D*2   E*4   F*2    //  0.125   0.25   0.125
+    //  G*1   H*2   I*1    //  0.0625  0.125  0.0625
+
+    vec2 inTexSize = vec2(textureSize(input_texture, 0));
+    vec2 invInputSize = 1.0 / inTexSize;
+    const float offset = 0.5;
+    const float weight = 0.25;
+
+    color += textureLod(input_texture, baseUV + vec2(-offset, -offset) * invInputSize, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(+offset, -offset) * invInputSize, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(-offset, +offset) * invInputSize, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(+offset, +offset) * invInputSize, 0.0) * weight;
+
+
     #endif
     imageStore(output_texture, pixel_coords, color);
 }
