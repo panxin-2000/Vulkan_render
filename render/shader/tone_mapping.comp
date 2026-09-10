@@ -8,7 +8,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
 layout (set = 2, binding = 0) uniform sampler2D input_texture;
-layout(rgba16f, set = 2, binding = 1) uniform image2D out_texture;
+layout(rgba16f, set = 2, binding = 1) uniform image2D output_texture;
 
 
 #define A_GLSL 1
@@ -31,7 +31,7 @@ AU4 LpmFilterCtl(AU1 i){ return constant.lpm[i]; }
 
 
 void main() {
-    ivec2 texSize = imageSize(out_texture);
+    ivec2 texSize = imageSize(output_texture);
     if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
         return;
     }
@@ -84,5 +84,5 @@ void main() {
     //    vec4 final_color = tonemap(color, 1.0);
 
 
-    imageStore(out_texture, pixel_coords, color);
+    imageStore(output_texture, pixel_coords, color);
 }

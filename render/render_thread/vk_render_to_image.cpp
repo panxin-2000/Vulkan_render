@@ -137,6 +137,9 @@ void render_different_pass(VCB &vcb,
                               depth_AO_copy_image->get_mipLevels());
 
         vcb.only_image_compute(engine, depth_AO_image, depth_AO_copy_image, "copy_from_depth_to_AO");
+        vcb.add_image_barrier(depth_AO_copy_image,
+                              image_barrier_compute_write_image2D,
+                              image_barrier_compute_read_sampler2D);
 
         // depth_down_sample.comp , 需要执行一次这个
         // vcb.copy_image(depth_AO_image, depth_AO_copy_image);
@@ -144,7 +147,7 @@ void render_different_pass(VCB &vcb,
         // 之后呢? 还需要再 转换为 depth_AO_copy_image 采样的布局
 
 
-        vcb.down_sample(engine, depth_AO_copy_image, "fxaa");
+        vcb.down_sample(engine, depth_AO_copy_image, "depth_down_sample");
         // simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
         // 这里大概需要需要生成 Mipmap

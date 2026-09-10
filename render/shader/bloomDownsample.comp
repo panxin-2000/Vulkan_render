@@ -6,7 +6,7 @@ layout(local_size_x = 16, local_size_y = 16) in;
 layout(binding = 0) uniform sampler2D materialParams_source;
 
 // 目标输出图像（降采样后的低分辨率纹理）
-layout(rgba16f, binding = 1) writeonly uniform image2D out_texture;
+layout(rgba16f, binding = 1) writeonly uniform image2D output_texture;
 
 // --- 辅助函数：计算 4 个采样点的平均值 ---
 vec3 box4x4(vec3 s0, vec3 s1, vec3 s2, vec3 s3) {
@@ -18,7 +18,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
 
     // 获取目标图像（输出端）的分辨率
-    ivec2 texSize = imageSize(out_texture);
+    ivec2 texSize = imageSize(output_texture);
     uint width = uint(texSize.x);
     uint height = uint(texSize.y);
 
@@ -71,5 +71,5 @@ void main() {
     vec3 finalColor = c0 * 0.5 + c1 * 0.125;
 
     // 将计算好的 Jimenez 降采样颜色写入目标纹理
-    imageStore(out_texture, ivec2(x, y), vec4(finalColor, 1.0));
+    imageStore(output_texture, ivec2(x, y), vec4(finalColor, 1.0));
 }

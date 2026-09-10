@@ -12,7 +12,7 @@ layout(std140, binding = 1) uniform MaterialParams {
 } materialParams;
 
 // 目标输出图像
-layout(rgba16f, binding = 2) writeonly uniform image2D out_texture;
+layout(rgba16f, binding = 2) writeonly uniform image2D output_texture;
 
 // 模拟原引擎的质量级别控制，你可以通过宏定义或直接写死来选择分支
 #define FILAMENT_QUALITY_HIGH 2
@@ -23,7 +23,7 @@ void main() {
     uint y = gl_GlobalInvocationID.y;
 
     // 获取目标图像尺寸（与 materialParams.resolution.xy 对应）
-    ivec2 texSize = imageSize(out_texture);
+    ivec2 texSize = imageSize(output_texture);
     uint width = uint(texSize.x);
     uint height = uint(texSize.y);
 
@@ -78,5 +78,5 @@ void main() {
     #endif
 
     // 将计算出的上采样（Upsample）颜色写入目标纹理
-    imageStore(out_texture, ivec2(x, y), vec4(finalColor, 1.0));
+    imageStore(output_texture, ivec2(x, y), vec4(finalColor, 1.0));
 }

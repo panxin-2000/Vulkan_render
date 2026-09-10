@@ -1,0 +1,32 @@
+#version 450
+#extension GL_GOOGLE_include_directive: enable
+#extension GL_EXT_nonuniform_qualifier : enable
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+
+layout (set = 0, binding = 0) uniform sampler2D input_texture;
+layout(r32f, set = 0, binding = 1) uniform image2D output_texture;
+
+void main() {
+    ivec2 texSize = imageSize(output_texture); // 一张超小的 2 × 2 像素贴图  返回值：一定是 ivec2(2, 2)
+    if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
+        return;
+    }
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    vec4 color;
+
+
+    // 如果你的 if 条件对于“这一组内所有的线程”都完全相同
+    // 那么这一组 32 个线程会作为一个整体，整整齐齐地直接走向其中一个分支。
+    // 另一个分支的指令在硬件层面上会被直接跳过（Zero Overhead），完全不会消耗任何算力和时钟周期。
+    // 只有在这种发生组内分歧的情况下，两个分支的指令才都会被执行一遍，导致算力浪费
+    if (imageSize(output_texture) == textureSize(input_texture, 0)){
+        // 最后一个像素的坐标是 pixel_coords = texSize - 1
+        vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
+        color = textureLod(input_texture, inUV, 0);
+    } else {
+        color = texelFetch(input_texture, pixel_coords, 0);
+    }
+    imageStore(output_texture, pixel_coords, color);
+}

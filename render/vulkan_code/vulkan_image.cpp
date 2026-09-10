@@ -135,6 +135,40 @@ void generateMipmaps(VK_backend &handle, const VKR_image_ptr image_ptr,
     Command_submit_manager::add_execute_function(execute_function);
 }
 
+
+VkImageView create_2d_view(VKR_image_ptr image_ptr, uint32_t baseMipLevel, uint32_t levelCount) {
+    const auto &backend                         = VK_backend::instance();
+    const Image_and_view_parameters &parameters = image_ptr->get_parameters();
+
+    VkImageView image_view = VK_NULL_HANDLE;
+    VkImage image          = image_ptr->get_image_handle();
+
+    VkImageViewCreateInfo depthViewCI{
+        .sType  = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image  = image,
+        .format = parameters.format,
+        .subresourceRange{
+            .aspectMask     = parameters.aspectMask,
+            .baseMipLevel   = baseMipLevel,
+            .levelCount     = levelCount,
+            .baseArrayLayer = 0,
+            .layerCount     = parameters.arrayLayers,
+        }
+    };
+    if (parameters.flags == 0) {
+        if (parameters.arrayLayers > 1) {
+            depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        } else if (parameters.arrayLayers == 1) {
+            depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        }
+    } else if (parameters.flags == VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+        depthViewCI.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    }
+
+    VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
+    return image_view;
+}
+
 /**
  * 这里是核心的创建函数
  * @param parameters

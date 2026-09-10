@@ -41,20 +41,20 @@ layout (push_constant, std430) uniform PushConstants {
 // 整个滤波管线使用纯 32 位 float（单精度浮点数）进行数据运算
 
     #include "ffx_a.h"
-    layout(set = 0, binding = 0) uniform texture2D InputTexture;
-    layout(set = 0, binding = 1, rgba32f) uniform image2D OutputTexture;
+    layout(set = 0, binding = 0) uniform texture2D input_texture;
+    layout(set = 0, binding = 1, rgba32f) uniform image2D output_texture;
     layout(set = 0, binding = 2) uniform sampler InputSampler;
 
     #if SAMPLE_EASU
         #define FSR_EASU_F 1
-        AF4 FsrEasuRF(AF2 p) { AF4 res = textureGather(sampler2D(InputTexture, InputSampler), p, 0); return res; }
-        AF4 FsrEasuGF(AF2 p) { AF4 res = textureGather(sampler2D(InputTexture, InputSampler), p, 1); return res; }
-        AF4 FsrEasuBF(AF2 p) { AF4 res = textureGather(sampler2D(InputTexture, InputSampler), p, 2); return res; }
+        AF4 FsrEasuRF(AF2 p) { AF4 res = textureGather(sampler2D(input_texture, InputSampler), p, 0); return res; }
+        AF4 FsrEasuGF(AF2 p) { AF4 res = textureGather(sampler2D(input_texture, InputSampler), p, 1); return res; }
+        AF4 FsrEasuBF(AF2 p) { AF4 res = textureGather(sampler2D(input_texture, InputSampler), p, 2); return res; }
     #endif
 
     #if SAMPLE_RCAS
     #define FSR_RCAS_F
-    AF4 FsrRcasLoadF(ASU2 p) { return texelFetch(sampler2D(InputTexture, InputSampler), ASU2(p), 0); }
+    AF4 FsrRcasLoadF(ASU2 p) { return texelFetch(sampler2D(input_texture, InputSampler), ASU2(p), 0); }
     void FsrRcasInputF(inout AF1 r, inout AF1 g, inout AF1 b) { }
     #endif
 
@@ -67,21 +67,21 @@ layout (push_constant, std430) uniform PushConstants {
     #include "ffx_a.h"
 
 
-    layout(set = 0, binding = 0) uniform texture2D InputTexture;
-    layout(set = 0, binding = 1, rgba16f) uniform image2D OutputTexture;
+    layout(set = 0, binding = 0) uniform texture2D input_texture;
+    layout(set = 0, binding = 1, rgba16f) uniform image2D output_texture;
     layout(set = 0, binding = 2) uniform sampler InputSampler;
 
 
     #if SAMPLE_EASU
         #define FSR_EASU_H 1
-        AH4 FsrEasuRH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(InputTexture, InputSampler), p, 0)); return res; }
-        AH4 FsrEasuGH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(InputTexture, InputSampler), p, 1)); return res; }
-        AH4 FsrEasuBH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(InputTexture, InputSampler), p, 2)); return res; }
+        AH4 FsrEasuRH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(input_texture, InputSampler), p, 0)); return res; }
+        AH4 FsrEasuGH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(input_texture, InputSampler), p, 1)); return res; }
+        AH4 FsrEasuBH(AF2 p) { AH4 res = AH4(textureGather(sampler2D(input_texture, InputSampler), p, 2)); return res; }
     #endif
 
     #if SAMPLE_RCAS
         #define FSR_RCAS_H
-        AH4 FsrRcasLoadH(ASW2 p) { return AH4(texelFetch(sampler2D(InputTexture, InputSampler), ASU2(p), 0)); }
+        AH4 FsrRcasLoadH(ASW2 p) { return AH4(texelFetch(sampler2D(input_texture, InputSampler), ASU2(p), 0)); }
         void FsrRcasInputH(inout AH1 r, inout AH1 g, inout AH1 b){ }
     #endif
 
@@ -96,12 +96,12 @@ void CurrFilter(AU2 pos)
             AF3 c;
             FsrEasuF(c, pos, Const0, Const1, Const2, Const3);
 //            if (Sample.x == 1) c *= c;
-            imageStore(OutputTexture, ASU2(pos), AF4(c, 1));
+            imageStore(output_texture, ASU2(pos), AF4(c, 1));
         #else
             AH3 c;
             FsrEasuH(c, pos, Const0, Const1, Const2, Const3);
 //            if (Sample.x == 1) c *= c;
-            imageStore(OutputTexture, ASU2(pos), AH4(c, 1));
+            imageStore(output_texture, ASU2(pos), AH4(c, 1));
         #endif
     #endif
     #if SAMPLE_RCAS
@@ -109,12 +109,12 @@ void CurrFilter(AU2 pos)
             AF3 c;
             FsrRcasF(c.r, c.g, c.b, pos, Const0);
 //            if (Sample.x == 1) c *= c;
-            imageStore(OutputTexture, ASU2(pos), AF4(c, 1));
+            imageStore(output_texture, ASU2(pos), AF4(c, 1));
         #else
             AH3 c;
             FsrRcasH(c.r, c.g, c.b, pos, Const0);
 //            if (Sample.x == 1) c *= c;  // Sample.x == 1 输入的是纯 sRGB 纹理 执行 c *= c强制进行二次方线性化。
-            imageStore(OutputTexture, ASU2(pos), AH4(c, 1));
+            imageStore(output_texture, ASU2(pos), AH4(c, 1));
         #endif
     #endif
 }
@@ -147,7 +147,7 @@ void main()
 
 //    uvec4 Sample;
 
-//    layout(set = 0, binding = 0) uniform texture2D InputTexture;
-//    layout(set = 0, binding = 1, rgba16f) uniform image2D OutputTexture; // 这里是输出,
+//    layout(set = 0, binding = 0) uniform texture2D input_texture;
+//    layout(set = 0, binding = 1, rgba16f) uniform image2D output_texture; // 这里是输出,
 //    layout(set = 0, binding = 2) uniform sampler InputSampler;           // 为什么会多一个 sampler
 //    binding = 1   和  binding = 3   稍微有点麻烦, 之前没有试过怎么上传
