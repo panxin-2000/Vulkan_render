@@ -785,42 +785,42 @@ void load_materials(std::vector<uint32_t> &material_indices,
                                       pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
                                       auto texture            = load_texture_info(path, model,
                                                                        material.occlusionTexture.value());
-                                      pbr.ORM_Texture = texture.image.get_index();
+                                      pbr.ORM_Texture = texture.image->get_index();
                                       ptr.ORM_Texture = texture;
                                   } else {
                                       auto texture = load_texture_info(path, model,
                                                                        material.pbrData.metallicRoughnessTexture.
                                                                        value());
-                                      pbr.ORM_Texture = texture.image.get_index();
+                                      pbr.ORM_Texture = texture.image->get_index();
                                       ptr.ORM_Texture = texture;
                                       // 否则的话,就需要 想办法合并两个通道的 内容 了
                                   }
                               } else if (material.occlusionTexture.has_value()) {
                                   pbr.occlusion_strength_ = material.occlusionTexture.value().strength;
                                   auto texture = load_texture_info(path, model, material.occlusionTexture.value());
-                                  pbr.ORM_Texture = texture.image.get_index();
+                                  pbr.ORM_Texture = texture.image->get_index();
                                   ptr.ORM_Texture = texture;
                               } else if (material.pbrData.metallicRoughnessTexture.has_value()) {
                                   auto texture = load_texture_info(path, model,
                                                                    material.pbrData.metallicRoughnessTexture.
                                                                    value());
-                                  pbr.ORM_Texture = texture.image.get_index();
+                                  pbr.ORM_Texture = texture.image->get_index();
                                   ptr.ORM_Texture = texture;
                               }
                               if (material.normalTexture.has_value()) {
                                   auto texture      = load_texture_info(path, model, material.normalTexture.value());
-                                  pbr.normalTexture = texture.image.get_index();
+                                  pbr.normalTexture = texture.image->get_index();
                                   ptr.normalTexture = texture;
                               }
                               if (material.emissiveTexture.has_value()) {
                                   auto texture = load_texture_info(path, model, material.emissiveTexture.value());
-                                  pbr.emissiveTexture = texture.image.get_index();
+                                  pbr.emissiveTexture = texture.image->get_index();
                                   ptr.emissiveTexture = texture;
                               }
                               if (material.pbrData.baseColorTexture.has_value()) {
                                   auto texture = load_texture_info(path, model,
                                                                    material.pbrData.baseColorTexture.value());
-                                  pbr.baseColorTexture = texture.image.get_index();
+                                  pbr.baseColorTexture = texture.image->get_index();
                                   ptr.baseColorTexture = texture;
                               }
                               result[i] = {pbr, ptr};

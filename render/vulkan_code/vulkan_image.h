@@ -15,24 +15,30 @@
 #include "image_and_view_paramter.h"
 #include "vulkan_buffer.h"
 
-class VKR_image : public NonCopyable {
+
+class VKR_image_date : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     VkImageView image_view_   = VK_NULL_HANDLE;
     uint64_t timeline_        = 0;
-    uint32_t index_           = 0; //
+    uint32_t index_           = 0;
     Image_and_view_parameters parameters_;
 
 public:
-    VKR_image(const VkImage &image_handle,
-              const VmaAllocation &allocation,
-              const VkImageView &image_view,
-              const Image_and_view_parameters &parameters) : image_handle_(image_handle),
-                                                             allocation_(allocation),
-                                                             image_view_(image_view),
-                                                             parameters_(parameters) {
+    VKR_image_date(const VkImage &image_handle,
+                   const VmaAllocation &allocation,
+                   const VkImageView &image_view,
+                   const Image_and_view_parameters &parameters) : image_handle_(image_handle),
+                                                                  allocation_(allocation),
+                                                                  image_view_(image_view),
+                                                                  parameters_(parameters) {
         // 这里开始构建的 时候就需要 添加 index 了
         index_ = get_one_bindless_index();
+    }
+
+    void clean_copy_VkImage() {
+        image_handle_ = VK_NULL_HANDLE;
+        allocation_   = VK_NULL_HANDLE;
     }
 
     const Image_and_view_parameters &get_parameters() const {
@@ -75,9 +81,6 @@ public:
 
     void destroy_image();
 
-    ~VKR_image() {
-        destroy_image();
-    }
 
     [[nodiscard]] VkImageView get_image_view(const uint64_t timeline = 0) {
         if (timeline > timeline_) timeline_ = timeline;
@@ -106,55 +109,22 @@ private:
     }
 };
 
-
-class VKR_image_ptr {
+class VKR_image : public VKR_image_date {
 public:
-    VKR_image_ptr(const VkImage &image_handle,
-                  const VmaAllocation &allocation,
-                  const VkImageView &image_view,
-                  const Image_and_view_parameters &parameters) : ptr(std::make_shared<VKR_image>(image_handle,
-                                                                              allocation,
-                                                                              image_view, parameters)) {
+    VKR_image(const VkImage &image_handle,
+              const VmaAllocation &allocation,
+              const VkImageView &image_view,
+              const Image_and_view_parameters &parameters) : VKR_image_date(image_handle, allocation, image_view,
+                                                                            parameters) {
     }
 
-    VKR_image_ptr() = default;
-
-    ~VKR_image_ptr() {
-        ptr = nullptr; //
+    ~VKR_image() {
+        destroy_image();
     }
-
-    [[nodiscard]] uint32_t use_count() const {
-        return ptr.use_count();
-    }
-
-    [[nodiscard]] uint32_t get_index() const {
-        return ptr->get_index();
-    }
-
-    bool operator==(std::nullptr_t) const noexcept {
-        return ptr == nullptr;
-    }
-
-    // 允许与 nullptr 进行 != 比较 （完美解决你的报错）
-    bool operator!=(std::nullptr_t) const noexcept {
-        return ptr != nullptr;
-    }
-
-
-    explicit operator bool() const noexcept {
-        return ptr != nullptr;
-    }
-
-
-    void clear() {
-        ptr = nullptr;
-    }
-
-    VKR_image *operator->() const { return ptr.get(); }
-
-private:
-    std::shared_ptr<VKR_image> ptr = nullptr;
 };
+
+using VKR_image_ptr = std::shared_ptr<VKR_image>;
+
 
 VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &parameters);
 

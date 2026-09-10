@@ -532,7 +532,7 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
     }
     for (auto i = 0; i < imageCount; i++) {
-        result.emplace_back(images[i],VK_NULL_HANDLE, image_views[i], parameters);
+        result.emplace_back(std::make_shared<VKR_image>(images[i],VK_NULL_HANDLE, image_views[i], parameters));
     }
     return result;
 }

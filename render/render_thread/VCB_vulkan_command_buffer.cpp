@@ -375,47 +375,49 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
                               i);
         }
         // 执行每一层的计算, 这里问题有点多
-        // {
-        //     auto last_view               = create_2d_view(image_ptr, i - 1, 1);
-        //     auto current_view            = create_2d_view(image_ptr, i, 1);
-        //     VKR_image_ptr last_image_ptr = {
-        //         image_ptr->get_image_handle(),
-        //         image_ptr->get_image_allocation(),
-        //         last_view,
-        //         image_ptr->get_parameters()
-        //     };
-        //     VKR_image_ptr current_view_image_ptr = {
-        //         image_ptr->get_image_handle(),
-        //         image_ptr->get_image_allocation(),
-        //         current_view,
-        //         image_ptr->get_parameters()
-        //     };
-        //
-        //     std::optional<Texture_parameter> offscreen       = create_2d_texture(last_image_ptr);
-        //     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(current_view_image_ptr);
-        //
-        //     // 逻辑还是看起来都差不多 , 但是最好能再上面的时候添加一个 总的汇总
-        //     shader_need_parameter parameter;
-        //     set_render_parameter(compute_shader->object_sets_bindings,
-        //                          parameter.update_object_descriptor_sets, "input_texture",
-        //                          offscreen);
-        //     set_render_parameter(compute_shader->object_sets_bindings,
-        //                          parameter.update_object_descriptor_sets, "output_texture",
-        //                          compute_texture);
-        //     allocate_descriptor_sets(parameter, compute_shader); // 暂时碰到这里的问题了
-        //     auto temp = get_descriptor_sets(parameter, compute_shader);
-        //     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
-        //     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
-        //                                VK_PIPELINE_BIND_POINT_COMPUTE);
-        //
-        //     auto width  = mipWidth > 1 ? mipWidth / 2 : 1;
-        //     auto height = mipHeight > 1 ? mipHeight / 2 : 1;
-        //
-        //     // 还需要创建多个 view , 之后再上传,之后 还需要清理掉
-        //     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
-        //     if (mipWidth > 1) mipWidth /= 2;
-        //     if (mipHeight > 1) mipHeight /= 2;
-        // }
+        {
+            auto last_view               = create_2d_view(image_ptr, i - 1, 1);
+            auto current_view            = create_2d_view(image_ptr, i, 1);
+            VKR_image_ptr last_image_ptr = std::make_shared<VKR_image>(
+                                                                       image_ptr->get_image_handle(),
+                                                                       image_ptr->get_image_allocation(),
+                                                                       last_view,
+                                                                       image_ptr->get_parameters()
+                                                                      );
+            VKR_image_ptr current_view_image_ptr = std::make_shared<VKR_image>(
+                                                                               image_ptr->get_image_handle(),
+                                                                               image_ptr->get_image_allocation(),
+                                                                               current_view,
+                                                                               image_ptr->get_parameters()
+                                                                              );
+
+            std::optional<Texture_parameter> offscreen       = create_2d_texture(last_image_ptr);
+            std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(current_view_image_ptr);
+
+            // 逻辑还是看起来都差不多 , 但是最好能再上面的时候添加一个 总的汇总
+            shader_need_parameter parameter;
+            set_render_parameter(compute_shader->object_sets_bindings,
+                                 parameter.update_object_descriptor_sets, "input_texture",
+                                 offscreen);
+            set_render_parameter(compute_shader->object_sets_bindings,
+                                 parameter.update_object_descriptor_sets, "output_texture",
+                                 compute_texture);
+            allocate_descriptor_sets(parameter, compute_shader); // 暂时碰到这里的问题了
+            auto temp = get_descriptor_sets(parameter, compute_shader);
+            update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+            bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                                       VK_PIPELINE_BIND_POINT_COMPUTE);
+
+            auto width  = mipWidth > 1 ? mipWidth / 2 : 1;
+            auto height = mipHeight > 1 ? mipHeight / 2 : 1;
+
+            // 还需要创建多个 view , 之后再上传,之后 还需要清理掉
+            vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
+            if (mipWidth > 1) mipWidth /= 2;
+            if (mipHeight > 1) mipHeight /= 2;
+            last_image_ptr->clean_copy_VkImage();
+            current_view_image_ptr->clean_copy_VkImage();
+        }
         // 执行计算完成之后的转换
         {
             add_image_barrier(image_ptr,

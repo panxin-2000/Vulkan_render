@@ -265,7 +265,7 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_samplerColorMap") {
-                auto index                                              = texture.value().image.get_index();
+                auto index                                              = texture.value().image->get_index();
                 Update_descriptor_binding temp                          = {};
                 temp.binding_name                                       = "bindless_samplerColorMap";
                 temp.resource_type                                      = "uniform sampler2D";

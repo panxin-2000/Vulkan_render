@@ -15,8 +15,8 @@
 
 std::vector<bool> image_index;
 
-std::atomic<uint32_t> VKR_image::max_index = 0;
-moodycamel::BlockingReaderWriterQueue<uint32_t> VKR_image::free_index;
+std::atomic<uint32_t> VKR_image_date::max_index = 0;
+moodycamel::BlockingReaderWriterQueue<uint32_t> VKR_image_date::free_index;
 
 
 VKR_buffer_ptr create_image_stage_buffer(const VkDeviceSize size,
@@ -228,7 +228,7 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     }
 
     VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
-    return {image, allocation, image_view, parameters};
+    return std::make_shared<VKR_image>(image, allocation, image_view, parameters);
 }
 
 VKR_image_ptr createTextureImage_detail(VK_backend &handle,

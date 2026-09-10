@@ -12,7 +12,7 @@ std::map<VkImageView, uint64_t> discard_image_view_map;
 std::map<std::pair<VkImage, VmaAllocation>, std::pair<uint64_t, uint32_t> > discard_image_map;
 
 
-void VKR_image::destroy_image() {
+void VKR_image_date::destroy_image() {
     if (image_view_ != VK_NULL_HANDLE) {
         discard_image_view_map.insert({{image_view_}, timeline_});
         image_view_ = VK_NULL_HANDLE;
