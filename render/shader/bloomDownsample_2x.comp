@@ -2,10 +2,10 @@
 // 建议使用 16x16 线程组，可根据目标硬件进行优化
 layout(local_size_x = 16, local_size_y = 16) in;
 
-// --- 对应原本的材质 parameters 声明 ---
-layout(binding = 0) uniform sampler2D materialParams_source;
+layout(set = 0, binding = 0) uniform sampler2D input_texture;
+layout(set = 0, binding = 1, rgba16f) writeonly uniform image2D output_texture;
 
-layout(std140, binding = 1) uniform MaterialParams {
+layout (push_constant) uniform PushConstant {
     float level;
     float threshold;
     float fireflies;
@@ -13,7 +13,6 @@ layout(std140, binding = 1) uniform MaterialParams {
 } materialParams;
 
 // 目标输出图像
-layout(rgba16f, binding = 2) writeonly uniform image2D output_texture;
 
 // --- 辅助函数：找出 vec3 中三个分量的最大值 ---
 highp float max3(vec3 v) {
@@ -47,18 +46,18 @@ void main() {
     }
 
     // 【核心替换】将原本的 variable_vertex.xy 替换为当前像素中心的归一化 UV 坐标
-    highp vec2 screenUV = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    highp vec2 base_UV = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
 
     float lod = materialParams.level;
 
     // 获取输入纹理在特定 Mip 级别的大小与纹素大小
-    highp vec2 size = vec2(textureSize(materialParams_source, int(lod)));
+    highp vec2 size = vec2(textureSize(input_texture, int(lod)));
     highp vec2 texelSize = vec2(1.0) / size;
 
     // Castaño, 2013, "Shadow Mapping Summary Part 1"
     // 3x3 gaussian filter with 4 linear samples
     vec2 offset = vec2(0.5);
-    highp vec2 uv = (screenUV * size) + offset; // 使用算好的 screenUV 替换
+    highp vec2 uv = (base_UV * size) + offset; // 使用算好的 screenUV 替换
     highp vec2 base = (floor(uv) - offset) * texelSize;
     highp vec2 st = fract(uv);
 
@@ -69,10 +68,10 @@ void main() {
     highp vec2 v = vec2((2.0 - st.y) / vw.x - 1.0, st.y / vw.y + 1.0) * texelSize.y;
 
     // 执行 4 次硬件双线性采样
-    vec3 c0 = textureLod(materialParams_source, base + vec2(u.x, v.x), lod).rgb;
-    vec3 c1 = textureLod(materialParams_source, base + vec2(u.y, v.x), lod).rgb;
-    vec3 c2 = textureLod(materialParams_source, base + vec2(u.x, v.y), lod).rgb;
-    vec3 c3 = textureLod(materialParams_source, base + vec2(u.y, v.y), lod).rgb;
+    vec3 c0 = textureLod(input_texture, base + vec2(u.x, v.x), lod).rgb;
+    vec3 c1 = textureLod(input_texture, base + vec2(u.y, v.x), lod).rgb;
+    vec3 c2 = textureLod(input_texture, base + vec2(u.x, v.y), lod).rgb;
+    vec3 c3 = textureLod(input_texture, base + vec2(u.y, v.y), lod).rgb;
 
     // 计算各采样点的初始高斯混合权重
     float w0 = uw.x * vw.x * (1.0 / 16.0);
@@ -100,7 +99,7 @@ void main() {
 
     // 满足阈值条件时执行高光压制
     if (materialParams.threshold > 0.0) {
-        threshold(c, materialParams_source.invHighlight);
+        threshold(c, materialParams.invHighlight);
     }
 
     // 将计算好的降采样颜色写入目标纹理
