@@ -75,6 +75,8 @@ public:
         return query_pool_;
     }
 
+    void CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image);
+
 
     struct scoped_debug_label {
         VkCommandBuffer command_buffer = VK_NULL_HANDLE;
