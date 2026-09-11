@@ -130,12 +130,21 @@ void render_different_pass(VCB &vcb,
         // 不能直接搬运,可以通过一个shader 来执行转换
 
         // vcb.compute_write_init_barrier(depth_AO_copy_image);
+
+        vcb.compute_write_init_barrier(SSAO_image);
+        vcb.SSAO(engine, depth_AO_image, SSAO_image);
+        vcb.compute_write_finish_same_read(SSAO_image);
+
+        vcb.compute_write_init_barrier(blur_SSAO_image);
+        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
+        vcb.compute_write_finish_sample_read({blur_SSAO_image});
+
+
         vcb.add_image_barrier(depth_AO_copy_image,
                               image_barrier_blank_stage,
                               image_barrier_compute_write_image2D,
                               0,
                               depth_AO_copy_image->get_mipLevels());
-
         vcb.only_image_compute(engine, depth_AO_image, depth_AO_copy_image, "copy_from_depth_to_AO");
         vcb.add_image_barrier(depth_AO_copy_image,
                               image_barrier_compute_write_image2D,
@@ -159,13 +168,6 @@ void render_different_pass(VCB &vcb,
         //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
 
         // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
-        vcb.compute_write_init_barrier(blur_SSAO_image);
-        vcb.SSAO(engine, depth_AO_image, blur_SSAO_image);
-        vcb.compute_write_finish_same_read(blur_SSAO_image);
-
-        // vcb.compute_write_init_barrier(blur_SSAO_image);
-        // // vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
-        // vcb.compute_write_finish_sample_read({blur_SSAO_image});
     }
 
 

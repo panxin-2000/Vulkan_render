@@ -393,7 +393,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
     const auto extent              = VK_backend::instance().get_current_extent();
     global_parameters_.screen_size = {
-        static_cast<float>(extent.width / 2), static_cast<float>(extent.height / 2), 0, 0
+        static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0
     };
 
     global_parameters_.frustum_planes =

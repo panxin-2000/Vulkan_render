@@ -135,7 +135,7 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
     };
     auto compute_shader                              = engine.get_shader_manager().find(blur);
     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
-    std::optional<Texture_parameter> offscreen       = create_compute_image2D_texture(input_image);
+    std::optional<Texture_parameter> offscreen       = create_2d_texture(input_image);
 
     shader_need_parameter parameter;
     set_render_parameter(compute_shader->object_sets_bindings,

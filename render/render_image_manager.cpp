@@ -18,8 +18,8 @@ VKR_image_ptr Render_image_manager::get_one_position_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-        .width  = extent.width / 2,
-        .height = extent.height / 2,
+        .width  = extent.width,
+        .height = extent.height,
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
@@ -36,8 +36,8 @@ VKR_image_ptr Render_image_manager::get_one_normal_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-        .width  = extent.width / 2,
-        .height = extent.height / 2,
+        .width  = extent.width,
+        .height = extent.height,
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
@@ -55,8 +55,8 @@ VKR_image_ptr Render_image_manager::get_one_color_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
-        .width  = extent.width / 2,
-        .height = extent.height / 2,
+        .width  = extent.width,
+        .height = extent.height,
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
@@ -99,8 +99,8 @@ VKR_image_ptr Render_image_manager::get_one_depth_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     //
     parameters.format      = VK_backend::instance().get_depth_format();
-    parameters.width       = extent.width / 2;
-    parameters.height      = extent.height / 2;
+    parameters.width       = extent.width;
+    parameters.height      = extent.height;
     parameters.depth       = 1;
     parameters.usage       = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     parameters.aspectMask  = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -177,8 +177,8 @@ VKR_image_ptr Render_image_manager::get_one_compute_write_image() {
     Image_and_view_parameters parameters{};
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     parameters.format       = VK_FORMAT_R16G16B16A16_SFLOAT;
-    parameters.width        = extent.width / 2;
-    parameters.height       = extent.height / 2;
+    parameters.width        = extent.width;
+    parameters.height       = extent.height;
     parameters.depth        = 1;
     parameters.usage        = static_cast<VkImageUsageFlagBits>(
         VK_IMAGE_USAGE_STORAGE_BIT |

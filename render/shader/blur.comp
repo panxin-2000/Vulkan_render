@@ -18,7 +18,7 @@ layout (r8, set = 0, binding = 1) uniform image2D output_texture;
 #define METHOD_5x5_TAP_GAUSS_9_time 8
 
 #ifndef METHOD
-#define METHOD METHOD_3x3_TAP_GAUSS
+#define METHOD METHOD_3x3_TAP_GAUSS_4_time
 #endif
 
 void main()
