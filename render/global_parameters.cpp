@@ -224,12 +224,19 @@ Eigen::Vector3f calculateCascadeSphereCenter(
     // =================================================================
     Eigen::Vector3f minimumBoundingCenter = mainCameraPos + mainCameraLookDir * D;
 
-    return minimumBoundingCenter.array().floor(); // 部分方向上有用,部分方向上没有用
+    return minimumBoundingCenter; // 部分方向上有用,部分方向上没有用
 }
 
 
 bool Global_parameters::update_directional_light() {
 #define SHADOW_MAP_CASCADE_COUNT 4
+
+    float distance = (world_camera_pos.head(3) - last_sun_camera_pos.head(3)).norm();
+    if (distance > 1.0f) {
+        last_sun_camera_pos = world_camera_pos;
+    } else {
+        return false;
+    }
 
     float nearClip = 0;
     float farClip  = 0;
@@ -249,7 +256,7 @@ bool Global_parameters::update_directional_light() {
         float radius = calculateCascadeRadiusFromProj(projection_matrix, cascades[i].nearPlane, cascades[i].farPlane);
         // 计算“常数级联半径”  能确保半径 不再 变化
 
-        radius = radius * 1.25; // 不知道为什么需要放大一点点,好像有一点不同 ,
+        radius = radius * 1.5; // 不知道为什么需要放大一点点,好像有一点不同 ,
         // frustumCenter 的平滑移动是导致抖动的“罪魁祸首”（诱因），
         // 而 radius（半径）如果没有锁死，则是放大这种抖动的“帮凶”
 

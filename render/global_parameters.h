@@ -129,6 +129,7 @@ public:
 
     Eigen::Vector4f fogColor = Eigen::Vector4f(0.7, 0.7, 0.7, 1.0);
     std::array<Eigen::Array4f, 9> shCoefficients;
+    Eigen::Vector4f last_sun_camera_pos;
 
 
     float &get_fxaaQualitySubpix() {
