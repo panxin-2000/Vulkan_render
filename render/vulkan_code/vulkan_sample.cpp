@@ -8,6 +8,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
 
+std::atomic<uint32_t> VKR_Sampler::max_index = 0;
 
 // 必须在全局命名空间中（或者与 VkSamplerCreateInfo 相同的命名空间，即全局）
 // 这样 Abseil 才能通过 ADL (Argument-Dependent Lookup) 找到它
@@ -57,13 +58,13 @@ inline bool operator==(const VkSamplerCreateInfo &lhs, const VkSamplerCreateInfo
 }
 
 
-absl::flat_hash_map<VkSamplerCreateInfo, VkSampler> map_;
+absl::flat_hash_map<VkSamplerCreateInfo, VKR_Sampler> map_;
 std::mutex sampler_manager_mutex_;
 
-VkSampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI) {
+VKR_Sampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI) {
     std::lock_guard<std::mutex> lock(sampler_manager_mutex_);
     if (map_.contains(samplerCI)) {
-        return map_[samplerCI];
+        return map_.at(samplerCI);
     } else {
         VkSampler sampler   = VK_NULL_HANDLE;
         const auto &backend = VK_backend::instance();
@@ -73,24 +74,27 @@ VkSampler create_vulkan_sample(const VkSamplerCreateInfo &samplerCI) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSampler(backend.get_device(), &samplerCI, nullptr, &sampler));
 
         if (sampler != VK_NULL_HANDLE) {
-            map_[samplerCI] = sampler;
-            return sampler;
+            auto index  = VKR_Sampler::get_one_bindless_index();
+            auto result = VKR_Sampler{sampler, index};
+            // 然后这里也是看看再什么时候添加到相应的绑定中
+            map_.insert({samplerCI, result});
+            return result;
         }
     }
-    return VK_NULL_HANDLE;
+    return VKR_Sampler{VK_NULL_HANDLE, 0};
 }
 
 
 void destroy_all_vulkan_sample() {
     const auto &backend = VK_backend::instance();
     for (const auto &[_, sampler]: map_) {
-        if (sampler != VK_NULL_HANDLE)
-            vkDestroySampler(backend.get_device(), sampler, nullptr);
+        if (sampler.get_sample() != VK_NULL_HANDLE)
+            vkDestroySampler(backend.get_device(), sampler.get_sample(), nullptr);
     }
     map_.clear();
 }
 
-VkSampler base_sample() {
+VKR_Sampler base_sample() {
     const auto &backend    = VK_backend::instance();
     VkSampler colorSampler = VK_NULL_HANDLE;
     VkSamplerCreateInfo samplerInfo{};
@@ -111,11 +115,9 @@ VkSampler base_sample() {
 }
 
 
-VkSampler create_2d_Texture_Sampler() {
+VKR_Sampler create_2d_Texture_Sampler() {
     auto &backend = VK_backend::instance();
 
-
-    VkSampler textureSampler;
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType         = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -159,14 +161,13 @@ VkSampler create_2d_Texture_Sampler() {
     samplerInfo.minLod     = 0.0f;
     samplerInfo.maxLod     = VK_LOD_CLAMP_NONE; // todo : why ? 设置为 1000 ，其实本质的意思是没有层级限制
     // mipLodBias 用于在 shader 计算完成之后再进行一个偏移，使画面稍微锐利或者模糊
-    return textureSampler = create_vulkan_sample(samplerInfo);
+    auto textureSampler = create_vulkan_sample(samplerInfo);
+    return textureSampler;
 }
 
-VkSampler create_skybox_Texture_Sampler() {
+VKR_Sampler create_skybox_Texture_Sampler() {
     auto &backend = VK_backend::instance();
 
-
-    VkSampler textureSampler;
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -209,5 +210,6 @@ VkSampler create_skybox_Texture_Sampler() {
     samplerInfo.minLod     = 0.0f;
     samplerInfo.maxLod     = VK_LOD_CLAMP_NONE; // todo : why ? 设置为 1000 ，其实本质的意思是没有层级限制
     // mipLodBias 用于在 shader 计算完成之后再进行一个偏移，使画面稍微锐利或者模糊
-    return textureSampler = create_vulkan_sample(samplerInfo);
+    auto textureSampler = create_vulkan_sample(samplerInfo);
+    return textureSampler;
 }

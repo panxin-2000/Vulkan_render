@@ -14,6 +14,7 @@
 
 #include "image_and_view_paramter.h"
 #include "vulkan_buffer.h"
+#include "vulkan_sample.h"
 
 
 class VKR_image_date : public NonCopyable {
@@ -148,12 +149,12 @@ std::pair<VkImage, VmaAllocation> create_2D_Image(uint32_t width, uint32_t heigh
 
 struct Texture_parameter {
     VKR_image_ptr image       = {};
-    VkSampler sampler         = VK_NULL_HANDLE;
+    VKR_Sampler sampler       = {VK_NULL_HANDLE, 0};
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     [[nodiscard]] VkDescriptorImageInfo get_descriptor_image_info(const uint64_t timeline = 0) const {
         const VkDescriptorImageInfo temp{
-            .sampler     = sampler,
+            .sampler     = sampler.get_sample(),
             .imageView   = image->get_image_view(timeline),
             .imageLayout = imageLayout
         };

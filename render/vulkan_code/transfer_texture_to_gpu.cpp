@@ -169,7 +169,7 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
             .maxAnisotropy    = 8.0f,
             .maxLod           = VK_LOD_CLAMP_NONE,
         };
-        VkSampler sampler = create_vulkan_sample(samplerCI);
+        auto sampler = create_vulkan_sample(samplerCI);
 
         ktxTexture_Destroy(ktxTexture);
 

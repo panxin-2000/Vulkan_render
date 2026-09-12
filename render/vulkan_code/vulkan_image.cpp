@@ -524,7 +524,7 @@ Texture_parameter create_skybox_texture_all(std::vector<std::string> paths) {
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView   = image_ptr->get_image_view();
-    imageInfo.sampler     = textureSampler;
+    imageInfo.sampler     = textureSampler.get_sample();
     Texture_parameter texture_parameter{
         .image       = image_ptr,
         .sampler     = textureSampler,
@@ -548,7 +548,7 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView   = image_ptr->get_image_view();
-    imageInfo.sampler     = textureSampler;
+    imageInfo.sampler     = textureSampler.get_sample();
     Texture_parameter texture_parameter{
         .image       = image_ptr,
         .sampler     = textureSampler,
@@ -570,7 +570,7 @@ Texture_parameter create_2d_texture(const VKR_image_ptr &image_ptr) {
 Texture_parameter create_compute_image2D_texture(const VKR_image_ptr &image_ptr) {
     Texture_parameter texture_parameter{
         .image       = image_ptr,
-        .sampler     = VK_NULL_HANDLE,
+        .sampler     = {VK_NULL_HANDLE, 0},
         .imageLayout = VK_IMAGE_LAYOUT_GENERAL
     };
     return texture_parameter;
