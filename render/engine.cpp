@@ -232,6 +232,7 @@ void Engine::create() {
         // 添加一张纯白的背景图片
         auto texture_default_color_ = create_single_color_texture(0x7f, 0x7f, 0x7f);
         add_bindless_texture(texture_default_color_);
+        add_bindless_sampler(texture_default_color_);
         // 默认 指向于 z 轴的 法线
         auto texture_default_normal_ = create_single_color_texture(128, 128, 255);
         add_bindless_texture(texture_default_normal_);
@@ -289,10 +290,10 @@ void Engine::add_bindless_sampler(const std::optional<Texture_parameter> &textur
     auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
-            if (info.binding_name == "bindless_Samplers") {
-                uint32_t index                                       = texture.value().image->get_index();
+            if (info.binding_name == "bindless_samplers") {
+                uint32_t index                                       = texture.value().sampler.get_index();
                 Update_descriptor_binding temp                       = {};
-                temp.binding_name                                    = "bindless_Samplers";
+                temp.binding_name                                    = "bindless_samplers";
                 temp.resource_type                                   = "uniform sampler2D";
                 temp.dstSet                                          = set_value;
                 temp.descriptor_write_binding.sType                  = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

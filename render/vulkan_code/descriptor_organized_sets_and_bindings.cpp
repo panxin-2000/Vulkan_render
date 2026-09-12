@@ -415,6 +415,29 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
         tem.descriptorCount = 1;
         tem.stageFlags      = get_stageFlags(shaderStage);
         tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLER;
+
+        const auto &type              = compiler.get_type(res.type_id);
+        VkDescriptorBindingFlags flag = 0;
+        if (type.array.empty()) {
+            // layout (binding = 1) uniform sampler2D sampler_position;
+            tem.descriptorCount = 1;
+        } else {
+            // array[0] 存储的是最外层括号的长度
+            uint32_t array_size = type.array[0];
+            if (array_size <= 1) {
+                // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
+                tem.descriptorCount = 512; // 这是一个上限，实际分配时， 暂时定义100，之后想办法添加一个宏吧
+                flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+                       VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                       VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                       VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+            } else {
+                // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
+                tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
+            }
+        }
+
+
         if (res.name.find("bindless") != std::string::npos) {
             tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                              VK_SHADER_STAGE_FRAGMENT_BIT |
@@ -469,6 +492,29 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             tem.descriptorCount = 1;
             tem.stageFlags      = get_stageFlags(shaderStage);
             tem.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+            const auto &type              = compiler.get_type(res.type_id);
+            VkDescriptorBindingFlags flag = 0;
+            if (type.array.empty()) {
+                // layout (binding = 1) uniform sampler2D sampler_position;
+                tem.descriptorCount = 1;
+            } else {
+                // array[0] 存储的是最外层括号的长度
+                uint32_t array_size = type.array[0];
+                if (array_size <= 1) {
+                    // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[];
+                    tem.descriptorCount = 512; //  现在这个上限可以添加的很大, 有 描述符 的 池的大小决定
+                    flag                = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+                           VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+                           VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+                           VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+                } else {
+                    // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
+                    tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
+                }
+            }
+
+
             if (res.name.find("bindless") != std::string::npos) {
                 tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                                  VK_SHADER_STAGE_FRAGMENT_BIT |

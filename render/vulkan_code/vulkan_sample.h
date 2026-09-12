@@ -29,6 +29,10 @@ public:
         return sampler;
     }
 
+    [[nodiscard]] uint32_t get_index() const {
+        return index_;
+    }
+
 
     VKR_Sampler(const VkSampler sampler, const uint32_t index) : sampler(sampler), index_(index) {
     }

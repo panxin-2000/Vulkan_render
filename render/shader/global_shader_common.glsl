@@ -12,7 +12,6 @@
 layout (set = 0, binding = 0) uniform texture2D bindless_texture2D[];
 layout (set = 0, binding = 1) uniform sampler bindless_samplers[512];
 // layout (set = 0, binding = 0) uniform texture2D bindless_Textures[];
-// layout (set = 0, binding = 1) uniform sampler bindless_Samplers[];
 
 
 #define SHADOW_MAP_CASCADE_COUNT 4
