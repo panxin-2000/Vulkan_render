@@ -277,7 +277,7 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
                 temp.descriptor_write_binding.pBufferInfo               = nullptr;
                 temp.descriptor_write_binding.pImageInfo                = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView          = nullptr;
-                temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 temp.texture_info                                       = {true, texture.value()};
                 update_bindless_descriptor_sets_[std::to_string(index)] = temp;
             }
@@ -289,22 +289,22 @@ void Engine::add_bindless_sampler(const std::optional<Texture_parameter> &textur
     auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
-            if (info.binding_name == "bindless_texture2D") {
-                uint32_t index                                          = texture.value().image->get_index();
-                Update_descriptor_binding temp                          = {};
-                temp.binding_name                                       = "bindless_texture2D";
-                temp.resource_type                                      = "uniform sampler2D";
-                temp.dstSet                                             = set_value;
-                temp.descriptor_write_binding.sType                     = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                temp.descriptor_write_binding.dstBinding                = binding_value;
-                temp.descriptor_write_binding.dstArrayElement           = index;
-                temp.descriptor_write_binding.descriptorCount           = 1;
-                temp.descriptor_write_binding.pBufferInfo               = nullptr;
-                temp.descriptor_write_binding.pImageInfo                = nullptr;
-                temp.descriptor_write_binding.pTexelBufferView          = nullptr;
-                temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLER;
-                temp.texture_info                                       = {true, texture.value()};
-                update_bindless_descriptor_sets_[std::to_string(index)] = temp;
+            if (info.binding_name == "bindless_Samplers") {
+                uint32_t index                                       = texture.value().image->get_index();
+                Update_descriptor_binding temp                       = {};
+                temp.binding_name                                    = "bindless_Samplers";
+                temp.resource_type                                   = "uniform sampler2D";
+                temp.dstSet                                          = set_value;
+                temp.descriptor_write_binding.sType                  = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                temp.descriptor_write_binding.dstBinding             = binding_value;
+                temp.descriptor_write_binding.dstArrayElement        = index;
+                temp.descriptor_write_binding.descriptorCount        = 1;
+                temp.descriptor_write_binding.pBufferInfo            = nullptr;
+                temp.descriptor_write_binding.pImageInfo             = nullptr;
+                temp.descriptor_write_binding.pTexelBufferView       = nullptr;
+                temp.descriptor_write_binding.descriptorType         = VK_DESCRIPTOR_TYPE_SAMPLER;
+                temp.texture_info                                    = {true, texture.value()};
+                update_bindless_sampler_sets_[std::to_string(index)] = temp; // 这一行 还是有问题的
             }
         }
     }
@@ -312,7 +312,9 @@ void Engine::add_bindless_sampler(const std::optional<Texture_parameter> &textur
 
 void Engine::update_bindless_descriptor_sets_function() {
     update_descriptor_sets(update_bindless_descriptor_sets_, bindless_descriptor_sets_);
+    update_descriptor_sets(update_bindless_sampler_sets_, bindless_descriptor_sets_);
     update_bindless_descriptor_sets_.clear();
+    update_bindless_sampler_sets_.clear();
 }
 
 

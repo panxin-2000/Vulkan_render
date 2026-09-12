@@ -38,15 +38,14 @@ public:
         descriptor_pools.at(size) = init_current_descriptor_pool();
     }
 
-    std::vector<DescriptorSet_ptr> allocate_bindless_descriptor_sets(
-        const sets_map &bindless_sets_bindings,
-        const std::vector<VkDescriptorSetLayout> &bindless_set_layout,
-        uint64_t timeline = 0) {
+    std::vector<DescriptorSet_ptr> allocate_bindless_descriptor_sets(const sets_map &bindless_sets_bindings,
+                                                                     const std::vector<VkDescriptorSetLayout> &
+                                                                     bindless_set_layout, uint64_t timeline = 0) {
         bindless_descriptor_pools = descriptor_pools.at(0); // todo: 需要添加申请的函数  // 或者说添加 初始化 时的参数
         auto &handle              = VK_backend::instance();
         auto sets_flags           = create_descriptor_sets_flags(handle, bindless_sets_bindings);
         auto result               = allocate_descriptor_sets(bindless_descriptor_pools, bindless_set_layout,
-                                               sets_flags, timeline);
+                                                             sets_flags, timeline);
 
         return result;
     }
@@ -60,7 +59,7 @@ public:
         auto &handle              = VK_backend::instance();
         auto sets_flags           = create_descriptor_sets_flags(handle, global_sets_bindings);
         auto result               = allocate_descriptor_sets(bindless_descriptor_pools, global_set_layout,
-                                               sets_flags, timeline);
+                                                             sets_flags, timeline);
 
         return result;
     }

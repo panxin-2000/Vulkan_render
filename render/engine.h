@@ -57,6 +57,7 @@ private:
     Global_parameters global_parameters_;
 
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
+    std::map<std::string, Update_descriptor_binding> update_bindless_sampler_sets_;
 
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
