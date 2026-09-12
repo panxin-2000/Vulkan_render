@@ -145,6 +145,56 @@ TEST(entt, calculate_level) {
     EXPECT_EQ(calculate_level( 0.5,0.124 ,5), 2);
 }
 
+TEST(entt, create_and_destroy_entity) {
+    auto n   = 1000;
+    auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
+
+    static entt::registry instance;
+#define Logic_entt() instance
+    const entt::entity entity_0 = Logic_entt().create();
+    const entt::entity entity_1 = Logic_entt().create();
+    const entt::entity entity_2 = Logic_entt().create();
+    const entt::entity entity_3 = Logic_entt().create();
+    const entt::entity entity_4 = Logic_entt().create();
+    Logic_entt().destroy(entity_0);
+    const entt::entity entity_5 = Logic_entt().create();
+    // 这其实稍微有点问题, 因为 entity_0 已经被删除了, 所以 再删除是没有作用的
+    Logic_entt().destroy(entity_0);
+    // 但是呢? 因为分为 值 和 版本, 所以重新删除了 entity_5 , 这里就出现了错乱
+    const entt::entity entity_6 = Logic_entt().create();
+    Logic_entt().destroy(entity_0);
+    const entt::entity entity_7 = Logic_entt().create();
+    const entt::entity entity_8 = Logic_entt().create();
+    const entt::entity entity_9 = Logic_entt().create();
+    Logic_entt().clear();
+}
+
+
+/**
+ * 为了证明, entt::entity 的32位的值是带版本号的
+ */
+TEST(entt, create_and_destroy_entity_old) {
+    auto n   = 1000;
+    auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
+
+    static entt::registry instance;
+#define Logic_entt() instance
+    const entt::entity entity_0 = Logic_entt().create();
+    const entt::entity entity_1 = Logic_entt().create();
+    const entt::entity entity_2 = Logic_entt().create();
+    const entt::entity entity_3 = Logic_entt().create();
+    const entt::entity entity_4 = Logic_entt().create();
+    Logic_entt().destroy(entity_0);
+    const entt::entity entity_5 = Logic_entt().create();
+    Logic_entt().destroy(entity_5);
+    const entt::entity entity_6 = Logic_entt().create();
+    Logic_entt().destroy(entity_6);
+    const entt::entity entity_7 = Logic_entt().create();
+    const entt::entity entity_8 = Logic_entt().create();
+    const entt::entity entity_9 = Logic_entt().create();
+    Logic_entt().clear();
+}
+
 TEST(entt, quadtree_point2) {
     auto n   = 1000;
     auto box = Box(0.0f, 0.0f, 1.0f, 1.0f);
