@@ -70,7 +70,7 @@ ComputeTBNMatrix(vec3 P, vec3 N, vec2 st)
 
 vec3 get_normal(ShaderMaterial material, vec3 world_pos, vec3 inNormal, vec2 inUV) {
     // 1. 从贴图采样（得到 0.0 到 1.0 之间的值）
-    vec3 normalSample = texture(bindless_samplerColorMap[material.normalTexture], inUV).rgb;
+    vec3 normalSample = texture(bindless_texture2D[material.normalTexture], inUV).rgb;
     // 2. 解码到 [-1, 1] 范围
     // 公式：n = color * 2.0 - 1.0
     vec3 tangent_space_Normal = normalSample * 2.0 - 1.0;

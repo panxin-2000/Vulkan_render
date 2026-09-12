@@ -244,6 +244,8 @@ public:
 
     void add_bindless_texture(const std::optional<Texture_parameter> &texture);
 
+    void add_bindless_sampler(const std::optional<Texture_parameter> &texture);
+
     void update_bindless_descriptor_sets_function();
 };
 

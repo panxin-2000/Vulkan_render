@@ -9,7 +9,8 @@
 #include "commom_function_and_struct.glsl"
 
 
-layout (set = 0, binding = 0) uniform sampler2D bindless_samplerColorMap[];
+layout (set = 0, binding = 0) uniform sampler2D bindless_texture2D[];
+//layout (set = 0, binding = 1) uniform sampler bindless_Samplers[];
 // layout (set = 0, binding = 0) uniform texture2D bindless_Textures[];
 // layout (set = 0, binding = 1) uniform sampler bindless_Samplers[];
 
@@ -83,40 +84,40 @@ float get_metallic(ShaderMaterial material) {
 
 vec4 get_base_color(ShaderMaterial material, vec2 inUV)
 {
-    vec4 inColor = texture(bindless_samplerColorMap[material.baseColorTexture], inUV);
+    vec4 inColor = texture(bindless_texture2D[material.baseColorTexture], inUV);
     return inColor * material.baseColorFactor;
 }
 
 vec4 get_emissive_color(ShaderMaterial material, vec2 inUV)
 {
-    vec4 emissive = texture(bindless_samplerColorMap[material.emissiveTexture], inUV);
+    vec4 emissive = texture(bindless_texture2D[material.emissiveTexture], inUV);
     return emissive * material.emissiveFactor;
 }
 
 float get_Roughness(ShaderMaterial material, vec2 inUV)
 {
     // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    vec4 Color = texture(bindless_texture2D[material.ORM_Texture], inUV);
     return Color.g * material.roughnessFactor;
 }
 
 float get_Metallic(ShaderMaterial material, vec2 inUV)
 {
     // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    vec4 Color = texture(bindless_texture2D[material.ORM_Texture], inUV);
     return Color.b * material.metallicFactor;
 }
 
 float get_Occlusion(ShaderMaterial material, vec2 inUV)
 {
     // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    vec4 Color = texture(bindless_texture2D[material.ORM_Texture], inUV);
     return 1.0 + material.occlusionStrength + (Color.r - 1.0);
 }
 
 vec3 get_Occlusion_Roughness_Metallic(ShaderMaterial material, vec2 inUV) {
     // Occlusion, Roughness, Metallic
-    vec4 Color = texture(bindless_samplerColorMap[material.ORM_Texture], inUV);
+    vec4 Color = texture(bindless_texture2D[material.ORM_Texture], inUV);
     vec3 result = Color.rgb * vec3(material.occlusionStrength, material.roughnessFactor, material.metallicFactor);
     result.r = 1.0 + result.r - material.occlusionStrength;
     return result;
