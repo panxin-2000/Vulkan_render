@@ -228,7 +228,9 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     }
 
     VK_CHECK_RESULT(vkCreateImageView(backend.get_device(), &depthViewCI, nullptr, &image_view));
-    return std::make_shared<VKR_image>(image, allocation, image_view, parameters);
+
+    auto index = VKR_image::get_one_bindless_index();
+    return std::make_shared<VKR_image>(image, allocation, index, image_view, parameters);
 }
 
 VKR_image_ptr createTextureImage_detail(VK_backend &handle,

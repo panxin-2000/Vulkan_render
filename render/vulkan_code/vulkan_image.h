@@ -27,13 +27,15 @@ class VKR_image_date : public NonCopyable {
 public:
     VKR_image_date(const VkImage &image_handle,
                    const VmaAllocation &allocation,
+                   const uint32_t index,
                    const VkImageView &image_view,
                    const Image_and_view_parameters &parameters) : image_handle_(image_handle),
                                                                   allocation_(allocation),
+                                                                  index_(index),
                                                                   image_view_(image_view),
                                                                   parameters_(parameters) {
         // 这里开始构建的 时候就需要 添加 index 了
-        index_ = get_one_bindless_index();
+        // index_ = get_one_bindless_index();
     }
 
     void clean_copy_VkImage() {
@@ -87,12 +89,6 @@ public:
         return image_view_;
     }
 
-private:
-    static moodycamel::BlockingReaderWriterQueue<uint32_t> free_index;
-    static std::atomic<uint32_t> max_index;
-    // 单入单出， 逻辑线程 和 渲染线程 同时 只会有一个 线程 写入或者释放
-    // 其实应该做到 单入 多出 ，这个 才是比较理想的一个状态
-
     static uint32_t get_one_bindless_index() {
         uint32_t value;
         if (free_index.try_dequeue(value) == true) {
@@ -102,6 +98,12 @@ private:
         ++max_index;
         return return_value;
     }
+
+private:
+    static moodycamel::BlockingReaderWriterQueue<uint32_t> free_index;
+    static std::atomic<uint32_t> max_index;
+    // 单入单出， 逻辑线程 和 渲染线程 同时 只会有一个 线程 写入或者释放
+    // 其实应该做到 单入 多出 ，这个 才是比较理想的一个状态
 
     static bool add_to_free_index(const uint32_t &index) {
         free_index.enqueue(index);
@@ -113,8 +115,9 @@ class VKR_image : public VKR_image_date {
 public:
     VKR_image(const VkImage &image_handle,
               const VmaAllocation &allocation,
+              const uint32_t index,
               const VkImageView &image_view,
-              const Image_and_view_parameters &parameters) : VKR_image_date(image_handle, allocation, image_view,
+              const Image_and_view_parameters &parameters) : VKR_image_date(image_handle, allocation, index, image_view,
                                                                             parameters) {
     }
 

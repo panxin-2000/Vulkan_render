@@ -381,12 +381,14 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
             VKR_image_ptr last_image_ptr = std::make_shared<VKR_image>(
                                                                        image_ptr->get_image_handle(),
                                                                        image_ptr->get_image_allocation(),
+                                                                       image_ptr->get_index(),
                                                                        last_view,
                                                                        image_ptr->get_parameters()
                                                                       );
             VKR_image_ptr current_view_image_ptr = std::make_shared<VKR_image>(
                                                                                image_ptr->get_image_handle(),
                                                                                image_ptr->get_image_allocation(),
+                                                                               image_ptr->get_index(),
                                                                                current_view,
                                                                                image_ptr->get_parameters()
                                                                               );
