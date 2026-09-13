@@ -16,32 +16,32 @@ shared vec4 s_Pixels[TILE_SIZE];
 
 void main()
 {
-    ivec2 texSize = imageSize(InputImage); // 这里获取图片的长宽
+    ivec2 image_size = imageSize(InputImage); // 这里获取图片的长宽
     ivec2 centerCoord = ivec2(gl_GlobalInvocationID.xy);
     uint localId = gl_LocalInvocationID.y;
     uint sharedIdx = localId + RADIUS;
 
     // 加载中心像素
-    s_Pixels[sharedIdx] = imageLoad(InputImage, clamp(centerCoord, ivec2(0), texSize - ivec2(1)));
+    s_Pixels[sharedIdx] = imageLoad(InputImage, clamp(centerCoord, ivec2(0), image_size - ivec2(1)));
 
     // 顶部边界填充
     if (localId < RADIUS)
     {
         ivec2 topCoord = ivec2(centerCoord.x, centerCoord.y - RADIUS);
-        s_Pixels[localId] = imageLoad(InputImage, clamp(topCoord, ivec2(0), texSize - ivec2(1)));
+        s_Pixels[localId] = imageLoad(InputImage, clamp(topCoord, ivec2(0), image_size - ivec2(1)));
     }
 
     // 底部边界填充
     if (localId >= (GROUP_SIZE - RADIUS))
     {
         ivec2 bottomCoord = ivec2(centerCoord.x, centerCoord.y + RADIUS);
-        s_Pixels[sharedIdx + RADIUS] = imageLoad(InputImage, clamp(bottomCoord, ivec2(0), texSize - ivec2(1)));
+        s_Pixels[sharedIdx + RADIUS] = imageLoad(InputImage, clamp(bottomCoord, ivec2(0), image_size - ivec2(1)));
     }
 
     barrier();
     memoryBarrierShared();
 
-    if (centerCoord.x >= texSize.x || centerCoord.y >= texSize.y)
+    if (centerCoord.x >= image_size.x || centerCoord.y >= image_size.y)
     return;
 
     // 垂直方向卷积计算

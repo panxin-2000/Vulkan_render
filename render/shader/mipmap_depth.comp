@@ -16,15 +16,9 @@ layout (set = 2, binding = 0) uniform sampler2D input_texture;
 layout(rgba16f, set = 2, binding = 1) uniform image2D output_texture;
 
 void main() {
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-    ivec2 texSize = imageSize(output_texture);
-
-    uint width = uint(texSize.x);
-    uint height = uint(texSize.y);
-
     // 越界检查
-    if (x >= width || y >= height) {
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
         return;
     }
 

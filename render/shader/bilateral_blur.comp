@@ -9,16 +9,13 @@ const float kernel1D[5] = float[](0.0625, 0.25, 0.375, 0.25, 0.0625);
 
 void main()
 {
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-
-    ivec2 texSize = imageSize(global_Blur_SSAO_compute_write);
-    if (x >= uint(texSize.x) || y >= uint(texSize.y)) {
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
         return;
     }
 
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    
+
     // ==========================================
     // 1. 获取中心像素的 Raw AO 和 深度
     // ==========================================
@@ -40,7 +37,7 @@ void main()
         for (int offset_y = -blurRange; offset_y <= blurRange; offset_y++)
         {
             ivec2 neighbor_coords = pixel_coords + ivec2(offset_x, offset_y);
-            neighbor_coords = clamp(neighbor_coords, ivec2(0), texSize - ivec2(1));
+            neighbor_coords = clamp(neighbor_coords, ivec2(0), imageSize(output_texture) - ivec2(1));
 
             // ==========================================
             // 2. 读取邻域像素的 AO 和 深度
@@ -52,7 +49,7 @@ void main()
             // ==========================================
             // 空间距离高斯权重（越远的像素权重越低）
             float spatialWeight = exp(-float(offset_x * offset_x + offset_y * offset_y) / (2.0 * float(blurRange * blurRange)));
-//            float spatialWeight = kernel1D[offset_x + 2] * kernel1D[offset_y + 2];
+            //            float spatialWeight = kernel1D[offset_x + 2] * kernel1D[offset_y + 2];
 
             // 深度相似度权重：深度差越大，权重呈指数级衰减 [1]
             float depthDiff = abs(centerDepth - neighborDepth);

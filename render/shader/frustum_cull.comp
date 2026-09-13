@@ -34,10 +34,10 @@ layout (push_constant) uniform PushConstant {
 **/
 float sampleHZB(sampler2D uHZB, vec4 aabbUV){
 
-    ivec2 texSize = textureSize(uHZB, 0);
+    ivec2 image_size = textureSize(uHZB, 0);
 
-    float width = (aabbUV.z - aabbUV.x) * float(texSize.x);
-    float height = (aabbUV.w - aabbUV.y) * float(texSize.y);
+    float width = (aabbUV.z - aabbUV.x) * float(image_size.x);
+    float height = (aabbUV.w - aabbUV.y) * float(image_size.y);
     float level = floor(log2(max(width, height)));
 
     level = max(level, 0.0);

@@ -22,9 +22,9 @@ float screenPxRange(vec2 in_UV) {
     float pxRange = 0.125; // set to distance field's pixel range
     vec2 unitRange = vec2(pxRange) / vec2(textureSize(sdf, 0));
     // If inversesqrt is not available, use vec2(1.0)/sqrt
-    vec2 screenTexSize = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
+    vec2 screen_texel_size = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
     // Can also be approximated as screenTexSize = vec2(1.0)/fwidth(texCoord);
-    return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+    return max(0.5 * dot(unitRange, screen_texel_size), 1.0);
 }
 
 void main()

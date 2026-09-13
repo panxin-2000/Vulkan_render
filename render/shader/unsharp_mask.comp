@@ -21,8 +21,8 @@ void main()
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
 
-    ivec2 texSize = imageSize(input_Image);
-    if (x >= uint(texSize.x) || y >= uint(texSize.y)) {
+    ivec2 image_size = imageSize(input_Image);
+    if (x >= uint(image_size.x) || y >= uint(image_size.y)) {
         return;
     }
 
@@ -47,7 +47,7 @@ void main()
         for (int j = -2; j <= 2; j++)
         {
             ivec2 neighbor_coords = pixel_coords + ivec2(i, j);
-            neighbor_coords = clamp(neighbor_coords, ivec2(0), texSize - ivec2(1));
+            neighbor_coords = clamp(neighbor_coords, ivec2(0), image_size - ivec2(1));
 
             vec3 neighborColor = imageLoad(input_Image, neighbor_coords).rgb;
 

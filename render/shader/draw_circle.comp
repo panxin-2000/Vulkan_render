@@ -15,9 +15,9 @@ void main() {
     uint x = gl_GlobalInvocationID.x;
     uint y = gl_GlobalInvocationID.y;
 
-    ivec2 texSize = imageSize(global_compute_Texture);
-    uint width = uint(texSize.x);
-    uint height = uint(texSize.y);
+    ivec2 image_size = imageSize(global_compute_Texture);
+    uint width = uint(image_size.x);
+    uint height = uint(image_size.y);
 
     // 越界检查
     if (x >= width || y >= height) {

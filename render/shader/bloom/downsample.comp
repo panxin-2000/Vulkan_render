@@ -8,10 +8,10 @@ layout(binding = 1, rgba32f) uniform writeonly image2D OutputImage; // 减半分
 
 void main()
 {
-    ivec2 outTexSize = imageSize(OutputImage);
+    ivec2 image_size = imageSize(OutputImage);
     ivec2 outCoord = ivec2(gl_GlobalInvocationID.xy);
 
-    if (outCoord.x >= outTexSize.x || outCoord.y >= outTexSize.y)
+    if (outCoord.x >= image_size.x || outCoord.y >= image_size.y)
     return;
 
     // 计算当前输出像素在输入纹理中对应的归一化 UV 坐标

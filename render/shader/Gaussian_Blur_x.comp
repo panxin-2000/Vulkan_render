@@ -19,26 +19,26 @@ shared vec4 s_Pixels[TILE_SIZE];
 
 void main()
 {
-    ivec2 texSize = imageSize(InputImage);
+    ivec2 image_size = imageSize(InputImage);
     ivec2 centerCoord = ivec2(gl_GlobalInvocationID.xy);
     uint localId = gl_LocalInvocationID.x;
     uint sharedIdx = localId + RADIUS;
 
     // 1. 协同加载：每个线程将自己负责的中心像素读入共享内存
-    s_Pixels[sharedIdx] = imageLoad(InputImage, clamp(centerCoord, ivec2(0), texSize - ivec2(1)));
+    s_Pixels[sharedIdx] = imageLoad(InputImage, clamp(centerCoord, ivec2(0), image_size - ivec2(1)));
 
     // 左侧边界填充（前几个线程额外加载左侧越界所需的像素）
     if (localId < RADIUS)
     {
         ivec2 leftCoord = ivec2(centerCoord.x - RADIUS, centerCoord.y);
-        s_Pixels[localId] = imageLoad(InputImage, clamp(leftCoord, ivec2(0), texSize - ivec2(1)));
+        s_Pixels[localId] = imageLoad(InputImage, clamp(leftCoord, ivec2(0), image_size - ivec2(1)));
     }
 
     // 右侧边界填充（后几个线程额外加载右侧越界所需的像素）
     if (localId >= (GROUP_SIZE - RADIUS))
     {
         ivec2 rightCoord = ivec2(centerCoord.x + RADIUS, centerCoord.y);
-        s_Pixels[sharedIdx + RADIUS] = imageLoad(InputImage, clamp(rightCoord, ivec2(0), texSize - ivec2(1)));
+        s_Pixels[sharedIdx + RADIUS] = imageLoad(InputImage, clamp(rightCoord, ivec2(0), image_size - ivec2(1)));
     }
 
     // 阻塞同步，确保当前工作组内所有线程都已将数据写入共享内存
@@ -46,7 +46,7 @@ void main()
     memoryBarrierShared();
 
     // 边界检查：防止分派的线程超出纹理实际大小
-    if (centerCoord.x >= texSize.x || centerCoord.y >= texSize.y)
+    if (centerCoord.x >= image_size.x || centerCoord.y >= image_size.y)
     return;
 
     // 2. 利用高速共享内存进行一维高斯卷积计算

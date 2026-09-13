@@ -24,11 +24,11 @@ layout (r8, set = 0, binding = 1) uniform image2D output_texture;
 void main()
 {
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 texSize = imageSize(output_texture); // 一张超小的 2 × 2 像素贴图  返回值：一定是 ivec2(2, 2)
-    if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
+    ivec2 image_size = imageSize(output_texture); // 一张超小的 2 × 2 像素贴图  返回值：一定是 ivec2(2, 2)
+    if (gl_GlobalInvocationID.x >= image_size.x || gl_GlobalInvocationID.y >= image_size.y) {
         return;
     }
-    vec2 baseUV = (vec2(pixel_coords) + 0.5) / texSize;
+    vec2 baseUV = (vec2(pixel_coords) + 0.5) / image_size;
 
     vec4 color = vec4(0.0);
     #if METHOD == METHOD_3TAP_GAUSS_HORIZ
@@ -141,15 +141,15 @@ void main()
     //  D*2   E*4   F*2    //  0.125   0.25   0.125
     //  G*1   H*2   I*1    //  0.0625  0.125  0.0625
 
-    vec2 inTexSize = vec2(textureSize(input_texture, 0));
-    vec2 invInputSize = 1.0 / inTexSize;
+    // 单个纹理像素（Texel）在归一化纹理坐标系（UV 坐标系，范围 0.0 到 1.0）中所占的尺寸宽度和高度
+    vec2 texel_size = 1.0 / textureSize(input_texture, 0);
     const float offset = 0.5;
     const float weight = 0.25;
 
-    color += textureLod(input_texture, baseUV + vec2(-offset, -offset) * invInputSize, 0.0) * weight;
-    color += textureLod(input_texture, baseUV + vec2(+offset, -offset) * invInputSize, 0.0) * weight;
-    color += textureLod(input_texture, baseUV + vec2(-offset, +offset) * invInputSize, 0.0) * weight;
-    color += textureLod(input_texture, baseUV + vec2(+offset, +offset) * invInputSize, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(-offset, -offset) * texel_size, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(+offset, -offset) * texel_size, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(-offset, +offset) * texel_size, 0.0) * weight;
+    color += textureLod(input_texture, baseUV + vec2(+offset, +offset) * texel_size, 0.0) * weight;
 
     #elif METHOD == METHOD_5x5_TAP_GAUSS
 

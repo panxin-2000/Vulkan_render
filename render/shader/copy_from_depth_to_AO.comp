@@ -9,8 +9,8 @@ layout (set = 0, binding = 0) uniform sampler2D input_texture;
 layout(r32f, set = 0, binding = 1) uniform image2D output_texture;
 
 void main() {
-    ivec2 texSize = imageSize(output_texture); // 一张超小的 2 × 2 像素贴图  返回值：一定是 ivec2(2, 2)
-    if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
+    ivec2 image_size = imageSize(output_texture); // 一张超小的 2 × 2 像素贴图  返回值：一定是 ivec2(2, 2)
+    if (gl_GlobalInvocationID.x >= image_size.x || gl_GlobalInvocationID.y >= image_size.y) {
         return;
     }
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -23,7 +23,7 @@ void main() {
     // 只有在这种发生组内分歧的情况下，两个分支的指令才都会被执行一遍，导致算力浪费
     if (imageSize(output_texture) == textureSize(input_texture, 0)){
         // 最后一个像素的坐标是 pixel_coords = texSize - 1
-        vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
+        vec2 inUV = (vec2(pixel_coords) + 0.5) / image_size;
         color = textureLod(input_texture, inUV, 0);
     } else {
         color = texelFetch(input_texture, pixel_coords, 0);

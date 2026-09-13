@@ -16,12 +16,12 @@ layout(r32f, set = 0, binding = 1) uniform image2D output_texture;
 
 
 void main() {
-    ivec2 texSize = imageSize(output_texture);
-    if (gl_GlobalInvocationID.x >= texSize.x || gl_GlobalInvocationID.y >= texSize.y) {
+    ivec2 image_size = imageSize(output_texture);
+    if (gl_GlobalInvocationID.x >= image_size.x || gl_GlobalInvocationID.y >= image_size.y) {
         return;
     }
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-    vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
+    vec2 inUV = (vec2(pixel_coords) + 0.5) / image_size;
 
 
     vec4 color = texture(input_texture, inUV);

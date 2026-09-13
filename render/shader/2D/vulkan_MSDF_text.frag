@@ -27,10 +27,10 @@ float screenPxRange(vec2 in_UV) {
 
     //    inversesqrt 应该是可以用 length 这个函数替代的
     // Can also be approximated as
-    vec2 screenTexSize = vec2(1.0) / fwidth(in_UV);
+    vec2 screen_texel_size = vec2(1.0) / fwidth(in_UV);
     //  1 个 UV 占多少屏幕像素
 
-    return max(0.5 * dot(unitRange, screenTexSize), 1.0);
+    return max(0.5 * dot(unitRange, screen_texel_size), 1.0);
 }
 
 vec3 srgbToLinearPrecise(vec3 srgb) {
