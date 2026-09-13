@@ -9,13 +9,46 @@ float saturate(float x) { return clamp(x, 0.0, 1.0); }
 
 
 #include "geometry.glsl"
-//#include "saoImpl.glsl"
 
 layout(set = 2, binding = 0) uniform sampler2D input_depth_texture;
 layout(r8, set = 2, binding = 1) uniform image2D output_texture;
 
+layout (set = 2, binding = 2) uniform SSAO_parameters
+{
+//    mat4 screenFromViewMatrix;
+    vec4 resolution;
+    vec2 positionParams;
+    vec2 sampleCount;
+    vec2 angleIncCosSin;
+    float invRadiusSquared;
+    float minHorizonAngleSineSquared;
+    float peak2;
+    float projectionScale;
+    float projectionScaleRadius;
+    float bias;
+    float power;
+    float intensity;
+    float spiralTurns;
+    float maxLevel;
+    vec2 reserved;
+//    float ssctShadowDistance;
+//    float ssctConeAngleTangeant;
+//    float ssctContactDistanceMaxInv;
+//    vec3 ssctVsLightDirection;
+//    float ssctIntensity;
+//    vec2 ssctDepthBias;
+//    vec2 ssctRayCount;
+//    uint ssctSampleCount;
+}materialParams;
+
+#include "saoImpl.glsl"
 
 
+// 上面就是需要的全部的参数了
+//type : sampler2d,
+//name : depth,
+//precision: high,
+//filterable: false //
 
 
 highp vec3 computeViewSpaceNormalHighQ_temp(
@@ -75,8 +108,14 @@ void main()
     vec2 inUV = (vec2(pixel_coords) + 0.5) / texSize;
 
 
+    // 首先,这里 拿到的深度值 是已经经过反转 z 轴的 0~1 的,
+    // 那么结果就是 1 是离的很近, 0 是离的很远
     highp float depth = sampleDepth(input_depth_texture, inUV, 0.0);
     vec3 origin = get_view_pos(inUV, depth, invProjection);
+    //  origin 中的 拿到的 z 轴是负数,  首先这里是哪里? 在 相机空间中的 位置
+    // x y 两个轴是 正常的
+    // X轴向右，Y轴向上）时，Z 轴会指向屏幕外面（指向观察者）
+    // 所以 拿到的  origin 中的 拿到的 z 轴是负数
 
     vec2 depth_tex_size = textureSize(input_depth_texture, 0);
 
@@ -87,7 +126,7 @@ void main()
     float occlusion = 0.0;
     vec3 bentNormal; // will be discarded
 
-    //    scalableAmbientObscurance(occlusion, bentNormal, inUV, origin, normal);
+    scalableAmbientObscurance(occlusion, bentNormal, inUV, origin, normal, pixel_coords, projection, invProjection, input_depth_texture);
 
 
     //    float aoVisibility = pow(saturate(1.0 - occlusion), materialParams.power);

@@ -21,6 +21,7 @@
  * code with only minor changes.
  */
 
+#include "common_math.glsl"
 #include "ssaoUtils.glsl"
 #include "geometry.glsl"
 
@@ -34,10 +35,10 @@ const float kLog2LodRate = 3.0;
 // "The Alchemy Screen-Space Ambient Obscurance Algorithm" by Morgan McGuire
 // "Scalable Ambient Obscurance" by Morgan McGuire, Michael Mara and David Luebke
 
-vec3 tapLocation(float i, const float noise, vec2 sampleCount, float spiralTurns) {
+vec3 tapLocation(float i, const float noise) {
     float offset = ((2.0 * PI) * 2.4) * noise;
-    float angle = ((i * sampleCount.y) * spiralTurns) * (2.0 * PI) + offset;
-    float radius = (i + noise + 0.5) * sampleCount.y;
+    float angle = ((i * materialParams.sampleCount.y) * materialParams.spiralTurns) * (2.0 * PI) + offset;
+    float radius = (i + noise + 0.5) * materialParams.sampleCount.y;
     return vec3(cos(angle), sin(angle), radius * radius);
 }
 
@@ -46,30 +47,35 @@ highp vec2 startPosition(const float noise) {
     return vec2(cos(angle), sin(angle));
 }
 
-highp mat2 tapAngleStep(vec2 angleIncCosSin) {
-    highp vec2 t = angleIncCosSin;
+highp mat2 tapAngleStep() {
+    highp vec2 t = materialParams.angleIncCosSin;
     return mat2(t.x, t.y, -t.y, t.x);
 }
 
-vec3 tapLocationFast(float i, vec2 p, const float noise, vec2 sampleCount) {
-    float radius = (i + noise + 0.5) * sampleCount.y;
+vec3 tapLocationFast(float i, vec2 p, const float noise) {
+    float radius = (i + noise + 0.5) * materialParams.sampleCount.y;
     return vec3(p, radius * radius);
 }
 
 void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
         float i, float ssDiskRadius,
         const highp vec2 uv, const highp vec3 origin, const vec3 normal,
-        const vec2 tapPosition, const float noise, mat4 Projection, vec2 sampleCount) {
+        const vec2 tapPosition, const float noise, mat4 Projection, mat4 invProjection, sampler2D depth_image) {
 
-    vec3 tap = tapLocationFast(i, tapPosition, noise, sampleCount);
+    vec3 tap = tapLocationFast(i, tapPosition, noise);
 
     float ssRadius = max(1.0, tap.z * ssDiskRadius); // at least 1 pixel screen-space radius
 
     vec2 uvSamplePos = uv + vec2(ssRadius * tap.xy) * materialParams.resolution.zw;
 
     float level = clamp(floor(log2(ssRadius)) - kLog2LodRate, 0.0, float(materialParams.maxLevel));
-    highp float occlusionDepth = sampleDepthLinear(materialParams_depth, uvSamplePos, level, Projection);
-    highp vec3 p = computeViewSpacePositionFromDepth(uvSamplePos, occlusionDepth, materialParams.positionParams);
+    highp float occlusionDepth = sampleDepthLinear(depth_image, uvSamplePos, level, Projection);
+
+    vec2 positionParams = textureSize(depth_image, 0);
+
+    highp vec3 p = get_view_pos(uvSamplePos, occlusionDepth, invProjection);
+
+    //    highp vec3 p = computeViewSpacePositionFromDepth(uvSamplePos, occlusionDepth, positionParams);
 
     // now we have the sample, compute AO
     highp vec3 v = p - origin;  // sample vector
@@ -107,8 +113,8 @@ void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
 }
 
 void scalableAmbientObscurance(out float obscurance, out vec3 bentNormal,
-        highp vec2 uv, highp vec3 origin, vec3 normal) {
-    float noise = interleavedGradientNoise(getFragCoord(materialParams.resolution.xy));
+        highp vec2 uv, highp vec3 origin, vec3 normal, ivec2 FragCoord, mat4 Projection, mat4 invProjection, sampler2D depth_image) {
+    float noise = interleavedGradientNoise(FragCoord);
     highp vec2 tapPosition = startPosition(noise);
     highp mat2 angleStep = tapAngleStep();
 
@@ -120,7 +126,7 @@ void scalableAmbientObscurance(out float obscurance, out vec3 bentNormal,
     bentNormal = normal;
     for (float i = 0.0; i < materialParams.sampleCount.x; i += 1.0) {
         computeAmbientOcclusionSAO(obscurance, bentNormal,
-                i, ssDiskRadius, uv, origin, normal, tapPosition, noise);
+                i, ssDiskRadius, uv, origin, normal, tapPosition, noise, Projection, invProjection, depth_image);
         tapPosition = angleStep * tapPosition;
     }
     obscurance = sqrt(obscurance * materialParams.intensity);

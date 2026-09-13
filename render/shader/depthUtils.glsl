@@ -28,6 +28,7 @@
 //    // this resolves to -near/depth, for an ortho projection this resolves to depth*(far - near) - far
 //    return (depth * p[2].z + p[3].z) / max(depth * p[2].w + p[3].w, preventDiv0);
 //}
+// 这里返回的 也是z 轴, 也是负数
 highp float linearizeDepth(highp float depth, mat4 Projection)
 {
     // 直接提取矩阵中掌管 NDC 到 ViewSpace 深度缩放与偏移的两大核心系数
@@ -39,6 +40,14 @@ highp float linearizeDepth(highp float depth, mat4 Projection)
 }
 
 
+vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
+    vec4 clipPos = vec4(uv * 2.0 - 1.0, depth, 1.0);
+    float x = invProjection[0][0] * clipPos.x;
+    float y = invProjection[1][1] * clipPos.y;
+    float z = EIGEN_INDEX(invProjection,2,2) * clipPos.z + EIGEN_INDEX(invProjection,2,3);
+    float w = EIGEN_INDEX(invProjection,3,2) * clipPos.z + EIGEN_INDEX(invProjection,3,3);
+    return vec3(x, y, z) / w;
+}
 
 
 
