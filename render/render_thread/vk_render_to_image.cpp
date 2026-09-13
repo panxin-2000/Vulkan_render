@@ -131,14 +131,6 @@ void render_different_pass(VCB &vcb,
 
         // vcb.compute_write_init_barrier(depth_AO_copy_image);
 
-        vcb.compute_write_init_barrier(SSAO_image);
-        vcb.SSAO(engine, depth_AO_image, SSAO_image);
-        vcb.compute_write_finish_same_read(SSAO_image);
-
-        vcb.compute_write_init_barrier(blur_SSAO_image);
-        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
-        vcb.compute_write_finish_sample_read({blur_SSAO_image});
-
 
         vcb.add_image_barrier(depth_AO_copy_image,
                               image_barrier_blank_stage,
@@ -150,13 +142,19 @@ void render_different_pass(VCB &vcb,
                               image_barrier_compute_write_image2D,
                               image_barrier_compute_read_sampler2D);
 
-        // depth_down_sample.comp , 需要执行一次这个
-        // vcb.copy_image(depth_AO_image, depth_AO_copy_image);
-
-        // 之后呢? 还需要再 转换为 depth_AO_copy_image 采样的布局
-
 
         vcb.down_sample(engine, depth_AO_copy_image, "mipmap_depth");
+
+
+        vcb.compute_write_init_barrier(SSAO_image);
+        vcb.SSAO(engine, depth_AO_copy_image, SSAO_image, engine.get_global_parameters().projection_matrix);
+        vcb.compute_write_finish_same_read(SSAO_image);
+
+        vcb.compute_write_init_barrier(blur_SSAO_image);
+        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
+        vcb.compute_write_finish_sample_read({blur_SSAO_image});
+
+
         // simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
         // 这里大概需要需要生成 Mipmap
@@ -471,7 +469,6 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
     // 我还没有想好怎么压缩 它们
     // 这里排列的都是什么?  带几何的物体, 如果没有几何的物体呢?
     // 比如粒子等等
-
 
 
     FrameRate_measure framerate_measure(backend.get_refresh_rate());

@@ -360,6 +360,7 @@ if (WITH_VULKAN_BACKEND)
             "render/VCB_shadow_render.cpp"
             "render/render_image_manager.cpp"
             "render/Shader_manager.cpp"
+            "render/SSAO_parameters.cpp"
             "render/VCB_vulkan_command_buffer.cpp"
             "render/vk_render_to_image.cpp"
             "render/vulkan_code/shader_create.cpp"

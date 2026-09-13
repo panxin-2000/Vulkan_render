@@ -4,6 +4,7 @@
 #include "VCB_vulkan_command_buffer.h"
 
 #include "shader_component.h"
+#include "SSAO_parameters.h"
 
 void VCB::reset_current_command_buffer(const uint64_t time_line, VkCommandBuffer command_buffer) {
     command_buffer_ = command_buffer;
@@ -102,7 +103,7 @@ void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
-void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image, Eigen::Matrix4f projection) {
     VKR_shader_paths SSAO{
         "", "", "", "SSAO"
     };
@@ -126,6 +127,15 @@ void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
                                VK_PIPELINE_BIND_POINT_COMPUTE);
     auto width  = compute_texture->image->get_width();
     auto height = compute_texture->image->get_height();
+
+    AmbientOcclusionOptions options;
+
+    auto consts = get_SSAO_parameters(options, projection, width, height);
+
+    PushConstants(compute_shader->pipeline_layout,
+                  VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(SSAO_parameters), &consts);
+
+
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
