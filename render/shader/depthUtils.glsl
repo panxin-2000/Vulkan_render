@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,17 +28,14 @@
 //    // this resolves to -near/depth, for an ortho projection this resolves to depth*(far - near) - far
 //    return (depth * p[2].z + p[3].z) / max(depth * p[2].w + p[3].w, preventDiv0);
 //}
-highp float linearizeDepth(highp float depth)
+highp float linearizeDepth(highp float depth, mat4 Projection)
 {
-    const highp float preventDiv0 = 1.0 / 16777216.0;
-    mat4 p = invProjection;
-
-    // ✨ 核心修正：在分母项的前面加上绝对值 abs() 或者是负号，
-    // 确保你的 Vulkan 逆矩阵算出来的负数分母不会被 max 强行拦截阉割
-    highp float denominator = abs(depth * p[2].w + p[3].w);
-
-    // 返回真实的 Vulkan 线性深度（使其保持为负数，对齐 Vulkan 右手系）
-    return -((depth * p[2].z + p[3].z) / max(denominator, preventDiv0));
+    // 直接提取矩阵中掌管 NDC 到 ViewSpace 深度缩放与偏移的两大核心系数
+    float P22 = EIGEN_INDEX(Projection, 2, 2);
+    float P32 = EIGEN_INDEX(Projection, 3, 2);
+    // 不管是常规 Z 还是 Reversed-Z，甚至包括“无限远景 Reversed-Z”，
+    // 它们在代数化简后，在 GPU 硬件层面全都能完美收敛到这个极简的分式中！
+    return P32 / (depth - P22);
 }
 
 
@@ -61,3 +58,4 @@ highp float sampleDepthLinear(const highp sampler2D depthTexture,
 }
 
 #endif // #define FILAMENT_MATERIALS_DEPTH_UTILS
+
