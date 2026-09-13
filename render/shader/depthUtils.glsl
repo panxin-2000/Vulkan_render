@@ -53,8 +53,8 @@ highp float sampleDepth(const highp sampler2D depthTexture, const highp vec2 uv,
 }
 
 highp float sampleDepthLinear(const highp sampler2D depthTexture,
-        const highp vec2 uv, float lod) {
-    return linearizeDepth(sampleDepth(depthTexture, uv, lod));
+        const highp vec2 uv, float lod, mat4 Projection) {
+    return linearizeDepth(sampleDepth(depthTexture, uv, lod), Projection);
 }
 
 #endif // #define FILAMENT_MATERIALS_DEPTH_UTILS

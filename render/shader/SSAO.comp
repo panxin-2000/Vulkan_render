@@ -4,42 +4,15 @@
 
 
 #define COMPUTE_BENT_NORMAL 0
-layout (constant_id = 0) const int SSAO_KERNEL_SIZE = 64;
-layout (constant_id = 1) const float SSAO_RADIUS = 0.5;
+
+float saturate(float x) { return clamp(x, 0.0, 1.0); }
+
 
 #include "geometry.glsl"
+//#include "saoImpl.glsl"
 
 layout(set = 2, binding = 0) uniform sampler2D input_depth_texture;
 layout(r8, set = 2, binding = 1) uniform image2D output_texture;
-
-
-
-float hashNoise(vec2 fragCoord) {
-    uvec2 p = uvec2(fragCoord);
-    uint h = (p.x * 1597334673U) ^ (p.y * 3812015827U);
-    h = h * 1597334673U;
-    return float(h) * (1.0 / 4294967296.0);
-}
-
-
-const vec3 SSAO_KERNEL[64] = vec3[64](
-        vec3(0.011, 0.013, 0.001), vec3(-0.024, 0.018, 0.004), vec3(0.009, -0.031, 0.007), vec3(-0.015, -0.022, 0.002),
-        vec3(0.041, 0.022, 0.012), vec3(-0.033, 0.051, 0.015), vec3(0.052, -0.019, 0.019), vec3(-0.021, -0.048, 0.009),
-        vec3(0.081, 0.065, 0.033), vec3(-0.072, 0.091, 0.041), vec3(0.069, -0.085, 0.038), vec3(-0.094, -0.052, 0.028),
-        vec3(0.124, 0.033, 0.051), vec3(-0.051, 0.142, 0.062), vec3(0.111, -0.098, 0.055), vec3(-0.132, -0.041, 0.047),
-        vec3(0.152, 0.181, 0.092), vec3(-0.191, 0.112, 0.081), vec3(0.134, -0.162, 0.076), vec3(-0.144, -0.192, 0.099),
-        vec3(0.221, 0.094, 0.121), vec3(-0.082, 0.254, 0.141), vec3(0.261, -0.112, 0.135), vec3(-0.194, -0.182, 0.112),
-        vec3(0.282, 0.221, 0.192), vec3(-0.312, 0.194, 0.174), vec3(0.241, -0.332, 0.181), vec3(-0.292, -0.261, 0.211),
-        vec3(0.381, 0.124, 0.261), vec3(-0.152, 0.412, 0.282), vec3(0.421, -0.191, 0.294), vec3(-0.332, -0.312, 0.242),
-        vec3(0.392, 0.342, 0.361), vec3(-0.442, 0.291, 0.332), vec3(0.321, -0.482, 0.382), vec3(-0.412, -0.392, 0.312),
-        vec3(0.512, 0.182, 0.451), vec3(-0.212, 0.554, 0.482), vec3(0.561, -0.221, 0.492), vec3(-0.441, -0.412, 0.412),
-        vec3(0.492, 0.482, 0.582), vec3(-0.581, 0.412, 0.551), vec3(0.412, -0.612, 0.592), vec3(-0.552, -0.512, 0.521),
-        vec3(0.681, 0.221, 0.712), vec3(-0.291, 0.724, 0.742), vec3(0.741, -0.312, 0.761), vec3(-0.592, -0.582, 0.682),
-        vec3(0.612, 0.592, 0.822), vec3(-0.751, 0.512, 0.811), vec3(0.522, -0.792, 0.852), vec3(-0.712, -0.642, 0.792),
-        vec3(0.821, 0.312, 0.922), vec3(-0.382, 0.884, 0.952), vec3(0.891, -0.391, 0.941), vec3(-0.742, -0.712, 0.892),
-        vec3(0.712, 0.712, 0.991), vec3(-0.891, 0.681, 0.982), vec3(0.622, -0.922, 1.000), vec3(-0.882, -0.792, 0.972),
-        vec3(0.941, 0.352, 1.000), vec3(-0.412, 0.971, 1.000), vec3(0.982, -0.412, 1.000), vec3(-0.812, -0.852, 1.000)
-);
 
 
 
@@ -103,47 +76,24 @@ void main()
 
 
     highp float depth = sampleDepth(input_depth_texture, inUV, 0.0);
-    vec3 viewPos = get_view_pos(inUV, depth, invProjection);
+    vec3 origin = get_view_pos(inUV, depth, invProjection);
 
     vec2 depth_tex_size = textureSize(input_depth_texture, 0);
 
     vec3 normal = computeViewSpaceNormalHighQ_temp(input_depth_texture, inUV, viewPos.z, viewPos, 1 / depth_tex_size,
             invProjection);
 
-    float noise = hashNoise(pixel_coords.xy);
-    float angle = noise * 2.0 * 3.1415926535f; // 映射到 0 到 360 度
-    vec3 randomVec = vec3(cos(angle), sin(angle), 0.0); // 完美的二维随机切线
+
+    float occlusion = 0.0;
+    vec3 bentNormal; // will be discarded
+
+    //    scalableAmbientObscurance(occlusion, bentNormal, inUV, origin, normal);
 
 
-    // Create TBN matrix
-    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
-    vec3 bitangent = cross(tangent, normal);
-    mat3 TBN = mat3(tangent, bitangent, normal);
-
-    // Calculate occlusion value
-    float occlusion = 0.0f;
-    // remove banding
-    const float bias = 0.025f;
-    for (int i = 0; i < SSAO_KERNEL_SIZE; i++)
-    {
-        vec3 samplePos = TBN * SSAO_KERNEL[i];
-        samplePos = viewPos + samplePos * SSAO_RADIUS;
-
-        // project
-        vec4 offset = vec4(samplePos, 1.0f);
-        offset = projection * offset;
-        offset.xyz /= offset.w;
-        offset.xyz = offset.xyz * 0.5f + 0.5f;
-
-        highp float depth_temp = sampleDepth(input_depth_texture, offset.xy, 0.0);
-
-        vec3 sampleDepth = get_view_pos(offset.xy, depth_temp, invProjection);
+    //    float aoVisibility = pow(saturate(1.0 - occlusion), materialParams.power);
+    float aoVisibility = pow(saturate(1.0 - occlusion), 2);
 
 
-        float rangeCheck = smoothstep(0.0f, 1.0f, SSAO_RADIUS / abs(viewPos.z - sampleDepth.z));
-        occlusion += (sampleDepth.z >= samplePos.z + bias ? 1.0f : 0.0f) * rangeCheck;
-    }
-    occlusion = 1.0 - (occlusion / float(SSAO_KERNEL_SIZE));
 
-    imageStore(output_texture, pixel_coords, vec4(occlusion, 0.0, 0.0, 0.0)); // 纯红
+    imageStore(output_texture, pixel_coords, vec4(aoVisibility, 0.0, 0.0, 0.0)); // 纯红
 }

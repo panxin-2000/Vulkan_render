@@ -453,6 +453,27 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
     // 单个绘制过程中不能更换 shader 那么最开始 设置的 material_index  需要替换掉 PBR_component
     // 也就是不能通过 firstInstance 直接得到需要的 material_index 的索引值,需要 查找一次
     // firstInstance  instanceCount 这两个其实就 只有第一个参数有用
+
+    // 这里是渲染的部分, 那么需要什么呢?
+    // 问题是需要存储什么?
+    // Name_component
+    // Proxy_descriptor_sets
+    // tag
+    // VKR_Render_state
+    // Mesh_data
+    // std::vector<VKR_Primitive>
+    // std::vector<VKR_Render_state>
+    // Shader_data
+    // shader_constant_parameter
+    // shader_need_parameter , 可能都能归类到这里
+    // 包围盒
+    // pbr 索引
+    // 我还没有想好怎么压缩 它们
+    // 这里排列的都是什么?  带几何的物体, 如果没有几何的物体呢?
+    // 比如粒子等等
+
+
+
     FrameRate_measure framerate_measure(backend.get_refresh_rate());
     while (need_render == running) {
         framerate_measure.begin_frame();
