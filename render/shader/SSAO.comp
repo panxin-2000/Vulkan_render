@@ -16,20 +16,21 @@ layout(r8, set = 2, binding = 1) uniform image2D output_texture;
 layout (set = 2, binding = 2) uniform SSAO_parameters
 {
 //    mat4 screenFromViewMatrix;
-    vec4 resolution;
-    vec2 positionParams;
-    vec2 sampleCount;
-    vec2 angleIncCosSin;
-    float invRadiusSquared;
-    float minHorizonAngleSineSquared;
-    float peak2;
-    float projectionScale;
-    float projectionScaleRadius;
-    float bias;
-    float power;
-    float intensity;
-    float spiralTurns;
-    float maxLevel;
+    vec4 resolution;                  // { desc.width, desc.height, 1.0f / desc.width, 1.0f / desc.height } 改为现场计算吧
+//    vec2 positionParams;
+    vec2 sampleCount;                 // sampleCount, 1.0f / (sampleCount - 0.5f)
+                                      // const float inc = (1.0f / (sampleCount - 0.5f)) * spiralTurns * f::TAU;
+    vec2 angleIncCosSin;              // std::cos(inc), std::sin(inc)
+    float invRadiusSquared;           // 1.0f / (options.radius * options.radius)
+    float minHorizonAngleSineSquared; // std::pow(std::sin(options.minHorizonAngleRad), 2.0f)
+    float peak2;                      // 0.0300000012 * 0.0300000012
+    float projectionScale;            // projectionScale
+    float projectionScaleRadius;      // projectionScale * options.radius
+    float bias;                       // 0.0005f
+    float power;                      // 2
+    float intensity;                  // ((f::TAU * peak) * options.intensity) / sampleCount
+    float spiralTurns;                // spiralTurns
+    float maxLevel;                   // 其实这里可以先空起来,看看慢的情况下能不能得到, 之后
     vec2 reserved;
 //    float ssctShadowDistance;
 //    float ssctConeAngleTangeant;
@@ -40,6 +41,28 @@ layout (set = 2, binding = 2) uniform SSAO_parameters
 //    vec2 ssctRayCount;
 //    uint ssctSampleCount;
 }materialParams;
+
+//case QualityLevel::LOW:
+//      sampleCount = 7.0f;
+//      spiralTurns = 3.0f;
+//      standardDeviation = 8.0;
+//      break;
+//case QualityLevel::MEDIUM:
+//      sampleCount = 11.0f;
+//      spiralTurns = 6.0f;
+//      standardDeviation = 8.0;
+//      break;
+//case QualityLevel::HIGH:
+//      sampleCount = 16.0f;
+//      spiralTurns = 7.0f;
+//      standardDeviation = 6.0;
+//      break;
+//case QualityLevel::ULTRA:
+//      sampleCount = 32.0f;
+//      spiralTurns = 14.0f;
+//      standardDeviation = 4.0;
+
+
 
 #include "saoImpl.glsl"
 
@@ -136,3 +159,17 @@ void main()
 
     imageStore(output_texture, pixel_coords, vec4(aoVisibility, 0.0, 0.0, 0.0)); // 纯红
 }
+
+//  简单的描述 ,采样的 过程需要完成什么?
+// 首先我需要去拿到 当前屏幕坐标对应的  相机空间中的位置 和  不知道什么空间中的 法线
+// 因为 是判断几何遮挡的 情况,
+// 所以 需要 从 相机空间中的位置 向 四周发射 射线, 检查 周围是否存在 遮挡
+// 知道这个点的 法线的 方向, 那么能向 半球空间 检查 是否遮挡
+// 需要循环采样
+//     确定需要 检查的 半球上的每个点
+//     得到需要采样的 点的 UV 坐标, 或者说, 射线行走固定距离后的 UV 的坐标在哪里
+//     得到 UV 坐标上的 深度
+//     比较 半球上的 点 深度 与 贴图上的 深度
+//     数量越多, 遮挡的越多
+// 最后 再 决定是否需要执行一个 1- rusult 作为最终的输出
+// 保存结果到图片中

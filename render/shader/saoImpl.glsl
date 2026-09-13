@@ -57,23 +57,37 @@ vec3 tapLocationFast(float i, vec2 p, const float noise) {
     return vec3(p, radius * radius);
 }
 
-void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
-        float i, float ssDiskRadius,
-        const highp vec2 uv, const highp vec3 origin, const vec3 normal,
-        const vec2 tapPosition, const float noise, mat4 Projection, mat4 invProjection, sampler2D depth_image) {
+void computeAmbientOcclusionSAO(inout float occlusion,
+                                inout vec3 bentNormal,
+                                float i,
+                                float ssDiskRadius,
+                                const highp vec2 uv,
+                                const highp vec3 origin,
+                                const vec3 normal,
+                                const vec2 tapPosition,
+                                const float noise,
+                                mat4 Projection,
+                                mat4 invProjection,
+                                sampler2D depth_image) {
 
+    // tap 的 意思是信号学 上的 一个概念, 用于 描述一次采样 或者 一个很尖的三角形
     vec3 tap = tapLocationFast(i, tapPosition, noise);
 
     float ssRadius = max(1.0, tap.z * ssDiskRadius); // at least 1 pixel screen-space radius
 
     vec2 uvSamplePos = uv + vec2(ssRadius * tap.xy) * materialParams.resolution.zw;
+    // 拿到了采样的坐标
 
     float level = clamp(floor(log2(ssRadius)) - kLog2LodRate, 0.0, float(materialParams.maxLevel));
+    // 计算可能的 采样的层级
+
     highp float occlusionDepth = sampleDepthLinear(depth_image, uvSamplePos, level, Projection);
+    // 拿到了 半球上的 点 投影到 深度贴图 上的 UV 坐标上 的  深度
 
     vec2 positionParams = textureSize(depth_image, 0);
 
     highp vec3 p = get_view_pos(uvSamplePos, occlusionDepth, invProjection);
+    //  相机空间 中的 三维坐标值
 
     //    highp vec3 p = computeViewSpacePositionFromDepth(uvSamplePos, occlusionDepth, positionParams);
 
@@ -81,6 +95,8 @@ void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
     highp vec3 v = p - origin;  // sample vector
     highp float vv = dot(v, v);       // squared distance
     highp float vn = dot(v, normal);  // distance * cos(v, normal)
+
+    //    vn 是什么?  采样点在中心点法线方向上的“垂直高度”
 
     // discard samples that are outside of the radius, preventing distant geometry to
     // cast shadows -- there are many functions that work and choosing one is an artistic
@@ -94,8 +110,10 @@ void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
     // sin(beta) * |v|. So the test simplifies to vn^2 < vv * sin(epsilon)^2.
     w *= step(vv * materialParams.minHorizonAngleSineSquared, vn * vn);
 
-    float sampleOcclusion = max(0.0, vn + (origin.z * materialParams.bias)) / (vv + materialParams.peak2);
+    float sampleOcclusion = max(0.0, vn + (abs(origin.z) * materialParams.bias)) / (vv + materialParams.peak2);
     occlusion += w * sampleOcclusion;
+
+    // 这里的 计算稍微有点复杂 , 知道最后为了 计算 occlusion, 但是我没有搞清楚方向
 
     #if COMPUTE_BENT_NORMAL
 
@@ -111,9 +129,26 @@ void computeAmbientOcclusionSAO(inout float occlusion, inout vec3 bentNormal,
 
     #endif
 }
-
-void scalableAmbientObscurance(out float obscurance, out vec3 bentNormal,
-        highp vec2 uv, highp vec3 origin, vec3 normal, ivec2 FragCoord, mat4 Projection, mat4 invProjection, sampler2D depth_image) {
+/**
+*  out float obscurance  遮蔽度 / 遮挡度 引入了距离衰减函数  周围的障碍物距离当前像素越近，遮蔽贡献越大（阴影越黑）；距离越远，遮蔽贡献越小（阴影越淡）
+*  out vec3 bentNormal   弯曲法线  它是对像素周围“哪个方向最空旷、最不容易被遮挡”的一种数学描述 , 暂时没有使用
+*  highp vec2 uv         两个意思吧, 即是 深度贴图的 UV,也是输出 到 image 的 UV
+*  highp vec3 origin     半球采样 的 原点
+*  vec3 normal           半球采样 的 原点 上的 法线
+*  ivec2 FragCoord       这里给出了 当前的 frag 阶段的 屏幕坐标 或者 compute 阶段 的 计算坐标, 用于计算之后的 扰动噪声
+*  mat4 Projection       投影矩阵
+*  mat4 invProjection    逆投影矩阵
+*  sampler2D depth_image 需要进行采样的深度贴图
+**/
+void scalableAmbientObscurance(out float obscurance,
+                               out vec3 bentNormal,  // 弯曲法线  它是对像素周围“哪个方向最空旷、最不容易被遮挡”的一种数学描述
+                               highp vec2 uv,
+                               highp vec3 origin,
+                               vec3 normal,
+                               ivec2 FragCoord,
+                               mat4 Projection,
+                               mat4 invProjection,
+                               sampler2D depth_image) {
     float noise = interleavedGradientNoise(FragCoord);
     highp vec2 tapPosition = startPosition(noise);
     highp mat2 angleStep = tapAngleStep();
