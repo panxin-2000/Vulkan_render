@@ -156,7 +156,7 @@ void render_different_pass(VCB &vcb,
         // 之后呢? 还需要再 转换为 depth_AO_copy_image 采样的布局
 
 
-        vcb.down_sample(engine, depth_AO_copy_image, "depth_down_sample");
+        vcb.down_sample(engine, depth_AO_copy_image, "mipmap_depth");
         // simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
         // 这里大概需要需要生成 Mipmap
