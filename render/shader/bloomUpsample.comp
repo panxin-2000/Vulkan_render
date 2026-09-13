@@ -3,7 +3,7 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 // --- 对应原本的材质 parameters 声明 ---
-layout(binding = 0) uniform sampler2D materialParams_source;
+layout(binding = 0) uniform sampler2D input_texture;
 
 // Filament 的 resolution 通常结构为：
 // x: width, y: height, z: 1.0/width, w: 1.0/height (即 texelSize)
@@ -19,21 +19,14 @@ layout(rgba16f, binding = 2) writeonly uniform image2D output_texture;
 #define FILAMENT_QUALITY 2 // 设为 HIGH 级别
 
 void main() {
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-
-    // 获取目标图像尺寸（与 materialParams.resolution.xy 对应）
-    ivec2 image_size = imageSize(output_texture);
-    uint width = uint(image_size.x);
-    uint height = uint(image_size.y);
-
     // 越界检查
-    if (x >= width || y >= height) {
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
         return;
     }
 
     // 【核心替换】将原本的 variable_vertex.xy 替换为当前像素中心的 UV 坐标
-    highp vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    highp vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / imageSize(output_texture).xy;
 
     vec3 finalColor = vec3(0.0);
 
@@ -44,10 +37,10 @@ void main() {
     highp vec4 d = vec4(materialParams.resolution.zw, -materialParams.resolution.zw) * 0.5;
 
     vec3 c;
-    c  = textureLod(materialParams_source, uv + d.zw, 0.0).rgb;
-    c += textureLod(materialParams_source, uv + d.xw, 0.0).rgb;
-    c += textureLod(materialParams_source, uv + d.xy, 0.0).rgb;
-    c += textureLod(materialParams_source, uv + d.zy, 0.0).rgb;
+    c = textureLod(input_texture, uv + d.zw, 0.0).rgb;
+    c += textureLod(input_texture, uv + d.xw, 0.0).rgb;
+    c += textureLod(input_texture, uv + d.xy, 0.0).rgb;
+    c += textureLod(input_texture, uv + d.zy, 0.0).rgb;
 
     finalColor = c * 0.25;
 
@@ -60,23 +53,23 @@ void main() {
 
     vec3 c0, c1;
     // 4 个对角线采样
-    c0  = textureLod(materialParams_source, uv + d.zw, 0.0).rgb;
-    c0 += textureLod(materialParams_source, uv + d.xw, 0.0).rgb;
-    c0 += textureLod(materialParams_source, uv + d.xy, 0.0).rgb;
-    c0 += textureLod(materialParams_source, uv + d.zy, 0.0).rgb;
+    c0 = textureLod(input_texture, uv + d.zw, 0.0).rgb;
+    c0 += textureLod(input_texture, uv + d.xw, 0.0).rgb;
+    c0 += textureLod(input_texture, uv + d.xy, 0.0).rgb;
+    c0 += textureLod(input_texture, uv + d.zy, 0.0).rgb;
     // 中心点采样（权重为 4）
-    c0 += 4.0 * textureLod(materialParams_source, uv, 0.0).rgb;
+    c0 += 4.0 * textureLod(input_texture, uv, 0.0).rgb;
 
     // 4 个十字形方向采样
-    c1  = textureLod(materialParams_source, uv + vec2(d.z,  0.0), 0.0).rgb;
-    c1 += textureLod(materialParams_source, uv + vec2(0.0,  d.w), 0.0).rgb;
-    c1 += textureLod(materialParams_source, uv + vec2(d.x,  0.0), 0.0).rgb;
-    c1 += textureLod(materialParams_source, uv + vec2( 0.0, d.y), 0.0).rgb;
+    c1 = textureLod(input_texture, uv + vec2(d.z, 0.0), 0.0).rgb;
+    c1 += textureLod(input_texture, uv + vec2(0.0, d.w), 0.0).rgb;
+    c1 += textureLod(input_texture, uv + vec2(d.x, 0.0), 0.0).rgb;
+    c1 += textureLod(input_texture, uv + vec2(0.0, d.y), 0.0).rgb;
 
     // 最终加权平均 (c0 的总权重是 4+4=8，c1 的总权重是 4*2=8，总计 16)
     finalColor = (c0 + 2.0 * c1) * (1.0 / 16.0);
     #endif
 
     // 将计算出的上采样（Upsample）颜色写入目标纹理
-    imageStore(output_texture, ivec2(x, y), vec4(finalColor, 1.0));
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.0));
 }

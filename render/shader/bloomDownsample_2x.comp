@@ -103,5 +103,5 @@ void main() {
     }
 
     // 将计算好的降采样颜色写入目标纹理
-    imageStore(output_texture, ivec2(x, y), vec4(c, 1.0));
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(c, 1.0));
 }

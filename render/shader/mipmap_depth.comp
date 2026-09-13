@@ -15,17 +15,26 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout (set = 2, binding = 0) uniform sampler2D input_texture;
 layout(rgba16f, set = 2, binding = 1) uniform image2D output_texture;
 
+
+// 交错采样
+// [X] [ ] [ ] [ ]
+// [ ] [ ] [X] [ ]
+// [ ] [X] [ ] [ ]
+// [ ] [ ] [ ] [X]
+
+// 用于半分辨率（Half-Resolution）后处理管线（比如半分辨率的环境光遮蔽 SSAO/HBAO、半分辨率的屏幕空间反射 SSR 或半分辨率的粒子/体积雾渲染）。
+// 保留高频的空间分布特征：如果只取固定左上角，会造成画面严重的阶梯状走样（Aliasing）。
+// 如果做 Min/Max 滤波，虽然对遮挡剔除（Hi-Z）很有用，但会破坏深度的连续性（导致边缘向内收缩或向外扩张）。
+// 这种交错采样能在降低分辨率的同时，在宏观统计上保留原始深度的统计分布和空间结构。
+// 配合后续的棋盘格重建或双边滤波（Bilateral Filter）：在随后的计算中，算法通常会利用这种交错的特性，
+// 结合周边的像素进行跨像素联合双边模糊，从而用极低的计算开销“拼凑”还原出接近全分辨率的视觉质量。
+
 void main() {
     // 越界检查
     if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
         gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
         return;
     }
-
-    //        ivec2 icoord = ivec2(gl_FragCoord.xy);
-    //        postProcess.depth = texelFetch(materialParams_depth,
-    //                2 * icoord + ivec2(icoord.y & 1, icoord.x & 1), 0).r;
-
     ivec2 icoord = ivec2(gl_GlobalInvocationID.xy);
     float depth = texelFetch(input_texture, 2 * icoord + ivec2(icoord.y & 1, icoord.x & 1), 0).r;
     imageStore(output_texture, icoord, vec4(depth, 0, 0, 0));

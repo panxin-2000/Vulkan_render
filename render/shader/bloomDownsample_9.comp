@@ -3,33 +3,34 @@
 layout(local_size_x = 16, local_size_y = 16) in;
 
 // --- 对应原本的材质参数 parameters 声明 ---
-layout(binding = 0) uniform sampler2D materialParams_source;
+layout(binding = 0) uniform sampler2D input_texture;
 
 // 目标输出图像（降采样后的低分辨率纹理）
 layout(rgba16f, binding = 1) writeonly uniform image2D output_texture;
 
 void main() {
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-
-    // 获取目标图像尺寸（即当前降采样层的分辨率）
-    ivec2 image_size = imageSize(output_texture);
-    uint width = uint(image_size.x);
-    uint height = uint(image_size.y);
-
     // 越界检查
-    if (x >= width || y >= height) {
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
         return;
     }
 
     // 【核心替换】将原本的 variable_vertex.xy 替换为当前像素中心的归一化 UV 坐标
-    highp vec2 uv = (vec2(x, y) + vec2(0.5)) / vec2(width, height);
+    highp vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / imageSize(output_texture).xy;
 
     // 获取输入纹理（上一层高分辨率纹理）的纹素大小（Texel Size）
-    highp vec2 size = vec2(1.0) / vec2(textureSize(materialParams_source, 0));
+    highp vec2 size = vec2(1.0) / vec2(textureSize(input_texture, 0));
 
     // --- 原算法中的权重与缩放参数计算 ---
-    float o  = 1.5 + 0.261629;
+
+
+    // 在计算机图形学中，当我们要高效模拟高斯模糊时，最经典的做法就是使用二项式系数（Binomial Coefficients）
+    // 因为当二项式分布的阶数足够高时，它的离散形态极度逼近连续的高斯钟形曲线
+    // 假设我们有一个离散的、关于中心对称的 3 抽头滤波器，其原始的整数相对权重比例为：
+    // [ 7.46602,  17.06796,  7.46602 ] 之和 为 32
+    // wa 是能够计算出来的  实际上  wb =  17.06796 / 32 , 只是为了少写一个硬编码的固定值
+
+    float o = 1.5 + 0.261629;
     float wa = 7.46602 / 32.0;
     float wb = 1.0 - wa * 2.0;
     float wab = wa * wb;
@@ -39,18 +40,27 @@ void main() {
     // 应用精心计算出的硬件双线性插值偏移尺寸
     size *= o;
 
+    // [ lt ] [ t ] [ rt ]
+    // [ l  ] [ c ] [ r  ]
+    // [ lb ] [ b ] [ rb ]
+
+    // [ waa ] [ wab ] [ waa ]
+    // [ wab ] [ wbb ] [ wab ]
+    // [ waa ] [ wab ] [ waa ]
+
     // --- 9 次双线性采样逻辑 ---
-    vec3 c  = textureLod(materialParams_source, uv + vec2(0.0)            , 0.0).rgb; // 中心
-    vec3 l  = textureLod(materialParams_source, uv + vec2(-size.x,    0.0), 0.0).rgb; // 左
-    vec3 r  = textureLod(materialParams_source, uv + vec2( size.x,    0.0), 0.0).rgb; // 右
-    vec3 b  = textureLod(materialParams_source, uv + vec2(    0.0,-size.y), 0.0).rgb; // 下
-    vec3 t  = textureLod(materialParams_source, uv + vec2(    0.0, size.y), 0.0).rgb; // 上
-    vec3 lb = textureLod(materialParams_source, uv + vec2(-size.x,-size.y), 0.0).rgb; // 左下
-    vec3 rb = textureLod(materialParams_source, uv + vec2( size.x,-size.y), 0.0).rgb; // 右下
-    vec3 lt = textureLod(materialParams_source, uv + vec2(-size.x, size.y), 0.0).rgb; // 左上
-    vec3 rt = textureLod(materialParams_source, uv + vec2( size.x, size.y), 0.0).rgb; // 右上
+    vec3 c = textureLod(input_texture, uv + vec2(0.0), 0.0).rgb; // 中心
+    vec3 l = textureLod(input_texture, uv + vec2(-size.x, 0.0), 0.0).rgb; // 左
+    vec3 r = textureLod(input_texture, uv + vec2(size.x, 0.0), 0.0).rgb; // 右
+    vec3 b = textureLod(input_texture, uv + vec2(0.0, -size.y), 0.0).rgb; // 下
+    vec3 t = textureLod(input_texture, uv + vec2(0.0, size.y), 0.0).rgb; // 上
+    vec3 lb = textureLod(input_texture, uv + vec2(-size.x, -size.y), 0.0).rgb; // 左下
+    vec3 rb = textureLod(input_texture, uv + vec2(size.x, -size.y), 0.0).rgb; // 右下
+    vec3 lt = textureLod(input_texture, uv + vec2(-size.x, size.y), 0.0).rgb; // 左上
+    vec3 rt = textureLod(input_texture, uv + vec2(size.x, size.y), 0.0).rgb; // 右上
 
     // --- 最终的滤波器权重组合 ---
+    // 重要的是权重是如何计算的
     vec3 finalColor = (c * wbb +
     (l * wab +
     (r * wab +
@@ -62,5 +72,5 @@ void main() {
     (rt * waa)))))))));
 
     // 将计算出的降采样颜色写入目标纹理
-    imageStore(output_texture, ivec2(x, y), vec4(finalColor, 1.0));
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.0));
 }
