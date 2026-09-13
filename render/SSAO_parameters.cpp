@@ -84,7 +84,7 @@ SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eige
     //  应该只差这两个参数了
     const float projectionScale = std::min(
                                            0.5f * projection(0, 0) * width,
-                                           0.5f * projection(1, 1) * height);
+                                           0.5f * -projection(1, 1) * height);
 
 
     SSAO_parameters temp;
@@ -99,7 +99,7 @@ SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eige
     temp.power                      = power;
     temp.intensity                  = intensity / sampleCount;
     temp.spiralTurns                = spiralTurns;
-    temp.maxLevel                   = 2; // 这里的值不对
+    temp.maxLevel                   = 6; // 这里的值不对
 
     return temp;
 }

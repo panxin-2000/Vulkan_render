@@ -45,7 +45,7 @@ struct AmbientOcclusionOptions {
     /** depth distance that constitute an edge for filtering */
     float bilateralThreshold = 0.05f;
     /** affects # of samples used for AO and params for filtering */
-    QualityLevel quality = QualityLevel::LOW;
+    QualityLevel quality = QualityLevel::HIGH;
     /** affects AO smoothness. Recommend setting to HIGH when aoType set to GTAO. */
     QualityLevel lowPassFilter = QualityLevel::MEDIUM;
     /** affects AO buffer upsampling quality */
@@ -62,24 +62,24 @@ struct AmbientOcclusionOptions {
 struct SSAO_parameters {
     //    mat4 screenFromViewMatrix;
     // Eigen::Vector4f resolution; // { desc.width, desc.height, 1.0f / desc.width, 1.0f / desc.height } 改为现场计算吧
-    //    vec2 positionParams;
-    Eigen::Vector2f sampleCount; // sampleCount, 1.0f / (sampleCount - 0.5f)
+    //    vec2 positionParams = ; // 有问题, 不确定是不是这个的原因导致的
+    Eigen::Vector2f sampleCount = {7, 0.15384616}; // sampleCount, 1.0f / (sampleCount - 0.5f)
     // const float inc = (1.0f / (sampleCount - 0.5f)) * spiralTurns * f::TAU;
-    Eigen::Vector2f angleIncCosSin; // std::cos(inc), std::sin(inc)
+    Eigen::Vector2f angleIncCosSin = {-0.970941901, 0.23931545}; // std::cos(inc), std::sin(inc)
 
-    float invRadiusSquared;           // 1.0f / (options.radius * options.radius)
-    float minHorizonAngleSineSquared; // std::pow(std::sin(options.minHorizonAngleRad), 2.0f)
-    float peak2;                      // 0.0300000012 * 0.0300000012
-    float projectionScale;            // projectionScale
+    float invRadiusSquared           = 11.1111107;     // 1.0f / (options.radius * options.radius)
+    float minHorizonAngleSineSquared = 0;              // std::pow(std::sin(options.minHorizonAngleRad), 2.0f)
+    float peak2                      = 0.000900000043; // 0.0300000012 * 0.0300000012
+    float projectionScale            = 746.666626;     // projectionScale
 
-    float projectionScaleRadius; // projectionScale * options.radius
-    float bias;                  // 0.0005f
-    float power;                 // 2
-    float intensity;             // ((f::TAU * peak) * options.intensity) / sampleCount
+    float projectionScaleRadius = 224;            // projectionScale * options.radius
+    float bias                  = 0.000500000024; // 0.0005f
+    float power                 = 2;              // 2
+    float intensity             = 0.0269279387;   // ((f::TAU * peak) * options.intensity) / sampleCount
 
-    float spiralTurns; // spiralTurns
-    float maxLevel;    // 其实这里可以先空起来,看看慢的情况下能不能得到, 之后
-    Eigen::Vector2f reserved;
+    float spiralTurns        = 3; // spiralTurns
+    float maxLevel           = 3; // 其实这里可以先空起来,看看慢的情况下能不能得到, 之后
+    Eigen::Vector2f reserved = Eigen::Vector2f::Zero();
     //    float ssctShadowDistance;
     //    float ssctConeAngleTangeant;
     //    float ssctContactDistanceMaxInv;

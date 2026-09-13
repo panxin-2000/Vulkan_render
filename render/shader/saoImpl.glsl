@@ -57,41 +57,9 @@ vec3 tapLocationFast(float i, vec2 p, const float noise) {
     return vec3(p, radius * radius);
 }
 
-void computeAmbientOcclusionSAO(inout float occlusion,
-        inout vec3 bentNormal,
-        float i,
-        float ssDiskRadius,
-        const highp vec2 uv,
-        const highp vec3 origin,
-        const vec3 normal,
-        const vec2 tapPosition,
-        const float noise,
-        mat4 Projection,
-        mat4 invProjection,
-        sampler2D depth_image) {
-
-    // tap 的 意思是信号学 上的 一个概念, 用于 描述一次采样 或者 一个很尖的三角形
-    vec3 tap = tapLocationFast(i, tapPosition, noise);
-
-    float ssRadius = max(1.0, tap.z * ssDiskRadius); // at least 1 pixel screen-space radius
-
-    //    vec2 positionParams = textureSize(depth_image, 0);
-
-    vec2 uvSamplePos = uv + vec2(ssRadius * tap.xy) * (1.0 / textureSize(depth_image, 0));
-    // 拿到了采样的坐标
-
-    float level = clamp(floor(log2(ssRadius)) - kLog2LodRate, 0.0, float(materialParams.maxLevel));
-    // 计算可能的 采样的层级
-
-    highp float occlusionDepth = sampleDepthLinear(depth_image, uvSamplePos, level, Projection);
-    // 拿到了 半球上的 点 投影到 深度贴图 上的 UV 坐标上 的  深度
 
 
-    highp vec3 p = get_view_pos(uvSamplePos, occlusionDepth, invProjection);
-    //  相机空间 中的 三维坐标值
-
-    //    highp vec3 p = computeViewSpacePositionFromDepth(uvSamplePos, occlusionDepth, positionParams);
-
+void compute_high_AO(inout float occlusion, highp vec3 p, const highp vec3 origin, const vec3 normal) {
     // now we have the sample, compute AO
     highp vec3 v = p - origin;  // sample vector
     highp float vv = dot(v, v);       // squared distance
@@ -113,6 +81,44 @@ void computeAmbientOcclusionSAO(inout float occlusion,
 
     float sampleOcclusion = max(0.0, vn + (abs(origin.z) * materialParams.bias)) / (vv + materialParams.peak2);
     occlusion += w * sampleOcclusion;
+
+}
+
+
+
+void computeAmbientOcclusionSAO(inout float occlusion,
+        inout vec3 bentNormal,
+        float i,
+        float ssDiskRadius,
+        const highp vec2 uv,
+        const highp vec3 origin,
+        const vec3 normal,
+        const vec2 tapPosition,
+        const float noise,
+        mat4 Projection,
+        mat4 invProjection,
+        sampler2D depth_image) {
+
+    // tap 的 意思是信号学 上的 一个概念, 用于 描述一次采样 或者 一个很尖的三角形
+    vec3 tap = tapLocationFast(i, tapPosition, noise);
+
+    float ssRadius = max(1.0, tap.z * ssDiskRadius); // at least 1 pixel screen-space radius
+
+    vec2 uvSamplePos = uv + vec2(ssRadius * tap.xy) * (1.0 / textureSize(depth_image, 0));
+    // 拿到了采样的坐标
+
+    float level = clamp(floor(log2(ssRadius)) - kLog2LodRate, 0.0, float(materialParams.maxLevel));
+    // 计算可能的 采样的层级
+
+    highp float occlusionDepth = sampleDepthLinear(depth_image, uvSamplePos, level, Projection);
+    // 拿到了 半球上的 点 投影到 深度贴图 上的 UV 坐标上 的  深度
+
+
+    highp vec3 p = get_view_pos(uvSamplePos, occlusionDepth, invProjection);
+    //  相机空间 中的 三维坐标值
+
+    compute_high_AO(occlusion, p, origin, normal);
+
 
     // 这里的 计算稍微有点复杂 , 知道最后为了 计算 occlusion, 但是我没有搞清楚方向
 
