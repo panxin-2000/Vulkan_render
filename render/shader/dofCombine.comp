@@ -1,0 +1,51 @@
+#version 450
+// 建议使用 16x16 线程组，可根据你的硬件情况调整优化
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// --- 对应原本的材质 parameters 声明 ---
+layout(set = 0, binding = 0) uniform sampler2D input_color;
+layout(set = 0, binding = 1) uniform sampler2D input_tiles;
+layout(set = 0, binding = 2) uniform sampler2D input_dof;
+layout(set = 0, binding = 3) uniform sampler2D input_alpha;
+
+// 目标输出图像（降采样后的低分辨率纹理）
+layout(rgba16f, set = 0, binding = 4) writeonly uniform image2D output_texture;
+
+#extension GL_GOOGLE_include_directive: enable
+#include "common_math.glsl"
+#include "dof_utils.glsl"
+
+
+
+// Dual Filtering（双重滤波）的下采样（Downsampling）
+void main() {
+    // 越界检查
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
+        return;
+    }
+    highp vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / imageSize(output_texture).xy;
+
+    vec2 tiles = textureLod(input_tiles, uv, 0.0).rg;
+
+    vec4 color;
+    if (isTrivialTile(tiles)) {
+        color = textureLod(input_color, uv, 0.0);
+    } else if (isFastTile(tiles) && (abs(tiles.r) >= MAX_IN_FOCUS_COC + 1.0)) {
+        // we can only handle fast tiles that don't have an alpha channel here
+        color = textureLod(input_dof, uv, 0.0);
+    } else {
+        float alpha = textureLod(input_alpha, uv, 0.0).r;
+        vec4 dof = textureLod(input_dof, uv, 0.0);
+        color = textureLod(input_color, uv, 0.0);
+        color = dof + (1.0 - alpha) * color;
+    }
+
+    #if POST_PROCESS_OPAQUE
+    // kill the work performed above
+    color.a = 1.0;
+    #endif
+
+
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(color));
+}

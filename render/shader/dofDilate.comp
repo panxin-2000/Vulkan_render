@@ -1,0 +1,62 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(set = 0, binding = 0) uniform sampler2D input_texture_tiles;
+layout(rgba16f, set = 0, binding = 1) writeonly uniform image2D output_texture;
+// rgba16f 可能不对, 需要改改
+
+#extension GL_GOOGLE_include_directive: enable
+#include "common_math.glsl"
+
+// Size of a tile in full-resolution pixels -- must match tileSize in PostProcessManager.cpp
+#define TILE_SIZE   16.0
+
+vec2 tap(const vec2 uv, const vec2 offset, sampler2D input_tiles) {
+    return textureLod(input_tiles, uv + offset, 0.0).rg;
+}
+
+vec2 dilate(inout vec2 center, const vec2 tap) {
+    // Tiles that can affect us need to transfer their CoC to us (for the foreground it's
+    // min(ourCoc, theirCoc) because CoC are negative (the min is the larger radius).
+    center.r = min(center.r, tap.r);
+    center.g = max(center.g, tap.g);
+    return center;
+}
+
+
+// Dual Filtering（双重滤波）的下采样（Downsampling）
+void main() {
+    // 越界检查
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
+        return;
+    }
+    highp vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / imageSize(output_texture).xy;
+
+
+    const float radius = 1.0;
+    // we need highp here just to maintain precision of 1/x
+    highp vec2 size = vec2(textureSize(input_texture_tiles, 0));
+    highp vec2 isize = 1.0 / size;
+
+    vec2 radii = float(radius) * isize;
+
+    // center
+    vec2 center = tap(uv, vec2(0, 0), input_texture_tiles);
+
+    // horizontal sides
+    for (float j = -radius; j <= radius; j += 1.0) {
+        float y = j * isize.y;
+        dilate(center, tap(uv, vec2(-radii.x, y), input_texture_tiles));
+        dilate(center, tap(uv, vec2(radii.x, y), input_texture_tiles));
+    }
+
+    // vertical sides
+    for (float i = -radius + 1.0; i <= radius - 1.0; i += 1.0) {
+        float x = i * isize.x;
+        dilate(center, tap(uv, vec2(x, -radii.y), input_texture_tiles));
+        dilate(center, tap(uv, vec2(x, radii.y), input_texture_tiles));
+    }
+
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(center, 0, 0));
+}

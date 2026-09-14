@@ -1,0 +1,60 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(set = 0, binding = 0) uniform sampler2D input_texture_color;
+layout(set = 0, binding = 1) uniform sampler2D input_texture_coc;
+layout(rgba16f, set = 0, binding = 2) writeonly uniform image2D output_texture;
+layout(r16f, set = 0, binding = 3) writeonly uniform image2D output_coc;
+// rgba16f 可能不对, 需要改改
+
+#extension GL_GOOGLE_include_directive: enable
+#include "common_math.glsl"
+#include "dof_Utils.glsl"
+
+
+layout (push_constant) uniform PushConstant
+{
+    float weightScale;
+}materialParams;
+
+
+
+// Dual Filtering（双重滤波）的下采样（Downsampling）
+void main() {
+    // 越界检查
+    if (gl_GlobalInvocationID.x >= imageSize(output_texture).x ||
+        gl_GlobalInvocationID.y >= imageSize(output_texture).y) {
+        return;
+    }
+    highp vec2 uv = (gl_GlobalInvocationID.xy + vec2(0.5)) / imageSize(output_texture).xy;
+
+    // the source is guaranteed to be a multiple of two, so we know the bilinear weights are 0.25
+
+    // the bilateral weights need to be scaled by to match the lower resolution
+    float weightScale = materialParams.weightScale;
+
+    vec4 s01 = textureLodOffset(input_texture_color, uv, 0.0, ivec2(0, 1));
+    vec4 s11 = textureLodOffset(input_texture_color, uv, 0.0, ivec2(1, 1));
+    vec4 s10 = textureLodOffset(input_texture_color, uv, 0.0, ivec2(1, 0));
+    vec4 s00 = textureLodOffset(input_texture_color, uv, 0.0, ivec2(0, 0));
+
+    // fetch the 4 corresponding CoC (textureGather with LOD doesn't exist)
+    vec4 c;
+    c[0] = textureLodOffset(input_texture_coc, uv, 0.0, ivec2(0, 1)).r;
+    c[1] = textureLodOffset(input_texture_coc, uv, 0.0, ivec2(1, 1)).r;
+    c[2] = textureLodOffset(input_texture_coc, uv, 0.0, ivec2(1, 0)).r;
+    c[3] = textureLodOffset(input_texture_coc, uv, 0.0, ivec2(0, 0)).r;
+
+    float outCoc = downsampleCoC(c);
+    vec4 w = downsampleCocWeights(c, outCoc, weightScale);
+    vec4 outColor = (s01 * w[0] + s11 * w[1] + s10 * w[2] + s00 * w[3]) * rcp(dot(vec4(1.0), w));
+
+    #if POST_PROCESS_OPAQUE
+    // kill the work performed above
+    outColor.a = 1.0;
+    #endif
+
+
+    imageStore(output_texture, ivec2(gl_GlobalInvocationID.xy), vec4(outColor));
+    imageStore(output_coc, ivec2(gl_GlobalInvocationID.xy), vec4(outCoc, 0, 0, 0));
+}
