@@ -132,7 +132,11 @@ using VKR_image_ptr = std::shared_ptr<VKR_image>;
 
 VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &parameters);
 
-VkImageView create_2d_view(VKR_image_ptr image_ptr, uint32_t baseMipLevel, uint32_t levelCount);
+VkImageView create_2d_view(VKR_image_ptr image_ptr,
+                           uint32_t baseMipLevel,
+                           uint32_t levelCount,
+                           uint32_t baseArrayLayer,
+                           uint32_t layerCount);
 
 void copyBufferToImage(VKR_buffer_ptr buffer,
                        VKR_image_ptr image_ptr,

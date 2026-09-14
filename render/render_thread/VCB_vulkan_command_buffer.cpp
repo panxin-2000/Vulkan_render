@@ -386,8 +386,8 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
         }
         // 执行每一层的计算, 这里问题有点多
         {
-            auto last_view               = create_2d_view(image_ptr, i - 1, 1);
-            auto current_view            = create_2d_view(image_ptr, i, 1);
+            auto last_view               = create_2d_view(image_ptr, i - 1, 1, 0, parameters.arrayLayers);
+            auto current_view            = create_2d_view(image_ptr, i, 1, 0, parameters.arrayLayers);
             VKR_image_ptr last_image_ptr = std::make_shared<VKR_image>(
                                                                        image_ptr->get_image_handle(),
                                                                        image_ptr->get_image_allocation(),

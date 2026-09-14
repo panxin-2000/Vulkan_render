@@ -43,7 +43,7 @@ void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,
             .offset = {0, 0},
             .extent = current_depth_extent,
         },
-        .layerCount           = depth->get_arrayLayers(),
+        .layerCount           = 1, // 这里最好还是能有一个参数来配置
         .colorAttachmentCount = 0,
         .pColorAttachments    = nullptr,
         .pDepthAttachment     = &depthAttachmentInfo, // pDepthAttachment 在缩放时有问题。

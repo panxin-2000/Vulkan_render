@@ -33,9 +33,21 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
     // 这个时候需要什么呢？ 物体的包围盒，model ,之后 再与 平头截体进行相交的判断
     // 之后再是什么呢？ 看看如何将这部分的计算放到GPU中计算
 
+    uint &i                                     = engine.get_current_CSM();
+    i                                           = i % 4;
+    const Image_and_view_parameters &parameters = depth_shadow_image->get_parameters();
 
-    begin_rendering_depth_attachment(depth_shadow_image,
-                                         VK_ATTACHMENT_LOAD_OP_CLEAR);
+    auto current_view               = create_2d_view(depth_shadow_image, 0, parameters.mipLevels, i, 1);
+    VKR_image_ptr current_image_ptr = std::make_shared<VKR_image>(
+                                                                  depth_shadow_image->get_image_handle(),
+                                                                  depth_shadow_image->get_image_allocation(),
+                                                                  depth_shadow_image->get_index(),
+                                                                  current_view,
+                                                                  depth_shadow_image->get_parameters()
+                                                                 );
+
+    begin_rendering_depth_attachment(current_image_ptr,
+                                     VK_ATTACHMENT_LOAD_OP_CLEAR);
     auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
     for (const auto entity: view) {
         auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
@@ -49,20 +61,12 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
                 engine.get_shader_manager().find(shader_path);
         bind_pipeline_update_parameter(entity, shader_data_ref);
         // 这里就需要看看怎么push
-        for (uint i = 0; i < 4; ++i) {
-            VkClearAttachment clearAttachment{};
-            clearAttachment.aspectMask              = VK_IMAGE_ASPECT_DEPTH_BIT;
-            clearAttachment.clearValue.depthStencil = {0.0f, 0}; // 刷成最远
-
-            VkClearRect clearRect{};
-            clearRect.rect.offset    = {0, 0};
-            clearRect.rect.extent    = {depth_shadow_image->get_width(), depth_shadow_image->get_height()};
-            clearRect.baseArrayLayer = 0; // 核心：精确指定清空第 i 层
-            clearRect.layerCount     = 1;
-
-            vkCmdClearAttachments(command_buffer_, 1, &clearAttachment, 1, &clearRect);
-
-            uint temp = 3 - i;
+        // 现在这里的压力有点大,看看怎么分散到多帧
+        // 这么改帧率是能上去的,但是需要注意一下关于清除的问题
+        // 其实应该是,begin_rendering_depth_attachment 的时候添加一个选择, 主动选择要写入的层,并清理掉 之前写入的结果
+        // 那一帧需要,就更新那一层的 相关矩阵, 否则不更新
+        {
+            uint temp = i;
             PushConstants(shader_data_ref->pipeline_layout,
                           VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &temp);
             // 现在绑定的管线是有问题的,
@@ -76,4 +80,6 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
         }
     }
     end_rendering();
+    current_image_ptr->clean_copy_VkImage();
+    ++i;
 }

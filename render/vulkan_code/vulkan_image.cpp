@@ -136,7 +136,11 @@ void generateMipmaps(VK_backend &handle, const VKR_image_ptr image_ptr,
 }
 
 
-VkImageView create_2d_view(VKR_image_ptr image_ptr, uint32_t baseMipLevel, uint32_t levelCount) {
+VkImageView create_2d_view(VKR_image_ptr image_ptr,
+                           uint32_t baseMipLevel,
+                           uint32_t levelCount,
+                           uint32_t baseArrayLayer,
+                           uint32_t layerCount) {
     const auto &backend                         = VK_backend::instance();
     const Image_and_view_parameters &parameters = image_ptr->get_parameters();
 
@@ -151,8 +155,8 @@ VkImageView create_2d_view(VKR_image_ptr image_ptr, uint32_t baseMipLevel, uint3
             .aspectMask     = parameters.aspectMask,
             .baseMipLevel   = baseMipLevel,
             .levelCount     = levelCount,
-            .baseArrayLayer = 0,
-            .layerCount     = parameters.arrayLayers,
+            .baseArrayLayer = baseArrayLayer,
+            .layerCount     = layerCount,
         }
     };
     if (parameters.flags == 0) {
