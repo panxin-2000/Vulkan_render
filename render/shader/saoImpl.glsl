@@ -72,6 +72,9 @@ void compute_high_AO(inout float occlusion, highp vec3 p, const highp vec3 origi
     // decision.
     // Need to be highp to avoid imprecision on certain hardware (e.g. PowerVR)
     highp float w = sq(max(0.0, 1.0 - vv * materialParams.invRadiusSquared));
+    // 上面一行 括弧中的内容算出来已经是零,所以之后的都不对了
+    // vv * materialParams.invRadiusSquared 需要控制在 0~1 之内
+    // vv 算出来的内容太大了, 为什么会这个样子呢?  p 还是 origin 有问题呢?
 
     // discard samples that are too close to the horizon to reduce shadows cast by geometry
     // not sufficently tessellated. The goal is to discard samples that form an angle 'beta'
@@ -110,7 +113,9 @@ void computeAmbientOcclusionSAO(inout float occlusion,
     float level = clamp(floor(log2(ssRadius)) - kLog2LodRate, 0.0, float(materialParams.maxLevel));
     // 计算可能的 采样的层级
 
-    highp float occlusionDepth = sampleDepthLinear(depth_image, uvSamplePos, level, Projection);
+    // 那么就是这里有问题了
+    highp float occlusionDepth = sampleDepth(depth_image, uvSamplePos, level);
+
     // 拿到了 半球上的 点 投影到 深度贴图 上的 UV 坐标上 的  深度
 
 
@@ -126,7 +131,8 @@ void computeAmbientOcclusionSAO(inout float occlusion,
 
     // TODO: revisit how we choose to keep the normal or not
     // reject samples beyond the far plane
-    if (occlusionDepth * materialParams.invFarPlane < 1.0) {
+    highp float occlusionDepthLinear = linearizeDepth(occlusionDepth, Projection);
+    if (occlusionDepthLinear * materialParams.invFarPlane < 1.0) {
         float rr = 1.0 / materialParams.invRadiusSquared;
         float cc = vv - vn * vn;
         float s = sqrt(max(0.0, rr - cc));
