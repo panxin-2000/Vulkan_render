@@ -1,11 +1,45 @@
 #version 450
 #extension GL_GOOGLE_include_directive: enable
-#include "global_shader_common.glsl"
+
+
+#define EIGEN_INDEX(m, row, col) (m)[col][row]
+#include "ssaoUtils.glsl"
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 
-const float kernel1D[5] = float[](0.0625, 0.25, 0.375, 0.25, 0.0625);
+layout(set = 0, binding = 0) uniform sampler2D input_texture;
+layout(rgba8, set = 0, binding = 1) uniform image2D output_texture;
+
+layout (push_constant) uniform PushConstant
+{
+    vec2 axis;
+    int  sampleCount;
+    float farPlaneOverEdgeDistance; // 只有 用于下面的一个 函数
+    float kernel[16];
+}materialParams;
+
+// 参数不多, 看看怎么做
+
+float bilateralWeight(in highp float center_depth, in highp float sampleDepth) {
+    // 问题是, farPlaneOverEdgeDistance 这个参数是什么意思? 用于比较什么?
+    // 还是只是一个 进行比较的 缩放参数
+    float diff = (sampleDepth - center_depth) * materialParams.farPlaneOverEdgeDistance;
+    return max(0.0, 1.0 - diff * diff);
+}
+
+void tap(const highp sampler2D saoTexture,
+        inout float sum, inout float totalWeight, float weight, float center_depth, vec2 position) {
+    // ambient occlusion sample
+    vec3 data = textureLod(saoTexture, position, 0.0).rgb;
+
+    // bilateral sample
+    float bilateral = weight * bilateralWeight(center_depth, unpack(data.gb));
+    sum += data.r * bilateral;
+    totalWeight += bilateral;
+}
+
+
 
 void main()
 {
@@ -15,57 +49,32 @@ void main()
     }
 
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = (vec2(pixel_coords) + 0.5) / imageSize(output_texture);
 
-    // ==========================================
-    // 1. 获取中心像素的 Raw AO 和 深度
-    // ==========================================
-    float centerAO = imageLoad(global_SSAO_compute_write, pixel_coords).r;
 
-    // 【新引入】读取中心像素的深度值（假设绑定在 binding = 2 且为单通道浮点）
-    float centerDepth = texelFetch(global_depth, pixel_coords, 0).r;
-    const int blurRange = 4; // 【优化】双边滤波允许你把范围开大（比如 4），不用担心边缘变糊
-    float totalAO = 0.0;
-    float totalWeight = 0.0;
-
-    // 控制深度敏感度的阈值（极其关键，需要根据你的深度范围微调）
-    // 如果你的深度是线性的（0~100米），这个值可以设为 0.1 或 0.2
-    // 如果是非线性深度，边缘处的差值可能极小，这个值需要设得非常小（如 0.005）
-    const float depthThreshold = 0.05;
-
-    for (int offset_x = -blurRange; offset_x <= blurRange; offset_x++)
-    {
-        for (int offset_y = -blurRange; offset_y <= blurRange; offset_y++)
-        {
-            ivec2 neighbor_coords = pixel_coords + ivec2(offset_x, offset_y);
-            neighbor_coords = clamp(neighbor_coords, ivec2(0), imageSize(output_texture) - ivec2(1));
-
-            // ==========================================
-            // 2. 读取邻域像素的 AO 和 深度
-            // ==========================================
-            float neighborAO = imageLoad(global_SSAO_compute_write, neighbor_coords).r;
-            float neighborDepth = texelFetch(global_depth, neighbor_coords, 0).r;
-            // ==========================================
-            // 3. 计算双边权重（Bilateral Weight）
-            // ==========================================
-            // 空间距离高斯权重（越远的像素权重越低）
-            float spatialWeight = exp(-float(offset_x * offset_x + offset_y * offset_y) / (2.0 * float(blurRange * blurRange)));
-            //            float spatialWeight = kernel1D[offset_x + 2] * kernel1D[offset_y + 2];
-
-            // 深度相似度权重：深度差越大，权重呈指数级衰减 [1]
-            float depthDiff = abs(centerDepth - neighborDepth);
-            float depthWeight = exp(-depthDiff / depthThreshold);
-
-            // 最终复合权重
-            float weight = spatialWeight * depthWeight;
-
-            // 累加
-            totalAO += neighborAO * weight;
-            totalWeight += weight;
-        }
+    vec3 data = textureLod(input_texture, uv, 0.0).rgb;
+    if (data.g * data.b == 1.0) {
+        // This is the skybox, skip
+        imageStore(output_texture, pixel_coords, vec4(data, 0.0));
+        return;
     }
 
-    // 防止分母为 0 导致全屏白色或黑色
-    float finalAO = totalAO / (totalWeight + 0.0001);
+    // we handle the center pixel separately because it doesn't participate in
+    // bilateral filtering
+    float center_depth = unpack(data.gb);
+    // 这里我拿到的深度 是 ?
+    float totalWeight = materialParams.kernel[0];
+    float sum = data.r * totalWeight;
 
-    imageStore(global_Blur_SSAO_compute_write, pixel_coords, vec4(finalAO, 0.0, 0.0, 0.0));
+    vec2 offset = materialParams.axis;
+    for (int i = 1; i < materialParams.sampleCount; i++) {
+        float weight = materialParams.kernel[i];
+        tap(input_texture, sum, totalWeight, weight, center_depth, uv + offset);
+        tap(input_texture, sum, totalWeight, weight, center_depth, uv - offset);
+        offset += materialParams.axis;
+    }
+
+    float ao = sum * (1.0 / totalWeight);
+
+    imageStore(output_texture, pixel_coords, vec4(ao, data.gb, 0.0));
 }
