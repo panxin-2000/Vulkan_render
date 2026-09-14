@@ -46,7 +46,7 @@ vec3 get_view_pos(vec2 uv, float depth, mat4 invProjection){
     float y = invProjection[1][1] * clipPos.y;
     float z = EIGEN_INDEX(invProjection,2,2) * clipPos.z + EIGEN_INDEX(invProjection,2,3);
     float w = EIGEN_INDEX(invProjection,3,2) * clipPos.z + EIGEN_INDEX(invProjection,3,3);
-    return vec3(x, y, z) / w;
+    return vec3(x, -y, z) / w;
 }
 
 

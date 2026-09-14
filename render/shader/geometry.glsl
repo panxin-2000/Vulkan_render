@@ -113,7 +113,7 @@ highp vec3 computeViewSpaceNormalHighQ(
     vec3 pos_u = get_view_pos(uv + dy, (V.y), invProjection);
     vec3 dpdy = (ve.x < ve.y) ? (pos_c - pos_d) : (pos_u - pos_c);
 
-    return normalize(cross(dpdy, dpdx));
+    return normalize(cross(dpdx, dpdy));
 }
 
 // depthTexture   : the depth texture in reversed-Z            深度图的纹理采样器（Sampler）
