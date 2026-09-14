@@ -45,7 +45,7 @@ struct AmbientOcclusionOptions {
     /** depth distance that constitute an edge for filtering */
     float bilateralThreshold = 0.05f;
     /** affects # of samples used for AO and params for filtering */
-    QualityLevel quality = QualityLevel::LOW;
+    QualityLevel quality = QualityLevel::HIGH;
     /** affects AO smoothness. Recommend setting to HIGH when aoType set to GTAO. */
     QualityLevel lowPassFilter = QualityLevel::MEDIUM;
     /** affects AO buffer upsampling quality */

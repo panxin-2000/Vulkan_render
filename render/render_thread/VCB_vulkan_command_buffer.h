@@ -130,9 +130,9 @@ public:
 
     void dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
 
-    void SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image ,Eigen::Matrix4f projection);
+    void SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image, Eigen::Matrix4f projection);
 
-    void blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image);
+    void blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image, Eigen::Vector2f axis);
 
     void only_image_compute(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image,
                             const std::string &compute_path);

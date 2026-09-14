@@ -151,9 +151,12 @@ void render_different_pass(VCB &vcb,
         vcb.compute_write_finish_same_read(SSAO_image);
 
         vcb.compute_write_init_barrier(blur_SSAO_image);
-        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image); // 这里还是稍微有点影响帧率的
+        vcb.blur_SSAO(engine, SSAO_image, blur_SSAO_image, {2, 0});
         vcb.compute_write_finish_sample_read({blur_SSAO_image});
 
+        vcb.compute_write_init_barrier(SSAO_image);
+        vcb.blur_SSAO(engine, blur_SSAO_image, SSAO_image, {0, 2});
+        vcb.compute_write_finish_sample_read({SSAO_image});
 
         // simple_mipmap(vcb.get_command_buffer(), depth_AO_image, depth_AO_image->get_parameters());
         // 之后还需要执行什么操作呢?  进行采样
@@ -349,7 +352,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
 
         auto offscreen      = create_2d_texture(color_image);
         auto depth          = create_2d_texture(depth_AO_image);
-        auto blur_SSAO      = create_2d_texture(blur_SSAO_image);
+        auto blur_SSAO      = create_2d_texture(SSAO_image);
         auto shadow_texture = create_2d_texture(depth_shadow_image);
 
         engine.update_global_parameter(offscreen,

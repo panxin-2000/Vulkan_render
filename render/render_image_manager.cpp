@@ -217,7 +217,7 @@ VKR_image_ptr Render_image_manager::get_one_post_process_finish_image() {
 VKR_image_ptr Render_image_manager::get_one_depth_SSAO_image() {
     const VkExtent2D extent = VK_backend::instance().get_current_extent();
     Image_and_view_parameters parameters{};
-    parameters.format = VK_FORMAT_R8_UNORM;
+    parameters.format = VK_FORMAT_R8G8B8A8_UNORM; //  这里 会 归一化 , 采样的问题还是输出的问题? 格式稍微
     parameters.width  = extent.width / 2;
     parameters.height = extent.height / 2;
     parameters.depth  = 1;

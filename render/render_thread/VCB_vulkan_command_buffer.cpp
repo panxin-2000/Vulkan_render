@@ -3,6 +3,8 @@
 //
 #include "VCB_vulkan_command_buffer.h"
 
+#include <vec2.hpp>
+
 #include "shader_component.h"
 #include "SSAO_parameters.h"
 
@@ -139,9 +141,9 @@ void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
-void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image) {
+void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image, Eigen::Vector2f axis) {
     VKR_shader_paths blur{
-        "", "", "", "blur"
+        "", "", "", "bilateral_blur"
     };
     auto compute_shader                              = engine.get_shader_manager().find(blur);
     std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(out_image);
@@ -154,6 +156,52 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
     set_render_parameter(compute_shader->object_sets_bindings,
                          parameter.update_object_descriptor_sets, "output_texture",
                          compute_texture);
+    constexpr size_t kernelArraySize = 16; // limited by bilateralBlur.mat
+    auto gaussianKernel              =
+            [kernelArraySize](float *outKernel, size_t const gaussianWidth, float const stdDev) -> uint32_t {
+        const size_t gaussianSampleCount = std::min(kernelArraySize, (gaussianWidth + 1u) / 2u);
+        for (size_t i = 0; i < gaussianSampleCount; i++) {
+            float const x = float(i);
+            float const g = std::exp(-(x * x) / (2.0f * stdDev * stdDev));
+            outKernel[i]  = g;
+        }
+        return uint32_t(gaussianSampleCount);
+    };
+
+    struct BilateralPassConfig {
+        uint8_t kernelSize       = 11;
+        bool bentNormals         = false;
+        float standardDeviation  = 1.0f;
+        float bilateralThreshold = 0.0625f;
+        float scale              = 1.0f;
+    };
+    // shader 逻辑没有错, 没有好好设置系数
+
+    BilateralPassConfig config;
+
+
+    float kGaussianSamples[kernelArraySize];
+    uint32_t const kGaussianCount = gaussianKernel(kGaussianSamples,
+                                                   config.kernelSize, config.standardDeviation);
+    auto width  = out_image->get_width();
+    auto height = out_image->get_height();
+
+    struct blur_SSAO_parameters {
+        Eigen::Vector2f axis; //  2.0 / input_texture.x 或者   2.0 / input_texture
+        int sampleCount;
+        float farPlaneOverEdgeDistance; // 只有 用于下面的一个 函数
+        float kernel[16];
+    } materialParams;
+
+    blur_SSAO_parameters consts;
+    consts.axis                     = {axis.x() / width, axis.y() / height}; // 前提,输入和输出大小一致
+    consts.sampleCount              = kGaussianCount;
+    consts.farPlaneOverEdgeDistance = -1 / config.bilateralThreshold;
+    consts.farPlaneOverEdgeDistance = -2000;
+    for (int i = 0; i < kernelArraySize; i++) {
+        consts.kernel[i] = kGaussianSamples[i];
+    }
+
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -161,8 +209,11 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
     // parameter.object_descriptor_sets 需要去确认 或者说需要更新
     bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
                                VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto width  = out_image->get_width();
-    auto height = out_image->get_height();
+
+    PushConstants(compute_shader->pipeline_layout,
+                  VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(blur_SSAO_parameters), &consts);
+
+
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
