@@ -388,6 +388,7 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
+                flag                = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             }
         }
         if (res.name.find("bindless") != std::string::npos) {
@@ -434,6 +435,7 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             } else {
                 // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                 tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
+                flag                = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
             }
         }
 
@@ -511,6 +513,7 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
                 } else {
                     // layout (set = 0, binding = 0) uniform sampler2D samplerColorMap[5];
                     tem.descriptorCount = array_size; // 暂时定义100，之后想办法添加一个宏吧
+                    flag                = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
                 }
             }
 
