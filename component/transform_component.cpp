@@ -111,14 +111,6 @@ void update_transform_matrix(const entt::entity entity) {
         const Eigen::Matrix4f result = parent_transform_matrix * transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(entity, result);
         Logic_entt().remove<Transform_matrix_dirty>(entity);
-
-        // 更新 整个模型的 AABB
-        if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB>(entity)) {
-            const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
-            const auto temp = transform_AABB(aabb, result);
-            Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
-        }
-        Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
 };
 

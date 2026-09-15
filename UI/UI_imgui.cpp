@@ -436,7 +436,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                 if (bistro == true) {
                     load_gltf_model("fox.gltf",
                                     "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Fox/glTF/Fox.gltf",
-                                    {100, 0, 0});
+                                    {10, 0, 0}); // 其实是这里的参数问题? 不对吧? 虽然有一点点影响,但是呢? 应该
                 }
             }
         }

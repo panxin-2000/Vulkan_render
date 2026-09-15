@@ -84,6 +84,29 @@ void main()
     gl_Position = projection * view * pos;
 }
 
+
+#elif defined(PASS_SHADOW_MAP)
+
+
+layout(push_constant) uniform PushConsts {
+    uint cascadeIndex;
+} pushConsts;
+
+
+void main()
+{
+    mat4 skinMat =
+    inJointWeights.x * jointMatrices[int(inJointIndices.x)] +
+    inJointWeights.y * jointMatrices[int(inJointIndices.y)] +
+    inJointWeights.z * jointMatrices[int(inJointIndices.z)] +
+    inJointWeights.w * jointMatrices[int(inJointIndices.w)];
+
+    vec4 pos = model_vector[gl_InstanceIndex] * skinMat * vec4(inPos.xyz, 1.0);
+
+    gl_Position = cascadeViewProjMat[pushConsts.cascadeIndex] * pos;
+}
+
+
 #elif defined(PASS_PICKUP)
 
 layout (location = 0) flat out uint out_entity;
