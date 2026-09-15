@@ -554,13 +554,18 @@ void gltf_load_skin(const fastgltf::Asset &model,
     }
 }
 
-
+/**
+ *  jointMatrix[j] =  inverse(globalTransform) *  globalJointTransform[j] *  inverseBindMatrix[j];
+ *  上面的 公式是 这个样子,但是呢? inverse(globalTransform) 这个参数没有设计,
+ *  globalJointTransform 是由 transform_matrix 按照层级一层一层的向下执行的
+ * @param model_entity
+ */
 void gltf_update_joint_matrix(const entt::entity &model_entity) {
     auto update_joint_matrix = [](const entt::entity entity) {
         if (Logic_entt().all_of<Transform_Matrix, Scene_Component, InverseBindMatrix>(entity)) {
-            auto transform_matrix           = Logic_entt().get<Transform_Matrix>(entity);
-            const auto &inverse_bind_matrix = Logic_entt().get<InverseBindMatrix>(entity);
-            Eigen::Matrix4f result          = transform_matrix * inverse_bind_matrix.matrix;
+            const auto &globalJointTransform = Logic_entt().get<Transform_Matrix>(entity);
+            const auto &inverseBindMatrix    = Logic_entt().get<InverseBindMatrix>(entity);
+            Eigen::Matrix4f result           = globalJointTransform * inverseBindMatrix.matrix;
             Logic_entt().emplace_or_replace<JointMatrix>(entity, result);
         }
     };
@@ -1062,6 +1067,9 @@ void combine_geometry(const entt::entity model_entity) {
 
     Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives); // 这两个本来应该是一体,但是 GPU 驱动导致分离了
     logic_update_proxy(model_entity, mesh);
+    // logic_update_proxy(model_entity, primitives);
+    // 第一个问题是这里的问题, 剔除之后, 就不会再去绘制了
+    // 另外一个问题, 应该是更新的流程都问题,导致了 不能正常绘制
 }
 
 void deal_new_add_model(const entt::entity model_entity) {

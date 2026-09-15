@@ -27,6 +27,7 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
                                                  unlimited,
                                                  [](continue_msg) -> int {
                                                      const auto root = get_world_root();
+                                                     // 下面这个函数 还是可以优化
                                                      add_recursion_function_to_children(root,
                                                               update_transform_matrix);
                                                      return 0;
@@ -57,6 +58,7 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
                                                        gltf_update_joint_matrix(it);
                                                        Logic_entt().remove<JointMatrixDirty>(it);
                                                    }
+                                                   return 0;
                                                });
     continue_node<continue_msg> update_JointMatrix(g,
                                                    unlimited,
@@ -75,11 +77,11 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
                                                        }
                                                    });
 
-    make_edge(start, transform_matrix);
+    make_edge(start, update_JointMatrix);
+    make_edge(update_JointMatrix, transform_matrix);
     make_edge(transform_matrix, add_new_model);
     make_edge(transform_matrix, transform_world_AABB);
-    make_edge(add_new_model, update_JointMatrix);
-    make_edge(update_JointMatrix, update_animals);
+    make_edge(add_new_model, update_animals);
 
     start.try_put(continue_msg());
     g.wait_for_all();

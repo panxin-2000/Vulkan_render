@@ -100,7 +100,10 @@ void update_primitives_model_matrix(const entt::entity model_entity) {
     }
 }
 
-
+/**
+ *
+ * @param entity
+ */
 void update_transform_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
         // 满足条件：两个组件都有
