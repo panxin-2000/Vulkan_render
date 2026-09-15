@@ -966,16 +966,11 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
 
 
 void deal_new_add_model(const entt::entity model_entity) {
-    const auto &transform = Logic_entt().get<Transform>(model_entity);
-
     auto &material_parameters     = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
     auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
     auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
     auto &render_entity_to_screen = Logic_entt().emplace<read_render_entt>(model_entity);
     // 包含不包含 model_entity 的矩阵
-    const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
-    Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
-
 
     std::vector<entt::entity> temp;
     auto generate_aabb = [&](const entt::entity entity) {
@@ -1022,8 +1017,7 @@ void deal_new_add_model(const entt::entity model_entity) {
     // 获取 每个 entity 的 全部 primitive 的 包围盒
     auto local_aabb = merge_AABBs(boxes);
     Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
-    const auto world_aabb = transform_AABB(local_aabb, model_entity_matrix);
-    Logic_entt().emplace_or_replace<World_Space_AABB>(model_entity, world_aabb.get_aabb_min());
+
 
 
     Geometry_data bindless_Geometry_data;

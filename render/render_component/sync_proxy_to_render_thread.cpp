@@ -31,6 +31,14 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
                                                               update_transform_matrix);
                                                      return 0;
                                                  });
+    continue_node<continue_msg> transform_world_AABB(g,
+                                                     unlimited,
+                                                     [](continue_msg) -> int {
+                                                         const auto root = get_world_root();
+                                                         add_recursion_function_to_children(root,
+                                                                  update_world_AABB);
+                                                         return 0;
+                                                     });
     continue_node<continue_msg> add_new_model(g,
                                               unlimited,
                                               [](continue_msg) -> int {
@@ -69,6 +77,7 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
 
     make_edge(start, transform_matrix);
     make_edge(transform_matrix, add_new_model);
+    make_edge(transform_matrix, transform_world_AABB);
     make_edge(add_new_model, update_JointMatrix);
     make_edge(update_JointMatrix, update_animals);
 

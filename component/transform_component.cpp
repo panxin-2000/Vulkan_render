@@ -38,6 +38,12 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
     return transform.get_transform_matrix();
 }
 
+/**
+ * transform local_AABB to world_AABB
+ * @param bound_box  local space aabb
+ * @param matrix     model matrix
+ * @return world sapce AABB
+ */
 Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &matrix) {
     const Eigen::Vector4f new_centroid  = matrix * bound_box.centroid_points;
     const Eigen::Matrix3f R             = matrix.block<3, 3>(0, 0);
@@ -118,22 +124,25 @@ void update_transform_matrix(const entt::entity entity) {
             const auto temp = transform_AABB(aabb, result);
             Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
         }
-        update_primitives_model_matrix(entity); // 函数内部有点乱, 这里应该也是可以剥离出 这个函数的
         Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
-
-    // if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB>(entity)) {
-    //     const Eigen::Matrix4f result = Logic_entt().get<Transform_Matrix>(entity);
-    //
-    //
-    //     // 更新 整个模型的 AABB
-    //     const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
-    //     const auto temp = transform_AABB(aabb, result);
-    //     Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
-    //     //
-    //     update_primitives_model_box(entity);
-    // }
 };
+
+/**
+ * 更新 entity 的 world space 的 AABB
+ * @param entity
+ */
+void update_world_AABB(const entt::entity entity) {
+    if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB, World_aabb_dirty>(entity)) {
+        const Eigen::Matrix4f result = Logic_entt().get<Transform_Matrix>(entity);
+
+        // 更新 整个模型的 AABB
+        const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
+        const auto temp = transform_AABB(aabb, result);
+        Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
+        Logic_entt().remove<World_aabb_dirty>(entity);
+    }
+}
 
 
 void set_transform_dirty(const entt::entity entity) {

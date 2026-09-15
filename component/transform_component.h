@@ -15,6 +15,9 @@
 struct Transform_matrix_dirty {
 };
 
+struct World_aabb_dirty {
+};
+
 
 class alignas(16) Transform_Matrix : public Eigen::Matrix4f {
 };
@@ -92,6 +95,8 @@ Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &
 void update_camera_transform();
 
 void update_transform_matrix(const entt::entity entity);
+
+void update_world_AABB(const entt::entity entity);
 
 void set_transform_dirty(const entt::entity entity);
 
