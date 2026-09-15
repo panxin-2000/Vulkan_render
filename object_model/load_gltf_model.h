@@ -34,6 +34,9 @@ struct JointMatrixDirty {
 struct ModelMatricesDirty {
 };
 
+struct Add_new_model {
+};
+
 
 #include <Eigen/Dense>
 
@@ -245,6 +248,7 @@ public:
     using std::vector<entt::entity>::vector;
 };
 
+void deal_new_add_model(const entt::entity model_entity);
 
 void load_gltf_material_separate(entt::entity model_entity);
 

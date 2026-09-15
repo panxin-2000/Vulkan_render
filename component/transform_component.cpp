@@ -65,22 +65,22 @@ void update_primitives_model_box(const entt::entity model_entity) {
 
         auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
         frustum_cull.command_size = primitives.size(); {
-            const auto boxes_ptr                = boxes.data();
-            auto boxes_size                     = boxes.size() * sizeof(Render_AABB);
-            auto boxes_buffer                   = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
+            const auto boxes_ptr           = boxes.data();
+            auto boxes_size                = boxes.size() * sizeof(Render_AABB);
+            auto boxes_buffer              = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
             frustum_cull.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
             frustum_cull.AABB_boxes_buffer = boxes_buffer;
         } {
-            const auto primitives_ptr                 = primitives.data();
-            auto primitives_size                      = primitives.size() * sizeof(VKR_Primitive);
-            auto primitives_buffer                    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            const auto primitives_ptr            = primitives.data();
+            auto primitives_size                 = primitives.size() * sizeof(VKR_Primitive);
+            auto primitives_buffer               = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
             frustum_cull.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
             frustum_cull.camera_write_buffer     = primitives_buffer;
             // 下面的几行还是需要测试的 , 为什么呢? 因为计算的时候只去算了 是否到绘制, 其他的信息根本没添加或者更改
-            frustum_cull.light_write_buffer[0]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            frustum_cull.light_write_buffer[1]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            frustum_cull.light_write_buffer[2]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
-            frustum_cull.light_write_buffer[3]   = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[0] = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[1] = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[2] = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+            frustum_cull.light_write_buffer[3] = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
         }
         logic_update_proxy(model_entity, frustum_cull);
     }
@@ -104,12 +104,13 @@ void update_primitives_model_matrix(const entt::entity model_entity) {
 void update_transform_matrix(const entt::entity entity) {
     if (Logic_entt().all_of<Transform, Scene_Component, Transform_matrix_dirty>(entity)) {
         // 满足条件：两个组件都有
-        auto parent_entity           = get_parent(entity);
-        auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_Matrix>(parent_entity,
+        const auto parent_entity           = get_parent(entity);
+        const auto parent_transform_matrix = Logic_entt().get_or_emplace<Transform_Matrix>(parent_entity,
                  Eigen::Matrix4f::Identity());
         const auto &transform        = Logic_entt().get<Transform>(entity);
         const Eigen::Matrix4f result = parent_transform_matrix * transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(entity, result);
+        Logic_entt().remove<Transform_matrix_dirty>(entity);
 
         // 更新 整个模型的 AABB
         if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB>(entity)) {
@@ -117,11 +118,21 @@ void update_transform_matrix(const entt::entity entity) {
             const auto temp = transform_AABB(aabb, result);
             Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
         }
-        //
-        update_primitives_model_box(entity);
-        update_primitives_model_matrix(entity);
+        update_primitives_model_matrix(entity); // 函数内部有点乱, 这里应该也是可以剥离出 这个函数的
         Logic_entt().remove<Transform_matrix_dirty>(entity);
     }
+
+    // if (Logic_entt().all_of<Transform_Matrix, Local_Space_AABB>(entity)) {
+    //     const Eigen::Matrix4f result = Logic_entt().get<Transform_Matrix>(entity);
+    //
+    //
+    //     // 更新 整个模型的 AABB
+    //     const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
+    //     const auto temp = transform_AABB(aabb, result);
+    //     Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
+    //     //
+    //     update_primitives_model_box(entity);
+    // }
 };
 
 

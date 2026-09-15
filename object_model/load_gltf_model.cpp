@@ -908,7 +908,10 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         world_root_add_child(model_entity);
         auto &model = optional_model.value();
         logic_create_proxy(model_entity);
-        const auto &transform = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
+        const auto &transform                     = Logic_entt().emplace<Transform>(model_entity, offset, rotate);
+        const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
+        Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
+
         // add_model_3d_Event(model_entity);
         Logic_entt().emplace<load_material>(model_entity);
 
@@ -950,117 +953,124 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
         gltf_load_skin(model, node_entities, model_entity);
         gltf_load_animal(model, node_entities, model_entity);
 
-
         add_recursion_function_to_children(model_entity, set_transform_dirty);
-        add_recursion_function_to_children(model_entity, update_transform_matrix);
-        // 为什么要在这里更新? 因为想要确定 精确的 AABB 包围盒的位置
+        // 到这里,其实就应该结束了, 后面的还是留给其他的 去 执行吧
 
-        auto &material_parameters     = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
-        auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
-        auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
-        auto &render_entity_to_screen = Logic_entt().emplace<read_render_entt>(model_entity);
-        // 包含不包含 model_entity 的矩阵
-        const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
-        Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
+        Logic_entt().emplace_or_replace<Add_new_model>(model_entity);
 
-
-        std::vector<entt::entity> temp;
-        auto generate_aabb = [&](const entt::entity entity) {
-            if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
-                temp.push_back(entity);
-            }
-        };
-        add_recursion_function_to_children(model_entity, generate_aabb);
-
-        tbb::parallel_for(tbb::blocked_range<size_t>(0, temp.size()),
-                          [&](const tbb::blocked_range<size_t> &r) {
-                              // 注意：这里的 r 是大区间被拆分后的一小段区间
-                              // 必须使用 r.begin() 和 r.end()，绝对不能用 0 和 N
-                              for (size_t i = r.begin(); i != r.end(); ++i) {
-                                  const auto entity = temp.at(i);
-                                  if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
-                                      auto &geometry_data = Logic_entt().get<Geometry_data>(entity);
-                                      for (auto &vertices: geometry_data.get_vertices()) {
-                                          const auto bound_box = find_min_max_point(vertices);
-                                          geometry_data.push_AABB(bound_box);
-                                      }
-                                  }
-                              }
-                          }
-                         );
-
-
-        auto update_aabb = [&](const entt::entity entity) {
-            if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
-                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
-                const auto aabbs         = geometry_data.get_aabbs();
-                const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
-                for (auto &bound_box: aabbs) {
-                    auto temp = transform_AABB(bound_box, model_matrix);
-                    boxes.push_back(temp);
-                    matrices.push_back(model_matrix);
-                    render_entity_to_screen.push_back(entity);
-                }
-            }
-        };
-        add_recursion_function_to_children(model_entity, update_aabb);
-
-
-        // 获取 每个 entity 的 全部 primitive 的 包围盒
-        auto local_aabb = merge_AABBs(boxes);
-        Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
-        const auto world_aabb = transform_AABB(local_aabb, model_entity_matrix);
-        Logic_entt().emplace_or_replace<World_Space_AABB>(model_entity, world_aabb.get_aabb_min());
-
-
-        Geometry_data bindless_Geometry_data;
-
-        auto geometry_function = [&](const entt::entity entity) {
-            if (entity != entt::null &&
-                Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
-                const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
-                const auto vertices      = geometry_data.get_vertices();
-                const auto indices       = geometry_data.get_indices();
-                const auto materials     = geometry_data.get_materials();
-                for (const auto &vertex: vertices) {
-                    bindless_Geometry_data.push_vertices(vertex);
-                }
-                for (const auto &index: indices) {
-                    bindless_Geometry_data.push_indices(index);
-                }
-                for (const auto &material: materials) {
-                    material_parameters.push_back(material);
-                }
-                Render_entt().remove<Geometry_data_need_copy_tag>(entity);
-            }
-        };
-        add_recursion_function_to_children(model_entity, geometry_function);
-
-
-        auto mesh       = create_mesh_data(bindless_Geometry_data);
-        auto primitives = create_primitives(bindless_Geometry_data);
-
-        Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives);
-
-        gltf_update_joint_matrix(model_entity);
-
-        // to GPU
-        update_primitives_model_matrix(model_entity);
-        update_entity_to_screen(model_entity);
-
-        logic_update_proxy(model_entity, boxes);
-        logic_update_proxy(model_entity, mesh);
-        logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
-
-        update_material(model_entity);
-
-        Logic_entt().emplace<GPU_frustum_cull>(model_entity);
-        update_primitives_model_box(model_entity);
 
         return model_entity;
     }
     return entt::null;
 }
+
+
+void deal_new_add_model(const entt::entity model_entity) {
+    const auto &transform = Logic_entt().get<Transform>(model_entity);
+
+    auto &material_parameters     = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
+    auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+    auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
+    auto &render_entity_to_screen = Logic_entt().emplace<read_render_entt>(model_entity);
+    // 包含不包含 model_entity 的矩阵
+    const Eigen::Matrix4f model_entity_matrix = transform.get_transform_matrix();
+    Logic_entt().emplace_or_replace<Transform_Matrix>(model_entity, model_entity_matrix);
+
+
+    std::vector<entt::entity> temp;
+    auto generate_aabb = [&](const entt::entity entity) {
+        if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
+            temp.push_back(entity);
+        }
+    };
+    add_recursion_function_to_children(model_entity, generate_aabb);
+
+    tbb::parallel_for(tbb::blocked_range<size_t>(0, temp.size()),
+                      [&](const tbb::blocked_range<size_t> &r) {
+                          // 注意：这里的 r 是大区间被拆分后的一小段区间
+                          // 必须使用 r.begin() 和 r.end()，绝对不能用 0 和 N
+                          for (size_t i = r.begin(); i != r.end(); ++i) {
+                              const auto entity = temp.at(i);
+                              if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
+                                  auto &geometry_data = Logic_entt().get<Geometry_data>(entity);
+                                  for (auto &vertices: geometry_data.get_vertices()) {
+                                      const auto bound_box = find_min_max_point(vertices);
+                                      geometry_data.push_AABB(bound_box);
+                                  }
+                              }
+                          }
+                      }
+                     );
+
+
+    auto update_aabb = [&](const entt::entity entity) {
+        if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
+            const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+            const auto aabbs         = geometry_data.get_aabbs();
+            const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
+            for (auto &bound_box: aabbs) {
+                auto temp = transform_AABB(bound_box, model_matrix);
+                boxes.push_back(temp);
+                matrices.push_back(model_matrix);
+                render_entity_to_screen.push_back(entity);
+            }
+        }
+    };
+    add_recursion_function_to_children(model_entity, update_aabb);
+
+
+    // 获取 每个 entity 的 全部 primitive 的 包围盒
+    auto local_aabb = merge_AABBs(boxes);
+    Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
+    const auto world_aabb = transform_AABB(local_aabb, model_entity_matrix);
+    Logic_entt().emplace_or_replace<World_Space_AABB>(model_entity, world_aabb.get_aabb_min());
+
+
+    Geometry_data bindless_Geometry_data;
+
+    auto geometry_function = [&](const entt::entity entity) {
+        if (entity != entt::null &&
+            Logic_entt().all_of<Geometry_data_need_copy_tag, Geometry_data, Transform_Matrix>(entity)) {
+            const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+            const auto vertices      = geometry_data.get_vertices();
+            const auto indices       = geometry_data.get_indices();
+            const auto materials     = geometry_data.get_materials();
+            for (const auto &vertex: vertices) {
+                bindless_Geometry_data.push_vertices(vertex);
+            }
+            for (const auto &index: indices) {
+                bindless_Geometry_data.push_indices(index);
+            }
+            for (const auto &material: materials) {
+                material_parameters.push_back(material);
+            }
+            Render_entt().remove<Geometry_data_need_copy_tag>(entity);
+        }
+    };
+    add_recursion_function_to_children(model_entity, geometry_function);
+
+
+    auto mesh       = create_mesh_data(bindless_Geometry_data);
+    auto primitives = create_primitives(bindless_Geometry_data);
+
+    Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives);
+
+    gltf_update_joint_matrix(model_entity);
+
+    // to GPU
+    update_primitives_model_matrix(model_entity);
+    update_entity_to_screen(model_entity);
+
+    logic_update_proxy(model_entity, boxes);
+    logic_update_proxy(model_entity, mesh);
+    logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
+
+    update_material(model_entity);
+
+    Logic_entt().emplace<GPU_frustum_cull>(model_entity);
+    update_primitives_model_box(model_entity);
+}
+
 
 VkPrimitiveTopology get_primitive_topology(const fastgltf::Primitive &primitive) {
     switch (primitive.type) {
