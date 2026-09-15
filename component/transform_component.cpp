@@ -45,9 +45,9 @@ Eigen::Matrix4f view_matrix(const Eigen::Vector3f &pos, const Eigen::Quaternionf
  * @return world sapce AABB
  */
 Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &matrix) {
-    const Eigen::Vector4f new_centroid  = matrix * bound_box.centroid_points;
+    const Eigen::Vector4f new_centroid  = matrix * bound_box.centroid_points_;
     const Eigen::Matrix3f R             = matrix.block<3, 3>(0, 0);
-    const Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals.head<3>();
+    const Eigen::Vector3f new_direction = R.cwiseAbs() * bound_box.direction_intervals_.head<3>();
     return {
         {new_centroid.x(), new_centroid.y(), new_centroid.z(), 1.0f},
         {new_direction.x(), new_direction.y(), new_direction.z(), 0.0f}
@@ -56,17 +56,17 @@ Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &
 
 
 void update_frustum_cull_box(const entt::entity model_entity) {
-    if (Logic_entt().all_of<std::vector<Render_AABB>,
+    if (Logic_entt().all_of<std::vector<World_Space_AABB>,
                             std::vector<VKR_Primitive>,
                             GPU_frustum_cull>(model_entity)) {
-        const auto &boxes = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
+        const auto &boxes = Logic_entt().get<std::vector<World_Space_AABB> >(model_entity);
 
         const auto &primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
 
         auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
         frustum_cull.command_size = primitives.size(); {
             const auto boxes_ptr           = boxes.data();
-            auto boxes_size                = boxes.size() * sizeof(Render_AABB);
+            auto boxes_size                = boxes.size() * sizeof(World_Space_AABB);
             auto boxes_buffer              = copy_data_to_SSBO_buffer(boxes_ptr, boxes_size);
             frustum_cull.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
             frustum_cull.AABB_boxes_buffer = boxes_buffer;
@@ -128,8 +128,8 @@ void update_world_AABB(const entt::entity entity) {
         // 更新 整个模型的 AABB
         const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
         const auto temp = transform_AABB(aabb, result);
-        Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp.get_aabb_min());
-        Logic_entt().remove<World_aabb_dirty>(entity);
+        Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp);
+        // Logic_entt().remove<World_aabb_dirty>(entity);
     }
 }
 

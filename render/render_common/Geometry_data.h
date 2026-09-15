@@ -38,7 +38,7 @@ public:
     ~Geometry_data() = default;
 
 
-    void push_AABB(const Render_AABB &aabb) {
+    void push_AABB(const Local_Space_AABB &aabb) {
         AABBs_.push_back(aabb);
     }
 
@@ -63,7 +63,7 @@ public:
 
     void push_vertices(const share_block &vertices_buffer, const Render_AABB &aabb) {
         vertices_.push_back(vertices_buffer);
-        AABBs_.push_back(aabb);
+        AABBs_.push_back(Local_Space_AABB(aabb));
     }
 
     template<typename index_t>
@@ -100,7 +100,7 @@ public:
         return indices_;
     };
 
-    [[nodiscard]] std::vector<Render_AABB> get_aabbs() const {
+    [[nodiscard]] std::vector<Local_Space_AABB> get_aabbs() const {
         return AABBs_;
     };
 
@@ -115,7 +115,7 @@ private:
     std::vector<share_block> vertices_;
     std::vector<share_block> indices_;
     std::vector<std::size_t> materials_;
-    std::vector<Render_AABB> AABBs_;
+    std::vector<Local_Space_AABB> AABBs_;
 };
 
 template<typename vertex_t, typename index_t>

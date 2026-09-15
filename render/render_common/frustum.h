@@ -95,9 +95,9 @@ inline bool frustum_cull_2(const FrustumPlanes &frustum_planes,
         // 2. 【核心优化】计算 AABB 沿平面法线的最大正向投影半径
         // .cwiseAbs() 会对法向量的每个分量取绝对值
         // .dot() 执行极致的 SIMD 乘加运算，彻底代替了原本的 mix 掩码操作
-        float projectedRadius = bounds.direction_intervals.dot(p.cwiseAbs());
+        float projectedRadius = bounds.direction_intervals_.dot(p.cwiseAbs());
         // 3. 计算中心点到平面的带符号物理距离
-        const float distanceToCenter = bounds.centroid_points.dot(p);
+        const float distanceToCenter = bounds.centroid_points_.dot(p);
         if (distanceToCenter < -projectedRadius - 0.0001f) {
             return false; // 整个盒体完全在平面外侧，安全剔除  // 有时很快,有时很慢, 是因为这里有快捷返回
         }

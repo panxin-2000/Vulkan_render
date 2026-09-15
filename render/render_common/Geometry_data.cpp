@@ -330,8 +330,8 @@ Render_AABB find_min_max_point_single_thread(const share_block &vertex) {
     Render_AABB bounding_box;
     const auto temp                  = (min + max) / 2;
     const auto temp_2                = (max - min) / 2;
-    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.z(), 1.0f};
-    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
+    bounding_box.centroid_points_     = {temp.x(), temp.y(), temp.z(), 1.0f};
+    bounding_box.direction_intervals_ = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
     return bounding_box;
 }
 
@@ -392,8 +392,8 @@ Render_AABB find_min_max_point_mult_thread(const share_block &vertex) {
     Render_AABB bounding_box;
     const auto temp                  = (min + max) / 2;
     const auto temp_2                = (max - min) / 2;
-    bounding_box.centroid_points     = {temp.x(), temp.y(), temp.z(), 1.0f};
-    bounding_box.direction_intervals = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
+    bounding_box.centroid_points_     = {temp.x(), temp.y(), temp.z(), 1.0f};
+    bounding_box.direction_intervals_ = {temp_2.x(), temp_2.y(), temp_2.z(), 0.0f};
     return bounding_box;
 }
 

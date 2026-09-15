@@ -988,7 +988,7 @@ void combine_geometry_data(const entt::entity model_entity) {
                                   auto &geometry_data = Logic_entt().get<Geometry_data>(entity);
                                   for (auto &vertices: geometry_data.get_vertices()) {
                                       const auto bound_box = find_min_max_point(vertices);
-                                      geometry_data.push_AABB(bound_box);
+                                      geometry_data.push_AABB(Local_Space_AABB(bound_box));
                                   }
                               }
                           }
@@ -999,7 +999,7 @@ void combine_geometry_data(const entt::entity model_entity) {
 
 
 void combine_boxes_and_matrices(const entt::entity model_entity) {
-    auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+    auto &boxes                   = Logic_entt().emplace<std::vector<World_Space_AABB> >(model_entity);
     auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
     auto &render_entity_to_screen = Logic_entt().emplace<screen_pick_entity>(model_entity);
 
@@ -1010,7 +1010,7 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
             const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
             for (auto &bound_box: aabbs) {
                 auto world_aabb = transform_AABB(bound_box, model_matrix);
-                boxes.push_back(world_aabb);
+                boxes.emplace_back(world_aabb);
                 matrices.push_back(model_matrix);
                 render_entity_to_screen.push_back(entity);
             }
@@ -1018,7 +1018,7 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
     };
     add_recursion_function_to_children(model_entity, update_aabb);
     auto local_aabb = merge_AABBs(boxes);
-    Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
+    Logic_entt().emplace<Local_Space_AABB>(model_entity, World_Space_AABB(local_aabb));
 
     update_primitives_model_matrix(model_entity); // 估计这一行会和上面有点像 , 不一样, 但是我不知道为什么 这个函数写的时候一定需要加一个共享指针呢?
     update_entity_to_screen(model_entity);

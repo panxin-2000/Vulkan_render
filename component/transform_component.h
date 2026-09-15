@@ -79,12 +79,6 @@ public:
     }
 };
 
-class Local_Space_AABB : public Render_AABB {
-};
-
-
-class World_Space_AABB : public Render_AABB_min {
-};
 
 Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &matrix);
 
