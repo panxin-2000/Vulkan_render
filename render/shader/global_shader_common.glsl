@@ -9,8 +9,8 @@
 #include "commom_function_and_struct.glsl"
 
 
-layout (set = 0, binding = 0) uniform texture2D bindless_texture2D[];
-layout (set = 0, binding = 1) uniform sampler bindless_samplers[512];
+layout (set = 0, binding = 0) uniform sampler bindless_samplers[512];
+layout (set = 0, binding = 1) uniform texture2D bindless_texture2D[]; // 不固定数量多只能分配到末尾
 // layout (set = 0, binding = 0) uniform texture2D bindless_Textures[];
 
 

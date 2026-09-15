@@ -440,20 +440,22 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
             auto last_view               = create_2d_view(image_ptr, i - 1, 1, 0, parameters.arrayLayers);
             auto current_view            = create_2d_view(image_ptr, i, 1, 0, parameters.arrayLayers);
             VKR_image_ptr last_image_ptr = std::make_shared<VKR_image>(
-                                                                       image_ptr->get_image_handle(),
-                                                                       image_ptr->get_image_allocation(),
+                                                                       image_ptr->get_image_handle(time_line_),
+                                                                       image_ptr->get_image_allocation(time_line_),
                                                                        image_ptr->get_index(),
                                                                        last_view,
                                                                        image_ptr->get_parameters()
                                                                       );
             VKR_image_ptr current_view_image_ptr = std::make_shared<VKR_image>(
-                                                                               image_ptr->get_image_handle(),
-                                                                               image_ptr->get_image_allocation(),
+                                                                               image_ptr->get_image_handle(time_line_),
+                                                                               image_ptr->
+                                                                               get_image_allocation(time_line_),
                                                                                image_ptr->get_index(),
                                                                                current_view,
                                                                                image_ptr->get_parameters()
                                                                               );
-
+            last_image_ptr->get_image_handle(time_line_);
+            current_view_image_ptr->get_image_handle(time_line_);
             std::optional<Texture_parameter> offscreen       = create_2d_texture(last_image_ptr);
             std::optional<Texture_parameter> compute_texture = create_compute_image2D_texture(current_view_image_ptr);
 

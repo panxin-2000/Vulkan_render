@@ -442,16 +442,16 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
             tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                              VK_SHADER_STAGE_FRAGMENT_BIT |
                              VK_SHADER_STAGE_COMPUTE_BIT;
-            bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+            bindless_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0, flag};
         } else if (res.name.find("global") != std::string::npos) {
             tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                              VK_SHADER_STAGE_FRAGMENT_BIT |
                              VK_SHADER_STAGE_COMPUTE_BIT;
-            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+            global_bindings_set[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0, flag};
         } else {
             auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
             tem.stageFlags                     = tem.stageFlags | stageFlag;
-            sorted_sets_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0};
+            sorted_sets_bindings[set][binding] = {tem, res.name, "uniform sampler", shaderStage, 0, flag};
         }
     }
     for (auto &res: resources.storage_images) {
@@ -519,16 +519,16 @@ void collect_and_sorted_resources(const spirv_cross::CompilerGLSL &compiler,
                 tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                                  VK_SHADER_STAGE_FRAGMENT_BIT |
                                  VK_SHADER_STAGE_COMPUTE_BIT;
-                bindless_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+                bindless_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0, flag};
             } else if (res.name.find("global") != std::string::npos) {
                 tem.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
                                  VK_SHADER_STAGE_FRAGMENT_BIT |
                                  VK_SHADER_STAGE_COMPUTE_BIT;
-                global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+                global_bindings_set[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0, flag};
             } else {
                 auto stageFlag                     = find_stageFlag(sorted_sets_bindings, res.name);
                 tem.stageFlags                     = tem.stageFlags | stageFlag;
-                sorted_sets_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0};
+                sorted_sets_bindings[set][binding] = {tem, res.name, "uniform texture2D", shaderStage, 0, flag};
             }
         }
     }

@@ -22,7 +22,7 @@ VkDescriptorPool init_current_descriptor_pool() {
     static constexpr uint32_t POOL_SIZE_COMBINED_IMAGE_SAMPLER = 2500;
     static constexpr uint32_t POOL_SIZE_UNIFORM_BUFFER         = 500;
     static constexpr uint32_t POOL_SIZE_SAMPLED_IMAGE          = 5000; //
-    static constexpr uint32_t POOL_SIZE_SAMPLED                = 500;
+    static constexpr uint32_t POOL_SIZE_SAMPLED                = 1000;
     static constexpr uint32_t POOL_SIZE_UNIFORM_TEXEL_BUFFER   = 100;
     static constexpr uint32_t POOL_SIZE_INPUT_ATTACHMENT       = 100;
 

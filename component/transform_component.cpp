@@ -129,7 +129,7 @@ void update_world_AABB(const entt::entity entity) {
         const auto aabb = Logic_entt().get<Local_Space_AABB>(entity);
         const auto temp = transform_AABB(aabb, result);
         Logic_entt().emplace_or_replace<World_Space_AABB>(entity, temp);
-        // Logic_entt().remove<World_aabb_dirty>(entity);
+        Logic_entt().remove<World_aabb_dirty>(entity);
     }
 }
 

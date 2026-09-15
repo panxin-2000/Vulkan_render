@@ -75,6 +75,7 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
                                                                    JointMatrixDirty>(entity);
                                                            }
                                                        }
+                                                       return 0;
                                                    });
 
     make_edge(start, update_JointMatrix);
