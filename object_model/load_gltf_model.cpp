@@ -1031,7 +1031,7 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
 void combine_material(const entt::entity model_entity) {
     auto &material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
 
-    auto update_material = [&](const entt::entity entity) {
+    auto update_material_temp = [&](const entt::entity entity) {
         if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
             const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
             const auto materials     = geometry_data.get_materials();
@@ -1040,7 +1040,7 @@ void combine_material(const entt::entity model_entity) {
             }
         }
     };
-    add_recursion_function_to_children(model_entity, update_material);
+    add_recursion_function_to_children(model_entity, update_material_temp);
     update_material(model_entity);
 }
 
