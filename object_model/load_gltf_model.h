@@ -243,7 +243,7 @@ public:
     using std::vector<entt::entity>::vector;
 };
 
-class read_render_entt : public std::vector<entt::entity> {
+class screen_pick_entity : public std::vector<entt::entity> {
 public:
     using std::vector<entt::entity>::vector;
 };

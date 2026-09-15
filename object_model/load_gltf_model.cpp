@@ -885,8 +885,8 @@ void load_gltf_material_separate(entt::entity model_entity) {
 
 
 void update_entity_to_screen(const entt::entity model_entity) {
-    if (Logic_entt().all_of<read_render_entt>(model_entity)) {
-        auto &render_entity_to_screen = Logic_entt().get<read_render_entt>(model_entity);
+    if (Logic_entt().all_of<screen_pick_entity>(model_entity)) {
+        auto &render_entity_to_screen = Logic_entt().get<screen_pick_entity>(model_entity);
         set_render_parameter(model_entity, "render_entity_to_screen", render_entity_to_screen);
     }
 }
@@ -964,14 +964,7 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
     return entt::null;
 }
 
-
-void deal_new_add_model(const entt::entity model_entity) {
-    auto &material_parameters     = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
-    auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
-    auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
-    auto &render_entity_to_screen = Logic_entt().emplace<read_render_entt>(model_entity);
-    // 包含不包含 model_entity 的矩阵
-
+void combine_geometry_data(const entt::entity model_entity) {
     std::vector<entt::entity> temp;
     auto generate_aabb = [&](const entt::entity entity) {
         if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
@@ -996,7 +989,14 @@ void deal_new_add_model(const entt::entity model_entity) {
                           }
                       }
                      );
+    // 到这里的时候应该是可以停一下的
+}
 
+
+void combine_boxes_and_matrices(const entt::entity model_entity) {
+    auto &boxes                   = Logic_entt().emplace<std::vector<Render_AABB> >(model_entity);
+    auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
+    auto &render_entity_to_screen = Logic_entt().emplace<screen_pick_entity>(model_entity);
 
     auto update_aabb = [&](const entt::entity entity) {
         if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
@@ -1004,22 +1004,43 @@ void deal_new_add_model(const entt::entity model_entity) {
             const auto aabbs         = geometry_data.get_aabbs();
             const auto &model_matrix = Logic_entt().get<Transform_Matrix>(entity);
             for (auto &bound_box: aabbs) {
-                auto temp = transform_AABB(bound_box, model_matrix);
-                boxes.push_back(temp);
+                auto world_aabb = transform_AABB(bound_box, model_matrix);
+                boxes.push_back(world_aabb);
                 matrices.push_back(model_matrix);
                 render_entity_to_screen.push_back(entity);
             }
         }
     };
     add_recursion_function_to_children(model_entity, update_aabb);
-
-
-    // 获取 每个 entity 的 全部 primitive 的 包围盒
     auto local_aabb = merge_AABBs(boxes);
     Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
 
+    // 下面这两个目的是 给 渲染线程 执行 frustum_cull
+    // 下面这个是做什么的?
+    // logic_update_proxy(model_entity, matrices);  // 应该是没有用的
+
+    update_primitives_model_matrix(model_entity); // 估计这一行会和上面有点像 , 不一样, 但是我不知道为什么 这个函数写的时候一定需要加一个共享指针呢?
+    update_entity_to_screen(model_entity);
+}
 
 
+void combine_material(const entt::entity model_entity) {
+    auto &material_parameters = Logic_entt().emplace<Gltf_material_parameters>(model_entity);
+
+    auto update_material = [&](const entt::entity entity) {
+        if (entity != entt::null && Logic_entt().all_of<Geometry_data>(entity)) {
+            const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
+            const auto materials     = geometry_data.get_materials();
+            for (const auto &material: materials) {
+                material_parameters.push_back(material);
+            }
+        }
+    };
+    add_recursion_function_to_children(model_entity, update_material);
+    update_material(model_entity);
+}
+
+void combine_geometry(const entt::entity model_entity) {
     Geometry_data bindless_Geometry_data;
 
     auto geometry_function = [&](const entt::entity entity) {
@@ -1028,15 +1049,11 @@ void deal_new_add_model(const entt::entity model_entity) {
             const auto geometry_data = Logic_entt().get<Geometry_data>(entity);
             const auto vertices      = geometry_data.get_vertices();
             const auto indices       = geometry_data.get_indices();
-            const auto materials     = geometry_data.get_materials();
             for (const auto &vertex: vertices) {
                 bindless_Geometry_data.push_vertices(vertex);
             }
             for (const auto &index: indices) {
                 bindless_Geometry_data.push_indices(index);
-            }
-            for (const auto &material: materials) {
-                material_parameters.push_back(material);
             }
             Render_entt().remove<Geometry_data_need_copy_tag>(entity);
         }
@@ -1047,19 +1064,20 @@ void deal_new_add_model(const entt::entity model_entity) {
     auto mesh       = create_mesh_data(bindless_Geometry_data);
     auto primitives = create_primitives(bindless_Geometry_data);
 
-    Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives);
+    Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives); // 这两个本来应该是一体,但是 GPU 驱动导致分离了
+    logic_update_proxy(model_entity, mesh); //
+}
+
+void deal_new_add_model(const entt::entity model_entity) {
+    combine_geometry_data(model_entity);
+
+    combine_boxes_and_matrices(model_entity);
+    combine_material(model_entity);
+    combine_geometry(model_entity);
+
 
     gltf_update_joint_matrix(model_entity);
 
-    // to GPU
-    update_primitives_model_matrix(model_entity);
-    update_entity_to_screen(model_entity);
-
-    logic_update_proxy(model_entity, boxes);
-    logic_update_proxy(model_entity, mesh);
-    logic_update_proxy(model_entity, matrices); // 这里给出的是什么? model 本身 不变的? 还是 会变动的呢?
-
-    update_material(model_entity);
 
     Logic_entt().emplace<GPU_frustum_cull>(model_entity);
     update_frustum_cull_box(model_entity);
