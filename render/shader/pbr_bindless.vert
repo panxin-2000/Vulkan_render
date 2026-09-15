@@ -62,7 +62,7 @@ void main()
 
 }
 
-#elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
+#elif defined(PASS_RANDOM_TRIANGLE_COLOR)
 void main()
 {
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
@@ -86,7 +86,7 @@ void main()
 }
 
 
-#elif defined(PASS_PICKUP)
+#elif defined(PASS_DEPTH_AND_PICKUP)
 layout (location = 0) flat out uint out_entity;
 void main()
 {

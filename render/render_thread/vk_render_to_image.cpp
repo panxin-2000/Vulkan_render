@@ -100,8 +100,8 @@ void render_different_pass(VCB &vcb,
     // 这里是绘制 不透明 ,得到深度图, 还是
     // 不能按照
     {
-        vcb.begin_rendering_depth_attachment(depth_AO_image,
-                                             VK_ATTACHMENT_LOAD_OP_CLEAR);
+        vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
+                                                VK_ATTACHMENT_LOAD_OP_CLEAR);
         auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
         for (const auto entity: view) {
             auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
@@ -110,7 +110,7 @@ void render_different_pass(VCB &vcb,
             shader_path.clear_define_macro();
             shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
             shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
-            shader_path.add_define_macro("PASS_DEPTH", 1);
+            shader_path.add_define_macro("PASS_DEPTH_AND_PICKUP", 1);
             const auto &shader_data_ref =
                     engine.get_shader_manager().find(shader_path);
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);

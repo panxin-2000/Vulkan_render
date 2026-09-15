@@ -146,11 +146,9 @@ VKR_shader_paths::VKR_shader_paths(const std::string &vertex_path,
     // }
     if (render_pass_type == Render_Pass_Type::Color) {
         define_macro_.push_back({"PASS_COLOR", 1});
-    } else if (render_pass_type == Render_Pass_Type::Depth) {
-        define_macro_.push_back({"PASS_DEPTH", 1});
-    } else if (render_pass_type == Render_Pass_Type::Pickup) {
-        define_macro_.push_back({"PASS_PICKUP", 1});
-    }else if (render_pass_type == Render_Pass_Type::RANDOM_color) {
+    } else if (render_pass_type == Render_Pass_Type::Depth_and_pickup) {
+        define_macro_.push_back({"PASS_DEPTH_AND_PICKUP", 1});
+    } else if (render_pass_type == Render_Pass_Type::RANDOM_color) {
         define_macro_.push_back({"PASS_RANDOM_TRIANGLE_COLOR", 1});
     }
 }

@@ -20,8 +20,7 @@ TMP_DIR = os.environ.get("TMPDIR", "/tmp")
 # 4. 🔴 定义三个互斥的宏及其对应输出文件名的后缀
 MACRO_CONFIGS = [
     {"macro": "PASS_COLOR=1",  "suffix": "COLOR"},
-    {"macro": "PASS_DEPTH=1",  "suffix": "DEPTH"},
-    {"macro": "PASS_PICKUP=1", "suffix": "PICKUP"}
+    {"macro": "PASS_DEPTH_AND_PICKUP=1",  "suffix": "DEPTH"},
 ]
 
 print(f"Found {len(SHADER_FILES)} shaders. Each will be compiled 3 times with different macros.\n")

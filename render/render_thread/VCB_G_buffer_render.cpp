@@ -61,7 +61,7 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
                                  .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
                                  .image               = depth->get_image_handle(time_line_),
                                  .subresourceRange{
-                                     .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                                     .aspectMask = depth->get_aspectMask(),
                                      .levelCount = 1,
                                      .layerCount = 1
                                  }
@@ -86,13 +86,17 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
                                            .clearValue{.color{0.0f, 0.0f, 0.0f, 1.0f}}
                                        });
     }
+
+    if (depth->get_format() == VK_FORMAT_D32_SFLOAT) {
+    }
+
     const VkExtent2D temp_extent = {depth->get_width(), depth->get_height()};
     VkRenderingAttachmentInfo depthAttachmentInfo{
         .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView   = depth->get_image_view(),
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp      = depth_loadOp,
-        .storeOp     = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue  = {.depthStencil = {0.0f, 0}}
     };
     VkRenderingAttachmentInfo StencilAttachmentInfo{
@@ -115,6 +119,11 @@ G_buffer_image_index VCB::begin_g_buffer_rendering_attachment(
         .pDepthAttachment     = &depthAttachmentInfo,
         .pStencilAttachment   = &StencilAttachmentInfo,
     };
+
+    if (depth->get_format() == VK_FORMAT_D32_SFLOAT) {
+        renderingInfo.pStencilAttachment = nullptr;
+    }
+
     vkCmdBeginRendering(command_buffer_, &renderingInfo);
     set_pass_viewport(depth->get_width(), depth->get_height());
     set_pass_scissor(depth->get_width(), depth->get_height());

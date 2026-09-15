@@ -67,7 +67,7 @@ void main()
     outViewVec = viewPos.xyz - pos.xyz;
 
 }
-#elif defined(PASS_DEPTH) || defined(PASS_RANDOM_TRIANGLE_COLOR)
+#elif defined(PASS_RANDOM_TRIANGLE_COLOR)
 
 void main()
 {
@@ -107,7 +107,7 @@ void main()
 }
 
 
-#elif defined(PASS_PICKUP)
+#elif defined(PASS_DEPTH_AND_PICKUP)
 
 layout (location = 0) flat out uint out_entity;
 

@@ -261,13 +261,15 @@ void main()
     // 好像看起来差不多了，边缘的颜色随着 物体的旋转变换很快，不应该这么快
 }
 
-#elif defined(PASS_DEPTH) || defined(PASS_SHADOW_MAP)
+#elif defined(PASS_SHADOW_MAP)
+
 
 void main()
 {
 
 }
-#elif defined(PASS_PICKUP)
+#elif defined(PASS_DEPTH_AND_PICKUP) || defined(PASS_PICKUP)
+
 
 layout (location = 0) flat in uint entity;
 

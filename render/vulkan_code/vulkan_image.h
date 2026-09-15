@@ -64,6 +64,15 @@ public:
         return parameters_.aspectMask;
     }
 
+    [[nodiscard]] VkImageUsageFlagBits get_usage() const {
+        return parameters_.usage;
+    }
+
+    [[nodiscard]] VkFormat get_format() const {
+        return parameters_.format;
+    }
+
+
     uint32_t get_mipLevels() const {
         return parameters_.mipLevels;
     }

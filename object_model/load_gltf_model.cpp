@@ -892,7 +892,10 @@ void load_gltf_material_separate(entt::entity model_entity) {
 void update_entity_to_screen(const entt::entity model_entity) {
     if (Logic_entt().all_of<screen_pick_entity>(model_entity)) {
         auto &render_entity_to_screen = Logic_entt().get<screen_pick_entity>(model_entity);
-        set_render_parameter(model_entity, "render_entity_to_screen", render_entity_to_screen);
+        const auto matrix_ptr         = render_entity_to_screen.data();
+        auto size                     = render_entity_to_screen.size() * sizeof(entt::entity);
+        auto buffer                   = copy_data_to_SSBO_buffer(matrix_ptr, size);
+        set_render_parameter(model_entity, "render_entity_to_screen", buffer);
     }
 }
 

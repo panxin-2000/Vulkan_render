@@ -120,7 +120,7 @@ using Shader_data = std::shared_ptr<vk_shader_data>;
 class VKR_shader_paths {
 public:
     enum Render_Pass_Type {
-        Depth,
+        Depth_and_pickup,
         Color,
         Pickup,
         RANDOM_color
