@@ -102,7 +102,7 @@ void set_transform_dirty(const entt::entity entity);
 
 void update_primitives_model_matrix(const entt::entity model_entity);
 
-void update_primitives_model_box(const entt::entity model_entity);
+void update_frustum_cull_box(const entt::entity model_entity);
 
 void add_model_3d_Event(const entt::entity entity);
 

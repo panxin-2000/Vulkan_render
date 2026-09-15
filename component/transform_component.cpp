@@ -55,18 +55,15 @@ Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &
 }
 
 
-void update_primitives_model_box(const entt::entity model_entity) {
-    if (Logic_entt().all_of<Transform_Matrix,
-                            std::vector<Render_AABB>,
+void update_frustum_cull_box(const entt::entity model_entity) {
+    if (Logic_entt().all_of<std::vector<Render_AABB>,
                             std::vector<VKR_Primitive>,
                             GPU_frustum_cull>(model_entity)) {
-        auto boxes_render        = std::make_shared<std::vector<Render_AABB> >();
-        auto boxes               = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
-        auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
-        for (auto &box: boxes) {
-            auto temp_box = transform_AABB(box, model_entity_matrix);
-            boxes_render->push_back(temp_box);
-        }
+        auto boxes = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
+
+        // 下面这两个目的是 给 渲染线程 执行 frustum_cull
+        logic_update_proxy(model_entity, boxes);
+
         const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
 
         auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
