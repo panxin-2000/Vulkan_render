@@ -1015,10 +1015,6 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
     auto local_aabb = merge_AABBs(boxes);
     Logic_entt().emplace<Local_Space_AABB>(model_entity, local_aabb);
 
-    // 下面这两个目的是 给 渲染线程 执行 frustum_cull
-    // 下面这个是做什么的?
-    // logic_update_proxy(model_entity, matrices);  // 应该是没有用的
-
     update_primitives_model_matrix(model_entity); // 估计这一行会和上面有点像 , 不一样, 但是我不知道为什么 这个函数写的时候一定需要加一个共享指针呢?
     update_entity_to_screen(model_entity);
 }
@@ -1065,7 +1061,7 @@ void combine_geometry(const entt::entity model_entity) {
     auto primitives = create_primitives(bindless_Geometry_data);
 
     Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives); // 这两个本来应该是一体,但是 GPU 驱动导致分离了
-    logic_update_proxy(model_entity, mesh); //
+    logic_update_proxy(model_entity, mesh);
 }
 
 void deal_new_add_model(const entt::entity model_entity) {

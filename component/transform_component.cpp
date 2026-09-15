@@ -59,12 +59,9 @@ void update_frustum_cull_box(const entt::entity model_entity) {
     if (Logic_entt().all_of<std::vector<Render_AABB>,
                             std::vector<VKR_Primitive>,
                             GPU_frustum_cull>(model_entity)) {
-        auto boxes = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
+        const auto &boxes = Logic_entt().get<std::vector<Render_AABB> >(model_entity);
 
-        // 下面这两个目的是 给 渲染线程 执行 frustum_cull
-        logic_update_proxy(model_entity, boxes);
-
-        const auto primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
+        const auto &primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
 
         auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
         frustum_cull.command_size = primitives.size(); {
