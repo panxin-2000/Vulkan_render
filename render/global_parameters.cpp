@@ -36,6 +36,14 @@ bool Global_parameters::set_invVP(const Eigen::Matrix4f &matrix) {
 
 bool Global_parameters::set_world_camera_pos(const Eigen::Vector3f &v3) {
     world_camera_pos = {v3.x(), v3.y(), v3.z(), 0};
+    float distance   = (world_camera_pos.head(3) - last_sun_camera_pos.head(3)).norm();
+    // LOG_INFO(g_log(), "distance {}", distance);
+    if (distance > 0.02f) {
+        last_sun_camera_pos = world_camera_pos;
+        need_update_CSM     = true;
+    } else {
+        return false;
+    }
     return true;
 }
 
@@ -45,6 +53,10 @@ bool Global_parameters::set_sun_light(const Eigen::Vector3f &v3) {
     auto tem = v3;
     tem.normalize();
     light.set_rotate({tem.x(), tem.y(), tem.z(), 0.0f});
+    if (last_light != light) {
+        need_update_CSM = true;
+        last_light      = light;
+    }
     return true;
 }
 
@@ -231,12 +243,11 @@ Eigen::Vector3f calculateCascadeSphereCenter(
 bool Global_parameters::update_directional_light() {
 #define SHADOW_MAP_CASCADE_COUNT 4
 
-    float distance = (world_camera_pos.head(3) - last_sun_camera_pos.head(3)).norm();
-    if (distance > 1.0f) {
-        last_sun_camera_pos = world_camera_pos;
-    } else {
-        return false;
-    }
+    // if (need_update_CSM == true) {
+    //     need_update_CSM = false;
+    // } else {
+    //     return false;
+    // }
 
     float nearClip = 0;
     float farClip  = 0;
@@ -247,11 +258,6 @@ bool Global_parameters::update_directional_light() {
     // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
 
     for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
-        Eigen::Vector3f frustumCenter = calculateCascadeSphereCenter(view_matrix,
-                                                                     projection_matrix,
-                                                                     cascades[i].nearPlane,
-                                                                     cascades[i].farPlane);
-
         // 计算包围球半径
         float radius = calculateCascadeRadiusFromProj(projection_matrix, cascades[i].nearPlane, cascades[i].farPlane);
         // 计算“常数级联半径”  能确保半径 不再 变化
@@ -267,10 +273,28 @@ bool Global_parameters::update_directional_light() {
         float zNearBuffer = 150.0f; // 允许球心背后多远（Caster 范围） // 这里可以很有
         float zFarBuffer  = 50.0f;  // 允许球心前面延伸多远
 
-        Eigen::Matrix4f lightViewMatrix = eigenLookAt(frustumCenter,
-                                                      frustumCenter + lightDir,
+        Eigen::Matrix4f lightViewMatrix = eigenLookAt(Eigen::Vector3f::Zero(),
+                                                      Eigen::Vector3f::Zero() + lightDir,
                                                       Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
+        float worldTexelSize = (2.0f * radius) / 2048.0f;
+
+        // 2. 将包围球中心点 position_ 转换到光源空间（Light Space）
+        Eigen::Vector4f lightSpacePos = lightViewMatrix * world_camera_pos;
+
+        // 3. 在光源空间中，强行按 Texel 大小进行向下或四舍五入取整（这里用 floor 或 round）
+        // 这样可以确保阴影相机永远只以“整颗像素”为单位进行移动
+        lightSpacePos.x() = std::floor(lightSpacePos.x() / worldTexelSize) * worldTexelSize;
+        lightSpacePos.y() = std::floor(lightSpacePos.y() / worldTexelSize) * worldTexelSize;
+
+        // 4. 将对齐后的光源空间位置逆矩阵变回世界空间，作为最终稳定的阴影相机位置
+        Eigen::Matrix4f invLightView       = lightViewMatrix.inverse();
+        Eigen::Vector4f stabilizedWorldPos = invLightView * lightSpacePos;
+        Eigen::Vector3f frustumCenter      = stabilizedWorldPos.head(3);
+
+        lightViewMatrix = eigenLookAt(frustumCenter,
+                                      frustumCenter + lightDir,
+                                      Eigen::Vector3f(0.0f, 1.0f, 0.0f));
 
         // 调用你专为 DX/Vulkan 写的 ortho 投影函数
         // 此时近裁剪面设为 0.0f，远裁剪面设为总深度范围
@@ -283,4 +307,5 @@ bool Global_parameters::update_directional_light() {
         light_viewProjMatrix[i] = lightOrthoMatrix * lightViewMatrix;
         light_frustum_planes[i] = get_Frustum_Planes(light_viewProjMatrix[i]);
     }
+    return true;
 }

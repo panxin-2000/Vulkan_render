@@ -133,6 +133,10 @@ public:
     Light() {
     }
 
+    bool operator==(const Light &rhs) const {
+        return std::memcmp(this, &rhs, sizeof(Light)) == 0;
+    }
+
     void set_color(const float R, const float G, const float B) {
         color_.R = R;
         color_.G = G;
