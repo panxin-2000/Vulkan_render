@@ -416,6 +416,36 @@ struct tone_mapping_Constants {
 };
 
 
+void VCB::pickup(const VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, int32_t width,
+                 int32_t height) {
+    add_image_barrier(entity_image,
+                      image_barrier_frag_write_color,
+                      image_barrier_transfer_read_src);
+
+    // 之后呢? 需要做什么?
+    VkBufferImageCopy region{};
+    region.bufferOffset                    = 0;
+    region.bufferRowLength                 = 0; // 0 表示紧密排列
+    region.bufferImageHeight               = 0;
+    region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel       = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount     = 1;
+    region.imageOffset                     = {width - 5, height - 5, 0};
+    region.imageExtent                     = {
+        static_cast<uint32_t>(11),
+        static_cast<uint32_t>(11), 1
+    };
+    // 4. 执行从 Image 到 Buffer 的复制
+    vkCmdCopyImageToBuffer(command_buffer_,
+                           entity_image->get_image_handle(),
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           dstBuffer->get_buffer_handle(time_line_),
+                           1,
+                           &region
+                          );
+}
+
 void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::string &compute_path) {
     const Image_and_view_parameters &parameters = image_ptr->get_parameters();
     int32_t mipWidth                            = parameters.width;

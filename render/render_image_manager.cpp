@@ -78,7 +78,7 @@ VKR_image_ptr Render_image_manager::get_one_entity_image() {
         .height = extent.height / 2,
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT),
         .aspectMask  = VK_IMAGE_ASPECT_COLOR_BIT,
         .tiling      = VK_IMAGE_TILING_OPTIMAL,
         .mipLevels   = 1,

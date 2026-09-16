@@ -122,6 +122,9 @@ void render_different_pass(VCB &vcb,
         vcb.end_rendering();
 
 
+        vcb.pickup(entity_image, engine.get_pickup_buffers(), 100, 100);
+
+
         vcb.add_image_barrier(depth_AO_image,
                               image_barrier_depth_write,
                               image_barrier_compute_read_sampler2D);

@@ -137,6 +137,8 @@ public:
     void only_image_compute(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image,
                             const std::string &compute_path);
 
+    void pickup(VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, int32_t width, int32_t height);
+
     void down_sample(Engine &engine, VKR_image_ptr image_ptr,
                      const std::string &compute_path);
 

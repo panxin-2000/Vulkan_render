@@ -36,6 +36,7 @@ private:
     std::array<VkQueryPool, maxFramesInFlight> query_pools         = {};
     std::array<VkFence, maxFramesInFlight> fences_                 = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
+    std::array<VKR_buffer_ptr, maxFramesInFlight> pickup_buffers_  = {};
 
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
@@ -48,6 +49,7 @@ private:
     Command_submit_manager command_submit_manager_;
     Shader_manager shader_manager_;
     PBR_manager pbr_manager_;
+
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
     std::atomic<uint64_t> framerate_   = 0;
@@ -223,6 +225,10 @@ public:
 
     [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
         return swap_chain_images_;
+    }
+
+    [[nodiscard]] const VKR_buffer_ptr &get_pickup_buffers() const {
+        return pickup_buffers_[0];
     }
 
     Shader_manager &get_shader_manager() {

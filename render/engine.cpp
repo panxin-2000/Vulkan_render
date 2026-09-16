@@ -204,6 +204,14 @@ void Engine::create_render_image() {
 
 
 void Engine::create() {
+    // pickup_buffers_
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        pickup_buffers_[i] = create_vma_buffer(ALIGN_256(11 * 11 * 4), VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                               VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
+    }
+
     descriptor_pool_manager_.create();
     command_submit_manager_.create();
     shader_manager_.create();
@@ -330,6 +338,11 @@ void Engine::recreate_swap_chain() {
 
 void Engine::destroy() {
     shader_manager_destroy();
+
+    for (auto i = 0; i < maxFramesInFlight; i++) {
+        pickup_buffers_[i] = nullptr;
+    }
+
 
     pbr_manager_.destroy();
     command_submit_manager_.destroy();
