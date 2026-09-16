@@ -370,17 +370,37 @@ void VCB::add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &b
 }
 
 
-void VCB::calculate_frustum_cull(const entt::entity entity, const FrustumPlanes &frustum_planes,
-                                 const std::array<FrustumPlanes, 4> &light_frustum_planes) {
+void VCB::calculate_frustum_cull(const entt::entity entity,
+                                 const FrustumPlanes &frustum_planes,
+                                 const std::array<FrustumPlanes, 4> &light_frustum_planes,
+                                 const VKR_image_ptr &depth) {
     {
-        auto command_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
-        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, command_shader->pipeline_t);
+        auto compute_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
+
+        std::optional<Texture_parameter> offscreen = create_2d_texture(depth);
+
+        shader_need_parameter parameter;
+        set_render_parameter(compute_shader->object_sets_bindings,
+                             parameter.update_object_descriptor_sets, "input_texture",
+                             offscreen);
+        allocate_descriptor_sets(parameter, compute_shader, time_line_);
+        auto temp = get_descriptor_sets(parameter, compute_shader);
+        update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
+
+        bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
+                                   VK_PIPELINE_BIND_POINT_COMPUTE);
+
+
+        vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
         std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
 
         auto command_calculate                    = Render_entt().get<GPU_frustum_cull>(entity);
+        command_calculate.hiz_min_lod             = 0;
+        command_calculate.hiz_max_lod             = depth->get_mipLevels();
         command_calculate.frustum_planes          = frustum_planes; // 还需要在这里更新一次
         command_calculate.IndirectCommandsAddress = command_calculate.camera_write_buffer->get_gpu_device_address();
-        vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+        vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                            &command_calculate);
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
@@ -415,7 +435,7 @@ void VCB::calculate_frustum_cull(const entt::entity entity, const FrustumPlanes 
             command_calculate.frustum_planes          = light_frustum_planes[i]; // 还需要在这里更新一次
             command_calculate.IndirectCommandsAddress =
                     command_calculate.light_write_buffer[i]->get_gpu_device_address();
-            vkCmdPushConstants(command_buffer_, command_shader->pipeline_layout,
+            vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                                &command_calculate);
             vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
@@ -444,8 +464,6 @@ void VCB::calculate_frustum_cull(const entt::entity entity, const FrustumPlanes 
                                                 .size = VK_WHOLE_SIZE,
                                             });
         }
-        auto &parameter = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-
 
         VkDependencyInfo barrierDependencyInfo{
             .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,

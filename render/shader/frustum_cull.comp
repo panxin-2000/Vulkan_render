@@ -17,12 +17,18 @@ layout (buffer_reference, scalar) buffer IndirectCommands {
     VkDrawIndexedIndirectCommand command[];
 };
 
+struct hiz_cull_para{
+    uint hiz_min_lod;
+    uint hiz_max_lod;
+};
+
 
 layout (push_constant) uniform PushConstant {
     Frustum frustum;
     uint64_t AABB_boxesAddress;
     uint64_t IndirectCommandsAddress;
     uint command_size;
+    hiz_cull_para para;
 } push_constant;
 
 /**
@@ -102,6 +108,7 @@ vec4 getScreenAABBUV(AABB_box box, inout float boxClosestDepth) {
         minUV = min(minUV, uv);
         maxUV = max(maxUV, uv);
         boxClosestDepth = max(boxClosestDepth, ndcPos.z);
+        // 上面用的是 max 是因为  反转了 z 轴
     }
 
     // 4. 组合成上一个函数 sampleHZB 需要的 vec4 (aabbUV)
@@ -111,56 +118,58 @@ vec4 getScreenAABBUV(AABB_box box, inout float boxClosestDepth) {
 
 
 
-struct hiz_cull_para{
-    vec4 viewport_scale_bias;
-    ivec2 hiz_resolution;
-    int hiz_min_lod;
-    int hiz_max_lod;
-};
 
 
 bool hiz_cull(sampler2D uHiZDepth, hiz_cull_para frustum, vec2 view_range_x, vec2 view_range_y, float closest_z)
 {
     // Viewport scale first applies any projection scale in X/Y (without Y flip).
     // The scale also does viewport size / 2 and then offsets into integer window coordinates.
-    vec2 range_x = view_range_x * frustum.viewport_scale_bias.x + frustum.viewport_scale_bias.z;
-    vec2 range_y = view_range_y * frustum.viewport_scale_bias.y + frustum.viewport_scale_bias.w;
+    //    vec2 range_x = view_range_x * frustum.viewport_scale_bias.x + frustum.viewport_scale_bias.z;
+    //    vec2 range_y = view_range_y * frustum.viewport_scale_bias.y + frustum.viewport_scale_bias.w;
+    vec2 range_x = view_range_x;
+    vec2 range_y = view_range_y;
 
     ivec2 ix = ivec2(range_x);
     ivec2 iy = ivec2(range_y);
 
-    ix.x = clamp(ix.x, 0, frustum.hiz_resolution.x - 1);
-    ix.y = clamp(ix.y, ix.x, frustum.hiz_resolution.x - 1);
-    iy.x = clamp(iy.x, 0, frustum.hiz_resolution.y - 1);
-    iy.y = clamp(iy.y, iy.x, frustum.hiz_resolution.y - 1);
+    ivec2 image_size = textureSize(uHiZDepth, 0);
+
+    ix.x = clamp(ix.x, 0, image_size.x - 1);
+    ix.y = clamp(ix.y, ix.x, image_size.x - 1);
+    iy.x = clamp(iy.x, 0, image_size.y - 1);
+    iy.y = clamp(iy.y, iy.x, image_size.y - 1);
 
     // We need to sample from a LOD where there is at most one texel delta
     // between lo/hi values.
     int max_delta = max(ix.y - ix.x, iy.y - iy.x);
-    int lod = clamp(findMSB(max_delta - 1) + 1, frustum.hiz_min_lod, frustum.hiz_max_lod);
-    ivec2 lod_max_coord = max(frustum.hiz_resolution >> lod, ivec2(1)) - 1;
+    int lod = clamp(findMSB(max_delta - 1) + 1, int(frustum.hiz_min_lod), int(frustum.hiz_max_lod));
+    ivec2 lod_max_coord = max(image_size >> lod, ivec2(1)) - 1;
     ix = min(ix >> lod, lod_max_coord.xx);
     iy = min(iy >> lod, lod_max_coord.yy);
 
     ivec2 hiz_coord = ivec2(ix.x, iy.x);
 
     // We didn't write the top LOD.
-    lod -= frustum.hiz_min_lod;
+    lod -= int(frustum.hiz_min_lod);
 
     float d = texelFetch(uHiZDepth, hiz_coord, lod).x;
     bool nx = ix.y != ix.x;
     bool ny = iy.y != iy.x;
     if (nx)
-    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 0)).x);
+    d = min(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 0)).x);
     if (ny)
-    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(0, 1)).x);
+    d = min(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(0, 1)).x);
     if (nx && ny)
-    d = max(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 1)).x);
+    d = min(d, texelFetchOffset(uHiZDepth, hiz_coord, lod, ivec2(1, 1)).x);
 
-    return closest_z < d;
+    //  closest_z 是 物体的 最大的 一个点 , 也就是离屏幕最近的一个点
+    //  d 是 深度图 中距离包围盒 最远的一个点
+    //  closest_z 更大, 意味着会被绘制出来
+    return closest_z > d;
 }
 
 
+layout (set = 2, binding = 0) uniform sampler2D input_texture;
 
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
@@ -177,7 +186,12 @@ void main()
     if (result == true) {
         //        uint write_index = atomicAdd(draw_count, 1);
         // // 利用这个独一无二的索引，紧密无缝地写入输出数组
-        command_buffer.command[idx].instanceCount = 1;
+        float boxClosestDepth;
+        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
+        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
+        if (result == true) {
+            command_buffer.command[idx].instanceCount = 1;
+        }
     } else {
         command_buffer.command[idx].instanceCount = 0;
     }

@@ -260,7 +260,8 @@ public:
     void calculate_frustum_cull(
         const entt::entity entity,
         const FrustumPlanes &frustum_planes,
-        const std::array<FrustumPlanes, 4> &light_frustum_planes);
+        const std::array<FrustumPlanes, 4> &light_frustum_planes,
+        const VKR_image_ptr &depth);
 
     void default_status() const {
         constexpr VKR_Render_state temp;

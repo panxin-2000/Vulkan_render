@@ -61,15 +61,20 @@ private:
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
     std::map<std::string, Update_descriptor_binding> update_bindless_sampler_sets_;
 
-    uint32_t frameIndex  = 0;
-    uint32_t imageIndex  = 0;
-    uint32_t current_CSM = 0;
+    uint32_t frameIndex         = 0;
+    uint32_t imageIndex         = 0;
+    uint32_t current_CSM        = 0;
+    bool update_frustum_culling = true;
 
 public:
     static Engine &instance();
 
     uint32_t &get_current_CSM() {
         return current_CSM;
+    }
+
+    bool &get_frustum_culling() {
+        return update_frustum_culling;
     }
 
     [[nodiscard]] uint64_t get_finished_timeline() const;

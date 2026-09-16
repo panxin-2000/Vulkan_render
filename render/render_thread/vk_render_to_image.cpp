@@ -68,10 +68,10 @@ void render_different_pass(VCB &vcb,
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
-    {
+    if (engine.get_frustum_culling() == true) {
         auto view = Render_entt().view<GPU_frustum_cull>();
         for (const auto entity: view)
-            vcb.calculate_frustum_cull(entity, frustum_planes, light_planes);
+            vcb.calculate_frustum_cull(entity, frustum_planes, light_planes, depth_AO_copy_image);
     }
 
     // 应该是在 需要 deferred 的时候才开启
