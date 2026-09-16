@@ -422,6 +422,10 @@ void VCB::pickup(const VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, int
                       image_barrier_frag_write_color,
                       image_barrier_transfer_read_src);
 
+    const int32_t offsetX = std::clamp(width - 5, 0, int32_t(entity_image->get_width() - 11));
+    const int32_t offsetY = std::clamp(height - 5, 0, int32_t(entity_image->get_height() - 11));
+
+
     // 之后呢? 需要做什么?
     VkBufferImageCopy region{};
     region.bufferOffset                    = 0;
@@ -431,7 +435,7 @@ void VCB::pickup(const VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, int
     region.imageSubresource.mipLevel       = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount     = 1;
-    region.imageOffset                     = {width - 5, height - 5, 0};
+    region.imageOffset                     = {offsetX, offsetY, 0};
     region.imageExtent                     = {
         static_cast<uint32_t>(11),
         static_cast<uint32_t>(11), 1

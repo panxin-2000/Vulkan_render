@@ -209,6 +209,7 @@ void Engine::create() {
         pickup_buffers_[i] = create_vma_buffer(ALIGN_256(11 * 11 * 4), VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                                VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
+                                               VMA_ALLOCATION_CREATE_MAPPED_BIT |
                                                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
     }
 

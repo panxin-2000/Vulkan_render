@@ -363,6 +363,13 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
         ImGuiIO &io = ImGui::GetIO();
         Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
         ImGui::Text("MousePos: %.2f, %.2f", io.MousePos.x, io.MousePos.y);
+        void *address = Engine::instance().get_pickup_buffers()->mapped_address();
+        if (address != nullptr) {
+            auto value = (uint32_t *) address;
+            ImGui::Text("pickup entity: %d", *value);
+        }
+
+
         ImGui::SliderFloat("fxaaQualitySubpix",
                            &Engine::instance().get_global_parameters().get_fxaaQualitySubpix(), 0.0f, 1.0f);
         ImGui::SliderFloat("fxaaQualityEdgeThreshold",

@@ -121,9 +121,8 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
 
-
-        vcb.pickup(entity_image, engine.get_pickup_buffers(), 100, 100);
-
+        auto &mouse_position = engine.get_global_parameters().get_mouse_position();
+        vcb.pickup(entity_image, engine.get_pickup_buffers(), mouse_position.x(), mouse_position.y());
 
         vcb.add_image_barrier(depth_AO_image,
                               image_barrier_depth_write,

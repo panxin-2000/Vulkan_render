@@ -163,6 +163,9 @@ public:
         return maxBlurPixels;
     }
 
+    Eigen::Vector4f &get_mouse_position() {
+        return mouse_position;
+    }
 
     float &get_fog_start() {
         return fogStart;
@@ -226,7 +229,7 @@ public:
 
     bool set_screen_size(const Eigen::Vector2f &screen_size_t);
 
-    bool update_directional_light( uint32_t i);
+    bool update_directional_light(uint32_t i);
 };
 
 
