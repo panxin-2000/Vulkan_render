@@ -34,7 +34,6 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
     // 之后再是什么呢？ 看看如何将这部分的计算放到GPU中计算
 
     uint &i                                     = engine.get_current_CSM();
-    i                                           = i % 4;
     const Image_and_view_parameters &parameters = depth_shadow_image->get_parameters();
 
     auto current_view               = create_2d_view(depth_shadow_image, 0, parameters.mipLevels, i, 1);
@@ -82,4 +81,5 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
     end_rendering();
     current_image_ptr->clean_copy_VkImage();
     ++i;
+    i = i % 4;
 }

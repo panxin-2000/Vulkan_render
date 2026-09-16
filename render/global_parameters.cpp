@@ -240,7 +240,7 @@ Eigen::Vector3f calculateCascadeSphereCenter(
 }
 
 
-bool Global_parameters::update_directional_light() {
+bool Global_parameters::update_directional_light(uint32_t i) {
 #define SHADOW_MAP_CASCADE_COUNT 4
 
     // if (need_update_CSM == true) {
@@ -257,7 +257,7 @@ bool Global_parameters::update_directional_light() {
     auto cascades = calculateSplits(farClip, nearClip, SHADOW_MAP_CASCADE_COUNT);
     // 纯数学优化的紧密球心与半径计算（代替你原本的公式）
 
-    for (uint32_t i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) {
+    {
         // 计算包围球半径
         float radius = calculateCascadeRadiusFromProj(projection_matrix, cascades[i].nearPlane, cascades[i].farPlane);
         // 计算“常数级联半径”  能确保半径 不再 变化
@@ -284,8 +284,8 @@ bool Global_parameters::update_directional_light() {
 
         // 3. 在光源空间中，强行按 Texel 大小进行向下或四舍五入取整（这里用 floor 或 round）
         // 这样可以确保阴影相机永远只以“整颗像素”为单位进行移动
-        lightSpacePos.x() = std::floor(lightSpacePos.x() / worldTexelSize) * worldTexelSize;
-        lightSpacePos.y() = std::floor(lightSpacePos.y() / worldTexelSize) * worldTexelSize;
+        lightSpacePos.x() = std::round(lightSpacePos.x() / worldTexelSize) * worldTexelSize;
+        lightSpacePos.y() = std::round(lightSpacePos.y() / worldTexelSize) * worldTexelSize;
 
         // 4. 将对齐后的光源空间位置逆矩阵变回世界空间，作为最终稳定的阴影相机位置
         Eigen::Matrix4f invLightView       = lightViewMatrix.inverse();
