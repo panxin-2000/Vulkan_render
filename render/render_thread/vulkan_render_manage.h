@@ -15,6 +15,8 @@
 #include <thread>
 #include <chrono>
 
+#include "logic_to_render.h"
+
 // 判断当前架构以选择正确的 CPU 暂停指令
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <immintrin.h>
@@ -72,8 +74,8 @@ public:
 
 class vk_render_queue {
 private:
-    oneapi::tbb::concurrent_queue<std::function<void(void)> > g_render_queue;
-
+    oneapi::tbb::concurrent_queue<RenderRingBuffer> g_render_queue;
+    RenderRingBuffer logic_to_render{2 * 1024 * 1024};
     alignas(64) std::atomic<bool> logic_thread_finished = false;
 
 public:
@@ -87,14 +89,14 @@ public:
     }
 
     void execute_update_lambda() {
-        std::function<void(void)> callback;
+        RenderRingBuffer callback{2 * 1024 * 1024};
         SpinWait spinner;
         if (g_render_queue.empty() == true) {
             return;
         }
         while (logic_thread_finished.load() == false) {
             if (g_render_queue.try_pop(callback)) {
-                callback();
+                callback.FlushAndExecute();
             } else {
                 spinner.spin_once();
             }
@@ -104,17 +106,39 @@ public:
 
     void logic_add_finished() {
         {
-            g_render_queue.emplace([&]() {
+            auto function = [&]() {
                 logic_thread_finished.store(true);
-            });
+            };
+            render_update_entt(function);
+            RenderRingBuffer temp{2 * 1024 * 1024};
+            std::swap(temp, logic_to_render);
+            g_render_queue.emplace((temp));
         }
     }
 
-    void render_update_entt(const std::function<void(void)> &callback) {
-        g_render_queue.emplace(callback);
+    template<typename F, typename... Args>
+    void render_update_entt(F &&func, Args &&... args) {
+        if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
+        } else {
+            RenderRingBuffer temp{2 * 1024 * 1024};
+            std::swap(temp, logic_to_render);
+            if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
+                assert(false && "logic_to_render.Submit");
+            }
+            g_render_queue.emplace((temp));
+        }
     }
 
     void destroy() {
+        RenderRingBuffer callback{2 * 1024 * 1024};
+        if (g_render_queue.empty() == true) {
+            return;
+        }
+        while (logic_thread_finished.load() == false) {
+            if (g_render_queue.try_pop(callback)) {
+                callback.FlushAndExecute();
+            }
+        }
         g_render_queue.clear();
     };
 
