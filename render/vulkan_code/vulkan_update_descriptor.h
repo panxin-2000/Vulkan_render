@@ -31,9 +31,9 @@ temp.descriptor_write_binding.pTexelBufferView = nullptr;
 
 template<typename T1>
 bool VK_update_parameter(sets_map &sets_map_in_for,
-                          std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
-                          const std::string &binding_name,
-                          T1 &binding_data) {
+                         std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
+                         const std::string &binding_name,
+                         const T1 &binding_data) {
     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
@@ -63,7 +63,7 @@ bool VK_update_parameter(sets_map &sets_map_in_for,
                         return true;
                     }
                 }
-            }else if (info.binding_name == binding_name && info.resource_type == "uniform sampler") {
+            } else if (info.binding_name == binding_name && info.resource_type == "uniform sampler") {
                 if constexpr (std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> >) {
                     if (binding_data.has_value()) {
                         Update_descriptor_binding_fixed_temp;
@@ -73,7 +73,7 @@ bool VK_update_parameter(sets_map &sets_map_in_for,
                         return true;
                     }
                 }
-            }else if (info.binding_name == binding_name && info.resource_type == "uniform texture2D") {
+            } else if (info.binding_name == binding_name && info.resource_type == "uniform texture2D") {
                 if constexpr (std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> >) {
                     if (binding_data.has_value()) {
                         Update_descriptor_binding_fixed_temp;

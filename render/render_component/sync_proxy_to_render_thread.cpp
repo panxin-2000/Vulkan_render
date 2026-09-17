@@ -96,10 +96,10 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
 bool clean_VKR_object_proxy(const entt::entity entity) {
     if (auto render = Logic_entt().try_get<Proxy_entity>(entity)) {
         const auto entity_temp = render->entity_;
-        auto lambda            = [entity_temp]() {
+        auto lambda            = [](const entt::entity entity_temp) {
             Render_entt().emplace_or_replace<Render_destroy_tag>(entity_temp);
         };
-        vk_render_queue::instance().render_update_entt(lambda);
+        vk_render_queue::instance().render_update_entt(lambda, entity_temp);
         return true;
     }
     return false;
