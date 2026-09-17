@@ -171,13 +171,16 @@ void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
             }
         }
 
-        float scale[2];
-        scale[0] = 2.0f / draw_data->DisplaySize.x; // Scale
-        scale[1] = 2.0f / draw_data->DisplaySize.y;
-        float translate[2];
-        translate[0] = -1.0f - draw_data->DisplayPos.x * scale[0]; // Translate
-        translate[1] = -1.0f - draw_data->DisplayPos.y * scale[1];
 
+        Eigen::Vector2f scale{
+            2.0f / draw_data->DisplaySize.x,
+            2.0f / draw_data->DisplaySize.y
+        };
+        Eigen::Vector2f translate{
+            -1.0f - draw_data->DisplayPos.x * scale[0],
+            -1.0f - draw_data->DisplayPos.y * scale[1]
+        };
+        // std::make_tuple（按值复制快照） 以及 Placement New（原地构造） 的物理布局
         set_push_constant_parameter(entity, "uScale", scale);
         set_push_constant_parameter(entity, "uTranslate", translate);
 

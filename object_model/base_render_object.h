@@ -30,7 +30,7 @@ public:
     }
 
     template<typename T1>
-    logic_render_object &add_push_constant_parameter(const std::string &binding_name, T1 &binding_data) {
+    logic_render_object &add_push_constant_parameter(const std::string &binding_name, const T1 &binding_data) {
         set_push_constant_parameter(entity, binding_name, binding_data);
         return *this;
     }

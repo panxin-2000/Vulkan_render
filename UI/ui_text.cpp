@@ -330,12 +330,8 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
 
     SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
 
-    float scale[2];
-    scale[0] = 2.0f / logical_w; // Scale
-    scale[1] = 2.0f / logical_h;
-    float translate[2];
-    translate[0] = -1.0f - 0 * scale[0]; // Translate
-    translate[1] = -1.0f - 0 * scale[1];
+    Eigen::Vector2f scale{.0f / logical_w, 2.0f / logical_h};
+    Eigen::Vector2f translate{-1.0f - 0 * scale[0], -1.0f - 0 * scale[1]};
 
     add_push_constant_parameter("uScale", scale);
     add_push_constant_parameter("uTranslate", translate);
