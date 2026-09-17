@@ -576,10 +576,11 @@ void gltf_update_joint_matrix(const entt::entity &model_entity) {
         for (const auto entity: *skin_joints) {
             JointMatrices.push_back(Logic_entt().get<JointMatrix>(entity).matrix);
         }
-        const auto matrix_ptr = JointMatrices.data();
-        auto matrix_size      = JointMatrices.size() * sizeof(Eigen::Matrix4f);
-        auto matrix_buffer    = copy_data_to_SSBO_buffer(matrix_ptr, matrix_size);
-        set_render_parameter(model_entity, "JointMatrices", matrix_buffer);
+        set_render_span_parameter(model_entity, "JointMatrices",
+                                  std::span{
+                                      JointMatrices.data(),
+                                      JointMatrices.size()
+                                  });
     }
 }
 
@@ -852,26 +853,28 @@ void load_materials(std::vector<uint32_t> &material_indices,
 
 void update_material(entt::entity model_entity) {
     {
-        auto temp = std::make_shared<std::vector<uint32_t> >();
+        std::vector<uint32_t> temp;
 
         auto material_indices    = Logic_entt().try_get<Gpu_material_indices>(model_entity);
         auto material_parameters = Logic_entt().try_get<Gltf_material_parameters>(model_entity);
 
         // 首先全部设置为零, 需要拿物体原本的,而不是
         if (material_parameters != nullptr && !material_parameters->empty())
-            temp->reserve(material_parameters->size());
+            temp.reserve(material_parameters->size());
 
         if (material_indices != nullptr && !material_indices->empty() &&
             material_parameters != nullptr) {
-            temp->reserve(material_indices->size());
+            temp.reserve(material_indices->size());
             for (const auto &material: *material_parameters) {
-                temp->push_back(material_indices->at(material));
+                temp.push_back(material_indices->at(material));
             }
         } else if (material_parameters != nullptr && !material_parameters->empty()) {
-            temp->resize(material_parameters->size());
+            temp.resize(material_parameters->size());
         }
-        if (!temp->empty())
-            set_render_parameter(model_entity, "model_material_parameters", temp);
+        if (!temp.empty()) {
+            const std::span temp_span = temp;
+            set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
+        }
     }
 }
 
@@ -892,10 +895,11 @@ void load_gltf_material_separate(entt::entity model_entity) {
 void update_entity_to_screen(const entt::entity model_entity) {
     if (Logic_entt().all_of<screen_pick_entity>(model_entity)) {
         auto &render_entity_to_screen = Logic_entt().get<screen_pick_entity>(model_entity);
-        const auto matrix_ptr         = render_entity_to_screen.data();
-        auto size                     = render_entity_to_screen.size() * sizeof(entt::entity);
-        auto buffer                   = copy_data_to_SSBO_buffer(matrix_ptr, size);
-        set_render_parameter(model_entity, "render_entity_to_screen", buffer);
+        set_render_span_parameter(model_entity, "render_entity_to_screen",
+                                  std::span{
+                                      render_entity_to_screen.data(),
+                                      render_entity_to_screen.size()
+                                  });
     }
 }
 

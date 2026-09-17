@@ -120,9 +120,11 @@ object_3d &object_3d::add_sky_box() {
 object_3d &object_3d::set_transform(const Eigen::Vector3f offset, const Eigen::Quaternionf &rotate) {
     auto matrix          = Logic_entt().emplace<Transform>(entity, offset, rotate);
     auto matrix_2        = matrix.get_transform_matrix();
-    auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
-    matrices_render->push_back(static_cast<std::vector<Transform_Matrix>::value_type>(matrix_2));
-    set_render_parameter(entity, "model_matrix_parameters", matrices_render);
+    auto matrices_render = std::vector<Transform_Matrix>();
+    matrices_render.push_back(static_cast<std::vector<Transform_Matrix>::value_type>(matrix_2));
+    const std::span temp = matrices_render;
+    set_render_span_parameter(entity, "model_matrix_parameters", temp);
+    //
     Logic_entt().emplace<Transform_matrix_dirty>(entity);
 
     return *this;

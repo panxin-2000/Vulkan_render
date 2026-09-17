@@ -91,12 +91,13 @@ void update_primitives_model_matrix(const entt::entity model_entity) {
         auto matrices            = Logic_entt().get<std::vector<Transform_Matrix> >(model_entity);
         auto model_entity_matrix = Logic_entt().get<Transform_Matrix>(model_entity);
 
-        auto matrices_render = std::make_shared<std::vector<Transform_Matrix> >();
+        std::vector<Transform_Matrix> matrices_render;
         for (Eigen::Matrix4f &matrix: matrices) {
             Transform_Matrix temp_matrix(model_entity_matrix * matrix);
-            matrices_render->push_back(temp_matrix);
+            matrices_render.push_back(temp_matrix);
         }
-        set_render_parameter(model_entity, "model_matrix_parameters", matrices_render);
+        const std::span temp = matrices_render;
+        set_render_span_parameter(model_entity, "model_matrix_parameters", temp);
     }
 }
 
