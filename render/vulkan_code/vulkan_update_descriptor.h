@@ -30,7 +30,7 @@ temp.descriptor_write_binding.pTexelBufferView = nullptr;
 
 
 template<typename T1>
-bool set_render_parameter(sets_map &sets_map_in_for,
+bool VK_update_parameter(sets_map &sets_map_in_for,
                           std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
                           const std::string &binding_name,
                           T1 &binding_data) {

@@ -380,7 +380,7 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
         std::optional<Texture_parameter> offscreen = create_2d_texture(depth);
 
         shader_need_parameter parameter;
-        set_render_parameter(compute_shader->object_sets_bindings,
+        VK_update_parameter(compute_shader->object_sets_bindings,
                              parameter.update_object_descriptor_sets, "input_texture",
                              offscreen);
         allocate_descriptor_sets(parameter, compute_shader, time_line_);

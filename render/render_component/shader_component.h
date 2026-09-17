@@ -56,7 +56,7 @@ bool render_render_parameter(const entt::entity entity, const std::string &bindi
     //     return true;
     // } else
     {
-        set_render_parameter(shader_data_ref->object_sets_bindings,
+        VK_update_parameter(shader_data_ref->object_sets_bindings,
                              parameter.update_object_descriptor_sets, binding_name,
                              binding_data);
         Render_entt().emplace_or_replace<uniform_buffer_update>(entity);

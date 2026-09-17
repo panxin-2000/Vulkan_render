@@ -420,7 +420,7 @@ void Engine::update_global_pbr_parameter(
 
         copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
         auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
-        set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                              "global_PBR_parameters", pbr_components_buffer_);
     }
 }
@@ -469,15 +469,15 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
 
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
-    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_parameters", global_parameters_);
-    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_offscreen", offscreen);
-    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_depth", depth);
-    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_Blur_SSAO", blur_SSAO);
-    set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                          "global_shadow_texture", shadow_texture);
 
     // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
