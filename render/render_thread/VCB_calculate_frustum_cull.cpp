@@ -401,7 +401,7 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
         command_calculate.frustum_planes          = frustum_planes; // 还需要在这里更新一次
         command_calculate.IndirectCommandsAddress = command_calculate.camera_write_buffer->get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, 124,
                            &command_calculate);
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
         VKR_buffer_ptr write_buffer_ptr = command_calculate.camera_write_buffer;
