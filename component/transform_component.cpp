@@ -114,6 +114,7 @@ void update_transform_matrix(const entt::entity entity) {
         const Eigen::Matrix4f result = parent_transform_matrix * transform.get_transform_matrix();
         Logic_entt().emplace_or_replace<Transform_Matrix>(entity, result);
         Logic_entt().remove<Transform_matrix_dirty>(entity);
+        update_primitives_model_matrix(entity);
     }
 };
 
