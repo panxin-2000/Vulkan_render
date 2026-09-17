@@ -10,13 +10,13 @@
 void set_PBR_base_color(const entt::entity entity, Color baseColorFactor) {
     auto material             = Logic_entt().get_or_emplace<PBR_component>(entity);
     material.baseColorFactor_ = baseColorFactor;
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_PBR_Emissive_color(const entt::entity entity, Color EmissiveFactor) {
     auto material            = Logic_entt().get_or_emplace<PBR_component>(entity);
     material.emissiveFactor_ = EmissiveFactor;
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_PBR_metallic_roughness_occlusion(const entt::entity entity, float metallic, float roughness, float occlusion) {
@@ -24,7 +24,7 @@ void set_PBR_metallic_roughness_occlusion(const entt::entity entity, float metal
     material.metallicFactor_     = metallic;
     material.roughnessFactor_    = roughness;
     material.occlusion_strength_ = occlusion;
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_baseColor_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture) {
@@ -36,7 +36,7 @@ void set_baseColor_Texture_index(const entt::entity entity, const std::optional<
     ptr.baseColorTexture      = texture.value();
     material.baseColorTexture = texture.value().image->get_index();
     // 具体的 index 在这里的时候已经被更新 // 这里的颜色不对 应该是 ktx 的问题
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_normal_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture) {
@@ -46,7 +46,7 @@ void set_normal_Texture_index(const entt::entity entity, const std::optional<Tex
     auto &ptr              = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.normalTexture      = texture.value();
     material.normalTexture = texture.value().image->get_index();
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_emissive_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture) {
@@ -56,7 +56,7 @@ void set_emissive_Texture_index(const entt::entity entity, const std::optional<T
     auto &ptr                = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.emissiveTexture      = texture.value();
     material.emissiveTexture = texture.value().image->get_index();;
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }
 
 void set_ORM_Texture_index(const entt::entity entity, const std::optional<Texture_parameter> &texture) {
@@ -66,5 +66,5 @@ void set_ORM_Texture_index(const entt::entity entity, const std::optional<Textur
     auto &ptr            = Logic_entt().get_or_emplace<PBR_Texture_ptr>(entity);
     ptr.ORM_Texture      = texture.value();
     material.ORM_Texture = texture.value().image->get_index();
-    set_render_parameter(entity, "object_material", material);
+    logic_set_render_parameter(entity, "object_material", material);
 }

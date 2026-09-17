@@ -30,8 +30,9 @@ public:
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
 
     template<typename T1>
+
     object_3d &add_render_parameter(const std::string &binding_name, T1 &binding_data) {
-        set_render_parameter(entity, binding_name, binding_data);
+        logic_set_render_parameter(entity, binding_name, binding_data);
         return *this;
     }
 

@@ -28,7 +28,7 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &eve
                 round_box.min_y += event.motion.yrel;
                 round_box.max_x += event.motion.xrel;
                 round_box.max_y += event.motion.yrel;
-                set_render_parameter(entity, "round_box", round_box);
+                logic_set_render_parameter(entity, "round_box", round_box);
                 return OPERATOR_RUNNING_MODAL;
             }
             return OPERATOR_PASS_THROUGH;
@@ -79,7 +79,7 @@ UI_Button &UI_Button::set_round_box(float min_x,
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
     Round_box &round_box = Logic_entt().emplace<
         Round_box>(entity, Round_box{min_x, min_y, max_x, max_y, 20, 10, 10, 10});
-    set_render_parameter(entity, "round_box", round_box);
+    logic_set_render_parameter(entity, "round_box", round_box);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
     logic_update_proxy(entity, primitives);

@@ -264,7 +264,7 @@ bool ImGui_ImplVulkan_CreateFontsTexture(const entt::entity entity) {
     picture_parameters.channels              = 4;
     std::optional<Texture_parameter> texture = create_2d_texture(picture_parameters);
 
-    set_render_parameter(entity, "sTexture", texture);
+    logic_set_render_parameter(entity, "sTexture", texture);
     // 这里就是看应该如何上传的时候了
     // imgui 是每帧都更新字体贴图吗？
     // 不是，只是最开始，之后的时候不会了，如果碰见没有的字，会用一个方块来替代

@@ -24,7 +24,7 @@ void copy_nvdb1_to_gpu_memory(entt::entity entity, const std::string &name,
         const auto ptr  = handle.data();
         const auto size = handle.bufferSize();
         auto buffer     = copy_data_to_SSBO_buffer(ptr, size);
-        set_render_parameter(entity, "nanovdb_buffer", buffer);
+        logic_set_render_parameter(entity, "nanovdb_buffer", buffer);
         // set_render_parameter(entity, "nanovdb_size", size);
     }
 }
@@ -165,7 +165,7 @@ entt::entity add_volume_pass(const std::string &name,
     // transform 需要在之前的 add_nanovdb_to_gpu 中设置
     const auto transform   = Logic_entt().get<Transform>(entity);
     const auto modelMatrix = get_model_matrix(transform);
-    set_render_parameter(entity, "model_4x4", modelMatrix);
+    logic_set_render_parameter(entity, "model_4x4", modelMatrix);
 
     Logic_entt().emplace<Name_component>(entity, "nanovdb_volume");
     logic_update_proxy<Name_component>(entity);

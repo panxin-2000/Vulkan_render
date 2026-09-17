@@ -34,7 +34,7 @@ void add_simple_computer_buffer_write() {
                                                   8 * 8 * 1));
 
     // 下面是设置一个参数
-    set_render_parameter(entity, "IndirectDraws", temp_ptr);
+    logic_set_render_parameter(entity, "IndirectDraws", temp_ptr);
 
 
     logic_update_add_tag<compute_pass_tag>(entity);

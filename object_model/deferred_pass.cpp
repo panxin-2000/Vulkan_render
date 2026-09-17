@@ -60,15 +60,15 @@ void add_deferred_pass(VKR_image_ptr color, VKR_image_ptr normal, VKR_image_ptr 
         set_push_constant_parameter(entity, "frag_scale", temp_value);
 
         // 下面三个只能选择一个显示，问题应该再下面的函数中，而不是frag shader中
-        set_render_parameter(entity, "samplerPosition", position);
-        set_render_parameter(entity, "samplerNormal", normal);
-        set_render_parameter(entity, "samplerBaseColor", baseColor);
+        logic_set_render_parameter(entity, "samplerPosition", position);
+        logic_set_render_parameter(entity, "samplerNormal", normal);
+        logic_set_render_parameter(entity, "samplerBaseColor", baseColor);
         auto temp_ptr          = create_SSBO_buffer(1024 * 5);
         float color[16]        = {1.0f, 0.0f, 0.0f, 1.0f};
         auto mem_copy_function = [color](void *dst) {
             memcpy(dst, color, sizeof(color));
         };
         copy_mem_from_cpu_to_gpu(temp_ptr, mem_copy_function);
-        set_render_parameter(entity, "light_buffer", temp_ptr);
+        logic_set_render_parameter(entity, "light_buffer", temp_ptr);
     }
 }

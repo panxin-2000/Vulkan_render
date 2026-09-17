@@ -25,7 +25,7 @@ public:
 
     template<typename T1>
     logic_render_object &add_render_parameter(const std::string &binding_name, T1 &binding_data) {
-        set_render_parameter(entity, binding_name, binding_data);
+        logic_set_render_parameter(entity, binding_name, binding_data);
         return *this;
     }
 

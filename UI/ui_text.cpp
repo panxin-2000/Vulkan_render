@@ -354,7 +354,7 @@ void UI_Text::set_string(const std::string &name) {
                                                                              msdf_text_tem.image.get_width(),
                                                                              msdf_text_tem.image.get_height(),
                                                                              4);
-        set_render_parameter(entity, "msdf", texture);
+        logic_set_render_parameter(entity, "msdf", texture);
         // assert(index == 1);
     }
     logic_update_proxy(entity, get_VKR_mesh(entity));

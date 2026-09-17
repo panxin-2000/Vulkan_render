@@ -83,7 +83,7 @@ bool set_render_span_parameter(const entt::entity entity,
 
 
 template<typename T1>
-bool set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
+bool logic_set_render_parameter(const entt::entity entity, const std::string &binding_name, T1 &binding_data) {
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         auto lambda = [ proxy_entity,binding_name, binding_data ]() {
             render_render_parameter(proxy_entity, binding_name, binding_data);
