@@ -15,38 +15,38 @@
 
 #include "base_geometry/intersect_function.h"
 
-entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
-    // ray.direction   = {0.0001, 0.0001, -1};
-    const auto view = Logic_entt().view<Name_component, World_Space_AABB>();
-    for (auto &entity: view) {
-        auto &name     = view.get<Name_component>(entity);
-        auto bound_box = view.get<World_Space_AABB>(entity);
-
-        AABB_min_max<Point_3> new_box = {
-            {
-                bound_box.min.x(),
-                bound_box.min.y(),
-                bound_box.min.z()
-            },
-            {
-                bound_box.max.x(),
-                bound_box.max.y(),
-                bound_box.max.z()
-            }
-        };
-        const Ray<Point_3> ray_temp = {
-            {ray.point.x(), ray.point.y(), ray.point.z()},
-            {ray.direction.x(), ray.direction.y(), ray.direction.z()}
-        };
-        if (is_intersect(new_box, ray_temp)) {
-            auto &name = view.get<Name_component>(entity);
-            // LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
-            return entity;
-        }
-    }
-
-    return entt::null;
-}
+// entt::entity find_entity_insert_ray(const Ray<Eigen::Vector3f> &ray) {
+//     // ray.direction   = {0.0001, 0.0001, -1};
+//     const auto view = Logic_entt().view<Name_component, World_Space_AABB>();
+//     for (auto &entity: view) {
+//         auto &name     = view.get<Name_component>(entity);
+//         auto bound_box = view.get<World_Space_AABB>(entity);
+//
+//         AABB_min_max<Point_3> new_box = {
+//             {
+//                 bound_box.min.x(),
+//                 bound_box.min.y(),
+//                 bound_box.min.z()
+//             },
+//             {
+//                 bound_box.max.x(),
+//                 bound_box.max.y(),
+//                 bound_box.max.z()
+//             }
+//         };
+//         const Ray<Point_3> ray_temp = {
+//             {ray.point.x(), ray.point.y(), ray.point.z()},
+//             {ray.direction.x(), ray.direction.y(), ray.direction.z()}
+//         };
+//         if (is_intersect(new_box, ray_temp)) {
+//             auto &name = view.get<Name_component>(entity);
+//             // LOG_INFO(g_log(), " insert box 3d {} ", name.name_);
+//             return entity;
+//         }
+//     }
+//
+//     return entt::null;
+// }
 
 
 void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_stamp> mouse) {
@@ -84,9 +84,9 @@ void base_event_dealing(const SDL_Event &event, std::optional<base_event_with_st
 
     std::vector<entt::entity> UI_stack = UI_stack_intersect(mouse_pos);
 
-    if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
-        UI_stack.push_back(insert_entity);
-    }
+    // if (const auto insert_entity = find_entity_insert_ray(ray); insert_entity != entt::null) {
+    // UI_stack.push_back(insert_entity);
+    // }
     // std::cout << "UI stack size: " << UI_stack.size() << std::endl;
     // for (auto it = UI_stack.rbegin(); it != UI_stack.rend(); ++it) {
     //     auto &name = view.get<Name_component>(*it);
