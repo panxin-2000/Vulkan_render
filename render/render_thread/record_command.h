@@ -99,20 +99,25 @@ public:
     // 【逻辑线程调用】向缓冲区提交任意函数和参数
     template<typename F, typename... Args>
     bool Submit(F &&func, Args &&... args) {
-        using CommandType = ConcreteRenderCommand<std::decay_t<F>, std::decay_t<Args>...>;
-
-        const size_t size                  = (sizeof(CommandType) + 7) & ~7;
-        const size_t current_write_address = next_write_address.fetch_add(size, std::memory_order_relaxed);
-        if (current_write_address + size > m_capacity) {
-            return false;
+        using CommandType            = ConcreteRenderCommand<std::decay_t<F>, std::decay_t<Args>...>;
+        const size_t size            = (sizeof(CommandType) + 7) & ~7;
+        size_t current_write_address = next_write_address.load();
+        while (true) {
+            if (current_write_address + size > m_capacity) {
+                return false;
+            }
+            if (next_write_address.compare_exchange_strong(current_write_address, current_write_address + size,
+                                                           std::memory_order_seq_cst,
+                                                           std::memory_order_relaxed)) {
+                char *write_ptr = m_buffer + current_write_address;
+                new(write_ptr) CommandType{
+                    {&CommandType::Dispatch, static_cast<uint32_t>(current_write_address + size)},
+                    std::forward<F>(func),
+                    std::make_tuple(std::forward<Args>(args)...)
+                };
+                return true;
+            }
         }
-        char *write_ptr = m_buffer + current_write_address;
-        new(write_ptr) CommandType{
-            {&CommandType::Dispatch, static_cast<uint32_t>(current_write_address + size)}, // 绑定跳板函数和下一步长
-            std::forward<F>(func),
-            std::make_tuple(std::forward<Args>(args)...)
-        };
-        return true;
     }
 
     // 【渲染线程调用】一次性解包并消费当前帧的所有命令
