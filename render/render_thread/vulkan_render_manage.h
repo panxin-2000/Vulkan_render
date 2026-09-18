@@ -15,7 +15,7 @@
 #include <thread>
 #include <chrono>
 
-#include "logic_to_render.h"
+#include "record_command.h"
 
 // 判断当前架构以选择正确的 CPU 暂停指令
 #if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
@@ -108,7 +108,7 @@ public:
             RenderRingBuffer temp{2 * 1024 * 1024};
             std::swap(temp, logic_to_render);
             size_t current = logic_write % g_render_queue.size();
-            g_render_queue.at(current).emplace(temp);
+            g_render_queue.at(current).emplace(std::move(temp));
             render_read = current;
             ++logic_write;
             logic_thread_finished.store(true);
@@ -124,7 +124,7 @@ public:
             if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
                 assert(false && "logic_to_render.Submit");
             }
-            g_render_queue.at(logic_write % g_render_queue.size()).emplace((temp));
+            g_render_queue.at(logic_write % g_render_queue.size()).emplace(std::move(temp));
         }
     }
 

@@ -6,7 +6,6 @@
 #define HELLO_MAC_LOGIC_TO_RENDER_H
 
 
-#include <oneapi/tbb.h>
 #include <tuple>
 #include <utility>
 
@@ -55,21 +54,20 @@ public:
         }
     }
 
-    RenderRingBuffer(RenderRingBuffer &other) {
-        std::swap(m_buffer, other.m_buffer);
-        std::swap(m_capacity, other.m_capacity);
-        std::swap(m_head, other.m_head);
-        std::swap(m_tail, other.m_tail);
-    };
+    RenderRingBuffer(const RenderRingBuffer &other) = delete;
 
-    RenderRingBuffer &operator=(RenderRingBuffer &other) = delete;
+    RenderRingBuffer &operator=(const RenderRingBuffer &other) = delete;
 
+
+    // 复制 必须使用 const
+    // 移动 必须使用  &&
     RenderRingBuffer(RenderRingBuffer &&other) noexcept
-        : m_buffer(other.m_buffer), m_capacity(other.m_capacity), m_head(other.m_head), m_tail(0) {
+        : m_buffer(other.m_buffer), m_capacity(other.m_capacity), m_head(other.m_head), m_tail(other.m_tail) {
         // 将源对象的指针和状态清空，防止其析构时释放内存
         other.m_buffer   = nullptr;
         other.m_capacity = 0;
         other.m_head     = 0;
+        other.m_tail     = 0;
     }
 
     // 3. 实现移动赋值运算符 (Move Assignment Operator)
