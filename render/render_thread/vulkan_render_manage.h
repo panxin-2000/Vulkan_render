@@ -74,9 +74,11 @@ public:
 
 class vk_render_queue {
 private:
-    oneapi::tbb::concurrent_queue<RenderRingBuffer> g_render_queue;
+    std::array<oneapi::tbb::concurrent_queue<RenderRingBuffer>, 3> g_render_queue;
     RenderRingBuffer logic_to_render{2 * 1024 * 1024};
     alignas(64) std::atomic<bool> logic_thread_finished = false;
+    alignas(64) std::atomic<size_t> logic_write         = 0;
+    alignas(64) std::atomic<size_t> render_read         = 1;
 
 public:
     static vk_render_queue &instance() {
@@ -90,29 +92,26 @@ public:
 
     void execute_update_lambda() {
         RenderRingBuffer callback{2 * 1024 * 1024};
-        SpinWait spinner;
-        if (g_render_queue.empty() == true) {
-            return;
-        }
-        while (logic_thread_finished.load() == false) {
-            if (g_render_queue.try_pop(callback)) {
+        oneapi::tbb::concurrent_queue<RenderRingBuffer> temp;
+        if (logic_thread_finished.load() == true) {
+            logic_thread_finished.store(false);
+            const auto current = render_read % g_render_queue.size();
+            while (g_render_queue.at(current).try_pop(callback)) {
                 callback.FlushAndExecute();
-            } else {
-                spinner.spin_once();
             }
+            g_render_queue.at(current).clear();
         }
-        logic_thread_finished.store(false);
     }
 
     void logic_add_finished() {
         {
-            auto function = [&]() {
-                logic_thread_finished.store(true);
-            };
-            render_update_entt(function);
             RenderRingBuffer temp{2 * 1024 * 1024};
             std::swap(temp, logic_to_render);
-            g_render_queue.emplace((temp));
+            size_t current = logic_write % g_render_queue.size();
+            g_render_queue.at(current).emplace(temp);
+            render_read = current;
+            ++logic_write;
+            logic_thread_finished.store(true);
         }
     }
 
@@ -125,26 +124,22 @@ public:
             if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
                 assert(false && "logic_to_render.Submit");
             }
-            g_render_queue.emplace((temp));
+            g_render_queue.at(logic_write % g_render_queue.size()).emplace((temp));
         }
     }
 
     void destroy() {
         RenderRingBuffer callback{2 * 1024 * 1024};
-        if (g_render_queue.empty() == true) {
-            return;
-        }
-        while (logic_thread_finished.load() == false) {
-            if (g_render_queue.try_pop(callback)) {
+        for (size_t i = 0; i < g_render_queue.size(); ++i) {
+            while (g_render_queue.at(i).try_pop(callback)) {
                 callback.FlushAndExecute();
             }
+            g_render_queue.at(i).clear();
         }
-        g_render_queue.clear();
     };
 
 private:
-    vk_render_queue() {
-    }
+    vk_render_queue() = default;
 
     ~vk_render_queue() = default;
 
