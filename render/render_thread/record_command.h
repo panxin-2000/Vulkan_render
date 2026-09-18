@@ -43,7 +43,7 @@ struct ConcreteRenderCommand {
 class RenderRingBuffer {
 public:
     // 建议使用 const size_t capacity =  2 * 1024 * 1024
-    explicit RenderRingBuffer(const size_t capacity) : m_capacity(capacity), m_head(0), m_tail(0) {
+    explicit RenderRingBuffer(const size_t capacity) : m_capacity(capacity), next_write_address(0), execute_address(0) {
         // 使用 TBB 线程安全且针对多核心优化的分配器申请一块连续大内存
         m_buffer = static_cast<char *>(malloc(capacity));
     }
@@ -62,30 +62,37 @@ public:
     // 复制 必须使用 const
     // 移动 必须使用  &&
     RenderRingBuffer(RenderRingBuffer &&other) noexcept
-        : m_buffer(other.m_buffer), m_capacity(other.m_capacity), m_head(other.m_head), m_tail(other.m_tail) {
+        : m_buffer(other.m_buffer), m_capacity(other.m_capacity), next_write_address(other.next_write_address.load()),
+          execute_address(other.execute_address) {
         // 将源对象的指针和状态清空，防止其析构时释放内存
-        other.m_buffer   = nullptr;
-        other.m_capacity = 0;
-        other.m_head     = 0;
-        other.m_tail     = 0;
+        other.m_buffer           = nullptr;
+        other.m_capacity         = 0;
+        other.next_write_address = 0;
+        other.execute_address    = 0;
     }
 
     // 3. 实现移动赋值运算符 (Move Assignment Operator)
     RenderRingBuffer &operator=(RenderRingBuffer &&other) noexcept {
         if (this != &other) {
             std::swap(m_buffer, other.m_buffer);
-            std::swap(m_capacity, other.m_capacity);
-            std::swap(m_head, other.m_head);
-            std::swap(m_tail, other.m_tail);
+            std::swap(m_capacity, other.m_capacity); {
+                const auto temp          = other.next_write_address.load();
+                other.next_write_address = next_write_address.load();
+                next_write_address.store(temp);
+            }
+            std::swap(execute_address, other.execute_address);
         }
         return *this;
     }
 
     friend void swap(RenderRingBuffer &a, RenderRingBuffer &b) noexcept {
         std::swap(a.m_buffer, b.m_buffer);
-        std::swap(a.m_capacity, b.m_capacity);
-        std::swap(a.m_head, b.m_head);
-        std::swap(a.m_tail, b.m_tail);
+        std::swap(a.m_capacity, b.m_capacity); {
+            const auto temp      = b.next_write_address.load();
+            b.next_write_address = a.next_write_address.load();
+            a.next_write_address.store(temp);
+        }
+        std::swap(a.execute_address, b.execute_address);
     }
 
 
@@ -94,59 +101,43 @@ public:
     bool Submit(F &&func, Args &&... args) {
         using CommandType = ConcreteRenderCommand<std::decay_t<F>, std::decay_t<Args>...>;
 
-        // 计算当前命令所需的总内存大小（向上对齐到 8 字节，对 CPU 缓存友好）
-        const size_t size = (sizeof(CommandType) + 7) & ~7;
-
-        if (m_head + size > m_capacity) {
-            // 【策略：自动使用 TBB 翻倍扩容】
-            // 注意：不能用 realloc，因为 realloc 移动内存会把旧命令的指针弄乱。
-            // 这里我们采用“分配新大块 -> 延迟处理”或者直接在这里返回 false 告知外面满了。
-            // 如果你想让它“绝对安全并自动扩容”，我们选择将容量翻倍：
-            // 如果系统内存耗尽扩容失败，返回 false
+        const size_t size                  = (sizeof(CommandType) + 7) & ~7;
+        const size_t current_write_address = next_write_address.fetch_add(size, std::memory_order_relaxed);
+        if (current_write_address + size > m_capacity) {
             return false;
         }
-
-        // 实际开发中此处需判断环形缓冲区是否写满 (m_head + size 是否超过 m_tail + capacity)
-        // 这里简化为直接写入
-        char *write_ptr = m_buffer + m_head;
-
-        // 1. 在缓冲区的指定位置上“原地构造”具体类型的命令对象（Placement New）
+        char *write_ptr = m_buffer + current_write_address;
         new(write_ptr) CommandType{
-            {&CommandType::Dispatch, static_cast<uint32_t>(m_head + size)}, // 绑定跳板函数和下一步长
+            {&CommandType::Dispatch, static_cast<uint32_t>(current_write_address + size)}, // 绑定跳板函数和下一步长
             std::forward<F>(func),
             std::make_tuple(std::forward<Args>(args)...)
         };
-
-        // 2. 移动头指针
-        m_head += size;
-
         return true;
-        // 这里的问题, 没有 做到能够扩容
     }
 
     // 【渲染线程调用】一次性解包并消费当前帧的所有命令
     void FlushAndExecute() {
-        size_t current_tail       = m_tail;
-        const size_t current_head = m_head; // 快照当前的头，防止逻辑线程同时写入产生竞争
+        // 这里的特殊之处 在于 渲染线程 执行时, 逻辑线程已经确定全部写完了 , 才swap 到渲染线程中
+        const size_t current_head = next_write_address; // 快照当前的头，防止逻辑线程同时写入产生竞争
 
-        while (current_tail < current_head) {
+        while (execute_address < current_head) {
             // 1. 获取当前命令的头部
-            char *read_ptr    = m_buffer + current_tail;
+            char *read_ptr    = m_buffer + execute_address;
             const auto header = reinterpret_cast<RenderCommandHeader *>(read_ptr);
             header->execute(read_ptr);
-            current_tail = header->next_offset;
+            execute_address = header->next_offset;
         }
 
         // 重置缓冲区索引（双缓冲或帧重置逻辑）
-        m_head = 0;
-        m_tail = 0;
+        next_write_address = 0;
+        execute_address    = 0;
     }
 
 private:
-    char *m_buffer    = nullptr;
-    size_t m_capacity = 0;
-    size_t m_head     = 0;
-    size_t m_tail     = 0;
+    char *m_buffer                         = nullptr;
+    size_t m_capacity                      = 0;
+    std::atomic<size_t> next_write_address = 0;
+    size_t execute_address                 = 0;
 };
 
 
