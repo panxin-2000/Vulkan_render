@@ -119,7 +119,7 @@ public:
     // 距离雾相关参数
     float fogStart   = 50;
     float fogEnd     = 200;
-    float fogDensity = 0.015;
+    float fogDensity = 0.001;
     uint fogType     = 1; // fogType == 0  线性雾   fogType == 1  指数雾 fogType == 2  指数平方雾
 
     float fxaaQualitySubpix           = 0.75;
