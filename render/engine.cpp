@@ -5,9 +5,12 @@
 
 #include <sys/stat.h>
 
+#include "load_gltf_model.h"
+#include "render_mesh.h"
 #include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
 #include "transform_component.h"
+#include "utils/StructureOfArrays.h"
 #include "vulkan_code/vulkan_backend.h"
 #include "vulkan_code/vulkan_sample.h"
 
@@ -421,8 +424,19 @@ void Engine::update_global_pbr_parameter(
         copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
         auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                             "global_PBR_parameters", pbr_components_buffer_);
+                            "global_PBR_parameters", pbr_components_buffer_);
     }
+}
+
+
+void Engine::update_SOA() {
+    auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                   std::vector<World_Space_AABB>,
+                                   std::vector<Transform_Matrix>,
+                                   Gltf_material_parameters,
+                                   screen_pick_entity>();
+    // 需要做什么呢? // entity 的 作为 ,
+    // 之后需要做什么呢? 计算
 }
 
 
@@ -470,15 +484,75 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                         "global_parameters", global_parameters_);
+                        "global_parameters", global_parameters_);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                         "global_offscreen", offscreen);
+                        "global_offscreen", offscreen);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                         "global_depth", depth);
+                        "global_depth", depth);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                         "global_Blur_SSAO", blur_SSAO);
+                        "global_Blur_SSAO", blur_SSAO);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                         "global_shadow_texture", shadow_texture);
+                        "global_shadow_texture", shadow_texture);
+
+    auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                   std::vector<World_Space_AABB>,
+                                   std::vector<Transform_Matrix>,
+                                   Gltf_material_parameters,
+                                   screen_pick_entity>();
+
+    size_t primitive_size = 0;
+    for (const auto entity: view) {
+        auto size      = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+        primitive_size += size;
+    }
+
+    if (primitive_size > 0) {
+        mRenderableData_.clear();
+        mRenderableData_.setCapacity(primitive_size);
+        // soa.push_back(0.0f, 1.0, destroyedFloat4);
+        for (const auto entity: view) {
+            auto size = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+            for (uint i = 0; i < size; ++i) {
+                auto soa_size = mRenderableData_.size();
+                mRenderableData_.push_back();
+                mRenderableData_.elementAt<SOA_Primitive>(soa_size) =
+                        Render_entt().get<std::vector<VKR_Primitive> >(entity).at(i);
+                mRenderableData_.elementAt<SOA_World_Space_AABB>(soa_size) =
+                        Render_entt().get<std::vector<World_Space_AABB> >(entity).at(i);
+                mRenderableData_.elementAt<SOA_Transform_Matrix>(soa_size) =
+                        Render_entt().get<std::vector<Transform_Matrix> >(entity).at(i);
+                mRenderableData_.elementAt<SOA_material_index>(soa_size) =
+                        Render_entt().get<Gltf_material_parameters>(entity).at(i);
+                mRenderableData_.elementAt<SOA_entity>(soa_size) =
+                        Render_entt().get<screen_pick_entity>(entity).at(i);
+            }
+        }
+        auto buffer_size          = RenderableSoa::getNeededSize(mRenderableData_.capacity());
+        auto vkr_primitive_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
+                                                             mRenderableData_.capacity() * sizeof(VKR_Primitive));
+        auto world_space_aabb_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<1>(),
+                                                                mRenderableData_.capacity() * sizeof(World_Space_AABB));
+        auto transform_matrix_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<2>(),
+                                                                mRenderableData_.capacity() * sizeof(Transform_Matrix));
+        auto uint32_t_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<3>(),
+                                                        mRenderableData_.capacity() * sizeof(uint32_t));
+        auto entity_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<4>(),
+                                                      mRenderableData_.capacity() * sizeof(entt::entity));
+        // 这里才是正确的内容 ,之后呢 ? 想办法
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_model_matrix", transform_matrix_buffer);
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_entity_to_screen", entity_buffer);
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_material_parameters", uint32_t_buffer);
+
+
+        frustum_culling_buffer_ =
+                copy_data_to_SSBO_buffer(nullptr, sizeof(VKR_Primitive) * mRenderableData_.capacity());
+        shadow_frustum_culling_buffer_ =
+                copy_data_to_SSBO_buffer(nullptr, sizeof(VKR_Primitive) * mRenderableData_.capacity());
+    }
+
 
     // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
     //                      "global_compute_Texture", compute_texture);

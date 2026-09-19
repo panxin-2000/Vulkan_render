@@ -15,9 +15,6 @@
 // 在前向渲染管线中，直接传递 worldPos 几乎总是更好的选择
 
 
-layout (set = 3, binding = 0) readonly buffer model_material_parameters {
-    uint material_pbr_index[];
-};
 
 #define DISTANCE_FOG 1
 

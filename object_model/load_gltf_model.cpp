@@ -873,7 +873,7 @@ void update_material(entt::entity model_entity) {
         }
         if (!temp.empty()) {
             const std::span temp_span = temp;
-            // set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
+            set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
             logic_update_proxy(model_entity, *material_parameters);
         }
     }

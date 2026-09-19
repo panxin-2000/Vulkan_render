@@ -118,7 +118,7 @@ void render_different_pass(VCB &vcb,
             vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
             // 现在绑定的管线是有问题的,
             vcb.default_status();
-
+            // 想调用下面这个, 还需要汇总数据
             vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
         }
         vcb.end_rendering();
@@ -359,13 +359,14 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
         auto blur_SSAO      = create_2d_texture(SSAO_image);
         auto shadow_texture = create_2d_texture(depth_shadow_image);
 
+        // 这里的好消息是 什么？ 这里可以申请；
+        // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
+        vk_render_queue::instance().execute_update_lambda();
+
         engine.update_global_parameter(offscreen,
                                        depth,
                                        blur_SSAO,
                                        shadow_texture);
-        // 这里的好消息是 什么？ 这里可以申请；
-        // 另一个消息是因为 移动到了这里的线程，那么是否就可以重新查找
-        vk_render_queue::instance().execute_update_lambda();
     } {
         const auto view = Render_entt().view<Name_component>(); // 先用这里了，不应该，但是
         for (const auto it: view) {
@@ -385,68 +386,6 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     engine.get_image_to_render();
     destroy_Render_entt();
 
-
-    auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                   std::vector<World_Space_AABB>,
-                                   std::vector<Transform_Matrix>,
-                                   // Gltf_material_parameters,
-                                   screen_pick_entity>();
-    // 需要做什么呢? // entity 的 作为 ,
-    size_t primitive_size = 0;
-    for (const auto entity: view) {
-        auto size      = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
-        primitive_size += size;
-    }
-
-    using RenderableSoa = utils::StructureOfArrays<
-        VKR_Primitive,    //
-        World_Space_AABB, //
-        Transform_Matrix, //
-        uint32_t,         //
-        entt::entity      //
-    >;
-
-    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
-    enum {
-        SOA_Primitive,        //   4 | instance of the Renderable component
-        SOA_World_Space_AABB, //   4 | instance of the Renderable component
-        SOA_Transform_Matrix, //   4 | instance of the Renderable component
-        SOA_material_index,   //   4 | instance of the Renderable component
-        SOA_entity,           //   4 | instance of the Renderable component
-    };
-
-    // 这里估计是需要 封装为一个函数了
-    {
-        const auto &storage = Render_entt().storage<Transform_Matrix>();
-
-        if (storage && storage.contains(entt::null)) {
-            // 2. 获取该实体组件在底层连续数组中的“逻辑索引” (0-based index)
-            // 这个值代表它前面有多少个组件元素，本质上就是逻辑上的“距离”
-            auto index = storage.index(entt::null);
-        }
-    }
-
-
-    RenderableSoa mRenderableData;
-    mRenderableData.setCapacity(primitive_size);
-    // soa.push_back(0.0f, 1.0, destroyedFloat4);
-    for (const auto entity: view) {
-        auto size = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
-        for (uint i = 0; i < size; ++i) {
-            mRenderableData.push_back();
-            auto soa_size                                      = mRenderableData.size();
-            mRenderableData.elementAt<SOA_Primitive>(soa_size) =
-                    Render_entt().get<std::vector<VKR_Primitive> >(entity).at(i);
-            mRenderableData.elementAt<SOA_World_Space_AABB>(soa_size) =
-                    Render_entt().get<std::vector<World_Space_AABB> >(entity).at(i);
-            mRenderableData.elementAt<SOA_Transform_Matrix>(soa_size) =
-                    Render_entt().get<std::vector<Transform_Matrix> >(entity).at(i);
-            mRenderableData.elementAt<SOA_material_index>(soa_size) =
-                    Render_entt().get<Gltf_material_parameters>(entity).at(i);
-            mRenderableData.elementAt<SOA_entity>(soa_size) =
-                    Render_entt().get<screen_pick_entity>(entity).at(i);
-        }
-    }
 
 
     // 拿到了总的数量,之后呢?

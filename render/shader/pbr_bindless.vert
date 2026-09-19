@@ -19,13 +19,6 @@ layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inUV;
 
 
-layout (set = 2, binding = 0) readonly buffer model_matrix_parameters {
-    mat4 model_matrix[];
-};
-
-layout (set = 2, binding = 1) readonly buffer render_entity_to_screen {
-    uint entities[];
-};
 
 const mat4 biasMat = mat4(
         0.5, 0.0, 0.0, 0.0,

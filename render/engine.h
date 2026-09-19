@@ -19,12 +19,14 @@
 #include "render_common/PBR_component.h"
 #include "pbr_manager.h"
 #include "render_image_manager.h"
+#include "render_mesh.h"
 #include "Shader_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"
 
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
+#include "utils/StructureOfArrays.h"
 
 
 struct Engine {
@@ -65,6 +67,28 @@ private:
     uint32_t imageIndex         = 0;
     uint32_t current_CSM        = 0;
     bool update_frustum_culling = true;
+
+
+    using RenderableSoa = utils::StructureOfArrays<
+        VKR_Primitive,    //
+        World_Space_AABB, //
+        Transform_Matrix, //
+        uint32_t,         //
+        entt::entity      //
+    >;
+
+    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
+    enum {
+        SOA_Primitive,        //   4 | instance of the Renderable component
+        SOA_World_Space_AABB, //   4 | instance of the Renderable component
+        SOA_Transform_Matrix, //   4 | instance of the Renderable component
+        SOA_material_index,   //   4 | instance of the Renderable component
+        SOA_entity,           //   4 | instance of the Renderable component
+    };
+
+    RenderableSoa mRenderableData_;
+    VKR_buffer_ptr frustum_culling_buffer_;
+    VKR_buffer_ptr shadow_frustum_culling_buffer_;
 
 public:
     static Engine &instance();
@@ -209,6 +233,8 @@ public:
     }
 
     void update_global_pbr_parameter(std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets);
+
+    void update_SOA();
 
     void update_bindless_parameter();
 
