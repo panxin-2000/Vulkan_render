@@ -43,6 +43,7 @@ private:
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
     uint32_t global_descriptor_sets_index                                 = 0;
+    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets_;
 
     std::vector<VKR_image_ptr> swap_chain_images_;
 
@@ -88,10 +89,16 @@ private:
 
     RenderableSoa mRenderableData_;
     VKR_buffer_ptr frustum_culling_buffer_;
+    VKR_buffer_ptr vkr_primitive_buffer_;
     VKR_buffer_ptr shadow_frustum_culling_buffer_;
 
 public:
     static Engine &instance();
+
+
+    VKR_buffer_ptr get_primitive_buffer() {
+        return vkr_primitive_buffer_;
+    }
 
     uint32_t &get_current_CSM() {
         return current_CSM;

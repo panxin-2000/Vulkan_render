@@ -444,9 +444,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                                      std::optional<Texture_parameter> depth,
                                      std::optional<Texture_parameter> blur_SSAO,
                                      std::optional<Texture_parameter> shadow_texture) {
-    auto gltf_shader_data        = shader_manager_.get_gltf_shader_data();
-    global_descriptor_sets_index = (global_descriptor_sets_index + 1) % 3;
-    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
+    auto gltf_shader_data          = shader_manager_.get_gltf_shader_data();
+    global_descriptor_sets_index   = (global_descriptor_sets_index + 1) % 3;
     const auto extent              = VK_backend::instance().get_current_extent();
     global_parameters_.screen_size = {
         static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0
@@ -483,15 +482,15 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
 
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                         "global_parameters", global_parameters_);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                         "global_offscreen", offscreen);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                         "global_depth", depth);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                         "global_Blur_SSAO", blur_SSAO);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                         "global_shadow_texture", shadow_texture);
 
     auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -506,7 +505,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         primitive_size += size;
     }
 
-    if (primitive_size > 0) {
+    if (primitive_size > 0 && primitive_size > mRenderableData_.size()) {
         mRenderableData_.clear();
         mRenderableData_.setCapacity(primitive_size);
         // soa.push_back(0.0f, 1.0, destroyedFloat4);
@@ -527,9 +526,9 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                         Render_entt().get<screen_pick_entity>(entity).at(i);
             }
         }
-        auto buffer_size          = RenderableSoa::getNeededSize(mRenderableData_.capacity());
-        auto vkr_primitive_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
-                                                             mRenderableData_.capacity() * sizeof(VKR_Primitive));
+        auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
+        vkr_primitive_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
+                                                         mRenderableData_.capacity() * sizeof(VKR_Primitive));
         auto world_space_aabb_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<1>(),
                                                                 mRenderableData_.capacity() * sizeof(World_Space_AABB));
         auto transform_matrix_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<2>(),
@@ -539,14 +538,15 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         auto entity_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<4>(),
                                                       mRenderableData_.capacity() * sizeof(entt::entity));
         // 这里才是正确的内容 ,之后呢 ? 想办法
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                             "global_model_matrix", transform_matrix_buffer);
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                             "global_entity_to_screen", entity_buffer);
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_material_parameters", uint32_t_buffer);
-
-
+        // 一直没有想到,是下面的出现了问题
+        // VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
+        //                     "global_material_parameters", uint32_t_buffer);
+        //
+        //
         frustum_culling_buffer_ =
                 copy_data_to_SSBO_buffer(nullptr, sizeof(VKR_Primitive) * mRenderableData_.capacity());
         shadow_frustum_culling_buffer_ =
@@ -565,7 +565,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     //                      "global_dof_BlurImg", dof_blur);
 
 
-    update_global_pbr_parameter(update_global_descriptor_sets);
+    update_global_pbr_parameter(update_global_descriptor_sets_);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
     auto bindless_descriptor_sets = get_bindless_descriptor_set();
     auto global_descriptor_sets   = get_global_descriptor_set();
@@ -579,7 +579,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     descriptor_sets.insert(descriptor_sets.end(),
                            global_descriptor_sets.begin(),
                            global_descriptor_sets.end());
-    update_descriptor_sets(update_global_descriptor_sets, descriptor_sets);
+    update_descriptor_sets(update_global_descriptor_sets_, descriptor_sets);
 }
 
 void Engine::update_bindless_parameter() {
