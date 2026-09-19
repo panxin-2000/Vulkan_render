@@ -8,12 +8,14 @@
 #include "vk_render_to_image.h"
 #include "GPU_frustum_cull.h"
 #include "framerate_measure.h"
+#include "load_gltf_model.h"
 #include "name_component.h"
 #include "object_ply.h"
 #include "vulkan_render_manage.h"
 #include "time_measure.h"
 #include "transform_component.h"
 #include "vulkan_execute_command.h"
+#include "utils/StructureOfArrays.h"
 
 
 void render_different_pass(VCB &vcb,
@@ -238,7 +240,7 @@ void render_different_pass(VCB &vcb,
                                            Name_component>();
             for (const auto entity: view) {
                 auto name = Render_entt().get<Name_component>(entity);
-                vcb.build_draw_command(entity);
+                // vcb.build_draw_command(entity);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
@@ -383,6 +385,79 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     engine.get_image_to_render();
     destroy_Render_entt();
 
+
+    auto view = Render_entt().view<std::vector<VKR_Primitive>,
+                                   std::vector<World_Space_AABB>,
+                                   std::vector<Transform_Matrix>,
+                                   // Gltf_material_parameters,
+                                   screen_pick_entity>();
+    // 需要做什么呢? // entity 的 作为 ,
+    size_t primitive_size = 0;
+    for (const auto entity: view) {
+        auto size      = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+        primitive_size += size;
+    }
+
+    using RenderableSoa = utils::StructureOfArrays<
+        VKR_Primitive,    //
+        World_Space_AABB, //
+        Transform_Matrix, //
+        uint32_t,         //
+        entt::entity      //
+    >;
+
+    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
+    enum {
+        SOA_Primitive,        //   4 | instance of the Renderable component
+        SOA_World_Space_AABB, //   4 | instance of the Renderable component
+        SOA_Transform_Matrix, //   4 | instance of the Renderable component
+        SOA_material_index,   //   4 | instance of the Renderable component
+        SOA_entity,           //   4 | instance of the Renderable component
+    };
+
+    // 这里估计是需要 封装为一个函数了
+    {
+        const auto &storage = Render_entt().storage<Transform_Matrix>();
+
+        if (storage && storage.contains(entt::null)) {
+            // 2. 获取该实体组件在底层连续数组中的“逻辑索引” (0-based index)
+            // 这个值代表它前面有多少个组件元素，本质上就是逻辑上的“距离”
+            auto index = storage.index(entt::null);
+        }
+    }
+
+
+    RenderableSoa mRenderableData;
+    mRenderableData.setCapacity(primitive_size);
+    // soa.push_back(0.0f, 1.0, destroyedFloat4);
+    for (const auto entity: view) {
+        auto size = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+        for (uint i = 0; i < size; ++i) {
+            mRenderableData.push_back();
+            auto soa_size                                      = mRenderableData.size();
+            mRenderableData.elementAt<SOA_Primitive>(soa_size) =
+                    Render_entt().get<std::vector<VKR_Primitive> >(entity).at(i);
+            mRenderableData.elementAt<SOA_World_Space_AABB>(soa_size) =
+                    Render_entt().get<std::vector<World_Space_AABB> >(entity).at(i);
+            mRenderableData.elementAt<SOA_Transform_Matrix>(soa_size) =
+                    Render_entt().get<std::vector<Transform_Matrix> >(entity).at(i);
+            mRenderableData.elementAt<SOA_material_index>(soa_size) =
+                    Render_entt().get<Gltf_material_parameters>(entity).at(i);
+            mRenderableData.elementAt<SOA_entity>(soa_size) =
+                    Render_entt().get<screen_pick_entity>(entity).at(i);
+        }
+    }
+
+
+    // 拿到了总的数量,之后呢?
+    // 需要写入
+    // 基本上就是上述 的 内容了, 需要 开一个 SOA , 之后 绑定时 , 就绑定这几个全局的就好了
+    // 然后这里也是需要执行双缓冲的 , 不, 需要三缓存,
+
+    // 上面的问题可以被整理为另一个问题, 静态的场景数据, 动态的物体数据,
+    // 静态的场景就直接进行剔除了
+
+
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
@@ -445,6 +520,7 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
     need_render = running; // 设置为运行中
 
     vk_render_queue::instance();
+    // Render_entt().group<PBR_material_index, Transform_Matrix, Render_AABB, Draw_command>();
     // 这四个 我目前感觉是需要
     // 然后需要怎么做呢? VKR_Primitive 是基本的命令的合集
     // 想要一起绘制呢? 首先需要 把顶点 全部都绑定 到一起,之后  firstIndex 和  vertexOffset 需要 重新计算

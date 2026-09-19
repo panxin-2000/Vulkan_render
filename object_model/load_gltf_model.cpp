@@ -873,7 +873,8 @@ void update_material(entt::entity model_entity) {
         }
         if (!temp.empty()) {
             const std::span temp_span = temp;
-            set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
+            // set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
+            logic_update_proxy(model_entity, *material_parameters);
         }
     }
 }
@@ -1009,6 +1010,7 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
     auto &boxes                   = Logic_entt().emplace<std::vector<World_Space_AABB> >(model_entity);
     auto &matrices                = Logic_entt().emplace<std::vector<Transform_Matrix> >(model_entity);
     auto &render_entity_to_screen = Logic_entt().emplace<screen_pick_entity>(model_entity);
+    // 这里是第二个问题, boxes ,  matrices 也是刚好相等, 在这里的时候, 可以使用 vector , 之后呢?
 
     auto update_aabb = [&](const entt::entity entity) {
         if (entity != entt::null && Logic_entt().all_of<Geometry_data, Transform_Matrix>(entity)) {
@@ -1027,8 +1029,9 @@ void combine_boxes_and_matrices(const entt::entity model_entity) {
     auto local_aabb = merge_AABBs(boxes);
     Logic_entt().emplace<Local_Space_AABB>(model_entity, World_Space_AABB(local_aabb));
 
-    update_primitives_model_matrix(model_entity); // 估计这一行会和上面有点像 , 不一样, 但是我不知道为什么 这个函数写的时候一定需要加一个共享指针呢?
-    update_entity_to_screen(model_entity);
+    logic_update_proxy(model_entity, render_entity_to_screen);
+    logic_update_proxy(model_entity, matrices);
+    logic_update_proxy(model_entity, boxes);
 }
 
 
@@ -1071,12 +1074,11 @@ void combine_geometry(const entt::entity model_entity) {
 
     auto mesh       = create_mesh_data(bindless_Geometry_data);
     auto primitives = create_primitives(bindless_Geometry_data);
+    // 其实这里是 第一个问题, 一个 entity 对应了 多个 primitives
 
     Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives); // 这两个本来应该是一体,但是 GPU 驱动导致分离了
     logic_update_proxy(model_entity, mesh);
-    // logic_update_proxy(model_entity, primitives);
-    // 第一个问题是这里的问题, 剔除之后, 就不会再去绘制了
-    // 另外一个问题, 应该是更新的流程都问题,导致了 不能正常绘制
+    logic_update_proxy(model_entity, primitives);
 }
 
 void deal_new_add_model(const entt::entity model_entity) {
