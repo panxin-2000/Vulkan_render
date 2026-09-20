@@ -73,7 +73,7 @@ void render_different_pass(VCB &vcb,
     if (engine.get_frustum_culling() == true) {
         auto view = Render_entt().view<GPU_frustum_cull>();
         for (const auto entity: view)
-            vcb.calculate_frustum_cull(entity, frustum_planes, light_planes, depth_AO_copy_image);
+            vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image);
     }
 
     // 应该是在 需要 deferred 的时候才开启
@@ -232,7 +232,7 @@ void render_different_pass(VCB &vcb,
                 auto name                   = Render_entt().get<Name_component>(entity);
                 const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
                 vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
-                vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
+                vcb.DrawIndexedIndirect(entity, command_calculate.command_size, engine.frustum_culling_buffer_);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -385,7 +385,6 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     engine.get_command_submit_manager().execute_callback_functions(time_line);
     engine.get_image_to_render();
     destroy_Render_entt();
-
 
 
     // 拿到了总的数量,之后呢?

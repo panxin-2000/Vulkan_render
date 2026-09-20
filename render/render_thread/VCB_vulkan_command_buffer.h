@@ -258,7 +258,7 @@ public:
     void add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
 
     void calculate_frustum_cull(
-        const entt::entity entity,
+        Engine &engine,
         const FrustumPlanes &frustum_planes,
         const std::array<FrustumPlanes, 4> &light_frustum_planes,
         const VKR_image_ptr &depth);

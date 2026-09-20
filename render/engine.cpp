@@ -529,8 +529,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
         vkr_primitive_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
                                                          mRenderableData_.capacity() * sizeof(VKR_Primitive));
-        auto world_space_aabb_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<1>(),
-                                                                mRenderableData_.capacity() * sizeof(World_Space_AABB));
+        world_space_aabb_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<1>(),
+                                                            mRenderableData_.capacity() * sizeof(World_Space_AABB));
         auto transform_matrix_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<2>(),
                                                                 mRenderableData_.capacity() * sizeof(Transform_Matrix));
         auto uint32_t_buffer = copy_data_to_SSBO_buffer(mRenderableData_.data<3>(),
@@ -548,9 +548,11 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         //
         //
         frustum_culling_buffer_ =
-                copy_data_to_SSBO_buffer(nullptr, sizeof(VKR_Primitive) * mRenderableData_.capacity());
+                copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
+                                         sizeof(VKR_Primitive) * mRenderableData_.capacity());
         shadow_frustum_culling_buffer_ =
-                copy_data_to_SSBO_buffer(nullptr, sizeof(VKR_Primitive) * mRenderableData_.capacity());
+                copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
+                                         sizeof(VKR_Primitive) * mRenderableData_.capacity());
     }
 
 

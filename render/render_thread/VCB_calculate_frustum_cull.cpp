@@ -370,7 +370,7 @@ void VCB::add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &b
 }
 
 
-void VCB::calculate_frustum_cull(const entt::entity entity,
+void VCB::calculate_frustum_cull(Engine &engine,
                                  const FrustumPlanes &frustum_planes,
                                  const std::array<FrustumPlanes, 4> &light_frustum_planes,
                                  const VKR_image_ptr &depth) {
@@ -381,8 +381,8 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
 
         shader_need_parameter parameter;
         VK_update_parameter(compute_shader->object_sets_bindings,
-                             parameter.update_object_descriptor_sets, "input_texture",
-                             offscreen);
+                            parameter.update_object_descriptor_sets, "input_texture",
+                            offscreen);
         allocate_descriptor_sets(parameter, compute_shader, time_line_);
         auto temp = get_descriptor_sets(parameter, compute_shader);
         update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -395,16 +395,19 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
         std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
 
-        auto command_calculate                    = Render_entt().get<GPU_frustum_cull>(entity);
+        GPU_frustum_cull command_calculate;
         command_calculate.hiz_min_lod             = 0;
         command_calculate.hiz_max_lod             = depth->get_mipLevels();
-        command_calculate.frustum_planes          = frustum_planes; // 还需要在这里更新一次
-        command_calculate.IndirectCommandsAddress = command_calculate.camera_write_buffer->get_gpu_device_address();
+        command_calculate.frustum_planes          = frustum_planes;
+        command_calculate.command_size            = engine.mRenderableData_.size();
+        command_calculate.IndirectCommandsAddress = engine.frustum_culling_buffer_->get_gpu_device_address();
+        command_calculate.AABB_boxesAddress       = engine.world_space_aabb_buffer_->get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 124,
                            &command_calculate);
+
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
-        VKR_buffer_ptr write_buffer_ptr = command_calculate.camera_write_buffer;
+        VKR_buffer_ptr write_buffer_ptr = engine.frustum_culling_buffer_;
         write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
                                             .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
                                             .pNext = nullptr,
@@ -430,14 +433,15 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
                                         });
 
 
-        for (uint32_t i = 0;
-             i < light_frustum_planes.size() && command_calculate.light_write_buffer[i] != nullptr; ++i) {
+        uint &i = engine.get_current_CSM();
+        if (i < light_frustum_planes.size() && command_calculate.light_write_buffer[i] != nullptr) {
             command_calculate.frustum_planes          = light_frustum_planes[i]; // 还需要在这里更新一次
             command_calculate.IndirectCommandsAddress =
-                    command_calculate.light_write_buffer[i]->get_gpu_device_address();
+                    engine.shadow_frustum_culling_buffer_->get_gpu_device_address();
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                                &command_calculate);
+
             vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
             write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
                                                 .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
@@ -456,7 +460,7 @@ void VCB::calculate_frustum_cull(const entt::entity entity,
                                                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
                                                 // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                                                .buffer = command_calculate.light_write_buffer[i]->
+                                                .buffer = engine.shadow_frustum_culling_buffer_->
                                                 get_buffer_handle(time_line_),
                                                 // 这里的buffer 句柄 应该从哪里拿?
                                                 .offset = 0,

@@ -87,12 +87,14 @@ private:
         SOA_entity,           //   4 | instance of the Renderable component
     };
 
+
+public:
     RenderableSoa mRenderableData_;
     VKR_buffer_ptr frustum_culling_buffer_;
+    VKR_buffer_ptr world_space_aabb_buffer_;
     VKR_buffer_ptr vkr_primitive_buffer_;
     VKR_buffer_ptr shadow_frustum_culling_buffer_;
 
-public:
     static Engine &instance();
 
 
