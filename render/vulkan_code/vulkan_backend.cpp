@@ -650,8 +650,8 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
         VK_CHECK_RESULT(vkCreateImageView(device_, &viewCI, nullptr, &image_views[i]));
     }
     for (auto i = 0; i < imageCount; i++) {
-        auto index = VKR_image::get_one_bindless_index();
-        result.emplace_back(std::make_shared<VKR_image>(images[i],VK_NULL_HANDLE, index, image_views[i], parameters));
+        // 下面的一个可以 将 index 改为零的前提是不能通过 bindless 来采样上一帧 输出的图像
+        result.emplace_back(std::make_shared<VKR_image>(images[i],VK_NULL_HANDLE, 0, image_views[i], parameters));
     }
     return result;
 }
