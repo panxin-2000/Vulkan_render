@@ -5,6 +5,9 @@
 - SSAO 屏幕空间遮蔽
 - Frustum culling 视锥体剔除
 
+
+![动画演示效果](./assets/CesiumMan.gif)
+
 [![优化大场景下的CSM阴影](./assets/CSM.png)](https://www.bilibili.com/video/BV1vney6TE5a/)
 
 
