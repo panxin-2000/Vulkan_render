@@ -18,55 +18,15 @@
 #include "utils/StructureOfArrays.h"
 
 
-void render_different_pass(VCB &vcb,
-                           Engine &engine,
-                           VKR_image_ptr color_image,
-                           VKR_image_ptr depth_image,
-                           VKR_image_ptr depth_AO_image,
-                           VKR_image_ptr depth_AO_copy_image,
-                           VKR_image_ptr SSAO_image,
-                           VKR_image_ptr blur_SSAO_image,
-                           VKR_image_ptr depth_shadow_image,
-                           VKR_image_ptr entity_image,
-                           VKR_image_ptr fxaa_result,
-                           VKR_image_ptr EASU_result,
-                           VKR_image_ptr RCAS_result,
-                           VKR_image_ptr compute_dof_blur_image
+void prepare_pass(VCB &vcb,
+                  Engine &engine,
+                  VKR_image_ptr depth_AO_image,
+                  VKR_image_ptr depth_AO_copy_image,
+                  VKR_image_ptr SSAO_image,
+                  VKR_image_ptr blur_SSAO_image,
+                  VKR_image_ptr depth_shadow_image,
+                  VKR_image_ptr entity_image
 ) {
-    std::array<VkBufferMemoryBarrier2, 1> write_buffer{
-        VkBufferMemoryBarrier2{
-            .sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .pNext         = nullptr,
-            .srcStageMask  = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            .srcAccessMask = VK_ACCESS_NONE,
-            .dstStageMask  = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT,
-
-            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .buffer              = VK_NULL_HANDLE,
-            .offset              = 0,
-            .size                = 1,
-        },
-
-    };
-    // dispatch 不能 render pass 中间调用
-    {
-        // Indirect draw ,先说需要哪几个 buffer ，
-        // 需要准备一个需要写入 command 的 buffer
-        // 数据，有哪些不透明的物体需要绘制的，位置或包围盒，
-        // 然后是对应的不透明的物体 draw command ,只是被复制，不需要被重新计算
-        // 上面是最简单的
-        // Hi-Z 遮挡剔除 需要什么呢？
-        // 一个深度图
-        // 上一帧绘制的 command 的 buffer
-        //
-        auto view = Render_entt().view<compute_pass_tag>();
-        for (const auto entity: view) {
-            vcb.build_compute_dispatch(entity);
-        }
-        // add_one_indirect_draw_barrier(handle,VK_NULL_HANDLE, 1024);
-    }
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
@@ -74,34 +34,7 @@ void render_different_pass(VCB &vcb,
         auto view = Render_entt().view<GPU_frustum_cull>();
         for (const auto entity: view)
             vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image);
-    }
-
-    // 应该是在 需要 deferred 的时候才开启
-    {
-        auto view = Render_entt().view<deferred_pass_tag>();
-        if (!view.empty()) {
-            auto g_buffer_image_indices = vcb.begin_g_buffer_rendering_attachment(
-                 {
-                     color_image, engine.get_image_manager().get_one_position_image(),
-                     engine.get_image_manager().get_one_normal_image()
-                 }, depth_image, VK_ATTACHMENT_LOAD_OP_CLEAR);
-            auto view_opacity = Render_entt().view<opacity_tag, Name_component>();
-            for (const auto entity: view_opacity) {
-                auto name = Render_entt().get<Name_component>(entity);
-                vcb.build_draw_command(entity);
-            }
-            vcb.end_rendering();
-            vcb.current_write_next_read_image({
-                                                  color_image,
-                                                  engine.get_image_manager().get_one_position_image(),
-                                                  engine.get_image_manager().get_one_normal_image()
-                                              });
-        }
-    }
-
-    // 这里是绘制 不透明 ,得到深度图, 还是
-    // 不能按照
-    {
+    } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);
         auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
@@ -123,18 +56,20 @@ void render_different_pass(VCB &vcb,
         }
         vcb.end_rendering();
 
+
+        vcb.CSM_pass(engine, depth_shadow_image);
+        vcb.add_image_barrier(depth_shadow_image,
+                              image_barrier_depth_write,
+                              image_barrier_frag_read_sampler2d);
+
+        // 这里可以暂时告一断落
+
         auto &mouse_position = engine.get_global_parameters().get_mouse_position();
         vcb.pickup(entity_image, engine.get_pickup_buffers(), mouse_position.x(), mouse_position.y());
 
         vcb.add_image_barrier(depth_AO_image,
                               image_barrier_depth_write,
                               image_barrier_compute_read_sampler2D);
-        // 这里需要什么呢?  // depth_AO_image 中复制到 depth_AO_copy_image ,
-        // 之后 进行降采样以及 上采样
-        // 不能直接搬运,可以通过一个shader 来执行转换
-
-        // vcb.compute_write_init_barrier(depth_AO_copy_image);
-
 
         vcb.add_image_barrier(depth_AO_copy_image,
                               image_barrier_blank_stage,
@@ -166,40 +101,16 @@ void render_different_pass(VCB &vcb,
         // 之后还需要执行什么操作呢?  进行采样
         // 这里大概需要需要生成 Mipmap
         // 其实搞好能够用于 SSAO
-    } {
-        //     // 这里还是稍微有点问题,其实是可以不要深度的
-        // vcb.begin_rendering_attachment(SSAO_image,
-        //                                depth_image,
-        //                                VK_ATTACHMENT_LOAD_OP_CLEAR);
-
-        // SSAO_image 需要转换布局,从 开始的 未知 转换为 gen
     }
+}
 
+void render_different_pass(VCB &vcb,
+                           Engine &engine,
+                           VKR_image_ptr color_image,
+                           VKR_image_ptr depth_image
+) {
+    // 这里向上, 都会需要执行的准备工作
 
-    // CSM  当然了,这里还是有一个问题, 最好能不需要渲染全部的,
-    {
-        vcb.CSM_pass(engine, depth_shadow_image);
-        vcb.add_image_barrier(depth_shadow_image,
-                              image_barrier_depth_write,
-                              image_barrier_frag_read_sampler2d);
-    }
-    // {
-    // vcb.begin_rendering_attachment(blur_SSAO_image,
-    // depth_image,
-    // VK_ATTACHMENT_LOAD_OP_CLEAR);
-    // VKR_shader_paths blur{
-    // "full_screen_triangle", "blur", "", "",
-    // VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-    // VK_FORMAT_UNDEFINED,
-    // VK_FORMAT_UNDEFINED,
-    // };
-    // auto command_shader = engine.get_shader_manager().find(blur);
-    // vcb.render_post_deal(command_shader, entt::null);
-    // vcb.end_rendering();
-    // vcb.current_write_next_read_image({
-    // blur_SSAO_image
-    // });
-    // }
 
     // 绘制 3d 物体的阶段 pass
     {
@@ -269,7 +180,19 @@ void render_different_pass(VCB &vcb,
             auto prefix_sum = vcb.render_3DGS_prefixsum(entity);
             vcb.render_3DGS_idkeys(entity, prefix_sum);
         }
-    } {
+    }
+}
+
+void render_post_process(VCB &vcb,
+                         Engine &engine,
+                         VKR_image_ptr color_image,
+                         VKR_image_ptr fxaa_result,
+                         VKR_image_ptr EASU_result,
+                         VKR_image_ptr RCAS_result,
+                         VKR_image_ptr compute_dof_blur_image
+) {
+    // 这里就都是 后处理相关的 内容了
+    {
         // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出
 
         // 景深（Depth of Field）绽放（Bloom）镜片炫光（Lens Flare）
@@ -319,7 +242,6 @@ void render_different_pass(VCB &vcb,
         vcb.end_rendering();
     }
 }
-
 
 void destroy_Render_entt() { {
         const auto view = Render_entt().view<Render_destroy_tag_last>();
@@ -399,11 +321,12 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     // 录制全部的绘制命令
     VCB vcb;
     vcb.reset_current_command_buffer(time_line, command_buffer);
-    render_different_pass(vcb, engine, color_image, depth_image, depth_AO_image, depth_AO_copy_image, SSAO_image,
-                          blur_SSAO_image, depth_shadow_image, entity_image, fxaa_result,
-                          EASU_result,
-                          RCAS_result,
-                          compute_dof_blur_image);
+
+
+    prepare_pass(vcb, engine, depth_AO_image, depth_AO_copy_image, SSAO_image, blur_SSAO_image, depth_shadow_image,
+                 entity_image);
+    render_different_pass(vcb, engine, color_image, depth_image);
+    render_post_process(vcb, engine, color_image, fxaa_result, EASU_result, RCAS_result, compute_dof_blur_image);
     vcb.end_command_buffer();
 
     vcb.submit_render_queue(engine);
