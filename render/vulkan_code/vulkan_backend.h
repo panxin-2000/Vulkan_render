@@ -42,6 +42,15 @@ private:
     VmaAllocator allocator_           = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
     VkExtent2D extent_;
 
+    std::vector<VKR_image_ptr> swap_chain_images_;
+    std::vector<VkSemaphore> render_to_image_semaphores_           = {};
+    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
+    std::array<VkFence, maxFramesInFlight> fences_                 = {};
+    uint32_t imageIndex                                            = 0;
+    uint32_t presentSemaphores                                     = 0;
+
+    uint32_t frameIndex = 0;
+
     /**
      * frameIndex 正在渲染的一帧图像
      * imageIndex swap chain 创建的 image 的索引
@@ -66,7 +75,63 @@ public:
 
     bool framebufferResized = false;
 
-public:
+    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
+        return swap_chain_images_;
+    }
+
+    uint32_t get_imageIndex() const {
+        return imageIndex;
+    }
+
+    std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
+        return render_to_image_semaphores_;
+    }
+
+    VkSemaphore &get_current_renderSemaphores() {
+        return get_can_render_to_image_semaphores()[frameIndex];
+    }
+
+    std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
+        return present_semaphores_;
+    }
+
+
+    void presentSemaphores_updated() {
+        presentSemaphores = (presentSemaphores + 1) % maxFramesInFlight;
+    }
+
+    VkSemaphore &get_current_presentSemaphores() {
+        return get_presentSemaphores()[frameIndex];
+    }
+
+
+    std::array<VkFence, maxFramesInFlight> &get_fences() {
+        return fences_;
+    }
+
+
+    VkFence &get_current_fences() {
+        return get_fences()[frameIndex];
+    }
+
+
+    void create_renderSemaphores();
+
+    const VKR_image_ptr &get_current_swap_chain_image() const;
+
+    void destroy_renderSemaphores();
+
+    void destroy_render_image();
+
+    void create_render_image();
+
+    void create_fences();
+
+    void destroy_fences();
+
+    void destroy_and_recreate_fence_and_semaphore();
+
+
     bool set_frame_buffer_resize(const bool value);;
 
     [[nodiscard]] bool is_frame_buffer_resize() const;;
@@ -98,6 +163,16 @@ public:
     void create_depth_format();
 
     void destroy_swap_chain(VkSwapchainKHR old_swap_chain);
+
+    void copy_image_to_screen();
+
+    void recreate_swap_chain();
+
+    void create_present_Semaphores();
+
+    void destroy_present_Semaphores();
+
+    void get_image_to_render();
 
     void destroy();
 

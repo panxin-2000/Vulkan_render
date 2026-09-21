@@ -185,6 +185,7 @@ void render_different_pass(VCB &vcb,
 }
 
 void render_post_process(VCB &vcb,
+                         VK_backend &backend,
                          Engine &engine,
                          VKR_image_ptr color_image,
                          VKR_image_ptr fxaa_result,
@@ -215,9 +216,9 @@ void render_post_process(VCB &vcb,
         vcb.FSR1_RCAS(engine, EASU_result, RCAS_result);
         vcb.compute_write_finish_barrier(RCAS_result);
 
-        vcb.copy_image(RCAS_result, engine.get_current_swap_chain_image());
+        vcb.copy_image(RCAS_result, backend.get_current_swap_chain_image());
     } {
-        vcb.begin_rendering_attachment_to_screen(engine.get_current_swap_chain_image(),
+        vcb.begin_rendering_attachment_to_screen(backend.get_current_swap_chain_image(),
                                                  VK_ATTACHMENT_LOAD_OP_LOAD); {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
@@ -303,9 +304,9 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
 
 
     const uint64_t time_line             = Engine::get_current_submit_timeline();
-    const VkCommandBuffer command_buffer = engine.get_current_command_buffer();
+    const VkCommandBuffer command_buffer = engine.get_current_command_buffer(); // 这和 frameIndex 无关
     engine.get_command_submit_manager().execute_callback_functions(time_line);
-    engine.get_image_to_render();
+    backend.get_image_to_render(); // imageIndex 在这里被改变
     destroy_Render_entt();
 
 
@@ -326,11 +327,13 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     prepare_pass(vcb, engine, depth_AO_image, depth_AO_copy_image, SSAO_image, blur_SSAO_image, depth_shadow_image,
                  entity_image);
     render_different_pass(vcb, engine, color_image, depth_image);
-    render_post_process(vcb, engine, color_image, fxaa_result, EASU_result, RCAS_result, compute_dof_blur_image);
-    vcb.end_command_buffer();
+    render_post_process(vcb, backend, engine, color_image, fxaa_result, EASU_result, RCAS_result,
+                        compute_dof_blur_image);
+    vcb.end_command_buffer(backend, engine);
 
-    vcb.submit_render_queue(engine);
-    engine.copy_image_to_screen();
+    vcb.submit_render_queue(backend, engine);  //
+    backend.copy_image_to_screen(); // 这里应该改为 backend
+
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);
 }

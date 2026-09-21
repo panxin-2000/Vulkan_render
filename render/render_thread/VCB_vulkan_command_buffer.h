@@ -120,7 +120,7 @@ public:
 
     void end_rendering();
 
-    void submit_render_queue(Engine &engine);
+    void submit_render_queue(VK_backend &backend, Engine &engine);
 
     void compute_write_finish_barrier(const VKR_image_ptr &compute_write_finish_image);
 
@@ -177,7 +177,7 @@ public:
 
     void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
 
-    void end_command_buffer();
+    void end_command_buffer(VK_backend &backend, Engine &engine);
 
 
     G_buffer_image_index begin_g_buffer_rendering_attachment(
@@ -211,7 +211,8 @@ public:
     void DrawIndexedIndirect(entt::entity entity,
                              uint32_t command_size, VKR_buffer_ptr read_buffer);
 
-    void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size, VKR_buffer_ptr read_buffer);
+    void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
+                             VKR_buffer_ptr read_buffer);
 
     inline void draw(
         const Mesh_data &mesh_data,

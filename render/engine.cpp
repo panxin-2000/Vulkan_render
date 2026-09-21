@@ -126,86 +126,6 @@ void Engine::destroy_command_buffer() {
 }
 
 
-void Engine::create_fences() {
-    const auto &backend = VK_backend::instance();
-    VkFenceCreateInfo fenceCI{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT};
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateFence(backend.get_device(), &fenceCI, nullptr, &fences_[i]));
-    }
-}
-
-void Engine::destroy_fences() {
-    const auto &backend = VK_backend::instance();
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(backend.get_device(), fences_[i], nullptr); //  这里还需要
-        fences_[i] = VK_NULL_HANDLE;
-    }
-}
-
-void Engine::create_present_Semaphores() {
-    const auto &backend = VK_backend::instance();
-    VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(backend.get_device(), &semaphoreCI,
-                                     nullptr, &present_semaphores_[i]));
-    }
-}
-
-void Engine::destroy_present_Semaphores() {
-    const auto &backend = VK_backend::instance();
-    for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroySemaphore(backend.get_device(), present_semaphores_[i], nullptr); //
-        present_semaphores_[i] = VK_NULL_HANDLE;
-    }
-}
-
-
-void Engine::create_renderSemaphores() {
-    const auto &backend = VK_backend::instance();
-    VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    render_to_image_semaphores_.resize(get_swap_chain_images().size());
-    LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
-    for (auto &semaphore: render_to_image_semaphores_) {
-        VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(backend.get_device(), &semaphoreCI, nullptr, &semaphore));
-    }
-}
-
-void Engine::destroy_renderSemaphores() {
-    const auto &backend = VK_backend::instance();
-    for (auto i = 0; i < render_to_image_semaphores_.size(); i++) {
-        vkDestroySemaphore(backend.get_device(), render_to_image_semaphores_[i], nullptr);
-        render_to_image_semaphores_[i] = VK_NULL_HANDLE;
-    }
-}
-
-
-void Engine::destroy_and_recreate_fence_and_semaphore() {
-    destroy_fences();
-    destroy_present_Semaphores();
-    destroy_renderSemaphores();
-    create_fences();
-    create_present_Semaphores();
-    create_renderSemaphores();
-    imageIndex = 0;
-    frameIndex = 0;
-}
-
-void Engine::destroy_render_image() {
-    for (const auto &image: swap_chain_images_) {
-        image->destroy_image();
-    }
-    swap_chain_images_.clear();
-    render_image_manager_.destroy();
-}
-
-void Engine::create_render_image() {
-    swap_chain_images_ = VK_backend::instance().create_swap_chain_image_and_view();
-
-
-    render_image_manager_.create();
-}
-
-
 void Engine::create() {
     // pickup_buffers_
     for (auto i = 0; i < maxFramesInFlight; i++) {
@@ -263,12 +183,9 @@ void Engine::create() {
     // }
 
 
-    create_render_image();
     create_command_pool();
     create_command_buffer();
-    create_fences();
-    create_present_Semaphores();
-    create_renderSemaphores();
+    render_image_manager_.create();
     create_timeline_Semaphores();
 }
 
@@ -331,17 +248,7 @@ void Engine::update_bindless_descriptor_sets_function() {
 }
 
 
-void Engine::recreate_swap_chain() {
-    VK_backend::instance().set_frame_buffer_resize(false);
-    const auto old_swap_chain = VK_backend::instance().get_swap_chain();
-    VK_backend::instance().create_swap_chain(old_swap_chain);
-    destroy_render_image();
-    create_render_image();
-    VK_backend::instance().destroy_swap_chain(old_swap_chain);
-}
-
 void Engine::destroy() {
-
     update_global_descriptor_sets_.clear();
     frustum_culling_buffer_        = nullptr;
     world_space_aabb_buffer_       = nullptr;
@@ -366,7 +273,8 @@ void Engine::destroy() {
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(backend.get_device()));
 
     // 这里的顺序不对
-    destroy_render_image();
+    render_image_manager_.destroy();
+
     // 需要强制清除
     constexpr uint64_t finished_timeline = std::numeric_limits<uint64_t>::max();
     discard_descriptor_set_map_clean(finished_timeline);
@@ -381,9 +289,6 @@ void Engine::destroy() {
     vk_timeline_semaphore_ = VK_NULL_HANDLE;
 
 
-    destroy_fences();
-    destroy_present_Semaphores();
-    destroy_renderSemaphores();
     destroy_command_buffer();
     destroy_command_pool();
     descriptor_pool_manager_.destroy();
@@ -605,104 +510,6 @@ Proxy_descriptor_sets Engine::get_bindless_descriptor_set(const uint index) {
 
 Proxy_descriptor_sets Engine::get_global_descriptor_set(const uint index) {
     return global_descriptor_sets_[global_descriptor_sets_index];
-}
-
-const VKR_image_ptr &Engine::get_current_swap_chain_image() const {
-    return get_swap_chain_images().at(get_imageIndex());
-}
-
-
-void Engine::submit_render_queue(uint64_t time_line) {
-    // Submit to graphics queue
-    VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    // 为了处理“交换链图像（Swapchain Image）还没准备好”的问题  图像还没有从显示器“拿回来”
-    auto cb = get_current_command_buffer();
-
-    // uint32_t wait_semaphore_len = submit_task->wait_semaphore == VK_NULL_HANDLE ? 0 : 1;
-    uint32_t signal_semaphore_len    = 2;
-    VkSemaphore signal_semaphores[2] = {
-        vk_timeline_semaphore_,
-        get_can_render_to_image_semaphores()[get_imageIndex()]
-    };
-    uint64_t signal_semaphore_values[2] = {time_line, 0};
-
-    VkTimelineSemaphoreSubmitInfo timeline_semaphore_submit_info = {
-        VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-        nullptr,
-        0,
-        nullptr,
-        signal_semaphore_len,
-        signal_semaphore_values
-    };
-
-    Command_submit_manager::command_buffer_submit(1, &cb,
-                                                  get_current_fences(),
-                                                  &timeline_semaphore_submit_info,
-                                                  1,
-                                                  &get_current_presentSemaphores(),
-                                                  &waitStages,
-                                                  2,
-                                                  signal_semaphores);
-}
-
-
-void Engine::copy_image_to_screen() {
-    frameIndex = (frameIndex + 1) % maxFramesInFlight;
-    VkPresentInfoKHR presentInfo{
-        .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
-        .swapchainCount     = 1,
-        .pSwapchains        = &VK_backend::instance().get_swap_chain(),
-        .pImageIndices      = &imageIndex
-    }; {
-        const auto result = Command_submit_manager::command_copy_image_to_screen(presentInfo);
-        if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-                   VK_backend::instance().is_frame_buffer_resize()) {
-            recreate_swap_chain();
-            destroy_and_recreate_fence_and_semaphore();
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
-        }
-    }
-}
-
-
-void Engine::get_image_to_render() {
-    // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true,
-                                 UINT64_MAX));
-    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
-    auto result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
-                                        VK_backend::instance().get_swap_chain(),
-                                        UINT64_MAX,
-                                        get_current_presentSemaphores(),
-                                        VK_NULL_HANDLE,
-                                        &imageIndex); // 其实是在这里执行了 ++ 的工作
-    if (result == VK_SUCCESS) {
-    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-               VK_backend::instance().is_frame_buffer_resize()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        recreate_swap_chain();
-        destroy_and_recreate_fence_and_semaphore();
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true
-                                    ,
-                                     UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
-        result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
-                                       VK_backend::instance().get_swap_chain(),
-                                       UINT64_MAX,
-                                       get_current_presentSemaphores(),
-                                       VK_NULL_HANDLE,
-                                       &imageIndex);
-        if (result == VK_SUCCESS) {
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // 有时候成功，有时候不能一次成功，不知道为什么
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
-    }
 }
 
 

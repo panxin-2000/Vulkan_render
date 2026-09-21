@@ -32,20 +32,16 @@
 struct Engine {
 private:
     // 也许这里需要一个 VK_backend 的指针
-    std::vector<VkCommandPool> command_pools_                      = {};
-    std::vector<VkSemaphore> render_to_image_semaphores_           = {};
-    std::array<VkCommandBuffer, 3> command_buffers_                = {};
-    std::array<VkQueryPool, maxFramesInFlight> query_pools         = {};
-    std::array<VkFence, maxFramesInFlight> fences_                 = {};
-    std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
-    std::array<VKR_buffer_ptr, maxFramesInFlight> pickup_buffers_  = {};
+    std::vector<VkCommandPool> command_pools_                     = {};
+    std::array<VkCommandBuffer, 3> command_buffers_               = {};
+    std::array<VkQueryPool, maxFramesInFlight> query_pools        = {};
+    std::array<VKR_buffer_ptr, maxFramesInFlight> pickup_buffers_ = {};
 
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
     uint32_t global_descriptor_sets_index                                 = 0;
     std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets_;
 
-    std::vector<VKR_image_ptr> swap_chain_images_;
 
     Render_image_manager render_image_manager_;
     Descriptor_pool_manager descriptor_pool_manager_;
@@ -64,8 +60,6 @@ private:
     std::map<std::string, Update_descriptor_binding> update_bindless_descriptor_sets_;
     std::map<std::string, Update_descriptor_binding> update_bindless_sampler_sets_;
 
-    uint32_t frameIndex         = 0;
-    uint32_t imageIndex         = 0;
     uint32_t current_CSM        = 0;
     bool update_frustum_culling = true;
 
@@ -88,10 +82,6 @@ private:
     };
 
     struct Static_Model {
-
-
-
-
     };
 
 public:
@@ -134,11 +124,6 @@ public:
         return framerate_;
     }
 
-    void submit_render_queue(uint64_t time_line);
-
-    void copy_image_to_screen();
-
-    void get_image_to_render();
 
     void create_timeline_Semaphores();
 
@@ -149,42 +134,10 @@ public:
     }
 
 
-    uint32_t get_frameIndex() const {
-        return frameIndex;
-    }
-
-    uint32_t get_imageIndex() const {
-        return imageIndex;
-    }
-
-
-    std::array<VkFence, maxFramesInFlight> &get_fences() {
-        return fences_;
-    }
-
     const VkCommandPool &get_command_pool(const uint index = 0) const {
         return command_pools_.at(index);
     }
 
-    VkFence &get_current_fences() {
-        return get_fences()[frameIndex];
-    }
-
-    std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
-        return present_semaphores_;
-    }
-
-    VkSemaphore &get_current_presentSemaphores() {
-        return get_presentSemaphores()[frameIndex];
-    }
-
-    std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
-        return render_to_image_semaphores_;
-    }
-
-    VkSemaphore &get_current_renderSemaphores() {
-        return get_can_render_to_image_semaphores()[frameIndex];
-    }
 
     VkSemaphore &get_timeline_semaphore() {
         return vk_timeline_semaphore_;
@@ -196,7 +149,7 @@ public:
     }
 
     VkQueryPool &get_current_query_pool() {
-        return query_pools[frameIndex];
+        return query_pools[0];
     }
 
     void get_query_results();
@@ -209,17 +162,6 @@ public:
 
     void destroy_query_pool();
 
-    void create_fences();
-
-    void destroy_fences();
-
-    void create_present_Semaphores();
-
-    void destroy_present_Semaphores();
-
-    void create_renderSemaphores();
-
-    void destroy_renderSemaphores();
 
     void create_command_pool();
 
@@ -261,17 +203,11 @@ public:
         descriptor_pool_manager_.allocate_descriptor_pool();
     }
 
-    void create_render_image();
-
-    [[nodiscard]] const VKR_image_ptr &get_current_swap_chain_image() const;
 
     Render_image_manager &get_image_manager() {
         return render_image_manager_;
     }
 
-    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
-        return swap_chain_images_;
-    }
 
     [[nodiscard]] const VKR_buffer_ptr &get_pickup_buffers() const {
         return pickup_buffers_[0];
@@ -290,15 +226,12 @@ public:
         shader_manager_.destroy();
     }
 
-    void destroy_render_image();
 
     void create();
 
-    void recreate_swap_chain();
 
     void destroy();
 
-    void destroy_and_recreate_fence_and_semaphore();
 
     void add_bindless_texture(const std::optional<Texture_parameter> &texture);
 
