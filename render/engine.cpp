@@ -341,6 +341,14 @@ void Engine::recreate_swap_chain() {
 }
 
 void Engine::destroy() {
+
+    update_global_descriptor_sets_.clear();
+    frustum_culling_buffer_        = nullptr;
+    world_space_aabb_buffer_       = nullptr;
+    vkr_primitive_buffer_          = nullptr;
+    shadow_frustum_culling_buffer_ = nullptr;
+
+
     shader_manager_destroy();
 
     for (auto i = 0; i < maxFramesInFlight; i++) {

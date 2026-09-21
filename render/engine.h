@@ -87,6 +87,12 @@ private:
         SOA_entity,           //   4 | instance of the Renderable component
     };
 
+    struct Static_Model {
+
+
+
+
+    };
 
 public:
     RenderableSoa mRenderableData_;

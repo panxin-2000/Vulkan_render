@@ -143,6 +143,7 @@ void render_different_pass(VCB &vcb,
                 auto name                   = Render_entt().get<Name_component>(entity);
                 const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
                 vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
+                //  vcb.DrawIndexedIndirect({}, {}, command_calculate.command_size, engine.frustum_culling_buffer_);
                 vcb.DrawIndexedIndirect(entity, command_calculate.command_size, engine.frustum_culling_buffer_);
             }
         } {
@@ -189,8 +190,7 @@ void render_post_process(VCB &vcb,
                          VKR_image_ptr fxaa_result,
                          VKR_image_ptr EASU_result,
                          VKR_image_ptr RCAS_result,
-                         VKR_image_ptr compute_dof_blur_image
-) {
+                         VKR_image_ptr compute_dof_blur_image) {
     // 这里就都是 后处理相关的 内容了
     {
         // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出

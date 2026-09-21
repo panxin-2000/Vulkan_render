@@ -186,12 +186,12 @@ void main()
     if (result == true) {
         //        uint write_index = atomicAdd(draw_count, 1);
         // // 利用这个独一无二的索引，紧密无缝地写入输出数组
-        float boxClosestDepth;
-        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
-        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
-        if (result == true) {
-            command_buffer.command[idx].instanceCount = 1;
-        }
+        //        float boxClosestDepth;
+        //        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
+        //        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
+        //        if (result == true) {
+        command_buffer.command[idx].instanceCount = 1;
+        //        }
     } else {
         command_buffer.command[idx].instanceCount = 0;
     }

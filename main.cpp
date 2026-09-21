@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
     box.set_transform();
 
 
-
     object_line line("line");
     line.add_B_spline_curve();
 
@@ -149,6 +148,46 @@ int main(int argc, char *argv[]) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ImGui_ImplSDL3_ProcessEvent(&event);
+
+            // switch (event.type) {
+            //     // 1. 最小化与恢复捕捉
+            //     case SDL_EVENT_WINDOW_MINIMIZED:
+            //         // is_minimized = true;
+            //         break;
+            //
+            //     case SDL_EVENT_WINDOW_RESTORED:
+            //         // is_minimized = false;
+            //         break;
+            //
+            //     // 2. 离开焦点捕捉（例如用户切到浏览器看网页，应用在后台）
+            //     case SDL_EVENT_WINDOW_FOCUS_LOST:
+            //         // is_keyboard_focused = false;
+            //         break;
+            //
+            //     case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            //         // is_keyboard_focused = true;
+            //         break;
+            //
+            //     // 3. 鼠标离开/进入窗口范围捕捉
+            //     case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+            //         // is_mouse_hovering = false;
+            //         break;
+            //
+            //     case SDL_EVENT_WINDOW_MOUSE_ENTER:
+            //         // is_mouse_hovering = true;
+            //         break;
+            //
+            //     // 4. 隐藏不可见（例如系统桌面切换导致的不可见）
+            //     case SDL_EVENT_WINDOW_HIDDEN:
+            //         // 窗口完全隐藏
+            //         break;
+            //
+            //     case SDL_EVENT_WINDOW_SHOWN:
+            //         // 窗口重新显示
+            //         break;
+            // }
+
+
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
                 if (event.type == SDL_EVENT_MOUSE_MOTION ||
                     event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
