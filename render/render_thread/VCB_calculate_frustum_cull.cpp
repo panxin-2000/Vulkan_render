@@ -398,7 +398,6 @@ void VCB::calculate_frustum_cull(Engine &engine,
         std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
 
         GPU_frustum_cull command_calculate;
-        command_calculate.hiz_min_lod    = 0;
         command_calculate.hiz_max_lod    = depth->get_mipLevels();
         command_calculate.frustum_planes = frustum_planes;
         command_calculate.command_size   = engine.get_renderable_SOA_data().size();
@@ -407,14 +406,19 @@ void VCB::calculate_frustum_cull(Engine &engine,
             engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
             Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling, engine.get_renderable_SOA_data().capacity())
         };
+        auto Primitives_buffer = VKR_buffer_offset{
+            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            Engine::RenderableSoa::getOffset(Engine::SOA_Primitive, engine.get_renderable_SOA_data().capacity())
+        };
 
         auto world_space_aabb_buffer = VKR_buffer_offset{
             engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB),
             Engine::RenderableSoa::getOffset(Engine::SOA_World_Space_AABB, engine.get_renderable_SOA_data().capacity())
         };
 
-        command_calculate.IndirectCommandsAddress = frustum_culling_buffer.get_gpu_device_address();
-        command_calculate.AABB_boxesAddress       = world_space_aabb_buffer.get_gpu_device_address();
+        command_calculate.frustum_cullingAddress = frustum_culling_buffer.get_gpu_device_address();
+        command_calculate.PrimitivesAddress      = frustum_culling_buffer.get_gpu_device_address();
+        command_calculate.AABB_boxesAddress      = world_space_aabb_buffer.get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
                            &command_calculate);
@@ -434,8 +438,9 @@ void VCB::calculate_frustum_cull(Engine &engine,
 
         uint &i = engine.get_current_CSM();
         if (i < light_frustum_planes.size()) {
-            command_calculate.frustum_planes          = light_frustum_planes[i]; // 还需要在这里更新一次
-            command_calculate.IndirectCommandsAddress = shadow_frustum_culling_buffer.get_gpu_device_address();
+            command_calculate.frustum_planes         = light_frustum_planes[i]; // 还需要在这里更新一次
+            command_calculate.PrimitivesAddress      = frustum_culling_buffer.get_gpu_device_address();
+            command_calculate.frustum_cullingAddress = shadow_frustum_culling_buffer.get_gpu_device_address();
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
                                &command_calculate);

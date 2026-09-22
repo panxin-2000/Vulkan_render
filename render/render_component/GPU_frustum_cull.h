@@ -10,9 +10,9 @@
 struct GPU_frustum_cull {
     FrustumPlanes frustum_planes;
     uint64_t AABB_boxesAddress;
-    uint64_t IndirectCommandsAddress;
+    uint64_t PrimitivesAddress;
+    uint64_t frustum_cullingAddress;
     uint32_t command_size;
-    uint32_t hiz_min_lod;
     uint32_t hiz_max_lod;
 };
 

@@ -904,8 +904,6 @@ void update_entity_to_screen(const entt::entity model_entity) {
 }
 
 
-
-
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
                              const Eigen::Vector3f offset,
                              const Eigen::Quaternionf &rotate,
@@ -1063,19 +1061,13 @@ void combine_geometry(const entt::entity model_entity) {
             for (const auto &index: indices) {
                 bindless_Geometry_data.push_indices(index);
             }
-            Render_entt().remove<Geometry_data_need_copy_tag>(entity);
+            Logic_entt().remove<Geometry_data_need_copy_tag>(entity);
         }
     };
     add_recursion_function_to_children(model_entity, geometry_function);
 
-
-    auto mesh       = create_mesh_data(bindless_Geometry_data);
-    auto primitives = create_primitives(bindless_Geometry_data);
-    // 其实这里是 第一个问题, 一个 entity 对应了 多个 primitives
-
-    Logic_entt().emplace<std::vector<VKR_Primitive> >(model_entity, primitives); // 这两个本来应该是一体,但是 GPU 驱动导致分离了
-    logic_update_proxy(model_entity, mesh);
-    logic_update_proxy(model_entity, primitives);
+    logic_update_proxy(model_entity, bindless_Geometry_data);
+    logic_update_add_tag<Mesh_need_create_tag>(model_entity);
 }
 
 void deal_new_add_model(const entt::entity model_entity) {
@@ -1084,6 +1076,7 @@ void deal_new_add_model(const entt::entity model_entity) {
     combine_boxes_and_matrices(model_entity);
     combine_material(model_entity);
     combine_geometry(model_entity);
+    // 慢慢的 变成了两个线程之间的 任务 应该如何划分的了
     load_gltf_material_separate(model_entity); // 之后尽量删除
 
     gltf_update_joint_matrix(model_entity);

@@ -14,6 +14,7 @@
 #include "vulkan_code/descriptor.h"
 
 #include "Descriptor_pool_manager.h"
+#include "Geometry_data.h"
 #include "global_parameters.h"
 #include "render_common/frustum.h"
 #include "render_common/PBR_component.h"
@@ -93,13 +94,19 @@ public:
 
 private:
     RenderableSoa mRenderableData_;
+    Mesh_data mesh_data_;
     VKR_buffer_ptr CommandCountBuffer_;
+    Geometry_data bindless_Geometry_data_;
 
 public:
     static Engine &instance();
 
     const RenderableSoa &get_renderable_SOA_data() const {
         return mRenderableData_;
+    }
+
+    const Mesh_data &get_mesh_data() const {
+        return mesh_data_;
     }
 
     const VKR_buffer_ptr &get_SOA_buffer() const {

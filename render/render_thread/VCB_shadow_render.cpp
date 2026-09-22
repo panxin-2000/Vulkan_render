@@ -47,17 +47,17 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
 
     begin_rendering_depth_attachment(current_image_ptr,
                                      VK_ATTACHMENT_LOAD_OP_CLEAR);
-    auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
-    for (const auto entity: view) {
-        auto name              = Render_entt().get<Name_component>(entity);
-        auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
+    auto view = Render_entt().view<opacity_tag, Name_component, VKR_shader_paths>();
+
+    if (engine.get_renderable_SOA_data().size() > 0) {
+        auto shader_path = get_gltf_shader_path();
         shader_path.clear_define_macro();
         shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
         shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
         shader_path.add_define_macro("PASS_SHADOW_MAP", 1);
         const auto &shader_data_ref =
                 engine.get_shader_manager().find(shader_path);
-        bind_pipeline_update_parameter(entity, shader_data_ref); // 重点的问题出在这一行
+        bind_pipeline_update_parameter(entt::null, shader_data_ref); // 重点的问题出在这一行
         // 这里就需要看看怎么push
         // 现在这里的压力有点大,看看怎么分散到多帧
         // 这么改帧率是能上去的,但是需要注意一下关于清除的问题

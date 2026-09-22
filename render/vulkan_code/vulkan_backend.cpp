@@ -498,7 +498,7 @@ void VK_backend::create_device() {
         .dynamicRendering = true,
     };
 
-    std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
     deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 
     const VkPhysicalDeviceFeatures enabledVk10Features{
@@ -547,10 +547,11 @@ void VK_backend::create_VMA() {
         .vkCreateImage         = vkCreateImage
     };
     VmaAllocatorCreateInfo allocatorCI{
-        .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-        .physicalDevice = physical_device_,
-        .device         = device_, .pVulkanFunctions = &vkFunctions,
-        .instance       = instance_
+        .flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT | VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
+        .physicalDevice   = physical_device_,
+        .device           = device_,
+        .pVulkanFunctions = &vkFunctions,
+        .instance         = instance_,
     };
     VK_CHECK_RESULT(vmaCreateAllocator(&allocatorCI, &allocator_));
 }

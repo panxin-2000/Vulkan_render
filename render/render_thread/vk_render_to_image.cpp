@@ -6,14 +6,12 @@
 #include "vertex_and_buffer_index.h"
 #include "VCB_vulkan_command_buffer.h"
 #include "vk_render_to_image.h"
-#include "GPU_frustum_cull.h"
 #include "framerate_measure.h"
 #include "load_gltf_model.h"
 #include "name_component.h"
 #include "object_ply.h"
 #include "vulkan_render_manage.h"
 #include "time_measure.h"
-#include "transform_component.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
 
@@ -35,17 +33,15 @@ void prepare_pass(VCB &vcb,
     } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);
-        auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
-        for (const auto entity: view) {
-            auto name        = Render_entt().get<Name_component>(entity);
-            auto shader_path = Render_entt().get<VKR_shader_paths>(entity);
+        if (engine.get_renderable_SOA_data().size() > 0) {
+            auto shader_path = get_gltf_shader_path();
             shader_path.clear_define_macro();
             shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
             shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
             shader_path.add_define_macro("PASS_DEPTH_AND_PICKUP", 1);
             const auto &shader_data_ref =
                     engine.get_shader_manager().find(shader_path);
-            vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
+            vcb.bind_pipeline_update_parameter(entt::null, shader_data_ref);
             // 现在绑定的管线是有问题的,
             vcb.default_status();
             // 想调用下面这个, 还需要汇总数据
@@ -134,18 +130,19 @@ void render_different_pass(VCB &vcb,
                 vcb.build_draw_command(entity);
             }
         } {
-            auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
-            for (const auto entity: view) {
-                auto name                   = Render_entt().get<Name_component>(entity);
-                const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
-                vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
-                //  vcb.DrawIndexedIndirect({}, {}, command_calculate.command_size, engine.frustum_culling_buffer_);
+            if (engine.get_renderable_SOA_data().size() > 0) {
+                auto gltf_shader_data = engine.get_shader_manager().get_gltf_shader_data();
+                vcb.bind_pipeline_update_parameter(entt::null, gltf_shader_data);
                 auto frustum_culling_buffer = VKR_buffer_offset{
-                    engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-                    Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling,
+                    engine.get_SOA_buffer(),
+                    engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+                    Engine::RenderableSoa::getOffset(Engine::SOA_Primitive,
                                                      engine.get_renderable_SOA_data().capacity())
                 };
-                vcb.DrawIndexedIndirect(entity, engine.get_renderable_SOA_data().size(), frustum_culling_buffer);
+                Mesh_data mesh_data = engine.get_mesh_data(); // 首先需要把 这个 解决掉
+                VKR_Render_state render_state;                // 这个还算比较好解决
+                vcb.DrawIndexedIndirect(mesh_data, render_state, engine.get_renderable_SOA_data().size(),
+                                        frustum_culling_buffer);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,

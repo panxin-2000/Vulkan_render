@@ -128,6 +128,9 @@ void Engine::destroy_command_buffer() {
 
 void Engine::create() {
     // pickup_buffers_
+
+    CommandCountBuffer_ = create_SSBO_buffer(1024, nullptr);
+
     for (auto i = 0; i < maxFramesInFlight; i++) {
         pickup_buffers_[i] = create_vma_buffer(ALIGN_256(11 * 11 * 4), VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -250,8 +253,9 @@ void Engine::update_bindless_descriptor_sets_function() {
 
 
 void Engine::destroy() {
-    SOA_buffer_        = nullptr;
+    SOA_buffer_         = nullptr;
     CommandCountBuffer_ = nullptr;
+    mesh_data_          = {};
     shader_manager_destroy();
 
     for (auto i = 0; i < maxFramesInFlight; i++) {
@@ -404,28 +408,51 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                         "global_shadow_texture", shadow_texture);
 
-    auto view = Render_entt().view<std::vector<VKR_Primitive>,
+    auto view = Render_entt().view<Geometry_data, Mesh_need_create_tag,
                                    std::vector<World_Space_AABB>,
                                    std::vector<Transform_Matrix>,
                                    Gltf_material_parameters,
                                    screen_pick_entity>();
 
-    size_t primitive_size = 0;
+    bool view_has_value = false;
     for (const auto entity: view) {
-        auto size      = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+        const auto geometry_data = Render_entt().get<Geometry_data>(entity);
+        const auto vertices      = geometry_data.get_vertices();
+        const auto indices       = geometry_data.get_indices();
+        for (const auto &vertex: vertices) {
+            bindless_Geometry_data_.push_vertices(vertex);
+        }
+        for (const auto &index: indices) {
+            bindless_Geometry_data_.push_indices(index);
+        }
+        view_has_value = true;
+        Render_entt().remove<Mesh_need_create_tag>(entity);
+    }
+
+    size_t primitive_size = 0;
+
+    auto view_2 = Render_entt().view<Geometry_data,
+                                     std::vector<World_Space_AABB>,
+                                     std::vector<Transform_Matrix>,
+                                     Gltf_material_parameters,
+                                     screen_pick_entity>();
+
+
+    for (const auto entity: view_2) {
+        auto size      = Render_entt().get<std::vector<Transform_Matrix> >(entity).size();
         primitive_size += size;
     }
 
-    if (primitive_size > 0) {
+    if (primitive_size > 0 && view_has_value == true) {
         mRenderableData_.clear();
         mRenderableData_.setCapacity(ALIGN_16(primitive_size));
-        for (const auto entity: view) {
-            auto size = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
+
+
+        for (const auto entity: view_2) {
+            auto size = Render_entt().get<std::vector<Transform_Matrix> >(entity).size();
             for (uint i = 0; i < size; ++i) {
                 auto soa_size = mRenderableData_.size();
                 mRenderableData_.push_back();
-                mRenderableData_.elementAt<SOA_Primitive>(soa_size) =
-                        Render_entt().get<std::vector<VKR_Primitive> >(entity).at(i);
                 mRenderableData_.elementAt<SOA_World_Space_AABB>(soa_size) =
                         Render_entt().get<std::vector<World_Space_AABB> >(entity).at(i);
                 mRenderableData_.elementAt<SOA_Transform_Matrix>(soa_size) =
@@ -438,6 +465,21 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         }
 
 
+        if (view_has_value == true) {
+            mesh_data_      = create_mesh_data(bindless_Geometry_data_);
+            auto primitives = create_primitives(bindless_Geometry_data_);
+            if (primitives.size() == mRenderableData_.size()) {
+                for (size_t i = 0; i < mRenderableData_.size(); ++i) {
+                    mRenderableData_.elementAt<SOA_Primitive>(i) = primitives.at(i);
+                }
+            }
+        }
+    }
+
+
+    // 没有一套完整的, 可以解决全部的办法
+
+    if (primitive_size > 0) {
         auto buffer_size          = RenderableSoa::getNeededSize(mRenderableData_.capacity());
         SOA_buffer_               = create_SSBO_buffer(buffer_size, mRenderableData_.data<0>());
         auto vkr_primitive_buffer = VKR_buffer_offset{

@@ -25,6 +25,9 @@ struct share_block {
 struct Geometry_data_need_copy_tag {
 };
 
+struct Mesh_need_create_tag {
+};
+
 
 Render_AABB find_min_max_point(const share_block &vertex);
 

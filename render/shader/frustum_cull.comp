@@ -69,53 +69,6 @@ float sampleHZB(sampler2D uHZB, vec4 aabbUV){
 }
 
 
-vec4 getScreenAABBUV(AABB_box box, inout float boxClosestDepth) {
-    // 1. 计算 3D 空间下的最小点和最大点
-    vec3 c = box.centroid_points.xyz;
-    vec3 e = box.direction_intervals.xyz;
-    vec3 boxMin = c - e;
-    vec3 boxMax = c + e;
-
-    // 2. 构造 AABB 的 8 个世界/局部空间顶点
-    vec3 vertices[8];
-    vertices[0] = vec3(boxMin.x, boxMin.y, boxMin.z);
-    vertices[1] = vec3(boxMax.x, boxMin.y, boxMin.z);
-    vertices[2] = vec3(boxMin.x, boxMax.y, boxMin.z);
-    vertices[3] = vec3(boxMax.x, boxMax.y, boxMin.z);
-    vertices[4] = vec3(boxMin.x, boxMin.y, boxMax.z);
-    vertices[5] = vec3(boxMax.x, boxMin.y, boxMax.z);
-    vertices[6] = vec3(boxMin.x, boxMax.y, boxMax.z);
-    vertices[7] = vec3(boxMax.x, boxMax.y, boxMax.z);
-
-    // 初始化 UV 的极值
-    // 使用大数值初始化 min，小数值初始化 max 方便后续用 min/max 函数迭代
-    vec2 minUV = vec2(1.0);
-    vec2 maxUV = vec2(0.0);
-
-    // 3. 遍历 8 个顶点进行投影计算
-    for (int i = 0; i < 8; i++) {
-        // 变换到裁剪空间 (Clip Space)
-        vec4 clipSpacePos = projection * view * vec4(vertices[i], 1.0);
-
-        // 归一化设备坐标 (NDC) 变换
-        // 乘以 0.5 + 0.5 是为了将 NDC 的 [-1, 1] 映射到屏幕 UV 的 [0, 1] 空间
-        vec3 ndcPos = clipSpacePos.xyz / clipSpacePos.w;
-        vec2 uv = ndcPos.xy * 0.5 + vec2(0.5);
-
-        // 裁剪保护：防止物体出屏或在相机背面时造成 UV 严重畸变
-        uv = clamp(uv, vec2(0.0), vec2(1.0));
-
-        // 迭代更新屏幕 AABB 的边界
-        minUV = min(minUV, uv);
-        maxUV = max(maxUV, uv);
-        boxClosestDepth = max(boxClosestDepth, ndcPos.z);
-        // 上面用的是 max 是因为  反转了 z 轴
-    }
-
-    // 4. 组合成上一个函数 sampleHZB 需要的 vec4 (aabbUV)
-    // 映射关系：x=min_u, y=min_v, z=max_u, w=max_v
-    return vec4(minUV.x, minUV.y, maxUV.x, maxUV.y);
-}
 
 
 
@@ -170,7 +123,10 @@ bool hiz_cull(sampler2D uHiZDepth, hiz_cull_para frustum, vec2 view_range_x, vec
 }
 
 
-layout (set = 2, binding = 0) uniform sampler2D input_texture;
+layout (set = 0, binding = 0) uniform sampler2D input_texture;
+layout(std430, set = 0, binding = 1) buffer CommandCountBuffer {
+    uint actual_draw_count[1024]; // 给 vkCmdDrawIndexedIndirectCount 专用的计数器
+};
 
 
 layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
