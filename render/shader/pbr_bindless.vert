@@ -33,15 +33,12 @@ layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 outViewVec;
 layout (location = 3) out vec4 outShadowCoord;
 layout (location = 4) out vec3 outWorldPos;
-layout (location = 5) flat out uint outMaterial_index;
-layout (location = 6) flat out uint outInstance_index;
+layout (location = 5) flat out uint outInstance_index;
 
 
 
 void main()
 {
-    outMaterial_index = gl_BaseInstanceARB;
-    //    outMaterial_index = gl_InstanceIndex;
     outInstance_index = gl_InstanceIndex;
     vec4 pos = model_matrix[gl_InstanceIndex] * vec4(inPos.xyz, 1.0);
     outWorldPos = pos.xyz;
