@@ -52,7 +52,7 @@ void prepare_pass(VCB &vcb,
             // 现在绑定的管线是有问题的,
             vcb.default_status();
             // 想调用下面这个, 还需要汇总数据
-            vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
+            // vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
         }
         vcb.end_rendering();
 

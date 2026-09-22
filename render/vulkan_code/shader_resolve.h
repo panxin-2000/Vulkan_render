@@ -52,7 +52,7 @@ struct Update_descriptor_binding {
     VkWriteDescriptorSet descriptor_write_binding = {};
 
     std::pair<bool, VKR_buffer_block_ptr> bufferInfo = {};
-    std::pair<bool, VKR_buffer_ptr> SSBO_bufferInfo  = {};
+    VKR_buffer_offset SSBO_bufferInfo;
     std::pair<bool, Texture_parameter> texture_info;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
     std::pair<bool, VkBufferView> TexelBufferView;

@@ -195,8 +195,8 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_texture2D") {
-                uint32_t index                                          = texture.value().image->get_index();
-                Update_descriptor_binding temp                          = {};
+                uint32_t index = texture.value().image->get_index();
+                Update_descriptor_binding temp;
                 temp.binding_name                                       = "bindless_texture2D";
                 temp.resource_type                                      = "uniform sampler2D";
                 temp.dstSet                                             = set_value;
@@ -220,8 +220,8 @@ void Engine::add_bindless_sampler(const std::optional<Texture_parameter> &textur
     for (auto const &[set_value, bindings_map]: gltf_shader_data->bindless_sets_bindings) {
         for (const auto &[binding_value, info]: bindings_map) {
             if (info.binding_name == "bindless_samplers") {
-                uint32_t index                                       = texture.value().sampler.get_index();
-                Update_descriptor_binding temp                       = {};
+                uint32_t index = texture.value().sampler.get_index();
+                Update_descriptor_binding temp;
                 temp.binding_name                                    = "bindless_samplers";
                 temp.resource_type                                   = "uniform sampler2D";
                 temp.dstSet                                          = set_value;
@@ -249,13 +249,13 @@ void Engine::update_bindless_descriptor_sets_function() {
 
 
 void Engine::destroy() {
-    frustum_culling_buffer_        = nullptr;
-    world_space_aabb_buffer_       = nullptr;
-    vkr_primitive_buffer_          = nullptr;
-    shadow_frustum_culling_buffer_ = nullptr;
-    transform_matrix_buffer_       = nullptr;
-    uint32_t_buffer_               = nullptr;
-    entity_buffer_                 = nullptr;
+    frustum_culling_buffer_.clear();
+    world_space_aabb_buffer_.clear();
+    vkr_primitive_buffer_.clear();
+    shadow_frustum_culling_buffer_.clear();
+    transform_matrix_buffer_.clear();
+    uint32_t_buffer_.clear();
+    entity_buffer_.clear();
 
 
     shader_manager_destroy();
@@ -328,7 +328,7 @@ void Engine::update_global_pbr_parameter(
         if (pbr_components_buffer_ == nullptr) {
             pbr_components_buffer_ = create_SSBO_buffer(ALIGN_1024(size * 2));
         }
-        if (pbr_components_buffer_.get()->complete_size() < size) {
+        if (pbr_components_buffer_.get()->get_size() < size) {
             pbr_components_buffer_ = create_SSBO_buffer(ALIGN_1024(size * 2));
         }
         auto mem_copy_function = [src,size](void *dst) {
@@ -445,16 +445,26 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         }
 
         auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
-        vkr_primitive_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(VKR_Primitive),
-                                                   mRenderableData_.data<0>());
-        world_space_aabb_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(World_Space_AABB),
-                                                      mRenderableData_.data<1>());
-        transform_matrix_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(Transform_Matrix),
-                                                      mRenderableData_.data<2>());
-        uint32_t_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(uint32_t),
-                                              mRenderableData_.data<3>());
-        entity_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(entt::entity),
-                                            mRenderableData_.data<4>());
+        vkr_primitive_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(VKR_Primitive),
+                               mRenderableData_.data<0>())
+        };
+        world_space_aabb_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(World_Space_AABB),
+                               mRenderableData_.data<1>())
+        };
+        transform_matrix_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(Transform_Matrix),
+                               mRenderableData_.data<2>())
+        };
+        uint32_t_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(uint32_t),
+                               mRenderableData_.data<3>())
+        };
+        entity_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(entt::entity),
+                               mRenderableData_.data<4>())
+        };
         // 这里才是正确的内容 ,之后呢 ? 想办法
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                             "global_model_matrix", transform_matrix_buffer_);
@@ -463,12 +473,14 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                             "global_material_parameters", uint32_t_buffer_);
 
-        frustum_culling_buffer_ =
-                create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
-                                   mRenderableData_.data<0>());
-        shadow_frustum_culling_buffer_ =
-                create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
-                                   mRenderableData_.data<0>());
+        frustum_culling_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
+                               mRenderableData_.data<0>())
+        };
+        shadow_frustum_culling_buffer_ = VKR_buffer_offset{
+            create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
+                               mRenderableData_.data<0>())
+        };
     }
 
 

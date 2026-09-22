@@ -37,8 +37,7 @@ public:
 
     ~VKR_buffer();
 
-
-    [[nodiscard]] void *mapped_address() const;
+    bool destroy_buffer();
 
     [[nodiscard]] VkDeviceAddress get_gpu_device_address() const;
 
@@ -46,26 +45,21 @@ public:
 
     [[nodiscard]] bool need_flush() const;
 
-    // timeline 会和这个函数强关联
-    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) {
-        if (timeline > timeline_) timeline_ = timeline;
-        return buffer_handle_;
-    }
+    [[nodiscard]] const VkBuffer get_buffer_handle(const uint64_t timeline = 0);
 
-    // timeline 会和这个函数强关联
     [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0);
-
-    bool unmap_memory() const;
-
-    bool destroy_buffer();
 
     [[nodiscard]] const VKR_buffer &value() const {
         return *this;
     }
 
+    [[nodiscard]] void *mapped_address() const;
+
+    [[nodiscard]] bool unmap_memory() const;
+
     [[nodiscard]] void *map_memory() const;
 
-    [[nodiscard]] VkDeviceSize complete_size() const;
+    [[nodiscard]] VkDeviceSize get_size() const;
 
     [[nodiscard]] static VkDeviceSize get_offset() {
         return 0;
@@ -74,6 +68,51 @@ public:
     bool flush(VkDeviceSize offset = 0, VkDeviceSize size = 0) const;
 
     [[nodiscard]] bool empty() const;
+};
+
+
+class VKR_buffer_offset {
+public:
+    VKR_buffer_offset() {
+    };
+
+    VKR_buffer_offset(const VKR_buffer_ptr &buffer_ptr,
+                      const VkDeviceSize size,
+                      const VkDeviceSize offset = 0) : buffer_ptr_(buffer_ptr),
+                                                       offset_(offset), size_(size) {
+    }
+
+    VKR_buffer_offset(const VKR_buffer_ptr &buffer_ptr) : buffer_ptr_(buffer_ptr) {
+        offset_ = 0;
+        size_   = buffer_ptr->get_size();
+    }
+
+    [[nodiscard]] VkDeviceAddress get_gpu_device_address() const {
+        return buffer_ptr_->get_gpu_device_address();
+    }
+
+    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
+        return buffer_ptr_->get_buffer_handle(timeline);
+    }
+
+    [[nodiscard]] VkDeviceSize get_offset() const {
+        return offset_;
+    }
+
+    [[nodiscard]] VkDeviceSize get_size() const {
+        return size_;
+    }
+
+    void clear() {
+        buffer_ptr_ = nullptr;
+        offset_     = 0;
+        size_       = 0;
+    }
+
+private:
+    VKR_buffer_ptr buffer_ptr_ = nullptr;
+    VkDeviceSize offset_       = 0;
+    VkDeviceSize size_         = 0;
 };
 
 class VKR_buffer_pool : public VKR_buffer {

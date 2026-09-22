@@ -44,7 +44,7 @@ static std::mutex buffer_block_mutex;
     return isVisible;
 }
 
-VkDeviceSize VKR_buffer::complete_size() const {
+VkDeviceSize VKR_buffer::get_size() const {
     const auto &backend = VK_backend::instance();
 
     VmaAllocationInfo allocInfo_for_map;
@@ -75,8 +75,8 @@ bool VKR_buffer::empty() const {
 
 VKR_buffer_pool::VKR_buffer_pool(const VkBuffer buffer_handle,
                                  const VmaAllocation allocation) : VKR_buffer(buffer_handle, allocation) {
-    offset_and_size_map.insert({0, {complete_size(), true}});
-    size_and_offset_map.insert({complete_size(), {0}});
+    offset_and_size_map.insert({0, {get_size(), true}});
+    size_and_offset_map.insert({get_size(), {0}});
 }
 
 std::map<VkDeviceSize, size_and_status> &VKR_buffer_pool::get_offset_and_size_map() {
@@ -109,6 +109,13 @@ const VKR_buffer_block &VKR_buffer_block::value() const {
 const VkBuffer *VKR_buffer::get_buffer_handle_ptr(const uint64_t timeline) {
     if (timeline > timeline_) timeline_ = timeline;
     return &buffer_handle_;
+}
+
+
+
+const VkBuffer VKR_buffer::get_buffer_handle(const uint64_t timeline) {
+    if (timeline > timeline_) timeline_ = timeline;
+    return buffer_handle_;
 }
 
 bool VKR_buffer::unmap_memory() const {
@@ -175,8 +182,8 @@ bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,
         if (mem_copy_callback != nullptr && buffer->mapped_address() != nullptr) {
             mem_copy_callback(buffer->mapped_address());
         }
-        buffer->flush();
-        buffer->unmap_memory();
+        auto value_result = buffer->flush();
+        auto value        = buffer->unmap_memory();
         return true;
     } else {
         return false;

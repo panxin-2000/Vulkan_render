@@ -85,18 +85,18 @@ private:
 
 public:
     RenderableSoa mRenderableData_;
-    VKR_buffer_ptr frustum_culling_buffer_;
-    VKR_buffer_ptr world_space_aabb_buffer_;
-    VKR_buffer_ptr transform_matrix_buffer_;
-    VKR_buffer_ptr uint32_t_buffer_;
-    VKR_buffer_ptr entity_buffer_;
-    VKR_buffer_ptr vkr_primitive_buffer_;
-    VKR_buffer_ptr shadow_frustum_culling_buffer_;
+    VKR_buffer_offset frustum_culling_buffer_;
+    VKR_buffer_offset world_space_aabb_buffer_;
+    VKR_buffer_offset transform_matrix_buffer_;
+    VKR_buffer_offset uint32_t_buffer_;
+    VKR_buffer_offset entity_buffer_;
+    VKR_buffer_offset vkr_primitive_buffer_;
+    VKR_buffer_offset shadow_frustum_culling_buffer_;
 
     static Engine &instance();
 
 
-    VKR_buffer_ptr get_primitive_buffer() {
+    VKR_buffer_offset get_primitive_buffer() {
         return vkr_primitive_buffer_;
     }
 

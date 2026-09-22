@@ -31,12 +31,12 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
             buffer_info->offset                      = binding_update.bufferInfo.second->offset_;
             buffer_info->range                       = binding_update.bufferInfo.second->size_;
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
-        } else if (binding_update.SSBO_bufferInfo.first) {
+        } else if (binding_update.SSBO_bufferInfo.get_size()) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                 allocate(sizeof(VkDescriptorBufferInfo)));
-            buffer_info->buffer                      = binding_update.SSBO_bufferInfo.second->get_buffer_handle();
-            buffer_info->offset                      = binding_update.SSBO_bufferInfo.second->get_offset();
-            buffer_info->range                       = binding_update.SSBO_bufferInfo.second->complete_size();
+            buffer_info->buffer                      = binding_update.SSBO_bufferInfo.get_buffer_handle();
+            buffer_info->offset                      = binding_update.SSBO_bufferInfo.get_offset();
+            buffer_info->range                       = binding_update.SSBO_bufferInfo.get_size();
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
         } else if (binding_update.texture_info.first) {
             const auto image_info = reinterpret_cast<VkDescriptorImageInfo *>(alloc.

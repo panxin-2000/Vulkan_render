@@ -209,7 +209,7 @@ public:
 
 
     void DrawIndexedIndirect(entt::entity entity,
-                             uint32_t command_size, VKR_buffer_ptr read_buffer);
+                             uint32_t command_size, VKR_buffer_offset read_buffer);
 
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
                              VKR_buffer_ptr read_buffer);

@@ -16,7 +16,7 @@
 
 
 #define Update_descriptor_binding_fixed_temp  \
-Update_descriptor_binding temp     = {};\
+Update_descriptor_binding temp     ;\
 temp.binding_name                   = binding_name;\
 temp.resource_type                  = info.resource_type;\
 temp.dstSet                         = set_value;\
@@ -27,6 +27,27 @@ temp.descriptor_write_binding.descriptorCount  = 1;\
 temp.descriptor_write_binding.pBufferInfo      = nullptr;\
 temp.descriptor_write_binding.pImageInfo       = nullptr;\
 temp.descriptor_write_binding.pTexelBufferView = nullptr;
+
+
+// inline bool vk_update_buffer_parameter(sets_map &sets_map_in_for,
+//                                        std::map<std::string, Update_descriptor_binding> &update_descriptor_write,
+//                                        const std::string &binding_name,
+//                                        const VKR_buffer_offset &binding_data) {
+//     for (auto const &[set_value, bindings_map]: sets_map_in_for) {
+//         for (const auto &[binding_value, info]: bindings_map) {
+//             if (info.binding_name == binding_name && info.resource_type == "storage buffer") {
+//                 {
+//                     Update_descriptor_binding_fixed_temp;
+//                     temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+//                     temp.SSBO_bufferInfo                         = {true, binding_data};
+//                     update_descriptor_write[binding_name]        = temp;
+//                     return true;
+//                 }
+//             }
+//         }
+//     }
+//     return false;
+// }
 
 
 template<typename T1>
@@ -49,7 +70,14 @@ bool VK_update_parameter(sets_map &sets_map_in_for,
                 if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_ptr>) {
                     Update_descriptor_binding_fixed_temp;
                     temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                    temp.SSBO_bufferInfo                         = {true, binding_data};
+                    temp.SSBO_bufferInfo = VKR_buffer_offset{binding_data, binding_data->get_size(), 0};
+                    update_descriptor_write[binding_name] = temp;
+                    return true;
+                }
+                if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_offset>) {
+                    Update_descriptor_binding_fixed_temp;
+                    temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    temp.SSBO_bufferInfo                         = binding_data;
                     update_descriptor_write[binding_name]        = temp;
                     return true;
                 }
@@ -123,7 +151,7 @@ inline bool add_texture_data_detail(sets_map &sets_map_in_for,
                 auto &handle = VK_backend::instance();
                 auto texture = create_textures_to_gpu(picture_path);
                 if (texture.has_value()) {
-                    Update_descriptor_binding temp      = {};
+                    Update_descriptor_binding temp;
                     temp.binding_name                   = binding_name;
                     temp.resource_type                  = info.resource_type;
                     temp.dstSet                         = set_value;

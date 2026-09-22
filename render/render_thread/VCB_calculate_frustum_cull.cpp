@@ -400,14 +400,14 @@ void VCB::calculate_frustum_cull(Engine &engine,
         command_calculate.hiz_max_lod             = depth->get_mipLevels();
         command_calculate.frustum_planes          = frustum_planes;
         command_calculate.command_size            = engine.mRenderableData_.size();
-        command_calculate.IndirectCommandsAddress = engine.frustum_culling_buffer_->get_gpu_device_address();
-        command_calculate.AABB_boxesAddress       = engine.world_space_aabb_buffer_->get_gpu_device_address();
+        command_calculate.IndirectCommandsAddress = engine.frustum_culling_buffer_.get_gpu_device_address();
+        command_calculate.AABB_boxesAddress       = engine.world_space_aabb_buffer_.get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, 124,
                            &command_calculate);
 
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
-        VKR_buffer_ptr write_buffer_ptr = engine.frustum_culling_buffer_;
+        VKR_buffer_offset write_buffer_ptr = engine.frustum_culling_buffer_;
         write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
                                             .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
                                             .pNext = nullptr,
@@ -425,7 +425,7 @@ void VCB::calculate_frustum_cull(Engine &engine,
                                             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
                                             // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                                            .buffer = write_buffer_ptr->get_buffer_handle(time_line_),
+                                            .buffer = write_buffer_ptr.get_buffer_handle(time_line_),
                                             // 这里的buffer 句柄 应该从哪里拿?
                                             .offset = 0,
                                             // 7. 填入该缓冲区的实际字节大小，或使用 VK_WHOLE_SIZE 覆盖整块内存
@@ -437,7 +437,7 @@ void VCB::calculate_frustum_cull(Engine &engine,
         if (i < light_frustum_planes.size() && command_calculate.light_write_buffer[i] != nullptr) {
             command_calculate.frustum_planes          = light_frustum_planes[i]; // 还需要在这里更新一次
             command_calculate.IndirectCommandsAddress =
-                    engine.shadow_frustum_culling_buffer_->get_gpu_device_address();
+                    engine.shadow_frustum_culling_buffer_.get_gpu_device_address();
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
                                &command_calculate);
@@ -460,7 +460,7 @@ void VCB::calculate_frustum_cull(Engine &engine,
                                                 .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
                                                 // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                                                .buffer = engine.shadow_frustum_culling_buffer_->
+                                                .buffer = engine.shadow_frustum_culling_buffer_.
                                                 get_buffer_handle(time_line_),
                                                 // 这里的buffer 句柄 应该从哪里拿?
                                                 .offset = 0,
