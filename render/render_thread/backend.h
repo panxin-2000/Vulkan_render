@@ -7,7 +7,7 @@
 #include "vulkan_backend.h"
 #include "engine.h"
 
-void render_thread_start(VK_backend &backend,Engine & engine );
+void render_thread_start(VK_backend & backend, Engine & engine);
 
 void render_thread_stop();
 

@@ -28,7 +28,7 @@
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
-
+#include "opacity_batch.h"
 
 struct Engine {
 private:
@@ -62,59 +62,18 @@ private:
     uint32_t current_CSM        = 0;
     bool update_frustum_culling = true;
 
+    VKR_buffer_ptr CommandCountBuffer_;
+    opacity_batch opacity_batch_;
 
-    VKR_buffer_ptr SOA_buffer_;
 
     struct Static_Model {
     };
 
 public:
-    using RenderableSoa = utils::StructureOfArrays<
-        VKR_Primitive,    //
-        Local_Space_AABB, //
-        World_Space_AABB, //
-        Transform_Matrix, //
-        uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
-        entt::entity,     //
-        VKR_Primitive,    //
-        VKR_Primitive     //
-    >;
-
-    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
-    enum {
-        SOA_Primitive,              //   4 | instance of the Renderable component
-        SOA_Local_Space_AABB,       //   4 | instance of the Renderable component
-        SOA_World_Space_AABB,       //   4 | instance of the Renderable component
-        SOA_Transform_Matrix,       //   4 | instance of the Renderable component
-        SOA_material_index,         //   4 | instance of the Renderable component
-        SOA_entity,                 //   4 | instance of the Renderable component
-        SOA_frustum_culling,        //   4 | instance of the Renderable component
-        SOA_shadow_frustum_culling, //   4 | instance of the Renderable component
-    };
-
-private:
-    RenderableSoa mRenderableData_;
-    Mesh_data mesh_data_;
-    VKR_buffer_ptr CommandCountBuffer_;
-    Geometry_data bindless_Geometry_data_;
-
-public:
     static Engine &instance();
 
-    const RenderableSoa &get_renderable_SOA_data() const {
-        return mRenderableData_;
-    }
-
-    const Mesh_data &get_mesh_data() const {
-        return mesh_data_;
-    }
-
-    const VKR_buffer_ptr &get_SOA_buffer() const {
-        return SOA_buffer_;
-    }
-
-    const VKR_buffer_ptr &get_CommandCountBuffer_() const {
-        return CommandCountBuffer_;
+    opacity_batch &get_opacity_batch() {
+        return opacity_batch_;
     }
 
 
@@ -202,6 +161,10 @@ public:
 
     std::array<FrustumPlanes, 4> get_light_frustum_planes() const {
         return global_parameters_.light_frustum_planes;
+    }
+
+    const VKR_buffer_ptr &get_CommandCountBuffer_() const {
+        return CommandCountBuffer_;
     }
 
 

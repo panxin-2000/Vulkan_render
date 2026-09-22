@@ -49,7 +49,7 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
                                      VK_ATTACHMENT_LOAD_OP_CLEAR);
     auto view = Render_entt().view<opacity_tag, Name_component, VKR_shader_paths>();
 
-    if (engine.get_renderable_SOA_data().size() > 0) {
+    if (engine.get_opacity_batch().get_renderable_SOA_data().size() > 0) {
         auto shader_path = get_gltf_shader_path();
         shader_path.clear_define_macro();
         shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;

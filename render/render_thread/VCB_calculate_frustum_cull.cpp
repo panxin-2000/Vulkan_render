@@ -373,7 +373,11 @@ void VCB::add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &b
 void VCB::calculate_frustum_cull(Engine &engine,
                                  const FrustumPlanes &frustum_planes,
                                  const std::array<FrustumPlanes, 4> &light_frustum_planes,
-                                 const VKR_image_ptr &depth) {
+                                 const VKR_image_ptr &depth, uint32_t command_size,
+                                 VKR_buffer_offset frustum_culling_buffer,
+                                 VKR_buffer_offset Primitives_buffer,
+                                 VKR_buffer_offset world_space_aabb_buffer,
+                                 VKR_buffer_offset shadow_frustum_culling_buffer) {
     {
         auto compute_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
 
@@ -400,21 +404,7 @@ void VCB::calculate_frustum_cull(Engine &engine,
         GPU_frustum_cull command_calculate;
         command_calculate.hiz_max_lod    = depth->get_mipLevels();
         command_calculate.frustum_planes = frustum_planes;
-        command_calculate.command_size   = engine.get_renderable_SOA_data().size();
-
-        auto frustum_culling_buffer = VKR_buffer_offset{
-            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-            Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling, engine.get_renderable_SOA_data().capacity())
-        };
-        auto Primitives_buffer = VKR_buffer_offset{
-            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-            Engine::RenderableSoa::getOffset(Engine::SOA_Primitive, engine.get_renderable_SOA_data().capacity())
-        };
-
-        auto world_space_aabb_buffer = VKR_buffer_offset{
-            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB),
-            Engine::RenderableSoa::getOffset(Engine::SOA_World_Space_AABB, engine.get_renderable_SOA_data().capacity())
-        };
+        command_calculate.command_size   = command_size;
 
         command_calculate.frustum_cullingAddress = frustum_culling_buffer.get_gpu_device_address();
         command_calculate.PrimitivesAddress      = Primitives_buffer.get_gpu_device_address();
@@ -432,18 +422,13 @@ void VCB::calculate_frustum_cull(Engine &engine,
                            VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
 
 
-        auto shadow_frustum_culling_buffer = VKR_buffer_offset{
-            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-            Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling, engine.get_renderable_SOA_data().capacity())
-        };
-
         uint &i = engine.get_current_CSM();
         if (i < light_frustum_planes.size()) {
             command_calculate.frustum_planes         = light_frustum_planes[i]; // 还需要在这里更新一次
             command_calculate.PrimitivesAddress      = Primitives_buffer.get_gpu_device_address();
             command_calculate.frustum_cullingAddress = shadow_frustum_culling_buffer.get_gpu_device_address();
             command_calculate.AABB_boxesAddress      = world_space_aabb_buffer.get_gpu_device_address();
-            command_calculate.command_size   = engine.get_renderable_SOA_data().size();
+            command_calculate.command_size           = command_size;
 
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),

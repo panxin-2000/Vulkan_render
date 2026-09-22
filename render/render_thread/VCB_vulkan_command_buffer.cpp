@@ -5,8 +5,10 @@
 
 #include <vec2.hpp>
 
+#include "engine.h"
 #include "shader_component.h"
 #include "SSAO_parameters.h"
+#include "vulkan_execute_command.h"
 
 void VCB::reset_current_command_buffer(const uint64_t time_line, VkCommandBuffer command_buffer) {
     command_buffer_ = command_buffer;

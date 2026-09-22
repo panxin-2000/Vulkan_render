@@ -12,13 +12,14 @@
 #include "../render/render_common/PBR_component.h"
 #include "base_3d_render_object.h"
 #include "camera_optical_component.h"
+#include "engine.h"
 #include "scene_component.h"
 #include "select_component.h"
 #include "stb_image.h"
 #include "time_measure.h"
 #include "tinyddsloader.h"
 #include "transform_AABB.h"
-#include "world_scene_root.h"
+#include "fastgltf/tools.hpp"
 
 std::optional<fastgltf::Asset> get_gltf_model(const std::filesystem::path &path) {
     fastgltf::Asset model;

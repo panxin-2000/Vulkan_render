@@ -8,6 +8,7 @@
 
 #include "shader_create.h"
 #include "descriptor.h"
+#include "engine.h"
 #include "pipeline_layout_component.h"
 #include "scene_component.h"
 #include "sets_and_bindings_layout.h"

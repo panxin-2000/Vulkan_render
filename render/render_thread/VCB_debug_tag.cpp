@@ -2,6 +2,7 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 #include "VCB_vulkan_command_buffer.h"
+#include "vulkan_backend.h"
 
 
 /**

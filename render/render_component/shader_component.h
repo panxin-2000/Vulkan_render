@@ -9,7 +9,6 @@
 
 #include "create_texture.h"
 #include "descriptor.h"
-#include "../engine.h"
 #include "sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"

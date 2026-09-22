@@ -4,6 +4,7 @@
 
 #include "PBR_component.h"
 
+#include "engine.h"
 #include "global_singleton.h"
 #include "../render_component/shader_component.h"
 

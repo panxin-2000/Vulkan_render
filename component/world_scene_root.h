@@ -6,6 +6,8 @@
 #define HELLO_MAC_WORLD_SCENE_ROOT_H
 #include <scene_component.h>
 
+#include "base_event.h"
+
 
 void init_world_scene_root(entt::entity entity);
 

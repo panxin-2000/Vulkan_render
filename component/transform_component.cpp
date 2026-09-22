@@ -5,6 +5,7 @@
 #include "transform_component.h"
 
 #include "camera_optical_component.h"
+#include "engine.h"
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"

@@ -6,11 +6,7 @@
 #define HELLO_MAC_SCENE_COMPONENT_H
 #include <iostream>
 #include <vector>
-#include <entt/entt.hpp>
-#include "base_event.h"
-#include "base_geometry/base.h"
 #include "global_singleton.h"
-#include "backend.h"
 #include "mesh_component.h"
 
 

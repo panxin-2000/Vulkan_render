@@ -9,6 +9,7 @@
 #include "Rect_2D_component.h"
 #include "shader_component.h"
 #include "VKR_proxy_component.h"
+#include "vulkan_execute_command.h"
 #include "vulkan_render_manage.h"
 #include "world_scene_root.h"
 

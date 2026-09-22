@@ -28,25 +28,26 @@ void prepare_pass(VCB &vcb,
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
-    if (engine.get_frustum_culling() == true && engine.get_renderable_SOA_data().size() > 0) {
-        vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image);
+    if (engine.get_frustum_culling() == true) {
+        vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image,
+                                   {},
+                                   {},
+                                   {},
+                                   {},
+                                   {});
     } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);
-        if (engine.get_renderable_SOA_data().size() > 0) {
-            auto shader_path = get_gltf_shader_path();
-            shader_path.clear_define_macro();
-            shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
-            shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
-            shader_path.add_define_macro("PASS_DEPTH_AND_PICKUP", 1);
-            const auto &shader_data_ref =
-                    engine.get_shader_manager().find(shader_path);
-            vcb.bind_pipeline_update_parameter(entt::null, shader_data_ref);
-            // 现在绑定的管线是有问题的,
-            vcb.default_status();
-            // 想调用下面这个, 还需要汇总数据
-            // vcb.DrawIndexedIndirect(entity, command_calculate.command_size, command_calculate.camera_write_buffer);
-        }
+        auto shader_path = get_gltf_shader_path();
+        shader_path.clear_define_macro();
+        shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
+        shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
+        shader_path.add_define_macro("PASS_DEPTH_AND_PICKUP", 1);
+        const auto &shader_data_ref =
+                engine.get_shader_manager().find(shader_path);
+
+        engine.get_opacity_batch().draw_depth_batch(vcb, shader_data_ref);
+
         vcb.end_rendering();
 
 
@@ -129,22 +130,10 @@ void render_different_pass(VCB &vcb,
             for (const auto entity: view) {
                 vcb.build_draw_command(entity);
             }
-        } {
-            if (engine.get_renderable_SOA_data().size() > 0) {
-                auto gltf_shader_data = engine.get_shader_manager().get_gltf_shader_data();
-                vcb.bind_pipeline_update_parameter(entt::null, gltf_shader_data);
-                auto frustum_culling_buffer = VKR_buffer_offset{
-                    engine.get_SOA_buffer(),
-                    engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-                    Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling,
-                                                     engine.get_renderable_SOA_data().capacity())
-                };
-                Mesh_data mesh_data = engine.get_mesh_data(); // 首先需要把 这个 解决掉
-                VKR_Render_state render_state;                // 这个还算比较好解决
-                vcb.DrawIndexedIndirect(mesh_data, render_state, engine.get_renderable_SOA_data().size(),
-                                        frustum_culling_buffer);
-            }
-        } {
+        }
+        engine.get_opacity_batch().draw_batch(vcb, engine.get_shader_manager().get_gltf_shader_data());
+        // 上面一行是绘制一个已经 绑定好的 批次
+        {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
                                            opacity_tag,
                                            Name_component>();

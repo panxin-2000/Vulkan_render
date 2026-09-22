@@ -4,9 +4,15 @@
 
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
+#include "frustum.h"
 #include "render_mesh.h"
 #include "render_state.h"
-#include "../engine.h"
+#include "vulkan_image.h"
+#include "global_singleton.h"
+#include "shader_resolve.h"
+
+class VK_backend;
+class Engine;
 
 struct G_buffer_image_index {
     uint32_t position_image_index;
@@ -154,7 +160,8 @@ public:
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 
-    void add_buffer_barrier(const VKR_buffer_offset &buffer, VkPipelineStageFlags srcStageMask, VkAccessFlags srcAccessMask,
+    void add_buffer_barrier(const VKR_buffer_offset &buffer, VkPipelineStageFlags srcStageMask,
+                            VkAccessFlags srcAccessMask,
                             VkPipelineStageFlags dstStageMask, VkAccessFlags dstAccessMask);
 
 
@@ -265,11 +272,14 @@ public:
 
     void add_buffer_write_to_read_barriers(const std::vector<VKR_buffer_ptr> &buffer_ptrs) const;
 
-    void calculate_frustum_cull(
-        Engine &engine,
-        const FrustumPlanes &frustum_planes,
-        const std::array<FrustumPlanes, 4> &light_frustum_planes,
-        const VKR_image_ptr &depth);
+    void calculate_frustum_cull(Engine &engine,
+                                const FrustumPlanes &frustum_planes,
+                                const std::array<FrustumPlanes, 4> &light_frustum_planes,
+                                const VKR_image_ptr &depth, uint32_t command_size,
+                                VKR_buffer_offset frustum_culling_buffer,
+                                VKR_buffer_offset Primitives_buffer,
+                                VKR_buffer_offset world_space_aabb_buffer,
+                                VKR_buffer_offset shadow_frustum_culling_buffer);
 
     void default_status() const {
         constexpr VKR_Render_state temp;
