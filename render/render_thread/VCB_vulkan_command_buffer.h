@@ -4,7 +4,6 @@
 
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
-#include "GPU_frustum_cull.h"
 #include "render_mesh.h"
 #include "render_state.h"
 #include "../engine.h"
@@ -215,7 +214,7 @@ public:
                              uint32_t command_size, VKR_buffer_offset read_buffer);
 
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
-                             VKR_buffer_ptr read_buffer);
+                             VKR_buffer_offset read_buffer);
 
     inline void draw(
         const Mesh_data &mesh_data,

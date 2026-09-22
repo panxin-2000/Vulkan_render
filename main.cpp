@@ -45,7 +45,6 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
     return interval;
 }
 
-VKR_shader_paths get_gltf_shader_path();
 
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");

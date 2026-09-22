@@ -12,7 +12,6 @@
 #include "../render/render_common/PBR_component.h"
 #include "base_3d_render_object.h"
 #include "camera_optical_component.h"
-#include "GPU_frustum_cull.h"
 #include "scene_component.h"
 #include "select_component.h"
 #include "stb_image.h"
@@ -904,9 +903,7 @@ void update_entity_to_screen(const entt::entity model_entity) {
     }
 }
 
-VKR_shader_paths get_gltf_shader_path();
 
-VKR_shader_paths get_skinning_shader_path();
 
 
 entt::entity load_gltf_model(const std::string &name, const std::filesystem::path &path,
@@ -1090,8 +1087,6 @@ void deal_new_add_model(const entt::entity model_entity) {
     load_gltf_material_separate(model_entity); // 之后尽量删除
 
     gltf_update_joint_matrix(model_entity);
-    auto &temp = Logic_entt().emplace<GPU_frustum_cull>(model_entity);
-    logic_update_proxy(model_entity, temp);
 }
 
 

@@ -3,7 +3,6 @@
 //
 
 
-#include "GPU_frustum_cull.h"
 #include "../engine.h"
 #include "render_proxy.h"
 #include "../render_common/render_state.h"
@@ -124,7 +123,7 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
 }
 
 void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
-                              uint32_t command_size, VKR_buffer_ptr read_buffer) {
+                              uint32_t command_size, VKR_buffer_offset read_buffer) {
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
                            mesh_data.vertices->get_buffer_handle_ptr(time_line_),
                            &mesh_data.vertices_offset);
@@ -136,7 +135,7 @@ void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state
                              mesh_data.indices_offset,
                              mesh_data.index_type);
         vkCmdDrawIndexedIndirect(command_buffer_,
-                                 read_buffer->get_buffer_handle(time_line_),
+                                 read_buffer.get_buffer_handle(time_line_),
                                  0,
                                  command_size,
                                  sizeof(VkDrawIndexedIndirectCommand));

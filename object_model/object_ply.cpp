@@ -17,7 +17,6 @@
 #include "world_scene_root.h"
 #include "PLYLoader.h"
 
-VKR_shader_paths get_gltf_shader_path();
 
 
 object_3DGS::object_3DGS(const std::string &name) : logic_render_object(name) {

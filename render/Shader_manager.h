@@ -34,4 +34,9 @@ public:
 };
 
 
+VKR_shader_paths get_gltf_shader_path();
+
+VKR_shader_paths get_skinning_shader_path();
+
+
 #endif //HELLO_MAC_SHADER_MANAGER_H

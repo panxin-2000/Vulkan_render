@@ -9,7 +9,6 @@
 #include "name_component.h"
 #include "VKR_proxy_component.h"
 
-VKR_shader_paths get_gltf_shader_path();
 
 
 logic_render_object::logic_render_object(const std::string &name) : entity(Logic_entt().create()) {
