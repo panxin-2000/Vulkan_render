@@ -116,7 +116,7 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
                              mesh_data.index_type);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
-                                 0,
+                                 read_buffer.get_offset(),
                                  command_size,
                                  sizeof(VkDrawIndexedIndirectCommand));
     }
@@ -136,7 +136,7 @@ void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state
                              mesh_data.index_type);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
-                                 0,
+                                 read_buffer.get_offset(),
                                  command_size,
                                  sizeof(VkDrawIndexedIndirectCommand));
     }
