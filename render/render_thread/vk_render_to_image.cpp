@@ -136,7 +136,7 @@ void render_different_pass(VCB &vcb,
                 auto frustum_culling_buffer = VKR_buffer_offset{
                     engine.get_SOA_buffer(),
                     engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-                    Engine::RenderableSoa::getOffset(Engine::SOA_Primitive,
+                    Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling,
                                                      engine.get_renderable_SOA_data().capacity())
                 };
                 Mesh_data mesh_data = engine.get_mesh_data(); // 首先需要把 这个 解决掉

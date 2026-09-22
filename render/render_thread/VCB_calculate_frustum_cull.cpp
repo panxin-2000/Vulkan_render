@@ -417,7 +417,7 @@ void VCB::calculate_frustum_cull(Engine &engine,
         };
 
         command_calculate.frustum_cullingAddress = frustum_culling_buffer.get_gpu_device_address();
-        command_calculate.PrimitivesAddress      = frustum_culling_buffer.get_gpu_device_address();
+        command_calculate.PrimitivesAddress      = Primitives_buffer.get_gpu_device_address();
         command_calculate.AABB_boxesAddress      = world_space_aabb_buffer.get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                            VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
@@ -425,7 +425,8 @@ void VCB::calculate_frustum_cull(Engine &engine,
 
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
 
-        add_buffer_barrier(frustum_culling_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        add_buffer_barrier(frustum_culling_buffer,
+                           VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
                            VK_ACCESS_2_SHADER_WRITE_BIT,
                            VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
                            VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
@@ -439,8 +440,11 @@ void VCB::calculate_frustum_cull(Engine &engine,
         uint &i = engine.get_current_CSM();
         if (i < light_frustum_planes.size()) {
             command_calculate.frustum_planes         = light_frustum_planes[i]; // 还需要在这里更新一次
-            command_calculate.PrimitivesAddress      = frustum_culling_buffer.get_gpu_device_address();
+            command_calculate.PrimitivesAddress      = Primitives_buffer.get_gpu_device_address();
             command_calculate.frustum_cullingAddress = shadow_frustum_culling_buffer.get_gpu_device_address();
+            command_calculate.AABB_boxesAddress      = world_space_aabb_buffer.get_gpu_device_address();
+            command_calculate.command_size   = engine.get_renderable_SOA_data().size();
+
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
                                &command_calculate);
