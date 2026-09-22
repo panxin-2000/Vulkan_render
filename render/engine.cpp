@@ -250,7 +250,8 @@ void Engine::update_bindless_descriptor_sets_function() {
 
 
 void Engine::destroy() {
-    SOA_buffer_ = nullptr;
+    SOA_buffer_        = nullptr;
+    CommandCountBuffer_ = nullptr;
     shader_manager_destroy();
 
     for (auto i = 0; i < maxFramesInFlight; i++) {

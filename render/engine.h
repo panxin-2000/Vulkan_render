@@ -70,6 +70,7 @@ private:
 public:
     using RenderableSoa = utils::StructureOfArrays<
         VKR_Primitive,    //
+        Local_Space_AABB, //
         World_Space_AABB, //
         Transform_Matrix, //
         uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
@@ -81,6 +82,7 @@ public:
     // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
     enum {
         SOA_Primitive,              //   4 | instance of the Renderable component
+        SOA_Local_Space_AABB,       //   4 | instance of the Renderable component
         SOA_World_Space_AABB,       //   4 | instance of the Renderable component
         SOA_Transform_Matrix,       //   4 | instance of the Renderable component
         SOA_material_index,         //   4 | instance of the Renderable component
@@ -91,6 +93,7 @@ public:
 
 private:
     RenderableSoa mRenderableData_;
+    VKR_buffer_ptr CommandCountBuffer_;
 
 public:
     static Engine &instance();
@@ -101,6 +104,10 @@ public:
 
     const VKR_buffer_ptr &get_SOA_buffer() const {
         return SOA_buffer_;
+    }
+
+    const VKR_buffer_ptr &get_CommandCountBuffer_() const {
+        return CommandCountBuffer_;
     }
 
 

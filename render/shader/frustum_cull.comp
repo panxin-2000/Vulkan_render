@@ -7,7 +7,7 @@
 #extension GL_EXT_scalar_block_layout: require
 #extension GL_ARB_gpu_shader_int64: require
 
-#include "global_shader_common.glsl"
+#include "commom_function_and_struct.glsl"
 
 layout (buffer_reference, scalar) readonly buffer AABB_boxes {
     AABB_box aabb_box[];
@@ -192,7 +192,7 @@ void main()
     //        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
     //        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
     //        if (result == true) {
-    //        uint index_offset = atomicAdd(Primitives_buffer.command[0].instanceCount, 1);
+    //        uint index_offset = atomicAdd(actual_draw_count[0], 1);
     uint index_offset = idx;
     frustum_culling_buffer.command[index_offset].indexCount = Primitives_buffer.command[idx].indexCount;
     frustum_culling_buffer.command[index_offset].instanceCount = uint(result);

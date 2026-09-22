@@ -383,6 +383,9 @@ void VCB::calculate_frustum_cull(Engine &engine,
         VK_update_parameter(compute_shader->object_sets_bindings,
                             parameter.update_object_descriptor_sets, "input_texture",
                             offscreen);
+        VK_update_parameter(compute_shader->object_sets_bindings,
+                            parameter.update_object_descriptor_sets, "CommandCountBuffer",
+                            engine.get_CommandCountBuffer_);
         allocate_descriptor_sets(parameter, compute_shader, time_line_);
         auto temp = get_descriptor_sets(parameter, compute_shader);
         update_descriptor_sets(parameter.update_object_descriptor_sets, temp);

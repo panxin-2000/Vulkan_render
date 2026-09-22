@@ -141,3 +141,32 @@ void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state
                                  sizeof(VkDrawIndexedIndirectCommand));
     }
 }
+
+
+// 这里是什么意思呢?  多批次物体剔除或大规模场景渲染 , 不是一个 批次 就完成了的
+void VCB::DrawIndexedIndirectCount(const Mesh_data &mesh_data,
+                                   const VKR_Render_state &render_state,
+                                   VKR_buffer_offset read_buffer,
+                                   VKR_buffer_offset countBuffer) {
+    vkCmdBindVertexBuffers(command_buffer_, 0, 1,
+                           mesh_data.vertices->get_buffer_handle_ptr(time_line_),
+                           &mesh_data.vertices_offset);
+    if (mesh_data.indices != nullptr &&
+        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+        render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        vkCmdBindIndexBuffer(command_buffer_,
+                             mesh_data.indices->get_buffer_handle(),
+                             mesh_data.indices_offset,
+                             mesh_data.index_type);
+        vkCmdDrawIndexedIndirectCount(
+                                      command_buffer_,
+                                      read_buffer.get_buffer_handle(time_line_), // 包含 draw_commands[] 的缓冲区
+                                      read_buffer.get_offset(),                  // 数组起始偏移
+                                      countBuffer.get_buffer_handle(time_line_), // 包含 actual_draw_count 的缓冲区
+                                      countBuffer.get_offset(),                  // 计数器在 buffer 中的偏移
+                                      countBuffer.get_size() / sizeof(VkDrawIndexedIndirectCommand),
+                                      // 允许的最大批次数量（通常是你的场景最大物体数，防止 GPU 越界）
+                                      sizeof(VkDrawIndexedIndirectCommand) // 每个命令的步长
+                                     );
+    }
+}

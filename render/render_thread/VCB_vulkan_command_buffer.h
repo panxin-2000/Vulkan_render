@@ -216,6 +216,9 @@ public:
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
                              VKR_buffer_offset read_buffer);
 
+    void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
+                                  VKR_buffer_offset read_buffer, VKR_buffer_offset countBuffer);
+
     inline void draw(
         const Mesh_data &mesh_data,
         const std::vector<VKR_Primitive> &primitives,
