@@ -5,7 +5,6 @@
 #include "transform_component.h"
 
 #include "camera_optical_component.h"
-#include "GPU_frustum_cull.h"
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
@@ -54,37 +53,6 @@ Render_AABB transform_AABB(const Render_AABB &bound_box, const Eigen::Matrix4f &
     };
 }
 
-
-void update_frustum_cull_box(const entt::entity model_entity) {
-    if (Logic_entt().all_of<std::vector<World_Space_AABB>,
-                            std::vector<VKR_Primitive>,
-                            GPU_frustum_cull>(model_entity)) {
-        const auto &boxes = Logic_entt().get<std::vector<World_Space_AABB> >(model_entity);
-
-        const auto &primitives = Logic_entt().get<std::vector<VKR_Primitive> >(model_entity);
-
-        auto &frustum_cull        = Logic_entt().get<GPU_frustum_cull>(model_entity);
-        frustum_cull.command_size = primitives.size(); {
-            const auto boxes_ptr           = boxes.data();
-            auto boxes_size                = boxes.size() * sizeof(World_Space_AABB);
-            auto boxes_buffer              = create_SSBO_buffer(boxes_size, boxes_ptr);
-            frustum_cull.AABB_boxesAddress = boxes_buffer->get_gpu_device_address();
-            frustum_cull.AABB_boxes_buffer = boxes_buffer;
-        } {
-            const auto primitives_ptr            = primitives.data();
-            auto primitives_size                 = primitives.size() * sizeof(VKR_Primitive);
-            auto primitives_buffer               = create_SSBO_buffer(primitives_size, primitives_ptr);
-            frustum_cull.IndirectCommandsAddress = primitives_buffer->get_gpu_device_address();
-            frustum_cull.camera_write_buffer     = primitives_buffer;
-            // 下面的几行还是需要测试的 , 为什么呢? 因为计算的时候只去算了 是否到绘制, 其他的信息根本没添加或者更改
-            frustum_cull.light_write_buffer[0] = create_SSBO_buffer(primitives_size, primitives_ptr);
-            frustum_cull.light_write_buffer[1] = create_SSBO_buffer(primitives_size, primitives_ptr);
-            frustum_cull.light_write_buffer[2] = create_SSBO_buffer(primitives_size, primitives_ptr);
-            frustum_cull.light_write_buffer[3] = create_SSBO_buffer(primitives_size, primitives_ptr);
-        }
-        logic_update_proxy(model_entity, frustum_cull);
-    }
-}
 
 void update_primitives_model_matrix(const entt::entity model_entity) {
     if (Logic_entt().all_of<Transform_Matrix, std::vector<Transform_Matrix> >(model_entity)) {

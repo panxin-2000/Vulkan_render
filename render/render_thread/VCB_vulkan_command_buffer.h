@@ -155,6 +155,9 @@ public:
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 
+    void add_buffer_barrier(const VKR_buffer_offset &buffer, VkPipelineStageFlags srcStageMask, VkAccessFlags srcAccessMask,
+                            VkPipelineStageFlags dstStageMask, VkAccessFlags dstAccessMask);
+
 
     /**
      *  blank_stage / compute_write_image2D /

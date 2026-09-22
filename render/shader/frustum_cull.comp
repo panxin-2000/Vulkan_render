@@ -24,11 +24,12 @@ struct hiz_cull_para{
 
 
 layout (push_constant) uniform PushConstant {
-    Frustum frustum;
-    uint64_t AABB_boxesAddress;
-    uint64_t IndirectCommandsAddress;
-    uint command_size;
-    hiz_cull_para para;
+    Frustum frustum;                   // vec4 = 16 * 6 = 96
+    uint64_t AABB_boxesAddress;        //  8 + 96 = 104
+    uint64_t PrimitivesAddress;  //  8 + 104 = 112
+    uint64_t frustum_cullingAddress;  //  8 + 104 = 112
+    uint command_size;                 //  124
+    uint hiz_max_lod;                  //  128
 } push_constant;
 
 /**
@@ -181,18 +182,23 @@ void main()
         return;
     }
     AABB_boxes AABB_boxes_buffer = AABB_boxes(push_constant.AABB_boxesAddress);
-    IndirectCommands command_buffer = IndirectCommands(push_constant.IndirectCommandsAddress);
+    IndirectCommands Primitives_buffer = IndirectCommands(push_constant.PrimitivesAddress);
+    IndirectCommands frustum_culling_buffer = IndirectCommands(push_constant.frustum_cullingAddress);
     bool result = IsAABBInFrustum(push_constant.frustum, AABB_boxes_buffer.aabb_box[idx]);
-    if (result == true) {
-        //        uint write_index = atomicAdd(draw_count, 1);
-        // // 利用这个独一无二的索引，紧密无缝地写入输出数组
-        //        float boxClosestDepth;
-        //        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
-        //        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
-        //        if (result == true) {
-        command_buffer.command[idx].instanceCount = 1;
-        //        }
-    } else {
-        command_buffer.command[idx].instanceCount = 0;
-    }
+    //    if (result == true) {
+    //        uint write_index = atomicAdd(draw_count, 1);
+    // // 利用这个独一无二的索引，紧密无缝地写入输出数组
+    //        float boxClosestDepth;
+    //        vec4 view_range = getScreenAABBUV(AABB_boxes_buffer.aabb_box[idx], boxClosestDepth);
+    //        result = hiz_cull(input_texture, push_constant.para, view_range.xy, view_range.zw, boxClosestDepth);
+    //        if (result == true) {
+    //        uint index_offset = atomicAdd(Primitives_buffer.command[0].instanceCount, 1);
+    uint index_offset = idx;
+    frustum_culling_buffer.command[index_offset].indexCount = Primitives_buffer.command[idx].indexCount;
+    frustum_culling_buffer.command[index_offset].instanceCount = uint(result);
+    frustum_culling_buffer.command[index_offset].firstIndex = Primitives_buffer.command[idx].firstIndex;
+    frustum_culling_buffer.command[index_offset].vertexOffset = Primitives_buffer.command[idx].vertexOffset;
+    frustum_culling_buffer.command[index_offset].firstInstance = Primitives_buffer.command[idx].firstInstance;
+    //        }
+    //    }
 }

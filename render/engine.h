@@ -32,12 +32,12 @@
 struct Engine {
 private:
     // 也许这里需要一个 VK_backend 的指针
-    std::vector<VkCommandPool> command_pools_                     = {};
-    std::array<VkCommandBuffer, 3> command_buffers_               = {};
-    std::array<VkQueryPool, maxFramesInFlight> query_pools        = {};
-    std::array<VKR_buffer_ptr, maxFramesInFlight> pickup_buffers_ = {};
+    std::vector<VkCommandPool> command_pools_                = {};
+    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_ = {};
 
-    std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
+    std::array<VkCommandBuffer, 3> command_buffers_                       = {};
+    std::array<VkQueryPool, maxFramesInFlight> query_pools                = {};
+    std::array<VKR_buffer_ptr, maxFramesInFlight> pickup_buffers_         = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
     uint32_t global_descriptor_sets_index                                 = 0;
 
@@ -47,7 +47,6 @@ private:
     Command_submit_manager command_submit_manager_;
     Shader_manager shader_manager_;
     PBR_manager pbr_manager_;
-
 
     VkSemaphore vk_timeline_semaphore_ = VK_NULL_HANDLE;
     std::atomic<uint64_t> framerate_   = 0;
@@ -63,42 +62,47 @@ private:
     bool update_frustum_culling = true;
 
 
-    using RenderableSoa = utils::StructureOfArrays<
-        VKR_Primitive,    //
-        World_Space_AABB, //
-        Transform_Matrix, //
-        uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
-        entt::entity      //
-    >;
-
-    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
-    enum {
-        SOA_Primitive,        //   4 | instance of the Renderable component
-        SOA_World_Space_AABB, //   4 | instance of the Renderable component
-        SOA_Transform_Matrix, //   4 | instance of the Renderable component
-        SOA_material_index,   //   4 | instance of the Renderable component
-        SOA_entity,           //   4 | instance of the Renderable component
-    };
+    VKR_buffer_ptr SOA_buffer_;
 
     struct Static_Model {
     };
 
 public:
-    RenderableSoa mRenderableData_;
-    VKR_buffer_offset frustum_culling_buffer_;
-    VKR_buffer_offset world_space_aabb_buffer_;
-    VKR_buffer_offset transform_matrix_buffer_;
-    VKR_buffer_offset uint32_t_buffer_;
-    VKR_buffer_offset entity_buffer_;
-    VKR_buffer_offset vkr_primitive_buffer_;
-    VKR_buffer_offset shadow_frustum_culling_buffer_;
+    using RenderableSoa = utils::StructureOfArrays<
+        VKR_Primitive,    //
+        World_Space_AABB, //
+        Transform_Matrix, //
+        uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
+        entt::entity,     //
+        VKR_Primitive,    //
+        VKR_Primitive     //
+    >;
 
+    // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
+    enum {
+        SOA_Primitive,              //   4 | instance of the Renderable component
+        SOA_World_Space_AABB,       //   4 | instance of the Renderable component
+        SOA_Transform_Matrix,       //   4 | instance of the Renderable component
+        SOA_material_index,         //   4 | instance of the Renderable component
+        SOA_entity,                 //   4 | instance of the Renderable component
+        SOA_frustum_culling,        //   4 | instance of the Renderable component
+        SOA_shadow_frustum_culling, //   4 | instance of the Renderable component
+    };
+
+private:
+    RenderableSoa mRenderableData_;
+
+public:
     static Engine &instance();
 
-
-    VKR_buffer_offset get_primitive_buffer() {
-        return vkr_primitive_buffer_;
+    const RenderableSoa &get_renderable_SOA_data() const {
+        return mRenderableData_;
     }
+
+    const VKR_buffer_ptr &get_SOA_buffer() const {
+        return SOA_buffer_;
+    }
+
 
     uint32_t &get_current_CSM() {
         return current_CSM;

@@ -30,18 +30,15 @@ void prepare_pass(VCB &vcb,
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
-    if (engine.get_frustum_culling() == true) {
-        auto view = Render_entt().view<GPU_frustum_cull>();
-        for (const auto entity: view)
-            vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image);
+    if (engine.get_frustum_culling() == true && engine.get_renderable_SOA_data().size() > 0) {
+        vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image);
     } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);
         auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component, VKR_shader_paths>();
         for (const auto entity: view) {
-            auto command_calculate = Render_entt().get<GPU_frustum_cull>(entity);
-            auto name              = Render_entt().get<Name_component>(entity);
-            auto shader_path       = Render_entt().get<VKR_shader_paths>(entity);
+            auto name        = Render_entt().get<Name_component>(entity);
+            auto shader_path = Render_entt().get<VKR_shader_paths>(entity);
             shader_path.clear_define_macro();
             shader_path.depthAttachmentFormat_   = VK_FORMAT_D32_SFLOAT;
             shader_path.stencilAttachmentFormat_ = VK_FORMAT_UNDEFINED;
@@ -139,12 +136,16 @@ void render_different_pass(VCB &vcb,
         } {
             auto view = Render_entt().view<opacity_tag, GPU_frustum_cull, Name_component>();
             for (const auto entity: view) {
-                auto command_calculate      = Render_entt().get<GPU_frustum_cull>(entity);
                 auto name                   = Render_entt().get<Name_component>(entity);
                 const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
                 vcb.bind_pipeline_update_parameter(entity, shader_data_ref);
                 //  vcb.DrawIndexedIndirect({}, {}, command_calculate.command_size, engine.frustum_culling_buffer_);
-                vcb.DrawIndexedIndirect(entity, command_calculate.command_size, engine.frustum_culling_buffer_);
+                auto frustum_culling_buffer = VKR_buffer_offset{
+                    engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+                    Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling,
+                                                     engine.get_renderable_SOA_data().capacity())
+                };
+                vcb.DrawIndexedIndirect(entity, engine.get_renderable_SOA_data().size(), frustum_culling_buffer);
             }
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,
@@ -331,8 +332,8 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                         compute_dof_blur_image);
     vcb.end_command_buffer(backend, engine);
 
-    vcb.submit_render_queue(backend, engine);  //
-    backend.copy_image_to_screen(); // 这里应该改为 backend
+    vcb.submit_render_queue(backend, engine); //
+    backend.copy_image_to_screen();           // 这里应该改为 backend
 
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);

@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#include "../render_component/GPU_frustum_cull.h"
+#include "GPU_frustum_cull.h"
 #include "engine.h"
 #include "global_singleton.h"
 #include "object_ply.h"
@@ -391,95 +391,57 @@ void VCB::calculate_frustum_cull(Engine &engine,
         bind_Proxy_descriptor_sets(temp, compute_shader->pipeline_layout,
                                    VK_PIPELINE_BIND_POINT_COMPUTE);
 
-
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
         std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
 
         GPU_frustum_cull command_calculate;
-        command_calculate.hiz_min_lod             = 0;
-        command_calculate.hiz_max_lod             = depth->get_mipLevels();
-        command_calculate.frustum_planes          = frustum_planes;
-        command_calculate.command_size            = engine.mRenderableData_.size();
-        command_calculate.IndirectCommandsAddress = engine.frustum_culling_buffer_.get_gpu_device_address();
-        command_calculate.AABB_boxesAddress       = engine.world_space_aabb_buffer_.get_gpu_device_address();
+        command_calculate.hiz_min_lod    = 0;
+        command_calculate.hiz_max_lod    = depth->get_mipLevels();
+        command_calculate.frustum_planes = frustum_planes;
+        command_calculate.command_size   = engine.get_renderable_SOA_data().size();
+
+        auto frustum_culling_buffer = VKR_buffer_offset{
+            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling, engine.get_renderable_SOA_data().capacity())
+        };
+
+        auto world_space_aabb_buffer = VKR_buffer_offset{
+            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB),
+            Engine::RenderableSoa::getOffset(Engine::SOA_World_Space_AABB, engine.get_renderable_SOA_data().capacity())
+        };
+
+        command_calculate.IndirectCommandsAddress = frustum_culling_buffer.get_gpu_device_address();
+        command_calculate.AABB_boxesAddress       = world_space_aabb_buffer.get_gpu_device_address();
         vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
-                           VK_SHADER_STAGE_COMPUTE_BIT, 0, 124,
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
                            &command_calculate);
 
         vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
-        VKR_buffer_offset write_buffer_ptr = engine.frustum_culling_buffer_;
-        write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
-                                            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
-                                            .pNext = nullptr,
-                                            // 2. 优化 Stage：前一个阶段是 Compute Shader 执行完成
-                                            .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                            // 3. 优化 Access：前一个动作是 Compute Shader 的写入完成
-                                            .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
 
-                                            // 4. 关键：接下来的阶段是 间接绘制命令读取（Draw Indirect Fetch）
-                                            .dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-                                            // 5. 关键：接下来的动作是 读取间接参数缓冲区（Indirect Buffer Read）
-                                            .dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
+        add_buffer_barrier(frustum_culling_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                           VK_ACCESS_2_SHADER_WRITE_BIT,
+                           VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+                           VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
 
-                                            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 
-                                            // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                                            .buffer = write_buffer_ptr.get_buffer_handle(time_line_),
-                                            // 这里的buffer 句柄 应该从哪里拿?
-                                            .offset = 0,
-                                            // 7. 填入该缓冲区的实际字节大小，或使用 VK_WHOLE_SIZE 覆盖整块内存
-                                            .size = VK_WHOLE_SIZE,
-                                        });
-
+        auto shadow_frustum_culling_buffer = VKR_buffer_offset{
+            engine.get_SOA_buffer(), engine.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            Engine::RenderableSoa::getOffset(Engine::SOA_frustum_culling, engine.get_renderable_SOA_data().capacity())
+        };
 
         uint &i = engine.get_current_CSM();
-        if (i < light_frustum_planes.size() && command_calculate.light_write_buffer[i] != nullptr) {
+        if (i < light_frustum_planes.size()) {
             command_calculate.frustum_planes          = light_frustum_planes[i]; // 还需要在这里更新一次
-            command_calculate.IndirectCommandsAddress =
-                    engine.shadow_frustum_culling_buffer_.get_gpu_device_address();
+            command_calculate.IndirectCommandsAddress = shadow_frustum_culling_buffer.get_gpu_device_address();
             vkCmdPushConstants(command_buffer_, compute_shader->pipeline_layout,
-                               VK_SHADER_STAGE_COMPUTE_BIT, 0, 116,
+                               VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(GPU_frustum_cull),
                                &command_calculate);
-
             vkCmdDispatch(command_buffer_, ALIGN_256(command_calculate.command_size) / 256, 1, 1);
-            write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
-                                                .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
-                                                .pNext = nullptr,
-                                                // 2. 优化 Stage：前一个阶段是 Compute Shader 执行完成
-                                                .srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
-                                                // 3. 优化 Access：前一个动作是 Compute Shader 的写入完成
-                                                .srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT,
-
-                                                // 4. 关键：接下来的阶段是 间接绘制命令读取（Draw Indirect Fetch）
-                                                .dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
-                                                // 5. 关键：接下来的动作是 读取间接参数缓冲区（Indirect Buffer Read）
-                                                .dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT,
-
-                                                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-                                                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-
-                                                // 6. 填入你那个存放 Indirect Commands 的实际 VkBuffer 句柄
-                                                .buffer = engine.shadow_frustum_culling_buffer_.
-                                                get_buffer_handle(time_line_),
-                                                // 这里的buffer 句柄 应该从哪里拿?
-                                                .offset = 0,
-                                                // 7. 填入该缓冲区的实际字节大小，或使用 VK_WHOLE_SIZE 覆盖整块内存
-                                                .size = VK_WHOLE_SIZE,
-                                            });
+            add_buffer_barrier(shadow_frustum_culling_buffer,
+                               VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                               VK_ACCESS_2_SHADER_WRITE_BIT,
+                               VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT,
+                               VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT);
         }
-
-        VkDependencyInfo barrierDependencyInfo{
-            .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .pNext                    = nullptr,
-            .dependencyFlags          = 0, // 默认填零，需要VR 或其他选项时才需要填
-            .memoryBarrierCount       = 0,
-            .pMemoryBarriers          = nullptr,
-            .bufferMemoryBarrierCount = static_cast<uint32_t>(write_buffer_barriers.size()),
-            .pBufferMemoryBarriers    = write_buffer_barriers.data(),
-            .imageMemoryBarrierCount  = 0,
-            .pImageMemoryBarriers     = nullptr,
-        };
-        vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
     }
 }

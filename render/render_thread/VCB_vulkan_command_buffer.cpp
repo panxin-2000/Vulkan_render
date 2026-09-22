@@ -650,6 +650,37 @@ void VCB::dof_composite(Engine &engine,
 }
 
 
+void VCB::add_buffer_barrier(const VKR_buffer_offset &buffer,
+                             const VkPipelineStageFlags srcStageMask,
+                             const VkAccessFlags srcAccessMask,
+                             const VkPipelineStageFlags dstStageMask,
+                             const VkAccessFlags dstAccessMask) {
+    std::vector<VkBufferMemoryBarrier2> write_buffer_barriers;
+    write_buffer_barriers.push_back(VkBufferMemoryBarrier2{
+                                        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2, // 1. 修正 stype 类型
+                                        .pNext = nullptr,
+                                        .srcStageMask = srcStageMask,
+                                        .srcAccessMask = srcAccessMask,
+                                        .dstStageMask = dstStageMask,
+                                        .dstAccessMask = dstAccessMask,
+                                        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                                        .buffer = buffer.get_buffer_handle(time_line_),
+                                        .offset = buffer.get_offset(),
+                                        .size = buffer.get_size(),
+                                    });
+
+    VkDependencyInfo drawImageDependencyInfo{
+        .sType                    = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .bufferMemoryBarrierCount = static_cast<uint32_t>(write_buffer_barriers.size()),
+        .pBufferMemoryBarriers    = write_buffer_barriers.data(),
+        .imageMemoryBarrierCount  = 0,
+        .pImageMemoryBarriers     = nullptr,
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &drawImageDependencyInfo);
+}
+
+
 void VCB::add_image_barrier(const VKR_image_ptr &image,
                             const VkPipelineStageFlags srcStageMask,
                             const VkAccessFlags srcAccessMask,

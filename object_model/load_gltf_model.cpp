@@ -1090,11 +1090,8 @@ void deal_new_add_model(const entt::entity model_entity) {
     load_gltf_material_separate(model_entity); // 之后尽量删除
 
     gltf_update_joint_matrix(model_entity);
-
-
-    Logic_entt().emplace<GPU_frustum_cull>(model_entity);
-    update_frustum_cull_box(model_entity);
-    // 上面的两行,终归是要删除的
+    auto &temp = Logic_entt().emplace<GPU_frustum_cull>(model_entity);
+    logic_update_proxy(model_entity, temp);
 }
 
 

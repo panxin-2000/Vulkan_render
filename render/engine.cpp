@@ -250,15 +250,7 @@ void Engine::update_bindless_descriptor_sets_function() {
 
 
 void Engine::destroy() {
-    frustum_culling_buffer_.clear();
-    world_space_aabb_buffer_.clear();
-    vkr_primitive_buffer_.clear();
-    shadow_frustum_culling_buffer_.clear();
-    transform_matrix_buffer_.clear();
-    uint32_t_buffer_.clear();
-    entity_buffer_.clear();
-
-
+    SOA_buffer_ = nullptr;
     shader_manager_destroy();
 
     for (auto i = 0; i < maxFramesInFlight; i++) {
@@ -425,8 +417,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
 
     if (primitive_size > 0) {
         mRenderableData_.clear();
-        mRenderableData_.setCapacity(primitive_size);
-        // soa.push_back(0.0f, 1.0, destroyedFloat4);
+        mRenderableData_.setCapacity(ALIGN_16(primitive_size));
         for (const auto entity: view) {
             auto size = Render_entt().get<std::vector<VKR_Primitive> >(entity).size();
             for (uint i = 0; i < size; ++i) {
@@ -445,56 +436,38 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
             }
         }
 
-        auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
-        auto SOA_buffer       = create_SSBO_buffer(buffer_size, mRenderableData_.data<0>());
-        vkr_primitive_buffer_ = VKR_buffer_offset{
-            SOA_buffer, mRenderableData_.capacity() * sizeof(VKR_Primitive),
-            RenderableSoa::getOffset(0, mRenderableData_.capacity())
-        };
-        world_space_aabb_buffer_ = VKR_buffer_offset{
-            SOA_buffer, mRenderableData_.capacity() * sizeof(World_Space_AABB),
-            RenderableSoa::getOffset(1, mRenderableData_.capacity())
-        };
-        transform_matrix_buffer_ = VKR_buffer_offset{
-            SOA_buffer, mRenderableData_.capacity() * sizeof(Transform_Matrix),
-            RenderableSoa::getOffset(2, mRenderableData_.capacity())
-        };
-        uint32_t_buffer_ = VKR_buffer_offset{
-            SOA_buffer, mRenderableData_.capacity() * sizeof(uint32_t),
-            RenderableSoa::getOffset(3, mRenderableData_.capacity())
-        };
-        entity_buffer_ = VKR_buffer_offset{
-            SOA_buffer, mRenderableData_.capacity() * sizeof(entt::entity),
-            RenderableSoa::getOffset(4, mRenderableData_.capacity())
-        };
-        // 这里才是正确的内容 ,之后呢 ? 想办法
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_model_matrix", transform_matrix_buffer_);
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_entity_to_screen", entity_buffer_);
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_material_parameters", uint32_t_buffer_);
 
-        frustum_culling_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
-                               mRenderableData_.data<0>())
+        auto buffer_size          = RenderableSoa::getNeededSize(mRenderableData_.capacity());
+        SOA_buffer_               = create_SSBO_buffer(buffer_size, mRenderableData_.data<0>());
+        auto vkr_primitive_buffer = VKR_buffer_offset{
+            SOA_buffer_, mRenderableData_.capacity() * sizeof(VKR_Primitive),
+            RenderableSoa::getOffset(SOA_Primitive, mRenderableData_.capacity())
         };
-        shadow_frustum_culling_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
-                               mRenderableData_.data<0>())
+        auto world_space_aabb_buffer = VKR_buffer_offset{
+            SOA_buffer_, mRenderableData_.capacity() * sizeof(World_Space_AABB),
+            RenderableSoa::getOffset(SOA_World_Space_AABB, mRenderableData_.capacity())
         };
+        auto global_model_matrix = VKR_buffer_offset{
+            SOA_buffer_, mRenderableData_.capacity() * sizeof(Transform_Matrix),
+            RenderableSoa::getOffset(SOA_Transform_Matrix, mRenderableData_.capacity())
+        };
+        auto global_material_parameters = VKR_buffer_offset{
+            SOA_buffer_, mRenderableData_.capacity() * sizeof(uint32_t),
+            RenderableSoa::getOffset(SOA_material_index, mRenderableData_.capacity())
+        };
+        auto global_entity_to_screen = VKR_buffer_offset{
+            SOA_buffer_, mRenderableData_.capacity() * sizeof(entt::entity),
+            RenderableSoa::getOffset(SOA_entity, mRenderableData_.capacity())
+        };
+
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_model_matrix", global_model_matrix);
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_entity_to_screen", global_entity_to_screen);
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_material_parameters", global_material_parameters);
     }
 
-
-    // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-    //                      "global_compute_Texture", compute_texture);
-    //
-    // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-    //                      "global_SSAO_compute_write", SSAO);
-    // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-    //                      "global_Blur_SSAO_compute_write", blur_write_SSAO);
-    // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-    //                      "global_dof_BlurImg", dof_blur);
 
     update_global_pbr_parameter(update_global_descriptor_sets);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
