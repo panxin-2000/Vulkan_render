@@ -596,6 +596,12 @@ namespace utils {
             }
         };
 
+        // this calculates the offset adjusted for all data alignment of a given array
+        static inline size_t getOffset(size_t index, size_t capacity) noexcept {
+            auto offsets = getOffsets(capacity);
+            return offsets[index];
+        }
+
     private:
         // 下面两个是很 好玩的事情， 巧妙的 I 为 sizeof...(Tp) 的时候函数非空
         // 其他的时候都是 递归的 向上更新 I 值并调用
@@ -634,12 +640,6 @@ namespace utils {
             }
             // record the new size of the arrays
             mSize = needed;
-        }
-
-        // this calculates the offset adjusted for all data alignment of a given array
-        static inline size_t getOffset(size_t index, size_t capacity) noexcept {
-            auto offsets = getOffsets(capacity);
-            return offsets[index];
         }
 
         static inline std::array<size_t, kArrayCount> getOffsets(size_t capacity) noexcept {

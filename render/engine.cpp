@@ -210,6 +210,7 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
                 temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
                 temp.texture_info                                       = {true, texture.value()};
                 update_bindless_descriptor_sets_[std::to_string(index)] = temp;
+                // 多线程的情况下 偶现 出现问题
             }
         }
     }
@@ -422,7 +423,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         primitive_size += size;
     }
 
-    if (primitive_size > 0 && primitive_size > mRenderableData_.size()) {
+    if (primitive_size > 0) {
         mRenderableData_.clear();
         mRenderableData_.setCapacity(primitive_size);
         // soa.push_back(0.0f, 1.0, destroyedFloat4);
@@ -445,25 +446,26 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         }
 
         auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
+        auto SOA_buffer       = create_SSBO_buffer(buffer_size, mRenderableData_.data<0>());
         vkr_primitive_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(VKR_Primitive),
-                               mRenderableData_.data<0>())
+            SOA_buffer, mRenderableData_.capacity() * sizeof(VKR_Primitive),
+            RenderableSoa::getOffset(0, mRenderableData_.capacity())
         };
         world_space_aabb_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(World_Space_AABB),
-                               mRenderableData_.data<1>())
+            SOA_buffer, mRenderableData_.capacity() * sizeof(World_Space_AABB),
+            RenderableSoa::getOffset(1, mRenderableData_.capacity())
         };
         transform_matrix_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(Transform_Matrix),
-                               mRenderableData_.data<2>())
+            SOA_buffer, mRenderableData_.capacity() * sizeof(Transform_Matrix),
+            RenderableSoa::getOffset(2, mRenderableData_.capacity())
         };
         uint32_t_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(uint32_t),
-                               mRenderableData_.data<3>())
+            SOA_buffer, mRenderableData_.capacity() * sizeof(uint32_t),
+            RenderableSoa::getOffset(3, mRenderableData_.capacity())
         };
         entity_buffer_ = VKR_buffer_offset{
-            create_SSBO_buffer(mRenderableData_.capacity() * sizeof(entt::entity),
-                               mRenderableData_.data<4>())
+            SOA_buffer, mRenderableData_.capacity() * sizeof(entt::entity),
+            RenderableSoa::getOffset(4, mRenderableData_.capacity())
         };
         // 这里才是正确的内容 ,之后呢 ? 想办法
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,

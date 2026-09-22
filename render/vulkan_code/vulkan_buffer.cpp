@@ -112,7 +112,6 @@ const VkBuffer *VKR_buffer::get_buffer_handle_ptr(const uint64_t timeline) {
 }
 
 
-
 const VkBuffer VKR_buffer::get_buffer_handle(const uint64_t timeline) {
     if (timeline > timeline_) timeline_ = timeline;
     return buffer_handle_;
@@ -191,7 +190,8 @@ bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,
 }
 
 VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
-                                 const VkBufferUsageFlags usage, const VmaAllocationCreateFlags flags) {
+                                 const VkBufferUsageFlags usage,
+                                 const VmaAllocationCreateFlags flags) {
     VkBuffer buffer                = VK_NULL_HANDLE;
     VmaAllocation allocation       = VK_NULL_HANDLE;
     const VkDeviceSize buffer_size = size;

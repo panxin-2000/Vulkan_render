@@ -88,7 +88,7 @@ public:
     }
 
     [[nodiscard]] VkDeviceAddress get_gpu_device_address() const {
-        return buffer_ptr_->get_gpu_device_address();
+        return buffer_ptr_->get_gpu_device_address() + offset_;
     }
 
     [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
