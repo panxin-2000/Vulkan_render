@@ -9,7 +9,7 @@
 
 VKR_buffer_pool_ptr &get_uniform_buffer();
 
-VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size);
+VKR_buffer_ptr create_SSBO_buffer(VkDeviceSize size);
 
 template<typename... Args>
 VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
@@ -43,14 +43,14 @@ VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
     }
 }
 
-VKR_buffer_ptr copy_data_to_SSBO_buffer(const void *src, uint64_t size);
+VKR_buffer_ptr create_SSBO_buffer(VkDeviceSize size, const void *src);
 
 
 template<typename T1>
 VKR_buffer_ptr copy_data_to_SSBO_buffer(const std::vector<T1> &data) {
     const auto primitives_ptr = data.data();
     auto primitives_size      = data.size() * sizeof(T1);
-    auto primitives_buffer    = copy_data_to_SSBO_buffer(primitives_ptr, primitives_size);
+    auto primitives_buffer    = create_SSBO_buffer(primitives_size, primitives_ptr);
     return primitives_buffer;
 }
 

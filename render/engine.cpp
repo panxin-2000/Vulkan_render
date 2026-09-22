@@ -445,33 +445,30 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         }
 
         auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
-        vkr_primitive_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
-                                                         mRenderableData_.capacity() * sizeof(VKR_Primitive));
-        world_space_aabb_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<1>(),
-                                                            mRenderableData_.capacity() * sizeof(World_Space_AABB));
-        transform_matrix_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<2>(),
-                                                            mRenderableData_.capacity() * sizeof(Transform_Matrix));
-        uint32_t_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<3>(),
-                                                    mRenderableData_.capacity() * sizeof(uint32_t));
-        entity_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<4>(),
-                                                  mRenderableData_.capacity() * sizeof(entt::entity));
+        vkr_primitive_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(VKR_Primitive),
+                                                   mRenderableData_.data<0>());
+        world_space_aabb_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(World_Space_AABB),
+                                                      mRenderableData_.data<1>());
+        transform_matrix_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(Transform_Matrix),
+                                                      mRenderableData_.data<2>());
+        uint32_t_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(uint32_t),
+                                              mRenderableData_.data<3>());
+        entity_buffer_ = create_SSBO_buffer(mRenderableData_.capacity() * sizeof(entt::entity),
+                                            mRenderableData_.data<4>());
         // 这里才是正确的内容 ,之后呢 ? 想办法
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                             "global_model_matrix", transform_matrix_buffer_);
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                             "global_entity_to_screen", entity_buffer_);
-        // 一直没有想到,是下面的出现了问题
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                             "global_material_parameters", uint32_t_buffer_);
 
-        //
-        //
         frustum_culling_buffer_ =
-                copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
-                                         sizeof(VKR_Primitive) * mRenderableData_.capacity());
+                create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
+                                   mRenderableData_.data<0>());
         shadow_frustum_culling_buffer_ =
-                copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
-                                         sizeof(VKR_Primitive) * mRenderableData_.capacity());
+                create_SSBO_buffer(sizeof(VKR_Primitive) * mRenderableData_.capacity(),
+                                   mRenderableData_.data<0>());
     }
 
 

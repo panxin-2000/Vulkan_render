@@ -28,10 +28,10 @@ void add_simple_computer_buffer_write() {
     Logic_entt().emplace<compute_group_count>(entity, 10, 10, 10);
     const auto group_count = Logic_entt().get<compute_group_count>(entity);
     auto temp_ptr          = create_SSBO_buffer(ALIGN_1024(sizeof(VkDrawIndexedIndirectCommand) *
-                                                  group_count.X *
-                                                  group_count.Y *
-                                                  group_count.Z *
-                                                  8 * 8 * 1));
+                                                           group_count.X *
+                                                           group_count.Y *
+                                                           group_count.Z *
+                                                           8 * 8 * 1));
 
     // 下面是设置一个参数
     logic_set_render_parameter(entity, "IndirectDraws", temp_ptr);

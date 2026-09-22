@@ -62,7 +62,7 @@ bool set_render_span_parameter(const entt::entity entity,
                                const std::span<T1> &binding_data) {
     const auto data_ptr = binding_data.data();
     auto size           = binding_data.size_bytes();
-    auto buffer         = copy_data_to_SSBO_buffer(data_ptr, size);
+    auto buffer         = create_SSBO_buffer(size, data_ptr);
     if (auto proxy_entity = get_proxy_entity(entity); proxy_entity != entt::null) {
         vk_render_queue::instance().render_update_entt(render_render_parameter<VKR_buffer_ptr>,
                                                        proxy_entity,

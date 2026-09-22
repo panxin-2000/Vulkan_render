@@ -40,7 +40,7 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
     return buffer;
 }
 
-VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
+VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                    VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
                                    VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT,
@@ -53,10 +53,10 @@ VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize &size) {
  * 一个需要注意的地方是 原本资源想要放置在哪里必须确定好，最后放置在哪里也是需要确定好的
  * 一个是负责具体复制的函数，
  * 另一个是复制完成之后资源是否需要释放的函数
- * @param src
  * @param size
+ * @param src
  */
-VKR_buffer_ptr copy_data_to_SSBO_buffer(const void *src, uint64_t size) {
+VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize size, const void *src) {
     if (size > 0) {
         const auto &backend = VK_backend::instance();
         auto temp_ptr       = create_SSBO_buffer(ALIGN_1024(size));

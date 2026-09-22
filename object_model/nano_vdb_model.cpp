@@ -23,7 +23,7 @@ void copy_nvdb1_to_gpu_memory(entt::entity entity, const std::string &name,
     if (!handle.empty()) {
         const auto ptr  = handle.data();
         const auto size = handle.bufferSize();
-        auto buffer     = copy_data_to_SSBO_buffer(ptr, size);
+        auto buffer     = create_SSBO_buffer(size, ptr);
         logic_set_render_parameter(entity, "nanovdb_buffer", buffer);
         // set_render_parameter(entity, "nanovdb_size", size);
     }

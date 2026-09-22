@@ -40,15 +40,15 @@ void object_3DGS::add_model(const std::string &file_path) {
     parameters.far = 1000;
     parameters.gaussianCount = gaussianData->_numGaussians;
     parameters.shDegree = gaussianData->_shDegree;
-    parameters.radius_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(int));
-    parameters.depth_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float));
-    parameters.rgb_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
-    parameters.conicOpacity_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
-    parameters.pointsXY_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 2);
-    parameters.tilesTouched_ptr = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(uint32_t));
+    parameters.radius_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(int), nullptr);
+    parameters.depth_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(float), nullptr);
+    parameters.rgb_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(float) * 4, nullptr);
+    parameters.conicOpacity_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(float) * 4, nullptr);
+    parameters.pointsXY_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(float) * 2, nullptr);
+    parameters.tilesTouched_ptr = create_SSBO_buffer(parameters.gaussianCount * sizeof(uint32_t), nullptr);
     parameters.tilesTouched_Prefix_Sum_ptr =
-            copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(uint32_t));
-    parameters.bbox_ptr            = copy_data_to_SSBO_buffer(nullptr, parameters.gaussianCount * sizeof(float) * 4);
+            create_SSBO_buffer(parameters.gaussianCount * sizeof(uint32_t), nullptr);
+    parameters.bbox_ptr            = create_SSBO_buffer(parameters.gaussianCount * sizeof(float) * 4, nullptr);
     // parameters.keysUnsorted        = copy_data_to_SSBO_buffer(nullptr, 5000000000 * sizeof(uint64_t));
     // parameters.valuesUnsorted      = copy_data_to_SSBO_buffer(nullptr, 5000000000 * sizeof(uint32_t));
     // parameters.swap_keysUnsorted   = copy_data_to_SSBO_buffer(nullptr, 5000000000 * sizeof(uint64_t));

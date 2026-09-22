@@ -7,10 +7,11 @@
 #include <memory_resource>
 #include <vector>
 
+// 这里 update_descriptor_sets 这个参数总是容易出现问题
 void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &update_descriptor_sets,
                             const std::vector<DescriptorSet_ptr> &descriptor_sets) {
     const auto &vk_backend = VK_backend::instance();
-    char stack_memory_pool[1024 * 2];
+    char stack_memory_pool[1024 * 8];
     std::pmr::monotonic_buffer_resource pool{stack_memory_pool, sizeof(stack_memory_pool)};
     std::pmr::polymorphic_allocator<std::byte> alloc{&pool};
 
