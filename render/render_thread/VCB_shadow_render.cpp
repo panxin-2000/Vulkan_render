@@ -58,7 +58,7 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
         shader_path.add_define_macro("PASS_SHADOW_MAP", 1);
         const auto &shader_data_ref =
                 engine.get_shader_manager().find(shader_path);
-        bind_pipeline_update_parameter(entity, shader_data_ref);
+        bind_pipeline_update_parameter(entity, shader_data_ref); // 重点的问题出在这一行 
         // 这里就需要看看怎么push
         // 现在这里的压力有点大,看看怎么分散到多帧
         // 这么改帧率是能上去的,但是需要注意一下关于清除的问题
@@ -75,8 +75,8 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
             temp_state.write_commands(command_buffer_);
 
             // 这里的 size 还是有问题的
-            DrawIndexedIndirect(entity, command_calculate.command_size,
-                                engine.shadow_frustum_culling_buffer_);
+            // DrawIndexedIndirect(entity, command_calculate.command_size,
+            //                     engine.shadow_frustum_culling_buffer_);
         }
     }
     end_rendering();

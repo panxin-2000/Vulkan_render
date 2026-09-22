@@ -40,7 +40,6 @@ private:
     std::vector<DescriptorSet_ptr> bindless_descriptor_sets_              = {};
     std::array<std::vector<DescriptorSet_ptr>, 3> global_descriptor_sets_ = {};
     uint32_t global_descriptor_sets_index                                 = 0;
-    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets_;
 
 
     Render_image_manager render_image_manager_;
@@ -88,6 +87,9 @@ public:
     RenderableSoa mRenderableData_;
     VKR_buffer_ptr frustum_culling_buffer_;
     VKR_buffer_ptr world_space_aabb_buffer_;
+    VKR_buffer_ptr transform_matrix_buffer_;
+    VKR_buffer_ptr uint32_t_buffer_;
+    VKR_buffer_ptr entity_buffer_;
     VKR_buffer_ptr vkr_primitive_buffer_;
     VKR_buffer_ptr shadow_frustum_culling_buffer_;
 
