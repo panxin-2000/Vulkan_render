@@ -68,7 +68,7 @@ private:
         VKR_Primitive,    //
         World_Space_AABB, //
         Transform_Matrix, //
-        uint32_t,         //
+        uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
         entt::entity      //
     >;
 

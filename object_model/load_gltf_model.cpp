@@ -853,7 +853,7 @@ void load_materials(std::vector<uint32_t> &material_indices,
 
 void update_material(entt::entity model_entity) {
     {
-        std::vector<uint32_t> temp;
+        Gltf_material_parameters temp;
 
         auto material_indices    = Logic_entt().try_get<Gpu_material_indices>(model_entity);
         auto material_parameters = Logic_entt().try_get<Gltf_material_parameters>(model_entity);
@@ -873,8 +873,8 @@ void update_material(entt::entity model_entity) {
         }
         if (!temp.empty()) {
             const std::span temp_span = temp;
-            set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
-            logic_update_proxy(model_entity, *material_parameters);
+            // set_render_span_parameter(model_entity, "model_material_parameters", temp_span);
+            logic_update_proxy(model_entity, temp);
         }
     }
 }
@@ -1087,7 +1087,7 @@ void deal_new_add_model(const entt::entity model_entity) {
     combine_boxes_and_matrices(model_entity);
     combine_material(model_entity);
     combine_geometry(model_entity);
-
+    load_gltf_material_separate(model_entity); // 之后尽量删除
 
     gltf_update_joint_matrix(model_entity);
 

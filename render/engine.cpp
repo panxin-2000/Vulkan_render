@@ -439,6 +439,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                         Render_entt().get<screen_pick_entity>(entity).at(i);
             }
         }
+
         auto buffer_size      = RenderableSoa::getNeededSize(mRenderableData_.capacity());
         vkr_primitive_buffer_ = copy_data_to_SSBO_buffer(mRenderableData_.data<0>(),
                                                          mRenderableData_.capacity() * sizeof(VKR_Primitive));
@@ -456,8 +457,9 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
         VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
                             "global_entity_to_screen", entity_buffer);
         // 一直没有想到,是下面的出现了问题
-        // VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
-        //                     "global_material_parameters", uint32_t_buffer);
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets_,
+                            "global_material_parameters", uint32_t_buffer);
+
         //
         //
         frustum_culling_buffer_ =
@@ -478,7 +480,6 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     //                      "global_Blur_SSAO_compute_write", blur_write_SSAO);
     // set_render_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
     //                      "global_dof_BlurImg", dof_blur);
-
 
     update_global_pbr_parameter(update_global_descriptor_sets_);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
