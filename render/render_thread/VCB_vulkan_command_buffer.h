@@ -13,6 +13,7 @@
 
 class VK_backend;
 class Engine;
+class opacity_batch;
 
 struct G_buffer_image_index {
     uint32_t position_image_index;
@@ -279,6 +280,10 @@ public:
                            stageFlags, offset, size, pValues);
     }
 
+    void frustum_culling_SOA(Engine &engine,
+                             const FrustumPlanes &frustum_planes,
+                             const std::array<FrustumPlanes, 4> &light_frustum_planes,
+                             const VKR_image_ptr &depth, const opacity_batch &batch);
 
 
     void bind_Proxy_descriptor_sets(entt::entity entity,

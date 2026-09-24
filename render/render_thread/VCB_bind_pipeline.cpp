@@ -10,6 +10,7 @@
 
 #include "shader_component.h"
 
+
 void VCB::bind_Proxy_descriptor_sets(entt::entity entity,
                                      VkPipelineLayout pipeline_layout,
                                      VkPipelineBindPoint bind_point) {

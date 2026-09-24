@@ -378,6 +378,7 @@ if (WITH_VULKAN_BACKEND)
 
             "render/render_component/Geometry_component.cpp"
             "render/render_thread/render_thread.cpp"
+            "render/render_thread/VCB_SOA_batch.cpp"
             "render/render_component/PBR_component.cpp"
             "render/render_component/pipeline_component.cpp"
             "render/render_component/pipeline_layout_component.cpp"
