@@ -28,13 +28,36 @@ void prepare_pass(VCB &vcb,
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
-    if (engine.get_frustum_culling() == true) {
+    auto &SOA_opacity = engine.get_opacity_batch();
+    if (engine.get_frustum_culling() == true && SOA_opacity.get_renderable_SOA_data().size() > 0) {
+        auto frustum_culling_buffer = VKR_buffer_offset{
+            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_frustum_culling,
+                                                    SOA_opacity.get_renderable_SOA_data().capacity())
+        };
+        auto shadow_frustum_culling_buffer = VKR_buffer_offset{
+            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_frustum_culling,
+                                                    SOA_opacity.get_renderable_SOA_data().capacity())
+        };
+        auto world_space_aabb_buffer = VKR_buffer_offset{
+            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB),
+            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_World_Space_AABB,
+                                                    SOA_opacity.get_renderable_SOA_data().capacity())
+        };
+        auto Primitives_buffer = VKR_buffer_offset{
+            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_Primitive,
+                                                    SOA_opacity.get_renderable_SOA_data().capacity())
+        };
+
+
         vcb.calculate_frustum_cull(engine, frustum_planes, light_planes, depth_AO_copy_image,
-                                   {},
-                                   {},
-                                   {},
-                                   {},
-                                   {});
+                                   SOA_opacity.get_renderable_SOA_data().size(),
+                                   frustum_culling_buffer,
+                                   Primitives_buffer,
+                                   world_space_aabb_buffer,
+                                   frustum_culling_buffer);
     } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);
