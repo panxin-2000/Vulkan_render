@@ -72,36 +72,16 @@ class VCB {
     VkRect2D pass_scissor_          = {};
 
 public:
-    VkCommandBuffer get_command_buffer() const {
+    [[nodiscard]] VkCommandBuffer get_command_buffer() const {
         return command_buffer_;
     }
 
-    VkQueryPool get_query_pool() const {
+    [[nodiscard]] VkQueryPool get_query_pool() const {
         return query_pool_;
     }
 
     void CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image);
 
-
-    struct scoped_debug_label {
-        VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-
-        scoped_debug_label(VCB &vcb, const std::string &label) {
-            command_buffer = vcb.command_buffer_;
-            VkDebugUtilsLabelEXT labelInfo{};
-            labelInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-            labelInfo.pLabelName = label.c_str();
-            labelInfo.color[0]   = 1.0f; // R (0.0~1.0)
-            labelInfo.color[1]   = 1.0f; // G
-            labelInfo.color[2]   = 0.0f; // B (黄色)
-            labelInfo.color[3]   = 1.0f; // A
-            vkCmdBeginDebugUtilsLabelEXT(command_buffer, &labelInfo);
-        };
-
-        ~scoped_debug_label() {
-            vkCmdEndDebugUtilsLabelEXT(command_buffer);
-        };
-    };
 
     void set_pass_viewport(const uint32_t width, const uint32_t height) {
         pass_viewport_ = VkViewport{
@@ -174,6 +154,10 @@ public:
      * @param dstStageMask
      * @param dstAccessMask
      * @param newLayout
+     * @param baseMipLevel
+     * @param levelCount
+     * @param baseArrayLayer
+     * @param layerCount
      */
     void add_image_barrier(const VKR_image_ptr &image, VkPipelineStageFlags srcStageMask, VkAccessFlags srcAccessMask,
                            VkImageLayout oldLayout, VkPipelineStageFlags dstStageMask, VkAccessFlags dstAccessMask,
@@ -203,7 +187,7 @@ public:
     void build_draw_command_UI(entt::entity entity);
 
 
-    void render_post_deal(std::shared_ptr<vk_shader_data> command_shader, entt::entity entity) {
+    void render_post_deal(const std::shared_ptr<vk_shader_data> &command_shader, entt::entity entity) {
         vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, command_shader->pipeline_t);
         bind_Proxy_descriptor_sets(entity,
                                    command_shader->pipeline_layout,
@@ -295,6 +279,8 @@ public:
                            stageFlags, offset, size, pValues);
     }
 
+
+
     void bind_Proxy_descriptor_sets(entt::entity entity,
                                     VkPipelineLayout pipeline_layout,
                                     VkPipelineBindPoint bind_point);
@@ -305,7 +291,7 @@ public:
 
     void bind_pipeline_update_parameter(entt::entity entity, const Shader_data &shader_data_ref);
 
-    void gpu_log_label_info(const std::string &label) {
+    void gpu_log_label_info(const std::string &label) const {
         VkDebugUtilsLabelEXT markerInfo{};
         markerInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
         markerInfo.pLabelName = label.c_str();
@@ -317,9 +303,30 @@ public:
     }
 
     void SetDebugName(const VK_backend &backend,
-                      const VkObjectType objectType,
-                      const uint64_t handle,
+                      VkObjectType objectType,
+                      uint64_t handle,
                       const std::string &name);
+};
+
+
+struct scoped_debug_label {
+    VkCommandBuffer command_buffer = VK_NULL_HANDLE;
+
+    scoped_debug_label(const VCB &vcb, const std::string &label) {
+        command_buffer = vcb.get_command_buffer();
+        VkDebugUtilsLabelEXT labelInfo{};
+        labelInfo.sType      = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        labelInfo.pLabelName = label.c_str();
+        labelInfo.color[0]   = 1.0f; // R (0.0~1.0)
+        labelInfo.color[1]   = 1.0f; // G
+        labelInfo.color[2]   = 0.0f; // B (黄色)
+        labelInfo.color[3]   = 1.0f; // A
+        vkCmdBeginDebugUtilsLabelEXT(command_buffer, &labelInfo);
+    };
+
+    ~scoped_debug_label() {
+        vkCmdEndDebugUtilsLabelEXT(command_buffer);
+    };
 };
 
 

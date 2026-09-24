@@ -2,6 +2,8 @@
 // Created by 潘鑫 on 2026/5/24.
 //
 
+#include "Geometry_component.h"
+
 #include "Geometry_data.h"
 #include "../render_component/shader_component.h"
 

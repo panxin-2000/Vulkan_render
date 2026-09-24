@@ -18,6 +18,8 @@
 #include "update_push_constants_data.h"
 #include <Eigen/Dense>
 
+#include "Geometry_component.h"
+
 void copy_nvdb1_to_gpu_memory(entt::entity entity, const std::string &name,
                               const nanovdb::GridHandle<nanovdb::HostBuffer> &handle) {
     if (!handle.empty()) {

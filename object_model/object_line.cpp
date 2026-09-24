@@ -5,6 +5,7 @@
 #include "object_line.h"
 
 #include "B_spline_cureve.h"
+#include "Geometry_component.h"
 #include "Geometry_data.h"
 #include "mesh_component.h"
 #include "name_component.h"

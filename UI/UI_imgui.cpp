@@ -5,6 +5,7 @@
 #include "UI_imgui.h"
 
 #include "engine.h"
+#include "Geometry_component.h"
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_vulkan.h"

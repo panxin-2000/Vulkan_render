@@ -5,6 +5,7 @@
 
 #include "input_component.h"
 #include "base_event.h"
+#include "Geometry_component.h"
 #include "model_matrix.h"
 #include "name_component.h"
 #include "Rect_2D_component.h"

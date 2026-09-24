@@ -13,6 +13,7 @@
 #include <meshoptimizer.h>
 
 #include "B_spline_cureve.h"
+#include "Geometry_component.h"
 #include "parse_geometry_file.h"
 #include "../render/render_common/render_state.h"
 #include "world_scene_root.h"

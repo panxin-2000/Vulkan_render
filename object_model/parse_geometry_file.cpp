@@ -4,6 +4,7 @@
 
 #include "parse_geometry_file.h"
 
+#include "Geometry_component.h"
 #include "tiny_obj_loader.h"
 
 
