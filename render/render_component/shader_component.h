@@ -7,7 +7,6 @@
 #include <map>
 #include <global_singleton.h>
 
-#include "create_texture.h"
 #include "descriptor.h"
 #include "sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
