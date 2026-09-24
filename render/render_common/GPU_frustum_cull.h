@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_COMMAND_CALCULATE_H
 #define HELLO_MAC_COMMAND_CALCULATE_H
-#include "../render_common/frustum.h"
+#include "frustum.h"
 #include "vulkan_buffer.h"
 
 struct GPU_frustum_cull {

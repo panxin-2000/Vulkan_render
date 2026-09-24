@@ -22,6 +22,8 @@
 //     // 对不同的材质做区分，有的需要先绘制，有的之后绘制
 // };
 
+#include "global_singleton.h"
+
 class Proxy_entity {
 public:
     entt::entity entity_;
@@ -89,6 +91,45 @@ struct Render_destroy_tag {
 };
 
 struct Render_destroy_tag_last {
+};
+
+struct UI_transform_dirty {
+};
+
+struct Object_transform_dirty {
+};
+
+struct Camera_dirty {
+};
+
+struct Camera_optical_specifications_dirty {
+};
+
+struct add_to_render_tag {
+};
+
+struct UI_2D_tag {
+};
+
+struct UI_render_text {
+};
+
+struct imgui_draw {
+};
+
+struct uniform_buffer_update {
+};
+
+struct push_constant_update {
+};
+
+struct global_uniform_buffer_update {
+};
+
+struct descriptor_set_update {
+};
+
+struct bindless_set_update_detail {
 };
 
 

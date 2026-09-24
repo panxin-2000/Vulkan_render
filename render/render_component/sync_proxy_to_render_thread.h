@@ -7,44 +7,6 @@
 #include "global_singleton.h"
 
 
-struct UI_transform_dirty {
-};
-
-struct Object_transform_dirty {
-};
-
-struct Camera_dirty {
-};
-
-struct Camera_optical_specifications_dirty {
-};
-
-struct add_to_render_tag {
-};
-
-struct UI_2D_tag {
-};
-
-struct UI_render_text {
-};
-
-struct imgui_draw {
-};
-
-struct uniform_buffer_update {
-};
-
-struct push_constant_update {
-};
-
-struct global_uniform_buffer_update {
-};
-
-struct descriptor_set_update {
-};
-
-struct bindless_set_update_detail {
-};
 
 //
 void sync_render_data_to_render_thread(float time_milliseconds);

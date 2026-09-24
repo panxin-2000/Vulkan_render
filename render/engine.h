@@ -17,7 +17,7 @@
 #include "Geometry_data.h"
 #include "global_parameters.h"
 #include "render_common/frustum.h"
-#include "render_common/PBR_component.h"
+#include "render_component/PBR_component.h"
 #include "pbr_manager.h"
 #include "render_image_manager.h"
 #include "render_mesh.h"

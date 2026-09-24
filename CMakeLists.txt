@@ -376,7 +376,8 @@ if (WITH_VULKAN_BACKEND)
             "render/vulkan_code/vulkan_update_descriptor.cpp"
             "render/vulkan_code/updata_push_constants_data.cpp"
 
-            "render/render_common/PBR_component.cpp"
+            "render/render_component/Geometry_component.cpp"
+            "render/render_component/PBR_component.cpp"
             "render/render_component/pipeline_component.cpp"
             "render/render_component/pipeline_layout_component.cpp"
             "render/render_component/shader_component.cpp"

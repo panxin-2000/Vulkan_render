@@ -5,7 +5,7 @@
 #include <SDL3/SDL.h>
 
 #include <thread>
-#include "render_thread/backend.h"
+#include "render_thread/render_thread.h"
 #include "vulkan_backend.h"
 #include "event/base_event.h"
 #include "labyrinth.h"

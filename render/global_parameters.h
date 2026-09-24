@@ -6,7 +6,7 @@
 #define HELLO_MAC_GLOBAL_PARAMETERS_H
 #include <Eigen/Eigen>
 #include "frustum.h"
-#include "PBR_component.h"
+#include "render_component/PBR_component.h"
 
 
 #include <algorithm>

@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/8/13.
 //
 
-#include "GPU_frustum_cull.h"
+#include "../render_common/GPU_frustum_cull.h"
 #include "engine.h"
 #include "global_singleton.h"
 #include "object_ply.h"

@@ -9,7 +9,7 @@
 #include <map>
 
 #include "descriptor.h"
-#include "PBR_component.h"
+#include "../render_component/PBR_component.h"
 #include "vulkan_buffer.h"
 #include "vulkan_image.h"
 #include "absl/hash/hash.h" // 引入 Google Abseil 头文件

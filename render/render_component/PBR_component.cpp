@@ -6,7 +6,7 @@
 
 #include "engine.h"
 #include "global_singleton.h"
-#include "../render_component/shader_component.h"
+#include "shader_component.h"
 
 void set_PBR_base_color(const entt::entity entity, Color baseColorFactor) {
     auto material             = Logic_entt().get_or_emplace<PBR_component>(entity);
