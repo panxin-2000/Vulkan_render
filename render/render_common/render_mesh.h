@@ -8,6 +8,7 @@
 #include <absl/container/flat_hash_map.h>
 
 #include "Geometry_data.h"
+#include "vertex_and_buffer_index.h"
 #include "vulkan_buffer.h"
 
 
@@ -42,7 +43,51 @@ public:
      * @param data
      */
     std::vector<VKR_Primitive> add_mesh_data(const Geometry_data &data) {
-        return {};
+        auto vertices_cpu     = data.get_vertices();
+        auto indices_cpu      = data.get_indices();
+        VkDeviceSize vBufSize = 0;
+        Mesh_data mesh_data;
+
+        for (const auto &vertex: vertices_cpu) {
+            vBufSize += vertex.total_size;
+        }
+        VkDeviceSize iBufSize = 0;
+        for (const auto &index: indices_cpu) {
+            iBufSize += index.total_size;
+            if (index.single_size == 2) {
+                mesh_data.index_type = VK_INDEX_TYPE_UINT16;
+            } else if (index.single_size == 4) {
+                mesh_data.index_type = VK_INDEX_TYPE_UINT32;
+            }
+        }
+        mesh_data.vertices_offset = 0;
+        mesh_data.indices_offset  = vBufSize;
+
+        // 具体的复制函数
+        auto mem_copy_function = [vertices_cpu,indices_cpu](void *dst) {
+            auto calculation_dst = static_cast<char *>(dst);
+            for (const auto &vertex: vertices_cpu) {
+                memcpy(calculation_dst, vertex.data, vertex.total_size);
+                calculation_dst += vertex.total_size;
+            }
+            for (const auto index: indices_cpu) {
+                memcpy(calculation_dst, index.data, index.total_size);
+                calculation_dst += index.total_size;
+            }
+        };
+
+        auto &backend              = VK_backend::instance();
+        const auto vertices_buffer =
+                create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
+        if (!indices_cpu.empty()) {
+            mesh_data.vertices = vertices_buffer;
+            mesh_data.indices  = vertices_buffer;
+            return {};
+        } else {
+            mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
+            mesh_data.vertices   = vertices_buffer;
+            return {};
+        }
     }
 
     /**
@@ -72,43 +117,6 @@ struct Draw_command {
         // 其实问题不只是 排列到 各自到 buffer 上，而是需要 按照顺序来排列
         //
     };
-};
-
-
-//
-class Draw_commands {
-public:
-    // 不做
-    VkDeviceSize vertices_offset = 0; // 以字节为单位的偏移
-    VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
-
-    // 其实还是要去分区的，看看那些内容在变化，哪些内容没有变化
-    // 为什么2d的内容可以 变化时 覆盖原有内容，而 3d 不行呢 ？
-    std::vector<Draw_command> draw_commands; // 需要 传输到 GPU ，没有做
-    VKR_buffer_ptr draw_commands_buffer = {};
-    VkIndexType index_type              = VK_INDEX_TYPE_UINT16;
-
-
-    void draw(const VkCommandBuffer &cb, const Mesh_data &mesh_data, const uint64_t time_line) const {
-        vkCmdBindVertexBuffers(cb, 0, 1, mesh_data.vertices->get_buffer_handle_ptr(time_line), &vertices_offset);
-        if (mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer(cb, mesh_data.indices->get_buffer_handle(), indices_offset, index_type);
-            vkCmdDrawIndexedIndirect(cb,
-                                     // draw_commands 相关内容
-                                     draw_commands_buffer->get_buffer_handle(),
-                                     0,
-                                     draw_commands.size(),
-                                     sizeof(Draw_command));
-        } else {
-            vkCmdDrawIndirect(cb,
-                              // draw_commands 相关内容
-                              draw_commands_buffer->get_buffer_handle(),
-                              0,
-                              draw_commands.size(),
-                              sizeof(Draw_command)
-                             );
-        }
-    }
 };
 
 
