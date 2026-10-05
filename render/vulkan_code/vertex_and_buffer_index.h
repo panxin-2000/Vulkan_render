@@ -44,13 +44,13 @@ inline VKR_buffer_ptr create_base_buffer(const VKR_buffer_ptr &base_buffer, cons
         if (staging_buffer->host_visible() == false) {
             LOG_ERROR(g_log(), "can find a cpu write memory, allocate size {}", size);
         } else {
-            copy_mem_from_cpu_to_gpu(staging_buffer, mem_copy_callback);
+            staging_buffer->copy_mem_from_cpu_to_gpu_host_visible(mem_copy_callback);
             copy_vk_buffer_and_execution(staging_buffer, base_buffer, size);
         }
         staging_buffer->destroy_buffer();
     } else {
         // 创建成功，但是 map 不成功的很少见
-        copy_mem_from_cpu_to_gpu(base_buffer, mem_copy_callback);
+        base_buffer->copy_mem_from_cpu_to_gpu_host_visible(mem_copy_callback);
     }
     return base_buffer;
 }
@@ -67,7 +67,7 @@ inline VKR_buffer_ptr create_base_buffer(const VKR_buffer_ptr &base_buffer, cons
 inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDeviceSize size,
                                                  const std::function<void(void *)> &mem_copy_callback) {
     auto vBuffer = create_vertex_index_buffer(backend, size);
-    if (vBuffer->empty())
+    if (vBuffer != nullptr && vBuffer->empty())
         return {};
     // 没有创建成功，直接退出
     // 创建成功，之后，记录，还是？

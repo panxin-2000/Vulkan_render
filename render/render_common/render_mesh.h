@@ -31,6 +31,15 @@ public:
     VkDeviceSize indices_offset  = 0; // 以字节为单位的偏移
     VkIndexType index_type       = VK_INDEX_TYPE_UINT16;
 
+    Geometry_data total_data_; // 汇总全部
+    Geometry_data add_dirty_;  // 汇总单帧中新增加是
+    bool dirty_tag = false;    // 是否需要更新
+
+
+    [[nodiscard]] bool is_dirty() const {
+        return dirty_tag;
+    }
+
     struct size_and_offset {
         VkDeviceSize size;
         VkDeviceSize offset;
@@ -43,51 +52,9 @@ public:
      * @param data
      */
     std::vector<VKR_Primitive> add_mesh_data(const Geometry_data &data) {
-        auto vertices_cpu     = data.get_vertices();
-        auto indices_cpu      = data.get_indices();
-        VkDeviceSize vBufSize = 0;
-        Mesh_data mesh_data;
-
-        for (const auto &vertex: vertices_cpu) {
-            vBufSize += vertex.total_size;
-        }
-        VkDeviceSize iBufSize = 0;
-        for (const auto &index: indices_cpu) {
-            iBufSize += index.total_size;
-            if (index.single_size == 2) {
-                mesh_data.index_type = VK_INDEX_TYPE_UINT16;
-            } else if (index.single_size == 4) {
-                mesh_data.index_type = VK_INDEX_TYPE_UINT32;
-            }
-        }
-        mesh_data.vertices_offset = 0;
-        mesh_data.indices_offset  = vBufSize;
-
-        // 具体的复制函数
-        auto mem_copy_function = [vertices_cpu,indices_cpu](void *dst) {
-            auto calculation_dst = static_cast<char *>(dst);
-            for (const auto &vertex: vertices_cpu) {
-                memcpy(calculation_dst, vertex.data, vertex.total_size);
-                calculation_dst += vertex.total_size;
-            }
-            for (const auto index: indices_cpu) {
-                memcpy(calculation_dst, index.data, index.total_size);
-                calculation_dst += index.total_size;
-            }
-        };
-
-        auto &backend              = VK_backend::instance();
-        const auto vertices_buffer =
-                create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
-        if (!indices_cpu.empty()) {
-            mesh_data.vertices = vertices_buffer;
-            mesh_data.indices  = vertices_buffer;
-            return {};
-        } else {
-            mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
-            mesh_data.vertices   = vertices_buffer;
-            return {};
-        }
+        total_data_.add_geometry(data);
+        add_dirty_.add_geometry(data);
+        dirty_tag = true;
     }
 
     /**
@@ -98,6 +65,50 @@ public:
      */
     std::vector<VKR_Primitive> remove_mesh_data(const Geometry_data &data) {
         return {};
+    }
+
+    [[nodiscard]] bool check_need_reserve() const {
+        const auto vertices_cpu     = total_data_.get_vertices();
+        const auto indices_cpu      = total_data_.get_indices();
+        const VkDeviceSize vBufSize = get_size(vertices_cpu);
+        const VkDeviceSize iBufSize = get_size(indices_cpu);
+        if (vertices != nullptr && vertices->get_size() > vBufSize) {
+            return true;
+        }
+        if (indices != nullptr && indices->get_size() > iBufSize) {
+            return true;
+        }
+        return false;
+    }
+
+    void update_mesh_data() {
+        auto vertices_cpu           = total_data_.get_vertices();
+        auto indices_cpu            = total_data_.get_indices();
+        const VkDeviceSize vBufSize = get_size(vertices_cpu);
+        const VkDeviceSize iBufSize = get_size(indices_cpu);
+
+        // 具体的复制函数
+        auto mem_copy_function = [vertices_cpu](void *dst) {
+            auto calculation_dst = static_cast<char *>(dst);
+            for (const auto &vertex: vertices_cpu) {
+                memcpy(calculation_dst, vertex.data, vertex.total_size);
+                calculation_dst += vertex.total_size;
+            }
+        };
+        auto mem_copy_function_indices = [indices_cpu](void *dst) {
+            auto calculation_dst = static_cast<char *>(dst);
+            for (const auto &index: indices_cpu) {
+                memcpy(calculation_dst, index.data, index.total_size);
+                calculation_dst += index.total_size;
+            }
+        };
+        auto result   = append_data(vertices, 0, mem_copy_function, vBufSize);
+        auto result_1 = append_data(indices, 0, mem_copy_function_indices, iBufSize);
+
+        // 这三个算是强制内容吧
+        index_type      = VK_INDEX_TYPE_UINT32;
+        vertices_offset = 0;
+        indices_offset  = 0;
     }
 
 private:

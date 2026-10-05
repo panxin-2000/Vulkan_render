@@ -127,12 +127,37 @@ public:
         push_indices(sp_indices);
     }
 
+
+    bool add_geometry(const Geometry_data &data) {
+        for (auto &vertex: data.get_vertices()) {
+            vertices_.push_back(vertex);
+        }
+        for (auto &index: data.get_indices()) {
+            indices_.push_back(index);
+        }
+        for (auto &material: data.get_materials()) {
+            materials_.push_back(material);
+        }
+        for (auto &aabb: data.get_aabbs()) {
+            AABBs_.push_back(aabb);
+        }
+        return true;
+    }
+
 private:
     std::vector<share_block> vertices_;
     std::vector<share_block> indices_;
     std::vector<std::size_t> materials_;
     std::vector<Local_Space_AABB> AABBs_;
 };
+
+inline size_t get_size(const std::vector<share_block> &blocks) {
+    size_t buf_size = 0;
+    for (const auto &vertex: blocks) {
+        buf_size += vertex.total_size;
+    }
+    return buf_size;
+}
 
 
 #endif //HELLO_MAC_GEOMETRY_DATA_H

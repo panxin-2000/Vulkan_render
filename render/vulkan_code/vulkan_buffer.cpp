@@ -4,10 +4,79 @@
 
 #include "vulkan_buffer.h"
 
+#include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 #include "vulkan_execute_command.h"
 
 static std::mutex buffer_block_mutex;
+
+void copy_vk_buffer_and_execution(const VkBuffer &srcBuffer,
+                                  const VkBuffer &dstBuffer,
+                                  const VkDeviceSize size,
+                                  const VkDeviceSize srcOffset = 0,
+                                  const VkDeviceSize dstOffset = 0) {
+    auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
+        VkBufferCopy copyRegion{};
+        copyRegion.srcOffset = srcOffset;
+        copyRegion.dstOffset = dstOffset;
+        copyRegion.size      = size;
+        vkCmdCopyBuffer(commandBuffer,
+                        srcBuffer,
+                        dstBuffer,
+                        1,
+                        &copyRegion);
+    };
+
+    Command_submit_manager::add_execute_function(execute_function);
+}
+
+
+bool VKR_buffer::copy_mem_from_cpu_to_gpu_host_visible(const std::function<void(void *)> &mem_copy_callback) {
+    if (host_visible() == true) {
+        if (map_memory() == nullptr) {
+            return false;
+        }
+        if (mem_copy_callback != nullptr && mapped_address() != nullptr) {
+            mem_copy_callback(mapped_address());
+        }
+        auto value_result = flush();
+        auto value        = unmap_memory();
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool VKR_buffer::copy_mem_from_cpu_to_gpu(const std::function<void(void *)> &mem_copy_callback,
+                                          VkDeviceSize size) {
+    if (empty())
+        return false;
+    // 没有创建成功，直接退出
+    // 创建成功，之后，记录，还是？
+
+    auto &backend = VK_backend::instance();
+    if (host_visible() == false) {
+        LOG_ERROR(g_log(), "can find a cpu write memory, only get GPU memory", size);
+        auto staging_buffer = create_staging_buffer(backend, size);
+        if (staging_buffer->empty()) {
+            // 创建 staging_buffer 失败
+            destroy_buffer();
+            return {};
+        }
+        if (staging_buffer->host_visible() == false) {
+            LOG_ERROR(g_log(), "can find a cpu write memory, allocate size {}", size);
+        } else {
+            staging_buffer->copy_mem_from_cpu_to_gpu_host_visible(mem_copy_callback);
+            copy_vk_buffer_and_execution(staging_buffer->get_buffer_handle(), get_buffer_handle(), size);
+        }
+        staging_buffer->destroy_buffer();
+    } else {
+        // 创建成功，但是 map 不成功的很少见
+        copy_mem_from_cpu_to_gpu_host_visible(mem_copy_callback);
+    }
+    return true;
+}
 
 
 [[nodiscard]] void *VKR_buffer::mapped_address() const {
@@ -155,11 +224,13 @@ bool VKR_buffer::need_flush() const {
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
                                   const VKR_buffer_ptr &dstBuffer,
-                                  const VkDeviceSize size) {
+                                  const VkDeviceSize size,
+                                  const VkDeviceSize srcOffset,
+                                  const VkDeviceSize dstOffset) {
     auto execute_function = [=](const VkCommandBuffer commandBuffer, const uint64_t time_line) {
         VkBufferCopy copyRegion{};
-        copyRegion.srcOffset = 0;
-        copyRegion.dstOffset = 0;
+        copyRegion.srcOffset = srcOffset;
+        copyRegion.dstOffset = dstOffset;
         copyRegion.size      = size;
         vkCmdCopyBuffer(commandBuffer,
                         srcBuffer->get_buffer_handle(time_line),
@@ -188,6 +259,22 @@ bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer,
         return false;
     }
 }
+
+[[nodiscard]] bool append_data(VKR_buffer_ptr &buffer, const VkDeviceSize offset,
+                               const std::function<void(void *)> &mem_copy_callback,
+                               const VkDeviceSize append_size) {
+    const auto &backend = VK_backend::instance();
+
+    if (buffer != nullptr && buffer->get_size() > offset + append_size) {
+        return true;
+    } else {
+        const auto vertices_buffer = create_vertex_index_buffer(backend, offset + append_size, mem_copy_callback);
+        buffer                     = vertices_buffer;
+        return true;
+    }
+    return false;
+}
+
 
 VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
                                  const VkBufferUsageFlags usage,

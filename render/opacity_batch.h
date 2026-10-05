@@ -71,14 +71,17 @@ public:
 
 
     void destroy() {
-        SOA_buffer_ = nullptr;
-        mesh_data_  = {};
+        SOA_buffer_         = nullptr;
+        mesh_data_.vertices = nullptr;
+        mesh_data_.indices  = nullptr;
+        mesh_data_          = {};
     }
 
 private:
-    VKR_buffer_ptr SOA_buffer_;
+    VKR_buffer_ptr SOA_buffer_; // 这里存储同一批物体的参数
+    // 不能直接在原本的位置上修改
     RenderableSoa mRenderableData_;
-    Mesh_data mesh_data_;
+    Mesh_data mesh_data_;       // 这里存储同一批物体的mesh
     Geometry_data bindless_Geometry_data_;
 };
 

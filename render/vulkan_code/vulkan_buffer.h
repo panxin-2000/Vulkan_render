@@ -53,6 +53,12 @@ public:
         return *this;
     }
 
+    bool copy_mem_from_cpu_to_gpu_host_visible(const std::function<void(void *)> &mem_copy_callback);
+
+    bool copy_mem_from_cpu_to_gpu(const std::function<void(void *)> &mem_copy_callback,
+                                  VkDeviceSize size);
+
+
     [[nodiscard]] void *mapped_address() const;
 
     [[nodiscard]] bool unmap_memory() const;
@@ -70,6 +76,17 @@ public:
     [[nodiscard]] bool empty() const;
 };
 
+[[nodiscard]] inline bool check_need_reserve(const VKR_buffer_ptr &buffer, const VkDeviceSize size) {
+    if (buffer != nullptr && buffer->get_size() > size) {
+        return true;
+    }
+    return false;
+}
+
+[[nodiscard]] bool append_data(VKR_buffer_ptr &buffer,
+                               const VkDeviceSize offset,
+                               const std::function<void(void *)> &mem_copy_callback,
+                               const VkDeviceSize append_size);
 
 class VKR_buffer_offset {
 public:
@@ -168,7 +185,9 @@ public:
 
 VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, uint64_t request_size);
 
-void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size);
+void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size,
+                                  VkDeviceSize srcOffset = 0,
+                                  VkDeviceSize dstOffset = 0);
 
 void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 

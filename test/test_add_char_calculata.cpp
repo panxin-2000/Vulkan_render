@@ -66,6 +66,10 @@ TEST(calculate, string_array_about_number_3) {
     char *calculate_expreesion[] = {
         "30", "+", "50", "/", "20"
     };
+    // 最开始的想法和逻辑确实是有问题, 首先是字符串解析的操作
+    // 首先将括号,提取出来, 用一个 指针, 或者 空的 node 替代掉,
+    // 之后呢? 再按照 * / 的优先级, 将 前后两个 数字或者 node 提取出来, 依次提取,
+    // 最后的结果 如果是 刚好为空, 那么就是正确的, 否则就是错误的
 
     int string_number = sizeof(calculate_expreesion) / sizeof(calculate_expreesion[0]);
     struct tree_node_calculate *tem = construction_calulate_tree(string_number,
