@@ -6,13 +6,6 @@
 #include "scalar.h"
 #include "SSAO_parameters.h"
 
-struct BilateralPassConfig {
-    uint8_t kernelSize       = 11;
-    bool bentNormals         = false;
-    float standardDeviation  = 1.0f;
-    float bilateralThreshold = 0.0625f;
-    float scale              = 1.0f;
-};
 
 
 SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eigen::Matrix4f projection, float width,
@@ -21,11 +14,6 @@ SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eige
     float sampleCount{};
     float spiralTurns{};
     float standardDeviation{};
-
-    BilateralPassConfig config = {
-        .bentNormals        = options.bentNormals,
-        .bilateralThreshold = options.bilateralThreshold,
-    };
 
 
     switch (options.quality) {
@@ -49,26 +37,6 @@ SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eige
             sampleCount = 32.0f;
             spiralTurns       = 14.0f;
             standardDeviation = 4.0;
-            break;
-    }
-    switch (options.lowPassFilter) {
-        default:
-        case QualityLevel::LOW:
-            // no filtering, values don't matter
-            config.kernelSize = 1;
-            config.standardDeviation = 1.0f;
-            config.scale             = 1.0f;
-            break;
-        case QualityLevel::MEDIUM:
-            config.kernelSize = 11;
-            config.standardDeviation = standardDeviation * 0.5f;
-            config.scale             = 2.0f;
-            break;
-        case QualityLevel::HIGH:
-        case QualityLevel::ULTRA:
-            config.kernelSize = 23;
-            config.standardDeviation = standardDeviation;
-            config.scale             = 1.0f;
             break;
     }
     const float inc = (1.0f / (sampleCount - 0.5f)) * spiralTurns * filament::math::f::TAU;
@@ -102,4 +70,50 @@ SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eige
     temp.maxLevel                   = 6; // 这里的值不对
 
     return temp;
+}
+
+
+BilateralPassConfig get_bilateral_pass_config(AmbientOcclusionOptions const &options) {
+    BilateralPassConfig config = {
+        .bentNormals        = options.bentNormals,
+        .bilateralThreshold = options.bilateralThreshold,
+    };
+
+    float standardDeviation{};
+    switch (options.quality) {
+        default:
+        case QualityLevel::LOW:
+            standardDeviation = 8.0;
+            break;
+        case QualityLevel::MEDIUM:
+            standardDeviation = 8.0;
+            break;
+        case QualityLevel::HIGH:
+            standardDeviation = 6.0;
+            break;
+        case QualityLevel::ULTRA:
+            standardDeviation = 4.0;
+            break;
+    }
+    switch (options.lowPassFilter) {
+        default:
+        case QualityLevel::LOW:
+            // no filtering, values don't matter
+            config.kernelSize = 1;
+            config.standardDeviation = 1.0f;
+            config.scale             = 1.0f;
+            break;
+        case QualityLevel::MEDIUM:
+            config.kernelSize = 11;
+            config.standardDeviation = standardDeviation * 0.5f;
+            config.scale             = 2.0f;
+            break;
+        case QualityLevel::HIGH:
+        case QualityLevel::ULTRA:
+            config.kernelSize = 23;
+            config.standardDeviation = standardDeviation;
+            config.scale             = 1.0f;
+            break;
+    }
+    return config;
 }

@@ -90,8 +90,18 @@ struct SSAO_parameters {
     //    uint ssctSampleCount;
 };
 
+struct BilateralPassConfig {
+    uint8_t kernelSize       = 11;
+    bool bentNormals         = false;
+    float standardDeviation  = 1.0f;
+    float bilateralThreshold = 0.0625f;
+    float scale              = 1.0f;
+};
+
 
 SSAO_parameters get_SSAO_parameters(AmbientOcclusionOptions const &options, Eigen::Matrix4f projection, float width,
                                     float height);
+
+BilateralPassConfig get_bilateral_pass_config(AmbientOcclusionOptions const &options);
 
 #endif //HELLO_MAC_SSAO_PARAMETERS_H

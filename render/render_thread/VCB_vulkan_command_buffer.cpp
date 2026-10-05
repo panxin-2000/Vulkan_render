@@ -143,7 +143,10 @@ void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
     vkCmdDispatch(command_buffer_, ALIGN_16(width) / 16, ALIGN_16(height) / 16, 1);
 }
 
+
 void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image, Eigen::Vector2f axis) {
+    AmbientOcclusionOptions options;
+    auto config = get_bilateral_pass_config(options);
     VKR_shader_paths blur{
         "", "", "", "bilateral_blur"
     };
@@ -170,16 +173,7 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
         return uint32_t(gaussianSampleCount);
     };
 
-    struct BilateralPassConfig {
-        uint8_t kernelSize       = 11;
-        bool bentNormals         = false;
-        float standardDeviation  = 1.0f;
-        float bilateralThreshold = 0.0625f;
-        float scale              = 1.0f;
-    };
     // shader 逻辑没有错, 没有好好设置系数
-
-    BilateralPassConfig config;
 
 
     float kGaussianSamples[kernelArraySize];
