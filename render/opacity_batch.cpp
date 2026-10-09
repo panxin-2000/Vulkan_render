@@ -124,13 +124,28 @@ void opacity_batch::draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_d
     }
 }
 
-void opacity_batch::draw_batch(VCB &vcb, const std::shared_ptr<vk_shader_data> &shader_data) {
+void opacity_batch::draw_batch(VCB &vcb) {
     if (mRenderableData_.size() > 0) {
-        vcb.bind_pipeline_update_parameter(entt::null, shader_data);
         auto frustum_culling_buffer = VKR_buffer_offset{
             SOA_buffer_,
             mRenderableData_.capacity() * sizeof(VKR_Primitive),
             RenderableSoa::getOffset(SOA_frustum_culling,
+                                     mRenderableData_.capacity())
+        };
+        VKR_Render_state render_state; // 这个还算比较好解决
+        vcb.DrawIndexedIndirect(mesh_data_,
+                                render_state,
+                                mRenderableData_.size(),
+                                frustum_culling_buffer);
+    }
+}
+
+void opacity_batch::draw_shadow(VCB &vcb) {
+    if (mRenderableData_.size() > 0) {
+        auto frustum_culling_buffer = VKR_buffer_offset{
+            SOA_buffer_,
+            mRenderableData_.capacity() * sizeof(VKR_Primitive),
+            RenderableSoa::getOffset(SOA_shadow_frustum_culling,
                                      mRenderableData_.capacity())
         };
         VKR_Render_state render_state; // 这个还算比较好解决

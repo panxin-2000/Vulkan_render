@@ -73,9 +73,7 @@ void VCB::CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image) {
             temp_state.cullMode_ = VK_CULL_MODE_FRONT_BIT;
             temp_state.write_commands(command_buffer_);
 
-            // 这里的 size 还是有问题的
-            // DrawIndexedIndirect(entity, command_calculate.command_size,
-            //                     engine.shadow_frustum_culling_buffer_);
+            engine.get_opacity_batch().draw_shadow(*this);
         }
     }
     end_rendering();

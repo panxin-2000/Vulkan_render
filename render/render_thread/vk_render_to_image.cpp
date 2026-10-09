@@ -127,7 +127,8 @@ void render_different_pass(VCB &vcb,
                 vcb.build_draw_command(entity);
             }
         }
-        engine.get_opacity_batch().draw_batch(vcb, engine.get_shader_manager().get_gltf_shader_data());
+        vcb.bind_pipeline_update_parameter(entt::null, engine.get_shader_manager().get_gltf_shader_data());
+        engine.get_opacity_batch().draw_batch(vcb);
         // 上面一行是绘制一个已经 绑定好的 批次
         {
             auto view = Render_entt().view<std::vector<VKR_Primitive>,

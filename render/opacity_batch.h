@@ -31,14 +31,14 @@ public:
 
     // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
     enum {
-        SOA_Primitive,              //   4 | instance of the Renderable component
-        SOA_Local_Space_AABB,       //   4 | instance of the Renderable component
-        SOA_World_Space_AABB,       //   4 | instance of the Renderable component
-        SOA_Transform_Matrix,       //   4 | instance of the Renderable component
-        SOA_material_index,         //   4 | instance of the Renderable component
-        SOA_entity,                 //   4 | instance of the Renderable component
-        SOA_frustum_culling,        //   4 | instance of the Renderable component
-        SOA_shadow_frustum_culling, //   4 | instance of the Renderable component
+        SOA_Primitive,              //
+        SOA_Local_Space_AABB,       //
+        SOA_World_Space_AABB,       //
+        SOA_Transform_Matrix,       //
+        SOA_material_index,         //
+        SOA_entity,                 //
+        SOA_frustum_culling,        //
+        SOA_shadow_frustum_culling, //   
     };
 
     const RenderableSoa &get_renderable_SOA_data() const {
@@ -67,7 +67,9 @@ public:
 
     void draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_data> &shader_data_ref);
 
-    void draw_batch(VCB &vcb, const std::shared_ptr<vk_shader_data> &shader_data);
+    void draw_batch(VCB &vcb);
+
+    void draw_shadow(VCB &vcb);
 
 
     void destroy() {
@@ -81,7 +83,7 @@ private:
     VKR_buffer_ptr SOA_buffer_; // 这里存储同一批物体的参数
     // 不能直接在原本的位置上修改
     RenderableSoa mRenderableData_;
-    Mesh_data mesh_data_;       // 这里存储同一批物体的mesh
+    Mesh_data mesh_data_; // 这里存储同一批物体的mesh
     Geometry_data bindless_Geometry_data_;
 };
 

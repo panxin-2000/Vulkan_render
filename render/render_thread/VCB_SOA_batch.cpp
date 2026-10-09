@@ -18,7 +18,7 @@ void VCB::frustum_culling_SOA(Engine &engine,
         };
         auto shadow_frustum_culling_buffer = VKR_buffer_offset{
             SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
-            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_frustum_culling,
+            opacity_batch::RenderableSoa::getOffset(opacity_batch::SOA_shadow_frustum_culling,
                                                     SOA_opacity.get_renderable_SOA_data().capacity())
         };
         auto world_space_aabb_buffer = VKR_buffer_offset{
@@ -38,6 +38,6 @@ void VCB::frustum_culling_SOA(Engine &engine,
                                frustum_culling_buffer,
                                Primitives_buffer,
                                world_space_aabb_buffer,
-                               frustum_culling_buffer);
+                               shadow_frustum_culling_buffer);
     }
 }
