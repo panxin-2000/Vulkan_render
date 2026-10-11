@@ -236,6 +236,33 @@ find_package(Boost CONFIG REQUIRED)
 find_package(OpenVDB REQUIRED)
 
 
+# ==============================================================================
+# 1. 查找 Open CASCADE
+# ==============================================================================
+# 推荐显式指定你需要用到的 OCCT 核心组件（Toolkit）
+# TKKernel      - 核心底层 (Standard_Handle, Standard_CString等)
+# TKBRep        - 边界表示法核心 (TopoDS_Shape, BRep_Tool)
+# TKMath        - 数学库 (gp_Pnt, gp_Dir)
+# TKMesh        - 网格化模块 (BRepMesh_IncrementalMesh)
+# TKSTEP        - STEP 文件导入 (STEPControl_Reader)
+# TKV3d / TKAIS - AIS 可视化核心 (AIS_InteractiveContext, AIS_Shape)
+
+
+find_package(OpenCASCADE REQUIRED)
+
+if (NOT OpenCASCADE_FOUND)
+    message(STATUS "OpenCASCADE NOT FOUND REASON: ${OpenCASCADE_NOT_FOUND_MESSAGE}")
+endif ()
+
+message(STATUS "OCCT Include Dir: ${OpenCASCADE_INCLUDE_DIRS}")
+
+# 2. Print the library directory (where .dylib or .so files live)
+message(STATUS "OCCT Library Dir: ${OpenCASCADE_LIBRARY_DIRS}")
+
+# 3. Print the list of all found library files
+message(STATUS "OCCT Libraries:   ${OpenCASCADE_LIBRARIES}")
+
+
 #已经不使用这个库了
 #FetchContent_Declare(
 #        directxmath
@@ -578,6 +605,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_Tent_Filter.cpp
         test/test_ear_clip.cpp
         test/test_mutex.cpp
+        test/test_occt.cpp
         test/test_quadtree.cpp
         test/test_highway.cpp
         test/test_particle.cpp
@@ -591,9 +619,9 @@ add_executable(hello_test ${LABYRINTH}
 
 include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
-gtest_discover_tests(hello_test)
+gtest_discover_tests(hello_test DISCOVERY_TIMEOUT 30)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy readerwriterqueue realsense2::realsense2 OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy ${OpenCASCADE_LIBRARIES} readerwriterqueue realsense2::realsense2 OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
