@@ -95,8 +95,11 @@ namespace my_namespace {
             auto &size_const_and_offset_map = free_block;
 
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
-            auto it_offset          = offset_const_and_size_map.find(offset);
-            auto it_offset_before   = offset_const_and_size_map.upper_bound(offset - 1);
+            auto it_offset        = offset_const_and_size_map.find(offset);
+            auto it_offset_before = it_offset;
+            if (it_offset != offset_const_and_size_map.begin()) {
+                --it_offset_before;
+            }
             auto it_offset_after    = offset_const_and_size_map.lower_bound(offset + 1);
             auto before_node_status = block_is_used;
             if (offset == 0) {
