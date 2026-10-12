@@ -25,6 +25,8 @@ struct offset_and_size {
 namespace my_namespace {
     using block_offset = uint64_t;
     using alloc_size   = uint64_t;
+#define  block_is_free true
+#define  block_is_used false
 
 
     class alloc_memory {
@@ -40,7 +42,7 @@ namespace my_namespace {
                                            0, //  空闲起始地址
                                            {
                                                total_size, //空闲大小
-                                               true
+                                               block_is_free
                                            }
                                        });
         }
@@ -67,17 +69,17 @@ namespace my_namespace {
                                           });
                         free_block.erase(found_free_block_it);
 
-                        it_offset->second = {request_size, false};
+                        it_offset->second = {request_size, block_is_used};
                         offset_and_size_map.insert({
                                                        found_free_block_offset + request_size, //  空闲起始地址
                                                        {
                                                            found_free_block_size - request_size, //空闲大小
-                                                           true                                  // true 表示空闲的
+                                                           block_is_free                         // true 表示空闲的
                                                        }
                                                    });
                     }
                 } else {
-                    it_offset->second = {request_size, false};
+                    it_offset->second = {request_size, block_is_used};
                     free_block.erase(found_free_block_it);
                 }
                 // LOG_DEBUG(g_log(), "VKR_buffer_block GPU_pool_alloc {}", found_free_block_offset);
@@ -93,19 +95,19 @@ namespace my_namespace {
             auto &size_const_and_offset_map = free_block;
 
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
-            auto it_offset        = offset_const_and_size_map.find(offset);
-            auto it_offset_before = offset_const_and_size_map.upper_bound(offset - 1);
-            auto it_offset_after  = offset_const_and_size_map.lower_bound(offset + 1);
-            auto before_bool      = false;
+            auto it_offset          = offset_const_and_size_map.find(offset);
+            auto it_offset_before   = offset_const_and_size_map.upper_bound(offset - 1);
+            auto it_offset_after    = offset_const_and_size_map.lower_bound(offset + 1);
+            auto before_node_status = block_is_used;
             if (offset == 0) {
-                it_offset_before = {};
-                before_bool      = false;
+                it_offset_before   = {};
+                before_node_status = block_is_used;
             } else if (it_offset_before != offset_const_and_size_map.end()) {
-                before_bool = it_offset_before->second.status_;
+                before_node_status = it_offset_before->second.status_;
             }
-            auto after_bool = false;
+            auto after_node_status = block_is_used;
             if (it_offset_after != offset_const_and_size_map.end()) {
-                after_bool = it_offset_after->second.status_;
+                after_node_status = it_offset_after->second.status_;
             }
 
 #define erase_before \
@@ -136,19 +138,23 @@ namespace my_namespace {
             // offset_const_and_size_map         size_const_and_offset_map 只有能分配的
             // 两个都不能合并
             // 当前 更改标志位                     添加 size 和 offset
-            if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == false) {
-                it_offset->second = {it_offset->second.size_, true};
+            if (it_offset != offset_const_and_size_map.end() &&
+                before_node_status == block_is_used &&
+                after_node_status == block_is_used) {
+                it_offset->second = {it_offset->second.size_, block_is_free};
                 size_const_and_offset_map.insert({it_offset->second.size_, {it_offset->first}});
             }
 
             // 只有前一个能合并
             // 前一个 更改大小                     找到 前一个 size  删除
             // 当前  删除                         添加合并后的 size 和 offset
-            if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == false) {
+            if (it_offset != offset_const_and_size_map.end() &&
+                before_node_status == block_is_free &&
+                after_node_status == block_is_used) {
                 erase_before;
                 const auto combination_size   = it_offset->second.size_ + it_offset_before->second.size_;
                 const auto combination_offset = it_offset_before->first;
-                it_offset_before->second      = {combination_size, true};
+                it_offset_before->second      = {combination_size, block_is_free};
                 offset_const_and_size_map.erase(it_offset);
                 size_const_and_offset_map.insert({combination_size, {combination_offset}});
             }
@@ -156,11 +162,13 @@ namespace my_namespace {
             // 之后后一个能合并
             // 当前 更改大小                       找到 后一个 size  删除
             // 后一个 删除                         添加合并后的 size 和 offset
-            if (it_offset != offset_const_and_size_map.end() && before_bool == false && after_bool == true) {
+            if (it_offset != offset_const_and_size_map.end() &&
+                before_node_status == block_is_used &&
+                after_node_status == block_is_free) {
                 erase_after;
                 const auto combination_size   = it_offset->second.size_ + it_offset_after->second.size_;
                 const auto combination_offset = it_offset->first;
-                it_offset->second             = {combination_size, true};
+                it_offset->second             = {combination_size, block_is_free};
                 offset_const_and_size_map.erase(it_offset_after);
                 size_const_and_offset_map.insert({combination_size, {combination_offset}});
             }
@@ -168,14 +176,16 @@ namespace my_namespace {
             // 前一个 更改大小                      找到 前一个 和 后一个 size  删除
             // 当前  删除                          添加合并后的 size 和 offset
             // 后一个 删除
-            if (it_offset != offset_const_and_size_map.end() && before_bool == true && after_bool == true) {
+            if (it_offset != offset_const_and_size_map.end() &&
+                before_node_status == block_is_free &&
+                after_node_status == block_is_free) {
                 const auto combination_size = it_offset_before->second.size_ +
                                               it_offset->second.size_ +
                                               it_offset_after->second.size_;
                 const auto combination_offset = it_offset_before->first;
                 erase_before;
                 erase_after;
-                it_offset_before->second = {combination_size, true};
+                it_offset_before->second = {combination_size, block_is_free};
                 offset_const_and_size_map.erase(it_offset);
                 offset_const_and_size_map.erase(it_offset_after);
                 size_const_and_offset_map.insert({combination_size, combination_offset});
@@ -190,6 +200,10 @@ namespace my_namespace {
         std::map<block_offset, size_and_status> offset_and_size_map;
         std::multimap<uint64_t, block_offset> free_block;
     };
+
+
+#undef  block_is_free
+#undef  block_is_used
 }
 
 #endif //HELLO_MAC_MEMORY_ALLOC_H
