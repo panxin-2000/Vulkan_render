@@ -605,6 +605,7 @@ add_executable(hello_test ${LABYRINTH}
         test/test_Tent_Filter.cpp
         test/test_ear_clip.cpp
         test/test_mutex.cpp
+        test/test_best-fit.cpp
         test/test_occt.cpp
         test/test_quadtree.cpp
         test/test_highway.cpp

@@ -11,7 +11,7 @@ std::mutex m;
 std::condition_variable cv;
 //  std::condition_variable  状态变量，怎么在线程中传递，
 std::string data;
-bool ready = false;
+bool ready     = false;
 bool processed = false;
 
 void worker_thread() {
@@ -27,14 +27,13 @@ void worker_thread() {
 
     // send data back to main()
     processed = true;
-    std::cout  << "worker thread signals data processing completed\n";
+    std::cout << "worker thread signals data processing completed\n";
 
     //manual unlocking is done before notifying ,to avoid waking up
     // the waiting thread only to block again (see notify_one for details)
 
     lk.unlock();
     cv.notify_one();
-
 }
 
 
@@ -53,7 +52,7 @@ void bar() {
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-std::mutex mtx;//
+std::mutex mtx; //
 int shared_resource = 0;
 
 int test_thread() {
@@ -69,14 +68,12 @@ int test_thread() {
 
     std::thread worker(worker_thread);
 
-    data = "example data";
-    {
+    data = "example data"; {
         std::lock_guard<std::mutex> lk(m);
         ready = true;
         std::cout << "main() siganls data ready for processing \n";
     }
-    cv.notify_one();
-    {
+    cv.notify_one(); {
         std::unique_lock<std::mutex> lk(m);
         cv.wait(lk, [] { return processed; });
     }
@@ -84,4 +81,5 @@ int test_thread() {
     worker.join();
     // 互斥量与lock的关系？为什么一定要这么写？
     // lock是互斥量的一个包装其，封装了一些操作
+    return 0;
 }
