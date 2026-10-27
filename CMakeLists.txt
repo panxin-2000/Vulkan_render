@@ -197,6 +197,14 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(readerwriterqueue)
 
+set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
+option(TRACY_ENABLE                  "Enable Tracy profiling"                    ON)
+
+add_executable(test_tracy tracy_main.cpp  "tracy/public/TracyClient.cpp")
+target_include_directories(test_tracy PRIVATE "tracy/public")
+if(TRACY_ENABLE)
+    target_compile_definitions(test_tracy PRIVATE TRACY_ENABLE)
+endif()
 
 #FetchContent_Declare(
 #        shaderc
