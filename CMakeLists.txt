@@ -634,6 +634,11 @@ target_compile_options(hello_test PRIVATE -g)
 target_compile_options(hello_test PRIVATE -fno-omit-frame-pointer)
 #target_compile_options(hello_test PRIVATE -fsanitize=address,undefined)
 #target_link_options(hello_test PRIVATE -fsanitize=address,undefined)
+
+# mac 上不支持leak ,在linux上是可以开启的, mac 上 Instruments，选择 Allocations 或 Leaks 模板，直接录制你的可执行程序
+#target_compile_options(hello_test PRIVATE -fsanitize=address,undefined,leak)
+#target_link_options(hello_test PRIVATE -fsanitize=address,undefined,leak)
+
 target_compile_definitions(hello_test PRIVATE NDEBUG)
 
 add_executable(test_mutex

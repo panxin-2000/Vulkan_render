@@ -25,6 +25,7 @@ void prepare_pass(VCB &vcb,
                   VKR_image_ptr depth_shadow_image,
                   VKR_image_ptr entity_image
 ) {
+    ZoneScoped;
     auto frustum_planes = engine.get_frustum_planes();
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
@@ -100,7 +101,7 @@ void render_different_pass(VCB &vcb,
                            VKR_image_ptr depth_image
 ) {
     // 这里向上, 都会需要执行的准备工作
-
+    ZoneScoped;
 
     // 绘制 3d 物体的阶段 pass
     {
@@ -175,7 +176,8 @@ void render_post_process(VCB &vcb,
                          VKR_image_ptr fxaa_result,
                          VKR_image_ptr EASU_result,
                          VKR_image_ptr RCAS_result,
-                         VKR_image_ptr compute_dof_blur_image) {
+                         VKR_image_ptr compute_dof_blur_image,
+                         const VKR_image_ptr &screen_image) {
     // 这里就都是 后处理相关的 内容了
     {
         // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出
@@ -200,9 +202,9 @@ void render_post_process(VCB &vcb,
         vcb.FSR1_RCAS(engine, EASU_result, RCAS_result);
         vcb.compute_write_finish_barrier(RCAS_result);
 
-        vcb.copy_image(RCAS_result, backend.get_current_swap_chain_image());
+        vcb.copy_image(RCAS_result, screen_image);
     } {
-        vcb.begin_rendering_attachment_to_screen(backend.get_current_swap_chain_image(),
+        vcb.begin_rendering_attachment_to_screen(screen_image,
                                                  VK_ATTACHMENT_LOAD_OP_LOAD); {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
             for (const auto entity: view) {
@@ -243,6 +245,7 @@ void destroy_Render_entt() { {
 }
 
 void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
+    ZoneScoped;
     VK_backend::instance().update_current_extent();
     engine.get_image_manager().using_to_free();
     const auto color_image            = engine.get_image_manager().get_one_color_image();
@@ -290,8 +293,11 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const uint64_t time_line             = Engine::get_current_submit_timeline();
     const VkCommandBuffer command_buffer = engine.get_current_command_buffer(); // 这和 frameIndex 无关
     engine.get_command_submit_manager().execute_callback_functions(time_line);
-    backend.get_image_to_render(); // imageIndex 在这里被改变
+
+    // 下面的的是 得到一个 能够绘制 画布
     destroy_Render_entt();
+
+    backend.update_swap_chain_image(); // imageIndex 在这里被改变
 
 
     // 拿到了总的数量,之后呢?
@@ -312,11 +318,14 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                  entity_image);
     render_different_pass(vcb, engine, color_image, depth_image);
     render_post_process(vcb, backend, engine, color_image, fxaa_result, EASU_result, RCAS_result,
-                        compute_dof_blur_image);
-    vcb.end_command_buffer(backend, engine);
+                        compute_dof_blur_image, backend.get_current_swap_chain_image());
+    vcb.end_command_buffer(backend, engine, backend.get_current_swap_chain_image());
 
-    vcb.submit_render_queue(backend, engine); //
-    backend.copy_image_to_screen();           // 这里应该改为 backend
+    vcb.submit_render_queue(backend, engine);
+
+
+    //
+    backend.copy_image_to_screen(); // 这里应该改为 backend
 
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);
@@ -366,6 +375,7 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
         return; // 已经在运行中了，直接返回
     }
     need_render = running; // 设置为运行中
+    tracy::SetThreadName("render thread");
 
     vk_render_queue::instance();
     // Render_entt().group<PBR_material_index, Transform_Matrix, Render_AABB, Draw_command>();
@@ -404,6 +414,7 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
         framerate_measure.begin_frame();
         engine.set_framerate(framerate_measure.get_frame_rate());
         render_once(backend, engine);
+        FrameMarkEnd("draw processing");
         framerate_measure.end_frame();
     }
     exit_and_clean(backend);

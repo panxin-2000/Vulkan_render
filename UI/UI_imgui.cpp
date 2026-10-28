@@ -85,6 +85,7 @@ bool ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo *info) {
 
 
 void update_imgui_geometry(const entt::entity entity, ImDrawData *draw_data) {
+    ZoneScoped;
     int fb_width  = (int) (draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     int fb_height = (int) (draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
     if (fb_width <= 0 || fb_height <= 0)
@@ -339,6 +340,7 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
                                   ImVec4 &clear_color,
                                   Point_3 &world_light_pos) {
     // Start the Dear ImGui frame
+    ZoneScoped;
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplVulkan_NewFrame(entity);
     ImGui_ImplSDL3_NewFrame();

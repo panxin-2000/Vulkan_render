@@ -718,7 +718,7 @@ void VCB::compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_i
 }
 
 void VCB::end_command_buffer(VK_backend &backend,
-                             Engine &engine) {
+                             Engine &engine, const VKR_image_ptr &screen_image) {
     if (query_pool_ != VK_NULL_HANDLE) {
         vkCmdWriteTimestamp(command_buffer_,
                             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, // 执行到哪个阶段时记录
@@ -728,7 +728,7 @@ void VCB::end_command_buffer(VK_backend &backend,
     }
     gpu_log_label_info("结束记录时间");
 
-    auto barrierPresent = init_image_memory_barrier(backend.get_current_swap_chain_image(),
+    auto barrierPresent = init_image_memory_barrier(screen_image,
                                                     image_barrier_frag_write_color,
                                                     image_barrier_present_src_khr
                                                    );

@@ -11,6 +11,8 @@
 
 #include "quill_log.h"
 #include "ECS.h"
+#include "tracy/Tracy.hpp"
+
 
 class quill_log;
 

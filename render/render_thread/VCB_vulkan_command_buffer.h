@@ -171,7 +171,7 @@ public:
 
     void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
 
-    void end_command_buffer(VK_backend &backend, Engine &engine);
+    void end_command_buffer(VK_backend &backend, Engine &engine , const VKR_image_ptr &screen_image);
 
 
     G_buffer_image_index begin_g_buffer_rendering_attachment(

@@ -172,7 +172,7 @@ public:
 
     void destroy_present_Semaphores();
 
-    void get_image_to_render();
+    void update_swap_chain_image();
 
     void destroy();
 

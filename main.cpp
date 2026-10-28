@@ -35,7 +35,6 @@
 
 
 #include "world_scene_root.h"
-#include "tracy/Tracy.hpp"
 
 Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval) {
     const char *message = (const char *) userdata;
@@ -149,6 +148,8 @@ int main(int argc, char *argv[]) {
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
             ZoneScopedN("process sdl event");
+            FrameMarkStart("input processing");
+
             ImGui_ImplSDL3_ProcessEvent(&event);
 
             // switch (event.type) {
@@ -220,6 +221,8 @@ int main(int argc, char *argv[]) {
         Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
         imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
         clean_render_entity();
+        FrameMarkEnd("input processing");
+        
         run_time = run_time + 1.0f / 60.0f;
         sync_render_data_to_render_thread(run_time);
         framerate_measure.end_frame();

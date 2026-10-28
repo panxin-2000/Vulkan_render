@@ -158,7 +158,7 @@ void VK_backend::destroy_present_Semaphores() {
 }
 
 
-void VK_backend::get_image_to_render() {
+void VK_backend::update_swap_chain_image() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
     VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true,
                                  UINT64_MAX));
@@ -175,8 +175,10 @@ void VK_backend::get_image_to_render() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         recreate_swap_chain();
         destroy_and_recreate_fence_and_semaphore();
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true
-                                    ,
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(),
+                                     1,
+                                     &get_current_fences(),
+                                     true,
                                      UINT64_MAX));
         VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
         result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
