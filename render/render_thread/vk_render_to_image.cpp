@@ -328,7 +328,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
 
 
     //
-    backend.copy_image_to_screen(); // 这里应该改为 backend
+    backend.copy_swap_chain_image_to_screen(); // 这里应该改为 backend
 
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);

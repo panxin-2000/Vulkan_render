@@ -24,6 +24,8 @@ std::vector<VkQueueFamilyProperties> get_queue_family_properties(const VkPhysica
 
 VkPhysicalDeviceMemoryProperties get_vulkan_memory(const VkPhysicalDevice &device);
 
+uint32_t getQueueFamilyIndex(const VkPhysicalDevice &physical_device, VkQueueFlags queueFlags);
+
 SwapChainSupportDetails querySwapChainSupport(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 VkExtent2D get_swap_image_rational_extent(const VkPhysicalDevice &device, const VkSurfaceKHR &surface,

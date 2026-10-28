@@ -38,7 +38,7 @@ VK_backend &VK_backend::instance() {
     return *current;
 }
 
-VkExtent2D VK_backend::get_swap_rational_extent() const {
+VkExtent2D VK_backend::get_swap_chain_image_extent() const {
     return swap_image_extent_;
 }
 
@@ -80,7 +80,7 @@ void VK_backend::destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
     }
 }
 
-void VK_backend::copy_image_to_screen() {
+void VK_backend::copy_swap_chain_image_to_screen() {
     frameIndex = (frameIndex + 1) % maxFramesInFlight;
     VkPresentInfoKHR presentInfo{
         .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -104,7 +104,7 @@ void VK_backend::copy_image_to_screen() {
 }
 
 void VK_backend::recreate_swap_chain() {
-    set_frame_buffer_resize(false);
+    set_screen_window_size_changed(false);
     const auto old_swap_chain = get_swap_chain();
     create_swap_chain(old_swap_chain);
     destroy_render_image();
@@ -191,7 +191,7 @@ void VK_backend::update_swap_chain_image() {
         return;
     } else if (result == VK_ERROR_OUT_OF_DATE_KHR ||
                result == VK_SUBOPTIMAL_KHR ||
-               is_frame_buffer_resize()) {
+               is_screen_window_size_changed()) {
         // 屏幕的大小发生了变化, 需要等待什么? 之前的提交全部绘制完成
         // 已经绘制完成的,全部显示到屏幕上完成
         VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(device_));
@@ -215,14 +215,22 @@ void VK_backend::update_swap_chain_image() {
             // 有几种情况,大小还在变动,所以不成功
             //          vulkan 设备错误,但是不能成功
         }
-    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    } else {
         LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
     }
 }
 
 
-uint32_t VK_backend::get_queue_Family() const {
-    return queue_family_;
+uint32_t VK_backend::get_common_queue() const {
+    return queueFamilyIndices.graphics;
+}
+
+uint32_t VK_backend::get_compute_queue() const {
+    return queueFamilyIndices.compute;
+}
+
+uint32_t VK_backend::get_transfer_queue() const {
+    return queueFamilyIndices.transfer;
 }
 
 const VkInstance &VK_backend::get_instance() const {
@@ -385,55 +393,18 @@ bool VK_backend::choose_one_physical_device() {
 }
 
 
-bool VK_backend::set_frame_buffer_resize(const bool value) {
+bool VK_backend::set_screen_window_size_changed(const bool value) {
     framebufferResized = value;
     return framebufferResized;
 }
 
-bool VK_backend::is_frame_buffer_resize() const {
+bool VK_backend::is_screen_window_size_changed() const {
     return framebufferResized;
 }
 
 float VK_backend::get_refresh_rate() const {
     return refresh_rate_;
 }
-
-uint32_t VK_backend::getQueueFamilyIndex(VkQueueFlags queueFlags) const {
-    auto queueFamilyProperties = get_queue_family_properties(physical_device_);
-
-    // Dedicated queue for compute
-    // Try to find a queue family index that supports compute but not graphics
-    if ((queueFlags & VK_QUEUE_COMPUTE_BIT) == queueFlags) {
-        for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
-            if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) &&
-                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)) {
-                return i;
-            }
-        }
-    }
-
-    // Dedicated queue for transfer
-    // Try to find a queue family index that supports transfer but not graphics and compute
-    if ((queueFlags & VK_QUEUE_TRANSFER_BIT) == queueFlags) {
-        for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
-            if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
-                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
-                ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0)) {
-                return i;
-            }
-        }
-    }
-
-    // For other queue types or if no separate compute queue is present, return the first one to support the requested flags
-    for (uint32_t i = 0; i < static_cast<uint32_t>(queueFamilyProperties.size()); i++) {
-        if ((queueFamilyProperties[i].queueFlags & queueFlags) == queueFlags) {
-            return i;
-        }
-    }
-
-    throw std::runtime_error("Could not find a matching queue family index");
-}
-
 
 void VK_backend::create_device() {
     // Logical device
@@ -443,7 +414,7 @@ void VK_backend::create_device() {
     VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT;
     // Graphics queue
     if (requestedQueueTypes & VK_QUEUE_GRAPHICS_BIT) {
-        queueFamilyIndices.graphics = getQueueFamilyIndex(VK_QUEUE_GRAPHICS_BIT);
+        queueFamilyIndices.graphics = getQueueFamilyIndex(physical_device_, VK_QUEUE_GRAPHICS_BIT);
         VkDeviceQueueCreateInfo queueInfo{};
         queueInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueInfo.queueFamilyIndex = queueFamilyIndices.graphics;
@@ -456,7 +427,7 @@ void VK_backend::create_device() {
 
     // Dedicated compute queue
     if (requestedQueueTypes & VK_QUEUE_COMPUTE_BIT) {
-        queueFamilyIndices.compute = getQueueFamilyIndex(VK_QUEUE_COMPUTE_BIT);
+        queueFamilyIndices.compute = getQueueFamilyIndex(physical_device_, VK_QUEUE_COMPUTE_BIT);
         if (queueFamilyIndices.compute != queueFamilyIndices.graphics) {
             // If compute family index differs, we need an additional queue create info for the compute queue
             VkDeviceQueueCreateInfo queueInfo{};
@@ -472,7 +443,7 @@ void VK_backend::create_device() {
     }
     // Dedicated transfer queue
     if (requestedQueueTypes & VK_QUEUE_TRANSFER_BIT) {
-        queueFamilyIndices.transfer = getQueueFamilyIndex(VK_QUEUE_TRANSFER_BIT);
+        queueFamilyIndices.transfer = getQueueFamilyIndex(physical_device_, VK_QUEUE_TRANSFER_BIT);
         if ((queueFamilyIndices.transfer != queueFamilyIndices.graphics) && (
                 queueFamilyIndices.transfer != queueFamilyIndices.compute)) {
             // If transfer family index differs, we need an additional queue create info for the transfer queue
@@ -588,7 +559,7 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
 
-    const VkExtent2D extent = get_swap_rational_extent();
+    const VkExtent2D extent = get_swap_chain_image_extent();
 
     uint32_t imageCount = get_rational_image_count(physical_device_, surface_);
 
@@ -642,7 +613,7 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     std::vector<VkImageView> image_views;
     images.resize(imageCount);
     image_views.resize(imageCount);
-    const VkExtent2D extent = get_swap_rational_extent();
+    const VkExtent2D extent = get_swap_chain_image_extent();
 
     Image_and_view_parameters parameters{};
     parameters.format      = surfaceFormat.format;

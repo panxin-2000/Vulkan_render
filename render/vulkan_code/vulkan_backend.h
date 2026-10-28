@@ -35,7 +35,6 @@ private:
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
     VkDevice device_                  = VK_NULL_HANDLE;
     VkQueue graphics_queue_           = VK_NULL_HANDLE;
-    VkQueue present_queue_            = VK_NULL_HANDLE;
     VkQueue transfer_queue_           = VK_NULL_HANDLE;
     VkQueue compute_queue_            = VK_NULL_HANDLE;
     VkSwapchainKHR swap_chain_        = VK_NULL_HANDLE;
@@ -63,7 +62,6 @@ private:
 public:
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
 
-    uint32_t queue_family_{0}; // 不清楚是否能够删除
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
     struct {
@@ -103,16 +101,6 @@ public:
         return get_fences()[frameIndex];
     }
 
-    void create_renderSemaphores();
-
-    void destroy_renderSemaphores();
-
-    void create_fences();
-
-    void destroy_fences();
-
-    void destroy_and_recreate_fence_and_semaphore();
-
 
     /*********************** fence_and_semaphore ****************************/
 
@@ -131,53 +119,22 @@ public:
 
     [[nodiscard]] size_t get_swap_chain_images_size() const;
 
-    /*********************** swap_chain_images ****************************/
+    void copy_swap_chain_image_to_screen();
+
+    VkExtent2D get_swap_chain_image_extent() const;
 
 
-    void destroy_render_image();
+    /*********************** screen_window ****************************/
 
-    void create_render_image();
+    bool set_screen_window_size_changed(const bool value);
 
-
-    bool set_frame_buffer_resize(const bool value);;
-
-    [[nodiscard]] bool is_frame_buffer_resize() const;;
+    [[nodiscard]] bool is_screen_window_size_changed() const;
 
     float get_refresh_rate() const;
 
-    uint32_t getQueueFamilyIndex(VkQueueFlags queueFlags) const;
-
-    void create_instance();
-
-    void create_surface();
-
-    bool choose_one_physical_device();
-
-    void create_device();
-
-    void create_VMA();
-
-    void create_swap_chain(VkSwapchainKHR old_swap_chain);
-
-
     static VK_backend &instance();
 
-    VkExtent2D get_swap_rational_extent() const;
-
     void create();
-
-    void create_depth_format();
-
-    void destroy_swap_chain(VkSwapchainKHR old_swap_chain);
-
-    void copy_image_to_screen();
-
-    void recreate_swap_chain();
-
-    void create_present_Semaphores();
-
-    void destroy_present_Semaphores();
-
 
     void destroy();
 
@@ -188,13 +145,21 @@ public:
      */
     void update_current_extent();
 
+
+    /*********************** 一系列的 get 函数 ****************************/
+
+
     [[nodiscard]] VkExtent2D get_current_extent() const;
 
     [[nodiscard]] const VkFormat &get_image_format() const;
 
     [[nodiscard]] const VkFormat &get_depth_format() const;
 
-    [[nodiscard]] uint32_t get_queue_Family() const;
+    [[nodiscard]] uint32_t get_common_queue() const;
+
+    [[nodiscard]] uint32_t get_compute_queue() const;
+
+    [[nodiscard]] uint32_t get_transfer_queue() const;
 
     [[nodiscard]] const VkInstance &get_instance() const;
 
@@ -219,6 +184,52 @@ private:
 
     ~VK_backend();
 
+    /**************** create ******************/
+
+    void create_instance();
+
+    void create_surface();
+
+    bool choose_one_physical_device();
+
+    void create_device();
+
+    void create_VMA();
+
+    // update_current_extent
+    void create_swap_chain(VkSwapchainKHR old_swap_chain);
+
+    void create_depth_format();
+
+    void create_render_image();
+
+    void create_fences();
+
+    void create_present_Semaphores();
+
+    void create_renderSemaphores();
+
+    /**************** create ******************/
+
+
+    /**************** destroy ******************/
+
+    void destroy_render_image();
+
+    void destroy_renderSemaphores();
+
+    void destroy_fences();
+
+    void destroy_present_Semaphores();
+
+    void destroy_swap_chain(VkSwapchainKHR old_swap_chain);
+
+    /**************** create ******************/
+
+    void recreate_swap_chain();
+
+    void destroy_and_recreate_fence_and_semaphore();
+
 public:
     VK_backend(const VK_backend &) = delete;
 
@@ -234,4 +245,5 @@ uint32_t get_maxPushConstantsSize();
 uint32_t get_max_descriptor_update_after_bind_samplers();
 
 void get_support_texture_formats();
+
 #endif //HELLO_MAC_GLFW_VULKAN_H

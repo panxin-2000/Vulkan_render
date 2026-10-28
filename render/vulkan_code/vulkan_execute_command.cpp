@@ -77,7 +77,7 @@ void Command_submit_manager::create() {
         .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext            = nullptr,
         .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = backend.get_queue_Family()
+        .queueFamilyIndex = backend.get_common_queue()
     };
     VK_CHECK_RESULT(vkCreateCommandPool(backend.get_device(), &commandPoolCI, nullptr, &pool));
     VkCommandBufferAllocateInfo allocInfo{};
