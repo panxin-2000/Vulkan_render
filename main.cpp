@@ -35,7 +35,7 @@
 
 
 #include "world_scene_root.h"
-
+#include "tracy/Tracy.hpp"
 
 Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval) {
     const char *message = (const char *) userdata;
@@ -48,6 +48,7 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
 
 int main(int argc, char *argv[]) {
     LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+    ZoneScopedN("main init");
 
     auto &backend = VK_backend::instance();
     backend.create();
@@ -142,10 +143,12 @@ int main(int argc, char *argv[]) {
     bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
     Mouse_status mouse_status;
+    tracy::SetThreadName("logic thread");
     while (!done) {
         framerate_measure.begin_frame();
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
+            ZoneScopedN("process sdl event");
             ImGui_ImplSDL3_ProcessEvent(&event);
 
             // switch (event.type) {

@@ -128,13 +128,6 @@ FetchContent_MakeAvailable(fastgltf)
 set(MSDFGEN_USE_VCPKG OFF)
 set(MSDFGEN_USE_SKIA OFF)
 
-FetchContent_Declare(
-        manifold
-        GIT_REPOSITORY https://github.com/elalish/manifold.git
-        GIT_TAG v3.3.2
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(manifold)
 
 
 find_package(Freetype REQUIRED)
@@ -198,7 +191,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(readerwriterqueue)
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
-option(TRACY_ENABLE                  "Enable Tracy profiling"                    ON)
+option(TRACY_ENABLE "Enable Tracy profiling" ON)
+set(TRACY_ENABLE ON CACHE BOOL "Enable Tracy profiling" FORCE)
+
 # 优先级从高到低为：
 # 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
 
@@ -469,7 +464,7 @@ file(GLOB_RECURSE object_model
         "object_model/load_gltf_model.cpp"
         "object_model/nano_vdb_model.cpp"
         "object_model/deferred_pass.cpp"
-        "object_model/manifold_model.cpp"
+#        "object_model/manifold_model.cpp"
         "object_model/simple_computer_buffer.cpp"
         "object_model/single_char.cpp"
         "object_model/skybox.cpp"
@@ -694,7 +689,7 @@ file(GLOB SHADER_FILES
 find_package(harfbuzz REQUIRED)
 
 
-add_executable(learn_render main.cpp
+add_executable(learn_render main.cpp "tracy/public/TracyClient.cpp"
         external/tinyobj/tiny_obj_loader.cc
 
         ${SHADER_FILES}
@@ -707,6 +702,11 @@ add_executable(learn_render main.cpp
         ${vulkan_code}
         ${imgui_sources}
 )
+
+target_include_directories(learn_render PRIVATE "tracy/public")
+if(TRACY_ENABLE)
+    target_compile_definitions(learn_render PUBLIC TRACY_ENABLE )
+endif()
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
@@ -731,7 +731,6 @@ target_link_libraries(learn_render PRIVATE Freetype)
 target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
-target_link_libraries(learn_render PRIVATE manifold)
 target_link_libraries(learn_render PRIVATE Vulkan::shaderc_combined)
 target_link_libraries(learn_render PRIVATE TBB::tbbmalloc_proxy)
 target_link_libraries(learn_render PRIVATE absl::hash)
