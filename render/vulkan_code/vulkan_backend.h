@@ -46,8 +46,7 @@ private:
     std::vector<VkSemaphore> render_to_image_semaphores_           = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
     std::array<VkFence, maxFramesInFlight> fences_                 = {};
-    uint32_t imageIndex                                            = 0;
-    uint32_t presentSemaphores                                     = 0;
+    uint32_t swap_chain_image_index_                               = 0;
 
     uint32_t frameIndex = 0;
 
@@ -76,9 +75,8 @@ public:
     bool framebufferResized = false;
 
 
-    uint32_t get_imageIndex() const {
-        return imageIndex;
-    }
+    /*********************** fence_and_semaphore ****************************/
+
 
     std::vector<VkSemaphore> &get_can_render_to_image_semaphores() {
         return render_to_image_semaphores_;
@@ -93,29 +91,37 @@ public:
     }
 
 
-    void presentSemaphores_updated() {
-        presentSemaphores = (presentSemaphores + 1) % maxFramesInFlight;
-    }
-
     VkSemaphore &get_current_presentSemaphores() {
         return get_presentSemaphores()[frameIndex];
     }
-
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
         return fences_;
     }
 
-
     VkFence &get_current_fences() {
         return get_fences()[frameIndex];
     }
 
-
     void create_renderSemaphores();
+
+    void destroy_renderSemaphores();
+
+    void create_fences();
+
+    void destroy_fences();
+
+    void destroy_and_recreate_fence_and_semaphore();
+
+
+    /*********************** fence_and_semaphore ****************************/
 
 
     /*********************** swap_chain_images ****************************/
+
+    uint32_t get_swap_chain_image_index() const {
+        return swap_chain_image_index_;
+    }
 
     std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
 
@@ -127,17 +133,10 @@ public:
 
     /*********************** swap_chain_images ****************************/
 
-    void destroy_renderSemaphores();
 
     void destroy_render_image();
 
     void create_render_image();
-
-    void create_fences();
-
-    void destroy_fences();
-
-    void destroy_and_recreate_fence_and_semaphore();
 
 
     bool set_frame_buffer_resize(const bool value);;

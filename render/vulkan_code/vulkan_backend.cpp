@@ -85,10 +85,10 @@ void VK_backend::copy_image_to_screen() {
     VkPresentInfoKHR presentInfo{
         .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores    = &get_can_render_to_image_semaphores()[imageIndex], // 不需要++ ？？可以，
+        .pWaitSemaphores    = &get_can_render_to_image_semaphores()[swap_chain_image_index_], // 不需要++ ？？可以，
         .swapchainCount     = 1,
         .pSwapchains        = &VK_backend::instance().get_swap_chain(),
-        .pImageIndices      = &imageIndex
+        .pImageIndices      = &swap_chain_image_index_
     }; {
         const auto result = Command_submit_manager::command_copy_image_to_screen(presentInfo);
         if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
@@ -145,7 +145,7 @@ void VK_backend::destroy_and_recreate_fence_and_semaphore() {
     create_fences();
     create_present_Semaphores();
     create_renderSemaphores();
-    imageIndex = 0;
+    swap_chain_image_index_ = 0;
 }
 
 void VK_backend::create_present_Semaphores() {
@@ -186,7 +186,7 @@ void VK_backend::update_swap_chain_image() {
                                         UINT64_MAX,
                                         get_current_presentSemaphores(),
                                         VK_NULL_HANDLE,
-                                        &imageIndex); // 其实是在这里执行了 ++ 的工作
+                                        &swap_chain_image_index_); // 其实是在这里执行了 ++ 的工作
     if (result == VK_SUCCESS) {
         return;
     } else if (result == VK_ERROR_OUT_OF_DATE_KHR ||
@@ -208,7 +208,7 @@ void VK_backend::update_swap_chain_image() {
                                        UINT64_MAX,
                                        get_current_presentSemaphores(),
                                        VK_NULL_HANDLE,
-                                       &imageIndex);
+                                       &swap_chain_image_index_);
         if (result == VK_SUCCESS) {
         } else {
             // 这里就是再次申请还是不成功, 那么需要做什么呢?
@@ -750,7 +750,7 @@ void VK_backend::create_renderSemaphores() {
 }
 
 const VKR_image_ptr &VK_backend::get_current_swap_chain_image() const {
-    return swap_chain_images_.at(get_imageIndex());
+    return swap_chain_images_.at(get_swap_chain_image_index());
 }
 
 

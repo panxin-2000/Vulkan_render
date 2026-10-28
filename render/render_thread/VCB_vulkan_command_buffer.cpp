@@ -44,7 +44,7 @@ void VCB::submit_render_queue(VK_backend &backend, Engine &engine) {
     uint32_t signal_semaphore_len    = 2;
     VkSemaphore signal_semaphores[2] = {
         engine.get_timeline_semaphore(),
-        backend.get_can_render_to_image_semaphores()[backend.get_imageIndex()]
+        backend.get_can_render_to_image_semaphores()[backend.get_swap_chain_image_index()]
     };
     uint64_t signal_semaphore_values[2] = {time_line_, 0};
 
