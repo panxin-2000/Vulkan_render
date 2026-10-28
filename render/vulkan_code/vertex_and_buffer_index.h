@@ -28,6 +28,12 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, cons
 inline VKR_buffer_ptr create_base_buffer(const VKR_buffer_ptr &base_buffer, const VK_backend &backend,
                                          VkDeviceSize size,
                                          const std::function<void(void *)> &mem_copy_callback) {
+
+    // vmaCopyMemoryToAllocation(allocator, &constantBufferData, alloc, 0, sizeof(ConstantBuffer));
+    // 找到了 一个 vma 官方提供的函数, 能够替代我下面写的代码
+
+    //  vmaCopyAllocationToMemory() 这个是只能够从 GPU 的内存 复制到 CPU 的内存
+
     if (base_buffer->empty())
         return {};
     // 没有创建成功，直接退出

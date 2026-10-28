@@ -14,10 +14,10 @@
 
 struct share_block {
     std::shared_ptr<void> ptr;
-    void *data;
-    size_t total_size;
-    size_t count;
-    size_t single_size;
+    void *data         = nullptr;
+    size_t total_size  = 0;
+    size_t count       = 0;
+    size_t single_size = 0;
     // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
 
 
@@ -43,6 +43,14 @@ struct Mesh_need_create_tag {
 
 
 Render_AABB find_min_max_point(const share_block &vertex);
+
+class Geometry {
+    share_block vertices_;
+    share_block indices_;
+    std::size_t materials_ = 0;
+    Local_Space_AABB AABBs_;
+};
+
 
 /**
  * 目的是两个各种各样格式的数据 放置到 vertex 和 index 两个 共享指针的内存区中

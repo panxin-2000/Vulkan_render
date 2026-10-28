@@ -85,6 +85,13 @@ private:
     RenderableSoa mRenderableData_;
     Mesh_data mesh_data_; // 这里存储同一批物体的mesh
     Geometry_data bindless_Geometry_data_;
+
+    // 这里需要什么? 由 新更新的 bindless_Geometry_data_ 计算出新的  std::vector<VKR_Primitive>
+    // 然后比较新旧的区别, 之后,  知道了区别, 然后就是执行 copy 了,
+    // 理论上两个是能够对比的,但是实际上还是有问题, 比如一个新插入的, 是直接写入到哪里呢?
+    // 找一个最后的, 先写到最后面? 之后呢?
+    // 另一个,如果中间某个删除呢? 那块位置是空闲呢? 还是 之后的内存整体进行一次搬运呢?
+
 };
 
 

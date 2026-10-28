@@ -199,6 +199,8 @@ FetchContent_MakeAvailable(readerwriterqueue)
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
 option(TRACY_ENABLE                  "Enable Tracy profiling"                    ON)
+# 优先级从高到低为：
+# 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
 
 add_executable(test_tracy tracy_main.cpp  "tracy/public/TracyClient.cpp")
 target_include_directories(test_tracy PRIVATE "tracy/public")

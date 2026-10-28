@@ -61,13 +61,13 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
     const std::vector<share_block> &vertices = data.get_vertices();
     const std::vector<share_block> &indices  = data.get_indices();
     if (!indices.empty() && indices.size() == vertices.size()) {
-        int32_t vertices_offset = 0;
-        uint32_t first_index    = 0;
+        size_t vertices_offset = 0;
+        uint32_t first_index   = 0;
         for (uint32_t i = 0; i < indices.size(); i++) {
             const auto index  = indices[i];
             const auto vertex = vertices[i];
             VKR_Primitive primitive;
-            primitive.vertexOffset = vertices_offset; // 应该是这里的问题
+            primitive.vertexOffset = static_cast<int32_t>(vertices_offset); // 应该是这里的问题
             vertices_offset        += vertex.count;
             primitive.firstIndex   = first_index;
             first_index            += index.count;

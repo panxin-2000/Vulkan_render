@@ -1072,6 +1072,7 @@ void combine_geometry(const entt::entity model_entity) {
 }
 
 void deal_new_add_model(const entt::entity model_entity) {
+    // 逻辑线程可以碰 数据的具体内容,但是不应该管理数据在 GPU 的内存中应该如何放置
     combine_geometry_data(model_entity);
 
     combine_boxes_and_matrices(model_entity);
