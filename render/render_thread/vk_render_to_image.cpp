@@ -420,6 +420,7 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
     while (need_render == running) {
         framerate_measure.begin_frame();
         engine.set_framerate(framerate_measure.get_frame_rate());
+        FrameMarkStart("draw processing");
         render_once(backend, engine);
         FrameMarkEnd("draw processing");
         framerate_measure.end_frame();

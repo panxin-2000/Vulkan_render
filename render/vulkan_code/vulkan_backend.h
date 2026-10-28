@@ -135,6 +135,8 @@ public:
 
     void destroy();
 
+    void check_malloc() const;
+
     /**
      *  有两次调用
      *      渲染循环每次循环的开始需要执行一次

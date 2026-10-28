@@ -654,6 +654,22 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     return result;
 }
 
+void VK_backend::check_malloc() const {
+    VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
+    vmaGetHeapBudgets(allocator_, budgets); // 极快，可每帧调用 //
+
+    // 获取例如 DEVICE_LOCAL 堆的索引数据
+    uint32_t heapIndex = 0;
+    std::cout << "VMA 账本统计已分配: " << budgets[heapIndex].statistics.allocationBytes / (1024 * 1024) << " MB\n";
+    std::cout << "VMA 实际向 Vulkan 申请的 Block 大小: " << budgets[heapIndex].statistics.blockBytes / (1024 * 1024) <<
+            " MB\n";
+    std::cout << "系统当前实时底层 Usage 估算: " << budgets[heapIndex].usage / (1024 * 1024) << " MB\n";
+
+#ifndef NDEBUG
+    VmaTotalStatistics pStats;
+    vmaCalculateStatistics(allocator_, &pStats);
+#endif
+}
 
 void VK_backend::destroy() {
     destroy_render_image();
@@ -676,16 +692,6 @@ void VK_backend::destroy() {
         vmaCalculateStatistics(allocator_, &stats);
         // 获取全局未销毁的分配总数
         uint32_t activeAllocCount = stats.total.statistics.allocationCount;
-
-        VmaBudget budgets[VK_MAX_MEMORY_HEAPS];
-        vmaGetHeapBudgets(allocator_, budgets); // 极快，可每帧调用 //
-
-        // 获取例如 DEVICE_LOCAL 堆的索引数据
-        uint32_t heapIndex = 0;
-        std::cout << "VMA 账本统计已分配: " << budgets[heapIndex].statistics.allocationBytes / (1024 * 1024) << " MB\n";
-        std::cout << "VMA 实际向 Vulkan 申请的 Block 大小: " << budgets[heapIndex].statistics.blockBytes / (1024 * 1024) <<
-                " MB\n";
-        std::cout << "系统当前实时底层 Usage 估算: " << budgets[heapIndex].usage / (1024 * 1024) << " MB\n";
 
 
         vmaDestroyAllocator(allocator_);

@@ -285,19 +285,33 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
     const VkBufferCreateInfo BufferCreateInfo{
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size  = buffer_size,
+#ifdef TRACY_ENABLE
+        .usage = static_cast<VkBufferUsageFlags>(usage | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT),
+#else
         .usage = usage
+#endif
+
     };
     const VmaAllocationCreateInfo AllocationCreateInfo{
         .flags = flags,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
     VmaAllocationInfo allocInfo = {};
-    const auto &handle          = VK_backend::instance();
+    const auto &backend         = VK_backend::instance();
     std::lock_guard<std::mutex> lock(buffer_block_mutex);
-    VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(handle.get_allocator(),
+    VK_CHECK_RESULT_NOT_EXIT(vmaCreateBuffer(backend.get_allocator(),
                                  &BufferCreateInfo, &AllocationCreateInfo,
                                  &buffer, &allocation,
                                  &allocInfo));
+#ifdef TRACY_ENABLE
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer
+    };
+    const auto deviceAddress = vkGetBufferDeviceAddress(backend.get_device(), &vk_buffer_device_address_info);
+    TracyAllocN(reinterpret_cast<void *>(deviceAddress), buffer_size, "VMA buffer");
+#endif
+
     return std::make_shared<VKR_buffer>(buffer, allocation);
 }
 
@@ -342,6 +356,14 @@ void discard_buffer_map_clean(uint64_t finished_timeline) {
                   timeline);
         if (finished_timeline >= timeline) {
             std::lock_guard<std::mutex> lock(buffer_block_mutex);
+#ifdef TRACY_ENABLE
+            const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+                .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+                .buffer = buffer.first
+            };
+            const auto deviceAddress = vkGetBufferDeviceAddress(backend.get_device(), &vk_buffer_device_address_info);
+            TracyFreeN(reinterpret_cast<void *>(deviceAddress), "VMA buffer");
+#endif
             vmaDestroyBuffer(backend.get_allocator(), buffer.first, buffer.second);
             it = discard_buffer_map.erase(it);
         } else {

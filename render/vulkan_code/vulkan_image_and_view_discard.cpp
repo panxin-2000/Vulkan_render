@@ -42,6 +42,8 @@ void discard_image_and_view_map_clean(uint64_t finished_timeline) {
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline, timeline.first);
         if (finished_timeline >= timeline.first) {
             vmaDestroyImage(backend.get_allocator(), image.first, image.second);
+            TracyFreeN(image.second,"VMA");
+
             it = discard_image_map.erase(it);
         } else {
             ++it;
