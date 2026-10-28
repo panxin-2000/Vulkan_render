@@ -49,6 +49,17 @@ private:
 
     uint32_t frameIndex = 0;
 
+    VkFormat depth_format_{VK_FORMAT_UNDEFINED};
+
+    struct {
+        uint32_t graphics;
+        uint32_t compute;
+        uint32_t transfer;
+    } queueFamilyIndices{}; // 不用给到外部，
+
+    bool framebufferResized = false;
+
+
     /**
      * frameIndex 正在渲染的一帧图像
      * imageIndex swap chain 创建的 image 的索引
@@ -61,16 +72,6 @@ private:
 
 public:
     // 为什么会多一个这个？   内存屏障的时候需要用到，清理的时候不用清理，由swap chain 清理
-
-    VkFormat depth_format_{VK_FORMAT_UNDEFINED};
-
-    struct {
-        uint32_t graphics;
-        uint32_t compute;
-        uint32_t transfer;
-    } queueFamilyIndices{}; // 不用给到外部，
-
-    bool framebufferResized = false;
 
 
     /*********************** fence_and_semaphore ****************************/
@@ -88,7 +89,6 @@ public:
         return present_semaphores_;
     }
 
-
     VkSemaphore &get_current_presentSemaphores() {
         return get_presentSemaphores()[frameIndex];
     }
@@ -102,9 +102,6 @@ public:
     }
 
 
-    /*********************** fence_and_semaphore ****************************/
-
-
     /*********************** swap_chain_images ****************************/
 
     uint32_t get_swap_chain_image_index() const {
@@ -113,9 +110,7 @@ public:
 
     std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
 
-    const VKR_image_ptr &get_current_swap_chain_image() const;
-
-    void update_swap_chain_image();
+    const VKR_image_ptr &get_blank_swap_chain_image();
 
     [[nodiscard]] size_t get_swap_chain_images_size() const;
 
@@ -129,6 +124,8 @@ public:
     bool set_screen_window_size_changed(const bool value);
 
     [[nodiscard]] bool is_screen_window_size_changed() const;
+
+    /*********************** other ****************************/
 
     float get_refresh_rate() const;
 
@@ -186,6 +183,7 @@ private:
 
     /**************** create ******************/
 
+
     void create_instance();
 
     void create_surface();
@@ -209,8 +207,6 @@ private:
 
     void create_renderSemaphores();
 
-    /**************** create ******************/
-
 
     /**************** destroy ******************/
 
@@ -224,9 +220,9 @@ private:
 
     void destroy_swap_chain(VkSwapchainKHR old_swap_chain);
 
-    /**************** create ******************/
+    /**************** destroy_and_recreate ******************/
 
-    void recreate_swap_chain();
+    void destroy_and_recreate_swap_chain_and_image();
 
     void destroy_and_recreate_fence_and_semaphore();
 

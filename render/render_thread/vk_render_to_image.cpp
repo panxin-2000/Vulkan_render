@@ -179,7 +179,7 @@ void render_post_process(VCB &vcb,
                          VKR_image_ptr compute_dof_blur_image,
                          const VKR_image_ptr &screen_image) {
     // 这里就都是 后处理相关的 内容了
-    {
+    if (screen_image != nullptr) {
         // 去缺陷 → 还原彩色 → 擦除噪点 → 提亮暗部 → 调出好看的颜色 → 最终压缩（如 JPEG）输出
 
         // 景深（Depth of Field）绽放（Bloom）镜片炫光（Lens Flare）
@@ -319,16 +319,19 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     render_different_pass(vcb, engine, color_image, depth_image);
 
 
-    backend.update_swap_chain_image(); // imageIndex 在这里被改变
-    render_post_process(vcb, backend, engine, color_image, fxaa_result, EASU_result, RCAS_result,
-                        compute_dof_blur_image, backend.get_current_swap_chain_image());
-    vcb.end_command_buffer(backend, engine, backend.get_current_swap_chain_image());
-
+    auto &swap_chain_image = backend.get_blank_swap_chain_image(); // imageIndex 在这里被改变
+    render_post_process(vcb, backend, engine,
+                        color_image,
+                        fxaa_result,
+                        EASU_result,
+                        RCAS_result,
+                        compute_dof_blur_image,
+                        swap_chain_image);
+    vcb.end_command_buffer(backend, engine, swap_chain_image);
     vcb.submit_render_queue(backend, engine);
 
-
-    //
-    backend.copy_swap_chain_image_to_screen(); // 这里应该改为 backend
+    if (swap_chain_image != nullptr)
+        backend.copy_swap_chain_image_to_screen(); // 这里应该改为 backend
 
     const uint64_t finished_timeline = engine.get_finished_timeline();
     clean_discard_vulkan_handle(finished_timeline);
