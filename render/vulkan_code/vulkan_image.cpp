@@ -210,7 +210,7 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
     VkMemoryRequirements img1MemReq;
     vkGetImageMemoryRequirements(backend.get_device(), image, &img1MemReq);
-    TracyAllocN(allocation, img1MemReq.size,"VMA");
+    TracyAllocN(allocation, img1MemReq.size,"VMA image");
 
     VkImageViewCreateInfo depthViewCI{
         .sType  = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
