@@ -45,9 +45,9 @@ private:
     std::vector<VkSemaphore> render_to_image_semaphores_           = {};
     std::array<VkSemaphore, maxFramesInFlight> present_semaphores_ = {};
     std::array<VkFence, maxFramesInFlight> fences_                 = {};
-    uint32_t swap_chain_image_index_                               = 0;
 
-    uint32_t frameIndex = 0;
+    uint32_t swap_chain_image_index_ = 0;
+    uint32_t frame_index_            = 0;
 
     VkFormat depth_format_{VK_FORMAT_UNDEFINED};
 
@@ -82,7 +82,7 @@ public:
     }
 
     VkSemaphore &get_current_renderSemaphores() {
-        return get_can_render_to_image_semaphores()[frameIndex];
+        return get_can_render_to_image_semaphores()[frame_index_];
     }
 
     std::array<VkSemaphore, maxFramesInFlight> &get_presentSemaphores() {
@@ -90,7 +90,7 @@ public:
     }
 
     VkSemaphore &get_current_presentSemaphores() {
-        return get_presentSemaphores()[frameIndex];
+        return get_presentSemaphores()[frame_index_];
     }
 
     std::array<VkFence, maxFramesInFlight> &get_fences() {
@@ -98,7 +98,7 @@ public:
     }
 
     VkFence &get_current_fences() {
-        return get_fences()[frameIndex];
+        return get_fences()[frame_index_];
     }
 
 

@@ -81,7 +81,7 @@ void VK_backend::destroy_swap_chain(VkSwapchainKHR old_swap_chain) {
 }
 
 void VK_backend::copy_swap_chain_image_to_screen() {
-    frameIndex = (frameIndex + 1) % maxFramesInFlight;
+    frame_index_ = (frame_index_ + 1) % maxFramesInFlight;
     VkPresentInfoKHR presentInfo{
         .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
