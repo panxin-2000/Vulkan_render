@@ -40,7 +40,7 @@ private:
     VkQueue compute_queue_            = VK_NULL_HANDLE;
     VkSwapchainKHR swap_chain_        = VK_NULL_HANDLE;
     VmaAllocator allocator_           = VK_NULL_HANDLE; // 之后需要添加的另一个项目中
-    VkExtent2D extent_;
+    VkExtent2D swap_image_extent_;
 
     std::vector<VKR_image_ptr> swap_chain_images_;
     std::vector<VkSemaphore> render_to_image_semaphores_           = {};
@@ -182,6 +182,11 @@ public:
 
     void destroy();
 
+    /**
+     *  有两次调用
+     *      渲染循环每次循环的开始需要执行一次
+     *      backend 初始化的时候需要执行一次
+     */
     void update_current_extent();
 
     [[nodiscard]] VkExtent2D get_current_extent() const;

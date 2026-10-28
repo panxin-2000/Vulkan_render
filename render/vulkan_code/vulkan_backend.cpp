@@ -39,8 +39,7 @@ VK_backend &VK_backend::instance() {
 }
 
 VkExtent2D VK_backend::get_swap_rational_extent() const {
-    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
-    return extent;
+    return swap_image_extent_;
 }
 
 void VK_backend::create() {
@@ -589,7 +588,7 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &capabilities);
 
-    const VkExtent2D extent = get_swap_image_rational_extent(physical_device_, surface_, window_);
+    const VkExtent2D extent = get_swap_rational_extent();
 
     uint32_t imageCount = get_rational_image_count(physical_device_, surface_);
 
@@ -657,8 +656,6 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     parameters.arrayLayers = 1;
     parameters.flags       = 0;
 
-    // 这里的问题导致的，
-    update_current_extent(); // 两个函数足够近，应该能避免很多问题
     VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device_, swap_chain_, &imageCount, images.data()));
     for (auto i = 0; i < imageCount; i++) {
         VkImageViewCreateInfo viewCI{
@@ -735,11 +732,11 @@ void VK_backend::destroy() {
 }
 
 void VK_backend::update_current_extent() {
-    extent_ = get_swap_image_rational_extent(physical_device_, surface_, window_);
+    swap_image_extent_ = get_swap_image_rational_extent(physical_device_, surface_, window_);
 }
 
 VkExtent2D VK_backend::get_current_extent() const {
-    return extent_;
+    return swap_image_extent_;
 }
 
 void VK_backend::create_renderSemaphores() {
