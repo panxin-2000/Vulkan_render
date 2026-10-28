@@ -75,9 +75,6 @@ public:
 
     bool framebufferResized = false;
 
-    [[nodiscard]] const std::vector<VKR_image_ptr> &get_swap_chain_images() const {
-        return swap_chain_images_;
-    }
 
     uint32_t get_imageIndex() const {
         return imageIndex;
@@ -117,7 +114,18 @@ public:
 
     void create_renderSemaphores();
 
+
+    /*********************** swap_chain_images ****************************/
+
+    std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
+
     const VKR_image_ptr &get_current_swap_chain_image() const;
+
+    void update_swap_chain_image();
+
+    [[nodiscard]] size_t get_swap_chain_images_size() const;
+
+    /*********************** swap_chain_images ****************************/
 
     void destroy_renderSemaphores();
 
@@ -152,7 +160,6 @@ public:
 
     void create_swap_chain(VkSwapchainKHR old_swap_chain);
 
-    std::vector<VKR_image_ptr> create_swap_chain_image_and_view();
 
     static VK_backend &instance();
 
@@ -172,7 +179,6 @@ public:
 
     void destroy_present_Semaphores();
 
-    void update_swap_chain_image();
 
     void destroy();
 

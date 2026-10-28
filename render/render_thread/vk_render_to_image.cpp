@@ -202,6 +202,9 @@ void render_post_process(VCB &vcb,
         vcb.FSR1_RCAS(engine, EASU_result, RCAS_result);
         vcb.compute_write_finish_barrier(RCAS_result);
 
+        // 来回移动的时候会导致下面一个问题
+        // pRegions[0].dstOffsets[0].x is 0 and dstOffsets[1].x is 1508 which exceed dstSubresource width extent (1500).
+        // 将画面扩大的时候遇到的 , 也就是
         vcb.copy_image(RCAS_result, screen_image);
     } {
         vcb.begin_rendering_attachment_to_screen(screen_image,
@@ -294,10 +297,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     const VkCommandBuffer command_buffer = engine.get_current_command_buffer(); // 这和 frameIndex 无关
     engine.get_command_submit_manager().execute_callback_functions(time_line);
 
-    // 下面的的是 得到一个 能够绘制 画布
     destroy_Render_entt();
-
-    backend.update_swap_chain_image(); // imageIndex 在这里被改变
 
 
     // 拿到了总的数量,之后呢?
@@ -317,6 +317,9 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     prepare_pass(vcb, engine, depth_AO_image, depth_AO_copy_image, SSAO_image, blur_SSAO_image, depth_shadow_image,
                  entity_image);
     render_different_pass(vcb, engine, color_image, depth_image);
+
+
+    backend.update_swap_chain_image(); // imageIndex 在这里被改变
     render_post_process(vcb, backend, engine, color_image, fxaa_result, EASU_result, RCAS_result,
                         compute_dof_blur_image, backend.get_current_swap_chain_image());
     vcb.end_command_buffer(backend, engine, backend.get_current_swap_chain_image());
@@ -353,6 +356,7 @@ void vk_render_GPU::exit_and_clean(VK_backend &backend) {
     // image_views_
     // images_
 
+    // 因为是想退出, 所以必须要等全部的数据都计算完成
     VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(VK_backend::instance().get_device()));
 
     Render_entt().clear();

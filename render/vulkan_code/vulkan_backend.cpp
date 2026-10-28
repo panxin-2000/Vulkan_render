@@ -92,24 +92,25 @@ void VK_backend::copy_image_to_screen() {
         .pImageIndices      = &imageIndex
     }; {
         const auto result = Command_submit_manager::command_copy_image_to_screen(presentInfo);
-        if (result == VK_SUCCESS) {
-        } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-                   VK_backend::instance().is_frame_buffer_resize()) {
+        if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
+            // 成功或者 因为当前屏幕已经改变,但是已经能够渲染完当前画面
+        } else if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            // 目前还没有走到这里
             recreate_swap_chain();
             destroy_and_recreate_fence_and_semaphore();
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
+        } else {
+            LOG_ERROR(g_log(), " Fatal error VkResult is {}  ", VK_error_string(result));
         }
     }
 }
 
 void VK_backend::recreate_swap_chain() {
-    VK_backend::instance().set_frame_buffer_resize(false);
-    const auto old_swap_chain = VK_backend::instance().get_swap_chain();
-    VK_backend::instance().create_swap_chain(old_swap_chain);
+    set_frame_buffer_resize(false);
+    const auto old_swap_chain = get_swap_chain();
+    create_swap_chain(old_swap_chain);
     destroy_render_image();
     create_render_image();
-    VK_backend::instance().destroy_swap_chain(old_swap_chain);
+    destroy_swap_chain(old_swap_chain);
 }
 
 
@@ -122,11 +123,19 @@ void VK_backend::create_fences() {
 }
 
 void VK_backend::destroy_fences() {
-    const auto &backend = VK_backend::instance();
     for (auto i = 0; i < maxFramesInFlight; i++) {
-        vkDestroyFence(backend.get_device(), fences_[i], nullptr); //  这里还需要
+        const auto result = vkGetFenceStatus(get_device(), fences_[i]);
+        if (result == VK_SUCCESS) {
+        } else if (result == VK_NOT_READY) {
+            VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(device_));
+            // 部分情况下是有用的,但是
+        } else if (result == VK_ERROR_DEVICE_LOST) {
+        } else {
+        }
+        vkDestroyFence(get_device(), fences_[i], nullptr); //  这里还需要
         fences_[i] = VK_NULL_HANDLE;
     }
+    return;
 }
 
 
@@ -158,39 +167,55 @@ void VK_backend::destroy_present_Semaphores() {
 }
 
 
+[[nodiscard]] size_t VK_backend::get_swap_chain_images_size() const {
+    return swap_chain_images_.size();
+}
+
+
 void VK_backend::update_swap_chain_image() {
     // forces the CPU to stop and wait until the GPU has finished executing a specific batch of commands
-    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(), 1, &get_current_fences(), true,
+    VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(),
+                                 1,
+                                 &get_current_fences(),
+                                 true,
                                  UINT64_MAX));
-    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
-    auto result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
-                                        VK_backend::instance().get_swap_chain(),
+    VK_CHECK_RESULT_NOT_EXIT(vkResetFences(get_device(),
+                                 1,
+                                 &get_current_fences()));
+    auto result = vkAcquireNextImageKHR(get_device(),
+                                        get_swap_chain(),
                                         UINT64_MAX,
                                         get_current_presentSemaphores(),
                                         VK_NULL_HANDLE,
                                         &imageIndex); // 其实是在这里执行了 ++ 的工作
     if (result == VK_SUCCESS) {
-    } else if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
-               VK_backend::instance().is_frame_buffer_resize()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        return;
+    } else if (result == VK_ERROR_OUT_OF_DATE_KHR ||
+               result == VK_SUBOPTIMAL_KHR ||
+               is_frame_buffer_resize()) {
+        // 屏幕的大小发生了变化, 需要等待什么? 之前的提交全部绘制完成
+        // 已经绘制完成的,全部显示到屏幕上完成
+        VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(device_));
         recreate_swap_chain();
         destroy_and_recreate_fence_and_semaphore();
-        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(VK_backend::instance().get_device(),
+        VK_CHECK_RESULT_NOT_EXIT(vkWaitForFences(get_device(),
                                      1,
                                      &get_current_fences(),
                                      true,
                                      UINT64_MAX));
-        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(VK_backend::instance().get_device(), 1, &get_current_fences()));
-        result = vkAcquireNextImageKHR(VK_backend::instance().get_device(),
-                                       VK_backend::instance().get_swap_chain(),
+        VK_CHECK_RESULT_NOT_EXIT(vkResetFences(get_device(), 1, &get_current_fences()));
+        result = vkAcquireNextImageKHR(get_device(),
+                                       get_swap_chain(),
                                        UINT64_MAX,
                                        get_current_presentSemaphores(),
                                        VK_NULL_HANDLE,
                                        &imageIndex);
         if (result == VK_SUCCESS) {
+        } else {
+            // 这里就是再次申请还是不成功, 那么需要做什么呢?
+            // 有几种情况,大小还在变动,所以不成功
+            //          vulkan 设备错误,但是不能成功
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // 有时候成功，有时候不能一次成功，不知道为什么
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         LOG_ERROR(g_log(), " failed to acquire swap chain image! ");
     }
@@ -594,7 +619,6 @@ void VK_backend::create_swap_chain(VkSwapchainKHR old_swap_chain) {
         .clipped        = VK_TRUE,
         .oldSwapchain   = old_swap_chain,
     };
-    VK_CHECK_RESULT_NOT_EXIT(vkDeviceWaitIdle(device_));
     VK_CHECK_RESULT(vkCreateSwapchainKHR(device_, &swapchainCI, nullptr, &swap_chain_));
     return; // how to vulkan
     // VK_ERROR_NATIVE_WINDOW_IN_USE_KHR
@@ -619,7 +643,7 @@ std::vector<VKR_image_ptr> VK_backend::create_swap_chain_image_and_view() {
     std::vector<VkImageView> image_views;
     images.resize(imageCount);
     image_views.resize(imageCount);
-    const VkExtent2D extent = VK_backend::instance().get_swap_rational_extent();
+    const VkExtent2D extent = get_swap_rational_extent();
 
     Image_and_view_parameters parameters{};
     parameters.format      = surfaceFormat.format;
@@ -721,7 +745,7 @@ VkExtent2D VK_backend::get_current_extent() const {
 void VK_backend::create_renderSemaphores() {
     const auto &backend = VK_backend::instance();
     VkSemaphoreCreateInfo semaphoreCI{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
-    render_to_image_semaphores_.resize(get_swap_chain_images().size());
+    render_to_image_semaphores_.resize(get_swap_chain_images_size());
     LOG_INFO(g_log(), "get_swap_image_view size :  {}!", render_to_image_semaphores_.size());
     for (auto &semaphore: render_to_image_semaphores_) {
         VK_CHECK_RESULT_NOT_EXIT(vkCreateSemaphore(backend.get_device(), &semaphoreCI, nullptr, &semaphore));
@@ -729,7 +753,7 @@ void VK_backend::create_renderSemaphores() {
 }
 
 const VKR_image_ptr &VK_backend::get_current_swap_chain_image() const {
-    return get_swap_chain_images().at(get_imageIndex());
+    return swap_chain_images_.at(get_imageIndex());
 }
 
 
@@ -749,7 +773,7 @@ void VK_backend::destroy_render_image() {
 }
 
 void VK_backend::create_render_image() {
-    swap_chain_images_ = VK_backend::instance().create_swap_chain_image_and_view();
+    swap_chain_images_ = create_swap_chain_image_and_view();
 }
 
 
