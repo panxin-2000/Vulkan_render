@@ -6,8 +6,14 @@
 #define HELLO_MAC_FONT_MANAGER_H
 
 #include "image.h"
+#include <msdfgen.h>
+#include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
+#include <map>
 
+#include "shader_common.h"
+#include "bin_pack/MaxRectsBinPack.h"
 
+// 纹理图集 Texture Atlas
 struct Atlas {
     std::string type;
     float distanceRange       = 0.0f;
@@ -18,6 +24,7 @@ struct Atlas {
     std::string yOrigin;
 };
 
+// 字形/图形度量信息
 struct Metrics {
     float emSize             = 0.0f; // 基准单位
     float lineHeight         = 0.0f; // 下一行的起始位置 字体大小 * lineHeight
@@ -27,7 +34,7 @@ struct Metrics {
     float underlineThickness = 0.0f; // 下划线的粗细
 };
 
-
+// 字母 “A” 的线条、轮廓和像素图像
 struct Glyph {
     uint32_t unicode = 0;
     float advance    = 0.6f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
@@ -53,11 +60,11 @@ public:
     // LRU_cache<unicode_value, Glyph> unicode_cache;
 
     // 没有 LRU (Least Recently Used)可以考虑之后添加
-    rbp::MaxRectsBinPack texture_of_MSDF;
+    rbp::MaxRectsBinPack bin_pack_manager;
     Image image;
 
-    msdfgen::FreetypeHandle *ft;
-    using Font_File_name = std::string;
+    msdfgen::FreetypeHandle *ft = nullptr;
+    using Font_File_name        = std::string;
 
     struct Font_File_name_and_FontHandle {
         Font_File_name name;
@@ -66,9 +73,7 @@ public:
 
     std::vector<Font_File_name_and_FontHandle> fonts;
 
-    explicit Msdf_text(const size_t max_size) //: unicode_cache(max_size)
-    {
-    }
+    Msdf_text() = default;
 
     ~Msdf_text() {
         for (const auto &font: fonts) {
@@ -99,10 +104,40 @@ public:
 
 class Font_Manager {
 public:
+    Msdf_text msdf_text;
 
+public:
+    Font_Manager(const Font_Manager &) = delete;
+
+    Font_Manager &operator=(const Font_Manager &) = delete;
+
+    Font_Manager(Font_Manager &&) = delete;
+
+    Font_Manager &operator=(Font_Manager &&) = delete;
+
+    static Font_Manager &instance();
+
+    void create();
 
 private:
+    Font_Manager() = default;
+
+    ~Font_Manager() = default;
 };
+
+bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
+                                    const std::vector<uint32_t> &unicode_points,
+                                    const std::string &font_file_name);
+
+
+std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
+create_text_geometry_data(
+    const std::string &text,
+    std::map<uint32_t, Glyph> &glyphs,
+    float min_x,
+    float min_y,
+    float atlas_width,
+    float atlas_height);
 
 
 #endif //HELLO_MAC_FONT_MANAGER_H

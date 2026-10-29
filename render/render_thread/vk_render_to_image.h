@@ -42,8 +42,7 @@ public:
 private:
     static void clean_discard_vulkan_handle(uint64_t finished_timeline);
 
-    vk_render_GPU() {
-    }
+    vk_render_GPU() = default;
 
     ~vk_render_GPU() = default;
 

@@ -6,17 +6,9 @@
 #define HELLO_MAC_UI_TEXT_H
 
 
-#include "LRU_cache.h"
-#include "bin_pack/MaxRectsBinPack.h"
-#include "name_component.h"
 #include "Rect_2D_component.h"
-#include <msdfgen.h>
-#include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
-
 #include <json_fwd.hpp> // 正确：只引入前置声明，文件极小，编译极快 , 只是声明
 #include "base_2d_render_object.h"
-
-
 #include "font_manager.h"
 
 
@@ -36,14 +28,6 @@ private:
 };
 
 
-std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
-create_text_geometry_data(
-    const std::string &text,
-    std::map<uint32_t, Glyph> &glyphs,
-    float min_x,
-    float min_y,
-    float atlas_width,
-    float atlas_height);
 
 
 void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path);
