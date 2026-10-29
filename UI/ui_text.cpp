@@ -74,14 +74,18 @@ void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 }
 
 
-void create_text_render(const entt::entity entity, const std::string &name, Msdf_text &msdf_text,
-                        float min_x,
-                        float min_y) {
+void create_text_geometry_data(const entt::entity entity,
+                               const std::string &text,
+                               std::map<uint32_t, Glyph> &glyphs,
+                               const float min_x,
+                               const float min_y,
+                               const float atlas_width,
+                               const float atlas_height) {
     // 1. 创建缓冲区
     hb_buffer_t *buf = hb_buffer_create();
 
     // 2. 添加文本 (UTF-8 格式)
-    hb_buffer_add_utf8(buf, name.c_str(), -1, 0, -1);
+    hb_buffer_add_utf8(buf, text.c_str(), -1, 0, -1);
     // 3. 设置文本属性（必须指定，否则可能排版错误）
 
     hb_buffer_set_direction(buf, HB_DIRECTION_LTR);                 // 从左往右
@@ -109,7 +113,7 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
     float current_x = min_x;
     float current_y = min_y + char_size;
 
-    std::string utf8_text = name;
+    std::string utf8_text = text;
     std::vector<uint32_t> unicode_points;
 
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
@@ -118,14 +122,13 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
         hb_codepoint_t glyph_id = unicode_points[i];
         // glyph_id 去map中查找索引
         // 得到的是一组相对于基线（Baseline）的数值
-        float x_advance = (float) glyph_pos[i].x_advance / (float) UPEM; // 通常需要除以缩放系数
-        float y_advance = (float) glyph_pos[i].y_advance / (float) UPEM;
-        float x_offset  = (float) glyph_pos[i].x_offset / (float) UPEM;
-        float y_offset  = (float) glyph_pos[i].x_offset / (float) UPEM;
+        const float x_advance = static_cast<float>(glyph_pos[i].x_advance) / static_cast<float>(UPEM); // 通常需要除以缩放系数
+        const float y_advance = static_cast<float>(glyph_pos[i].y_advance) / static_cast<float>(UPEM);
+        const float x_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
+        const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
 
 
-        auto glyph = msdf_text.glyphs.find(glyph_id);
-        if (glyph != msdf_text.glyphs.end()) {
+        if (auto glyph = glyphs.find(glyph_id); glyph != glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             append_text_box(vertices, indices, {
                                 current_x + char_size * (x_offset + glyph->second.planeBounds.left),
@@ -135,10 +138,10 @@ void create_text_render(const entt::entity entity, const std::string &name, Msdf
                                 current_x + char_size * glyph->second.planeBounds.right,
                                 current_y - char_size * glyph->second.planeBounds.top
                             },
-                            (glyph->second.atlasBounds.left) / msdf_text.atlas.width,
-                            (glyph->second.atlasBounds.bottom) / msdf_text.atlas.height,
-                            (glyph->second.atlasBounds.right) / msdf_text.atlas.width,
-                            (glyph->second.atlasBounds.top) / msdf_text.atlas.height);
+                            (glyph->second.atlasBounds.left) / atlas_width,
+                            (glyph->second.atlasBounds.bottom) / atlas_height,
+                            (glyph->second.atlasBounds.right) / atlas_width,
+                            (glyph->second.atlasBounds.top) / atlas_height);
             current_x += x_advance * char_size;
             current_y += y_advance * char_size;
         }
@@ -265,25 +268,26 @@ void write_bitmap_to_bin_pack_image(const rbp::Rect &position, msdfgen::Bitmap<f
 }
 
 
-Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points, const std::string &filename) {
+Msdf_text &get_msdf_text_add_string(const std::vector<uint32_t> &unicode_points, const std::string &font_file_name) {
     auto &msdf_text_tem = get_msdf_text();
 
 
-    msdfgen::FontHandle *font = msdfgen::loadFont(msdf_text_tem.ft, filename.c_str());
-    if (!font) {
+    // 这里有一个内存的泄漏
+    const auto font = msdfgen::loadFont(msdf_text_tem.ft, font_file_name.c_str());
+    if (font == nullptr) {
+        // 字体加载失败
     }
-    std::vector<std::pair<Msdf_text::Filename, msdfgen::FontHandle *> > temp_fonts;
     // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
-
+    msdf_text_tem.fonts.push_back({font_file_name, font});
 
     for (auto unicode_point: unicode_points) {
         // 需要
         if (msdf_text_tem.glyphs.find(unicode_point) != msdf_text_tem.glyphs.end()) {
             // 已经存在，
         } else {
-            for (const auto &font: msdf_text_tem.fonts) {
+            for (const auto &font_temp: msdf_text_tem.fonts) {
                 msdfgen::Shape shape;
-                if (loadGlyph(shape, font.second, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                if (loadGlyph(shape, font_temp.font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
                     Glyph glyph;
                     glyph.unicode = unicode_point;
                     auto bitmap   = generate_sdf_bitmap_and(glyph, shape);
@@ -338,17 +342,19 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
     add_push_constant_parameter("uTranslate", translate);
 }
 
-void UI_Text::set_string(const std::string &name) {
-    std::string utf8_text = name;
-    std::vector<uint32_t> unicode_points;
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
+void UI_Text::set_render_text(const std::string &text) {
+    std::string utf8_text = text;
+    std::vector<uint32_t> unicode_string;
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_string));
 
-    auto &msdf_text_tem = get_msdf_text_add_string(unicode_points,
+    auto &msdf_text_tem = get_msdf_text_add_string(unicode_string,
                                                    "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     float min_x = 0;
     float min_y = 0;
 
-    create_text_render(entity, name, msdf_text_tem, min_x, min_y); // 如果可以，尽量考虑圆角部分的内容
+    create_text_geometry_data(entity, text, msdf_text_tem.glyphs, min_x, min_y,
+                              msdf_text_tem.atlas.width,
+                              msdf_text_tem.atlas.height); // 如果可以，尽量考虑圆角部分的内容
     {
         auto &msdf_text_tem                      = get_msdf_text();
         std::optional<Texture_parameter> texture = create_texture_from_image(msdf_text_tem.image.get_data(),

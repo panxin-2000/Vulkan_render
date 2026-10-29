@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
 
     UI_Text text("AbcgoyQj");
-    text.set_string("AbcgoyQj");
+    text.set_render_text("AbcgoyQj");
     // {
     // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
     // }
@@ -150,7 +150,6 @@ int main(int argc, char *argv[]) {
             ZoneScopedN("process sdl event");
             FrameMarkStart("input processing");
 
-            auto ptr = malloc(44);
             // TracyAlloc(ptr, 44);
             ImGui_ImplSDL3_ProcessEvent(&event);
 

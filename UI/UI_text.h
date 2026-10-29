@@ -105,14 +105,26 @@ public:
     Image image;
 
     msdfgen::FreetypeHandle *ft;
-    using Filename = std::string;
-    std::vector<std::pair<Filename, msdfgen::FontHandle *> > fonts;
+    using Font_File_name = std::string;
+
+    struct Font_File_name_and_FontHandle {
+        Font_File_name name;
+        msdfgen::FontHandle *font_handle;
+    };
+
+    std::vector<Font_File_name_and_FontHandle> fonts;
 
     explicit Msdf_text(const size_t max_size) //: unicode_cache(max_size)
     {
     }
 
-    bool add_font(const Filename &file_name) {
+    ~Msdf_text() {
+        for (const auto &font: fonts) {
+            free(font.font_handle);
+        }
+    }
+
+    bool add_font(const Font_File_name &file_name) {
         if (ft != nullptr) {
             msdfgen::FontHandle *font = msdfgen::loadFont(ft, file_name.c_str());
             if (font != nullptr) {
@@ -133,19 +145,30 @@ public:
 };
 
 
-
 class UI_Text : public object_2d {
 public:
     UI_Text(const std::string &name);
 
-    void set_string(const std::string &string);
+    // 这里把之后的绘制的部分 的 代码也放进去了
+    void set_render_text(const std::string &text);
+
+    void add_render_text(const std::string &text) {
+        render_text = render_text + "\n" + text;
+    }
+
+private:
+    std::string render_text;
 };
 
 
+void create_text_geometry_data(entt::entity entity,
+                               const std::string &text,
+                               std::map<uint32_t, Glyph> &glyphs,
+                               float min_x,
+                               float min_y,
+                               float atlas_width,
+                               float atlas_height);
 
-void create_text_render(const entt::entity entity, const std::string &name, Msdf_text &msdf_text,
-                        float min_x,
-                        float min_y);
 
 void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path);
 
