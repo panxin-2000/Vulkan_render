@@ -478,6 +478,7 @@ file(GLOB_RECURSE component
         "UI/UI_button.cpp"
         "UI/UI_imgui.cpp"
         "UI/UI_text.cpp"
+        "UI/font_manager.cpp.cpp"
         "UI/bin_pack/Rect.cpp"
         "UI/bin_pack/MaxRectBinPact.cpp"
         "UI/bin_pack/ShelfBinPack.cpp"

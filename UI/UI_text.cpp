@@ -74,13 +74,14 @@ void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 }
 
 
-void create_text_geometry_data(const entt::entity entity,
-                               const std::string &text,
-                               std::map<uint32_t, Glyph> &glyphs,
-                               const float min_x,
-                               const float min_y,
-                               const float atlas_width,
-                               const float atlas_height) {
+std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
+create_text_geometry_data(
+    const std::string &text,
+    std::map<uint32_t, Glyph> &glyphs,
+    const float min_x,
+    const float min_y,
+    const float atlas_width,
+    const float atlas_height) {
     // 1. 创建缓冲区
     hb_buffer_t *buf = hb_buffer_create();
 
@@ -159,13 +160,14 @@ void create_text_geometry_data(const entt::entity entity,
 
         // 用 HarfBuzz 的结果代替 JSON 的 advance 来更新光标位置
     }
-    add_geometry_data(entity, vertices, indices);
 
 
     hb_buffer_destroy(buf);
     hb_font_destroy(font);
     hb_face_destroy(face);
     hb_blob_destroy(blob);
+
+    return {vertices, indices};
 }
 
 
@@ -352,9 +354,12 @@ void UI_Text::set_render_text(const std::string &text) {
     float min_x = 0;
     float min_y = 0;
 
-    create_text_geometry_data(entity, text, msdf_text_tem.glyphs, min_x, min_y,
-                              msdf_text_tem.atlas.width,
-                              msdf_text_tem.atlas.height); // 如果可以，尽量考虑圆角部分的内容
+    auto result = create_text_geometry_data(text, msdf_text_tem.glyphs, min_x, min_y, msdf_text_tem.atlas.width,
+                                            msdf_text_tem.atlas.height); // 如果可以，尽量考虑圆角部分的内容
+
+
+    add_geometry_data(entity, result.first, result.second);
+
     {
         auto &msdf_text_tem                      = get_msdf_text();
         std::optional<Texture_parameter> texture = create_texture_from_image(msdf_text_tem.image.get_data(),
