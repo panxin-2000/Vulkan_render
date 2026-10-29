@@ -11,6 +11,7 @@
 #include <map>
 
 #include "shader_common.h"
+#include "vulkan_image.h"
 #include "bin_pack/MaxRectsBinPack.h"
 
 // 纹理图集 Texture Atlas
@@ -35,6 +36,7 @@ struct Metrics {
 };
 
 // 字母 “A” 的线条、轮廓和像素图像
+// 字符级别的个体度量
 struct Glyph {
     uint32_t unicode = 0;
     float advance    = 0.6f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
@@ -51,45 +53,79 @@ struct Glyph {
 };
 
 
-class Msdf_text {
-public:
-    Atlas atlas;
-    Metrics metrics;
+class Font_Manager {
+    // Metrics metrics; // 每一个字体的全局 Metrics（以及每个具体字符的 Metrics）全都不一样
     using unicode_value = uint32_t;
-    std::map<unicode_value, Glyph> glyphs;
     // LRU_cache<unicode_value, Glyph> unicode_cache;
 
     // 没有 LRU (Least Recently Used)可以考虑之后添加
     rbp::MaxRectsBinPack bin_pack_manager;
     Image image;
 
-    msdfgen::FreetypeHandle *ft = nullptr;
-    using Font_File_name        = std::string;
+    // FT_Library 的 对应封装句柄
+    msdfgen::FreetypeHandle *freetype_handle = nullptr;
+    using Font_File_name                     = std::string;
 
     struct Font_File_name_and_FontHandle {
         Font_File_name name;
+        Metrics metrics_temp;
         msdfgen::FontHandle *font_handle;
+        std::map<unicode_value, Glyph> glyphs;
+
+        // FT_Face 的对应封装句柄
+        // 一个 FT_Face 代表了一个字体文件中的某一个“外观”
     };
 
     std::vector<Font_File_name_and_FontHandle> fonts;
 
-    Msdf_text() = default;
+public:
+    Atlas atlas;
 
-    ~Msdf_text() {
-        for (const auto &font: fonts) {
-            free(font.font_handle);
-        }
-    }
 
     bool add_font(const Font_File_name &file_name) {
-        if (ft != nullptr) {
-            msdfgen::FontHandle *font = msdfgen::loadFont(ft, file_name.c_str());
+        if (freetype_handle != nullptr) {
+            msdfgen::FontHandle *font = msdfgen::loadFont(freetype_handle, file_name.c_str());
             if (font != nullptr) {
-                fonts.push_back({file_name.c_str(), font});
+                msdfgen::FontMetrics metrics;
+                //  调用 getFontMetrics 读取度量数据
+                // 第三个参数指定缩放类型，建议使用 FONT_SCALING_EM_NORMALIZED
+                // 这样获取到的就是您前面看到的那种以 EM = 1 为基准的归一化浮点数
+                bool success = msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_EM_NORMALIZED);
+                if (success) {
+                    // 5. 成功读取后，直接从结构体中提取您需要的固定值
+                    std::cout << "Line Height (推荐行高): " << metrics.lineHeight << std::endl;
+                    std::cout << "Ascender (上伸高度): " << metrics.ascenderY << std::endl;
+                    std::cout << "Descender (下伸高度): " << metrics.descenderY << std::endl;
+                    std::cout << "Underline Y (下划线Y): " << metrics.underlineY << std::endl;
+                    std::cout << "Underline Thickness (下划线厚度): " << metrics.underlineThickness << std::endl;
+
+                    Metrics metrics_temp;
+                    metrics_temp.emSize             = metrics.emSize;
+                    metrics_temp.lineHeight         = metrics.lineHeight;
+                    metrics_temp.ascender           = metrics.ascenderY;
+                    metrics_temp.descender          = metrics.descenderY;
+                    metrics_temp.underlineY         = metrics.underlineY;
+                    metrics_temp.underlineThickness = metrics.underlineThickness;
+                    fonts.push_back({file_name.c_str(), metrics_temp, font});
+                } else {
+                    std::cerr << "获取 Metrics 失败！" << std::endl;
+                }
+
                 return true;
             }
         }
         return false;
+    }
+
+
+    bool add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &unicode_points,
+                                        const std::string &font_file_name);
+
+    void clear_fonts() {
+        for (const auto &font: fonts) {
+            msdfgen::destroyFont(font.font_handle);
+        }
+        fonts.clear();
     }
 
     [[nodiscard]] float get_scale() const {
@@ -99,14 +135,18 @@ public:
     [[nodiscard]] uint get_distanceRange() const {
         return static_cast<int>(atlas.distanceRange);
     }
-};
-
-
-class Font_Manager {
-public:
-    Msdf_text msdf_text;
 
 public:
+    std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
+    create_text_geometry_data(
+        const std::string &text,
+        const std::string &font_file_name,
+        float min_x,
+        float min_y,
+        float atlas_width,
+        float atlas_height);
+
+
     Font_Manager(const Font_Manager &) = delete;
 
     Font_Manager &operator=(const Font_Manager &) = delete;
@@ -119,25 +159,15 @@ public:
 
     void create();
 
+    void destroy();
+
+    Texture_parameter create_or_update_texture_from_image();
+
 private:
     Font_Manager() = default;
 
     ~Font_Manager() = default;
 };
-
-bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
-                                    const std::vector<uint32_t> &unicode_points,
-                                    const std::string &font_file_name);
-
-
-std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
-create_text_geometry_data(
-    const std::string &text,
-    std::map<uint32_t, Glyph> &glyphs,
-    float min_x,
-    float min_y,
-    float atlas_width,
-    float atlas_height);
 
 
 #endif //HELLO_MAC_FONT_MANAGER_H

@@ -12,68 +12,65 @@
 #include "Geometry_component.h"
 #include "model_matrix.h"
 
-void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
-    // 1. 打开文件流
-    std::ifstream file(file_path);
-
-    if (!file.is_open()) {
-        std::cerr << "无法打开文件！" << std::endl;
-        return;
-    }
-    try {
-        // 2. 直接从流解析
-        nlohmann::json data = nlohmann::json::parse(file);
-
-        if (data.contains("atlas")) {
-            auto atlas = data.at("atlas");
-            if (atlas.contains("type")) msdf_text.atlas.type = atlas.at("type");
-            if (atlas.contains("distanceRange")) msdf_text.atlas.distanceRange = atlas.at("distanceRange");
-            if (atlas.contains("distanceRangeMiddle"))
-                msdf_text.atlas.distanceRangeMiddle = atlas.at("distanceRangeMiddle");
-            if (atlas.contains("size")) msdf_text.atlas.size = atlas.at("size");
-            if (atlas.contains("width")) msdf_text.atlas.width = atlas.at("width");
-            if (atlas.contains("height")) msdf_text.atlas.height = atlas.at("height");
-            if (atlas.contains("yOrigin")) msdf_text.atlas.yOrigin = atlas.at("yOrigin");
-        }
-        if (data.contains("metrics")) {
-            auto metrics = data.at("metrics");
-            if (metrics.contains("emSize")) msdf_text.metrics.emSize = metrics.at("emSize");
-            if (metrics.contains("lineHeight")) msdf_text.metrics.lineHeight = metrics.at("lineHeight");
-            if (metrics.contains("ascender")) msdf_text.metrics.ascender = metrics.at("ascender");
-            if (metrics.contains("descender")) msdf_text.metrics.descender = metrics.at("descender");
-            if (metrics.contains("underlineY")) msdf_text.metrics.underlineY = metrics.at("underlineY");
-            if (metrics.contains("underlineThickness"))
-                msdf_text.metrics.underlineThickness = metrics.at("underlineThickness");
-        }
-
-        for (auto &glyph: data["glyphs"]) {
-            auto unicode = glyph.at("unicode");
-            struct Glyph tem;
-            tem.unicode = glyph.at("unicode");
-            tem.advance = glyph.at("advance");
-            if (glyph.contains("planeBounds")) {
-                auto planeBounds       = glyph.at("planeBounds");
-                tem.planeBounds.left   = planeBounds.at("left");
-                tem.planeBounds.bottom = planeBounds.at("bottom");
-                tem.planeBounds.right  = planeBounds.at("right");
-                tem.planeBounds.top    = planeBounds.at("top");
-            }
-            if (glyph.contains("atlasBounds")) {
-                auto atlasBounds       = glyph.at("atlasBounds");
-                tem.atlasBounds.left   = atlasBounds.at("left");
-                tem.atlasBounds.bottom = atlasBounds.at("bottom");
-                tem.atlasBounds.right  = atlasBounds.at("right");
-                tem.atlasBounds.top    = atlasBounds.at("top");
-            }
-            msdf_text.glyphs.insert({unicode, tem});
-        }
-    } catch (nlohmann::json::parse_error &e) {
-        std::cerr << "JSON 语法错误: " << e.what() << std::endl;
-    }
-}
-
-
-
+// void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
+//     // 1. 打开文件流
+//     std::ifstream file(file_path);
+//
+//     if (!file.is_open()) {
+//         std::cerr << "无法打开文件！" << std::endl;
+//         return;
+//     }
+//     try {
+//         // 2. 直接从流解析
+//         nlohmann::json data = nlohmann::json::parse(file);
+//
+//         if (data.contains("atlas")) {
+//             auto atlas = data.at("atlas");
+//             if (atlas.contains("type")) msdf_text.atlas.type = atlas.at("type");
+//             if (atlas.contains("distanceRange")) msdf_text.atlas.distanceRange = atlas.at("distanceRange");
+//             if (atlas.contains("distanceRangeMiddle"))
+//                 msdf_text.atlas.distanceRangeMiddle = atlas.at("distanceRangeMiddle");
+//             if (atlas.contains("size")) msdf_text.atlas.size = atlas.at("size");
+//             if (atlas.contains("width")) msdf_text.atlas.width = atlas.at("width");
+//             if (atlas.contains("height")) msdf_text.atlas.height = atlas.at("height");
+//             if (atlas.contains("yOrigin")) msdf_text.atlas.yOrigin = atlas.at("yOrigin");
+//         }
+//         if (data.contains("metrics")) {
+//             auto metrics = data.at("metrics");
+//             if (metrics.contains("emSize")) msdf_text.metrics.emSize = metrics.at("emSize");
+//             if (metrics.contains("lineHeight")) msdf_text.metrics.lineHeight = metrics.at("lineHeight");
+//             if (metrics.contains("ascender")) msdf_text.metrics.ascender = metrics.at("ascender");
+//             if (metrics.contains("descender")) msdf_text.metrics.descender = metrics.at("descender");
+//             if (metrics.contains("underlineY")) msdf_text.metrics.underlineY = metrics.at("underlineY");
+//             if (metrics.contains("underlineThickness"))
+//                 msdf_text.metrics.underlineThickness = metrics.at("underlineThickness");
+//         }
+//
+//         for (auto &glyph: data["glyphs"]) {
+//             auto unicode = glyph.at("unicode");
+//             struct Glyph tem;
+//             tem.unicode = glyph.at("unicode");
+//             tem.advance = glyph.at("advance");
+//             if (glyph.contains("planeBounds")) {
+//                 auto planeBounds       = glyph.at("planeBounds");
+//                 tem.planeBounds.left   = planeBounds.at("left");
+//                 tem.planeBounds.bottom = planeBounds.at("bottom");
+//                 tem.planeBounds.right  = planeBounds.at("right");
+//                 tem.planeBounds.top    = planeBounds.at("top");
+//             }
+//             if (glyph.contains("atlasBounds")) {
+//                 auto atlasBounds       = glyph.at("atlasBounds");
+//                 tem.atlasBounds.left   = atlasBounds.at("left");
+//                 tem.atlasBounds.bottom = atlasBounds.at("bottom");
+//                 tem.atlasBounds.right  = atlasBounds.at("right");
+//                 tem.atlasBounds.top    = atlasBounds.at("top");
+//             }
+//             msdf_text.glyphs.insert({unicode, tem});
+//         }
+//     } catch (nlohmann::json::parse_error &e) {
+//         std::cerr << "JSON 语法错误: " << e.what() << std::endl;
+//     }
+// }
 
 
 UI_Text::UI_Text(const std::string &name) : object_2d(name) {
@@ -101,25 +98,23 @@ void UI_Text::set_render_text(const std::string &text) {
     std::vector<uint32_t> unicode_string;
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_string));
 
-    add_text_to_Atlas_and_bin_pack(Font_Manager::instance().msdf_text, unicode_string,
-                                   "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    Font_Manager::instance().add_text_to_Atlas_and_bin_pack(unicode_string,
+                                                            "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     float min_x = 0;
     float min_y = 0;
 
-    auto result = create_text_geometry_data(text,
-                                            Font_Manager::instance().msdf_text.glyphs, min_x, min_y,
-                                            Font_Manager::instance().msdf_text.atlas.width,
-                                            Font_Manager::instance().msdf_text.atlas.height); // 如果可以，尽量考虑圆角部分的内容
+    auto result = Font_Manager::instance().create_text_geometry_data(text,
+                                                                     "Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf",
+                                                                     min_x, min_y,
+                                                                     Font_Manager::instance().atlas.width,
+                                                                     Font_Manager::instance().atlas.height);
+    // 如果可以，尽量考虑圆角部分的内容
 
 
     add_geometry_data(entity, result.first, result.second); {
-        auto &msdf_text_tem                      = Font_Manager::instance().msdf_text;
-        std::optional<Texture_parameter> texture = create_texture_from_image(msdf_text_tem.image.get_data(),
-                                                                             msdf_text_tem.image.get_width(),
-                                                                             msdf_text_tem.image.get_height(),
-                                                                             4);
+        // 下面这个也算是糊弄过去了,之后还是要看应该如何上传的
+        std::optional<Texture_parameter> texture = Font_Manager::instance().create_or_update_texture_from_image();
         logic_set_render_parameter(entity, "msdf", texture);
-        // assert(index == 1);
     }
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));

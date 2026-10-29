@@ -28,10 +28,6 @@ private:
 };
 
 
-
-
-void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path);
-
 entt::entity UI_text(const std::string &name,
                      float min_x,
                      float min_y,

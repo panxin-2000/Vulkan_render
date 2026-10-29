@@ -30,30 +30,47 @@ Font_Manager &Font_Manager::instance() {
 }
 
 void Font_Manager::create() {
-    msdf_text.atlas.type                = "msdf";
-    msdf_text.atlas.distanceRange       = 4;
-    msdf_text.atlas.distanceRangeMiddle = 0;
-    msdf_text.atlas.size                = 32;
-    msdf_text.atlas.width               = 256;
-    msdf_text.atlas.height              = 256;
-    msdf_text.atlas.yOrigin             = "bottom";
+    atlas.type                = "msdf";
+    atlas.distanceRange       = 4; // 距离过渡带的像素宽度
+    atlas.distanceRangeMiddle = 0; // • 零交叉阈值（即字体的真实数学边界）。
+    // 在采样距离场时，当解码出的数值恰好为 0，就代表这是字符的边缘。
+    // 大于 0 的值代表在字形内部，小于 0 的值代表在字形外部。
 
-    msdf_text.metrics.emSize             = 1;
-    msdf_text.metrics.lineHeight         = 1.3200000000000001;
-    msdf_text.metrics.ascender           = 1.02;
-    msdf_text.metrics.descender          = -0.29999999999999999;
-    msdf_text.metrics.underlineY         = -0.17999999999999999;
-    msdf_text.metrics.underlineThickness = 0.050000000000000003;
+    atlas.size    = 32;
+    atlas.width   = 256;
+    atlas.height  = 256;
+    atlas.yOrigin = "bottom"; // 定义了纹理坐标的垂直方向
 
-    msdf_text.image.init(static_cast<size_t>(msdf_text.atlas.width),
-                         static_cast<size_t>(msdf_text.atlas.height));
+    // msdf_text.metrics.emSize             = 1;
+    // msdf_text.metrics.lineHeight         = 1.3200000000000001;
+    // msdf_text.metrics.ascender           = 1.02;
+    // msdf_text.metrics.descender          = -0.29999999999999999;
+    // msdf_text.metrics.underlineY         = -0.17999999999999999;
+    // msdf_text.metrics.underlineThickness = 0.050000000000000003;
+
+    image.init(static_cast<size_t>(atlas.width),
+               static_cast<size_t>(atlas.height));
 
     // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
-    msdf_text.bin_pack_manager.Init(static_cast<int>(msdf_text.atlas.width),
-                                    static_cast<int>(msdf_text.atlas.height), false);
+    bin_pack_manager.Init(static_cast<int>(atlas.width),
+                          static_cast<int>(atlas.height), false);
 
-    msdf_text.ft = msdfgen::initializeFreetype();
-    msdf_text.add_font("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    freetype_handle = msdfgen::initializeFreetype();
+    add_font("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+}
+
+void Font_Manager::destroy() {
+    // 先清理掉这个
+    if (freetype_handle != nullptr)
+        msdfgen::deinitializeFreetype(freetype_handle);
+    freetype_handle = nullptr;
+}
+
+Texture_parameter Font_Manager::create_or_update_texture_from_image() {
+    return create_texture_from_image(image.get_data(),
+                                     image.get_width(),
+                                     image.get_height(),
+                                     4);
 }
 
 std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, msdfgen::Shape &shape) {
@@ -65,8 +82,8 @@ std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, 
     glyph.planeBounds.top    = static_cast<float>(bounds.t);
     glyph.planeBounds.bottom = static_cast<float>(bounds.b);
     edgeColoringByDistance(shape, 3.0);
-    const float scale          = Font_Manager::instance().msdf_text.get_scale();         // 英文字母其实16就够了，行字需要 32;
-    const double distanceRange = Font_Manager::instance().msdf_text.get_distanceRange(); // 让画布留白正好等于渐变宽度
+    const float scale          = Font_Manager::instance().get_scale();         // 英文字母其实16就够了，行字需要 32;
+    const double distanceRange = Font_Manager::instance().get_distanceRange(); // 让画布留白正好等于渐变宽度
     int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
     int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
 
@@ -113,16 +130,16 @@ void write_bitmap_to_bin_pack_image(const rbp::Rect &position, msdfgen::Bitmap<f
 }
 
 
-bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
-                                    const std::vector<uint32_t> &unicode_points,
-                                    const std::string &font_file_name) {
+bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &unicode_points,
+                                                  const std::string &font_file_name) {
     // 这里有一个内存的泄漏
-    const auto font = msdfgen::loadFont(msdf_text_tem.ft, font_file_name.c_str());
-    if (font == nullptr) {
-        // 字体加载失败
-    }
-    // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
-    msdf_text_tem.fonts.push_back({font_file_name, font});
+    // const auto font = msdfgen::loadFont(msdf_text_tem.freetype_handle, font_file_name.c_str());
+    // if (font == nullptr) {
+    //     // 字体加载失败
+    // }
+    // // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
+    // msdf_text_tem.fonts.push_back({font_file_name, font});
+    Font_File_name_and_FontHandle msdf_text_tem; // 也先空出来, 之后调用一个查找的函数就好
 
     for (auto unicode_point: unicode_points) {
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
@@ -131,10 +148,10 @@ bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
             return true;
         } else {
             // 不存在,
-            for (const auto &font_temp: msdf_text_tem.fonts) {
+            {
                 msdfgen::Shape shape;
                 // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
-                if (loadGlyph(shape, font_temp.font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                if (loadGlyph(shape, msdf_text_tem.font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
                     Glyph glyph;
                     // 临时创建一个 Glyph 用于存储当前这个 字的
                     glyph.unicode = unicode_point;
@@ -144,12 +161,12 @@ bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
                         const auto width  = bitmap.value().width();
                         const auto height = bitmap.value().height();
                         // 下面一行是从图集中分配一个位置
-                        auto position = msdf_text_tem.bin_pack_manager.Insert(width, height,
-                                                                              rbp::MaxRectsBinPack::RectBestShortSideFit);
+                        auto position = bin_pack_manager.Insert(width, height,
+                                                                rbp::MaxRectsBinPack::RectBestShortSideFit);
                         // 需要将 bitmap.value() 的内容写入图片 的 position
                         if (position.width == width) {
                             // 没有翻转
-                            write_bitmap_to_bin_pack_image(position, bit_map, msdf_text_tem.image);
+                            write_bitmap_to_bin_pack_image(position, bit_map, image);
                         } else {
                             // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
                             assert(false);
@@ -172,12 +189,12 @@ bool add_text_to_Atlas_and_bin_pack(Msdf_text &msdf_text_tem,
 
 
 std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
-create_text_geometry_data(const std::string &text,
-                          std::map<uint32_t, Glyph> &glyphs,
-                          const float min_x,
-                          const float min_y,
-                          const float atlas_width,
-                          const float atlas_height) {
+Font_Manager::create_text_geometry_data(const std::string &text,
+                                        const std::string &font_file_name,
+                                        const float min_x,
+                                        const float min_y,
+                                        const float atlas_width,
+                                        const float atlas_height) {
     // 1. 创建缓冲区
     hb_buffer_t *buf = hb_buffer_create();
 
@@ -190,7 +207,7 @@ create_text_geometry_data(const std::string &text,
     hb_buffer_set_language(buf, hb_language_from_string("en", -1)); // 英语
 
     // 使用 HarfBuzz 内置的 OpenType 支持加载字体
-    hb_blob_t *blob = hb_blob_create_from_file("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    hb_blob_t *blob = hb_blob_create_from_file(font_file_name.c_str());
     hb_face_t *face = hb_face_create(blob, 0);
     hb_font_t *font = hb_font_create(face);
     auto UPEM       = hb_face_get_upem(face);
@@ -225,6 +242,7 @@ create_text_geometry_data(const std::string &text,
         const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
 
 
+        std::map<uint32_t, Glyph> glyphs; // 这里展示写为空, 之后在从总的当中查找
         if (auto glyph = glyphs.find(glyph_id); glyph != glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             append_text_box(vertices, indices, {
