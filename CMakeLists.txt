@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
+
 if (NOT FETCHCONTENT_BASE_DIR)
     set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/../.cmake_fetch_cache" CACHE PATH "FetchContent base directory")
 endif ()
@@ -129,7 +132,6 @@ set(MSDFGEN_USE_VCPKG OFF)
 set(MSDFGEN_USE_SKIA OFF)
 
 
-
 find_package(Freetype REQUIRED)
 
 include(FetchContent)
@@ -197,11 +199,11 @@ set(TRACY_ENABLE ON CACHE BOOL "Enable Tracy profiling" FORCE)
 # 优先级从高到低为：
 # 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
 
-add_executable(test_tracy tracy_main.cpp  "tracy/public/TracyClient.cpp")
+add_executable(test_tracy tracy_main.cpp "tracy/public/TracyClient.cpp")
 target_include_directories(test_tracy PRIVATE "tracy/public")
-if(TRACY_ENABLE)
+if (TRACY_ENABLE)
     target_compile_definitions(test_tracy PRIVATE TRACY_ENABLE)
-endif()
+endif ()
 
 #FetchContent_Declare(
 #        shaderc
@@ -464,7 +466,7 @@ file(GLOB_RECURSE object_model
         "object_model/load_gltf_model.cpp"
         "object_model/nano_vdb_model.cpp"
         "object_model/deferred_pass.cpp"
-#        "object_model/manifold_model.cpp"
+        #        "object_model/manifold_model.cpp"
         "object_model/simple_computer_buffer.cpp"
         "object_model/single_char.cpp"
         "object_model/skybox.cpp"
@@ -672,7 +674,14 @@ target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
 
 
 find_package(TBB REQUIRED)
-find_package(absl REQUIRED COMPONENTS hash container)
+
+FetchContent_Declare(absl
+        GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+        GIT_TAG 20260107.1  # 替换为你需要的版本 Tag 或 Commit
+        GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(absl)
 
 
 #find_library(TCMALLOC_LIB NAMES tcmalloc_minimal tcmalloc)
@@ -709,9 +718,9 @@ add_executable(learn_render main.cpp "tracy/public/TracyClient.cpp"
 )
 
 target_include_directories(learn_render PRIVATE "tracy/public")
-if(TRACY_ENABLE)
-    target_compile_definitions(learn_render PUBLIC TRACY_ENABLE )
-endif()
+if (TRACY_ENABLE)
+    target_compile_definitions(learn_render PUBLIC TRACY_ENABLE)
+endif ()
 
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
@@ -738,6 +747,9 @@ target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE Vulkan::shaderc_combined)
 target_link_libraries(learn_render PRIVATE TBB::tbbmalloc_proxy)
+target_compile_options(learn_render PRIVATE -fsanitize=address,undefined)
+target_link_options(learn_render PRIVATE -fsanitize=address,undefined)
+
 target_link_libraries(learn_render PRIVATE absl::hash)
 target_link_libraries(learn_render PRIVATE absl::raw_hash_set)
 # 【只选择其一】在这里只链接你需要的轻量库
@@ -750,3 +762,31 @@ target_link_libraries(learn_render PRIVATE meshoptimizer)
 target_link_libraries(learn_render PRIVATE ccd)
 target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
 
+
+if (APPLE)
+    # 1. 自动在构建目录生成凭证文件
+    set(ENTITLEMENTS_FILE "${CMAKE_CURRENT_BINARY_DIR}/debug.entitlements")
+    file(WRITE ${ENTITLEMENTS_FILE}
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://apple.com\">\n"
+            "<plist version=\"1.0\">\n"
+            "<dict>\n"
+            "    <!-- 允许 Instruments 挂载调试 -->\n"
+            "    <key>com.apple.security.get-task-allow</key>\n"
+            "    <true/>\n"
+            "    <!-- 允许加载未签名的第三方动态库（如 Instruments 的 liboainject.dylib） -->\n"
+            "    <key>com.apple.security.cs.disable-library-validation</key>\n"
+            "    <true/>\n"
+            "    <!-- 允许执行或注入处于不可执行内存段的代码 -->\n"
+            "    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>\n"
+            "    <true/>\n"
+            "</dict>\n"
+            "</plist>\n"
+    )
+
+    # 2. 让目标程序在编译完成后自动签名（假设你的 target 叫 MyVulkanApp）
+    add_custom_command(TARGET learn_render POST_BUILD
+            COMMAND codesign --force --sign - --entitlements ${ENTITLEMENTS_FILE} $<TARGET_FILE:learn_render>
+            COMMENT "Automatically signing with get-task-allow for Instruments profiling..."
+    )
+endif ()

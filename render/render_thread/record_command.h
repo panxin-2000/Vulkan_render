@@ -5,6 +5,8 @@
 #ifndef HELLO_MAC_LOGIC_TO_RENDER_H
 #define HELLO_MAC_LOGIC_TO_RENDER_H
 
+#define ALIGN_16(size) (((size) + 15) & ~15)
+
 
 #include <tuple>
 #include <utility>
@@ -45,7 +47,8 @@ public:
     // 建议使用 const size_t capacity =  2 * 1024 * 1024
     explicit RenderRingBuffer(const size_t capacity) : m_capacity(capacity), next_write_address(0), execute_address(0) {
         // 使用 TBB 线程安全且针对多核心优化的分配器申请一块连续大内存
-        m_buffer = static_cast<char *>(malloc(capacity));
+        const size_t aligned_capacity = (capacity + 255) & ~255; // 向上取整到 256 的倍数
+        m_buffer                      = static_cast<char *>(std::aligned_alloc(256, aligned_capacity));
     }
 
     ~RenderRingBuffer() {
@@ -102,8 +105,8 @@ public:
     template<typename F, typename... Args>
     bool Submit(F &&func, Args &&... args) {
         using CommandType            = ConcreteRenderCommand<std::decay_t<F>, std::decay_t<Args>...>;
-        const size_t size            = (sizeof(CommandType) + 7) & ~7;
-        size_t current_write_address = next_write_address.load();
+        const size_t size            = ALIGN_16(sizeof(CommandType)); // 我需要的字节数
+        size_t current_write_address = next_write_address.load();     // 当前能够直接写的地址, 需要16字节对齐
         while (true) {
             if (current_write_address + size > m_capacity) {
                 return false;
@@ -111,6 +114,7 @@ public:
             if (next_write_address.compare_exchange_strong(current_write_address, current_write_address + size,
                                                            std::memory_order_seq_cst,
                                                            std::memory_order_relaxed)) {
+                // next_write_address 这里还应该是 16 字节对齐的
                 char *write_ptr = m_buffer + current_write_address;
                 new(write_ptr) CommandType{
                     {&CommandType::Dispatch, static_cast<uint32_t>(current_write_address + size)},
