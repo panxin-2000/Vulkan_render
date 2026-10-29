@@ -119,6 +119,7 @@ VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
         memcpy(dst, ktxTexture->pData, ktxTexture->dataSize);
     };
     const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
+    // ktxTexture_Destroy(ktxTexture);
 
     std::vector<VkBufferImageCopy> copyRegions{};
     for (auto j = 0; j < parameters.mipLevels; j++) {

@@ -138,10 +138,10 @@ public:
 
     VKR_shader_paths() = delete;
 
-    std::string vertex_path_;
-    std::string geometry_path_;
-    std::string fragment_path_;
-    std::string compute_path_;
+    std::string vertex_path_      = "";
+    std::string geometry_path_    = "";
+    std::string fragment_path_    = "";
+    std::string compute_path_     = "";
     VkPrimitiveTopology topology_ = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkFormat depthAttachmentFormat_;
     VkFormat stencilAttachmentFormat_;

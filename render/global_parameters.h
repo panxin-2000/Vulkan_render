@@ -206,8 +206,8 @@ public:
     }
 
     bool set_mouse_position(const float x, const float y) {
-        mouse_position.x() = x;
-        mouse_position.y() = y;
+        mouse_position.x() = std::max(x, 0.0f);
+        mouse_position.y() = std::max(y, 0.0f);
         return true;
     }
 

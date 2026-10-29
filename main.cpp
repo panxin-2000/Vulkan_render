@@ -150,6 +150,8 @@ int main(int argc, char *argv[]) {
             ZoneScopedN("process sdl event");
             FrameMarkStart("input processing");
 
+            auto ptr = malloc(44);
+            // TracyAlloc(ptr, 44);
             ImGui_ImplSDL3_ProcessEvent(&event);
 
             // switch (event.type) {
@@ -190,13 +192,13 @@ int main(int argc, char *argv[]) {
             //         break;
             // }
 
-
-            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                if (event.type == SDL_EVENT_MOUSE_MOTION ||
-                    event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
-                    event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
-                    event.type == SDL_EVENT_MOUSE_WHEEL
-                ) {
+            if (event.type == SDL_EVENT_MOUSE_MOTION ||
+                event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+                event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
+                event.type == SDL_EVENT_MOUSE_WHEEL
+            ) {
+                // Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
+                if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
                     auto mouse = mouse_status.check_mouse_scroll_status(event);
                     base_event_dealing(event, mouse);
                 }
@@ -237,6 +239,12 @@ int main(int argc, char *argv[]) {
     ImGui::DestroyContext();
 
     // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
+    auto view = Logic_entt().view<Scene_Component>();
+    for (auto entity: view) {
+        auto &scene = Logic_entt().get<Scene_Component>(entity);
+        scene.clean_parent_entity();
+        scene.clean_children_entity();
+    }
     Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
     // vk_render_GPU::instance().exit_and_clean(backend);

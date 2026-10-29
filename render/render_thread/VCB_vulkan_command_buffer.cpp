@@ -412,14 +412,16 @@ struct tone_mapping_Constants {
 };
 
 
-void VCB::pickup(const VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, int32_t width,
-                 int32_t height) {
+void VCB::pickup(const VKR_image_ptr entity_image, VKR_buffer_ptr dstBuffer, float width,
+                 float height) {
     add_image_barrier(entity_image,
                       image_barrier_frag_write_color,
                       image_barrier_transfer_read_src);
 
-    const int32_t offsetX = std::clamp(width - 5, 0, int32_t(entity_image->get_width() - 11));
-    const int32_t offsetY = std::clamp(height - 5, 0, int32_t(entity_image->get_height() - 11));
+    const int32_t offsetX = std::clamp(static_cast<int32_t>(width - 5), 0,
+                                       static_cast<int32_t>(entity_image->get_width() - 11));
+    const int32_t offsetY = std::clamp(static_cast<int32_t>(height - 5), 0,
+                                       static_cast<int32_t>(entity_image->get_height() - 11));
 
 
     // 之后呢? 需要做什么?

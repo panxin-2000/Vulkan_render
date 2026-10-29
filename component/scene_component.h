@@ -18,7 +18,7 @@ public:
 public:
     ~Scene_Component();
 
-    void add_parent_relation(entt::entity entity) {
+    void set_parent_entity(const entt::entity entity) {
         parent_ = entity;
     }
 
@@ -30,16 +30,22 @@ public:
         return children_;
     }
 
-
-    void remove_parent_relation() {
+    void clean_parent_entity() {
         parent_ = entt::null;
     }
 
-    void remove_children_relation(const entt::entity entity) {
+    void clean_parent_relation() ;
+
+
+    void clean_children_entity() {
+        children_.clear();
+    }
+
+    void remove_child_entity(const entt::entity entity) {
         children_.erase(std::remove(children_.begin(), children_.end(), entity), children_.end());
     }
 
-    void add_child_relation(const entt::entity entity) {
+    void add_child_entity(const entt::entity entity) {
         // 这里需要想办法去除一下重复的内容
         children_.push_back(entity);
     }
