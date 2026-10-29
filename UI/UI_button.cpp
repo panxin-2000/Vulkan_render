@@ -106,7 +106,7 @@ UI_Button::UI_Button(const std::string &name) : object_2d(name) {
 
     SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
 
-    Eigen::Vector2f scale{.0f / logical_w, 2.0f / logical_h};
+    Eigen::Vector2f scale{2.0f / logical_w, 2.0f / logical_h};
     Eigen::Vector2f translate{-1.0f - 0 * scale[0], -1.0f - 0 * scale[1]};
 
     add_push_constant_parameter("uScale", scale);

@@ -190,14 +190,12 @@ int main(int argc, char *argv[]) {
             //         // 窗口重新显示
             //         break;
             // }
-
-            if (event.type == SDL_EVENT_MOUSE_MOTION ||
-                event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
-                event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
-                event.type == SDL_EVENT_MOUSE_WHEEL
-            ) {
-                // Engine::instance().get_global_parameters().set_mouse_position(io.MousePos.x, io.MousePos.y);
-                if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                if (event.type == SDL_EVENT_MOUSE_MOTION ||
+                    event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+                    event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
+                    event.type == SDL_EVENT_MOUSE_WHEEL
+                ) {
                     auto mouse = mouse_status.check_mouse_scroll_status(event);
                     base_event_dealing(event, mouse);
                 }
@@ -238,8 +236,7 @@ int main(int argc, char *argv[]) {
     ImGui::DestroyContext();
 
     // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
-    auto view = Logic_entt().view<Scene_Component>();
-    for (auto entity: view) {
+    for (auto view = Logic_entt().view<Scene_Component>(); auto entity: view) {
         auto &scene = Logic_entt().get<Scene_Component>(entity);
         scene.clean_parent_entity();
         scene.clean_children_entity();
