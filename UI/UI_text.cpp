@@ -98,6 +98,7 @@ void UI_Text::set_render_text(const std::string &text) {
     std::vector<uint32_t> unicode_string;
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_string));
 
+    // 这一行似乎有点多余,需要清理掉
     Font_Manager::instance().add_text_to_Atlas_and_bin_pack(unicode_string,
                                                             "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
     float min_x = 0;
@@ -105,9 +106,10 @@ void UI_Text::set_render_text(const std::string &text) {
 
     auto result = Font_Manager::instance().create_text_geometry_data(text,
                                                                      "Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf",
-                                                                     min_x, min_y,
-                                                                     Font_Manager::instance().atlas.width,
-                                                                     Font_Manager::instance().atlas.height);
+                                                                     min_x,
+                                                                     min_y,
+                                                                     0xffffff,
+                                                                     0xffffff);
     // 如果可以，尽量考虑圆角部分的内容
 
 

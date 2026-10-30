@@ -40,6 +40,11 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
                      Point_2 min, Point_2 max,
                      float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
 
+void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
+                     const std::shared_ptr<std::vector<unsigned short> > &indices,
+                     Point_2 min, Point_2 max,
+                     Eigen::Vector4f uv);
+
 
 bool add_path(const entt::entity entity, const std::vector<Eigen::Vector2f> &path, const Color color);
 

@@ -200,10 +200,10 @@ Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const s
 std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
 Font_Manager::create_text_geometry_data(const std::string &text,
                                         const std::string &font_file_name,
-                                        const float min_x,
-                                        const float min_y,
-                                        const float atlas_width,
-                                        const float atlas_height) {
+                                        const float start_position_x,
+                                        const float start_position_y,
+                                        const float max_position_x,
+                                        const float max_position_y) {
     // 1. 创建缓冲区
     hb_buffer_t *buf = hb_buffer_create();
 
@@ -233,8 +233,8 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
 
     float char_size = 40;
-    float current_x = min_x;
-    float current_y = min_y + char_size;
+    float current_x = start_position_x;
+    float current_y = start_position_y + char_size;
 
     std::string utf8_text = text;
     std::vector<uint32_t> unicode_points;
@@ -254,6 +254,7 @@ Font_Manager::create_text_geometry_data(const std::string &text,
         auto glyphs = get_font_data(font_file_name).glyphs;
         if (auto glyph = glyphs.find(glyph_id); glyph != glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
+            const auto char_uv = get_char_uv(glyph->second);
             append_text_box(vertices, indices, {
                                 current_x + char_size * (x_offset + glyph->second.planeBounds.left),
                                 current_y - char_size * (y_offset + glyph->second.planeBounds.bottom)
@@ -262,10 +263,7 @@ Font_Manager::create_text_geometry_data(const std::string &text,
                                 current_x + char_size * glyph->second.planeBounds.right,
                                 current_y - char_size * glyph->second.planeBounds.top
                             },
-                            (glyph->second.atlasBounds.left) / atlas_width,
-                            (glyph->second.atlasBounds.bottom) / atlas_height,
-                            (glyph->second.atlasBounds.right) / atlas_width,
-                            (glyph->second.atlasBounds.top) / atlas_height);
+                            char_uv);
             current_x += x_advance * char_size;
             current_y += y_advance * char_size;
         }
@@ -291,4 +289,13 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     hb_blob_destroy(blob);
 
     return {vertices, indices};
+}
+
+Eigen::Vector4f Font_Manager::get_char_uv(const Glyph &glyph) const {
+    return {
+        (glyph.atlasBounds.left) / atlas.width,
+        (glyph.atlasBounds.bottom) / atlas.height,
+        (glyph.atlasBounds.right) / atlas.width,
+        (glyph.atlasBounds.top) / atlas.height
+    };
 }

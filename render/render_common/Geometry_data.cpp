@@ -28,6 +28,30 @@ void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
     return;
 }
 
+void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
+                     const std::shared_ptr<std::vector<unsigned short> > &indices,
+                     Point_2 min, Point_2 max,
+                     Eigen::Vector4f uv) {
+    indices->push_back(vertices->size() + 0);
+    indices->push_back(vertices->size() + 1);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 2);
+    indices->push_back(vertices->size() + 3);
+    indices->push_back(vertices->size() + 0);
+    //     3            2
+    //      ************
+    //      *        * *
+    //      *     *    *
+    //      *  *       *
+    //      ************
+    //     0            1
+    vertices->emplace_back(Vertex_2D{{min.x, min.y}, uv.x(), uv.y()}); //0 1 2
+    vertices->emplace_back(Vertex_2D{{max.x, min.y}, uv.z(), uv.y()});
+    vertices->emplace_back(Vertex_2D{{max.x, max.y}, uv.z(), uv.w()}); // 2 3 0
+    vertices->emplace_back(Vertex_2D{{min.x, max.y}, uv.x(), uv.w()});
+    return;
+}
+
 
 Render_AABB find_min_max_point_single_thread(const share_block &vertex) {
     Eigen::Vector3f min = Eigen::Vector3f::Constant(std::numeric_limits<float>::infinity());;

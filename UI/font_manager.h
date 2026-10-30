@@ -143,10 +143,11 @@ public:
     create_text_geometry_data(
         const std::string &text,
         const std::string &font_file_name,
-        float min_x,
-        float min_y,
-        float atlas_width,
-        float atlas_height);
+        float start_position_x,
+        float start_position_y, float max_position_x, float max_position_y);
+
+
+    Eigen::Vector4f get_char_uv(const Glyph &glyph) const;
 
 
     Font_Manager(const Font_Manager &) = delete;
