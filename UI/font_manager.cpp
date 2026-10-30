@@ -4,6 +4,7 @@
 
 #include "font_manager.h"
 
+
 extern "C" {
 #include <hb.h>
 #include <hb-ft.h>
@@ -59,6 +60,9 @@ void Font_Manager::create() {
                           static_cast<int>(atlas.height), false);
 
     freetype_handle = msdfgen::initializeFreetype();
+
+    // 这里本质的调用是 FT_Init_FreeType ,  初始化一个 FT_Library library
+
     add_font("/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
 }
 
@@ -225,12 +229,14 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     hb_buffer_set_language(buf, hb_language_from_string("en", -1)); // 英语
 
     // 使用 HarfBuzz 内置的 OpenType 支持加载字体
-    hb_blob_t *blob = hb_blob_create_from_file(font_file_name.c_str());
-    hb_face_t *face = hb_face_create(blob, 0);
-    hb_font_t *font = hb_font_create(face);
-    auto UPEM       = hb_face_get_upem(face);
+    // hb_blob_t *blob = hb_blob_create_from_file(font_file_name.c_str());
+    // hb_face_t *face = hb_face_create(blob, 0);
 
-    // hb_font_t* hbFont = hb_ft_font_create_referenced(ftFace);
+    // 那么这里就只有一个问题,通过 font_file_name 获取 ftFace todo:
+    FT_Face ftFace;
+    auto UPEM = ftFace->units_per_EM;
+
+    hb_font_t *font = hb_ft_font_create_referenced(ftFace);
 
     // 传入字体和缓冲区，执行塑造
     hb_shape(font, buf, NULL, 0);
@@ -296,8 +302,6 @@ Font_Manager::create_text_geometry_data(const std::string &text,
 
     hb_buffer_destroy(buf);
     hb_font_destroy(font);
-    hb_face_destroy(face);
-    hb_blob_destroy(blob);
 
     return {vertices, indices};
 }

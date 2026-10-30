@@ -64,6 +64,8 @@ class Font_Manager {
 
     // FT_Library 的 对应封装句柄
     msdfgen::FreetypeHandle *freetype_handle = nullptr;
+    // 当你拿到  msdfgen::FontHandle *font_handle 或者 本质是 FT_Face face 的时候基本就不用它了
+
     using Font_File_name                     = std::string;
 
     struct Font_File_name_and_FontHandle {
@@ -78,6 +80,26 @@ class Font_Manager {
 
     std::vector<Font_File_name_and_FontHandle> fonts;
 
+
+
+    // FT_Face ft_face
+    // 在 PC 中, 一般的做法是整个font 文件都读取放在内存中
+    // 在嵌入式中, 一般的做法是 把 font 写如 SPI 存储芯片的固定位置,
+    //           之后给出 font_name 与 具体地址的联系, 可以有多个 font_name
+    //           然后就是怎么读取的问题了,
+    //               外部内存直接映射（XIP 模式 —— 硬件级最强方案）
+    //                  不消化 SRAM 内存的 , SPI控制器或 QSPI 控制器上本身 有 内存用来缓存
+    //               FreeType 最高级的 FT_Open_Face 接口
+    //                       通过纯软件的方式，为 FreeType 实现一个自定义的“流（Stream）”
+    // 具体的哪里是最消耗执行时间的 代码, 并没有很去测试
+
+    // freetype 是可以 自己生成 sdf 的 , 或者位图的
+    // FreeType 是为了 PC 端设计的，内部有大量的 malloc 和 free ( 并不是很准确 )
+    // 真正会产生大量临时分配的地方：字形缓存( Cache )
+    //    如果你在渲染文本时发现内存分配频繁，通常不是 FreeType 核心解析器的锅，
+    //    而是你开启了字形缓存（FT_Cache）或者高强度的矢量轮廓渲染（Outline Decomposition）
+    //    FreeType 为了加速二次渲染，会把轮廓、位图缓存起来。如果不加限制，这个缓存池确实会频繁向你的内存管理器申请空间
+
 public:
     Atlas atlas;
 
@@ -85,6 +107,11 @@ public:
     bool add_font(const Font_File_name &file_name) {
         if (freetype_handle != nullptr) {
             msdfgen::FontHandle *font = msdfgen::loadFont(freetype_handle, file_name.c_str());
+            // 上一行的本质调用是 FT_New_Face  , 目的是为了 初始化 FT_Face face
+            // msdfgen::FontHandle* font = msdfgen::adoptFreetypeFont(ftFace); // 另一个做法,也是可以使用的
+            // 那么正确的建议就是是 使用 ftFace , 以它作为基础来管理各个字体
+            // FT_New_Face , 调用这个函数之后再调用 msdfgen::adoptFreetypeFont  就可以了
+
             if (font != nullptr) {
                 msdfgen::FontMetrics metrics;
                 //  调用 getFontMetrics 读取度量数据
