@@ -78,6 +78,7 @@ void Font_Manager::destroy() {
 void Font_Manager::check_need_update() {
     if (need_update_atlas == true) {
         // 需要更新图集 到 GPU , 在本帧开始绘制之前
+
     }
 }
 
@@ -157,47 +158,43 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
     auto &msdf_text_tem = get_font_data(font_file_name); // 也先空出来, 之后调用一个查找的函数就好
     auto font_handle    = msdfgen::adoptFreetypeFont(msdf_text_tem.font_handle);
 
-    for (auto unicode_point: unicode_points) {
+    for (auto unicode_point: unicode_points)
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
-        if (msdf_text_tem.glyphs.find(unicode_point) != msdf_text_tem.glyphs.end()) {
-            // 已经存在，直接退出
-            return true;
-        } else {
+        if (msdf_text_tem.glyphs.find(unicode_point) == msdf_text_tem.glyphs.end()) {
             // 不存在,
-            {
-                msdfgen::Shape shape;
-                // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
-                if (loadGlyph(shape, font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
-                    Glyph glyph;
-                    // 临时创建一个 Glyph 用于存储当前这个 字的
-                    glyph.unicode = unicode_point;
-                    auto bitmap   = generate_sdf_bitmap_and(glyph, shape);
-                    if (bitmap.has_value()) {
-                        auto bit_map      = bitmap.value();
-                        const auto width  = bitmap.value().width();
-                        const auto height = bitmap.value().height();
-                        // 下面一行是从图集中分配一个位置
-                        auto position = bin_pack_manager.Insert(width, height,
-                                                                rbp::MaxRectsBinPack::RectBestShortSideFit);
-                        // 需要将 bitmap.value() 的内容写入图片 的 position
-                        if (position.width == width) {
-                            // 没有翻转
-                            write_bitmap_to_bin_pack_image(position, bit_map, image);
-                        } else {
-                            // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
-                            assert(false);
-                        }
-                        // 也可能因为上下翻转需要处理一下下面的四个字
-                        glyph.atlasBounds.left   = (static_cast<float>(position.x) + 0.5f);
-                        glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
-                        glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
-                        glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
-                        msdf_text_tem.glyphs.insert({unicode_point, glyph});
+            msdfgen::Shape shape;
+            // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
+            if (loadGlyph(shape, font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                Glyph glyph;
+                // 临时创建一个 Glyph 用于存储当前这个 字的
+                glyph.unicode = unicode_point;
+                auto bitmap   = generate_sdf_bitmap_and(glyph, shape);
+                if (bitmap.has_value()) {
+                    auto bit_map      = bitmap.value();
+                    const auto width  = bitmap.value().width();
+                    const auto height = bitmap.value().height();
+                    // 下面一行是从图集中分配一个位置
+                    auto position = bin_pack_manager.Insert(width, height,
+                                                            rbp::MaxRectsBinPack::RectBestShortSideFit);
+                    // 需要将 bitmap.value() 的内容写入图片 的 position
+                    need_update_atlas = true;
+                    //  这里的代码暂时不能分开, 如果直接申请固定大小的区域的话,是可以分开的
+                    if (position.width == width) {
+                        // 没有翻转
+                        write_bitmap_to_bin_pack_image(position, bit_map, image);
+                    } else {
+                        // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
+                        assert(false);
                     }
+                    // 也可能因为上下翻转需要处理一下下面的四个字
+                    glyph.atlasBounds.left   = (static_cast<float>(position.x) + 0.5f);
+                    glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
+                    glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
+                    glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
+                    msdf_text_tem.glyphs.insert({unicode_point, glyph});
                 }
             }
         }
-    }
     msdfgen::destroyFont(font_handle);
 
     return true;
