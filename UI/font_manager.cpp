@@ -59,7 +59,9 @@ void Font_Manager::create() {
     bin_pack_manager.Init(static_cast<int>(atlas.width),
                           static_cast<int>(atlas.height), false);
 
-    freetype_handle = msdfgen::initializeFreetype();
+    FT_Error error = FT_Init_FreeType(&library);
+    if (error) {
+    }
 
     // 这里本质的调用是 FT_Init_FreeType ,  初始化一个 FT_Library library
 
@@ -68,9 +70,9 @@ void Font_Manager::create() {
 
 void Font_Manager::destroy() {
     // 先清理掉这个
-    if (freetype_handle != nullptr)
-        msdfgen::deinitializeFreetype(freetype_handle);
-    freetype_handle = nullptr;
+    if (nullptr != library)
+        FT_Done_FreeType(library);
+    library = nullptr;
 }
 
 void Font_Manager::check_need_update() {
@@ -153,6 +155,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
     // // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
     // msdf_text_tem.fonts.push_back({font_file_name, font});
     auto &msdf_text_tem = get_font_data(font_file_name); // 也先空出来, 之后调用一个查找的函数就好
+    auto font_handle    = msdfgen::adoptFreetypeFont(msdf_text_tem.font_handle);
 
     for (auto unicode_point: unicode_points) {
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
@@ -164,7 +167,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
             {
                 msdfgen::Shape shape;
                 // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
-                if (loadGlyph(shape, msdf_text_tem.font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                if (loadGlyph(shape, font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
                     Glyph glyph;
                     // 临时创建一个 Glyph 用于存储当前这个 字的
                     glyph.unicode = unicode_point;
@@ -195,6 +198,8 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
             }
         }
     }
+    msdfgen::destroyFont(font_handle);
+
     return true;
     // 还是先假设全部正常输出,
 }
@@ -233,8 +238,12 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     // hb_face_t *face = hb_face_create(blob, 0);
 
     // 那么这里就只有一个问题,通过 font_file_name 获取 ftFace todo:
-    FT_Face ftFace;
-    auto UPEM = ftFace->units_per_EM;
+    FT_Face ftFace = get_font_data(font_file_name).font_handle;
+    auto UPEM      = ftFace->units_per_EM;
+
+    FT_Set_Pixel_Sizes(ftFace, 0, 16);
+    // 还需要去设置字号的大小
+    // 否则会缩成一团
 
     hb_font_t *font = hb_ft_font_create_referenced(ftFace);
 

@@ -5,7 +5,10 @@
 #ifndef HELLO_MAC_FONT_MANAGER_H
 #define HELLO_MAC_FONT_MANAGER_H
 
+#include <freetype/freetype.h>
+
 #include "image.h"
+#define  FT_LOAD_DEFAULT
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 #include <map>
@@ -63,15 +66,15 @@ class Font_Manager {
     Image image;
 
     // FT_Library 的 对应封装句柄
-    msdfgen::FreetypeHandle *freetype_handle = nullptr;
+    FT_Library library = nullptr;
     // 当你拿到  msdfgen::FontHandle *font_handle 或者 本质是 FT_Face face 的时候基本就不用它了
 
-    using Font_File_name                     = std::string;
+    using Font_File_name = std::string;
 
     struct Font_File_name_and_FontHandle {
         Font_File_name name;
         Metrics metrics_temp;
-        msdfgen::FontHandle *font_handle;
+        FT_Face font_handle;
         std::map<unicode_value, Glyph> glyphs;
 
         // FT_Face 的对应封装句柄
@@ -79,7 +82,6 @@ class Font_Manager {
     };
 
     std::vector<Font_File_name_and_FontHandle> fonts;
-
 
 
     // FT_Face ft_face
@@ -104,9 +106,13 @@ public:
     Atlas atlas;
 
 
-    bool add_font(const Font_File_name &file_name) {
-        if (freetype_handle != nullptr) {
-            msdfgen::FontHandle *font = msdfgen::loadFont(freetype_handle, file_name.c_str());
+    bool add_font(const Font_File_name &file_name) { {
+            FT_Face face;
+            FT_Error error = FT_New_Face(library, file_name.c_str(), 0, &face);
+            if (error) {
+                return false;
+            }
+            msdfgen::FontHandle *font = msdfgen::adoptFreetypeFont(face);
             // 上一行的本质调用是 FT_New_Face  , 目的是为了 初始化 FT_Face face
             // msdfgen::FontHandle* font = msdfgen::adoptFreetypeFont(ftFace); // 另一个做法,也是可以使用的
             // 那么正确的建议就是是 使用 ftFace , 以它作为基础来管理各个字体
@@ -133,11 +139,11 @@ public:
                     metrics_temp.descender          = metrics.descenderY;
                     metrics_temp.underlineY         = metrics.underlineY;
                     metrics_temp.underlineThickness = metrics.underlineThickness;
-                    fonts.push_back({file_name.c_str(), metrics_temp, font});
+                    fonts.push_back({file_name.c_str(), metrics_temp, face});
                 } else {
                     std::cerr << "获取 Metrics 失败！" << std::endl;
                 }
-
+                msdfgen::destroyFont(font);
                 return true;
             }
         }
@@ -150,7 +156,7 @@ public:
 
     void clear_fonts() {
         for (const auto &font: fonts) {
-            msdfgen::destroyFont(font.font_handle);
+            FT_Done_Face(font.font_handle);
         }
         fonts.clear();
     }
