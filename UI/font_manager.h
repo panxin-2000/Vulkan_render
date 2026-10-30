@@ -128,6 +128,8 @@ public:
         fonts.clear();
     }
 
+    Font_File_name_and_FontHandle &get_font_data(const std::string &font_file_name);
+
     [[nodiscard]] float get_scale() const {
         return atlas.size;
     }

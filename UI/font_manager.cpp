@@ -139,7 +139,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
     // }
     // // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
     // msdf_text_tem.fonts.push_back({font_file_name, font});
-    Font_File_name_and_FontHandle msdf_text_tem; // 也先空出来, 之后调用一个查找的函数就好
+    auto &msdf_text_tem = get_font_data(font_file_name); // 也先空出来, 之后调用一个查找的函数就好
 
     for (auto unicode_point: unicode_points) {
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
@@ -177,7 +177,6 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                         glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
                         glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
                         msdf_text_tem.glyphs.insert({unicode_point, glyph});
-                        break;
                     }
                 }
             }
@@ -185,6 +184,16 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
     }
     return true;
     // 还是先假设全部正常输出,
+}
+
+Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const std::string &font_file_name) {
+    for (auto &font: fonts) {
+        if (font_file_name.compare(font_file_name) == 0) {
+            return font;
+        }
+    }
+    add_font(font_file_name);
+    return fonts.back();
 }
 
 
@@ -242,7 +251,7 @@ Font_Manager::create_text_geometry_data(const std::string &text,
         const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
 
 
-        std::map<uint32_t, Glyph> glyphs; // 这里展示写为空, 之后在从总的当中查找
+        auto glyphs = get_font_data(font_file_name).glyphs;
         if (auto glyph = glyphs.find(glyph_id); glyph != glyphs.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             append_text_box(vertices, indices, {
