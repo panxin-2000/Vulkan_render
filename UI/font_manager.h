@@ -164,9 +164,16 @@ public:
 
     void destroy();
 
+    /**
+     * 检查是否有新的字被添加进行,需要更新图集
+     */
+    void check_need_update();
+
     Texture_parameter create_or_update_texture_from_image();
 
 private:
+    bool need_update_atlas = false;
+
     Font_Manager() = default;
 
     ~Font_Manager() = default;

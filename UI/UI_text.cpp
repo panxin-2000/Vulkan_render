@@ -117,6 +117,8 @@ void UI_Text::set_render_text(const std::string &text) {
         // 下面这个也算是糊弄过去了,之后还是要看应该如何上传的
         std::optional<Texture_parameter> texture = Font_Manager::instance().create_or_update_texture_from_image();
         logic_set_render_parameter(entity, "msdf", texture);
+        // 那么问题就是这里了, 这个贴图 如果作为参数在最后整体时更新 ? 
+        // 这个贴图,如果能做的话, 我也想做成 bindless , 不过暂时没有必要
     }
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));

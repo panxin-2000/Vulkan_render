@@ -4,7 +4,10 @@
 
 #include "font_manager.h"
 
+extern "C" {
 #include <hb.h>
+#include <hb-ft.h>
+}
 
 #include "bin_pack/MaxRectsBinPack.h"
 #include "ext/import-font.h"
@@ -64,6 +67,12 @@ void Font_Manager::destroy() {
     if (freetype_handle != nullptr)
         msdfgen::deinitializeFreetype(freetype_handle);
     freetype_handle = nullptr;
+}
+
+void Font_Manager::check_need_update() {
+    if (need_update_atlas == true) {
+        // 需要更新图集 到 GPU , 在本帧开始绘制之前
+    }
 }
 
 Texture_parameter Font_Manager::create_or_update_texture_from_image() {
@@ -220,6 +229,8 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     hb_face_t *face = hb_face_create(blob, 0);
     hb_font_t *font = hb_font_create(face);
     auto UPEM       = hb_face_get_upem(face);
+
+    // hb_font_t* hbFont = hb_ft_font_create_referenced(ftFace);
 
     // 传入字体和缓冲区，执行塑造
     hb_shape(font, buf, NULL, 0);
