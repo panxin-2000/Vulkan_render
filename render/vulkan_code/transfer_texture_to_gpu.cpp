@@ -119,7 +119,6 @@ VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
         memcpy(dst, ktxTexture->pData, ktxTexture->dataSize);
     };
     const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
-    // ktxTexture_Destroy(ktxTexture);
 
     std::vector<VkBufferImageCopy> copyRegions{};
     for (auto j = 0; j < parameters.mipLevels; j++) {
@@ -138,6 +137,8 @@ VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
                                   },
                               });
     }
+    ktxTexture_Destroy(ktxTexture);
+    // 使程序能够正常跑之后,确实能查出来这里是有内存泄漏的
 
 
     transfer_ktx_to_gpu(image_ptr, staging_buffer, parameters, copyRegions);
@@ -172,7 +173,6 @@ std::optional<Texture_parameter> create_textures_to_gpu(const std::string &filen
         };
         auto sampler = create_vulkan_sample(samplerCI);
 
-        ktxTexture_Destroy(ktxTexture);
 
         texture.image       = image_ptr;
         texture.sampler     = sampler;

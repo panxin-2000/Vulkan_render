@@ -833,8 +833,8 @@ void load_materials(std::vector<uint32_t> &material_indices,
                           }
                       });
 
-    auto lambda = [](std::vector<std::pair<PBR_component, PBR_Texture_ptr> > result) {
-        for (const auto &pair: result) {
+    auto lambda = [](const std::vector<std::pair<PBR_component, PBR_Texture_ptr> > &pass_result) {
+        for (const auto &pair: pass_result) {
             if (pair.second.baseColorTexture.image != nullptr) {
                 // 加上一个比较严格的限制,这个函数就是有问题的
                 Engine::instance().add_bindless_texture(pair.second.baseColorTexture);
