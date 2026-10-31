@@ -24,18 +24,23 @@
 static std::atomic<VK_backend *> backend_instance{nullptr};
 static std::mutex backend_mutex;
 
+VK_backend *VK_backend::instance_ptr = nullptr;
+
+
 VK_backend &VK_backend::instance() {
-    VK_backend *current = backend_instance.load(std::memory_order_acquire);
-    if (current == nullptr) {
-        std::lock_guard<std::mutex> lock(backend_mutex);
-        current = backend_instance.load(std::memory_order_relaxed);
-        if (current == nullptr) {
-            current = new VK_backend();
-            assert(current != nullptr);
-            backend_instance.store(current, std::memory_order_release);
-        }
+    static std::once_flag flag;
+    std::call_once(flag, []() {
+        instance_ptr = new VK_backend();
+    });
+    return *instance_ptr;
+}
+
+bool VK_backend::destroy_instance() {
+    if (instance_ptr != nullptr) {
+        delete instance_ptr;
     }
-    return *current;
+    instance_ptr = nullptr;
+    return true;
 }
 
 VkExtent2D VK_backend::get_swap_chain_image_extent() const {

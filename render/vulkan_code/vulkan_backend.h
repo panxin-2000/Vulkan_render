@@ -17,6 +17,8 @@
 
 
 class VK_backend : public GPU_backend {
+    static VK_backend *instance_ptr;
+
 private:
     // ApplicationInfo 的参数
     std::string application_name_ = "Vulkan Example";
@@ -130,6 +132,8 @@ public:
     float get_refresh_rate() const;
 
     static VK_backend &instance();
+
+    static bool destroy_instance();
 
     void create();
 

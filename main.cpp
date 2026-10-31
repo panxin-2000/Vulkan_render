@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     backend.create();
     auto &engine = Engine::instance();
     engine.create();
+    Font_Manager::instance();
     auto world_root = get_world_root();
     auto UI_root    = get_UI_scene_root();
     // 需要确定启动的顺序
@@ -250,8 +251,11 @@ int main(int argc, char *argv[]) {
     auto &buffer = get_uniform_buffer();
     buffer->destroy_buffer();
 
+    Font_Manager::instance().destroy();
     engine.destroy();
+    engine.destroy_instance();
     backend.destroy();
+    backend.destroy_instance();
 }
 
 

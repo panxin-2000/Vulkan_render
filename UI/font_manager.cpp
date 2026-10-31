@@ -20,17 +20,17 @@ extern "C" {
 #include "Geometry_component.h"
 #include "utf8/checked.h"
 
+Font_Manager *Font_Manager::instance_ptr = nullptr;
+
 
 Font_Manager &Font_Manager::instance() {
-    static Font_Manager *instance;
-
     static std::once_flag flag;
     std::call_once(flag, []() {
-        instance = new Font_Manager();
-        instance->create();
+        instance_ptr = new Font_Manager();
+        instance_ptr->create();
     });
 
-    return *instance;
+    return *instance_ptr;
 }
 
 void Font_Manager::create() {
@@ -73,12 +73,13 @@ void Font_Manager::destroy() {
     if (nullptr != library)
         FT_Done_FreeType(library);
     library = nullptr;
+
+    delete instance_ptr;
 }
 
 void Font_Manager::check_need_update() {
     if (need_update_atlas == true) {
         // 需要更新图集 到 GPU , 在本帧开始绘制之前
-
     }
 }
 

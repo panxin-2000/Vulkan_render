@@ -205,6 +205,9 @@ public:
     Texture_parameter create_or_update_texture_from_image();
 
 private:
+    static Font_Manager *instance_ptr;
+
+
     bool need_update_atlas = false;
 
     Font_Manager() = default;

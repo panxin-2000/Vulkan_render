@@ -31,6 +31,8 @@
 #include "opacity_batch.h"
 
 struct Engine {
+    static Engine *instance_ptr;
+
 private:
     // 也许这里需要一个 VK_backend 的指针
     std::vector<VkCommandPool> command_pools_                = {};
@@ -71,6 +73,8 @@ private:
 
 public:
     static Engine &instance();
+
+    static bool destroy_instance();
 
     opacity_batch &get_opacity_batch() {
         return opacity_batch_;
