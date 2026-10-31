@@ -100,6 +100,9 @@ VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
         }
     }
     auto format = ktxTexture_GetVkFormat(ktxTexture);
+    // 不能 将 lambda 继续向前扩充了, format 可能是在不断变化的
+    // VK_FORMAT_BC7_UNORM_BLOCK 和 VK_FORMAT_BC7_SRGB_BLOCK 都有可能
+
 
     Image_and_view_parameters parameters{
         .format = format,
@@ -114,34 +117,44 @@ VKR_image_ptr load_ktx(ktxTexture *ktxTexture) {
         .arrayLayers = 1,
         .flags       = 0
     };
-    auto image_ptr         = create_2d_image_and_view(parameters);
-    auto mem_copy_function = [&](void *dst) {
-        memcpy(dst, ktxTexture->pData, ktxTexture->dataSize);
+    auto image_ptr = create_2d_image_and_view(parameters);
+    // TODO: 更改这里,看看 如何 整理到 一个 专门到 stage_manager 中执行的,
+    auto lambda = [=]() {
+        auto mem_copy_function = [&](void *dst) {
+            memcpy(dst, ktxTexture->pData, ktxTexture->dataSize);
+        };
+        const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
+
+        std::vector<VkBufferImageCopy> copyRegions{};
+        for (auto j = 0; j < parameters.mipLevels; j++) {
+            ktx_size_t mipOffset{0};
+            KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, j, 0, 0, &mipOffset);
+            copyRegions.push_back({
+                                      .bufferOffset = mipOffset,
+                                      .imageSubresource{
+                                          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = (uint32_t) j,
+                                          .layerCount = 1
+                                      },
+                                      .imageExtent{
+                                          .width  = parameters.width >> j,
+                                          .height = parameters.height >> j,
+                                          .depth  = 1
+                                      },
+                                  });
+        }
+        ktxTexture_Destroy(ktxTexture);
+        // 使程序能够正常跑之后,确实能查出来这里是有内存泄漏的
+        transfer_ktx_to_gpu(image_ptr, staging_buffer, parameters, copyRegions);
     };
-    const auto staging_buffer = create_image_stage_buffer(ktxTexture->dataSize, mem_copy_function);
+    vk_render_queue::instance().render_update_entt(lambda); // 之后更改这里,看看 如何
 
-    std::vector<VkBufferImageCopy> copyRegions{};
-    for (auto j = 0; j < parameters.mipLevels; j++) {
-        ktx_size_t mipOffset{0};
-        KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, j, 0, 0, &mipOffset);
-        copyRegions.push_back({
-                                  .bufferOffset = mipOffset,
-                                  .imageSubresource{
-                                      .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = (uint32_t) j,
-                                      .layerCount = 1
-                                  },
-                                  .imageExtent{
-                                      .width  = parameters.width >> j,
-                                      .height = parameters.height >> j,
-                                      .depth  = 1
-                                  },
-                              });
-    }
-    ktxTexture_Destroy(ktxTexture);
-    // 使程序能够正常跑之后,确实能查出来这里是有内存泄漏的
+    // 更改前
+    // [Timer] bistro.gltf : end took 2.06 s
+    // [Timer] load_materials : end took 3.28 s
+    // 更改后 主要的时间消耗并不在 memcpy 函数
+    // [Timer] bistro.gltf : end took 2.05 s
+    // [Timer] load_materials : end took 3.34 s
 
-
-    transfer_ktx_to_gpu(image_ptr, staging_buffer, parameters, copyRegions);
     return image_ptr;
 }
 
