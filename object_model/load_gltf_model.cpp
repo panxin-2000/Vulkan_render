@@ -832,19 +832,27 @@ void load_materials(std::vector<uint32_t> &material_indices,
                               result[i] = {pbr, ptr};
                           }
                       });
+
+    auto lambda = [](std::vector<std::pair<PBR_component, PBR_Texture_ptr> > result) {
+        for (const auto &pair: result) {
+            if (pair.second.baseColorTexture.image != nullptr) {
+                // 加上一个比较严格的限制,这个函数就是有问题的
+                Engine::instance().add_bindless_texture(pair.second.baseColorTexture);
+            }
+            if (pair.second.normalTexture.image != nullptr) {
+                Engine::instance().add_bindless_texture(pair.second.normalTexture);
+            }
+            if (pair.second.emissiveTexture.image != nullptr) {
+                Engine::instance().add_bindless_texture(pair.second.emissiveTexture);
+            }
+            if (pair.second.ORM_Texture.image != nullptr) {
+                Engine::instance().add_bindless_texture(pair.second.ORM_Texture);
+            }
+        }
+    };
+    vk_render_queue::instance().render_update_entt(lambda, result);
+
     for (const auto &pair: result) {
-        if (pair.second.baseColorTexture.image != nullptr) {
-            Engine::instance().add_bindless_texture(pair.second.baseColorTexture);
-        }
-        if (pair.second.normalTexture.image != nullptr) {
-            Engine::instance().add_bindless_texture(pair.second.normalTexture);
-        }
-        if (pair.second.emissiveTexture.image != nullptr) {
-            Engine::instance().add_bindless_texture(pair.second.emissiveTexture);
-        }
-        if (pair.second.ORM_Texture.image != nullptr) {
-            Engine::instance().add_bindless_texture(pair.second.ORM_Texture);
-        }
         auto material_index = pbr_manager.push(pair.first, pair.second);
         material_indices.push_back(material_index);
     }
