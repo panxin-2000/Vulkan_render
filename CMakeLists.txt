@@ -8,9 +8,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 #add_compile_options(-fsanitize=address)
 #add_link_options(-fsanitize=address)
 
-if (NOT FETCHCONTENT_BASE_DIR)
-    set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/../.cmake_fetch_cache" CACHE PATH "FetchContent base directory")
-endif ()
 if (APPLE)
     # 强制指定编译时和 CLion 解析时使用 Homebrew LLVM 的标准库与头文件
     add_compile_options("-stdlib=libc++" "-I/opt/homebrew/opt/llvm/include")
@@ -42,43 +39,19 @@ add_compile_options(-fno-omit-frame-pointer)
 add_compile_options(-mno-omit-leaf-frame-pointer)
 
 ## 按照googletest官网文档添加了gtest
-include(FetchContent)
 
 
 add_subdirectory(external/cereal)
 
-## 官网给的FetchContent_Declare如下，但是不方便直观的看明白版本
-#FetchContent_Declare(
-#        googletest
-#        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-#)
-## 我修改如下，方便看清楚版本号
-FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.17.0
-        GIT_SHALLOW TRUE
-)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+add_subdirectory(external/googletest)
+
 
 # 自动寻找 Google Benchmark 库 并且 如果需要更改库，只需要更改子文件夹下的内容
 find_package(benchmark REQUIRED)
 add_subdirectory(benchmark)
 
-#  开发者常私下将其解读为 Entity Templates
-FetchContent_Declare(
-        entt
-        GIT_REPOSITORY https://github.com/skypjack/entt.git
-        GIT_TAG v3.16.0
-        GIT_SHALLOW TRUE
-)
-
-FetchContent_Declare(
-        quill
-        GIT_REPOSITORY https://github.com/odygrd/quill.git
-        GIT_TAG v11.0.2  # 明确指向某个标签
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(quill)
+add_subdirectory(external/quill)
 
 
 # tinygltf 中占据了 IMGUI_DIR 这个符号，所需需要放在 tinygltf 之前
@@ -104,30 +77,10 @@ set(MSDFGEN_USE_SKIA OFF)
 
 find_package(Freetype REQUIRED)
 
-include(FetchContent)
-FetchContent_Declare(
-        msdfgen
-        GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
-        GIT_TAG v1.13
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(msdfgen)
+add_subdirectory(external/msdfgen)
 
-FetchContent_Declare(
-        meshoptimizer
-        GIT_REPOSITORY https://github.com/zeux/meshoptimizer.git
-        GIT_TAG v1.1
-        GIT_SHALLOW TRUE
-)
+add_subdirectory(external/meshoptimizer)
 
-FetchContent_MakeAvailable(meshoptimizer)
-
-FetchContent_Declare(
-        ktx
-        GIT_REPOSITORY https://github.com/KhronosGroup/KTX-Software.git
-        GIT_TAG v4.4.2 # 建议指定一个稳定的 Release 标签
-        GIT_SHALLOW TRUE
-)
 
 
 # 【核心步骤】通过 CMake 选项关闭整个 KTX 仓库的其他多余目标
@@ -140,27 +93,14 @@ set(KTX_FEATURE_PY OFF CACHE BOOL "" FORCE)    # 关闭 Python 绑定
 #set(LIBKTX_VERSION_READ_ONLY ON CACHE BOOL "" FORCE)
 
 
-FetchContent_MakeAvailable(ktx)
+add_subdirectory(external/ktx)
 
 
-FetchContent_Declare(
-        cxxopts
-        GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
-        GIT_TAG v3.3.1
-        GIT_SHALLOW TRUE
-
-)
-FetchContent_MakeAvailable(cxxopts)
+add_subdirectory(external/cxxopts)
 
 
-FetchContent_Declare(
-        readerwriterqueue
-        GIT_REPOSITORY https://github.com/cameron314/readerwriterqueue
-        GIT_TAG master
-        GIT_SHALLOW TRUE
-)
 
-FetchContent_MakeAvailable(readerwriterqueue)
+add_subdirectory(external/readerwriterqueue)
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
 option(TRACY_ENABLE "Enable Tracy profiling" ON)
@@ -175,17 +115,6 @@ if (TRACY_ENABLE)
     target_compile_definitions(test_tracy PRIVATE TRACY_ENABLE)
 endif ()
 
-#FetchContent_Declare(
-#        shaderc
-#        GIT_REPOSITORY https://github.com/google/shaderc.git
-#        GIT_TAG v2026.3
-#        GIT_SHALLOW TRUE
-#)
-## 临时关闭 shaderc 内部自带的测试用例和第三方多余组件的编译，加快你的 CMake 速度
-#set(SHADERC_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-#set(SHADERC_ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
-#
-#FetchContent_MakeAvailable(shaderc)
 
 
 add_subdirectory(external/libccd)
@@ -225,14 +154,6 @@ message(STATUS "OCCT Library Dir: ${OpenCASCADE_LIBRARY_DIRS}")
 message(STATUS "OCCT Libraries:   ${OpenCASCADE_LIBRARIES}")
 
 
-#已经不使用这个库了
-#FetchContent_Declare(
-#        directxmath
-#        GIT_REPOSITORY https://github.com/microsoft/DirectXMath.git
-#        GIT_TAG apr2025
-#        GIT_SHALLOW TRUE     
-#)
-#FetchContent_MakeAvailable(directxmath)
 
 
 #set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
@@ -291,14 +212,7 @@ if (WITH_VULKAN_BACKEND)
 
 
     add_definitions(-DENGINE_USE_VOLK)
-    FetchContent_Declare(
-            VulkanMemoryAllocator
-            GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-            GIT_TAG v3.1.0  # 建议指定一个稳定的发布版本
-            GIT_SHALLOW TRUE
-            SYSTEM
-    )
-    FetchContent_MakeAvailable(VulkanMemoryAllocator)
+    add_subdirectory(external/VulkanMemoryAllocator)
 
 
     include_directories(external/ktx/include)
@@ -520,22 +434,8 @@ set(LIBRARIES "Vulkan::Vulkan")
 find_package(realsense2 REQUIRED)
 
 
-## 下面这行没有看懂什么意思，按照说明先复制过来了
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-#FetchContent_MakeAvailable() 命令会确保指定的依赖项已被填充
-FetchContent_MakeAvailable(googletest)
-FetchContent_MakeAvailable(entt)
+add_subdirectory(external/entt)
 
-## CMake Cookbook中关于添加gtest还添加了下面一行
-## 用于查询内容是否已经被获取或填充
-#FetchContent_GetProperties(googletest)
-
-## 如果还没有填充，获取并配置子项目
-#if(NOT googletest_POPULATED)
-#    FetchContent_Populate(googletest)
-
-## 也就是目前给出了两种教程完成同一个任务，暂时来看，CMake Cookbook给出的似乎更好，
-## 实际上需要了解FetchContent_MakeAvailable中的细节再去做判断
 
 enable_testing()
 
@@ -630,13 +530,8 @@ target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
 
 find_package(TBB REQUIRED)
 
-FetchContent_Declare(absl
-        GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-        GIT_TAG 20260107.1  # 替换为你需要的版本 Tag 或 Commit
-        GIT_SHALLOW TRUE
-)
 
-FetchContent_MakeAvailable(absl)
+add_subdirectory(external/absl)
 
 
 #find_library(TCMALLOC_LIB NAMES tcmalloc_minimal tcmalloc)
