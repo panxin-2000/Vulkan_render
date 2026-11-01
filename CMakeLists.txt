@@ -88,15 +88,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(quill)
 
 
-FetchContent_Declare(
-        json
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        GIT_TAG v3.12.0
-        GIT_SHALLOW TRUE
-        GIT_SUBMODULES ""   # 不下载任何子模块
-)
-FetchContent_MakeAvailable(json)
-
 # tinygltf 中占据了 IMGUI_DIR 这个符号，所需需要放在 tinygltf 之前
 set(IMGUI_DIR ./imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
@@ -110,22 +101,8 @@ file(GLOB imgui_sources
         ${IMGUI_DIR}/imgui_tables.cpp
         ${IMGUI_DIR}/imgui_widgets.cpp)
 
-
-FetchContent_Declare(
-        simdjson
-        GIT_REPOSITORY https://github.com/simdjson/simdjson.git
-        GIT_TAG v4.6.4
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(simdjson)
-
-FetchContent_Declare(
-        fastgltf
-        GIT_REPOSITORY https://github.com/spnda/fastgltf.git
-        GIT_TAG v0.8.0 # 建议锁定一个稳定的发布版本，也可以用 main
-        GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(fastgltf)
+add_subdirectory(simdjson)
+add_subdirectory(fastgltf)
 
 
 set(MSDFGEN_USE_VCPKG OFF)
@@ -219,21 +196,6 @@ endif ()
 
 
 add_subdirectory(thirdparty/libccd)
-
-find_package(highway)
-if (highway_FOUND)
-    message("find highway has installed")
-else ()
-    FetchContent_Declare(
-            highway
-            GIT_REPOSITORY https://github.com/google/highway.git
-            GIT_TAG 1.2.0 #
-            GIT_SHALLOW TRUE
-    )
-    set(HWY_ENABLE_TESTS OFF CACHE INTERNAL "")
-    set(HWY_ENABLE_EXAMPLES OFF CACHE INTERNAL "")
-    FetchContent_MakeAvailable(highway)
-endif ()
 
 
 if (APPLE)
@@ -616,7 +578,6 @@ add_executable(hello_test ${LABYRINTH}
         test/test_best-fit.cpp
         test/test_occt.cpp
         test/test_quadtree.cpp
-        test/test_highway.cpp
         test/test_particle.cpp
         test/test_intersect.cpp
         test/test_reader_writer_queue.cpp
@@ -741,7 +702,6 @@ target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)
 #target_link_libraries(learn_render PRIVATE DirectXMath)
 target_link_libraries(learn_render PRIVATE fastgltf::fastgltf)
-target_link_libraries(learn_render PRIVATE nlohmann_json::nlohmann_json) # 纯头文件，链接不链接无所谓
 target_include_directories(learn_render PRIVATE ${FREETYPE_INCLUDE_DIRS})
 target_link_libraries(learn_render PRIVATE ${FREETYPE_LIBRARIES})
 
