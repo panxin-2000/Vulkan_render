@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(hello_mac)
+project(vulkan_render)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
@@ -26,9 +26,7 @@ endif ()
 #    link_libraries(${XCB_LIBRARIES} ${Vulkan_LIBRARY} ${Vulkan_LIBRARY} ${DIRECTFB_LIBRARIES} ${WAYLAND_CLIENT_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 #ENDIF (WIN32)
 
-find_package(SDL3 CONFIG REQUIRED)
 
-find_package(Curses REQUIRED)
 include_directories(${CURSES_INCLUDE_DIR})
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -save-temps=obj")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps=obj")
@@ -37,21 +35,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fno-strict-return")
 add_compile_options(-fno-omit-frame-pointer)
 add_compile_options(-mno-omit-leaf-frame-pointer)
-
-## 按照googletest官网文档添加了gtest
-
-
-add_subdirectory(external/cereal)
-
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-add_subdirectory(external/googletest)
-
-
-# 自动寻找 Google Benchmark 库 并且 如果需要更改库，只需要更改子文件夹下的内容
-find_package(benchmark REQUIRED)
-add_subdirectory(benchmark)
-
-add_subdirectory(external/quill)
 
 
 # tinygltf 中占据了 IMGUI_DIR 这个符号，所需需要放在 tinygltf 之前
@@ -67,20 +50,21 @@ file(GLOB imgui_sources
         ${IMGUI_DIR}/imgui_tables.cpp
         ${IMGUI_DIR}/imgui_widgets.cpp)
 
-add_subdirectory(simdjson)
-add_subdirectory(fastgltf)
+
+add_subdirectory(external/cereal)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+add_subdirectory(external/googletest)
+add_subdirectory(external/quill)
 
 
 set(MSDFGEN_USE_VCPKG OFF)
 set(MSDFGEN_USE_SKIA OFF)
 
 
-find_package(Freetype REQUIRED)
-
+add_subdirectory(simdjson)
+add_subdirectory(fastgltf)
 add_subdirectory(external/msdfgen)
-
 add_subdirectory(external/meshoptimizer)
-
 
 
 # 【核心步骤】通过 CMake 选项关闭整个 KTX 仓库的其他多余目标
@@ -94,13 +78,35 @@ set(KTX_FEATURE_PY OFF CACHE BOOL "" FORCE)    # 关闭 Python 绑定
 
 
 add_subdirectory(external/ktx)
-
-
 add_subdirectory(external/cxxopts)
-
-
-
 add_subdirectory(external/readerwriterqueue)
+
+add_subdirectory(external/libccd)
+add_subdirectory(external/entt)
+add_subdirectory(external/absl)
+
+find_package(OpenGL REQUIRED)
+find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(spirv_cross_core REQUIRED)
+find_package(spirv_cross_glsl REQUIRED)
+find_package(spirv_cross_cpp REQUIRED)
+find_package(TBB REQUIRED)
+find_package(realsense2 REQUIRED)
+find_package(Boost CONFIG REQUIRED)
+if (APPLE)
+    list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
+endif ()
+find_package(OpenVDB REQUIRED)
+find_package(harfbuzz REQUIRED)
+find_package(TBB REQUIRED)
+find_package(OpenCASCADE REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
+find_package(Curses REQUIRED)
+find_package(benchmark REQUIRED)
+find_package(Freetype REQUIRED)
+
+add_subdirectory(benchmark)
+
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
 option(TRACY_ENABLE "Enable Tracy profiling" ON)
@@ -116,17 +122,6 @@ if (TRACY_ENABLE)
 endif ()
 
 
-
-add_subdirectory(external/libccd)
-
-
-if (APPLE)
-    list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
-endif ()
-find_package(Boost CONFIG REQUIRED)
-find_package(OpenVDB REQUIRED)
-
-
 # ==============================================================================
 # 1. 查找 Open CASCADE
 # ==============================================================================
@@ -138,8 +133,6 @@ find_package(OpenVDB REQUIRED)
 # TKSTEP        - STEP 文件导入 (STEPControl_Reader)
 # TKV3d / TKAIS - AIS 可视化核心 (AIS_InteractiveContext, AIS_Shape)
 
-
-find_package(OpenCASCADE REQUIRED)
 
 if (NOT OpenCASCADE_FOUND)
     message(STATUS "OpenCASCADE NOT FOUND REASON: ${OpenCASCADE_NOT_FOUND_MESSAGE}")
@@ -153,29 +146,6 @@ message(STATUS "OCCT Library Dir: ${OpenCASCADE_LIBRARY_DIRS}")
 # 3. Print the list of all found library files
 message(STATUS "OCCT Libraries:   ${OpenCASCADE_LIBRARIES}")
 
-
-
-
-#set(SAL_STUB_DIR "${PROJECT_SOURCE_DIR}/need_download_include")
-#file(MAKE_DIRECTORY ${SAL_STUB_DIR})
-#
-#set(SAL_FILE_PATH "${SAL_STUB_DIR}/sal.h")
-#
-#if (EXISTS "${SAL_FILE_PATH}")
-#    message(STATUS "have found file : ${SAL_FILE_PATH}")
-#else ()
-#    set(REMOTE_URL "https://raw.githubusercontent.com/dotnet/runtime/main/src/coreclr/pal/inc/rt/sal.h")
-#    file(DOWNLOAD ${REMOTE_URL} "${SAL_FILE_PATH}"
-#            SHOW_PROGRESS
-#            STATUS download_status
-#    )
-#    list(GET download_status 0 status_code)
-#    if (NOT status_code EQUAL 0)
-#        message(FATAL_ERROR "下载 sal.h 失败: ${download_status}")
-#    endif ()
-#endif ()
-#
-#include_directories(${SAL_STUB_DIR})
 
 set(WITH_VULKAN_BACKEND ON)
 set(WITH_OPENGL_BACKEND OFF)
@@ -217,22 +187,6 @@ if (WITH_VULKAN_BACKEND)
 
     include_directories(external/ktx/include)
     include_directories(external/ktx/other_include)
-
-
-    #    set(KTX_FEATURE_OPENCL OFF CACHE BOOL "Disable OpenCL acceleration" FORCE)
-    #    set(KTX_FEATURE_VULKAN OFF CACHE BOOL "Disable Vulkan" FORCE)
-    #    set(KTX_FEATURE_OPENGL OFF CACHE BOOL "Disable OpenGL" FORCE)
-
-    #    set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
-    #    set(KTX_SOURCES
-    #            ${KTX_DIR}/lib/texture.c
-    #            ${KTX_DIR}/lib/hashlist.c
-    #            ${KTX_DIR}/lib/checkheader.c
-    #            ${KTX_DIR}/lib/swap.c
-    #            ${KTX_DIR}/lib/memstream.c
-    #            ${KTX_DIR}/lib/filestream.c
-    #            ${KTX_DIR}/lib/vkloader.c)
-    #    add_library(ktx STATIC ${KTX_SOURCES})
 
 
     file(GLOB_RECURSE vulkan_code
@@ -317,13 +271,6 @@ include_directories(external/tinyobj)
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
-find_package(OpenGL REQUIRED)
-
-find_package(Eigen3 REQUIRED NO_MODULE)
-
-find_package(spirv_cross_core REQUIRED)
-find_package(spirv_cross_glsl REQUIRED)
-find_package(spirv_cross_cpp REQUIRED)
 
 
 file(GLOB_RECURSE RENDER
@@ -397,8 +344,6 @@ file(GLOB_RECURSE INPUT_DEVICE
         "input_device/device_input_event_deal.cpp"
 )
 
-find_package(TBB REQUIRED)
-
 
 #######################################vulkan#####################################
 
@@ -430,11 +375,6 @@ ENDIF ()
 set(LIBRARIES "Vulkan::Vulkan")
 
 #######################################vulkan#####################################
-
-find_package(realsense2 REQUIRED)
-
-
-add_subdirectory(external/entt)
 
 
 enable_testing()
@@ -511,8 +451,6 @@ add_executable(fixture test/sample3.cpp include/sample3.h)
 gtest_discover_tests(fixture)
 target_link_libraries(fixture GTest::gtest_main)
 
-#find_package(Eigen3 REQUIRED)
-#INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
 include_directories(include)
 #include_directories()
 include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3)
@@ -526,12 +464,6 @@ add_executable(hello_mac
         test/longest_continuous_sequence.cpp
         test/set_graph.cpp)
 target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
-
-
-find_package(TBB REQUIRED)
-
-
-add_subdirectory(external/absl)
 
 
 #find_library(TCMALLOC_LIB NAMES tcmalloc_minimal tcmalloc)
@@ -550,7 +482,6 @@ file(GLOB SHADER_FILES
         "${SHADER_SOURCE_DIR}/*.geom"
         "${SHADER_SOURCE_DIR}/*.comp"
 )
-find_package(harfbuzz REQUIRED)
 
 
 add_executable(learn_render main.cpp "tracy/public/TracyClient.cpp"
