@@ -15,7 +15,7 @@
 首次构建需要执行的命令有
 ``` 
 
-git clone --depth 1                        https://github.com/danfis/libccd.git                                  external/libccd
+git clone --depth 1 --branch  v2.1         https://github.com/danfis/libccd.git                                  external/libccd
 git clone --depth 1 --branch  v1.3.2       https://github.com/USCiLab/cereal.git                                 external/cereal
 git clone --depth 1 --branch  v1.17.0      https://github.com/google/googletest.git                              external/googletest
 git clone --depth 1 --branch  v3.1.0       https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git external/VulkanMemoryAllocator
