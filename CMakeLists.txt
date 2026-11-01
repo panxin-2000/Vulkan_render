@@ -45,14 +45,7 @@ add_compile_options(-mno-omit-leaf-frame-pointer)
 include(FetchContent)
 
 
-FetchContent_Declare(
-        cereal
-        GIT_REPOSITORY https://github.com/USCiLab/cereal.git
-        GIT_TAG v1.3.2 # 或者是 master
-        GIT_SHALLOW TRUE
-)
-
-FetchContent_MakeAvailable(cereal)
+add_subdirectory(external/cereal)
 
 ## 官网给的FetchContent_Declare如下，但是不方便直观的看明白版本
 #FetchContent_Declare(
@@ -195,7 +188,7 @@ endif ()
 #FetchContent_MakeAvailable(shaderc)
 
 
-add_subdirectory(thirdparty/libccd)
+add_subdirectory(external/libccd)
 
 
 if (APPLE)
