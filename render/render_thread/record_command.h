@@ -49,6 +49,7 @@ public:
         // 使用 TBB 线程安全且针对多核心优化的分配器申请一块连续大内存
         const size_t aligned_capacity = (capacity + 255) & ~255; // 向上取整到 256 的倍数
         m_buffer                      = static_cast<char *>(std::aligned_alloc(256, aligned_capacity));
+        // 看起来是正确的, 但是做起来是不对的
     }
 
     ~RenderRingBuffer() {

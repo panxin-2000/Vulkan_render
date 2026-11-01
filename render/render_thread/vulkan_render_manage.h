@@ -92,7 +92,6 @@ public:
 
     void execute_update_lambda() {
         RenderRingBuffer callback{2 * 1024 * 1024};
-        oneapi::tbb::concurrent_queue<RenderRingBuffer> temp;
         if (logic_thread_finished.load() == true) {
             logic_thread_finished.store(false);
             const auto current = render_read % g_render_queue.size();

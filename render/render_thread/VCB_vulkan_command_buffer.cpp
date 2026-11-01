@@ -98,6 +98,7 @@ void VCB::dof_blur(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_
                         parameter.update_object_descriptor_sets, "output_texture",
                         compute_texture);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
+    // 这里确实写的不是很好 ,  本质上这里确实在不限的增加
     update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);
     bind_Proxy_descriptor_sets(parameter.object_descriptor_sets, compute_shader->pipeline_layout,
