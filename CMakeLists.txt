@@ -485,7 +485,7 @@ file(GLOB SHADER_FILES
 
 
 add_executable(learn_render main.cpp "tracy/public/TracyClient.cpp"
-        external/tinyobj/tiny_obj_loader.cc
+        object_model/tiny_obj_loader.cc
 
         ${SHADER_FILES}
         ${component}

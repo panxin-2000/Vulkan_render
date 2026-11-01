@@ -14,6 +14,7 @@
 
 首次构建需要执行的命令有
 ``` 
+
 git clone --depth 1                        https://github.com/danfis/libccd.git                                  external/libccd
 git clone --depth 1 --branch  v1.3.2       https://github.com/USCiLab/cereal.git                                 external/cereal
 git clone --depth 1 --branch  v1.17.0      https://github.com/google/googletest.git                              external/googletest
@@ -26,4 +27,5 @@ git clone --depth 1 --branch  v4.4.2       https://github.com/KhronosGroup/KTX-S
 git clone --depth 1 --branch  v3.3.1       https://github.com/jarro2783/cxxopts.git                              external/cxxopts
 git clone --depth 1 --branch  v1.0.7       https://github.com/cameron314/readerwriterqueue.git                   external/readerwriterqueue
 git clone --depth 1 --branch  20260107.1   https://github.com/abseil/abseil-cpp.git                              external/absl
+wget -P external/tinyobj/  https://github.com/tinyobjloader/tinyobjloader/releases/download/v1.0.6/tiny_obj_loader.h 
 ```
