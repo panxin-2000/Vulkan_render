@@ -34,49 +34,6 @@ object_3d &object_3d::object_3d_add_mesh(const AABB_min_max<Point_3> &bounding_b
     return *this;
 }
 
-object_3d &object_3d::add_manifold_mesh(manifold::MeshGL &mesh) {
-    const auto vertex_count = mesh.vertProperties.size() / mesh.numProp;
-    // 索引（Indices）推荐“原地优化”，但顶点（Vertices）推荐“非原地优化（重新排列）”
-
-    // 先优化顶点缓存 (减少 VS 计算)
-    meshopt_optimizeVertexCache(mesh.triVerts.data(),
-                                mesh.triVerts.data(),
-                                mesh.triVerts.size(),
-                                vertex_count);
-
-    // 再优化过渡绘制 (减少 PS 浪费)
-    // 通过重排三角形减少 Overdraw（适合深度前传或不透明物体）
-    meshopt_optimizeOverdraw(mesh.triVerts.data(),
-                             mesh.triVerts.data(),
-                             mesh.triVerts.size(),
-                             mesh.vertProperties.data(), vertex_count,
-                             mesh.numProp * sizeof(float), 1.05f);
-
-    // 最后排列顶点 (提升内存访问效率)
-    // 重新排列顶点属性数据，使内存访问与索引顺序对齐
-    std::vector<float> optimized_vertices(mesh.vertProperties.size());
-    meshopt_optimizeVertexFetch(
-                                optimized_vertices.data(),                  // 输出
-                                mesh.triVerts.data(), mesh.triVerts.size(), // 已优化的索引
-                                mesh.vertProperties.data(),                 // 原始顶点属性
-                                vertex_count,                               // 顶点数
-                                mesh.numProp * sizeof(float)                // 每个顶点的字节步长
-                               );
-    // 将优化后的顶点数据写回
-    mesh.vertProperties = std::move(optimized_vertices);
-    auto sp_vertices    = std::make_shared<std::vector<Vertex> >();
-    auto sp_indices     = std::make_shared<std::vector<uint16_t> >();
-    sp_vertices->resize(mesh.vertProperties.size() / mesh.numProp);
-    sp_indices->reserve(mesh.triVerts.size());
-    memcpy(sp_vertices->data(), mesh.vertProperties.data(), sp_vertices->size() * sizeof(Vertex));
-    for (int i = 0; i < mesh.triVerts.size(); i++) {
-        sp_indices->push_back(mesh.triVerts.at(i));
-    }
-    add_geometry_data(entity, sp_vertices, sp_indices);
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity));
-    return *this;
-}
 
 object_3d &object_3d::add_mesh(const std::string &mesh_path) {
     auto aabb = load_model(entity, mesh_path);

@@ -8,7 +8,6 @@
 #include "global_singleton.h"
 #include "shader_component.h"
 #include "base_geometry/base.h"
-#include "manifold/manifold.h"
 #include "base_render_object.h"
 
 class object_3d : public logic_render_object {
@@ -16,8 +15,6 @@ public:
     object_3d(const std::string &name);
 
     object_3d &object_3d_add_mesh(const AABB_min_max<Point_3> &bounding_box);
-
-    object_3d &add_manifold_mesh(manifold::MeshGL &mesh);
 
     object_3d &add_mesh(const std::string &mesh_path);
 

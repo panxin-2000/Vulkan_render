@@ -4,8 +4,9 @@
 
 #ifndef LEARN_OPENGL_EVENT_BASE_H
 #define LEARN_OPENGL_EVENT_BASE_H
+#include <bitset>
+#include <chrono>
 #include <string>
-
 #include <SDL3/SDL.h>
 
 #include "utility.h"

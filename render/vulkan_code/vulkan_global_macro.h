@@ -6,7 +6,7 @@
 #define HELLO_MAC_VULKAN_GLOBAL_MACRO_H
 
 #ifdef ENGINE_USE_VOLK
-#include <volk.h>
+#include "volk.h"
 #else
 #include <vulkan/vulkan.h>
 #endif

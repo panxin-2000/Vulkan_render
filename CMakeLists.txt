@@ -10,8 +10,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
 
 if (APPLE)
     # 强制指定编译时和 CLion 解析时使用 Homebrew LLVM 的标准库与头文件
-    add_compile_options("-stdlib=libc++" "-I/opt/homebrew/opt/llvm/include")
-    add_link_options("-L/opt/homebrew/opt/llvm/lib" "-Wl,-rpath,/opt/homebrew/opt/llvm/lib")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        add_compile_options("-stdlib=libc++" "-I/opt/homebrew/opt/llvm/include")
+        add_link_options("-L/opt/homebrew/opt/llvm/lib" "-Wl,-rpath,/opt/homebrew/opt/llvm/lib")
+    endif ()
+
 endif ()
 
 #IF (WIN32)
@@ -32,7 +35,18 @@ include_directories(${CURSES_INCLUDE_DIR})
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps=obj")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fno-strict-return")
+
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fno-strict-return")
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # 将部分严格的编译错误弱化为警告，强行让代码通过编译
+    add_compile_options(-fpermissive)
+endif ()
+
+
 add_compile_options(-fno-omit-frame-pointer)
 add_compile_options(-mno-omit-leaf-frame-pointer)
 
@@ -51,7 +65,7 @@ file(GLOB imgui_sources
         ${IMGUI_DIR}/imgui_widgets.cpp)
 
 
-add_subdirectory(external/cereal)
+#add_subdirectory(external/cereal)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(external/googletest)
 add_subdirectory(external/quill)
@@ -92,20 +106,21 @@ find_package(spirv_cross_glsl REQUIRED)
 find_package(spirv_cross_cpp REQUIRED)
 find_package(TBB REQUIRED)
 find_package(realsense2 REQUIRED)
-find_package(Boost CONFIG REQUIRED)
 if (APPLE)
     list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
+elseif (LINUX)
+    list(APPEND CMAKE_MODULE_PATH "/usr/lib/aarch64-linux-gnu/cmake/OpenVDB")
 endif ()
+
 find_package(OpenVDB REQUIRED)
 find_package(harfbuzz REQUIRED)
 find_package(TBB REQUIRED)
-find_package(OpenCASCADE REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
 find_package(Curses REQUIRED)
-find_package(benchmark REQUIRED)
+#find_package(benchmark REQUIRED)
 find_package(Freetype REQUIRED)
 
-add_subdirectory(benchmark)
+#add_subdirectory(benchmark)
 
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
@@ -132,19 +147,6 @@ endif ()
 # TKMesh        - 网格化模块 (BRepMesh_IncrementalMesh)
 # TKSTEP        - STEP 文件导入 (STEPControl_Reader)
 # TKV3d / TKAIS - AIS 可视化核心 (AIS_InteractiveContext, AIS_Shape)
-
-
-if (NOT OpenCASCADE_FOUND)
-    message(STATUS "OpenCASCADE NOT FOUND REASON: ${OpenCASCADE_NOT_FOUND_MESSAGE}")
-endif ()
-
-message(STATUS "OCCT Include Dir: ${OpenCASCADE_INCLUDE_DIRS}")
-
-# 2. Print the library directory (where .dylib or .so files live)
-message(STATUS "OCCT Library Dir: ${OpenCASCADE_LIBRARY_DIRS}")
-
-# 3. Print the list of all found library files
-message(STATUS "OCCT Libraries:   ${OpenCASCADE_LIBRARIES}")
 
 
 set(WITH_VULKAN_BACKEND ON)
@@ -424,7 +426,7 @@ include_directories(/opt/homebrew/include/glm)
 include(GoogleTest)
 gtest_discover_tests(hello_test DISCOVERY_TIMEOUT 30)
 gtest_discover_tests(cache_time)
-target_link_libraries(hello_test ccd hwy ${OpenCASCADE_LIBRARIES} readerwriterqueue realsense2::realsense2 OpenVDB::openvdb cereal::cereal GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
+target_link_libraries(hello_test ccd hwy readerwriterqueue realsense2::realsense2 OpenVDB::openvdb GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
 target_compile_options(hello_test PRIVATE -g)
 #target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
@@ -512,10 +514,11 @@ set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURR
 
 target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 
-target_link_libraries(learn_render PRIVATE cereal::cereal)
+#target_link_libraries(learn_render PRIVATE cereal::cereal)
 #target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)
 #target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
+target_link_libraries(learn_render PRIVATE SDL3::SDL3)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
 target_link_libraries(learn_render PRIVATE spirv-cross-cpp)

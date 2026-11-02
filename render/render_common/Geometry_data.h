@@ -6,18 +6,18 @@
 #define HELLO_MAC_GEOMETRY_DATA_H
 #include <oneapi/tbb.h>
 
-#include "vector"
+#include <vector>
 #include "global_singleton.h"
 #include "../render_component/PBR_component.h"
 // #include "shader_common.h"
 #include "AABB_box.h"
 
 struct share_block {
-    std::shared_ptr<void> ptr;
-    void *data         = nullptr;
-    size_t total_size  = 0;
-    size_t count       = 0;
-    size_t single_size = 0;
+    std::shared_ptr<void> ptr = nullptr;
+    void *data                = nullptr;
+    size_t total_size         = 0;
+    size_t count              = 0;
+    size_t single_size        = 0;
     // std::vector<VertexAttrib> vertex_attribs;  // 这里暂时清除了
 
 
