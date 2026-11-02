@@ -41,11 +41,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fno-strict-return")
 endif ()
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # 将部分严格的编译错误弱化为警告，强行让代码通过编译
-    add_compile_options(-fpermissive)
-endif ()
-
 
 add_compile_options(-fno-omit-frame-pointer)
 add_compile_options(-mno-omit-leaf-frame-pointer)
@@ -514,9 +509,6 @@ set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURR
 
 target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 
-#target_link_libraries(learn_render PRIVATE cereal::cereal)
-#target_link_libraries(learn_render PRIVATE OrthoTree::OrthoTree)
-#target_link_libraries(learn_render PRIVATE ktx slang)
 target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
@@ -535,8 +527,16 @@ target_link_libraries(learn_render PRIVATE msdfgen-ext)
 target_link_libraries(learn_render PRIVATE Vulkan::shaderc_combined)
 #target_link_libraries(learn_render PRIVATE TBB::tbbmalloc_proxy)
 
-#target_compile_options(learn_render PRIVATE -fsanitize=undefined)
-#target_link_options(learn_render PRIVATE -fsanitize=undefined)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(learn_render PRIVATE -fsanitize=undefined)
+    target_link_options(learn_render PRIVATE -fsanitize=undefined)
+endif ()
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # 将部分严格的编译错误弱化为警告，强行让代码通过编译
+    add_compile_options(-fpermissive)
+endif ()
+
 
 target_link_libraries(learn_render PRIVATE absl::hash)
 target_link_libraries(learn_render PRIVATE absl::raw_hash_set)
