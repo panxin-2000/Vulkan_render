@@ -4,6 +4,7 @@
 
 #include "vulkan_read_attribute.h"
 
+#include <algorithm>
 #include <iostream>
 #include <SDL3/SDL_video.h>
 

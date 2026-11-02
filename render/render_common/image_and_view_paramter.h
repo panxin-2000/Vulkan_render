@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <volk.h>
+#include <cmath>
+
 
 struct Image_and_view_parameters {
     VkFormat format;

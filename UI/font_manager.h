@@ -167,8 +167,8 @@ public:
         return atlas.size;
     }
 
-    [[nodiscard]] uint get_distanceRange() const {
-        return static_cast<int>(atlas.distanceRange);
+    [[nodiscard]] double get_distanceRange() const {
+        return static_cast<double>(atlas.distanceRange);
     }
 
 public:

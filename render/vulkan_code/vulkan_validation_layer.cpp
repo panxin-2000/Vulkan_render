@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include <ostream>
-
+#include <algorithm>
 #include "vulkan_read_attribute.h"
 #include "vulkan_utility.h"
 

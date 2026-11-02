@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 inline unsigned char floatToByte(const float value) {
     // std::lround 会自动进行精确的四舍五入，并返回 long 类型
@@ -43,11 +44,11 @@ public:
     }
 
 
-    bool write(const uint x, const uint y, const float r, const float g, const float b, const float a = 0) {
+    bool write(const size_t x, const size_t y, const float r, const float g, const float b, const float a = 0) {
         return write(x, y, floatToByte(r), floatToByte(g), floatToByte(b), floatToByte(a));
     }
 
-    bool write(const uint x, const uint y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0) {
+    bool write(const size_t x, const size_t y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0) {
         if (x < width_ && y < height_) {
             data[(x + width_ * y)].r = r;
             data[(x + width_ * y)].g = g;

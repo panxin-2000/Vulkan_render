@@ -5,7 +5,9 @@
 #ifndef HELLO_MAC_VULKAN_BUFFER_H
 #define HELLO_MAC_VULKAN_BUFFER_H
 
+#include <functional>
 #include <map>
+#include <memory>
 #include <utility>
 #include <vk_mem_alloc.h>
 #include "APP_utility_mixins.h"

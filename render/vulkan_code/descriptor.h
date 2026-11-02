@@ -4,6 +4,8 @@
 
 #ifndef HOWTOVULKAN_DESCRIPTOR_H
 #define HOWTOVULKAN_DESCRIPTOR_H
+#include <memory>
+
 #include "APP_utility_mixins.h"
 #include <volk.h>
 #include <vector>

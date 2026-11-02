@@ -5,7 +5,11 @@
 #ifndef HELLO_MAC_VULKAN_EXECUTE_COMMAND_H
 #define HELLO_MAC_VULKAN_EXECUTE_COMMAND_H
 
+#include <functional>
 #include <map>
+#include <mutex>
+#include <vector>
+#include <array>
 #include <vk_mem_alloc.h>
 
 

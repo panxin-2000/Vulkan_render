@@ -86,6 +86,7 @@ template<typename T1>
 bool render_push_constant_parameter(const entt::entity entity, const std::string &binding_name,
                                     const T1 &binding_data) {
     const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+    // 一个细节的问题,导致有时候会出现entt错误
     auto &parameter             = Render_entt().get_or_emplace<shader_constant_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {

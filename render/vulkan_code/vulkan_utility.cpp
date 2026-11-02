@@ -25,11 +25,14 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
     {
         auto supportedInstanceExtensions = get_all_instance_extensions();
         // SRS - When running on iOS/macOS with MoltenVK and VK_KHR_portability_enumeration is defined and supported by the instance, enable the extension and the flag
-        if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(),
-                      VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
-            instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-            instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        for (const auto &ext: supportedInstanceExtensions) {
+            if (ext == VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME) {
+                instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+                instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+                break;
+            }
         }
+
         instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
     }
 #endif
@@ -81,11 +84,11 @@ VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTil
 
 VkFormat findDepthFormat(const VkPhysicalDevice &physicalDevice) {
     return findSupportedFormat(
-        {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        physicalDevice
-    );
+                               {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+                               VK_IMAGE_TILING_OPTIMAL,
+                               VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                               physicalDevice
+                              );
 }
 
 
@@ -109,7 +112,7 @@ static std::vector<char> readFile(const std::string &filename) {
 
 int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfaceKHR surface_) {
     auto family_properties = get_queue_family_properties(physical_device);
-    int queueFamilyIndex = 0;
+    int queueFamilyIndex   = 0;
     for (auto family_property: family_properties) {
         bool temp_1 = check_have_queue_compute(family_property);
         bool temp_2 = check_have_queue_graphics(family_property);
@@ -126,8 +129,8 @@ int32_t get_queue_family_index(const VkPhysicalDevice &physical_device, VkSurfac
 void createCommandPool(const VkPhysicalDevice &physical_device, VkDevice device, VkSurfaceKHR surface,
                        VkCommandPool &commandPool) {
     VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = get_queue_family_index(physical_device, surface);
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
