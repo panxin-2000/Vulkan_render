@@ -26,6 +26,21 @@ git clone --depth 1 --branch  v1.1         https://github.com/zeux/meshoptimizer
 git clone --depth 1 --branch  v4.4.2       https://github.com/KhronosGroup/KTX-Software.git                      external/ktx
 git clone --depth 1 --branch  v3.3.1       https://github.com/jarro2783/cxxopts.git                              external/cxxopts
 git clone --depth 1 --branch  v1.0.7       https://github.com/cameron314/readerwriterqueue.git                   external/readerwriterqueue
-git clone --depth 1 --branch  20260107.1   https://github.com/abseil/abseil-cpp.git                              external/absl
+git clone --depth 1 --branch  20260817.0   https://github.com/abseil/abseil-cpp.git                              external/absl
 wget -P external/tinyobj/  https://github.com/tinyobjloader/tinyobjloader/releases/download/v1.0.6/tiny_obj_loader.h 
+```
+
+树莓派上运行需要提前安装的程序
+```
+sudo apt install vulkan-tools
+sudo apt install spirv-cross libspirv-cross-c-shared-dev -y
+sudo apt install libopenvdb-dev -y
+sudo apt install libboost-iostreams-dev libboost-system-dev -y
+sudo apt install -y build-essential cmake libasound2-dev libpulse-dev \
+    libwayland-dev wayland-protocols libx11-dev libxrandr-dev \
+    libxinerama-dev libxcursor-dev libxi-dev libxss-dev libkbproto-dev \
+    libdrm-dev libgbm-dev
+sudo apt install libncurses5-dev libncursesw5-dev
+sudo apt install libvulkan-dev vulkan-tools libshaderc-dev
+
 ```
