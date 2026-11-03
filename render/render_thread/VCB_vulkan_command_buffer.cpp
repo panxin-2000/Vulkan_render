@@ -3,8 +3,8 @@
 //
 #include "VCB_vulkan_command_buffer.h"
 
-#include <vec2.hpp>
 
+#include "Eigen/Eigen"
 #include "engine.h"
 #include "shader_component.h"
 #include "SSAO_parameters.h"

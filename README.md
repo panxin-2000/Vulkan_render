@@ -42,5 +42,5 @@ sudo apt install -y build-essential cmake libasound2-dev libpulse-dev \
     libdrm-dev libgbm-dev
 sudo apt install libncurses5-dev libncursesw5-dev
 sudo apt install libvulkan-dev vulkan-tools libshaderc-dev
-
+sudo apt install -y libnanovdb-dev libnanovdb-tools
 ```

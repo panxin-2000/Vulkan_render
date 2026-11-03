@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <string>
+#include <cstdint>
 
 inline unsigned char floatToByte(const float value) {
     // std::lround 会自动进行精确的四舍五入，并返回 long 类型

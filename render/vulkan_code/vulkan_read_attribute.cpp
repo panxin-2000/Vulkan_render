@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <SDL3/SDL_video.h>
 
 std::vector<std::string> get_all_instance_extensions() {

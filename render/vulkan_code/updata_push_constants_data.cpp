@@ -2,6 +2,7 @@
 // Created by 潘鑫 on 2026/2/15.
 //
 
+#include "vulkan_global_macro.h"
 #include "update_push_constants_data.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
@@ -42,8 +43,8 @@ VKR_buffer_pool_ptr &get_uniform_buffer() {
 
 VKR_buffer_ptr create_SSBO_buffer(const VkDeviceSize size) {
     return create_vma_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                                   VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT |
-                                   VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT,
+                                   VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT_KHR |
+                                   VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT_KHR,
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                              VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT);
 }

@@ -9,9 +9,9 @@
 #include "input_component.h"
 #include "vulkan_texture_bindless.h"
 #include "base_geometry/intersect_function.h"
-#include "manifold/linalg.h"
 #include "move_speed.h"
 #include "world_scene_root.h"
+#include <SDL3/SDL.h>
 
 /**
  * 使用位置和四元数构建 View 矩阵

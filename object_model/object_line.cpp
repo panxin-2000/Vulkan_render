@@ -14,27 +14,10 @@
 
 
 void update_curve(const entt::entity entity) {
-    if (auto BSpline = Logic_entt().try_get<B_spline<Eigen::Vector2f> >(entity)) {
-        const auto path = BSpline->get_path(1.25);
-        add_path(entity, path, {});
-        logic_update_proxy(entity, get_VKR_mesh(entity));
-    }
 }
 
 
 object_2d &object_2d::add_B_spline_curve() {
-    auto &BSpline = Logic_entt().emplace<B_spline<Eigen::Vector2f> >(entity);
-    BSpline.add_point({200, 200});
-    BSpline.add_point({200, 600});
-    BSpline.add_point({600, 200});
-    BSpline.add_point({600, 600});
-    BSpline.add_point({700, 700});
-    const auto path = BSpline.get_path(1.25);
-
-    add_path(entity, path, {});
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity));
-    logic_update_add_tag<Line_tag>(entity);
     return *this;
 }
 
@@ -59,12 +42,5 @@ void object_line(const std::string &name) {
 }
 
 object_2d &object_2d::add_bezier_curve() {
-    Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
-    std::vector<Eigen::Vector2f> path;
-    bezier.Casteljau(&path);
-    add_path(entity, path, {});
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity));
-    logic_update_add_tag<Line_tag>(entity);
     return *this;
 }

@@ -23,7 +23,7 @@ VKR_buffer_ptr create_image_stage_buffer(const VkDeviceSize size,
                                          const std::function<void(void *)> mem_copy_callback) {
     auto &backend      = VK_backend::instance();
     const auto vBuffer =
-            create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT,
+            create_vma_buffer(size, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT_KHR,
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                               VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT); // 最差结果 纯显存（DEVICE_LOCAL）
     if (vBuffer->empty())

@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 #include <array>
+#include <atomic>
 #include <vk_mem_alloc.h>
 
 

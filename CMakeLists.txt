@@ -104,6 +104,7 @@ find_package(realsense2 REQUIRED)
 if (APPLE)
     list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
 elseif (LINUX)
+    include_directories("/usr/local/include")
     list(APPEND CMAKE_MODULE_PATH "/usr/lib/aarch64-linux-gnu/cmake/OpenVDB")
 endif ()
 
@@ -509,7 +510,6 @@ set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURR
 
 target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
 
-target_link_libraries(learn_render PRIVATE volk)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)

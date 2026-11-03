@@ -286,7 +286,7 @@ VKR_buffer_ptr create_vma_buffer(const VkDeviceSize size,
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size  = buffer_size,
 #ifdef TRACY_ENABLE
-        .usage = static_cast<VkBufferUsageFlags>(usage | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT),
+        .usage = static_cast<VkBufferUsageFlags>(usage | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT_KHR),
 #else
         .usage = usage
 #endif

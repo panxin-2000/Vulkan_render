@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_POINT_2_H
 #define HELLO_MAC_POINT_2_H
 #include <algorithm>
+#include <limits>
 #include <ostream>
 
 class Point_2 {

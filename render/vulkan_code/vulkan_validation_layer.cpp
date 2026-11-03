@@ -28,27 +28,30 @@ void add_instance_validation_layers(VkInstanceCreateInfo &instanceCreateInfo,
                                     VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfo,
                                     std::vector<const char *> &instanceExtensions) {
     {
-        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debugCreateInfo.messageSeverity =
                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         debugCreateInfo.messageType =
                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugCreateInfo.pfnUserCallback = debugCallback;
+        debugCreateInfo.pfnUserCallback  = debugCallback;
         auto supportedInstanceExtensions = get_all_instance_extensions();
-        if (std::find(supportedInstanceExtensions.begin(), supportedInstanceExtensions.end(),
-                      VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != supportedInstanceExtensions.end()) {
-            instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-            instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
-            instanceCreateInfo.enabledLayerCount = validationLayers.size();
-            instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
+
+        for (const auto &ext: supportedInstanceExtensions) {
+            if (ext == VK_EXT_DEBUG_UTILS_EXTENSION_NAME) {
+                instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+                instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+                instanceCreateInfo.enabledLayerCount   = validationLayers.size();
+                instanceCreateInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
+                break;
+            }
         }
     }
 }
 
 
 void add_device_validation_layers(VkDeviceCreateInfo &createInfo) {
-    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+    createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
     createInfo.ppEnabledLayerNames = validationLayers.data();
 }

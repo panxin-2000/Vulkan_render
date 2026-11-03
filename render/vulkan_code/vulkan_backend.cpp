@@ -4,7 +4,7 @@
 
 // 下面这个只能在一个 cpp 文件中定义
 #ifdef ENGINE_USE_VOLK
-#define VOLK_IMPLEMENTATION
+// #define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
 #include <volk.h>
@@ -504,7 +504,7 @@ void VK_backend::create_device() {
     };
 
     std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
-    deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    deviceExtensions.push_back("VK_KHR_portability_subset");
 
     const VkPhysicalDeviceFeatures enabledVk10Features{
         .multiDrawIndirect                      = VK_TRUE,

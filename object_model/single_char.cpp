@@ -12,7 +12,6 @@
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
 
 #include "earcut.h"
-#include "manifold/manifold.h"
 
 
 void test_single_char() {
