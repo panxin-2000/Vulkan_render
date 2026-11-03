@@ -32,6 +32,9 @@ wget -P external/tinyobj/  https://github.com/tinyobjloader/tinyobjloader/releas
 
 树莓派上运行需要提前安装的程序
 ```
+sudo apt install -y libfreetype6-dev 
+sudo apt install -y libtinyxml2-dev 
+sudo apt install -y libeigen3-dev 
 sudo apt install vulkan-tools
 sudo apt install spirv-cross libspirv-cross-c-shared-dev -y
 sudo apt install libopenvdb-dev -y
@@ -43,4 +46,18 @@ sudo apt install -y build-essential cmake libasound2-dev libpulse-dev \
 sudo apt install libncurses5-dev libncursesw5-dev
 sudo apt install libvulkan-dev vulkan-tools libshaderc-dev
 sudo apt install -y libnanovdb-dev libnanovdb-tools
+sudo apt install libharfbuzz-dev
+sudo apt install glslang-tools glslang-dev
+
+```
+
+树莓派上还需要自己下载编译 SDL3
+```
+git clone --depth 1 --branch release-3.4.4 https://github.com/libsdl-org/SDL.git 
+mkdir  build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release -DSDL_X11_XSCRNSAVER=OFF  -DSDL_X11_XTEST=OFF
+cmake --build . --config Release -j$(nproc)
+sudo cmake --install .
+
 ```

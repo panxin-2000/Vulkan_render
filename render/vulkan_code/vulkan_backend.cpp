@@ -4,7 +4,7 @@
 
 // 下面这个只能在一个 cpp 文件中定义
 #ifdef ENGINE_USE_VOLK
-// #define VOLK_IMPLEMENTATION
+#define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
 #include <volk.h>
