@@ -6,7 +6,7 @@
 #define HELLO_MAC_UPDATE_PUSH_CONSTANTS_DATA_H
 #include "vulkan_buffer.h"
 
-
+#include <algorithm>
 VKR_buffer_pool_ptr &get_uniform_buffer();
 
 VKR_buffer_ptr create_SSBO_buffer(VkDeviceSize size);
