@@ -119,8 +119,7 @@ find_package(Freetype REQUIRED)
 
 
 set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
-option(TRACY_ENABLE "Enable Tracy profiling" ON)
-set(TRACY_ENABLE ON CACHE BOOL "Enable Tracy profiling" FORCE)
+option(TRACY_ENABLE "Enable Tracy profiling" OFF)
 
 # 优先级从高到低为：
 # 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
@@ -129,6 +128,9 @@ add_executable(test_tracy tracy_main.cpp "tracy/public/TracyClient.cpp")
 target_include_directories(test_tracy PRIVATE "tracy/public")
 if (TRACY_ENABLE)
     target_compile_definitions(test_tracy PRIVATE TRACY_ENABLE)
+    file(GLOB TRACY_FILES "tracy/public/TracyClient.cpp")
+else ()
+    file(GLOB TRACY_FILES "tracy/public/TracyClient.cpp")
 endif ()
 
 
@@ -201,6 +203,7 @@ if (WITH_VULKAN_BACKEND)
             "render/vulkan_code/vulkan_execute_command.cpp"
             "render/vulkan_code/vulkan_buffer_block.cpp"
             "render/vulkan_code/vulkan_backend.cpp"
+            "render/vulkan_code/volk.c"
             "render/vulkan_code/transfer_texture_to_gpu.cpp"
             "render/render_thread/backend.cpp"
             "render/vulkan_code/shader_resolve.cpp"
@@ -483,9 +486,9 @@ file(GLOB SHADER_FILES
 )
 
 
-add_executable(learn_render main.cpp "tracy/public/TracyClient.cpp"
+add_executable(learn_render main.cpp
         object_model/tiny_obj_loader.cc
-
+        ${TRACY_FILES}
         ${SHADER_FILES}
         ${component}
         ${RENDER}

@@ -5,6 +5,7 @@
 #include <list>
 #include "set_graph.h"
 
+#include <cmath>
 #include <queue>
 
 /**

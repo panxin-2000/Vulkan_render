@@ -113,7 +113,7 @@ public:
 using Shader_data = std::shared_ptr<vk_shader_data>;
 
 #ifndef SHADER_BASE_DIR
-#define SHADER_BASE_DIR "/Users/panxin/CLionProjects/hello_mac/render/shader/"
+#define SHADER_BASE_DIR "./render/shader/"
 #endif
 
 

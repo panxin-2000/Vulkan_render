@@ -382,7 +382,10 @@ void vk_render_GPU::render_thread(VK_backend &backend, Engine &engine) {
         return; // 已经在运行中了，直接返回
     }
     need_render = running; // 设置为运行中
+
+#ifdef  TRACY_ENABLE
     tracy::SetThreadName("render thread");
+#endif
 
     vk_render_queue::instance();
     // Render_entt().group<PBR_material_index, Transform_Matrix, Render_AABB, Draw_command>();

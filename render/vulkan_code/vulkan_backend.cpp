@@ -4,7 +4,6 @@
 
 // 下面这个只能在一个 cpp 文件中定义
 #ifdef ENGINE_USE_VOLK
-#define VOLK_IMPLEMENTATION
 #define VMA_IMPLEMENTATION
 
 #include <volk.h>
@@ -297,10 +296,13 @@ void VK_backend::create_instance() {
     appInfo.apiVersion         = api_version_;
     appInfo.pNext              = nullptr;
 
+
     VkInstanceCreateInfo instanceCreateInfo{};
     instanceCreateInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &appInfo;
     add_platform_need_instance_extensions(instanceCreateInfo, instanceExtensions);
+
+    instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 #ifndef NDEBUG //  cmake_build_type 在build 模式下不产生 NDEBUG 宏
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -308,8 +310,36 @@ void VK_backend::create_instance() {
 #else
 
 #endif
+
+#ifdef __linux__
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+        printf("Error: SDL_Init(): %s\n", SDL_GetError());
+        return;
+    }
+    SDL_Vulkan_LoadLibrary(nullptr);
+    uint32_t sdlExtensionCount      = 0;
+    const char *const*sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
+
+    if (!sdlExtensions) {
+        // 获取失败处理
+        SDL_Log("Failed to get Vulkan extensions from SDL: %s", SDL_GetError());
+    }
+
+    // 3. （可选）如果你除了 SDL 要求的扩展，还需要手动追加其他的扩展
+    // 例如你提到的：VK_KHR_get_physical_device_properties2
+    std::vector<const char *> finalExtensions;
+
+    // 先把 SDL 确定的扩展全部塞进去
+    for (uint32_t i = 0; i < sdlExtensionCount; ++i) {
+        finalExtensions.push_back(sdlExtensions[i]);
+        instanceExtensions.push_back(sdlExtensions[i]);
+    }
+#endif
+
+#ifdef   __APPLE__ & __MACH__
     instanceExtensions.push_back("VK_KHR_surface");
     instanceExtensions.push_back("VK_KHR_get_physical_device_properties2");
+#endif
 
     instanceCreateInfo.enabledExtensionCount   = instanceExtensions.size();
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
@@ -370,6 +400,7 @@ void VK_backend::create_surface() {
 
     // Create Window Surface
     if (SDL_Vulkan_CreateSurface(window_, instance_, VK_ORIGINAL_Allocator, &surface_) == 0) {
+        printf("Surface 创建失败原因: %s  \n ", SDL_GetError());
         printf("Failed to create Vulkan surface.\n");
         return;
     }
@@ -504,20 +535,22 @@ void VK_backend::create_device() {
     };
 
     std::vector<const char *> deviceExtensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME};
+#ifdef   __APPLE__ & __MACH__
     deviceExtensions.push_back("VK_KHR_portability_subset");
+#endif
 
     const VkPhysicalDeviceFeatures enabledVk10Features{
-        .multiDrawIndirect                      = VK_TRUE,
+        .multiDrawIndirect                      = VK_FALSE,
         .samplerAnisotropy                      = VK_TRUE,
-        .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
-        .shaderInt64                            = VK_TRUE,
-        .shaderInt16                            = VK_TRUE,
+        .shaderSampledImageArrayDynamicIndexing = VK_FALSE,
+        .shaderInt64                            = VK_FALSE,
+        .shaderInt16                            = VK_FALSE,
     };
 
 
     VkDeviceCreateInfo deviceCI{
         .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext                   = &enabledVk13Features,
+        .pNext                   = nullptr,
         .queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size()),
         .pQueueCreateInfos       = queueCreateInfos.data(),
         .enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size()),
@@ -529,7 +562,8 @@ void VK_backend::create_device() {
 #else
     createInfo.enabledLayerCount = 0;
 #endif
-    VK_CHECK_RESULT(vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
+    auto result = (vkCreateDevice(physical_device_, &deviceCI, nullptr, &device_));
+    assert(result == VK_SUCCESS);
 #ifdef ENGINE_USE_VOLK
     volkLoadDevice(device_);
 #endif
@@ -547,9 +581,10 @@ void VK_backend::create_device() {
 void VK_backend::create_VMA() {
     // VMA
     VmaVulkanFunctions vkFunctions{
-        .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
-        .vkGetDeviceProcAddr   = vkGetDeviceProcAddr,
-        .vkCreateImage         = vkCreateImage
+        .vkGetInstanceProcAddr                   = vkGetInstanceProcAddr,
+        .vkGetDeviceProcAddr                     = vkGetDeviceProcAddr,
+        .vkCreateImage                           = vkCreateImage,
+        .vkGetPhysicalDeviceMemoryProperties2KHR = vkGetPhysicalDeviceMemoryProperties2KHR,
     };
     VmaAllocatorCreateInfo allocatorCI{
         .flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT | VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,

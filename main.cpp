@@ -143,7 +143,10 @@ int main(int argc, char *argv[]) {
     bool done      = false;
     FrameRate_measure framerate_measure(60.0f);
     Mouse_status mouse_status;
+#ifdef  TRACY_ENABLE
     tracy::SetThreadName("logic thread");
+#endif
+
     while (!done) {
         framerate_measure.begin_frame();
         SDL_Event event;
