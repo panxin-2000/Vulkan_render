@@ -10,8 +10,9 @@ file(GLOB SHADER_FILES
         "${SHADER_SOURCE_DIR}/*.comp"
 )
 
+#add_subdirectory(vulkan_code)
 
-file(GLOB_RECURSE vulkan_code
+file(GLOB_RECURSE render_code
         "vulkan_code/vulkan_utility.cpp"
         "vulkan_code/vulkan_read_attribute.cpp"
         "vulkan_code/vulkan_validation_layer.cpp"
@@ -68,8 +69,7 @@ file(GLOB_RECURSE vulkan_code
 )
 
 
-
-add_library(render_vulkan STATIC ${vulkan_code})
+add_library(render_vulkan STATIC ${render_code})
 
 target_compile_definitions(render_vulkan PRIVATE VK_NO_PROTOTYPES)
 
@@ -86,6 +86,7 @@ target_include_directories(render_vulkan PUBLIC
 
 target_link_libraries(render_vulkan PUBLIC Eigen3::Eigen EnTT::EnTT quill::quill)
 target_link_libraries(render_vulkan PUBLIC GPUOpen::VulkanMemoryAllocator)
+#target_link_libraries(render_vulkan PUBLIC vulkan_core)
 target_link_libraries(render_vulkan PUBLIC absl::hash)
 target_link_libraries(render_vulkan PUBLIC absl::raw_hash_set)
 

@@ -540,17 +540,17 @@ void VK_backend::create_device() {
 #endif
 
     const VkPhysicalDeviceFeatures enabledVk10Features{
-        .multiDrawIndirect                      = VK_FALSE,
+        .multiDrawIndirect                      = VK_TRUE,
         .samplerAnisotropy                      = VK_TRUE,
-        .shaderSampledImageArrayDynamicIndexing = VK_FALSE,
-        .shaderInt64                            = VK_FALSE,
-        .shaderInt16                            = VK_FALSE,
+        .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
+        .shaderInt64                            = VK_TRUE,
+        .shaderInt16                            = VK_TRUE,
     };
 
 
     VkDeviceCreateInfo deviceCI{
         .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .pNext                   = nullptr,
+        .pNext                   = &enabledVk13Features,
         .queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size()),
         .pQueueCreateInfos       = queueCreateInfos.data(),
         .enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size()),

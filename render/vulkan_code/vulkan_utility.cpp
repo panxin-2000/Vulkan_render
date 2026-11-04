@@ -21,7 +21,7 @@
  */
 void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateInfo,
                                            std::vector<const char *> &instanceExtensions) {
-#if (defined(VK_USE_PLATFORM_IOS_MVK) || defined(VK_USE_PLATFORM_MACOS_MVK) || defined(VK_USE_PLATFORM_METAL_EXT)) && defined(VK_KHR_portability_enumeration)
+#ifdef   __APPLE__ & __MACH__
     {
         auto supportedInstanceExtensions = get_all_instance_extensions();
         // SRS - When running on iOS/macOS with MoltenVK and VK_KHR_portability_enumeration is defined and supported by the instance, enable the extension and the flag
@@ -33,7 +33,7 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
             }
         }
 
-        instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
+        instanceExtensions.push_back("VK_EXT_metal_surface");
     }
 #endif
 }
