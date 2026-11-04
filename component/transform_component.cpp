@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/3/18.
 //
 
-#include "transform_component.h"
+#include "../include/transform_component.h"
 
 #include "camera_optical_component.h"
 #include "engine.h"

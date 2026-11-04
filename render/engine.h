@@ -28,7 +28,7 @@
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
-#include "opacity_batch.h"
+#include "../UI/opacity_batch.h"
 
 struct Engine {
     static Engine *instance_ptr;

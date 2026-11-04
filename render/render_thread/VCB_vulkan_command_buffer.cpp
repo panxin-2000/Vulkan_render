@@ -6,7 +6,7 @@
 
 #include "Eigen/Eigen"
 #include "engine.h"
-#include "shader_component.h"
+#include "render_component/shader_component.h"
 #include "SSAO_parameters.h"
 #include "vulkan_execute_command.h"
 

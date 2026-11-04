@@ -7,10 +7,10 @@
 #include "model_matrix.h"
 #include "transform_component.h"
 #include "Rect_2D_component.h"
-#include "shader_component.h"
+#include "render_component/shader_component.h"
 #include "VKR_proxy_component.h"
 #include "vulkan_execute_command.h"
-#include "vulkan_render_manage.h"
+#include "render_thread/vulkan_render_manage.h"
 #include "world_scene_root.h"
 
 

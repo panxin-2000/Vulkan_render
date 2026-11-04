@@ -8,13 +8,13 @@
 #include <global_singleton.h>
 
 #include "descriptor.h"
-#include "sync_proxy_to_render_thread.h"
+#include "../../UI/sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
 
 
 #include "vulkan_update_descriptor.h"
-#include "VKR_proxy_component.h"
+#include "../../UI/VKR_proxy_component.h"
 
 
 #include "shader_resolve.h"

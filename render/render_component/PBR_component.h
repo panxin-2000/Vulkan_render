@@ -5,7 +5,6 @@
 #ifndef HELLO_MAC_PBR_COMPONENT_H
 #define HELLO_MAC_PBR_COMPONENT_H
 #include "global_singleton.h"
-#include "transform_component.h"
 #include "vulkan_image.h"
 #include "PBR_base.h"
 

@@ -7,7 +7,7 @@
 
 
 #include "input_component.h"
-#include "scene_component.h"
+#include "../include/scene_component.h"
 #include "UI_button.h"
 
 

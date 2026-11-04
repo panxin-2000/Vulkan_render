@@ -7,7 +7,7 @@
 #include <iostream>
 #include <vector>
 #include "global_singleton.h"
-#include "mesh_component.h"
+#include "render_component/mesh_component.h"
 
 
 class Scene_Component {

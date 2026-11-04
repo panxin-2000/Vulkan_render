@@ -16,7 +16,6 @@
 #include "vulkan_buffer.h"
 #include "vulkan_execute_command.h"
 #include "vulkan_sample.h"
-#include "fastgltf/types.hpp"
 
 
 // std::array<Texture_parameter, 3> textures{};

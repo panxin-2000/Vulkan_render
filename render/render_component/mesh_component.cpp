@@ -3,7 +3,6 @@
 //
 
 #include "mesh_component.h"
-#include "Rect_2D_component.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 

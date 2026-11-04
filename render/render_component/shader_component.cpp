@@ -14,10 +14,9 @@
 #include "sets_and_bindings_layout.h"
 #include "transfer_texture_to_gpu.h"
 #include "transform_component.h"
-#include "VKR_proxy_component.h"
+#include "../../UI/VKR_proxy_component.h"
 #include "vulkan_backend.h"
-#include "vulkan_render_manage.h"
-#include "world_scene_root.h"
+#include "render_thread/vulkan_render_manage.h"
 
 
 void update_bindings_to_descriptor_sets(const entt::entity entity) {
@@ -148,9 +147,9 @@ void global_uniform_buffer_update_function() {
 }
 
 void add_bindless_update_tag() {
-    auto world_entity = get_world_root();
-    // todo: 有问题
-    Render_entt().emplace_or_replace<bindless_set_update_detail>(world_entity);
+    // auto world_entity = get_world_root();
+    // // todo: 有问题
+    // Render_entt().emplace_or_replace<bindless_set_update_detail>(world_entity);
 }
 
 void bindless_uniform_sampler2D_update_function() {

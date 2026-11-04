@@ -89,8 +89,8 @@
 #include <entt/entity/entity.hpp>
 
 #include "global_singleton.h"
-#include "shader_component.h"
-#include "VKR_proxy_component.h"
+#include "render_component/shader_component.h"
+#include "../../UI/VKR_proxy_component.h"
 #ifndef IM_MAX
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif

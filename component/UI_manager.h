@@ -7,10 +7,10 @@
 
 
 #include "global_singleton.h"
-#include "name_component.h"
+#include "../include/name_component.h"
 #include "Rect_2D_component.h"
-#include "scene_component.h"
-#include "shader_component.h"
+#include "../include/scene_component.h"
+#include "render_component/shader_component.h"
 
 
 class UI_scene_root {

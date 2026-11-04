@@ -8,7 +8,7 @@
 #include "input_component.h"
 #include "move_speed.h"
 #include "name_component.h"
-#include "sync_proxy_to_render_thread.h"
+#include "../UI/sync_proxy_to_render_thread.h"
 
 
 void update_camera_parameter(const entt::entity entity);

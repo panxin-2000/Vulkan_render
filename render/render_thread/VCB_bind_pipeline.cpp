@@ -8,7 +8,7 @@
 #include "name_component.h"
 #include "VCB_vulkan_command_buffer.h"
 
-#include "shader_component.h"
+#include "render_component/shader_component.h"
 
 
 void VCB::bind_Proxy_descriptor_sets(entt::entity entity,

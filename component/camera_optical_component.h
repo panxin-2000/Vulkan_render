@@ -9,7 +9,7 @@
 
 #include "name_component.h"
 #include "shader_component.h"
-#include "sync_proxy_to_render_thread.h"
+#include "../UI/sync_proxy_to_render_thread.h"
 
 
 /**

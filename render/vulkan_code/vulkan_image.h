@@ -10,11 +10,11 @@
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
 
-#include <readerwriterqueue.h>
 
 #include "image_and_view_paramter.h"
 #include "vulkan_buffer.h"
 #include "vulkan_sample.h"
+#include <oneapi/tbb.h>
 
 
 class VKR_image_date : public NonCopyable {
@@ -101,7 +101,7 @@ public:
 
     static uint32_t get_one_bindless_index() {
         uint32_t value;
-        if (free_index.try_dequeue(value) == true) {
+        if (free_index.try_pop(value) == true) {
             return value;
         }
         const auto return_value = max_index.load();
@@ -110,13 +110,13 @@ public:
     }
 
 private:
-    static moodycamel::BlockingReaderWriterQueue<uint32_t> free_index;
+    static oneapi::tbb::concurrent_queue<uint32_t> free_index;
     static std::atomic<uint32_t> max_index;
     // 单入单出， 逻辑线程 和 渲染线程 同时 只会有一个 线程 写入或者释放
     // 其实应该做到 单入 多出 ，这个 才是比较理想的一个状态
 
     static bool add_to_free_index(const uint32_t &index) {
-        free_index.enqueue(index);
+        free_index.emplace(index);
         return true;
     }
 };

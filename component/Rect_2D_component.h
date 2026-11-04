@@ -9,7 +9,7 @@
 #include "descriptor_pool.h"
 #include "transform_component.h"
 #include "name_component.h"
-#include "VKR_proxy_component.h"
+#include "../UI/VKR_proxy_component.h"
 #include "shader_component.h"
 #include "base_geometry/intersect_function.h"
 

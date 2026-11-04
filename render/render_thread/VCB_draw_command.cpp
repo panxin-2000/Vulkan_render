@@ -9,7 +9,6 @@
 #include "../render_common/render_mesh.h"
 
 #include "VCB_vulkan_command_buffer.h"
-#include "sync_proxy_to_render_thread.h"
 
 void VCB::draw(const Mesh_data &mesh_data,
                const std::vector<VKR_Primitive> &primitives,

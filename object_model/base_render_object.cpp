@@ -7,7 +7,7 @@
 
 #include "engine.h"
 #include "name_component.h"
-#include "VKR_proxy_component.h"
+#include "../UI/VKR_proxy_component.h"
 
 
 

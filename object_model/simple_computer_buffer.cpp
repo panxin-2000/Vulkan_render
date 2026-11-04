@@ -4,10 +4,10 @@
 
 #include "simple_computer_buffer.h"
 #include "global_singleton.h"
-#include "mesh_component.h"
-#include "name_component.h"
-#include "shader_component.h"
-#include "VKR_proxy_component.h"
+#include "render_component/mesh_component.h"
+#include "../include/name_component.h"
+#include "render_component/shader_component.h"
+#include "../UI/VKR_proxy_component.h"
 
 
 void add_simple_computer_buffer_write() {

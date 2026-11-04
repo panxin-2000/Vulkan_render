@@ -7,7 +7,7 @@
 #include "name_component.h"
 #include "scene_component.h"
 #include "shader_component.h"
-#include "VKR_proxy_component.h"
+#include "../UI/VKR_proxy_component.h"
 #include "vulkan_sample.h"
 
 entt::entity add_render_pass(const std::string &name) {

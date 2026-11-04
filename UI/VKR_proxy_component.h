@@ -8,7 +8,7 @@
 
 #include "global_singleton.h"
 #include "render_proxy.h"
-#include "vulkan_render_manage.h"
+#include "render_thread/vulkan_render_manage.h"
 
 
 using entt_proxy_update_lambda = const std::function<void(void)> &;

@@ -4,17 +4,19 @@
 
 #include "opacity_batch.h"
 
+#include "mesh_component.h"
 #include "render_state.h"
-#include "VCB_vulkan_command_buffer.h"
+#include "tag_matrix.h"
+#include "render_thread/VCB_vulkan_command_buffer.h"
 
 
 void opacity_batch::check_and_update(sets_map &sets_map_in_for,
                                      std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
     auto view = Render_entt().view<Geometry_data, Mesh_need_create_tag,
-                                   std::vector<World_Space_AABB>,
-                                   std::vector<Transform_Matrix>,
-                                   Gltf_material_parameters,
-                                   screen_pick_entity>();
+        std::vector<World_Space_AABB>,
+        std::vector<Transform_Matrix>,
+        Gltf_material_parameters,
+        screen_pick_entity>();
 
     bool view_has_value = false;
     for (const auto entity: view) {
@@ -34,10 +36,10 @@ void opacity_batch::check_and_update(sets_map &sets_map_in_for,
     size_t primitive_size = 0;
 
     auto view_2 = Render_entt().view<Geometry_data,
-                                     std::vector<World_Space_AABB>,
-                                     std::vector<Transform_Matrix>,
-                                     Gltf_material_parameters,
-                                     screen_pick_entity>();
+        std::vector<World_Space_AABB>,
+        std::vector<Transform_Matrix>,
+        Gltf_material_parameters,
+        screen_pick_entity>();
 
 
     for (const auto entity: view_2) {

@@ -6,10 +6,9 @@
 #define HELLO_MAC_OPACITY_BATCH_H
 #include "AABB_box.h"
 #include "Geometry_data.h"
-#include "render_common/GPU_frustum_cull.h"
-#include "load_gltf_model.h"
+#include "../render/render_common/GPU_frustum_cull.h"
 #include "render_mesh.h"
-#include "shader_component.h"
+#include "../render/render_component/shader_component.h"
 #include "transform_component.h"
 #include "utils/StructureOfArrays.h"
 

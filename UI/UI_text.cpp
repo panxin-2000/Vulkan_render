@@ -9,7 +9,7 @@
 #include <fstream>
 
 #include "base_2d_render_object.h"
-#include "Geometry_component.h"
+#include "render_component/Geometry_component.h"
 #include "model_matrix.h"
 
 // void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {

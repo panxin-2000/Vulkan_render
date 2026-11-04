@@ -5,7 +5,6 @@
 
 #include <sys/stat.h>
 
-#include "load_gltf_model.h"
 #include "render_mesh.h"
 #include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
@@ -334,11 +333,11 @@ void Engine::update_global_pbr_parameter(
 
 
 void Engine::update_SOA() {
-    auto view = Render_entt().view<std::vector<VKR_Primitive>,
-                                   std::vector<World_Space_AABB>,
-                                   std::vector<Transform_Matrix>,
-                                   Gltf_material_parameters,
-                                   screen_pick_entity>();
+    // auto view = Render_entt().view<std::vector<VKR_Primitive>,
+    //                                std::vector<World_Space_AABB>,
+    //                                std::vector<Transform_Matrix>,
+    //                                Gltf_material_parameters,
+    //                                screen_pick_entity>();
     // 需要做什么呢? // entity 的 作为 ,
     // 之后需要做什么呢? 计算
 }

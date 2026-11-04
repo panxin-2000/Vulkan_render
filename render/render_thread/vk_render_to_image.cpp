@@ -7,13 +7,12 @@
 #include "VCB_vulkan_command_buffer.h"
 #include "vk_render_to_image.h"
 #include "framerate_measure.h"
-#include "load_gltf_model.h"
 #include "name_component.h"
-#include "object_ply.h"
 #include "vulkan_render_manage.h"
 #include "time_measure.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
+#include "object_ply.h"
 
 
 void prepare_pass(VCB &vcb,

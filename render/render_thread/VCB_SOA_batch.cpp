@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/9/24.
 //
 
-#include "opacity_batch.h"
+#include "../../UI/opacity_batch.h"
 #include "VCB_vulkan_command_buffer.h"
 
 void VCB::frustum_culling_SOA(Engine &engine,

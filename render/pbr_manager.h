@@ -12,7 +12,7 @@ class PBR_manager {
     std::atomic<uint32_t> pbr_components_size_;
     std::vector<PBR_component> pbr_components_;
     std::vector<PBR_Texture_ptr> pbr_texture_ptr_;
-    moodycamel::BlockingReaderWriterQueue<uint32_t> free_index;
+    oneapi::tbb::concurrent_queue<uint32_t> free_index;
     std::atomic<uint32_t> max_index;
 
 public:
@@ -30,7 +30,7 @@ public:
 
     uint32_t push(const PBR_component &component, const PBR_Texture_ptr &texture) {
         uint32_t return_value;
-        if (free_index.try_dequeue(return_value) == true) {
+        if (free_index.try_pop(return_value) == true) {
         } else {
             return_value = max_index.load();
             ++max_index;
@@ -44,7 +44,7 @@ public:
 
 
     bool free(const uint32_t index) {
-        free_index.enqueue(index);
+        free_index.emplace(index);
         return true;
     }
 

@@ -2,20 +2,18 @@ cmake_minimum_required(VERSION 3.27)
 project(vulkan_render)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DVK_PROTOTYPES")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_PROTOTYPES")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF) # 关闭 GNU 扩展，确保标准严格对齐
+
+# 强制要求 Abseil 使用完全相同的标准
+set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "" FORCE)
+
+# 使用现代化 CMake 语法来全局定义 VK_PROTOTYPES 宏，绝不污染 CXX_FLAGS
+add_compile_definitions(VK_PROTOTYPES)
 
 #add_compile_options(-fsanitize=address)
 #add_link_options(-fsanitize=address)
 
-if (APPLE)
-    # 强制指定编译时和 CLion 解析时使用 Homebrew LLVM 的标准库与头文件
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        add_compile_options("-stdlib=libc++" "-I/opt/homebrew/opt/llvm/include")
-        add_link_options("-L/opt/homebrew/opt/llvm/lib" "-Wl,-rpath,/opt/homebrew/opt/llvm/lib")
-    endif ()
-
-endif ()
 
 #IF (WIN32)
 #    # Nothing here (yet)
@@ -34,11 +32,9 @@ include_directories(${CURSES_INCLUDE_DIR})
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -save-temps=obj")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -save-temps=obj")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
-
-
+add_compile_options(-O0)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fno-strict-return")
+    add_compile_options(-fno-strict-return)
 endif ()
 
 
@@ -189,66 +185,8 @@ if (WITH_VULKAN_BACKEND)
     include_directories(external/ktx/include)
     include_directories(external/ktx/other_include)
 
+    add_subdirectory(render)
 
-    file(GLOB_RECURSE vulkan_code
-            "render/vulkan_code/vulkan_utility.cpp"
-            "render/vulkan_code/vulkan_read_attribute.cpp"
-            "render/vulkan_code/vulkan_validation_layer.cpp"
-            "render/vulkan_code/vulkan_image.cpp"
-            "render/vulkan_code/vulkan_image_view.cpp"
-            "render/vulkan_code/vulkan_image_and_view_discard.cpp"
-            "render/vulkan_code/descriptor_organized_sets_and_bindings.cpp"
-            "render/vulkan_code/vulkan_sample.cpp"
-            "render/vulkan_code/vulkan_buffer.cpp"
-            "render/vulkan_code/vulkan_execute_command.cpp"
-            "render/vulkan_code/vulkan_buffer_block.cpp"
-            "render/vulkan_code/vulkan_backend.cpp"
-            "render/vulkan_code/volk.c"
-            "render/vulkan_code/transfer_texture_to_gpu.cpp"
-            "render/render_thread/backend.cpp"
-            "render/vulkan_code/shader_resolve.cpp"
-            "render/engine.cpp"
-            "render/opacity_batch.cpp"
-            "render/global_parameters.cpp"
-            "render/VCB_bind_pipeline.cpp"
-            "render/VCB_calculate_frustum_cull.cpp"
-            "render/VCB_compute_command.cpp"
-            "render/VCB_debug_tag.cpp"
-            "render/VCB_direct_render.cpp"
-            "render/VCB_draw_command.cpp"
-            "render/VCB_G_buffer_render.cpp"
-            "render/VCB_shadow_render.cpp"
-            "render/render_image_manager.cpp"
-            "render/Shader_manager.cpp"
-            "render/SSAO_parameters.cpp"
-            "render/VCB_vulkan_command_buffer.cpp"
-            "render/vk_render_to_image.cpp"
-            "render/vulkan_code/shader_create.cpp"
-            "render/vulkan_code/descriptor.cpp"
-            "render/vulkan_code/create_texture.cpp"
-            "render/vulkan_code/create_pipeline.cpp"
-            "render/vulkan_code/descriptor_pool.cpp"
-            "render/vulkan_code/pipeline_layout.cpp"
-            "render/vulkan_code/sets_and_bindings_layout.cpp"
-            "render/vulkan_code/render_function.cpp"
-            "render/vulkan_code/vulkan_texture_bindless.cpp"
-            "render/vulkan_code/vulkan_update_descriptor.cpp"
-            "render/vulkan_code/updata_push_constants_data.cpp"
-
-            "render/render_component/Geometry_component.cpp"
-            "render/render_thread/render_thread.cpp"
-            "render/render_thread/VCB_SOA_batch.cpp"
-            "render/render_component/PBR_component.cpp"
-            "render/render_component/pipeline_component.cpp"
-            "render/render_component/pipeline_layout_component.cpp"
-            "render/render_component/shader_component.cpp"
-            "render/render_component/sync_proxy_to_render_thread.cpp"
-            "render/render_component/mesh_component.cpp"
-            "render/render_common/Geometry_data.cpp"
-            "object_model/parse_geometry_file.cpp"
-            "render/render_component/VKR_proxy_component.cpp"
-    )
-    include_directories(render/vulkan_code)
 
 endif ()
 # 极致性能优化
@@ -262,7 +200,6 @@ if (WITH_OPENGL_BACKEND)
 endif ()
 
 include_directories(utility)
-include_directories(render)
 include_directories(object_model)
 
 
@@ -275,10 +212,6 @@ include_directories(external/tinyobj)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 
-file(GLOB_RECURSE RENDER
-
-        "render/render_common/stb_image.cpp"
-)
 
 file(GLOB_RECURSE object_model
         "object_model/load_gltf_model.cpp"
@@ -318,7 +251,6 @@ file(GLOB_RECURSE component
 )
 
 
-include_directories(render/render_common)
 include_directories(windows)
 file(GLOB_RECURSE WINDOW
         " windows/windows.cpp"
@@ -330,9 +262,7 @@ include_directories(event)
 include_directories(singleton)
 include_directories(labyrinth)
 include_directories(input_device)
-include_directories(render/render_thread)
 include_directories(component)
-include_directories(render/render_component)
 include_directories(interactable_object)
 include_directories(spherical_harmonics)
 
@@ -477,26 +407,21 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")
 # 可以更容易地使用相对路径（如 ./shaders/main.spv）来定位资源
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
-set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/render/shader)
-file(GLOB SHADER_FILES
-        "${SHADER_SOURCE_DIR}/*.vert"
-        "${SHADER_SOURCE_DIR}/*.frag"
-        "${SHADER_SOURCE_DIR}/*.geom"
-        "${SHADER_SOURCE_DIR}/*.comp"
-)
-
 
 add_executable(learn_render main.cpp
         object_model/tiny_obj_loader.cc
         ${TRACY_FILES}
-        ${SHADER_FILES}
         ${component}
         ${RENDER}
         ${object_model}
         ${INPUT_DEVICE}
         ${LABYRINTH}
         ${WINDOW}
-        ${vulkan_code}
+        "object_model/parse_geometry_file.cpp"
+        "UI/sync_proxy_to_render_thread.cpp"
+        "UI/VKR_proxy_component.cpp"
+        "UI/opacity_batch.cpp"
+
         ${imgui_sources}
 )
 
@@ -524,6 +449,7 @@ target_link_libraries(learn_render PRIVATE ${FREETYPE_LIBRARIES})
 target_link_libraries(learn_render PRIVATE harfbuzz::harfbuzz)
 target_link_libraries(learn_render PRIVATE msdfgen-core)
 target_link_libraries(learn_render PRIVATE msdfgen-ext)
+target_link_libraries(learn_render PRIVATE simdjson::simdjson)
 target_link_libraries(learn_render PRIVATE Vulkan::shaderc_combined)
 target_link_libraries(learn_render PRIVATE glslang::glslang)
 target_link_libraries(learn_render PRIVATE glslang::SPIRV)
@@ -544,8 +470,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif ()
 
 
-target_link_libraries(learn_render PRIVATE absl::hash)
-target_link_libraries(learn_render PRIVATE absl::raw_hash_set)
 # 【只选择其一】在这里只链接你需要的轻量库
 # 如果你上面开启了 LIBKTX_VERSION_READ_ONLY，请链接：ktx_read
 # 如果你需要完整的写功能，请链接：ktx
@@ -554,7 +478,7 @@ target_link_libraries(learn_render PRIVATE cxxopts::cxxopts)
 target_link_libraries(learn_render PRIVATE readerwriterqueue)
 target_link_libraries(learn_render PRIVATE meshoptimizer)
 target_link_libraries(learn_render PRIVATE ccd)
-target_link_libraries(learn_render PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(learn_render PRIVATE render_vulkan)
 
 
 if (APPLE)
