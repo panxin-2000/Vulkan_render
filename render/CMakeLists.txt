@@ -71,7 +71,7 @@ file(GLOB_RECURSE render_code
 
 add_library(render_vulkan STATIC ${render_code})
 
-target_compile_definitions(render_vulkan PRIVATE VK_NO_PROTOTYPES)
+target_compile_definitions(render_vulkan PRIVATE VK_NO_PROTOTYPES) # 没有  原型, 雏形, 蓝本
 
 target_include_directories(render_vulkan PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/../include"     # 先这样写, 之后需要更改

@@ -18,7 +18,7 @@ void add_platform_need_instance_extensions(VkInstanceCreateInfo &instanceCreateI
 
 bool check_have_present_support(const VkPhysicalDevice &device,
                                 VkQueueFamilyProperties &queueFamily,
-                                const int queueFamilyIndex,
+                                int queueFamilyIndex,
                                 const VkSurfaceKHR &surface);
 
 

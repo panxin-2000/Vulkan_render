@@ -212,7 +212,6 @@ include_directories(external/tinyobj)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 
-
 file(GLOB_RECURSE object_model
         "object_model/load_gltf_model.cpp"
         "object_model/nano_vdb_model.cpp"
@@ -383,8 +382,8 @@ add_executable(fixture test/sample3.cpp include/sample3.h)
 gtest_discover_tests(fixture)
 target_link_libraries(fixture GTest::gtest_main)
 
-include_directories(include)
-#include_directories()
+add_subdirectory(include)
+
 include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3)
 add_executable(hello_mac
         include/run_time.cpp
@@ -473,6 +472,7 @@ endif ()
 # 【只选择其一】在这里只链接你需要的轻量库
 # 如果你上面开启了 LIBKTX_VERSION_READ_ONLY，请链接：ktx_read
 # 如果你需要完整的写功能，请链接：ktx
+target_link_libraries(learn_render PRIVATE project_include)
 target_link_libraries(learn_render PRIVATE ktx)
 target_link_libraries(learn_render PRIVATE cxxopts::cxxopts)
 target_link_libraries(learn_render PRIVATE readerwriterqueue)
