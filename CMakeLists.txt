@@ -114,20 +114,12 @@ find_package(Freetype REQUIRED)
 #add_subdirectory(benchmark)
 
 
-set(TRACY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tracy")
-option(TRACY_ENABLE "Enable Tracy profiling" OFF)
+option(TRACY_ENABLE "Enable Tracy profiling" ON)
 
+
+add_subdirectory(tracy)
 # 优先级从高到低为：
 # 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
-
-add_executable(test_tracy tracy_main.cpp "tracy/public/TracyClient.cpp")
-target_include_directories(test_tracy PRIVATE "tracy/public")
-if (TRACY_ENABLE)
-    target_compile_definitions(test_tracy PRIVATE TRACY_ENABLE)
-    file(GLOB TRACY_FILES "tracy/public/TracyClient.cpp")
-else ()
-    file(GLOB TRACY_FILES "tracy/public/TracyClient.cpp")
-endif ()
 
 
 # ==============================================================================
@@ -409,7 +401,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
 
 add_executable(learn_render main.cpp
         object_model/tiny_obj_loader.cc
-        ${TRACY_FILES}
+
         ${component}
         ${RENDER}
         ${object_model}
@@ -424,11 +416,10 @@ add_executable(learn_render main.cpp
         ${imgui_sources}
 )
 
-target_include_directories(learn_render PRIVATE "tracy/public")
 if (TRACY_ENABLE)
     target_compile_definitions(learn_render PUBLIC TRACY_ENABLE)
 endif ()
-
+target_link_libraries(learn_render PRIVATE project_tracy)
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
 

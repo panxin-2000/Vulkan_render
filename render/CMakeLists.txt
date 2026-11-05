@@ -74,8 +74,6 @@ add_library(render_vulkan STATIC ${render_code})
 target_compile_definitions(render_vulkan PRIVATE VK_NO_PROTOTYPES) # 没有  原型, 雏形, 蓝本
 
 target_include_directories(render_vulkan PUBLIC
-        "${CMAKE_CURRENT_SOURCE_DIR}/../singleton"     # 先这样写, 之后需要更改
-        "${CMAKE_CURRENT_SOURCE_DIR}/../tracy/public"     # 先这样写, 之后需要更改
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/render_common
         ${CMAKE_CURRENT_SOURCE_DIR}/render_component
@@ -86,6 +84,10 @@ target_include_directories(render_vulkan PUBLIC
 target_link_libraries(render_vulkan PUBLIC Eigen3::Eigen EnTT::EnTT quill::quill)
 target_link_libraries(render_vulkan PUBLIC GPUOpen::VulkanMemoryAllocator)
 target_link_libraries(render_vulkan PUBLIC project_include)
+if (TRACY_ENABLE)
+    target_compile_definitions(render_vulkan PUBLIC TRACY_ENABLE)
+endif ()
+target_link_libraries(render_vulkan PRIVATE project_tracy)
 target_link_libraries(render_vulkan PUBLIC absl::hash)
 target_link_libraries(render_vulkan PUBLIC absl::raw_hash_set)
 

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 project(vulkan_core LANGUAGES CXX)
 
 
+# 这里需要思考的一个问题是 哪些是需要 include 的,但是哪些是不需要的
+
+
 file(GLOB_RECURSE vulkan_code_file
         "vulkan_utility.cpp"
         "vulkan_read_attribute.cpp"
