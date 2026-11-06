@@ -410,9 +410,9 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
 
 Eigen::Vector4f Font_Manager::get_char_uv(const Glyph &glyph) const {
     return {
-        (glyph.atlasBounds.left) / atlas.width,
-        (glyph.atlasBounds.bottom) / atlas.height,
-        (glyph.atlasBounds.right) / atlas.width,
-        (glyph.atlasBounds.top) / atlas.height
+        (glyph.atlasBounds.left + 2) / atlas.width,
+        (glyph.atlasBounds.bottom - 2) / atlas.height,
+        (glyph.atlasBounds.right - 2) / atlas.width,
+        (glyph.atlasBounds.top + 2) / atlas.height
     };
 }
