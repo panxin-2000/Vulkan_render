@@ -114,7 +114,7 @@ find_package(Freetype REQUIRED)
 #add_subdirectory(benchmark)
 
 
-option(TRACY_ENABLE "Enable Tracy profiling" ON)
+option(TRACY_ENABLE "Enable Tracy profiling" OFF)
 
 
 add_subdirectory(tracy)
