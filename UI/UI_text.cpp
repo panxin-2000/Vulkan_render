@@ -93,11 +93,10 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
     add_push_constant_parameter("uTranslate", translate);
 }
 
-void UI_Text::set_render_text(const std::string &utf8_text) {
+void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name) {
     float min_x = 0;
     float min_y = 0;
-    auto result = Font_Manager::instance().create_text_geometry_data(utf8_text,
-                                                                     "Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf",
+    auto result = Font_Manager::instance().create_text_geometry_data(utf8_text, font_file_name,
                                                                      min_x,
                                                                      min_y,
                                                                      0xffffff,

@@ -117,6 +117,6 @@ UI_Text UI_Button::set_text(const std::string &text) {
     UI_Text text_string(text);
     clear_parent_relation(text_string.get_entity());
     add_relation(entity, text_string.get_entity());
-    text_string.set_render_text(text);
+    text_string.set_render_text(text, "");
     return text_string;
 }

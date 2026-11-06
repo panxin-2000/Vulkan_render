@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
 
         UI_Text text("AbcgoyQj");
-        text.set_render_text("AbcgoyQj");
+        text.set_render_text("你好, 苹果", "/System/Library/Fonts/PingFang.ttc");
         // {
         // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
         // }

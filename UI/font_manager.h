@@ -97,7 +97,7 @@ public:
 
     std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
     create_text_geometry_data(const std::string &utf8_text,
-                              const std::string &font_file_name,
+                              const std::string &font_file,
                               float start_position_x,
                               float start_position_y, float max_position_x, float max_position_y);
 

@@ -92,6 +92,9 @@ Texture_parameter Font_Manager::create_or_update_texture_from_image() {
 
 std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) {
     // 预处理：标准化轮廓方向
+    if (shape.contours.empty()) {
+        return {};
+    }
     shape.normalize();
     const auto bounds        = shape.getBounds();
     glyph.planeBounds.left   = static_cast<float>(bounds.l);
@@ -212,6 +215,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
             // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
             if (loadGlyph(shape, font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
                 // FT_Load_Glyph  这里是 freetype 中调用的,  loadGlyph 封装了这个逻辑
+                shape.orientContours();
                 Glyph glyph;
                 // 临时创建一个 Glyph 用于存储当前这个 字的
                 glyph.unicode = unicode_point;
@@ -239,6 +243,8 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                     glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
                     glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
                     msdf_text_tem.unicode_value_and_glyphs.insert({unicode_point, glyph});
+                } else {
+                    msdf_text_tem.unicode_value_and_glyphs.insert({unicode_point, glyph});
                 }
             }
         }
@@ -257,7 +263,7 @@ void Font_Manager::clear_fonts() {
 
 Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const std::string &font_file_name) {
     for (auto &font: fonts) {
-        if (font_file_name.compare(font_file_name) == 0) {
+        if (font.name.compare(font_file_name) == 0) {
             return font;
         }
     }
@@ -276,14 +282,22 @@ double Font_Manager::get_distanceRange() const {
 
 std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
 Font_Manager::create_text_geometry_data(const std::string &utf8_text,
-                                        const std::string &font_file_name,
+                                        const std::string &font_file,
                                         const float start_position_x,
                                         const float start_position_y,
                                         const float max_position_x,
                                         const float max_position_y) {
+    std::string font_file_name;
+    if (font_file.empty()) {
+        font_file_name = "default_font";
+    } else {
+        font_file_name = font_file;
+    }
+
+
     std::vector<uint32_t> unicode_vector;
     utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_vector));
-    add_text_to_Atlas_and_bin_pack(unicode_vector, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+    add_text_to_Atlas_and_bin_pack(unicode_vector, font_file_name);
 
 
     // 1. 创建缓冲区
