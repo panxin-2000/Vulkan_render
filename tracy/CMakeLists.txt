@@ -7,19 +7,14 @@ add_library(project_tracy STATIC
 )
 
 if (TRACY_ENABLE)
-    target_compile_definitions(project_tracy PUBLIC TRACY_ENABLE)
-    target_compile_definitions(project_tracy PUBLIC TRACY_MANUAL_LIFETIME)
-    target_compile_definitions(project_tracy PUBLIC TRACY_DELAYED_INIT)
 
-
-    #    add_library(tracy_config INTERFACE)
-    #    target_compile_definitions(tracy_config INTERFACE
-    #            TRACY_ENABLE
-    #            TRACY_MANUAL_LIFETIME
-    #            TRACY_DELAYED_INIT
-    #    )
-    #    target_link_libraries(project_tracy PUBLIC tracy_config)
-
+    add_library(tracy_config INTERFACE)
+    target_compile_definitions(tracy_config INTERFACE
+            TRACY_ENABLE
+            TRACY_MANUAL_LIFETIME
+            TRACY_DELAYED_INIT
+    )
+    target_link_libraries(project_tracy PUBLIC tracy_config)
 endif ()
 
 

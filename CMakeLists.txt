@@ -416,11 +416,6 @@ add_executable(learn_render main.cpp
         ${imgui_sources}
 )
 
-if (TRACY_ENABLE)
-    target_compile_definitions(learn_render PUBLIC TRACY_ENABLE)
-    target_compile_definitions(learn_render PUBLIC TRACY_MANUAL_LIFETIME)
-    target_compile_definitions(learn_render PUBLIC TRACY_DELAYED_INIT)
-endif ()
 target_link_libraries(learn_render PRIVATE project_tracy)
 
 target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
