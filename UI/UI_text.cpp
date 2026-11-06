@@ -93,18 +93,10 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
     add_push_constant_parameter("uTranslate", translate);
 }
 
-void UI_Text::set_render_text(const std::string &text) {
-    std::string utf8_text = text;
-    std::vector<uint32_t> unicode_string;
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_string));
-
-    // 这一行似乎有点多余,需要清理掉
-    Font_Manager::instance().add_text_to_Atlas_and_bin_pack(unicode_string,
-                                                            "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+void UI_Text::set_render_text(const std::string &utf8_text) {
     float min_x = 0;
     float min_y = 0;
-
-    auto result = Font_Manager::instance().create_text_geometry_data(text,
+    auto result = Font_Manager::instance().create_text_geometry_data(utf8_text,
                                                                      "Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf",
                                                                      min_x,
                                                                      min_y,

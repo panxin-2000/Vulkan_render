@@ -126,11 +126,11 @@ public:
                 bool success = msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_EM_NORMALIZED);
                 if (success) {
                     // 5. 成功读取后，直接从结构体中提取您需要的固定值
-                    std::cout << "Line Height (推荐行高): " << metrics.lineHeight << std::endl;
-                    std::cout << "Ascender (上伸高度): " << metrics.ascenderY << std::endl;
-                    std::cout << "Descender (下伸高度): " << metrics.descenderY << std::endl;
-                    std::cout << "Underline Y (下划线Y): " << metrics.underlineY << std::endl;
-                    std::cout << "Underline Thickness (下划线厚度): " << metrics.underlineThickness << std::endl;
+                    // std::cout << "Line Height (推荐行高): " << metrics.lineHeight << std::endl;
+                    // std::cout << "Ascender (上伸高度): " << metrics.ascenderY << std::endl;
+                    // std::cout << "Descender (下伸高度): " << metrics.descenderY << std::endl;
+                    // std::cout << "Underline Y (下划线Y): " << metrics.underlineY << std::endl;
+                    // std::cout << "Underline Thickness (下划线厚度): " << metrics.underlineThickness << std::endl;
 
                     Metrics metrics_temp;
                     metrics_temp.emSize             = metrics.emSize;
@@ -174,7 +174,7 @@ public:
 public:
     std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
     create_text_geometry_data(
-        const std::string &text,
+        const std::string &utf8_text,
         const std::string &font_file_name,
         float start_position_x,
         float start_position_y, float max_position_x, float max_position_y);

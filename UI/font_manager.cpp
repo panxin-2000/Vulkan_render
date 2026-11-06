@@ -166,6 +166,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
             msdfgen::Shape shape;
             // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
             if (loadGlyph(shape, font_handle, unicode_point, msdfgen::FONT_SCALING_EM_NORMALIZED)) {
+                // FT_Load_Glyph  这里是 freetype 中调用的,  loadGlyph 封装了这个逻辑
                 Glyph glyph;
                 // 临时创建一个 Glyph 用于存储当前这个 字的
                 glyph.unicode = unicode_point;
@@ -214,17 +215,22 @@ Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const s
 
 
 std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
-Font_Manager::create_text_geometry_data(const std::string &text,
+Font_Manager::create_text_geometry_data(const std::string &utf8_text,
                                         const std::string &font_file_name,
                                         const float start_position_x,
                                         const float start_position_y,
                                         const float max_position_x,
                                         const float max_position_y) {
+    std::vector<uint32_t> unicode_vector;
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_vector));
+    add_text_to_Atlas_and_bin_pack(unicode_vector, "/Users/panxin/Library/Fonts/JetBrainsMonoNL-Regular.ttf");
+
+
     // 1. 创建缓冲区
     hb_buffer_t *buf = hb_buffer_create();
 
     // 2. 添加文本 (UTF-8 格式)
-    hb_buffer_add_utf8(buf, text.c_str(), -1, 0, -1);
+    hb_buffer_add_utf8(buf, utf8_text.c_str(), -1, 0, -1);
     // 3. 设置文本属性（必须指定，否则可能排版错误）
 
     hb_buffer_set_direction(buf, HB_DIRECTION_LTR);                 // 从左往右
@@ -260,13 +266,9 @@ Font_Manager::create_text_geometry_data(const std::string &text,
     float current_x = start_position_x;
     float current_y = start_position_y + char_size;
 
-    std::string utf8_text = text;
-    std::vector<uint32_t> unicode_points;
 
-    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_points));
-
-    for (unsigned int i = 0; i < unicode_points.size(); i++) {
-        hb_codepoint_t glyph_id = unicode_points[i];
+    for (unsigned int i = 0; i < unicode_vector.size(); i++) {
+        hb_codepoint_t glyph_id = unicode_vector[i];
         // glyph_id 去map中查找索引
         // 得到的是一组相对于基线（Baseline）的数值
         const float x_advance = static_cast<float>(glyph_pos[i].x_advance) / static_cast<float>(UPEM); // 通常需要除以缩放系数
