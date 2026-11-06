@@ -45,219 +45,228 @@ Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 inter
 
 
 int main(int argc, char *argv[]) {
-    LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
-    ZoneScopedN("main init");
-
-    auto &backend = VK_backend::instance();
-    backend.create();
-    auto &engine = Engine::instance();
-    engine.create();
-    Font_Manager::instance();
-    auto world_root = get_world_root();
-    auto UI_root    = get_UI_scene_root();
-    // 需要确定启动的顺序
-    render_thread_start(backend, engine);
-
-
-    // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-    UI_Button button("按钮1");
-    button.set_round_box(0, 0, 60, 60);
-    // UI_block("功能块", 0, 0, 50, 200);
-    // UI_block("按钮2", 0, 0, 145, 130);
-    //
-
-    add_skybox_entity();
-    // add_manifold_entity();
-
-    // add_simple_computer_buffer_write();
-    // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/Sphere.nvdb");
-    // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/SmallCampfireVDB/smallCampfire/smallCampfireVDB/smallCampfire_0000.vdb");
-    // add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
-
-
-    UI_Text text("AbcgoyQj");
-    text.set_render_text("AbcgoyQj");
-    // {
-    // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-    // }
-    object_3d box("box");
-    box.add_shader_path(get_gltf_shader_path());
-    box.set_random_triangle_color();
-    box.add_mesh({{1, 1, 1}, {2, 2, 2}});
-    box.set_transform();
-
-
-    // object_line line("line");
-    // line.add_B_spline_curve();
-
-    // object_line object_line_old(" old");
-    // object_line_old.add_bezier_curve();
-    // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
-    // auto entity = load_gltf_model("Sponza",
-    //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
-
-    // load_gltf_model("DamagedHelmet.gltf",
-    //                 "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
-
-
-    // Setup Dear ImGui context
-
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void) io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
-
-    ImGui_ImplSDL3_InitForVulkan(backend.get_window());
-
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF("/Users/panxin/CLionProjects/hello_mac/imgui/misc/fonts/Cousine-Regular.ttf", 13.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    io.Fonts->Build();
-    // 字体的内容存储在了alpha通道中
-
-    // 扩展和层并不在意添加的顺序，能否在一开始就将需要的层和扩展添加了，之后根据具体的实现判断是否能获得，能获得就添加。
-
-    // Setup Platform/Renderer backends
-    // getSingleInstance() ···等申请的内容，都是是在 SetupVulkan  中做完的，之后绘制的时候绑定提交会调用init_info中的内容（或者说指向）
-    // ImGui_ImplGlfw_InitForVulkan(backend.get_window(), true);
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    ImGui_ImplVulkan_Init(&init_info);
-
-
-    bool show_demo_window    = false;
-    bool show_another_window = false;
-    ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    auto imgui_entity        = create_imgui_entity("imgui", nullptr);
-    Point_3 world_light_pos(0.250f, -1.0f, 0.750f);
-
-    // Render loop
-    float run_time = 0;
-    bool done      = false;
-    FrameRate_measure framerate_measure(60.0f);
-    Mouse_status mouse_status;
 #ifdef  TRACY_ENABLE
-    tracy::SetThreadName("logic thread");
+    tracy::StartupProfiler();
+#endif
+    {
+        LOG_INFO(g_log(), "Hello from {}!", "Quill v11.0.2");
+        ZoneScopedN("main init");
+
+        auto &backend = VK_backend::instance();
+        backend.create();
+        auto &engine = Engine::instance();
+        engine.create();
+        Font_Manager::instance();
+        auto world_root = get_world_root();
+        auto UI_root    = get_UI_scene_root();
+        // 需要确定启动的顺序
+        render_thread_start(backend, engine);
+
+
+        // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
+        UI_Button button("按钮1");
+        button.set_round_box(0, 0, 60, 60);
+        // UI_block("功能块", 0, 0, 50, 200);
+        // UI_block("按钮2", 0, 0, 145, 130);
+        //
+
+        add_skybox_entity();
+        // add_manifold_entity();
+
+        // add_simple_computer_buffer_write();
+        // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/Sphere.nvdb");
+        // add_volume_pass("/Users/panxin/CLionProjects/hello_mac/assets/SmallCampfireVDB/smallCampfire/smallCampfireVDB/smallCampfire_0000.vdb");
+        // add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
+
+
+        UI_Text text("AbcgoyQj");
+        text.set_render_text("AbcgoyQj");
+        // {
+        // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
+        // }
+        object_3d box("box");
+        box.add_shader_path(get_gltf_shader_path());
+        box.set_random_triangle_color();
+        box.add_mesh({{1, 1, 1}, {2, 2, 2}});
+        box.set_transform();
+
+
+        // object_line line("line");
+        // line.add_B_spline_curve();
+
+        // object_line object_line_old(" old");
+        // object_line_old.add_bezier_curve();
+        // object_3d_model("box", {{510, 510, 500}, {520, 520, 520}});
+        // auto entity = load_gltf_model("Sponza",
+        //                               "/Users/panxin/file_sync/glTF-Sample-Models/2.0/Sponza/glTF/Sponza.gltf");
+
+        // load_gltf_model("DamagedHelmet.gltf",
+        //                 "/Users/panxin/file_sync/glTF-Sample-Models/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf");
+
+
+        // Setup Dear ImGui context
+
+
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO &io = ImGui::GetIO();
+        (void) io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+        ImGui_ImplSDL3_InitForVulkan(backend.get_window());
+
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+        // io.Fonts->AddFontDefault();
+        io.Fonts->AddFontFromFileTTF("/Users/panxin/CLionProjects/hello_mac/imgui/misc/fonts/Cousine-Regular.ttf",
+                                     13.0f);
+        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+        //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+        io.Fonts->Build();
+        // 字体的内容存储在了alpha通道中
+
+        // 扩展和层并不在意添加的顺序，能否在一开始就将需要的层和扩展添加了，之后根据具体的实现判断是否能获得，能获得就添加。
+
+        // Setup Platform/Renderer backends
+        // getSingleInstance() ···等申请的内容，都是是在 SetupVulkan  中做完的，之后绘制的时候绑定提交会调用init_info中的内容（或者说指向）
+        // ImGui_ImplGlfw_InitForVulkan(backend.get_window(), true);
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        ImGui_ImplVulkan_Init(&init_info);
+
+
+        bool show_demo_window    = false;
+        bool show_another_window = false;
+        ImVec4 clear_color       = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+        auto imgui_entity        = create_imgui_entity("imgui", nullptr);
+        Point_3 world_light_pos(0.250f, -1.0f, 0.750f);
+
+        // Render loop
+        float run_time = 0;
+        bool done      = false;
+        FrameRate_measure framerate_measure(60.0f);
+        Mouse_status mouse_status;
+#ifdef  TRACY_ENABLE
+        tracy::SetThreadName("logic thread");
 #endif
 
-    while (!done) {
-        framerate_measure.begin_frame();
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            ZoneScopedN("process sdl event");
-            FrameMarkStart("input processing");
+        while (!done) {
+            framerate_measure.begin_frame();
+            SDL_Event event;
+            while (SDL_PollEvent(&event)) {
+                ZoneScopedN("process sdl event");
+                FrameMarkStart("input processing");
 
-            // TracyAlloc(ptr, 44);
-            ImGui_ImplSDL3_ProcessEvent(&event);
+                // TracyAlloc(ptr, 44);
+                ImGui_ImplSDL3_ProcessEvent(&event);
 
-            // switch (event.type) {
-            //     // 1. 最小化与恢复捕捉
-            //     case SDL_EVENT_WINDOW_MINIMIZED:
-            //         // is_minimized = true;
-            //         break;
-            //
-            //     case SDL_EVENT_WINDOW_RESTORED:
-            //         // is_minimized = false;
-            //         break;
-            //
-            //     // 2. 离开焦点捕捉（例如用户切到浏览器看网页，应用在后台）
-            //     case SDL_EVENT_WINDOW_FOCUS_LOST:
-            //         // is_keyboard_focused = false;
-            //         break;
-            //
-            //     case SDL_EVENT_WINDOW_FOCUS_GAINED:
-            //         // is_keyboard_focused = true;
-            //         break;
-            //
-            //     // 3. 鼠标离开/进入窗口范围捕捉
-            //     case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-            //         // is_mouse_hovering = false;
-            //         break;
-            //
-            //     case SDL_EVENT_WINDOW_MOUSE_ENTER:
-            //         // is_mouse_hovering = true;
-            //         break;
-            //
-            //     // 4. 隐藏不可见（例如系统桌面切换导致的不可见）
-            //     case SDL_EVENT_WINDOW_HIDDEN:
-            //         // 窗口完全隐藏
-            //         break;
-            //
-            //     case SDL_EVENT_WINDOW_SHOWN:
-            //         // 窗口重新显示
-            //         break;
-            // }
-            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                if (event.type == SDL_EVENT_MOUSE_MOTION ||
-                    event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
-                    event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
-                    event.type == SDL_EVENT_MOUSE_WHEEL
-                ) {
-                    auto mouse = mouse_status.check_mouse_scroll_status(event);
-                    base_event_dealing(event, mouse);
+                // switch (event.type) {
+                //     // 1. 最小化与恢复捕捉
+                //     case SDL_EVENT_WINDOW_MINIMIZED:
+                //         // is_minimized = true;
+                //         break;
+                //
+                //     case SDL_EVENT_WINDOW_RESTORED:
+                //         // is_minimized = false;
+                //         break;
+                //
+                //     // 2. 离开焦点捕捉（例如用户切到浏览器看网页，应用在后台）
+                //     case SDL_EVENT_WINDOW_FOCUS_LOST:
+                //         // is_keyboard_focused = false;
+                //         break;
+                //
+                //     case SDL_EVENT_WINDOW_FOCUS_GAINED:
+                //         // is_keyboard_focused = true;
+                //         break;
+                //
+                //     // 3. 鼠标离开/进入窗口范围捕捉
+                //     case SDL_EVENT_WINDOW_MOUSE_LEAVE:
+                //         // is_mouse_hovering = false;
+                //         break;
+                //
+                //     case SDL_EVENT_WINDOW_MOUSE_ENTER:
+                //         // is_mouse_hovering = true;
+                //         break;
+                //
+                //     // 4. 隐藏不可见（例如系统桌面切换导致的不可见）
+                //     case SDL_EVENT_WINDOW_HIDDEN:
+                //         // 窗口完全隐藏
+                //         break;
+                //
+                //     case SDL_EVENT_WINDOW_SHOWN:
+                //         // 窗口重新显示
+                //         break;
+                // }
+                if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                    if (event.type == SDL_EVENT_MOUSE_MOTION ||
+                        event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
+                        event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
+                        event.type == SDL_EVENT_MOUSE_WHEEL
+                    ) {
+                        auto mouse = mouse_status.check_mouse_scroll_status(event);
+                        base_event_dealing(event, mouse);
+                    }
                 }
+                if (event.type == SDL_EVENT_DROP_FILE) {
+                    SDL_Log("File: %s", event.drop.data); // 获取路径
+                    std::filesystem::path filePath = event.drop.data;
+                    load_gltf_model(filePath.stem().string(), filePath);
+                }
+                if (event.type == SDL_EVENT_QUIT)
+                    done = true;
+                if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID ==
+                    SDL_GetWindowID(backend.get_window()))
+                    done = true;
             }
-            if (event.type == SDL_EVENT_DROP_FILE) {
-                SDL_Log("File: %s", event.drop.data); // 获取路径
-                std::filesystem::path filePath = event.drop.data;
-                load_gltf_model(filePath.stem().string(), filePath);
+            if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
+                auto mouse = mouse_status.check_key_status();
+                if (mouse.event_type != EVENT_NONE)
+                    base_event_dealing(event, mouse);
             }
-            if (event.type == SDL_EVENT_QUIT)
-                done = true;
-            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID ==
-                SDL_GetWindowID(backend.get_window()))
-                done = true;
+
+            Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
+            imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
+            clean_render_entity();
+            FrameMarkEnd("input processing");
+
+            run_time = run_time + 1.0f / 60.0f;
+            sync_render_data_to_render_thread(run_time);
+            framerate_measure.end_frame();
         }
-        if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-            auto mouse = mouse_status.check_key_status();
-            if (mouse.event_type != EVENT_NONE)
-                base_event_dealing(event, mouse);
+
+
+        // IM_ASSERT_USER_ERROR(g.IO.BackendPlatformUserData == NULL, "Forgot to shutdown Platform backend?");
+        // IM_ASSERT_USER_ERROR(g.IO.BackendRendererUserData == NULL, "Forgot to shutdown Renderer backend?");
+        // 上面两个需要清理
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+
+        // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
+        for (auto view = Logic_entt().view<Scene_Component>(); auto entity: view) {
+            auto &scene = Logic_entt().get<Scene_Component>(entity);
+            scene.clean_parent_entity();
+            scene.clean_children_entity();
         }
+        Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
 
-        Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
-        imgui_draw_new_frame(imgui_entity, show_demo_window, show_another_window, clear_color, world_light_pos);
-        clean_render_entity();
-        FrameMarkEnd("input processing");
+        // vk_render_GPU::instance().exit_and_clean(backend);
+        render_thread_stop_and_wait();
 
-        run_time = run_time + 1.0f / 60.0f;
-        sync_render_data_to_render_thread(run_time);
-        framerate_measure.end_frame();
+        // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
+        auto &buffer = get_uniform_buffer();
+        buffer->destroy_buffer();
+
+        Font_Manager::instance().destroy();
+        engine.destroy();
+        engine.destroy_instance();
+        backend.destroy();
+        backend.destroy_instance();
     }
-
-
-    // IM_ASSERT_USER_ERROR(g.IO.BackendPlatformUserData == NULL, "Forgot to shutdown Platform backend?");
-    // IM_ASSERT_USER_ERROR(g.IO.BackendRendererUserData == NULL, "Forgot to shutdown Renderer backend?");
-    // 上面两个需要清理
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
-
-    // free_bindless_uniform_sampler2D("white_color_texture"); 不用时需要手动清理，但是world 实体销毁之后也会自动清理
-    for (auto view = Logic_entt().view<Scene_Component>(); auto entity: view) {
-        auto &scene = Logic_entt().get<Scene_Component>(entity);
-        scene.clean_parent_entity();
-        scene.clean_children_entity();
-    }
-    Logic_entt().clear(); // 必须先清理， root entity 会占有一部分资源，需要先清理
-
-    // vk_render_GPU::instance().exit_and_clean(backend);
-    render_thread_stop_and_wait();
-
-    // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
-    auto &buffer = get_uniform_buffer();
-    buffer->destroy_buffer();
-
-    Font_Manager::instance().destroy();
-    engine.destroy();
-    engine.destroy_instance();
-    backend.destroy();
-    backend.destroy_instance();
+#ifdef  TRACY_ENABLE
+    tracy::ShutdownProfiler();
+#endif
 }
 
 

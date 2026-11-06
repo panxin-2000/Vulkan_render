@@ -418,6 +418,8 @@ add_executable(learn_render main.cpp
 
 if (TRACY_ENABLE)
     target_compile_definitions(learn_render PUBLIC TRACY_ENABLE)
+    target_compile_definitions(learn_render PUBLIC TRACY_MANUAL_LIFETIME)
+    target_compile_definitions(learn_render PUBLIC TRACY_DELAYED_INIT)
 endif ()
 target_link_libraries(learn_render PRIVATE project_tracy)
 
