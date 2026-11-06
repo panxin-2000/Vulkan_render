@@ -57,31 +57,18 @@ struct Glyph {
 
 
 class Font_Manager {
-    // Metrics metrics; // 每一个字体的全局 Metrics（以及每个具体字符的 Metrics）全都不一样
-    using unicode_value = uint32_t;
-    // LRU_cache<unicode_value, Glyph> unicode_cache;
-
-    // 没有 LRU (Least Recently Used)可以考虑之后添加
-    rbp::MaxRectsBinPack bin_pack_manager;
-    Image image;
-
-    // FT_Library 的 对应封装句柄
-    FT_Library library = nullptr;
-    // 当你拿到  msdfgen::FontHandle *font_handle 或者 本质是 FT_Face face 的时候基本就不用它了
-
+    using unicode_value  = uint32_t;
     using Font_File_name = std::string;
 
     struct Font_File_name_and_FontHandle {
         Font_File_name name;
-        Metrics metrics_temp;
+        Metrics metrics; // 每一个字体的全局 Metrics 全都不一样
         FT_Face font_handle;
-        std::map<unicode_value, Glyph> glyphs;
+        std::map<unicode_value, Glyph> unicode_value_and_glyphs;
 
         // FT_Face 的对应封装句柄
         // 一个 FT_Face 代表了一个字体文件中的某一个“外观”
     };
-
-    std::vector<Font_File_name_and_FontHandle> fonts;
 
 
     // FT_Face ft_face
@@ -102,86 +89,74 @@ class Font_Manager {
     //    而是你开启了字形缓存（FT_Cache）或者高强度的矢量轮廓渲染（Outline Decomposition）
     //    FreeType 为了加速二次渲染，会把轮廓、位图缓存起来。如果不加限制，这个缓存池确实会频繁向你的内存管理器申请空间
 
+
 public:
-    Atlas atlas;
+    // 理论上最外之需要调用两个函数
+    //    create_text_geometry_data             在需要添加字体的时候调用
+    //    create_or_update_texture_from_image   在逻辑线程完成向渲染线程同步前调用
+
+    std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
+    create_text_geometry_data(const std::string &utf8_text,
+                              const std::string &font_file_name,
+                              float start_position_x,
+                              float start_position_y, float max_position_x, float max_position_y);
+
+    Texture_parameter create_or_update_texture_from_image();
 
 
-    bool add_font(const Font_File_name &file_name) { {
-            FT_Face face;
-            FT_Error error = FT_New_Face(library, file_name.c_str(), 0, &face);
-            if (error) {
-                return false;
-            }
-            msdfgen::FontHandle *font = msdfgen::adoptFreetypeFont(face);
-            // 上一行的本质调用是 FT_New_Face  , 目的是为了 初始化 FT_Face face
-            // msdfgen::FontHandle* font = msdfgen::adoptFreetypeFont(ftFace); // 另一个做法,也是可以使用的
-            // 那么正确的建议就是是 使用 ftFace , 以它作为基础来管理各个字体
-            // FT_New_Face , 调用这个函数之后再调用 msdfgen::adoptFreetypeFont  就可以了
+    static Font_Manager &instance();
 
-            if (font != nullptr) {
-                msdfgen::FontMetrics metrics;
-                //  调用 getFontMetrics 读取度量数据
-                // 第三个参数指定缩放类型，建议使用 FONT_SCALING_EM_NORMALIZED
-                // 这样获取到的就是您前面看到的那种以 EM = 1 为基准的归一化浮点数
-                bool success = msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_EM_NORMALIZED);
-                if (success) {
-                    // 5. 成功读取后，直接从结构体中提取您需要的固定值
-                    // std::cout << "Line Height (推荐行高): " << metrics.lineHeight << std::endl;
-                    // std::cout << "Ascender (上伸高度): " << metrics.ascenderY << std::endl;
-                    // std::cout << "Descender (下伸高度): " << metrics.descenderY << std::endl;
-                    // std::cout << "Underline Y (下划线Y): " << metrics.underlineY << std::endl;
-                    // std::cout << "Underline Thickness (下划线厚度): " << metrics.underlineThickness << std::endl;
+    void create();
 
-                    Metrics metrics_temp;
-                    metrics_temp.emSize             = metrics.emSize;
-                    metrics_temp.lineHeight         = metrics.lineHeight;
-                    metrics_temp.ascender           = metrics.ascenderY;
-                    metrics_temp.descender          = metrics.descenderY;
-                    metrics_temp.underlineY         = metrics.underlineY;
-                    metrics_temp.underlineThickness = metrics.underlineThickness;
-                    fonts.push_back({file_name.c_str(), metrics_temp, face});
-                } else {
-                    std::cerr << "获取 Metrics 失败！" << std::endl;
-                }
-                msdfgen::destroyFont(font);
-                return true;
-            }
-        }
-        return false;
-    }
+    void destroy();
 
+private:
+    FT_Library library = nullptr;
+    // FT_Library 的 对应封装句柄
+
+    std::vector<Font_File_name_and_FontHandle> fonts;
+
+
+    // LRU_cache<unicode_value, Glyph> unicode_cache;  // 想去添加这个 , 还需要把 字体 unicode_value 这两个作为索引去处理
+
+    // 没有 LRU (Least Recently Used)可以考虑之后添加
+    // 这三个是用来管理字体的存储在图像的哪里的 , 每次添加一个字都需要在渲染前进行更新
+    Atlas atlas;                           // 纹理图集
+    rbp::MaxRectsBinPack bin_pack_manager; //
+    Image image;
+
+    bool need_update_atlas = false;
+
+
+    bool add_font(const Font_File_name &file_name);
+
+    std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape);
 
     bool add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &unicode_points,
                                         const std::string &font_file_name);
 
-    void clear_fonts() {
-        for (const auto &font: fonts) {
-            FT_Done_Face(font.font_handle);
-        }
-        fonts.clear();
-    }
+    void clear_fonts();
 
     Font_File_name_and_FontHandle &get_font_data(const std::string &font_file_name);
 
-    [[nodiscard]] float get_scale() const {
-        return atlas.size;
-    }
+    [[nodiscard]] float get_scale() const;
 
-    [[nodiscard]] double get_distanceRange() const {
-        return static_cast<double>(atlas.distanceRange);
-    }
+    [[nodiscard]] double get_distanceRange() const;
 
-public:
-    std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
-    create_text_geometry_data(
-        const std::string &utf8_text,
-        const std::string &font_file_name,
-        float start_position_x,
-        float start_position_y, float max_position_x, float max_position_y);
 
+    /**
+     * 检查是否有新的字被添加进行,需要更新图集
+     */
+    void check_need_update();
 
     Eigen::Vector4f get_char_uv(const Glyph &glyph) const;
 
+private:
+    static Font_Manager *instance_ptr;
+
+    Font_Manager() = default;
+
+    ~Font_Manager() = default;
 
     Font_Manager(const Font_Manager &) = delete;
 
@@ -190,29 +165,6 @@ public:
     Font_Manager(Font_Manager &&) = delete;
 
     Font_Manager &operator=(Font_Manager &&) = delete;
-
-    static Font_Manager &instance();
-
-    void create();
-
-    void destroy();
-
-    /**
-     * 检查是否有新的字被添加进行,需要更新图集
-     */
-    void check_need_update();
-
-    Texture_parameter create_or_update_texture_from_image();
-
-private:
-    static Font_Manager *instance_ptr;
-
-
-    bool need_update_atlas = false;
-
-    Font_Manager() = default;
-
-    ~Font_Manager() = default;
 };
 
 

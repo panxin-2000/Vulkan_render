@@ -90,7 +90,7 @@ Texture_parameter Font_Manager::create_or_update_texture_from_image() {
                                      4);
 }
 
-std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, msdfgen::Shape &shape) {
+std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) {
     // 预处理：标准化轮廓方向
     shape.normalize();
     const auto bounds        = shape.getBounds();
@@ -99,8 +99,8 @@ std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, 
     glyph.planeBounds.top    = static_cast<float>(bounds.t);
     glyph.planeBounds.bottom = static_cast<float>(bounds.b);
     edgeColoringByDistance(shape, 3.0);
-    const float scale          = Font_Manager::instance().get_scale();         // 英文字母其实16就够了，行字需要 32;
-    const double distanceRange = Font_Manager::instance().get_distanceRange(); // 让画布留白正好等于渐变宽度
+    const float scale          = get_scale();         // 英文字母其实16就够了，行字需要 32;
+    const double distanceRange = get_distanceRange(); // 让画布留白正好等于渐变宽度
     int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
     int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
 
@@ -121,6 +121,50 @@ std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap_and(Glyph &glyph, 
     generateMSDF(msdf, shape, transform, config);
     // Bitmap 中的数据生成好了
     return msdf;
+}
+
+bool Font_Manager::add_font(const Font_File_name &file_name) { {
+        FT_Face face;
+        FT_Error error = FT_New_Face(library, file_name.c_str(), 0, &face);
+        if (error) {
+            return false;
+        }
+        msdfgen::FontHandle *font = msdfgen::adoptFreetypeFont(face);
+        // 上一行的本质调用是 FT_New_Face  , 目的是为了 初始化 FT_Face face
+        // msdfgen::FontHandle* font = msdfgen::adoptFreetypeFont(ftFace); // 另一个做法,也是可以使用的
+        // 那么正确的建议就是是 使用 ftFace , 以它作为基础来管理各个字体
+        // FT_New_Face , 调用这个函数之后再调用 msdfgen::adoptFreetypeFont  就可以了
+
+        if (font != nullptr) {
+            msdfgen::FontMetrics metrics;
+            //  调用 getFontMetrics 读取度量数据
+            // 第三个参数指定缩放类型，建议使用 FONT_SCALING_EM_NORMALIZED
+            // 这样获取到的就是您前面看到的那种以 EM = 1 为基准的归一化浮点数
+            bool success = msdfgen::getFontMetrics(metrics, font, msdfgen::FONT_SCALING_EM_NORMALIZED);
+            if (success) {
+                // 5. 成功读取后，直接从结构体中提取您需要的固定值
+                // std::cout << "Line Height (推荐行高): " << metrics.lineHeight << std::endl;
+                // std::cout << "Ascender (上伸高度): " << metrics.ascenderY << std::endl;
+                // std::cout << "Descender (下伸高度): " << metrics.descenderY << std::endl;
+                // std::cout << "Underline Y (下划线Y): " << metrics.underlineY << std::endl;
+                // std::cout << "Underline Thickness (下划线厚度): " << metrics.underlineThickness << std::endl;
+
+                Metrics metrics_temp;
+                metrics_temp.emSize             = metrics.emSize;
+                metrics_temp.lineHeight         = metrics.lineHeight;
+                metrics_temp.ascender           = metrics.ascenderY;
+                metrics_temp.descender          = metrics.descenderY;
+                metrics_temp.underlineY         = metrics.underlineY;
+                metrics_temp.underlineThickness = metrics.underlineThickness;
+                fonts.push_back({file_name.c_str(), metrics_temp, face});
+            } else {
+                std::cerr << "获取 Metrics 失败！" << std::endl;
+            }
+            msdfgen::destroyFont(font);
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -161,7 +205,8 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
 
     for (auto unicode_point: unicode_points)
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
-        if (msdf_text_tem.glyphs.find(unicode_point) == msdf_text_tem.glyphs.end()) {
+        if (msdf_text_tem.unicode_value_and_glyphs.find(unicode_point) == msdf_text_tem.unicode_value_and_glyphs.
+            end()) {
             // 不存在,
             msdfgen::Shape shape;
             // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
@@ -170,7 +215,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                 Glyph glyph;
                 // 临时创建一个 Glyph 用于存储当前这个 字的
                 glyph.unicode = unicode_point;
-                auto bitmap   = generate_sdf_bitmap_and(glyph, shape);
+                auto bitmap   = generate_sdf_bitmap(glyph, shape);
                 if (bitmap.has_value()) {
                     auto bit_map      = bitmap.value();
                     const auto width  = bitmap.value().width();
@@ -193,7 +238,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                     glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
                     glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
                     glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
-                    msdf_text_tem.glyphs.insert({unicode_point, glyph});
+                    msdf_text_tem.unicode_value_and_glyphs.insert({unicode_point, glyph});
                 }
             }
         }
@@ -201,6 +246,13 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
 
     return true;
     // 还是先假设全部正常输出,
+}
+
+void Font_Manager::clear_fonts() {
+    for (const auto &font: fonts) {
+        FT_Done_Face(font.font_handle);
+    }
+    fonts.clear();
 }
 
 Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const std::string &font_file_name) {
@@ -211,6 +263,14 @@ Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const s
     }
     add_font(font_file_name);
     return fonts.back();
+}
+
+float Font_Manager::get_scale() const {
+    return atlas.size;
+}
+
+double Font_Manager::get_distanceRange() const {
+    return static_cast<double>(atlas.distanceRange);
 }
 
 
@@ -277,17 +337,17 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
         const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
 
 
-        auto glyphs = get_font_data(font_file_name).glyphs;
-        if (auto glyph = glyphs.find(glyph_id); glyph != glyphs.end()) {
+        auto &temp_map = get_font_data(font_file_name).unicode_value_and_glyphs;
+        if (auto value = temp_map.find(glyph_id); value != temp_map.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
-            const auto char_uv = get_char_uv(glyph->second);
+            const auto char_uv = get_char_uv(value->second);
             append_text_box(vertices, indices, {
-                                current_x + char_size * (x_offset + glyph->second.planeBounds.left),
-                                current_y - char_size * (y_offset + glyph->second.planeBounds.bottom)
+                                current_x + char_size * (x_offset + value->second.planeBounds.left),
+                                current_y - char_size * (y_offset + value->second.planeBounds.bottom)
                             },
                             {
-                                current_x + char_size * glyph->second.planeBounds.right,
-                                current_y - char_size * glyph->second.planeBounds.top
+                                current_x + char_size * value->second.planeBounds.right,
+                                current_y - char_size * value->second.planeBounds.top
                             },
                             char_uv);
             current_x += x_advance * char_size;
