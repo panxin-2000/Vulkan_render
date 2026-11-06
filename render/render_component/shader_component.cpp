@@ -54,7 +54,7 @@ void allocate_descriptor_sets(const entt::entity entity) {
         // get_or_emplace 新找到了一个函数，有就返回，没有就创建
         auto &vk_s_d_s = Render_entt().get_or_emplace<shader_need_parameter>(entity);
         if (!shader_ref->object_descriptor_sets_layout.empty()) {
-            allocate_descriptor_sets(vk_s_d_s, shader_ref);  // 这里的问题还没有解决掉
+            allocate_descriptor_sets(vk_s_d_s, shader_ref); // 这里的问题还没有解决掉
         }
     }
 }
@@ -109,6 +109,21 @@ Proxy_descriptor_sets update_descriptor_sets(const entt::entity entity) {
     } else if (const auto vk_s_d_s = Render_entt().try_get<shader_need_parameter>(entity)) {
         if (const auto shader_temp = Render_entt().try_get<Shader_data>(entity)) {
             return get_descriptor_sets(*vk_s_d_s, *shader_temp);
+        }
+    } else {
+        const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
+        if (!shader_data_ref->bindless_sets_bindings.empty() && !shader_data_ref->bindless_sets_bindings.empty()) {
+            auto bindless_descriptor_sets = Engine::instance().get_bindless_descriptor_set();
+            auto global_descriptor_sets   = Engine::instance().get_global_descriptor_set();
+
+            descriptor_sets.reserve(bindless_descriptor_sets.size() +
+                                    global_descriptor_sets.size());
+            descriptor_sets.insert(descriptor_sets.end(),
+                                   bindless_descriptor_sets.begin(),
+                                   bindless_descriptor_sets.end());
+            descriptor_sets.insert(descriptor_sets.end(),
+                                   global_descriptor_sets.begin(),
+                                   global_descriptor_sets.end());
         }
     }
     return descriptor_sets;

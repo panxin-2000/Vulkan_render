@@ -397,6 +397,11 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                         "global_Blur_SSAO", blur_SSAO);
     VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
                         "global_shadow_texture", shadow_texture);
+    if (global_parameters_.MSDF_texture_.image != nullptr) {
+        std::optional<Texture_parameter> temp = global_parameters_.MSDF_texture_;
+        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+                            "global_MSDF_texture", temp);
+    }
 
 
     opacity_batch_.check_and_update(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets);

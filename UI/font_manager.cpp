@@ -4,6 +4,8 @@
 
 #include "font_manager.h"
 
+#include "engine.h"
+
 
 extern "C" {
 #include <hb.h>
@@ -77,8 +79,15 @@ void Font_Manager::destroy() {
     delete instance_ptr;
 }
 
-void Font_Manager::check_need_update() {
+void Font_Manager::check_and_update() {
     if (need_update_atlas == true) {
+        auto lambda = [](std::optional<Texture_parameter> texture) {
+            if (texture.has_value())
+                Engine::instance().get_global_parameters().set_MSDF_texture(texture.value());
+        };
+        std::optional<Texture_parameter> texture = Font_Manager::instance().create_or_update_texture_from_image();
+        vk_render_queue::instance().render_update_entt(lambda, texture);
+        need_update_atlas = false;
         // 需要更新图集 到 GPU , 在本帧开始绘制之前
     }
 }

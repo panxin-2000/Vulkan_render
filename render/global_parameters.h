@@ -134,6 +134,8 @@ public:
 
     bool need_update_CSM = false;
 
+    Texture_parameter MSDF_texture_;
+
     float &get_fxaaQualitySubpix() {
         return fxaaQualitySubpix;
     }
@@ -212,6 +214,8 @@ public:
     }
 
     bool set_render_timeline(const uint32_t &timeline);
+
+    bool set_MSDF_texture(const Texture_parameter MSDF_texture);
 
     bool set_projection_matrix(const Eigen::Matrix4f &matrix);
 

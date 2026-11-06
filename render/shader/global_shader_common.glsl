@@ -67,15 +67,16 @@ layout (set = 1, binding = 2) uniform sampler2D global_offscreen;
 layout (set = 1, binding = 3) uniform sampler2D global_Blur_SSAO;       // 这里是第一次输出的结果
 layout (set = 1, binding = 4) uniform sampler2D global_depth;
 layout (set = 1, binding = 5) uniform sampler2DArray global_shadow_texture;  // 这里是经过模糊之后的SSAO
-layout (set = 1, binding = 6) readonly buffer global_model_matrix {
+layout (set = 1, binding = 6) uniform sampler2D global_MSDF_texture;  // 这里是经过模糊之后的SSAO
+layout (set = 1, binding = 7) readonly buffer global_model_matrix {
     mat4 model_matrix[];
 };
 
-layout (set = 1, binding = 7) readonly buffer global_entity_to_screen {
+layout (set = 1, binding = 8) readonly buffer global_entity_to_screen {
     uint entities[];
 };
 
-layout (set = 1, binding = 8) readonly buffer global_material_parameters {
+layout (set = 1, binding = 9) readonly buffer global_material_parameters {
     uint material_pbr_index[];
 };
 

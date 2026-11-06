@@ -3,6 +3,8 @@
 //
 
 
+#include "engine.h"
+#include "font_manager.h"
 #include "load_gltf_model.h"
 #include "model_matrix.h"
 #include "transform_component.h"
@@ -86,6 +88,11 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
     make_edge(add_new_model, update_animals);
 
     start.try_put(continue_msg());
+
+
+    Font_Manager::instance().check_and_update();
+
+
     g.wait_for_all();
 
     // 中间这部分需要移动

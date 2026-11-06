@@ -8,8 +8,6 @@ layout (location = 0) in vec2 in_UV;
 
 layout (location = 0) out vec4 outFragColor_B8G8R8A8_SRGB;
 
-layout (set = 2, binding = 1) uniform sampler2D msdf;
-
 
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
@@ -19,9 +17,9 @@ float median(float r, float g, float b) {
 vec2 sqr(vec2 x) { return x * x; } // squares vector components
 
 // 计算出的结果其实是屏幕上的过渡带宽度
-float screenPxRange(vec2 in_UV) {
+float screenPxRange(vec2 in_UV, sampler2D MSDF) {
     float pixel_range = 4; // set to distance field's pixel range
-    vec2 unitRange = vec2(pixel_range) / vec2(textureSize(msdf, 0));
+    vec2 unitRange = vec2(pixel_range) / vec2(textureSize(MSDF, 0));
     // If inversesqrt is not available, use vec2(1.0)/sqrt
     //    vec2 screenTexSize = inversesqrt(sqr(dFdx(in_UV)) + sqr(dFdy(in_UV)));
     //    vec2 screen_Size = vec2(dFdx(in_UV), dFdy(in_UV));
@@ -46,7 +44,7 @@ void main()
     //这是因为 median(r, g, b) 在两条线交汇处，由于插值误差，计算出的 sd 值可能会超过正常的最大值（例如本该是 0.8，结果变成了 1.2）。
 
 
-    vec3 msd = texture(msdf, in_UV).rgb;
+    vec3 msd = texture(global_MSDF_texture, in_UV).rgb;
 
     float sd = median(msd.r, msd.g, msd.b);
     //sd > 0.5 ：表示该像素位于形状内部。
@@ -54,7 +52,7 @@ void main()
     //sd = 0.5 ：正好是形状的边缘（边界）
     //sd = 0.0 ：已经完成不在羽化的边缘内了
     //           程序中设置的是4, 羽化的边缘有四个像素, 也就是 从边缘向外四个像素的之后全部的值都是零
-    float temp = screenPxRange(in_UV);  // 这是什么? 给出的结果是什么?  Shader 里的 screenPxRange() 计算出的结果其实是屏幕上的过渡带宽度
+    float temp = screenPxRange(in_UV, global_MSDF_texture);  // 这是什么? 给出的结果是什么?  Shader 里的 screenPxRange() 计算出的结果其实是屏幕上的过渡带宽度
 
     float screenPxDistance = temp * (0.5 - sd);  // 这里是什么？ 这里最重要，重点改这里
     // 0是边界 负数代表内部 正数代表外部

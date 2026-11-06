@@ -9,6 +9,11 @@ bool Global_parameters::set_render_timeline(const uint32_t &timeline) {
     return true;
 }
 
+bool Global_parameters::set_MSDF_texture(const Texture_parameter MSDF_texture) {
+    MSDF_texture_ = MSDF_texture;
+    return true;
+}
+
 bool Global_parameters::set_projection_matrix(const Eigen::Matrix4f &matrix) {
     projection_matrix = matrix;
     return true;

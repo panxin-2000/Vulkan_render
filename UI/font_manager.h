@@ -95,6 +95,9 @@ public:
     //    create_text_geometry_data             在需要添加字体的时候调用
     //    create_or_update_texture_from_image   在逻辑线程完成向渲染线程同步前调用
 
+    void check_and_update();
+
+
     std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
     create_text_geometry_data(const std::string &utf8_text,
                               const std::string &font_file,
@@ -147,7 +150,6 @@ private:
     /**
      * 检查是否有新的字被添加进行,需要更新图集
      */
-    void check_need_update();
 
     Eigen::Vector4f get_char_uv(const Glyph &glyph) const;
 
