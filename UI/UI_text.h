@@ -17,7 +17,7 @@ public:
     UI_Text(const std::string &name);
 
     // 这里把之后的绘制的部分 的 代码也放进去了
-    void set_render_text(const std::string &utf8_text, const std::string & font_file_name);
+    void set_render_text(const std::string &utf8_text, const std::string & font_file_name, float char_size);
 
     void add_render_text(const std::string &text) {
         render_text = render_text + "\n" + text;

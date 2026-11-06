@@ -196,6 +196,8 @@ VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
 
 Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters);
 
+Texture_parameter create_2d_linear_texture(const Picture_parameters &picture_parameters);
+
 VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters);
 
 Texture_parameter create_skybox_texture_all(std::vector<std::string> paths);

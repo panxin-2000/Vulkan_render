@@ -44,6 +44,8 @@ void destroy_all_vulkan_sample();
 
 VKR_Sampler create_2d_Texture_Sampler();
 
+VKR_Sampler linear_sample();
+
 VKR_Sampler create_skybox_Texture_Sampler();
 
 VKR_Sampler base_sample();

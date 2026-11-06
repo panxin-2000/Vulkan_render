@@ -99,7 +99,7 @@ public:
     create_text_geometry_data(const std::string &utf8_text,
                               const std::string &font_file,
                               float start_position_x,
-                              float start_position_y, float max_position_x, float max_position_y);
+                              float start_position_y, float max_position_x, float max_position_y, float char_size);
 
     Texture_parameter create_or_update_texture_from_image();
 

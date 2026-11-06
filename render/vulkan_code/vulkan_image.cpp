@@ -210,7 +210,7 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
     vmaCreateImage(backend.get_allocator(), &imageInfo, &allocInfo, &image, &allocation, &resultInfo);
     VkMemoryRequirements img1MemReq;
     vkGetImageMemoryRequirements(backend.get_device(), image, &img1MemReq);
-    TracyAllocN(allocation, img1MemReq.size,"VMA image");
+    TracyAllocN(allocation, img1MemReq.size, "VMA image");
 
     VkImageViewCreateInfo depthViewCI{
         .sType  = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -503,7 +503,7 @@ Texture_parameter create_texture_from_image(uint8_t *image,
     picture_parameters.width      = width;
     picture_parameters.image_data = image;
     picture_parameters.channels   = channels;
-    auto result                   = create_2d_texture(picture_parameters);
+    auto result                   = create_2d_linear_texture(picture_parameters);
     return result;
 }
 
@@ -552,6 +552,24 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
     auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 
     auto textureSampler = create_2d_Texture_Sampler();
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView   = image_ptr->get_image_view();
+    imageInfo.sampler     = textureSampler.get_sample();
+    Texture_parameter texture_parameter{
+        .image       = image_ptr,
+        .sampler     = textureSampler,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    };
+    return texture_parameter;
+}
+
+
+Texture_parameter create_2d_linear_texture(const Picture_parameters &picture_parameters) {
+    auto &handle   = VK_backend::instance();
+    auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
+
+    auto textureSampler = linear_sample();
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageInfo.imageView   = image_ptr->get_image_view();

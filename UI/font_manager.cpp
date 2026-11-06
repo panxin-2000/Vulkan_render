@@ -104,15 +104,31 @@ std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyp
     edgeColoringByDistance(shape, 3.0);
     const float scale          = get_scale();         // 英文字母其实16就够了，行字需要 32;
     const double distanceRange = get_distanceRange(); // 让画布留白正好等于渐变宽度
-    int width                  = static_cast<int>((bounds.r - bounds.l) * scale + 2 * distanceRange + 0.9999);
-    int height                 = static_cast<int>((bounds.t - bounds.b) * scale + 2 * distanceRange + 0.9999);
+    // 1. 先计算完美的、未取整的浮点数尺寸
+    double exactWidth  = (bounds.r - bounds.l) * scale + 2 * distanceRange + 0.999f;
+    double exactHeight = (bounds.t - bounds.b) * scale + 2 * distanceRange + 0.999f;
+
+    // 2. 转换为 int 并进位到偶数
+    int width  = static_cast<int>(exactWidth);
+    int height = static_cast<int>(exactHeight);
 
     // 进位到偶数（部分图形 API 在渲染奇数宽度的纹理时性能较差）
     if (width % 2 != 0) width++;
     if (height % 2 != 0) height++;
+
+    // 3. 计算由于进位（以及 static_cast 截断）导致纹理多出来的物理像素
+    double extraPixelX = static_cast<double>(width) - exactWidth;
+    double extraPixelY = static_cast<double>(height) - exactHeight;
+
+    // 4. 将多出来的像素平均分配到两边（除以 2），并转换回字形设计单位（除以 scale）
+    double paddingOffsetX = (extraPixelX / 2.0) / scale;
+    double paddingOffsetY = (extraPixelY / 2.0) / scale;
+
+    // 5. 在原本的 translate 基础上，加上这个居中补偿量
+    const auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale + paddingOffsetX,
+                                            -bounds.b + distanceRange / scale + paddingOffsetY);
+
     msdfgen::Bitmap<float, 3> msdf(width, height);
-    const auto translate = msdfgen::Vector2(-bounds.l + distanceRange / scale,
-                                            -bounds.b + distanceRange / scale);
     const msdfgen::SDFTransformation transform(msdfgen::Projection(scale, translate),
                                                msdfgen::Range(distanceRange / scale));
 
@@ -286,7 +302,8 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
                                         const float start_position_x,
                                         const float start_position_y,
                                         const float max_position_x,
-                                        const float max_position_y) {
+                                        const float max_position_y,
+                                        const float char_size) {
     std::string font_file_name;
     if (font_file.empty()) {
         font_file_name = "default_font";
@@ -319,12 +336,12 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
     FT_Face ftFace = get_font_data(font_file_name).font_handle;
     auto UPEM      = ftFace->units_per_EM;
 
-    FT_Set_Pixel_Sizes(ftFace, 0, 16);
     // 还需要去设置字号的大小
     // 否则会缩成一团
 
     hb_font_t *font = hb_ft_font_create_referenced(ftFace);
 
+    hb_font_set_scale(font, char_size * 64, char_size * 64);
     // 传入字体和缓冲区，执行塑造
     hb_shape(font, buf, NULL, 0);
 
@@ -336,19 +353,21 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
     const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
 
-    float char_size = 40;
     float current_x = start_position_x;
     float current_y = start_position_y + char_size;
+    unsigned int x_ppem;
+    unsigned int y_ppem;
+    hb_font_get_ppem(font, &x_ppem, &y_ppem);
 
 
     for (unsigned int i = 0; i < unicode_vector.size(); i++) {
         hb_codepoint_t glyph_id = unicode_vector[i];
         // glyph_id 去map中查找索引
         // 得到的是一组相对于基线（Baseline）的数值
-        const float x_advance = static_cast<float>(glyph_pos[i].x_advance) / static_cast<float>(UPEM); // 通常需要除以缩放系数
-        const float y_advance = static_cast<float>(glyph_pos[i].y_advance) / static_cast<float>(UPEM);
-        const float x_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
-        const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(UPEM);
+        const float x_advance = static_cast<float>(glyph_pos[i].x_advance) / static_cast<float>(64); // 通常需要除以缩放系数
+        const float y_advance = static_cast<float>(glyph_pos[i].y_advance) / static_cast<float>(64);
+        const float x_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(64);
+        const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(64);
 
 
         auto &temp_map = get_font_data(font_file_name).unicode_value_and_glyphs;
@@ -356,16 +375,16 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
             // 方向可能都稍微有点问题，但是结果是对的
             const auto char_uv = get_char_uv(value->second);
             append_text_box(vertices, indices, {
-                                current_x + char_size * (x_offset + value->second.planeBounds.left),
-                                current_y - char_size * (y_offset + value->second.planeBounds.bottom)
+                                current_x + char_size * (value->second.planeBounds.left),
+                                current_y - char_size * (value->second.planeBounds.bottom)
                             },
                             {
                                 current_x + char_size * value->second.planeBounds.right,
                                 current_y - char_size * value->second.planeBounds.top
                             },
                             char_uv);
-            current_x += x_advance * char_size;
-            current_y += y_advance * char_size;
+            current_x += x_advance;
+            current_y += y_advance;
         }
 
 
