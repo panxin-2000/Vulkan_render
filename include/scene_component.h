@@ -96,4 +96,11 @@ bool clear_relation(const entt::entity parent_entity, const entt::entity childre
 
 
 void clean_render_entity();
+
+
+bool get_intersect_entity(std::vector<entt::entity> &return_value,
+                          entt::entity entity,
+                          const Eigen::Vector2f &mouse_position);
+
+
 #endif //HELLO_MAC_SCENE_COMPONENT_H

@@ -45,10 +45,6 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &eve
             return OPERATOR_FINISHED;
         }
         case SDL_EVENT_MOUSE_WHEEL: {
-            // event.wheel.x
-            // if (auto *UI = Logic_entt().try_get<Rect_2D_transform>(entity)) {
-            //     deal_zoom(entity, event);
-            // }
         }
         case SDL_EVENT_TEXT_INPUT: {
         }

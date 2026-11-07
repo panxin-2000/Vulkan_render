@@ -42,3 +42,6 @@ object_2d::object_2d(const std::string &name) : logic_render_object(name) {
     logic_update_proxy<Name_component>(entity);
     UI_root_add_child(entity);
 }
+
+
+

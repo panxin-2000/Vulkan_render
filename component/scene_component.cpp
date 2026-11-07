@@ -3,6 +3,7 @@
 //
 #include "scene_component.h"
 
+#include "bounding_box_2d.h"
 #include "transform_component.h"
 #include "Rect_2D_component.h"
 #include "UI_manager.h"
@@ -88,4 +89,30 @@ void clean_render_entity() {
         clean_VKR_object_proxy(entity);
     }
     Logic_entt().destroy(view.begin(), view.end()); // 执行销毁程序
+}
+
+
+bool check_entity_intersect_point(const entt::entity entity, const Eigen::Vector2f &current_position) {
+    if (auto *scene_node = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
+        AABB_min_max<Point_2> temp{{scene_node->box[0], scene_node->box[1]}, {scene_node->box[2], scene_node->box[3]}};
+        if (is_intersect(temp, {current_position.x(), current_position.y()})) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool get_intersect_entity(std::vector<entt::entity> &return_value,
+                          const entt::entity entity,
+                          const Eigen::Vector2f &mouse_position) {
+    if (const auto *scene_node = Logic_entt().try_get<Scene_Component>(entity)) {
+        for (const entt::entity children_entity: scene_node->children_) {
+            if (check_entity_intersect_point(children_entity, mouse_position)) {
+                return_value.push_back(children_entity);
+                get_intersect_entity(return_value, children_entity, mouse_position);
+            }
+        }
+    }
+    return false;
 }

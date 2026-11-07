@@ -8,9 +8,7 @@
 
 #include "global_singleton.h"
 #include "../include/name_component.h"
-#include "Rect_2D_component.h"
 #include "../include/scene_component.h"
-#include "render_component/shader_component.h"
 
 
 class UI_scene_root {
@@ -22,15 +20,8 @@ public:
 
         std::call_once(flag, []() {
                            Logic_entt().emplace<Scene_Component>(instance);
-                           Logic_entt().emplace<Name_component>(instance, "scene_root");
+                           Logic_entt().emplace<Name_component>(instance, "UI_scene_root");
 
-                           if (auto *scene_node = Logic_entt().try_get<Rect_2D_transform>(instance)) {
-                               scene_node->set_bounding_box({0, 0},
-                                                            {
-                                                                static_cast<float>(get_win_WIDTH()),
-                                                                static_cast<float>(get_win_HEIGHT())
-                                                            });
-                           }
                            // 在系统初始化时，给logic_render_data * 的类型都添加这个销毁前执行的函数
                            // g_entt().on_destroy<logic_render_data>().connect<&cleanup_logic_render_data>();
                            // 也可以在只移除 logic_render_data 时 触发，但是不同类型触发的顺序可能是随机的。
@@ -51,11 +42,6 @@ static entt::entity &get_UI_scene_root() {
 }
 
 
-inline std::vector<entt::entity> UI_stack_intersect(const Eigen::Vector2f &current_position) {
-    std::vector<entt::entity> return_value;
-    const auto scene_root_node = get_UI_scene_root();
-    get_intersect_entity(return_value, scene_root_node, current_position);
-    return return_value;
-}
+std::vector<entt::entity> UI_stack_intersect(const Eigen::Vector2f &current_position);
 
 #endif //HELLO_MAC_UI_MANAGER_H
