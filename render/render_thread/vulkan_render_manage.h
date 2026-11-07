@@ -15,6 +15,7 @@
 #include <thread>
 #include <chrono>
 
+#include "CircularBuffer.h"
 #include "record_command.h"
 
 // 判断当前架构以选择正确的 CPU 暂停指令
@@ -74,8 +75,9 @@ public:
 
 class vk_render_queue {
 private:
-    std::array<oneapi::tbb::concurrent_queue<RenderRingBuffer>, 3> g_render_queue;
-    RenderRingBuffer logic_to_render{2 * 1024 * 1024};
+    filament::backend::CircularBuffer mCurrentBuffer{4 * 1024 * 1024};
+
+    oneapi::tbb::concurrent_queue<filament::backend::CircularBuffer::Range> g_render_queue;
     alignas(64) std::atomic<bool> logic_thread_finished = false;
     alignas(64) std::atomic<size_t> logic_write         = 0;
     alignas(64) std::atomic<size_t> render_read         = 1;
@@ -91,49 +93,47 @@ public:
     }
 
     void execute_update_lambda() {
-        RenderRingBuffer callback{2 * 1024 * 1024};
         if (logic_thread_finished.load() == true) {
             logic_thread_finished.store(false);
-            const auto current = render_read % g_render_queue.size();
-            while (g_render_queue.at(current).try_pop(callback)) {
-                callback.FlushAndExecute();
+            filament::backend::CircularBuffer::Range current = {nullptr, nullptr};
+            while (g_render_queue.try_pop(current)) {
+                void *current_tail = current.tail;
+                while (current_tail < current.head) {
+                    const auto header = reinterpret_cast<RenderCommandHeader *>(current_tail);
+                    header->execute(current_tail);
+                    current_tail = header->next_offset;
+                }
             }
-            g_render_queue.at(current).clear();
         }
     }
 
     void logic_add_finished() {
-        {
-            RenderRingBuffer temp{2 * 1024 * 1024};
-            std::swap(temp, logic_to_render);
-            size_t current = logic_write % g_render_queue.size();
-            g_render_queue.at(current).emplace(std::move(temp));
-            render_read = current;
-            ++logic_write;
-            logic_thread_finished.store(true);
-        }
+        auto range = mCurrentBuffer.getBuffer();
+        g_render_queue.emplace(range);
+        logic_thread_finished.store(true);
     }
 
     template<typename F, typename... Args>
     void render_update_entt(F &&func, Args &&... args) {
-        if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
-        } else {
-            RenderRingBuffer temp{2 * 1024 * 1024};
-            std::swap(temp, logic_to_render);
-            if (true == logic_to_render.Submit(std::forward<F>(func), std::forward<Args>(args)...)) {
-                assert(false && "logic_to_render.Submit");
-            }
-            g_render_queue.at(logic_write % g_render_queue.size()).emplace(std::move(temp));
-        }
+        using CommandType = ConcreteRenderCommand<std::decay_t<F>, std::decay_t<Args>...>;
+        const size_t size = ALIGN_16(sizeof(CommandType)); // 我需要的字节数
+        auto write_ptr    = mCurrentBuffer.allocate(size);
+        new(write_ptr) CommandType{
+            {&CommandType::Dispatch, (static_cast<char *>(write_ptr) + size)},
+            std::forward<F>(func),
+            std::make_tuple(std::forward<Args>(args)...)
+        };
     }
 
     void destroy() {
-        RenderRingBuffer callback{2 * 1024 * 1024};
-        for (size_t i = 0; i < g_render_queue.size(); ++i) {
-            while (g_render_queue.at(i).try_pop(callback)) {
-                callback.FlushAndExecute();
+        filament::backend::CircularBuffer::Range current = {nullptr, nullptr};
+        while (g_render_queue.try_pop(current)) {
+            void *current_tail = current.tail;
+            while (current_tail < current.head) {
+                const auto header = reinterpret_cast<RenderCommandHeader *>(current_tail);
+                header->execute(current_tail); // 暂时是可以执行的, 之后可能需要修改
+                current_tail = header->next_offset;
             }
-            g_render_queue.at(i).clear();
         }
     };
 
