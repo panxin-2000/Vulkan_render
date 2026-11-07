@@ -13,6 +13,8 @@
 #include "UI_text.h"
 
 
+#include  "bounding_box_2d.h"
+
 struct Round_box {
     float min_x, min_y, max_x, max_y;
     float radius_min_x, radius_min_y, radius_max_x, radius_max_y;
@@ -72,13 +74,15 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &eve
 }
 
 
-UI_Button &UI_Button::set_round_box(float min_x,
-                                    float min_y,
-                                    float max_x,
-                                    float max_y) {
+void set_round_box_impl(const entt::entity entity,
+                        const float min_x,
+                        const float min_y,
+                        const float max_x,
+                        const float max_y) {
+    Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, Eigen::Vector4f(min_x, min_y, max_x, max_y));
     LOG_INFO(g_log(), "UI create  {} {} {} {} ", min_x, min_y, max_x, max_y);
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
-    Round_box &round_box = Logic_entt().emplace<
+    Round_box &round_box = Logic_entt().emplace_or_replace<
         Round_box>(entity, Round_box{min_x, min_y, max_x, max_y, 20, 10, 10, 10});
     logic_set_render_parameter(entity, "round_box", round_box);
     logic_update_proxy(entity, get_VKR_mesh(entity));
@@ -91,11 +95,25 @@ UI_Button &UI_Button::set_round_box(float min_x,
     render_state.set_depthTest_disable();
     render_states.push_back(render_state);
     logic_update_proxy(entity, render_states);
+}
 
+
+void set_round_box_impl(const entt::entity entity,
+                        const Eigen::Vector4f &box) {
+    set_round_box_impl(entity, box[0], box[1], box[2], box[3]);
+}
+
+
+UI_Button &UI_Button::set_round_box(float min_x,
+                                    float min_y,
+                                    float max_x,
+                                    float max_y) {
+    set_round_box_impl(entity, min_x, min_y, max_x, max_y);
     return *this;
 }
 
-UI_Button::UI_Button(const std::string &name) : object_2d(name) {
+UI_Button::UI_Button(const std::string &name)
+    : object_2d(name) {
     add_shader_path(VKR_shader_paths{
                         "2D/vulkan_round_box", "2D/vulkan_round_box", "", ""
                     });

@@ -15,6 +15,11 @@ struct Inverse_Global_Transform {
     Eigen::Matrix4f matrix;
 };
 
+struct Bounding_Box_2D {
+    Eigen::Vector4f matrix;
+};
+
+
 struct JointMatrix {
     Eigen::Matrix4f matrix;
 };

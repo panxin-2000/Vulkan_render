@@ -26,6 +26,14 @@ public:
     UI_Text set_text(const std::string &text);
 };
 
+void set_round_box_impl(entt::entity entity,
+                        float min_x,
+                        float min_y,
+                        float max_x,
+                        float max_y);
+
+void set_round_box_impl(entt::entity entity,
+                        const Eigen::Vector4f &box);
 
 // entt::entity UI_button(const std::string &name,
 // float min_x,

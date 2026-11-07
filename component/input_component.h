@@ -66,5 +66,6 @@ public:
                               std::optional<base_event_with_stamp> mouse);
 };
 
+wmOperatorStatus delete_object(const entt::entity entity, std::chrono::milliseconds ms);
 
 #endif //HELLO_MAC_INPUT_COMPONENT_H

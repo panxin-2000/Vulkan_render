@@ -4,6 +4,8 @@
 
 #include "input_component.h"
 
+#include "global_singleton.h"
+
 
 wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_Event &event,
                                            std::optional<base_event_with_stamp> mouse) {
@@ -63,6 +65,15 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
             case EVENT_MOVE:
                 break;
         }
+    }
+    return OPERATOR_PASS_THROUGH;
+}
+
+
+wmOperatorStatus delete_object(const entt::entity entity, std::chrono::milliseconds ms) {
+    if (Logic_entt().valid(entity)) {
+        Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
+        return OPERATOR_FINISHED;
     }
     return OPERATOR_PASS_THROUGH;
 }

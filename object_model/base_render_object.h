@@ -19,7 +19,7 @@ public:
 
     bool set_random_triangle_color();
 
-    entt::entity get_entity() const {
+    [[nodiscard]] entt::entity get_entity() const {
         return entity;
     }
 

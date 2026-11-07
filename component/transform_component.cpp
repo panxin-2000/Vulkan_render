@@ -231,13 +231,6 @@ static wmOperatorStatus model_offset(const entt::entity entity,
     }
 }
 
-wmOperatorStatus delete_object(const entt::entity entity, std::chrono::milliseconds ms) {
-    if (Logic_entt().valid(entity)) {
-        Logic_entt().emplace_or_replace<Logic_destroy_tag>(entity);
-        return OPERATOR_FINISHED;
-    }
-    return OPERATOR_PASS_THROUGH;
-}
 
 void add_model_3d_Event(const entt::entity entity) {
     auto &status = Logic_entt().emplace_or_replace<Input_Component>(entity);

@@ -43,8 +43,8 @@ void Font_Manager::create() {
     // 大于 0 的值代表在字形内部，小于 0 的值代表在字形外部。
 
     atlas.size    = 32;
-    atlas.width   = 256;
-    atlas.height  = 256;
+    atlas.width   = 512; // 这里是宽度,不能更改了, 高度之后还能更改
+    atlas.height  = 512;
     atlas.yOrigin = "bottom"; // 定义了纹理坐标的垂直方向
 
     // msdf_text.metrics.emSize             = 1;

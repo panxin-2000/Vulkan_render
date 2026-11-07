@@ -23,13 +23,10 @@
 #include "UI_manager.h"
 #include "update_push_constants_data.h"
 #include "ccd/ccd.h"
-#include "object_model/base_3d_render_object.h"
 #include "UI/UI_imgui.h"
 #include "UI/UI_text.h"
 #include "imgui.h"
 #include "input_device_manage.h"
-#include "object_line.h"
-#include "object_ply.h"
 #include "skybox.h"
 
 
@@ -61,15 +58,17 @@ int main(int argc, char *argv[]) {
         auto UI_root    = get_UI_scene_root();
         // 需要确定启动的顺序
         render_thread_start(backend, engine);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 
         // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
-        UI_Button button("按钮1");
-        button.set_round_box(0, 0, 60, 60);
-        // UI_block("功能块", 0, 0, 50, 200);
-        // UI_block("按钮2", 0, 0, 145, 130);
-        //
-
+        {
+            UI_Button button("按钮1");
+            button.set_round_box(0, 0, 60, 60);
+        } {
+            UI_Button button("按钮2");
+            button.set_round_box(60, 60, 200, 200);
+        }
         add_skybox_entity();
         // add_manifold_entity();
 
@@ -80,16 +79,16 @@ int main(int argc, char *argv[]) {
 
 
         UI_Text text("AbcgoyQj");
-        text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;", "/System/Library/Fonts/PingFang.ttc", 32);
-        // {
-        // auto entity = UI_text("AbcgoyQj", 200, 200, 500, 500);
-        // }
-        object_3d box("box");
-        box.add_shader_path(get_gltf_shader_path());
-        box.set_random_triangle_color();
-        box.add_mesh({{1, 1, 1}, {2, 2, 2}});
-        box.set_transform();
+        text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;", "/System/Library/Fonts/PingFang.ttc",
+                             32);
 
+
+        // object_3d box("box");
+        // box.add_shader_path(get_gltf_shader_path());
+        // box.set_random_triangle_color();
+        // box.add_mesh({{1, 1, 1}, {2, 2, 2}});
+        // box.set_transform();
+        //
 
         // object_line line("line");
         // line.add_B_spline_curve();
