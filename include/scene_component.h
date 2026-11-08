@@ -34,7 +34,7 @@ public:
         parent_ = entt::null;
     }
 
-    void clean_parent_relation() ;
+    void clean_parent_relation();
 
 
     void clean_children_entity() {
@@ -81,6 +81,9 @@ void scene_add_child(const entt::entity parent_entity, const entt::entity childr
 
 
 entt::entity get_parent(const entt::entity entity);
+
+
+std::vector<entt::entity> get_children(const entt::entity entity);
 
 
 bool clear_parent_relation(const entt::entity children_entity);

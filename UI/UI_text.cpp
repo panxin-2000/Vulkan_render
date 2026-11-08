@@ -75,6 +75,7 @@
 
 
 UI_Text::UI_Text(const std::string &name) : object_2d(name) {
+    Logic_entt().emplace<UI_Text_data>(entity);
     add_shader_path(VKR_shader_paths{
                         "2D/vulkan_MSDF_text",
                         "2D/vulkan_MSDF_text",
@@ -95,9 +96,19 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
 }
 
 void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
+    auto &data           = Logic_entt().get<UI_Text_data>(entity);
+    data.render_text_    = utf8_text;
+    data.font_file_name_ = font_file_name;
+    data.char_size_      = char_size;
+    update();
+}
+
+
+void update_UI_Text(const entt::entity entity) {
+    auto &data = Logic_entt().get<UI_Text_data>(entity);
+
     float min_x = 0;
     float min_y = 0;
-
     if (auto parent = get_parent(entity); parent != entt::null) {
         if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
             const auto &parent_bounding_box = Logic_entt().get<Bounding_Box_2D>(parent);
@@ -106,17 +117,22 @@ void UI_Text::set_render_text(const std::string &utf8_text, const std::string &f
         }
     }
 
-    auto result = Font_Manager::instance().create_text_geometry_data(utf8_text, font_file_name,
+    auto result = Font_Manager::instance().create_text_geometry_data(data.render_text_,
+                                                                     data.font_file_name_,
                                                                      min_x,
                                                                      min_y,
                                                                      0xffffff,
                                                                      0xffffff,
-                                                                     char_size);
+                                                                     data.char_size_);
     // 如果可以，尽量考虑圆角部分的内容
 
 
-    add_geometry_data(entity, result.first, result.second);
+    set_geometry_data(entity, result.first, result.second);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_add_tag<UI_render_text>(entity);
+}
+
+void UI_Text::update() {
+    update_UI_Text(entity);
 }

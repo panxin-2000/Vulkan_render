@@ -37,6 +37,13 @@ entt::entity get_parent(const entt::entity entity) {
     return entt::null;
 }
 
+std::vector<entt::entity> get_children(const entt::entity entity) {
+    if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {
+        return temp->get_children();
+    }
+    return {};
+}
+
 // 只是清理了两个 entity 之间的关系
 bool clear_relation(const entt::entity parent_entity, const entt::entity children_entity) {
     if (Logic_entt().all_of<Scene_Component>(parent_entity)) {

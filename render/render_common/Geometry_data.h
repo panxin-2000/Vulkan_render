@@ -116,6 +116,10 @@ public:
         return vertices_;
     };
 
+    [[nodiscard]] std::vector<share_block> &get_vertices() {
+        return vertices_;
+    };
+
     [[nodiscard]] std::vector<std::size_t> get_materials() const {
         return materials_;
     };

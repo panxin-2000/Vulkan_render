@@ -11,6 +11,17 @@
 #include "UI_button.h"
 
 
+void update_children(entt::entity entity, const Eigen::Vector2f move) {
+    auto lambda = [](const entt::entity child_entity) {
+        if (child_entity != entt::null) {
+            if (Logic_entt().all_of<UI_render_text>(child_entity)) {
+                update_UI_Text(child_entity);
+            }
+        }
+    };
+    add_recursion_function_to_children(entity, lambda);
+}
+
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f current_position,
                                      const Eigen::Vector2f last_position) {
@@ -21,6 +32,7 @@ static wmOperatorStatus model_offset(const entt::entity entity,
         temp.tail<2>()         = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
         Eigen::Vector4f result = transform->box + temp;
         set_round_box_impl(entity, result);
+        update_children(entity, current_position - last_position);
 
         return OPERATOR_RUNNING_MODAL;
     } else {
@@ -42,6 +54,3 @@ object_2d::object_2d(const std::string &name) : logic_render_object(name) {
     logic_update_proxy<Name_component>(entity);
     UI_root_add_child(entity);
 }
-
-
-

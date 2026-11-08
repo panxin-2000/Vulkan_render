@@ -16,6 +16,14 @@ void add_geometry_data(const entt::entity entity,
     geometry.push(sp_vertices, sp_indices);
 }
 
+template<typename vertex_t, typename index_t>
+void set_geometry_data(const entt::entity entity,
+                       const std::shared_ptr<std::vector<vertex_t> > &sp_vertices,
+                       const std::shared_ptr<std::vector<index_t> > &sp_indices) {
+    auto &geometry = Logic_entt().emplace_or_replace<Geometry_data>(entity);
+    geometry.push(sp_vertices, sp_indices);
+}
+
 void clean_geometry_data(const entt::entity entity);
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
