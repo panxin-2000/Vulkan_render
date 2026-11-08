@@ -155,17 +155,26 @@ void UI_Button::draw() const {
 }
 
 void UI_Button::update() const {
+    Logic_entt().emplace_or_replace<Tag_UI_Button_data_dirty>(entity);
 }
 
-void UI_Button::set_renderable(bool renderable) const {
+void UI_Button::set_renderable(const bool renderable) const {
+    if (renderable == true) {
+        Logic_entt().emplace_or_replace<Tag_UI_Button_renderable>(entity);
+    } else {
+        Logic_entt().remove<Tag_UI_Button_renderable>(entity);
+    }
 }
 
 
-UI_Text UI_Button::add_text(const std::string &name) const {
-    const UI_Text text(name);
+UI_Text UI_Button::add_text(const std::string &debug_name) const {
+    const UI_Text text(debug_name);
     add_relation(entity, text.get_entity());
     return text;
 }
 
 UI_Button UI_Button::add_button(const std::string &debug_name) const {
+    const UI_Button button("debug_name");
+    add_relation(entity, button.get_entity());
+    return button;
 }

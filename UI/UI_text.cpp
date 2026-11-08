@@ -141,18 +141,20 @@ UI_Text::UI_Text(const std::string &debug_name) : object_2d(debug_name) {
     add_push_constant_parameter("uTranslate", translate);
 }
 
-void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
+UI_Text &UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
     auto &data           = Logic_entt().get<UI_Text_data>(entity);
     data.render_text_    = utf8_text;
     data.font_file_name_ = font_file_name;
     data.char_size_      = char_size;
     Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
     draw();
+    return *this;
 }
 
 
-void UI_Text::draw() const {
+UI_Text &UI_Text::draw() {
     UI_Text_draw(entity);
+    return *this;
 }
 
 void UI_Text::update() const {
@@ -163,7 +165,7 @@ void UI_Text::set_renderable(bool renderable) const {
     if (renderable == true) {
         Logic_entt().emplace_or_replace<Tag_UI_text_renderable>(entity);
     } else {
-        Logic_entt().emplace_or_replace<Tag_UI_text_renderable>(entity);
+        Logic_entt().remove<Tag_UI_text_renderable>(entity);
     }
 }
 
