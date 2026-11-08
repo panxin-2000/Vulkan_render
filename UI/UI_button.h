@@ -19,7 +19,15 @@
 
 class UI_Button : public object_2d {
 public:
-    UI_Button &set_round_box(float min_x, float min_y, float max_x, float max_y);
+    UI_Button &set_Round_Rect(float min_x, float min_y, float max_x, float max_y,
+                              float right_down = 10, float right_up = 10, float left_down = 10, float left_up = 10);
+
+
+    UI_Button &set_Round_Rect(Eigen::Vector4f box,
+                              float right_down,
+                              float right_up,
+                              float left_down,
+                              float left_up);
 
     UI_Button(const std::string &name);
 

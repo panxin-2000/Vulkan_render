@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
         // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
         {
             UI_Button button("按钮1");
-            button.set_round_box(0, 0, 60, 60);
+            button.set_Round_Rect(0, 0, 60, 60);
         } {
             UI_Button button("按钮2");
-            button.set_round_box(60, 60, 220, 220);
+            button.set_Round_Rect(60, 60, 220, 220);
             auto text = button.add_text("按钮2文本");
             text.set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
                                  "/System/Library/Fonts/PingFang.ttc",

@@ -114,11 +114,12 @@ void update_UI_Text(const entt::entity entity) {
     float max_y = 0;
     if (auto parent = get_parent(entity); parent != entt::null) {
         if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
-            const auto &parent_bounding_box = Logic_entt().get<Bounding_Box_2D>(parent);
-            min_x                           = parent_bounding_box.box[0];
-            min_y                           = parent_bounding_box.box[1];
-            max_x                           = parent_bounding_box.box[2];
-            max_y                           = parent_bounding_box.box[3];
+            const auto &parent_bounding_box = Logic_entt().get<SDF_Round_box_2d>(parent);
+            auto bounding_box               = parent_bounding_box.get_bounding_box();
+            min_x                           = bounding_box[0];
+            min_y                           = bounding_box[1];
+            max_x                           = bounding_box[2];
+            max_y                           = bounding_box[3];
         }
     }
 

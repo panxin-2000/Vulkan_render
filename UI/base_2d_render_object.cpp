@@ -25,13 +25,16 @@ void update_children(entt::entity entity, const Eigen::Vector2f move) {
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f current_position,
                                      const Eigen::Vector2f last_position) {
-    if (auto *transform = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
+    if (auto *data = Logic_entt().try_get<SDF_Round_box_2d>(entity)) {
         Eigen::Vector4f temp;
+        temp.head<2>() = current_position - last_position; // 将 v1 赋给 v4 的前两个元素
+        temp.tail<2>() = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
+        data->box      = data->box + temp;
+        if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
+            bounding_box->box += temp;
+        }
+        set_round_box_impl(entity, data->box);
 
-        temp.head<2>()         = current_position - last_position; // 将 v1 赋给 v4 的前两个元素
-        temp.tail<2>()         = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
-        Eigen::Vector4f result = transform->box + temp;
-        set_round_box_impl(entity, result);
         update_children(entity, current_position - last_position);
 
         return OPERATOR_RUNNING_MODAL;

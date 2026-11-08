@@ -15,10 +15,7 @@
 
 #include  "bounding_box_2d.h"
 
-struct Round_box {
-    float min_x, min_y, max_x, max_y;
-    float radius_min_x, radius_min_y, radius_max_x, radius_max_y;
-};
+//
 
 
 static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &event) {
@@ -26,11 +23,11 @@ static wmOperatorStatus on_Event(const entt::entity entity, const SDL_Event &eve
     switch (event.type) {
         case SDL_EVENT_MOUSE_MOTION: {
             if (status.select_status_ == select_current) {
-                auto &round_box = Logic_entt().get<Round_box>(entity);
-                round_box.min_x += event.motion.xrel;
-                round_box.min_y += event.motion.yrel;
-                round_box.max_x += event.motion.xrel;
-                round_box.max_y += event.motion.yrel;
+                auto &round_box   = Logic_entt().get<Bounding_Box_2D>(entity);
+                round_box.min_x() += event.motion.xrel;
+                round_box.min_y() += event.motion.yrel;
+                round_box.max_x() += event.motion.xrel;
+                round_box.max_y() += event.motion.yrel;
                 logic_set_render_parameter(entity, "round_box", round_box);
                 return OPERATOR_RUNNING_MODAL;
             }
@@ -78,9 +75,9 @@ void set_round_box_impl(const entt::entity entity,
     Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, Eigen::Vector4f(min_x, min_y, max_x, max_y));
     LOG_INFO(g_log(), "UI create  {} {} {} {} ", min_x, min_y, max_x, max_y);
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
-    Round_box &round_box = Logic_entt().emplace_or_replace<
-        Round_box>(entity, Round_box{min_x, min_y, max_x, max_y, 20, 10, 10, 10});
-    logic_set_render_parameter(entity, "round_box", round_box);
+
+    auto RoundRect = Logic_entt().get<SDF_Round_box_2d>(entity);
+    logic_set_render_parameter(entity, "round_box", RoundRect);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
     logic_update_proxy(entity, primitives);
@@ -100,10 +97,37 @@ void set_round_box_impl(const entt::entity entity,
 }
 
 
-UI_Button &UI_Button::set_round_box(float min_x,
-                                    float min_y,
-                                    float max_x,
-                                    float max_y) {
+UI_Button &UI_Button::set_Round_Rect(Eigen::Vector4f box,
+                                     float right_down,
+                                     float right_up,
+                                     float left_down,
+                                     float left_up) {
+    auto data = Logic_entt().emplace_or_replace<SDF_Round_box_2d>(entity,
+                                                                  SDF_Round_box_2d{
+                                                                      box, right_down, right_up, left_down, left_up
+                                                                  });
+
+    Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, box);
+
+    set_round_box_impl(entity, box);
+    return *this;
+}
+
+UI_Button &UI_Button::set_Round_Rect(float min_x,
+                                     float min_y,
+                                     float max_x,
+                                     float max_y,
+                                     float right_down,
+                                     float right_up,
+                                     float left_down,
+                                     float left_up) {
+    auto data = Logic_entt().emplace_or_replace<SDF_Round_box_2d>(entity, SDF_Round_box_2d{
+                                                                      {min_x, min_y, max_x, max_y},
+                                                                      right_down, right_up, left_down, left_up
+                                                                  });
+    Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, Eigen::Vector4f{min_x, min_y, max_x, max_y});
+
+
     set_round_box_impl(entity, min_x, min_y, max_x, max_y);
     return *this;
 }
