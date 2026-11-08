@@ -9,12 +9,22 @@
 #include "model_matrix.h"
 #include "transform_component.h"
 #include "Rect_2D_component.h"
+#include "UI_manager.h"
 #include "render_component/shader_component.h"
 #include "VKR_proxy_component.h"
 #include "vulkan_execute_command.h"
 #include "render_thread/vulkan_render_manage.h"
 #include "world_scene_root.h"
 
+void draw_UI_button(const entt::entity entity);
+
+void sync_render_2D_data_to_render_thread(float time_milliseconds) {
+    auto UI_root = get_UI_scene_root();
+    auto lambda  = [](const entt::entity entity_temp) {
+        draw_UI_button(entity_temp);
+    };
+    add_recursion_function_to_children(UI_root, lambda);
+}
 
 void sync_render_data_to_render_thread(float time_milliseconds) {
     // 应该不止更新 position，还有很多的都需要更新

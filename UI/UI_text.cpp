@@ -123,22 +123,13 @@ void UI_Text_draw(const entt::entity entity) {
 
 UI_Text::UI_Text(const std::string &debug_name) : object_2d(debug_name) {
     Logic_entt().emplace<UI_Text_data>(entity);
-    add_shader_path(VKR_shader_paths{
-                        "2D/vulkan_MSDF_text",
-                        "2D/vulkan_MSDF_text",
-                        "", ""
-                    });
-    int logical_w, logical_h;
-    const auto &backend = VK_backend::instance();
+    // add_shader_path(VKR_shader_paths{
+    //                     "2D/vulkan_MSDF_text",
+    //                     "2D/vulkan_MSDF_text",
+    //                     "", ""
+    //                 });
 
     Logic_entt().emplace_or_replace<Tag_UI_text>(entity);
-
-    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
-
-    Eigen::Vector2f scale{2.0f / logical_w, 2.0f / logical_h};
-    Eigen::Vector2f translate{-1.0f - 0 * scale[0], -1.0f - 0 * scale[1]};
-    add_push_constant_parameter("uScale", scale);
-    add_push_constant_parameter("uTranslate", translate);
 }
 
 UI_Text &UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {

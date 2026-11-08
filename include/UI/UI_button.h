@@ -46,7 +46,6 @@ struct Tag_UI_Button_data_dirty {
 struct Tag_UI_Button_renderable {
 };
 
-
 class UI_Button : public object_2d {
 public:
     UI_Button &set_Round_Rect(float min_x, float min_y, float max_x, float max_y,
@@ -61,29 +60,20 @@ public:
 
     UI_Button(const std::string &debug_name);
 
-    void draw() const;
 
-    void update() const;
+    UI_Button &update();
 
     /**
      * 其全部子节点都会不再绘制
      * @param renderable true or false
      */
-    void set_renderable(bool renderable) const;
+    UI_Button &set_renderable(bool renderable);
 
     UI_Text add_text(const std::string &debug_name) const;
 
     UI_Button add_button(const std::string &debug_name) const;
 };
 
-void set_round_box_impl(entt::entity entity,
-                        float min_x,
-                        float min_y,
-                        float max_x,
-                        float max_y);
-
-void set_round_box_impl(entt::entity entity,
-                        const Eigen::Vector4f &box);
 
 // entt::entity UI_button(const std::string &name,
 // float min_x,

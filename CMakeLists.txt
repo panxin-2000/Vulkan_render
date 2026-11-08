@@ -218,6 +218,7 @@ file(GLOB_RECURSE object_model
 file(GLOB_RECURSE component
         "UI/UI_block.cpp"
         "UI/UI_button.cpp"
+        "UI/UI_button_render.cpp"
         "UI/UI_imgui.cpp"
         "UI/UI_text.cpp"
         "UI/font_manager.cpp"

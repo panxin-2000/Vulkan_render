@@ -13,6 +13,7 @@
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
 #include "object_ply.h"
+#include "UI/UI_button.h"
 #include "UI/UI_text.h"
 
 
@@ -209,7 +210,7 @@ void render_post_process(VCB &vcb,
     } {
         vcb.begin_rendering_attachment_to_screen(screen_image,
                                                  VK_ATTACHMENT_LOAD_OP_LOAD); {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_2D_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_Button>();
             for (const auto entity: view) {
                 vcb.build_draw_command_UI(entity);
             }

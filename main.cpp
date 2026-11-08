@@ -65,17 +65,19 @@ int main(int argc, char *argv[]) {
         // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
         {
             UI_Button button("按钮1");
-            button.set_Round_Rect(0, 0, 60, 60);
+            button.set_Round_Rect(0, 0, 60, 60)
+                    .update()
+                    .set_renderable(true);
         } {
-            UI_Button button("按钮2");
-            button.set_Round_Rect(60, 60, 220, 220);
-            auto text = button.add_text("按钮2文本")
-                    .set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
-                                     "/System/Library/Fonts/PingFang.ttc",
-                                     32)
-                    .draw();
+            // UI_Button button("按钮2");
+            // button.set_Round_Rect(60, 60, 220, 220);
+            // auto text = button.add_text("按钮2文本")
+            //         .set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
+            //                          "/System/Library/Fonts/PingFang.ttc",
+            //                          32)
+            //         .draw();
         }
-        add_skybox_entity();
+        // add_skybox_entity();
         // add_manifold_entity();
 
         // add_simple_computer_buffer_write();
@@ -236,6 +238,7 @@ int main(int argc, char *argv[]) {
             FrameMarkEnd("input processing");
 
             run_time = run_time + 1.0f / 60.0f;
+            sync_render_2D_data_to_render_thread(run_time);
             sync_render_data_to_render_thread(run_time);
             framerate_measure.end_frame();
         }

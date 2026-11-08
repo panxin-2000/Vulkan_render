@@ -33,7 +33,9 @@ static wmOperatorStatus model_offset(const entt::entity entity,
         if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
             bounding_box->box += temp;
         }
-        set_round_box_impl(entity, data->box);
+
+        // 这里就需要调用update了， 等等之后
+        // set_round_box_impl(entity, data->box);
 
         update_children(entity, current_position - last_position);
 
@@ -53,7 +55,5 @@ void add_model_2d_Event(const entt::entity entity) {
 
 object_2d::object_2d(const std::string &name) : logic_render_object(name) {
     add_model_2d_Event(entity);
-    logic_create_proxy(entity);
-    logic_update_proxy<Name_component>(entity);
     UI_root_add_child(entity);
 }

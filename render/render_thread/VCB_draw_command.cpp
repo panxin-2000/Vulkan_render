@@ -9,6 +9,7 @@
 #include "../render_common/render_mesh.h"
 
 #include "VCB_vulkan_command_buffer.h"
+#include "UI/UI_button.h"
 
 void VCB::draw(const Mesh_data &mesh_data,
                const std::vector<VKR_Primitive> &primitives,
@@ -67,7 +68,7 @@ void VCB::build_draw_command(entt::entity entity) {
         // 为空并且有一个deferred 标记 // todo: 标记判断
         if (Render_entt().any_of<deferred_pass_tag>(entity))
             vkCmdDraw(command_buffer_, 3, 1, 0, 0);
-        if (Render_entt().any_of<UI_2D_tag>(entity))
+        if (Render_entt().any_of<Tag_UI_Button>(entity))
             vkCmdDraw(command_buffer_, 4, 1, 0, 0);
     }
 }
@@ -93,7 +94,7 @@ void VCB::build_draw_command_UI(entt::entity entity) {
         // 为空并且有一个deferred 标记 // todo: 标记判断
         if (Render_entt().any_of<deferred_pass_tag>(entity))
             vkCmdDraw(command_buffer_, 3, 1, 0, 0);
-        if (Render_entt().any_of<UI_2D_tag>(entity))
+        if (Render_entt().any_of<Tag_UI_Button>(entity))
             vkCmdDraw(command_buffer_, 4, 1, 0, 0);
     }
 }
