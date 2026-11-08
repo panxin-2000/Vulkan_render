@@ -8,4 +8,5 @@ add_library(project_include OBJECT
 
 target_include_directories(project_include PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/component
 )
