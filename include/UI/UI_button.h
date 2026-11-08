@@ -58,7 +58,7 @@ public:
                               float left_down,
                               float left_up);
 
-    UI_Button(const std::string &debug_name);
+    UI_Button(const std::string &debug_name, const entt::entity parent_entity = entt::null);
 
 
     UI_Button &update();

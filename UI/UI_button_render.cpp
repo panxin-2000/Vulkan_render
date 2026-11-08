@@ -6,11 +6,9 @@
 #include "input_component.h"
 #include "base_event.h"
 #include "render_component/Geometry_component.h"
-#include "model_matrix.h"
 #include "../include/name_component.h"
 #include "Rect_2D_component.h"
 #include "render_state.h"
-#include "UI/UI_text.h"
 
 
 #include  "bounding_box_2d.h"//
@@ -28,7 +26,7 @@ void update_UI_button_render_para(const entt::entity entity) {
 }
 
 
-void set_round_box_impl(const entt::entity entity) {
+void draw_UI_button_impl(const entt::entity entity) {
     auto proxy_entity = get_proxy_entity(entity);
     logic_update_proxy<Name_component>(entity);
 
@@ -69,41 +67,12 @@ void set_round_box_impl(const entt::entity entity) {
 }
 
 
-void draw_UI_button(const entt::entity entity) {
+bool draw_UI_button(const entt::entity entity) {
     if (Logic_entt().all_of<Tag_UI_Button_data_dirty, Tag_UI_Button_renderable>(entity)) {
-        set_round_box_impl(entity);
+        draw_UI_button_impl(entity);
         logic_update_add_tag<Tag_UI_Button>(entity);
         Logic_entt().remove<Tag_UI_Button_data_dirty>(entity);
+        return true;
     }
+    return false;
 }
-
-
-// logic_render_object &logic_render_object::add_shader_path(VKR_shader_paths shader_path) {
-//     Logic_entt().emplace_or_replace<VKR_shader_paths>(entity, shader_path);
-//     auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
-//     Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
-//     logic_update_proxy<VKR_shader_paths>(entity);
-//     logic_update_proxy<Shader_data>(entity);
-//     return *this;
-// }
-//
-// bool logic_render_object::set_random_triangle_color() {
-//     if (auto shader_path = Logic_entt().try_get<VKR_shader_paths>(entity)) {
-//         shader_path->clear_define_macro();
-//         shader_path->add_define_macro("PASS_RANDOM_TRIANGLE_COLOR", 1);
-//         auto shader_data = Engine::instance().get_shader_manager().find(*shader_path);
-//         Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
-//         logic_update_proxy<VKR_shader_paths>(entity);
-//         logic_update_proxy<Shader_data>(entity);
-//         return true;
-//     }
-//     return false;
-// }
-
-
-// UI_Button::UI_Button(const std::string &debug_name)
-//     : object_2d(debug_name) {
-//     add_shader_path();
-//
-//     logic_update_add_tag<UI_2D_tag>(entity);
-// }

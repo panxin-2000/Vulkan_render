@@ -77,58 +77,9 @@
 // }
 
 
-void UI_Text_draw(const entt::entity entity) {
-    auto &data = Logic_entt().get<UI_Text_data>(entity);
-
-    float min_x = 0;
-    float min_y = 0;
-    float max_x = 0;
-    float max_y = 0;
-    if (auto parent = get_parent(entity); parent != entt::null) {
-        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
-            const auto &ui_button_data   = Logic_entt().get<UI_Button_data>(parent);
-            auto can_render_bounding_box = ui_button_data.get_render_bounding_box();
-            min_x                        = can_render_bounding_box[0];
-            min_y                        = can_render_bounding_box[1];
-            max_x                        = can_render_bounding_box[2];
-            max_y                        = can_render_bounding_box[3];
-        }
-    }
-
-    auto result = Font_Manager::instance().create_text_geometry_data(data.render_text_,
-                                                                     data.font_file_name_,
-                                                                     min_x,
-                                                                     min_y,
-                                                                     max_x,
-                                                                     max_y,
-                                                                     data.char_size_);
-    // 如果可以，尽量考虑圆角部分的内容
-    auto scale = SDL_GetWindowDisplayScale(VK_backend::instance().get_window());
-    std::vector<VKR_Render_state> render_states;
-    VKR_Render_state render_state;
-    render_state.scissor.offset.x      = static_cast<int32_t>(min_x * scale);
-    render_state.scissor.offset.y      = static_cast<int32_t>(min_y * scale);
-    render_state.scissor.extent.width  = static_cast<uint32_t>((max_x - min_x) * scale);
-    render_state.scissor.extent.height = static_cast<uint32_t>((max_y - min_y) * scale);
-    render_states.push_back(render_state);
-
-
-    set_geometry_data(entity, result.first, result.second);
-    logic_update_proxy(entity, get_VKR_mesh(entity));
-    logic_update_proxy(entity, create_primitives(entity));
-    logic_update_proxy(entity, render_states);
-    logic_update_add_tag<Tag_UI_text>(entity);
-}
-
-
-UI_Text::UI_Text(const std::string &debug_name) : object_2d(debug_name) {
+UI_Text::UI_Text(const std::string &debug_name,
+                 const entt::entity parent_entity) : object_2d(debug_name, parent_entity) {
     Logic_entt().emplace<UI_Text_data>(entity);
-    // add_shader_path(VKR_shader_paths{
-    //                     "2D/vulkan_MSDF_text",
-    //                     "2D/vulkan_MSDF_text",
-    //                     "", ""
-    //                 });
-
     Logic_entt().emplace_or_replace<Tag_UI_text>(entity);
 }
 
@@ -138,26 +89,27 @@ UI_Text &UI_Text::set_render_text(const std::string &utf8_text, const std::strin
     data.font_file_name_ = font_file_name;
     data.char_size_      = char_size;
     Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
-    draw();
     return *this;
 }
 
 
 UI_Text &UI_Text::draw() {
-    UI_Text_draw(entity);
+    draw_UI_text_impl(entity);
     return *this;
 }
 
-void UI_Text::update() const {
+UI_Text &UI_Text::update() {
     Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
+    return *this;
 }
 
-void UI_Text::set_renderable(bool renderable) const {
+UI_Text &UI_Text::set_renderable(bool renderable) {
     if (renderable == true) {
         Logic_entt().emplace_or_replace<Tag_UI_text_renderable>(entity);
     } else {
         Logic_entt().remove<Tag_UI_text_renderable>(entity);
     }
+    return *this;
 }
 
 void UI_Text::add_render_text(const std::string &text) {

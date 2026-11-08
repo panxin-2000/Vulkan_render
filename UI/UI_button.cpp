@@ -47,8 +47,8 @@ UI_Button &UI_Button::set_Round_Rect(float min_x,
 }
 
 
-UI_Button::UI_Button(const std::string &debug_name)
-    : object_2d(debug_name) {
+UI_Button::UI_Button(const std::string &debug_name, const entt::entity parent_entity)
+    : object_2d(debug_name, parent_entity) {
     Logic_entt().emplace_or_replace<Tag_UI_Button>(entity);
 }
 
@@ -69,13 +69,11 @@ UI_Button &UI_Button::set_renderable(const bool renderable) {
 
 
 UI_Text UI_Button::add_text(const std::string &debug_name) const {
-    const UI_Text text(debug_name);
-    add_relation(entity, text.get_entity());
+    const UI_Text text(debug_name, entity);
     return text;
 }
 
 UI_Button UI_Button::add_button(const std::string &debug_name) const {
-    const UI_Button button("debug_name");
-    add_relation(entity, button.get_entity());
+    const UI_Button button("debug_name", entity);
     return button;
 }

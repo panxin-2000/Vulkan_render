@@ -15,7 +15,7 @@ void update_children(entt::entity entity, const Eigen::Vector2f move) {
     auto lambda = [](const entt::entity child_entity) {
         if (child_entity != entt::null) {
             if (Logic_entt().all_of<Tag_UI_text>(child_entity)) {
-                UI_Text_draw(child_entity);
+                draw_UI_text_impl(child_entity);
             }
         }
     };
@@ -54,7 +54,11 @@ void add_model_2d_Event(const entt::entity entity) {
 }
 
 
-object_2d::object_2d(const std::string &name) : logic_render_object(name) {
+object_2d::object_2d(const std::string &name, const entt::entity parent_entity) : logic_render_object(name) {
     add_model_2d_Event(entity);
-    UI_root_add_child(entity);
+    if (parent_entity != entt::null) {
+        add_relation(parent_entity, entity);
+    } else {
+        UI_root_add_child(entity);
+    }
 }

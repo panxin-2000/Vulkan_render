@@ -69,13 +69,17 @@ int main(int argc, char *argv[]) {
                     .update()
                     .set_renderable(true);
         } {
-            // UI_Button button("按钮2");
-            // button.set_Round_Rect(60, 60, 220, 220);
-            // auto text = button.add_text("按钮2文本")
-            //         .set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
-            //                          "/System/Library/Fonts/PingFang.ttc",
-            //                          32)
-            //         .draw();
+            UI_Button button("按钮2");
+            button.set_Round_Rect(60, 60, 220, 220)
+                    .update()
+                    .set_renderable(true);
+
+            button.add_text("按钮2文本")
+                    .set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
+                                     "/System/Library/Fonts/PingFang.ttc",
+                                     32)
+                    .update()
+                    .set_renderable(true);
         }
         // add_skybox_entity();
         // add_manifold_entity();

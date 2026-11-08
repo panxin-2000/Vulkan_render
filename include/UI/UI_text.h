@@ -30,7 +30,7 @@ struct Tag_UI_text_renderable {
 
 class UI_Text : public object_2d {
 public:
-    explicit UI_Text(const std::string &debug_name);
+    explicit UI_Text(const std::string &debug_name, const entt::entity parent_entity = entt::null);
 
     // 这里把之后的绘制的部分 的 代码也放进去了
     UI_Text &set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size);
@@ -41,9 +41,9 @@ public:
 
     UI_Text &draw();
 
-    void update() const;
+    UI_Text &update();
 
-    void set_renderable(bool renderable) const;
+    UI_Text &set_renderable(bool renderable);
 };
 
 
@@ -54,7 +54,7 @@ entt::entity UI_text(const std::string &name,
                      float max_y);
 
 
-void UI_Text_draw(const entt::entity entity);
+void draw_UI_text_impl(const entt::entity entity);
 
 
 #endif //HELLO_MAC_UI_TEXT_H

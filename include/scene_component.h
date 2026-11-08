@@ -61,6 +61,16 @@ inline void add_recursion_function_to_children(const entt::entity entity,
     }
 }
 
+inline void add_recursion_function_to_children_condition(const entt::entity entity,
+                                                         const std::function<bool(entt::entity entity)> &lambda) {
+    if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {
+        for (const entt::entity child: temp->get_children()) {
+            if (lambda(child))
+                add_recursion_function_to_children_condition(child, lambda);
+        }
+    }
+}
+
 inline void add_recursion_function_to_itself_children(const entt::entity entity,
                                                       const std::function<void(entt::entity entity)> &lambda) {
     if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {
