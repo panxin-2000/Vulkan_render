@@ -12,6 +12,7 @@
 #include "bounding_box_2d.h"
 #include "render_component/Geometry_component.h"
 #include "model_matrix.h"
+#include "render_state.h"
 
 // void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 //     // 1. 打开文件流
@@ -129,11 +130,20 @@ void update_UI_Text(const entt::entity entity) {
                                                                      max_y,
                                                                      data.char_size_);
     // 如果可以，尽量考虑圆角部分的内容
+    auto scale = SDL_GetWindowDisplayScale(VK_backend::instance().get_window());
+    std::vector<VKR_Render_state> render_states;
+    VKR_Render_state render_state;
+    render_state.scissor.offset.x      = static_cast<int32_t>(min_x * scale);
+    render_state.scissor.offset.y      = static_cast<int32_t>(min_y * scale);
+    render_state.scissor.extent.width  = static_cast<uint32_t>((max_x - min_x) * scale);
+    render_state.scissor.extent.height = static_cast<uint32_t>((max_y - min_y) * scale);
+    render_states.push_back(render_state);
 
 
     set_geometry_data(entity, result.first, result.second);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
+    logic_update_proxy(entity, render_states);
     logic_update_add_tag<UI_render_text>(entity);
 }
 

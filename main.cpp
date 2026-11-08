@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
             UI_Button button("按钮2");
             button.set_round_box(60, 60, 220, 220);
             auto text = button.add_text("按钮2文本");
-            text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
+            text.set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
                                  "/System/Library/Fonts/PingFang.ttc",
                                  32);
         }
