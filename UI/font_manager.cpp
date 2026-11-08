@@ -383,6 +383,14 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
         if (auto value = temp_map.find(glyph_id); value != temp_map.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             const auto char_uv = get_char_uv(value->second);
+            if (max_position_x < current_x + char_size * value->second.planeBounds.right) {
+                current_x = start_position_x;
+                current_y = current_y + char_size;
+                if (current_y > max_position_y) {
+                    break;
+                }
+            }
+
             append_text_box(vertices, indices, {
                                 current_x + char_size * (value->second.planeBounds.left),
                                 current_y - char_size * (value->second.planeBounds.bottom)
@@ -392,6 +400,7 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
                                 current_y - char_size * value->second.planeBounds.top
                             },
                             char_uv);
+
             current_x += x_advance;
             current_y += y_advance;
         }

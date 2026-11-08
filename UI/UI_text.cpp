@@ -109,11 +109,15 @@ void update_UI_Text(const entt::entity entity) {
 
     float min_x = 0;
     float min_y = 0;
+    float max_x = 0;
+    float max_y = 0;
     if (auto parent = get_parent(entity); parent != entt::null) {
         if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
             const auto &parent_bounding_box = Logic_entt().get<Bounding_Box_2D>(parent);
             min_x                           = parent_bounding_box.box[0];
             min_y                           = parent_bounding_box.box[1];
+            max_x                           = parent_bounding_box.box[2];
+            max_y                           = parent_bounding_box.box[3];
         }
     }
 
@@ -121,8 +125,8 @@ void update_UI_Text(const entt::entity entity) {
                                                                      data.font_file_name_,
                                                                      min_x,
                                                                      min_y,
-                                                                     0xffffff,
-                                                                     0xffffff,
+                                                                     max_x,
+                                                                     max_y,
                                                                      data.char_size_);
     // 如果可以，尽量考虑圆角部分的内容
 
