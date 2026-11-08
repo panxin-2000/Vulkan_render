@@ -24,6 +24,8 @@ public:
     UI_Button(const std::string &name);
 
     UI_Text set_text(const std::string &text);
+
+    UI_Text add_text(const std::string &name);
 };
 
 void set_round_box_impl(entt::entity entity,

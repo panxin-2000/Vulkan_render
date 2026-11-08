@@ -68,6 +68,10 @@ int main(int argc, char *argv[]) {
         } {
             UI_Button button("按钮2");
             button.set_round_box(60, 60, 200, 200);
+            auto text = button.add_text("按钮2文本");
+            text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
+                                 "/System/Library/Fonts/PingFang.ttc",
+                                 32);
         }
         add_skybox_entity();
         // add_manifold_entity();
@@ -78,9 +82,9 @@ int main(int argc, char *argv[]) {
         // add_volume_pass("./assets/CloudPackVDB/CloudPack/CloudPackVDB/cloud_01_variant_0000.vdb");
 
 
-        UI_Text text("AbcgoyQj");
-        text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;", "/System/Library/Fonts/PingFang.ttc",
-                             32);
+        // UI_Text text("AbcgoyQj");
+        // text.set_render_text(" 你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;", "/System/Library/Fonts/PingFang.ttc",
+        //                      32);
 
 
         // object_3d box("box");

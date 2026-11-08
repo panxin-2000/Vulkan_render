@@ -134,3 +134,9 @@ UI_Text UI_Button::set_text(const std::string &text) {
     text_string.set_render_text(text, "", 12);
     return text_string;
 }
+
+UI_Text UI_Button::add_text(const std::string &name) {
+    UI_Text text(name);
+    add_relation(entity, text.get_entity());
+    return text;
+}

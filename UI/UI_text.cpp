@@ -9,6 +9,7 @@
 #include <fstream>
 
 #include "base_2d_render_object.h"
+#include "bounding_box_2d.h"
 #include "render_component/Geometry_component.h"
 #include "model_matrix.h"
 
@@ -96,6 +97,15 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
 void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
     float min_x = 0;
     float min_y = 0;
+
+    if (auto parent = get_parent(entity); parent != entt::null) {
+        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
+            const auto &parent_bounding_box = Logic_entt().get<Bounding_Box_2D>(parent);
+            min_x                           = parent_bounding_box.box[0];
+            min_y                           = parent_bounding_box.box[1];
+        }
+    }
+
     auto result = Font_Manager::instance().create_text_geometry_data(utf8_text, font_file_name,
                                                                      min_x,
                                                                      min_y,
