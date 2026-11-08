@@ -14,8 +14,8 @@
 void update_children(entt::entity entity, const Eigen::Vector2f move) {
     auto lambda = [](const entt::entity child_entity) {
         if (child_entity != entt::null) {
-            if (Logic_entt().all_of<UI_render_text>(child_entity)) {
-                update_UI_Text(child_entity);
+            if (Logic_entt().all_of<Tag_UI_text>(child_entity)) {
+                UI_Text_draw(child_entity);
             }
         }
     };
@@ -25,7 +25,7 @@ void update_children(entt::entity entity, const Eigen::Vector2f move) {
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f current_position,
                                      const Eigen::Vector2f last_position) {
-    if (auto *data = Logic_entt().try_get<SDF_Round_box_2d>(entity)) {
+    if (auto *data = Logic_entt().try_get<UI_Button_data>(entity)) {
         Eigen::Vector4f temp;
         temp.head<2>() = current_position - last_position; // 将 v1 赋给 v4 的前两个元素
         temp.tail<2>() = current_position - last_position; // 将 v2 赋给 v4 的后两个元素

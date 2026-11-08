@@ -17,6 +17,26 @@
 // 键盘是另一种操作，按下时就去执行响应的动作，有时会增加弹窗来进行确认
 
 
+struct UI_Button_data {
+    Eigen::Vector4f box;
+    float right_down, right_up, left_down, left_up;
+
+    Eigen::Vector4f get_render_bounding_box() const {
+        return Eigen::Vector4f(box[0] + std::max(left_down, left_up),
+                               box[1] + +std::max(right_up, left_up),
+                               box[2] - std::max(left_down, left_up),
+                               box[3] - std::max(right_up, left_up));
+    }
+
+    Eigen::Vector4f get_interactive_bounding_box() const {
+        return Eigen::Vector4f(box[0] - std::max(left_down, left_up),
+                               box[1] - +std::max(right_up, left_up),
+                               box[2] + std::max(left_down, left_up),
+                               box[3] + std::max(right_up, left_up));
+    }
+};
+
+
 class UI_Button : public object_2d {
 public:
     UI_Button &set_Round_Rect(float min_x, float min_y, float max_x, float max_y,
@@ -31,9 +51,7 @@ public:
 
     UI_Button(const std::string &name);
 
-    UI_Text set_text(const std::string &text);
-
-    UI_Text add_text(const std::string &name);
+    UI_Text add_text(const std::string &name) const;
 };
 
 void set_round_box_impl(entt::entity entity,

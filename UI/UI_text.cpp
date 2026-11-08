@@ -13,6 +13,7 @@
 #include "render_component/Geometry_component.h"
 #include "model_matrix.h"
 #include "render_state.h"
+#include "UI_button.h"
 
 // void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 //     // 1. 打开文件流
@@ -85,7 +86,7 @@ UI_Text::UI_Text(const std::string &name) : object_2d(name) {
     int logical_w, logical_h;
     const auto &backend = VK_backend::instance();
 
-    logic_update_add_tag<UI_render_text>(entity);
+    logic_update_add_tag<Tag_UI_text>(entity);
 
     SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
 
@@ -105,7 +106,7 @@ void UI_Text::set_render_text(const std::string &utf8_text, const std::string &f
 }
 
 
-void update_UI_Text(const entt::entity entity) {
+void UI_Text_draw(const entt::entity entity) {
     auto &data = Logic_entt().get<UI_Text_data>(entity);
 
     float min_x = 0;
@@ -114,12 +115,12 @@ void update_UI_Text(const entt::entity entity) {
     float max_y = 0;
     if (auto parent = get_parent(entity); parent != entt::null) {
         if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
-            const auto &parent_bounding_box = Logic_entt().get<SDF_Round_box_2d>(parent);
-            auto bounding_box               = parent_bounding_box.get_bounding_box();
-            min_x                           = bounding_box[0];
-            min_y                           = bounding_box[1];
-            max_x                           = bounding_box[2];
-            max_y                           = bounding_box[3];
+            const auto &ui_button_data   = Logic_entt().get<UI_Button_data>(parent);
+            auto can_render_bounding_box = ui_button_data.get_render_bounding_box();
+            min_x                        = can_render_bounding_box[0];
+            min_y                        = can_render_bounding_box[1];
+            max_x                        = can_render_bounding_box[2];
+            max_y                        = can_render_bounding_box[3];
         }
     }
 
@@ -145,9 +146,14 @@ void update_UI_Text(const entt::entity entity) {
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
     logic_update_proxy(entity, render_states);
-    logic_update_add_tag<UI_render_text>(entity);
+    logic_update_add_tag<Tag_UI_text>(entity);
 }
 
 void UI_Text::update() {
-    update_UI_Text(entity);
+    UI_Text_draw(entity);
+}
+
+void UI_Text::add_render_text(const std::string &text) {
+    auto &data        = Logic_entt().get<UI_Text_data>(entity);
+    data.render_text_ = data.render_text_ + text;
 }

@@ -26,13 +26,9 @@ public:
     // 这里把之后的绘制的部分 的 代码也放进去了
     void set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size);
 
-
     void update();
 
-    void add_render_text(const std::string &text) {
-        auto &data        = Logic_entt().get<UI_Text_data>(entity);
-        data.render_text_ = data.render_text_ + text;
-    }
+    void add_render_text(const std::string &text);
 };
 
 
@@ -43,7 +39,7 @@ entt::entity UI_text(const std::string &name,
                      float max_y);
 
 
-void update_UI_Text(const entt::entity entity);
+void UI_Text_draw(const entt::entity entity);
 
 
 #endif //HELLO_MAC_UI_TEXT_H

@@ -213,7 +213,7 @@ void render_post_process(VCB &vcb,
                 vcb.build_draw_command_UI(entity);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, UI_render_text>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_text>();
             for (const auto entity: view) {
                 vcb.build_draw_command_UI(entity);
             }

@@ -76,7 +76,7 @@ void set_round_box_impl(const entt::entity entity,
     LOG_INFO(g_log(), "UI create  {} {} {} {} ", min_x, min_y, max_x, max_y);
     add_2D_bound_box_geometry(entity, {min_x, min_y}, {max_x, max_y});
 
-    auto RoundRect = Logic_entt().get<SDF_Round_box_2d>(entity);
+    auto RoundRect = Logic_entt().get<UI_Button_data>(entity);
     logic_set_render_parameter(entity, "round_box", RoundRect);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     auto primitives = create_primitives(entity);
@@ -102,8 +102,8 @@ UI_Button &UI_Button::set_Round_Rect(Eigen::Vector4f box,
                                      float right_up,
                                      float left_down,
                                      float left_up) {
-    auto data = Logic_entt().emplace_or_replace<SDF_Round_box_2d>(entity,
-                                                                  SDF_Round_box_2d{
+    auto data = Logic_entt().emplace_or_replace<UI_Button_data>(entity,
+                                                                  UI_Button_data{
                                                                       box, right_down, right_up, left_down, left_up
                                                                   });
 
@@ -121,7 +121,7 @@ UI_Button &UI_Button::set_Round_Rect(float min_x,
                                      float right_up,
                                      float left_down,
                                      float left_up) {
-    auto data = Logic_entt().emplace_or_replace<SDF_Round_box_2d>(entity, SDF_Round_box_2d{
+    auto data = Logic_entt().emplace_or_replace<UI_Button_data>(entity, UI_Button_data{
                                                                       {min_x, min_y, max_x, max_y},
                                                                       right_down, right_up, left_down, left_up
                                                                   });
@@ -151,16 +151,9 @@ UI_Button::UI_Button(const std::string &name)
     add_push_constant_parameter("uTranslate", translate);
 }
 
-UI_Text UI_Button::set_text(const std::string &text) {
-    UI_Text text_string(text);
-    clear_parent_relation(text_string.get_entity());
-    add_relation(entity, text_string.get_entity());
-    text_string.set_render_text(text, "", 12);
-    return text_string;
-}
 
-UI_Text UI_Button::add_text(const std::string &name) {
-    UI_Text text(name);
+UI_Text UI_Button::add_text(const std::string &name) const {
+    const UI_Text text(name);
     add_relation(entity, text.get_entity());
     return text;
 }
