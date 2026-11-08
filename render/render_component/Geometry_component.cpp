@@ -32,7 +32,7 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
         vertices->emplace_back(Vertex_2D{{max.x, max.y}, 1, 1}); // 2 3 0
         vertices->emplace_back(Vertex_2D{{min.x, max.y}, 0, 1});
     }
-    add_geometry_data(entity, vertices, indices);
+    set_geometry_data(entity, vertices, indices);
     return true;
 }
 
@@ -293,4 +293,3 @@ bool add_box_data(const entt::entity entity, const AABB_min_max<Point_3> &boundi
                         bounding_box.max_point_.y,
                         bounding_box.max_point_.z);
 }
-

@@ -33,11 +33,12 @@ static wmOperatorStatus model_offset(const entt::entity entity,
         if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
             bounding_box->box += temp;
         }
+        Logic_entt().emplace_or_replace<Tag_UI_Button_data_dirty>(entity);
 
         // 这里就需要调用update了， 等等之后
         // set_round_box_impl(entity, data->box);
 
-        update_children(entity, current_position - last_position);
+        // update_children(entity, current_position - last_position);
 
         return OPERATOR_RUNNING_MODAL;
     } else {

@@ -29,9 +29,10 @@ void update_UI_button_render_para(const entt::entity entity) {
 
 
 void set_round_box_impl(const entt::entity entity) {
-    get_proxy_entity(entity);
+    auto proxy_entity = get_proxy_entity(entity);
     logic_update_proxy<Name_component>(entity);
 
+    Logic_entt().remove<Geometry_data>(entity); // 这里是很重要的一项，需要清除之前的几何数据
 
     auto box = Logic_entt().get<Bounding_Box_2D>(entity);
     add_2D_bound_box_geometry(entity, {box.min_x(), box.min_y()}, {box.max_x(), box.max_y()});
@@ -40,11 +41,15 @@ void set_round_box_impl(const entt::entity entity) {
     auto shader_path = VKR_shader_paths{
         "2D/vulkan_round_box", "2D/vulkan_round_box", "", ""
     };
-    Logic_entt().emplace_or_replace<VKR_shader_paths>(entity, shader_path);
-    auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
-    Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
-    logic_update_proxy<VKR_shader_paths>(entity);
-    logic_update_proxy<Shader_data>(entity);
+    if (!Logic_entt().all_of<VKR_shader_paths>(entity)) {
+        Logic_entt().emplace_or_replace<VKR_shader_paths>(entity, shader_path);
+        logic_update_proxy<VKR_shader_paths>(entity);
+    }
+    if (!Logic_entt().all_of<Shader_data>(entity)) {
+        auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
+        Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
+        logic_update_proxy<Shader_data>(entity);
+    }
 
 
     logic_set_render_parameter(entity, "round_box", RoundRect);
