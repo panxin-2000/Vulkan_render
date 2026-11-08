@@ -13,6 +13,7 @@
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
 #include "object_ply.h"
+#include "UI/UI_text.h"
 
 
 void prepare_pass(VCB &vcb,

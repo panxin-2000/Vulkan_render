@@ -37,6 +37,16 @@ struct UI_Button_data {
 };
 
 
+struct Tag_UI_Button {
+};
+
+struct Tag_UI_Button_data_dirty {
+};
+
+struct Tag_UI_Button_renderable {
+};
+
+
 class UI_Button : public object_2d {
 public:
     UI_Button &set_Round_Rect(float min_x, float min_y, float max_x, float max_y,
@@ -49,9 +59,21 @@ public:
                               float left_down,
                               float left_up);
 
-    UI_Button(const std::string &name);
+    UI_Button(const std::string &debug_name);
 
-    UI_Text add_text(const std::string &name) const;
+    void draw() const;
+
+    void update() const;
+
+    /**
+     * 其全部子节点都会不再绘制
+     * @param renderable true or false
+     */
+    void set_renderable(bool renderable) const;
+
+    UI_Text add_text(const std::string &debug_name) const;
+
+    UI_Button add_button(const std::string &debug_name) const;
 };
 
 void set_round_box_impl(entt::entity entity,

@@ -31,6 +31,7 @@
 
 
 #include "world_scene_root.h"
+#include "UI/font_manager.h"
 
 Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval) {
     const char *message = (const char *) userdata;

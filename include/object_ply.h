@@ -8,7 +8,7 @@
 #include "global_singleton.h"
 #include <Eigen/Eigen>
 
-#include "../object_model/base_render_object.h"
+#include "UI/base_render_object.h"
 
 
 class object_3DGS : public logic_render_object {

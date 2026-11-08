@@ -1,19 +1,20 @@
 //
 // Created by 潘鑫 on 2026/4/9.
 //
-#include "UI_text.h"
+#include "UI/UI_text.h"
 
 
 #include "utf8.h"
 #include "json.hpp"  // 仅在需要处理具体业务的 .cpp 文件中引入完整实现
 #include <fstream>
 
-#include "base_2d_render_object.h"
+#include "UI/base_2d_render_object.h"
 #include "bounding_box_2d.h"
+#include "font_manager.h"
 #include "render_component/Geometry_component.h"
-#include "model_matrix.h"
 #include "render_state.h"
-#include "UI_button.h"
+#include "scene_component.h"
+#include "UI/UI_button.h"
 
 // void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 //     // 1. 打开文件流
@@ -76,36 +77,6 @@
 // }
 
 
-UI_Text::UI_Text(const std::string &name) : object_2d(name) {
-    Logic_entt().emplace<UI_Text_data>(entity);
-    add_shader_path(VKR_shader_paths{
-                        "2D/vulkan_MSDF_text",
-                        "2D/vulkan_MSDF_text",
-                        "", ""
-                    });
-    int logical_w, logical_h;
-    const auto &backend = VK_backend::instance();
-
-    logic_update_add_tag<Tag_UI_text>(entity);
-
-    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
-
-    Eigen::Vector2f scale{2.0f / logical_w, 2.0f / logical_h};
-    Eigen::Vector2f translate{-1.0f - 0 * scale[0], -1.0f - 0 * scale[1]};
-
-    add_push_constant_parameter("uScale", scale);
-    add_push_constant_parameter("uTranslate", translate);
-}
-
-void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
-    auto &data           = Logic_entt().get<UI_Text_data>(entity);
-    data.render_text_    = utf8_text;
-    data.font_file_name_ = font_file_name;
-    data.char_size_      = char_size;
-    update();
-}
-
-
 void UI_Text_draw(const entt::entity entity) {
     auto &data = Logic_entt().get<UI_Text_data>(entity);
 
@@ -149,11 +120,59 @@ void UI_Text_draw(const entt::entity entity) {
     logic_update_add_tag<Tag_UI_text>(entity);
 }
 
-void UI_Text::update() {
+
+UI_Text::UI_Text(const std::string &debug_name) : object_2d(debug_name) {
+    Logic_entt().emplace<UI_Text_data>(entity);
+    add_shader_path(VKR_shader_paths{
+                        "2D/vulkan_MSDF_text",
+                        "2D/vulkan_MSDF_text",
+                        "", ""
+                    });
+    int logical_w, logical_h;
+    const auto &backend = VK_backend::instance();
+
+    Logic_entt().emplace_or_replace<Tag_UI_text>(entity);
+
+    SDL_GetWindowSize(backend.get_window(), &logical_w, &logical_h);
+
+    Eigen::Vector2f scale{2.0f / logical_w, 2.0f / logical_h};
+    Eigen::Vector2f translate{-1.0f - 0 * scale[0], -1.0f - 0 * scale[1]};
+    add_push_constant_parameter("uScale", scale);
+    add_push_constant_parameter("uTranslate", translate);
+}
+
+void UI_Text::set_render_text(const std::string &utf8_text, const std::string &font_file_name, float char_size) {
+    auto &data           = Logic_entt().get<UI_Text_data>(entity);
+    data.render_text_    = utf8_text;
+    data.font_file_name_ = font_file_name;
+    data.char_size_      = char_size;
+    Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
+    draw();
+}
+
+
+void UI_Text::draw() const {
     UI_Text_draw(entity);
+}
+
+void UI_Text::update() const {
+    Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
+}
+
+void UI_Text::set_renderable(bool renderable) const {
+    if (renderable == true) {
+        Logic_entt().emplace_or_replace<Tag_UI_text_renderable>(entity);
+    } else {
+        Logic_entt().emplace_or_replace<Tag_UI_text_renderable>(entity);
+    }
 }
 
 void UI_Text::add_render_text(const std::string &text) {
     auto &data        = Logic_entt().get<UI_Text_data>(entity);
     data.render_text_ = data.render_text_ + text;
+}
+
+const std::string &UI_Text::get_render_text() const {
+    auto &data = Logic_entt().get<UI_Text_data>(entity);
+    return data.render_text_;
 }

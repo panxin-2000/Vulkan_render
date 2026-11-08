@@ -41,7 +41,8 @@ void logic_update_proxy(const entt::entity logic_entity, const T &data) {
 }
 
 inline void logic_create_proxy(const entt::entity logic_entity) {
-    Logic_entt().emplace<Proxy_entity>(logic_entity, Render_entt().create());
+    if (!Logic_entt().all_of<Proxy_entity>(logic_entity))
+        Logic_entt().emplace<Proxy_entity>(logic_entity, Render_entt().create());
 }
 
 template<typename T>

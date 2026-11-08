@@ -8,7 +8,7 @@
 #include "global_singleton.h"
 #include "shader_component.h"
 #include "base_geometry/base.h"
-#include "base_render_object.h"
+#include "UI/base_render_object.h"
 
 class object_3d : public logic_render_object {
 public:

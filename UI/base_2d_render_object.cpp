@@ -2,13 +2,13 @@
 // Created by 潘鑫 on 2026/8/22.
 //
 
-#include "base_2d_render_object.h"
+#include "UI/base_2d_render_object.h"
 
 #include "bounding_box_2d.h"
 #include "input_component.h"
 #include "name_component.h"
 #include "scene_component.h"
-#include "UI_button.h"
+#include "UI/UI_button.h"
 
 
 void update_children(entt::entity entity, const Eigen::Vector2f move) {
@@ -52,8 +52,8 @@ void add_model_2d_Event(const entt::entity entity) {
 
 
 object_2d::object_2d(const std::string &name) : logic_render_object(name) {
+    add_model_2d_Event(entity);
     logic_create_proxy(entity);
-    add_model_2d_Event(entity); // 这里不对,需要改为2d的
     logic_update_proxy<Name_component>(entity);
     UI_root_add_child(entity);
 }

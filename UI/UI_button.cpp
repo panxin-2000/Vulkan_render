@@ -1,7 +1,7 @@
 //
 // Created by 潘鑫 on 2026/3/18.
 //
-#include "UI_button.h"
+#include "UI/UI_button.h"
 
 #include "input_component.h"
 #include "base_event.h"
@@ -10,7 +10,7 @@
 #include "../include/name_component.h"
 #include "Rect_2D_component.h"
 #include "render_state.h"
-#include "UI_text.h"
+#include "UI/UI_text.h"
 
 
 #include  "bounding_box_2d.h"
@@ -103,9 +103,9 @@ UI_Button &UI_Button::set_Round_Rect(Eigen::Vector4f box,
                                      float left_down,
                                      float left_up) {
     auto data = Logic_entt().emplace_or_replace<UI_Button_data>(entity,
-                                                                  UI_Button_data{
-                                                                      box, right_down, right_up, left_down, left_up
-                                                                  });
+                                                                UI_Button_data{
+                                                                    box, right_down, right_up, left_down, left_up
+                                                                });
 
     Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, box);
 
@@ -122,9 +122,9 @@ UI_Button &UI_Button::set_Round_Rect(float min_x,
                                      float left_down,
                                      float left_up) {
     auto data = Logic_entt().emplace_or_replace<UI_Button_data>(entity, UI_Button_data{
-                                                                      {min_x, min_y, max_x, max_y},
-                                                                      right_down, right_up, left_down, left_up
-                                                                  });
+                                                                    {min_x, min_y, max_x, max_y},
+                                                                    right_down, right_up, left_down, left_up
+                                                                });
     Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, Eigen::Vector4f{min_x, min_y, max_x, max_y});
 
 
@@ -132,8 +132,8 @@ UI_Button &UI_Button::set_Round_Rect(float min_x,
     return *this;
 }
 
-UI_Button::UI_Button(const std::string &name)
-    : object_2d(name) {
+UI_Button::UI_Button(const std::string &debug_name)
+    : object_2d(debug_name) {
     add_shader_path(VKR_shader_paths{
                         "2D/vulkan_round_box", "2D/vulkan_round_box", "", ""
                     });
@@ -151,9 +151,21 @@ UI_Button::UI_Button(const std::string &name)
     add_push_constant_parameter("uTranslate", translate);
 }
 
+void UI_Button::draw() const {
+}
+
+void UI_Button::update() const {
+}
+
+void UI_Button::set_renderable(bool renderable) const {
+}
+
 
 UI_Text UI_Button::add_text(const std::string &name) const {
     const UI_Text text(name);
     add_relation(entity, text.get_entity());
     return text;
+}
+
+UI_Button UI_Button::add_button(const std::string &debug_name) const {
 }
