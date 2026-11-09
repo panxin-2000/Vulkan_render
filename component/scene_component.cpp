@@ -8,6 +8,7 @@
 #include "Rect_2D_component.h"
 #include "UI_manager.h"
 #include "world_scene_root.h"
+#include "UI/UI_button.h"
 
 void world_root_add_child(const entt::entity entity) {
     const auto root = get_world_root();
@@ -36,6 +37,25 @@ entt::entity get_parent(const entt::entity entity) {
     }
     return entt::null;
 }
+
+Bounding_Box_2D get_parent_Bounding_Box(const entt::entity entity) {
+    if (auto parent = get_parent(entity); parent != entt::null) {
+        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
+            const auto &ui_button_data = Logic_entt().get<UI_Button_data>(parent);
+            return Bounding_Box_2D(ui_button_data.get_render_bounding_box());
+        }
+        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
+            return Logic_entt().get<Bounding_Box_2D>(parent);
+        }
+    }
+    return Bounding_Box_2D(Eigen::Vector4f{
+                               0,
+                               0,
+                               std::numeric_limits<float>::max(),
+                               std::numeric_limits<float>::max()
+                           });
+}
+
 
 std::vector<entt::entity> get_children(const entt::entity entity) {
     if (const auto temp = Logic_entt().try_get<Scene_Component>(entity)) {

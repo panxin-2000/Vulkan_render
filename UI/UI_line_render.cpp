@@ -38,19 +38,10 @@ void draw_UI_line_impl(const entt::entity entity) {
 
     auto path = Logic_entt().get<UI_line_data>(entity).path;
 
-
-    float min_x = 0;
-    float min_y = 0;
+    auto bounding_box = get_parent_Bounding_Box(entity);
 
 
-    if (auto parent = get_parent(entity); parent != entt::null) {
-        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
-            const auto &bounding = Logic_entt().get<Bounding_Box_2D>(parent);
-            min_x                = bounding.box[0];
-            min_y                = bounding.box[1];
-        }
-    }
-    Eigen::Vector2f err{min_x, min_y};
+    const Eigen::Vector2f err{bounding_box.min_x(), bounding_box.min_y()};
     for (auto &point: path) {
         point += err;
     }

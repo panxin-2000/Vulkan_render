@@ -6,6 +6,8 @@
 #define HELLO_MAC_SCENE_COMPONENT_H
 #include <iostream>
 #include <vector>
+
+#include "bounding_box_2d.h"
 #include "global_singleton.h"
 #include "render_component/mesh_component.h"
 
@@ -92,6 +94,7 @@ void scene_add_child(const entt::entity parent_entity, const entt::entity childr
 
 entt::entity get_parent(const entt::entity entity);
 
+Bounding_Box_2D get_parent_Bounding_Box(const entt::entity entity);
 
 std::vector<entt::entity> get_children(const entt::entity entity);
 

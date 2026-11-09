@@ -40,20 +40,16 @@ void draw_UI_text_impl(const entt::entity entity) {
     update_UI_button_render_para(entity);
 
 
-    float min_x = 0;
-    float min_y = 0;
-    float max_x = 0;
-    float max_y = 0;
-    if (auto parent = get_parent(entity); parent != entt::null) {
-        if (Logic_entt().all_of<Bounding_Box_2D>(parent)) {
-            const auto &ui_button_data   = Logic_entt().get<UI_Button_data>(parent);
-            auto can_render_bounding_box = ui_button_data.get_render_bounding_box();
-            min_x                        = can_render_bounding_box[0];
-            min_y                        = can_render_bounding_box[1];
-            max_x                        = can_render_bounding_box[2];
-            max_y                        = can_render_bounding_box[3];
-        }
-    }
+    float min_x       = 0;
+    float min_y       = 0;
+    float max_x       = 0;
+    float max_y       = 0;
+    auto bounding_box = get_parent_Bounding_Box(entity);
+    min_x             = bounding_box.min_x();
+    min_y             = bounding_box.min_y();
+    max_x             = bounding_box.max_x();
+    max_y             = bounding_box.max_y();
+
 
     auto result = Font_Manager::instance().create_text_geometry_data(data.render_text_,
                                                                      data.font_file_name_,
