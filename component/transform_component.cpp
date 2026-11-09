@@ -201,8 +201,8 @@ static wmOperatorStatus model_rotate(const entt::entity entity, const Point_2 te
  * @return
  */
 static wmOperatorStatus model_offset(const entt::entity entity,
-                                     const Eigen::Vector2f current_position,
-                                     const Eigen::Vector2f last_position) {
+                                     const Eigen::Vector2f &current_position,
+                                     const Eigen::Vector2f &last_position) {
     if (auto *transform = Logic_entt().try_get<Transform>(entity)) {
         const auto object_position = transform->get_offset();
         const auto world_entity    = get_world_root();

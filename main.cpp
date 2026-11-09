@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
             FrameMarkEnd("input processing");
 
             run_time = run_time + 1.0f / 60.0f;
-            sync_render_2D_data_to_render_thread(run_time);
+            redraw_render_2D_data(run_time);
             sync_render_data_to_render_thread(run_time);
             framerate_measure.end_frame();
         }

@@ -11,24 +11,24 @@
 #include "UI/UI_button.h"
 
 
-void set_render_2D_data_dirty(const entt::entity itself_entity);
+#include  "UI_render_common.h"
 
 static wmOperatorStatus model_offset(const entt::entity entity,
-                                     const Eigen::Vector2f current_position,
-                                     const Eigen::Vector2f last_position) {
-    if (auto *data = Logic_entt().try_get<UI_Button_data>(entity)) {
+                                     const Eigen::Vector2f &current_position,
+                                     const Eigen::Vector2f &last_position) {
+    if (Logic_entt().any_of<UI_Button_data, Bounding_Box_2D>(entity)) {
         // 这一步做的内容是更改值
         Eigen::Vector4f temp;
         temp.head<2>() = current_position - last_position; // 将 v1 赋给 v4 的前两个元素
         temp.tail<2>() = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
-        data->box      = data->box + temp;
+
+        if (auto *data = Logic_entt().try_get<UI_Button_data>(entity)) {
+            data->box = data->box + temp;
+        }
         if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
             bounding_box->box += temp;
         }
-
-        // 这里做的内容是更改标记
         set_render_2D_data_dirty(entity);
-
         return OPERATOR_RUNNING_MODAL;
     } else {
         return OPERATOR_PASS_THROUGH;
