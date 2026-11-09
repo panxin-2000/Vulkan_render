@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
                     .update()
                     .set_renderable(true);
         }
-        // add_skybox_entity();
+        add_skybox_entity();
         // add_manifold_entity();
 
         // add_simple_computer_buffer_write();
