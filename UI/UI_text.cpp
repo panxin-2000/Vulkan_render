@@ -82,12 +82,6 @@ UI_Text &UI_Text::set_render_text(const std::string &utf8_text, const std::strin
     return *this;
 }
 
-bool draw_UI_text(entt::entity entity); // TODO： 这里还是稍微有点不脱
-
-UI_Text &UI_Text::draw() {
-    draw_UI_text(entity);
-    return *this;
-}
 
 UI_Text &UI_Text::update() {
     Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);

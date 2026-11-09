@@ -5,6 +5,8 @@
 #include <SDL3/SDL.h>
 
 #include <thread>
+
+#include "bezier_curve.h"
 #include "render_thread/render_thread.h"
 #include "vulkan_backend.h"
 #include "event/base_event.h"
@@ -32,6 +34,7 @@
 
 #include "world_scene_root.h"
 #include "UI/font_manager.h"
+#include "UI/UI_line.h"
 
 Uint32 SDLCALL MyTimerCallback(void *userdata, SDL_TimerID timerID, Uint32 interval) {
     const char *message = (const char *) userdata;
@@ -64,6 +67,15 @@ int main(int argc, char *argv[]) {
 
         // UI 部分有些细节做的不到位，但是还是全黑的，且没有警告提示了
         {
+            UI_line line("line");
+            Bezier<Eigen::Vector2f> bezier({200, 200}, {200, 600}, {600, 200}, {600, 600}, 1.25);
+            std::vector<Eigen::Vector2f> path;
+            bezier.Casteljau(&path);
+
+            line.add_path(path)
+                    .set_renderable(true)
+                    .update();
+        } {
             UI_Button button("按钮1");
             button.set_Round_Rect(0, 0, 60, 60)
                     .update()

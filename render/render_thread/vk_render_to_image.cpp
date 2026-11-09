@@ -14,6 +14,7 @@
 #include "utils/StructureOfArrays.h"
 #include "object_ply.h"
 #include "UI/UI_button.h"
+#include "UI/UI_line.h"
 #include "UI/UI_text.h"
 
 
@@ -220,7 +221,7 @@ void render_post_process(VCB &vcb,
                 vcb.build_draw_command_UI(entity);
             }
         } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, Line_tag>();
+            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_line>();
             for (const auto entity: view) {
                 vcb.build_draw_command_UI(entity);
             }

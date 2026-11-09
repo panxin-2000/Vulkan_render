@@ -69,8 +69,6 @@ struct opacity_tag {
 struct opacity_gltf_tag {
 };
 
-struct Line_tag {
-};
 
 struct ply_3DGS_tag {
 };
@@ -107,7 +105,6 @@ struct Camera_optical_specifications_dirty {
 
 struct add_to_render_tag {
 };
-
 
 
 struct imgui_draw {

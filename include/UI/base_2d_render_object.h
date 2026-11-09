@@ -11,7 +11,7 @@
 
 class object_2d : public logic_render_object {
 public:
-    explicit object_2d(const std::string &name, const entt::entity parent_entity = entt::null);
+    explicit object_2d(const std::string &name, entt::entity parent_entity = entt::null);
 
     object_2d &add_B_spline_curve();
 
