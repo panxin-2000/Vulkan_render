@@ -16,38 +16,7 @@
 #include "render_thread/vulkan_render_manage.h"
 #include "world_scene_root.h"
 
-bool draw_UI_button(const entt::entity entity);
 
-bool draw_UI_text(const entt::entity entity);
-
-bool draw_UI_line(const entt::entity entity);
-
-bool update_UI_button(const entt::entity entity);
-
-bool update_UI_text(const entt::entity entity);
-
-bool update_UI_line(const entt::entity entity);
-
-void set_render_2D_data_dirty(const entt::entity itself_entity) {
-    auto lambda = [](const entt::entity entity_temp) {
-        update_UI_button(entity_temp);
-        update_UI_text(entity_temp);
-        update_UI_line(entity_temp);
-    };
-    add_recursion_function_to_itself_children(itself_entity, lambda);
-}
-
-
-void sync_render_2D_data_to_render_thread(float time_milliseconds) {
-    auto UI_root = get_UI_scene_root();
-    auto lambda  = [](const entt::entity entity_temp)-> bool {
-        if (draw_UI_button(entity_temp)) return true;
-        if (draw_UI_text(entity_temp)) return true;
-        if (draw_UI_line(entity_temp)) return true;
-        return false;
-    };
-    add_recursion_function_to_children_condition(UI_root, lambda);
-}
 
 void sync_render_data_to_render_thread(float time_milliseconds) {
     // 应该不止更新 position，还有很多的都需要更新
@@ -145,3 +114,5 @@ bool clean_VKR_object_proxy(const entt::entity entity) {
     }
     return false;
 }
+
+

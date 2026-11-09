@@ -11,9 +11,8 @@
 #include "render_state.h"
 
 
-#include  "bounding_box_2d.h"//
+#include  "bounding_box_2d.h"
 #include "engine.h"
-
 
 void update_UI_button_render_para(const entt::entity entity) {
     int logical_w, logical_h;
@@ -24,6 +23,8 @@ void update_UI_button_render_para(const entt::entity entity) {
     set_push_constant_parameter(entity, "uScale", scale);
     set_push_constant_parameter(entity, "uTranslate", translate);
 }
+
+void add_shader(const entt::entity entity, const VKR_shader_paths &shader_path);
 
 
 void draw_UI_button_impl(const entt::entity entity) {
@@ -39,15 +40,7 @@ void draw_UI_button_impl(const entt::entity entity) {
     auto shader_path = VKR_shader_paths{
         "2D/vulkan_round_box", "2D/vulkan_round_box", "", ""
     };
-    if (!Logic_entt().all_of<VKR_shader_paths>(entity)) {
-        Logic_entt().emplace_or_replace<VKR_shader_paths>(entity, shader_path);
-        logic_update_proxy<VKR_shader_paths>(entity);
-    }
-    if (!Logic_entt().all_of<Shader_data>(entity)) {
-        auto shader_data = Engine::instance().get_shader_manager().find(shader_path);
-        Logic_entt().emplace_or_replace<Shader_data>(entity, shader_data);
-        logic_update_proxy<Shader_data>(entity);
-    }
+    add_shader(entity, shader_path);
 
 
     logic_set_render_parameter(entity, "round_box", RoundRect);
