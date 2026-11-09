@@ -210,22 +210,32 @@ void render_post_process(VCB &vcb,
         vcb.copy_image(RCAS_result, screen_image);
     } {
         vcb.begin_rendering_attachment_to_screen(screen_image,
-                                                 VK_ATTACHMENT_LOAD_OP_LOAD); {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_Button>();
-            for (const auto entity: view) {
-                vcb.build_draw_command_UI(entity);
+                                                 VK_ATTACHMENT_LOAD_OP_LOAD);
+
+
+        // 这里也是一个问题， imgui_draw 通过在逻辑线程全部整理了， 一起合并之后提交到渲染线程，
+        // 自己写的UI 也许如此， 才能有一个确定的先后顺序来绘制 ， 只需要在逻辑线程给出 view 的顺序就好
+        // 之后 这里再 转为 Render_entt
+        {
+            {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_Button>();
+                for (const auto entity: view) {
+                    vcb.build_draw_command_UI(entity);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_text>();
+                for (const auto entity: view) {
+                    vcb.build_draw_command_UI(entity);
+                }
+            } {
+                auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_line>();
+                for (const auto entity: view) {
+                    vcb.build_draw_command_UI(entity);
+                }
             }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_text>();
-            for (const auto entity: view) {
-                vcb.build_draw_command_UI(entity);
-            }
-        } {
-            auto view = Render_entt().view<std::vector<VKR_Primitive>, Tag_UI_line>();
-            for (const auto entity: view) {
-                vcb.build_draw_command_UI(entity);
-            }
-        } {
+        }
+
+        {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto entity: view) {
                 vcb.build_draw_command_UI(entity);
