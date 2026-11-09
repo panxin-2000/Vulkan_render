@@ -3,18 +3,8 @@
 //
 #include "UI/UI_text.h"
 
-
-#include "utf8.h"
-#include "json.hpp"  // 仅在需要处理具体业务的 .cpp 文件中引入完整实现
-#include <fstream>
-
 #include "UI/base_2d_render_object.h"
-#include "bounding_box_2d.h"
-#include "font_manager.h"
-#include "render_component/Geometry_component.h"
-#include "render_state.h"
 #include "scene_component.h"
-#include "UI/UI_button.h"
 
 // void read_msdf_atlas(Msdf_text &msdf_text, std::string file_path) {
 //     // 1. 打开文件流
@@ -92,9 +82,10 @@ UI_Text &UI_Text::set_render_text(const std::string &utf8_text, const std::strin
     return *this;
 }
 
+bool draw_UI_text(entt::entity entity); // TODO： 这里还是稍微有点不脱
 
 UI_Text &UI_Text::draw() {
-    draw_UI_text_impl(entity);
+    draw_UI_text(entity);
     return *this;
 }
 

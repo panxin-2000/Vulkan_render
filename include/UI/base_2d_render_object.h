@@ -7,6 +7,7 @@
 
 
 #include "base_render_object.h"
+#include "Eigen/Eigen"
 
 class object_2d : public logic_render_object {
 public:

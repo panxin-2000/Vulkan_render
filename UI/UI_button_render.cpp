@@ -76,3 +76,11 @@ bool draw_UI_button(const entt::entity entity) {
     }
     return false;
 }
+
+bool update_UI_button(const entt::entity entity) {
+    if (Logic_entt().all_of<Tag_UI_Button>(entity)) {
+        Logic_entt().emplace_or_replace<Tag_UI_Button_data_dirty>(entity);
+        return true;
+    }
+    return false;
+}

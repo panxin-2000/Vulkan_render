@@ -4,11 +4,6 @@
 #include "UI/UI_text.h"
 
 
-#include "utf8.h"
-#include "json.hpp"  // 仅在需要处理具体业务的 .cpp 文件中引入完整实现
-#include <fstream>
-
-#include "UI/base_2d_render_object.h"
 #include "bounding_box_2d.h"
 #include "engine.h"
 #include "font_manager.h"
@@ -85,12 +80,32 @@ void draw_UI_text_impl(const entt::entity entity) {
     logic_update_add_tag<Tag_UI_text>(entity);
 }
 
-
+/**
+ * 负责重新绘制，根据当前的参数和它的parent_entity 的参数来完成重新绘制
+ * @param entity
+ * @return
+ */
 bool draw_UI_text(const entt::entity entity) {
     if (Logic_entt().all_of<Tag_UI_text_data_dirty, Tag_UI_text_renderable>(entity)) {
         draw_UI_text_impl(entity);
         logic_update_add_tag<Tag_UI_text>(entity);
         Logic_entt().remove<Tag_UI_text_data_dirty>(entity);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 任何时候 需要绘制的参数被修改之后会调用这个函数
+ * 这个函数负责 触发 Tag_UI_text_data_dirty
+ * Tag_UI_text_data_dirty 会调用上面的 draw_UI_text 函数
+ * draw_UI_text 负责重新绘制，
+ * @param entity
+ * @return
+ */
+bool update_UI_text(const entt::entity entity) {
+    if (Logic_entt().all_of<Tag_UI_text>(entity)) {
+        Logic_entt().emplace_or_replace<Tag_UI_text_data_dirty>(entity);
         return true;
     }
     return false;

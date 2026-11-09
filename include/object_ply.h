@@ -8,6 +8,7 @@
 #include "global_singleton.h"
 #include <Eigen/Eigen>
 
+#include "vulkan_buffer.h"
 #include "UI/base_render_object.h"
 
 

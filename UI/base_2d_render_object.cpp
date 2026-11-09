@@ -11,21 +11,13 @@
 #include "UI/UI_button.h"
 
 
-void update_children(entt::entity entity, const Eigen::Vector2f move) {
-    auto lambda = [](const entt::entity child_entity) {
-        if (child_entity != entt::null) {
-            if (Logic_entt().all_of<Tag_UI_text>(child_entity)) {
-                draw_UI_text_impl(child_entity);
-            }
-        }
-    };
-    add_recursion_function_to_children(entity, lambda);
-}
+void set_render_2D_data_dirty(const entt::entity itself_entity);
 
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f current_position,
                                      const Eigen::Vector2f last_position) {
     if (auto *data = Logic_entt().try_get<UI_Button_data>(entity)) {
+        // 这一步做的内容是更改值
         Eigen::Vector4f temp;
         temp.head<2>() = current_position - last_position; // 将 v1 赋给 v4 的前两个元素
         temp.tail<2>() = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
@@ -33,12 +25,9 @@ static wmOperatorStatus model_offset(const entt::entity entity,
         if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
             bounding_box->box += temp;
         }
-        Logic_entt().emplace_or_replace<Tag_UI_Button_data_dirty>(entity);
 
-        // 这里就需要调用update了， 等等之后
-        // set_round_box_impl(entity, data->box);
-
-        // update_children(entity, current_position - last_position);
+        // 这里做的内容是更改标记
+        set_render_2D_data_dirty(entity);
 
         return OPERATOR_RUNNING_MODAL;
     } else {

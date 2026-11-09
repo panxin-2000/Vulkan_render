@@ -7,7 +7,6 @@
 
 
 #include "base_2d_render_object.h"
-#include "span.hpp"
 #include "global_singleton.h"
 #include "UI_text.h"
 
@@ -21,18 +20,22 @@ struct UI_Button_data {
     Eigen::Vector4f box;
     float right_down, right_up, left_down, left_up;
 
-    Eigen::Vector4f get_render_bounding_box() const {
-        return Eigen::Vector4f(box[0] + std::max(left_down, left_up),
-                               box[1] + +std::max(right_up, left_up),
-                               box[2] - std::max(left_down, left_up),
-                               box[3] - std::max(right_up, left_up));
+    [[nodiscard]] Eigen::Vector4f get_render_bounding_box() const {
+        return {
+            box[0] + std::max(left_down, left_up),
+            box[1] + +std::max(right_up, left_up),
+            box[2] - std::max(left_down, left_up),
+            box[3] - std::max(right_up, left_up)
+        };
     }
 
-    Eigen::Vector4f get_interactive_bounding_box() const {
-        return Eigen::Vector4f(box[0] - std::max(left_down, left_up),
-                               box[1] - +std::max(right_up, left_up),
-                               box[2] + std::max(left_down, left_up),
-                               box[3] + std::max(right_up, left_up));
+    [[nodiscard]] Eigen::Vector4f get_interactive_bounding_box() const {
+        return {
+            box[0] - std::max(left_down, left_up),
+            box[1] - +std::max(right_up, left_up),
+            box[2] + std::max(left_down, left_up),
+            box[3] + std::max(right_up, left_up)
+        };
     }
 };
 
@@ -58,13 +61,17 @@ public:
                               float left_down,
                               float left_up);
 
-    UI_Button(const std::string &debug_name, const entt::entity parent_entity = entt::null);
+    UI_Button(const std::string &debug_name, entt::entity parent_entity = entt::null);
 
 
+    /**
+     * 这个函数的目的只是为了设置一个 dirty tag 用于在之后根据参数重新绘制
+     * @return
+     */
     UI_Button &update();
 
     /**
-     * 其全部子节点都会不再绘制
+     * 想要绘制时，把参数设置好，然后 set_renderable ，就会在当前帧的末尾提交绘制需要的参数
      * @param renderable true or false
      */
     UI_Button &set_renderable(bool renderable);
@@ -74,11 +81,5 @@ public:
     UI_Button add_button(const std::string &debug_name) const;
 };
 
-
-// entt::entity UI_button(const std::string &name,
-// float min_x,
-// float min_y,
-// float max_x,
-// float max_y);
 
 #endif //HELLO_MAC_UI_BUTTON_H
