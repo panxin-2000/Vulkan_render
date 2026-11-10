@@ -100,7 +100,7 @@ void main()
 
 
 
-    float aphleMask = smoothstep(-selectColor_smoothW, selectColor_smoothW, sd - thickness);  //
+    float alphaMask = smoothstep(-selectColor_smoothW, selectColor_smoothW, sd - thickness);  //
 
     // 1. 计算填充遮罩 (前景色 vs 背景色)
     // 当 d < 0 是内部，d > 0 是外部
@@ -128,5 +128,19 @@ void main()
 
 
 
-    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0 - aphleMask);
+    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0 - alphaMask);
 }
+
+/**
+*   上面的代码的目的是什么。
+*   最外层的颜色， 可以交给输出的 alpha  去管理，
+*   那么最外层就是一个纯色 也就是边框的颜色
+*   之后呢？ 就是内部的底色，找到哪里需要填充，都设置为1，两个颜色交界处设置为过渡
+*   然后把整个输出就好
+*   字体 那边也是一样的，确定好字体中需要显示的为1，两个颜色交界处设置为过渡
+*
+*
+*
+*
+*
+**/
