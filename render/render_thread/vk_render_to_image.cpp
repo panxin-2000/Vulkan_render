@@ -153,9 +153,6 @@ void render_different_pass(VCB &vcb,
             }
         }
         vcb.end_rendering();
-        vcb.current_write_next_read_image({
-                                              color_image
-                                          });
     }
     // 那么这里是否可以插入 其他的内容呢?
     //
@@ -233,9 +230,7 @@ void render_post_process(VCB &vcb,
                     vcb.build_draw_command_UI(entity);
                 }
             }
-        }
-
-        {
+        } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto entity: view) {
                 vcb.build_draw_command_UI(entity);
@@ -330,6 +325,10 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
                  entity_image);
     render_different_pass(vcb, engine, color_image, depth_image);
 
+
+    vcb.current_frag_write_next_compute_read_image({
+                                                       color_image
+                                                   });
 
     auto &swap_chain_image = backend.get_blank_swap_chain_image(); // imageIndex 在这里被改变
     render_post_process(vcb, backend, engine,

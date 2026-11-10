@@ -76,9 +76,9 @@ public:
      */
     UI_Button &set_renderable(bool renderable);
 
-    UI_Text add_text(const std::string &debug_name) const;
+    [[nodiscard]] UI_Text add_text(const std::string &debug_name) const;
 
-    UI_Button add_button(const std::string &debug_name) const;
+    [[nodiscard]] UI_Button add_button(const std::string &debug_name) const;
 };
 
 

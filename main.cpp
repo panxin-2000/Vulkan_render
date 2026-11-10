@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
             button.add_text("按钮2文本")
                     .set_render_text("你好苹果你好苹A果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果你好苹果;",
-                                     "/System/Library/Fonts/PingFang.ttc",
+                                     "/System/Library/Fonts/STHeiti Medium.ttc",
                                      32)
                     .update()
                     .set_renderable(true);

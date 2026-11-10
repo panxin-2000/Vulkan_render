@@ -150,3 +150,26 @@ void VCB::current_write_next_read_image(const std::vector<VKR_image_ptr> &images
     };
     vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
 }
+
+/**
+ * 复制自上一个函数，更改了一个参数，修正了mac系统升级后本身的错误导致的花屏
+ * @param images
+ */
+void VCB::current_frag_write_next_compute_read_image(const std::vector<VKR_image_ptr> &images) {
+    std::vector<VkImageMemoryBarrier2> outputBarriers;
+    outputBarriers.reserve(images.size());
+
+    for (const auto &image: images) {
+        auto temp = init_image_memory_barrier(image,
+                                              image_barrier_frag_write_color,
+                                              image_barrier_compute_read_sampler2D
+                                             );
+        outputBarriers.push_back(temp);
+    }
+    const VkDependencyInfo barrierDependencyInfo{
+        .sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(outputBarriers.size()),
+        .pImageMemoryBarriers    = outputBarriers.data()
+    };
+    vkCmdPipelineBarrier2(command_buffer_, &barrierDependencyInfo);
+}
