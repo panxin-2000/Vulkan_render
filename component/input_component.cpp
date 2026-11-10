@@ -18,6 +18,14 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
                 break;
             }
             case EVENT_RELEASE_LEFT: {
+                const Eigen::Vector2f current_position{event.motion.x, event.motion.y};
+                const Eigen::Vector2f last_position{
+                    event.motion.x - event.motion.xrel,
+                    event.motion.y - event.motion.yrel
+                };
+                if (release_mouse != nullptr) {
+                    return release_mouse(entity, current_position, last_position);
+                }
                 break;
             }
             case EVENT_FIRST_RIGHT: {

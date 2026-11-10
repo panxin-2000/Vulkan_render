@@ -35,6 +35,9 @@ public:
     std::function<wmOperatorStatus (const entt::entity entity,
                                     const Eigen::Vector2f current_position,
                                     const Eigen::Vector2f last_position)> mouse_drag = nullptr;
+    std::function<wmOperatorStatus (const entt::entity entity,
+                                    const Eigen::Vector2f current_position,
+                                    const Eigen::Vector2f last_position)> release_mouse = nullptr;
 
 
     Input_Component() = default;
@@ -58,6 +61,12 @@ public:
                                                               const Eigen::Vector2f current_position,
                                                               const Eigen::Vector2f last_position)> &function) {
         mouse_drag = function;
+    }
+
+    void add_release_mouse(const std::function<wmOperatorStatus (const entt::entity entity,
+                                                                 const Eigen::Vector2f current_position,
+                                                                 const Eigen::Vector2f last_position)> &function) {
+        release_mouse = function;
     }
 
     ~Input_Component() = default;

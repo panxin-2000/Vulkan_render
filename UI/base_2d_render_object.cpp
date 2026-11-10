@@ -25,6 +25,8 @@ float sdRoundedBox(Eigen::Vector2f p, Eigen::Vector2f b, Eigen::Vector4f r) {
     return std::min(max_q_xy, 0.0f) + max_q_zero.norm() - rad;
 }
 
+struct Scale_rounded_rectangle {
+};
 
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f &current_position,
@@ -43,7 +45,8 @@ static wmOperatorStatus model_offset(const entt::entity entity,
             Eigen::Vector2f center   = Eigen::Vector2f((min_x + max_x) / 2, (min_y + max_y) / 2);
             Eigen::Vector2f half_box = Eigen::Vector2f((max_x - min_x) / 2, (max_y - min_y) / 2);
             float sd                 = sdRoundedBox(current_position - center, half_box, Eigen::Vector4f::Zero());
-            if (std::abs(sd) < 10) {
+            if (std::abs(sd) < 10 || Logic_entt().all_of<Scale_rounded_rectangle>(entity)) {
+                Logic_entt().emplace_or_replace<Scale_rounded_rectangle>(entity);
                 if (center.x() > current_position.x()) {
                     data->box.x() += (current_position - last_position).x();
                 } else {
@@ -72,9 +75,17 @@ static wmOperatorStatus model_offset(const entt::entity entity,
 }
 
 
+static wmOperatorStatus clean_status(const entt::entity entity,
+                                     const Eigen::Vector2f &current_position,
+                                     const Eigen::Vector2f &last_position) {
+    Logic_entt().remove<Scale_rounded_rectangle>(entity);
+    return OPERATOR_FINISHED;
+}
+
 void add_model_2d_Event(const entt::entity entity) {
     auto &status = Logic_entt().emplace_or_replace<Input_Component>(entity);
     status.add_mouse_drag(model_offset);
+    status.add_release_mouse(clean_status);
     status.add_shortcut_keys(Combined_shortcut_keys(" 'x' "), delete_object);
 }
 
