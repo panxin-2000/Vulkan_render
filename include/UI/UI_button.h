@@ -19,6 +19,13 @@
 struct UI_Button_data {
     Eigen::Vector4f box;
     float right_down, right_up, left_down, left_up;
+    Eigen::Vector4f bgColor = Eigen::Vector4f::Zero();
+    Eigen::Vector4f fgColor = Eigen::Vector4f::Ones();
+    Eigen::Vector4f borderColor{1.0, 1.0, 0.0, 0.0};
+    float smooth_width = 1;
+    float border_width = 5;
+    float pad_0        = 0;
+    float pad_1        = 0;
 
     [[nodiscard]] Eigen::Vector4f get_render_bounding_box() const {
         return {
@@ -32,7 +39,7 @@ struct UI_Button_data {
     [[nodiscard]] Eigen::Vector4f get_interactive_bounding_box() const {
         return {
             box[0] - std::max(left_down, left_up),
-            box[1] - +std::max(right_up, left_up),
+            box[1] - std::max(right_up, left_up),
             box[2] + std::max(left_down, left_up),
             box[3] + std::max(right_up, left_up)
         };

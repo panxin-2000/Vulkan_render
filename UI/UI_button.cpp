@@ -16,20 +16,6 @@
 #include  "bounding_box_2d.h"
 
 
-UI_Button &UI_Button::set_Round_Rect(Eigen::Vector4f box,
-                                     float right_down,
-                                     float right_up,
-                                     float left_down,
-                                     float left_up) {
-    Logic_entt().emplace_or_replace<UI_Button_data>(entity,
-                                                    UI_Button_data{
-                                                        box, right_down, right_up, left_down, left_up
-                                                    });
-
-    Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, box);
-    return *this;
-}
-
 UI_Button &UI_Button::set_Round_Rect(float min_x,
                                      float min_y,
                                      float max_x,
@@ -43,6 +29,20 @@ UI_Button &UI_Button::set_Round_Rect(float min_x,
                                                         right_down, right_up, left_down, left_up
                                                     });
     Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, Eigen::Vector4f{min_x, min_y, max_x, max_y});
+    return *this;
+}
+
+UI_Button &UI_Button::set_Round_Rect(Eigen::Vector4f box,
+                                     float right_down,
+                                     float right_up,
+                                     float left_down,
+                                     float left_up) {
+    Logic_entt().emplace_or_replace<UI_Button_data>(entity,
+                                                    UI_Button_data{
+                                                        box, right_down, right_up, left_down, left_up
+                                                    });
+
+    Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, box);
     return *this;
 }
 

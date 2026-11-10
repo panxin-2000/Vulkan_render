@@ -13,6 +13,19 @@
 
 #include  "UI_render_common.h"
 
+
+float sdRoundedBox(Eigen::Vector2f p, Eigen::Vector2f b, Eigen::Vector4f r) {
+    // 根据 p.x 和 p.y 的象限，直接映射到对应的圆角半径分量
+    const float rad = (p.x() > 0.0f)
+                          ? ((p.y() > 0.0f) ? r.x() : r.y())
+                          : ((p.y() > 0.0f) ? r.z() : r.w());
+    const Eigen::Vector2f q          = p.cwiseAbs() - b + Eigen::Vector2f::Constant(rad);
+    const float max_q_xy             = std::max(q.x(), q.y());
+    const Eigen::Vector2f max_q_zero = q.cwiseMax(0.0f);
+    return std::min(max_q_xy, 0.0f) + max_q_zero.norm() - rad;
+}
+
+
 static wmOperatorStatus model_offset(const entt::entity entity,
                                      const Eigen::Vector2f &current_position,
                                      const Eigen::Vector2f &last_position) {
@@ -23,7 +36,30 @@ static wmOperatorStatus model_offset(const entt::entity entity,
         temp.tail<2>() = current_position - last_position; // 将 v2 赋给 v4 的后两个元素
 
         if (auto *data = Logic_entt().try_get<UI_Button_data>(entity)) {
-            data->box = data->box + temp;
+            float min_x              = data->box.x();
+            float min_y              = data->box.y();
+            float max_x              = data->box.z();
+            float max_y              = data->box.w();
+            Eigen::Vector2f center   = Eigen::Vector2f((min_x + max_x) / 2, (min_y + max_y) / 2);
+            Eigen::Vector2f half_box = Eigen::Vector2f((max_x - min_x) / 2, (max_y - min_y) / 2);
+            float sd                 = sdRoundedBox(current_position - center, half_box, Eigen::Vector4f::Zero());
+            if (std::abs(sd) < 10) {
+                if (center.x() > current_position.x()) {
+                    data->box.x() += (current_position - last_position).x();
+                } else {
+                    data->box.z() += (current_position - last_position).x();
+                }
+                if (center.y() > current_position.y()) {
+                    data->box.y() += (current_position - last_position).y();
+                } else {
+                    data->box.w() += (current_position - last_position).y();
+                }
+            } else {
+                data->box = data->box + temp;
+            }
+            Logic_entt().emplace_or_replace<Bounding_Box_2D>(entity, data->box);
+            set_render_2D_data_dirty(entity);
+            return OPERATOR_RUNNING_MODAL;
         }
         if (auto *bounding_box = Logic_entt().try_get<Bounding_Box_2D>(entity)) {
             bounding_box->box += temp;

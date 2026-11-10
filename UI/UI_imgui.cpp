@@ -350,6 +350,9 @@ entt::entity imgui_draw_new_frame(const entt::entity entity,
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
 
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand); // 确实是需要每帧调用的 
+
+
     // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
     {
         static float f                = 0.0f;

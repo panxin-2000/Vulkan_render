@@ -49,6 +49,13 @@ layout (set = 0, binding = 1) uniform round_box
 {
     vec4 box;
     vec4 radius;
+    vec4 bgColor;
+    vec4 fgColor;
+    vec4 borderColor;
+    float smooth_width;
+    float border_width;
+    float pad_0;
+    float pad_1;
 };
 
 
@@ -76,58 +83,15 @@ void main()
     vec2 center = vec2((min_x + max_x) / 2, (min_y + max_y) / 2);
     vec2 half_box = vec2((max_x - min_x) / 2, (max_y - min_y) / 2);
 
-    float thickness = 10.0; // 边框厚度（单位：像素）
-
-    //     输入参数
-    // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
-    float sd = sdRoundedBox(gl_FragCoord.xy * 0.5 - center, half_box - vec2(thickness), vec4(radius.x, radius.y, radius.z, radius.w));
-
-    // 首先需要明白， SD 是一个边界 ， 中间全部都是负值，有一个为零的边界带， 然后向外全部为1
-
-    vec3 bgColor = vec3(1.0); // 背景色
-    vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
-    vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
-    vec3 selectColor = vec3(1.0, 1.0, 0); // 黄色主框
-    vec3 shadowColor = vec3(0.0, 0.0, 0.0); // 黑色勾边
-
-    float smoothW = 1.0; // 平滑宽度（单位：像素）
-    float fgColor_smoothW = 1.0; // 平滑宽度（单位：像素）
-    float selectColor_smoothW = 1.0; // 平滑宽度（单位：像素）
+    float sd = sdRoundedBox(gl_FragCoord.xy * 0.5 - center, half_box - vec2(border_width), vec4(radius.x, radius.y, radius.z, radius.w));
 
     //  fgColor fgColor_smoothW  selectColor_smoothW  selectColor selectColor_smoothW
     //             1.0           -------------------thickness------------------
-    //
-
-
-
-    float alphaMask = smoothstep(-selectColor_smoothW, selectColor_smoothW, sd - thickness);  //
-
-    // 1. 计算填充遮罩 (前景色 vs 背景色)
-    // 当 d < 0 是内部，d > 0 是外部
-    float fillMask = smoothstep(0, fgColor_smoothW, sd);
-    // 这里的意思是 取两个像素的边界带，然后 内部为零， 外部全部为一， 中间两个像素带在 0～1 之间进行插值
-    // mix 的函数的意思是， 为零时 ，选择 fgColor ，为 1 时选择 bgColor
-
-    float borderDist = (sd - thickness * 0.5);   // border 中心到边界的距离
-    // 这里， 执行零一步abs ， 意思是取绝对值， 得出的结果是什么呢？ 边界周围的一个像素或者两个像素为 负， 其他的都是的都是逐渐增加的正数
-
-    // 2. 计算黄色主边框遮罩
-    //    float borderMask = smoothstep(-(thickness * 0.5 - smoothW), thickness, -borderDist);
-    float borderMask = smoothstep(-((thickness * 0.5)), -(((thickness * 0.5))), borderDist);
-    vec3 finalColor = mix(fgColor, selectColor, fillMask);
-
-
-
-
-    // 2. 计算边框遮罩 (在 d=0 的两侧绘制)
-    // abs(d) 是点到边缘的绝对距离，thickness 是边框半径
-    //    float borderMask = smoothstep(thickness + smoothW, thickness - smoothW, abs(sd));
-    //
-    //    // 3. 叠加边框
-    //    finalColor = mix(finalColor, borderColor, borderMask);
-
-
-
+    float alphaMask = smoothstep(-smooth_width, smooth_width, sd - border_width);
+    float fillMask = smoothstep(0, smooth_width, sd);
+    float borderDist = (sd - border_width * 0.5);   // border 中心到边界的距离
+    float borderMask = smoothstep(-((border_width * 0.5)), -(((border_width * 0.5))), borderDist);
+    vec3 finalColor = mix(fgColor.rgb, borderColor.rgb, fillMask);
     outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0 - alphaMask);
 }
 
