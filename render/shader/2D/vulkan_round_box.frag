@@ -98,31 +98,23 @@ void main()
     //             1.0           -------------------thickness------------------
     //
 
+
+
     float aphleMask = smoothstep(-selectColor_smoothW, selectColor_smoothW, sd - thickness);  //
 
     // 1. 计算填充遮罩 (前景色 vs 背景色)
     // 当 d < 0 是内部，d > 0 是外部
-    float fillMask = smoothstep(0, fgColor_smoothW, sd - thickness);
+    float fillMask = smoothstep(0, fgColor_smoothW, sd);
     // 这里的意思是 取两个像素的边界带，然后 内部为零， 外部全部为一， 中间两个像素带在 0～1 之间进行插值
-    vec3 finalColor = mix(fgColor, bgColor, fillMask);
     // mix 的函数的意思是， 为零时 ，选择 fgColor ，为 1 时选择 bgColor
 
-    float borderDist = abs(sd - thickness * 0.5);   // border 中心到边界的距离
+    float borderDist = (sd - thickness * 0.5);   // border 中心到边界的距离
     // 这里， 执行零一步abs ， 意思是取绝对值， 得出的结果是什么呢？ 边界周围的一个像素或者两个像素为 负， 其他的都是的都是逐渐增加的正数
 
     // 2. 计算黄色主边框遮罩
     //    float borderMask = smoothstep(-(thickness * 0.5 - smoothW), thickness, -borderDist);
-    float borderMask = smoothstep(-(thickness * 0.5 - fgColor_smoothW),
-                                  -(thickness * 0.5 - fgColor_smoothW - selectColor_smoothW),
-                                  -borderDist);
-
-
-    // 3. 计算黑勾边遮罩 (比黄色边框稍微加宽 1~1.5 个像素)
-    //    float outlineDist = borderDist - 1.2;
-    //    float outlineMask = smoothstep(-smoothW, smoothW, outlineDist);
-
-    // 先涂一层黑色的宽边，再把黄色的小边叠在上面
-    finalColor = mix(finalColor, selectColor, borderMask);  // 叠黄边
+    float borderMask = smoothstep(-((thickness * 0.5)), -(((thickness * 0.5))), borderDist);
+    vec3 finalColor = mix(fgColor, selectColor, fillMask);
 
 
 
