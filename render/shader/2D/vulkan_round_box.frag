@@ -76,22 +76,56 @@ void main()
     vec2 center = vec2((min_x + max_x) / 2, (min_y + max_y) / 2);
     vec2 half_box = vec2((max_x - min_x) / 2, (max_y - min_y) / 2);
 
+    float thickness = 10.0; // 边框厚度（单位：像素）
+
     //     输入参数
     // 你计算出的 sd_RoundBox 结果（单位：像素） // 核心在于 sd_RoundBox 的单位都是像素
-    float sd = sdRoundedBox(gl_FragCoord.xy * 0.5 - center, half_box, vec4(radius.x, radius.y, radius.z, radius.w));
+    float sd = sdRoundedBox(gl_FragCoord.xy * 0.5 - center, half_box - vec2(thickness), vec4(radius.x, radius.y, radius.z, radius.w));
 
+    // 首先需要明白， SD 是一个边界 ， 中间全部都是负值，有一个为零的边界带， 然后向外全部为1
 
     vec3 bgColor = vec3(1.0); // 背景色
     vec3 fgColor = vec3(1.0, 0, 0); // 前景色 (填充色)
     vec3 borderColor = vec3(0, 1.0, 0); // 边框颜色
-    float thickness = 2.0; // 边框厚度（单位：像素）
-    float smoothW = 1.0; // 平滑宽度（单位：像素，通常取 1.0-1.5）
+    vec3 selectColor = vec3(1.0, 1.0, 0); // 黄色主框
+    vec3 shadowColor = vec3(0.0, 0.0, 0.0); // 黑色勾边
+
+    float smoothW = 1.0; // 平滑宽度（单位：像素）
+    float fgColor_smoothW = 1.0; // 平滑宽度（单位：像素）
+    float selectColor_smoothW = 1.0; // 平滑宽度（单位：像素）
+
+    //  fgColor fgColor_smoothW  selectColor_smoothW  selectColor selectColor_smoothW
+    //             1.0           -------------------thickness------------------
+    //
+
+    float aphleMask = smoothstep(-selectColor_smoothW, selectColor_smoothW, sd - thickness);  //
 
     // 1. 计算填充遮罩 (前景色 vs 背景色)
     // 当 d < 0 是内部，d > 0 是外部
-    float fillMask = smoothstep(-smoothW, smoothW, sd);
-    // 为什么会有 粉色？ 因为内部很少是负的？
+    float fillMask = smoothstep(0, fgColor_smoothW, sd - thickness);
+    // 这里的意思是 取两个像素的边界带，然后 内部为零， 外部全部为一， 中间两个像素带在 0～1 之间进行插值
     vec3 finalColor = mix(fgColor, bgColor, fillMask);
+    // mix 的函数的意思是， 为零时 ，选择 fgColor ，为 1 时选择 bgColor
+
+    float borderDist = abs(sd - thickness * 0.5);   // border 中心到边界的距离
+    // 这里， 执行零一步abs ， 意思是取绝对值， 得出的结果是什么呢？ 边界周围的一个像素或者两个像素为 负， 其他的都是的都是逐渐增加的正数
+
+    // 2. 计算黄色主边框遮罩
+    //    float borderMask = smoothstep(-(thickness * 0.5 - smoothW), thickness, -borderDist);
+    float borderMask = smoothstep(-(thickness * 0.5 - fgColor_smoothW),
+                                  -(thickness * 0.5 - fgColor_smoothW - selectColor_smoothW),
+                                  -borderDist);
+
+
+    // 3. 计算黑勾边遮罩 (比黄色边框稍微加宽 1~1.5 个像素)
+    //    float outlineDist = borderDist - 1.2;
+    //    float outlineMask = smoothstep(-smoothW, smoothW, outlineDist);
+
+    // 先涂一层黑色的宽边，再把黄色的小边叠在上面
+    finalColor = mix(finalColor, selectColor, borderMask);  // 叠黄边
+
+
+
 
     // 2. 计算边框遮罩 (在 d=0 的两侧绘制)
     // abs(d) 是点到边缘的绝对距离，thickness 是边框半径
@@ -102,5 +136,5 @@ void main()
 
 
 
-    outFragColor_B8G8R8A8_SRGB = vec4(fgColor, 1.0 - fillMask);
+    outFragColor_B8G8R8A8_SRGB = vec4(finalColor, 1.0 - aphleMask);
 }
