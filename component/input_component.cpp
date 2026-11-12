@@ -70,7 +70,8 @@ wmOperatorStatus Input_Component::on_Event(const entt::entity entity, const SDL_
             }
             case EVENT_KEY_UP:
                 break;
-            case EVENT_MOVE:
+            case EVENT_MOUSE_MOVE:
+                LOG_INFO(g_log(), "EVENT_MOVE");
                 break;
         }
     }

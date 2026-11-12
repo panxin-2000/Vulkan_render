@@ -181,52 +181,17 @@ int main(int argc, char *argv[]) {
                 ZoneScopedN("process sdl event");
                 FrameMarkStart("input processing");
 
-                // TracyAlloc(ptr, 44);
                 ImGui_ImplSDL3_ProcessEvent(&event);
-
-                // switch (event.type) {
-                //     // 1. 最小化与恢复捕捉
-                //     case SDL_EVENT_WINDOW_MINIMIZED:
-                //         // is_minimized = true;
-                //         break;
-                //
-                //     case SDL_EVENT_WINDOW_RESTORED:
-                //         // is_minimized = false;
-                //         break;
-                //
-                //     // 2. 离开焦点捕捉（例如用户切到浏览器看网页，应用在后台）
-                //     case SDL_EVENT_WINDOW_FOCUS_LOST:
-                //         // is_keyboard_focused = false;
-                //         break;
-                //
-                //     case SDL_EVENT_WINDOW_FOCUS_GAINED:
-                //         // is_keyboard_focused = true;
-                //         break;
-                //
-                //     // 3. 鼠标离开/进入窗口范围捕捉
-                //     case SDL_EVENT_WINDOW_MOUSE_LEAVE:
-                //         // is_mouse_hovering = false;
-                //         break;
-                //
-                //     case SDL_EVENT_WINDOW_MOUSE_ENTER:
-                //         // is_mouse_hovering = true;
-                //         break;
-                //
-                //     // 4. 隐藏不可见（例如系统桌面切换导致的不可见）
-                //     case SDL_EVENT_WINDOW_HIDDEN:
-                //         // 窗口完全隐藏
-                //         break;
-                //
-                //     case SDL_EVENT_WINDOW_SHOWN:
-                //         // 窗口重新显示
-                //         break;
-                // }
                 if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
                     if (event.type == SDL_EVENT_MOUSE_MOTION ||
                         event.type == SDL_EVENT_MOUSE_BUTTON_DOWN ||
                         event.type == SDL_EVENT_MOUSE_BUTTON_UP ||
                         event.type == SDL_EVENT_MOUSE_WHEEL
                     ) {
+                        if (event.type == SDL_EVENT_MOUSE_MOTION) {
+                            event.type = SDL_EVENT_MOUSE_MOTION;
+                        }
+
                         auto mouse = mouse_status.check_mouse_scroll_status(event);
                         base_event_dealing(event, mouse);
                     }
@@ -238,14 +203,15 @@ int main(int argc, char *argv[]) {
                 }
                 if (event.type == SDL_EVENT_QUIT)
                     done = true;
-                if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID ==
-                    SDL_GetWindowID(backend.get_window()))
+                if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+                    event.window.windowID == SDL_GetWindowID(backend.get_window()))
                     done = true;
             }
+            // 这里是处理 键盘的 代码
             if (!io.WantCaptureMouse && !io.WantCaptureKeyboard) {
-                auto mouse = mouse_status.check_key_status();
-                if (mouse.event_type != EVENT_NONE)
-                    base_event_dealing(event, mouse);
+                auto mouse_and_keys = mouse_status.check_key_status();
+                if (mouse_and_keys.event_type != EVENT_NONE)
+                    base_event_dealing(event, mouse_and_keys);
             }
 
             Logic_entt().emplace_or_replace<Camera_dirty>(get_world_root());
