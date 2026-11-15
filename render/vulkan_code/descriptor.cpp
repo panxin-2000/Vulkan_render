@@ -52,7 +52,6 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
     descriptor_sets.resize(descriptor_set_layouts.size(),VK_NULL_HANDLE);
     return_value.resize(descriptor_set_layouts.size());
 
-    bool need_allocate = false;
     for (int i = 0; i < descriptor_set_layouts.size(); i++) {
         size_t num = layout_and_set_map.count(descriptor_set_layouts.at(i));
         auto range = layout_and_set_map.equal_range(descriptor_set_layouts.at(i));
@@ -63,11 +62,15 @@ Proxy_descriptor_sets allocate_descriptor_sets(const VkDescriptorPool &descripto
                 return_value[i]       = std::make_shared<DescriptorSet_detail>(descriptor_sets.at(i),
                                                                          descriptor_set_layouts.at(i));
                 it = layout_and_set_map.erase(it);
-                break;
             }
         }
-        need_allocate = true;
-        break;
+    }
+    bool need_allocate = false;
+    for (uint32_t i = 0; i < descriptor_sets.size(); i++) {
+        if (return_value.at(i) == nullptr) {
+            need_allocate = true;
+            break;
+        }
     }
     if (need_allocate == false) {
         return return_value;
