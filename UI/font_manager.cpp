@@ -53,9 +53,9 @@ void Font_Manager::create() {
     // msdf_text.metrics.descender          = -0.29999999999999999;
     // msdf_text.metrics.underlineY         = -0.17999999999999999;
     // msdf_text.metrics.underlineThickness = 0.050000000000000003;
-
-    image.init(static_cast<size_t>(atlas.width),
-               static_cast<size_t>(atlas.height));
+    image_ = std::make_shared<Image>();
+    image_->init(static_cast<size_t>(atlas.width),
+                 static_cast<size_t>(atlas.height));
 
     // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
     bin_pack_manager.Init(static_cast<int>(atlas.width),
@@ -75,7 +75,8 @@ void Font_Manager::destroy() {
     if (nullptr != library)
         FT_Done_FreeType(library);
     library = nullptr;
-
+    if (image_ != nullptr)
+        image_ = nullptr;
     delete instance_ptr;
 }
 
@@ -93,10 +94,7 @@ void Font_Manager::check_and_update() {
 }
 
 Texture_parameter Font_Manager::create_or_update_texture_from_image() {
-    return create_texture_from_image(image.get_data(),
-                                     image.get_width(),
-                                     image.get_height(),
-                                     4);
+    return create_2d_texture(image_);
 }
 
 std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) {
@@ -257,7 +255,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                     //  这里的代码暂时不能分开, 如果直接申请固定大小的区域的话,是可以分开的
                     if (position.width == width) {
                         // 没有翻转
-                        write_bitmap_to_bin_pack_image(position, bit_map, image);
+                        write_bitmap_to_bin_pack_image(position, bit_map, *image_.get());
                     } else {
                         // 翻转了长宽，顺时针旋转 90 度 // 顺逆都可以，确定同一个
                         assert(false);

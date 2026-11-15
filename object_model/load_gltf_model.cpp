@@ -4,6 +4,7 @@
 
 #include "load_gltf_model.h"
 
+#include "../include/image.h"
 #include <oneapi/tbb.h>
 
 #include "input_component.h"
@@ -595,8 +596,9 @@ void update_joint_matrix_matrix(const entt::entity entity) {
 };
 
 
-Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::Asset &model, fastgltf::Image &image) {
-    Picture_parameters picture_parameters{};
+std::shared_ptr<Image> loadImage(const std::filesystem::path &path, const fastgltf::Asset &model,
+                                 fastgltf::Image &image) {
+    auto picture_parameters = std::make_shared<Image>();
     std::visit(fastgltf::visitor{
                    [](auto &arg) {
                    },
@@ -617,13 +619,8 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
 
                        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
                            ScopedTimer temp("stbi_load");
-                           unsigned char *data = stbi_load(absolutePath.c_str(),
-                                                           (int *) &picture_parameters.width,
-                                                           (int *) &picture_parameters.height,
-                                                           &picture_parameters.channels,
-                                                           4);
-                           picture_parameters.channels   = 4;
-                           picture_parameters.image_data = data;
+                           picture_parameters->init(absolutePath);
+                           // 这里确实是有问题的
                        } else if (ext == ".dds") {
                            tinyddsloader::DDSFile dds;
                            auto ret = dds.Load(absolutePath.c_str());
@@ -634,16 +631,8 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                    [&](fastgltf::sources::Array &vector) {
                        int width, height, nrChannels;
                        ScopedTimer temp("stbi_load");
-                       unsigned char *data =
-                               stbi_load_from_memory(reinterpret_cast<const stbi_uc *>(vector.bytes.
-                                                         data()),
-                                                     static_cast<int>(vector.bytes.size()),
-                                                     (int *) &picture_parameters.width,
-                                                     (int *) &picture_parameters.height,
-                                                     &picture_parameters.channels,
-                                                     4);
-                       picture_parameters.channels   = 4;
-                       picture_parameters.image_data = data;
+                       picture_parameters->init(reinterpret_cast<const stbi_uc *>(vector.bytes.data()),
+                                                static_cast<int>(vector.bytes.size()));
                    },
                    [&](fastgltf::sources::BufferView &view) {
                        auto &bufferView = model.bufferViews[view.bufferViewIndex];
@@ -655,19 +644,10 @@ Picture_parameters loadImage(const std::filesystem::path &path, const fastgltf::
                                       // all buffers are already loaded into a vector.
                                       [&](const fastgltf::sources::Array &vector) {
                                           ScopedTimer temp("stbi_load");
-                                          int width, height, nrChannels;
-                                          unsigned char *data =
-                                                  stbi_load_from_memory(reinterpret_cast<const
-                                                                            stbi_uc *>(
-                                                                            vector.bytes.data() + bufferView.
-                                                                            byteOffset),
-                                                                        static_cast<int>(bufferView.byteLength),
-                                                                        (int *) &picture_parameters.width,
-                                                                        (int *) &picture_parameters.height,
-                                                                        &picture_parameters.channels,
-                                                                        4);
-                                          picture_parameters.channels   = 4;
-                                          picture_parameters.image_data = data;
+                                          picture_parameters->init(reinterpret_cast<const stbi_uc *>(
+                                                                       vector.bytes.data() + bufferView.byteOffset
+                                                                   ),
+                                                                   static_cast<int>(bufferView.byteLength));
                                       },
                                       [](auto &arg) {
                                           uint8_t *data;

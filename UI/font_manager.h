@@ -7,7 +7,7 @@
 
 #include <freetype/freetype.h>
 
-#include "image.h"
+#include "../include/image.h"
 #define  FT_LOAD_DEFAULT
 #include <msdfgen.h>
 #include <msdfgen-ext.h> // 该头文件包含了加载字体所需的 FreetypeHandle
@@ -126,7 +126,7 @@ private:
     // 这三个是用来管理字体的存储在图像的哪里的 , 每次添加一个字都需要在渲染前进行更新
     Atlas atlas;                           // 纹理图集
     rbp::MaxRectsBinPack bin_pack_manager; //
-    Image image;
+    std::shared_ptr<Image> image_ = nullptr;
 
     bool need_update_atlas = false;
 

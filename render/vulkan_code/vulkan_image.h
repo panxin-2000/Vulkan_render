@@ -6,6 +6,7 @@
 #define HELLO_MAC_VULKAN_IMAGE_H
 #include "vulkan_global_macro.h"
 #include <vk_mem_alloc.h>
+#include "image.h"
 
 #include "APP_utility_mixins.h"
 #include "shader_common.h"
@@ -194,22 +195,17 @@ void transition_image(const VkCommandBuffer commandBuffer,
 VKR_buffer_ptr create_image_stage_buffer(VkDeviceSize size,
                                          std::function<void(void *)> mem_copy_callback);
 
-Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters);
+Texture_parameter create_2d_texture(const std::shared_ptr<Image> &picture_parameters);
 
-Texture_parameter create_2d_linear_texture(const Picture_parameters &picture_parameters);
+Texture_parameter create_2d_linear_texture(const std::shared_ptr<Image> &picture_parameters);
 
-VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters);
+VKR_image_ptr create_skybox_texture(std::vector<std::shared_ptr<Image> > &picture_parameters);
 
 Texture_parameter create_skybox_texture_all(std::vector<std::string> paths);
 
 Texture_parameter create_2d_texture(const std::string &picture_path);
 
 Texture_parameter create_single_color_texture(const uint8_t &R, const uint8_t &G, const uint8_t &B);
-
-Texture_parameter create_texture_from_image(uint8_t *image,
-                                            int width,
-                                            int height,
-                                            int channels);
 
 void discard_image_and_view_map_clean(uint64_t finished_timeline);
 

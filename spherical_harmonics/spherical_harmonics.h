@@ -41,7 +41,7 @@
 #include <functional>
 #include <memory>
 
-#include "image.h"
+#include "sh_image.h"
 
 namespace sh {
     // A spherical function, the first argument is phi, the second is theta.

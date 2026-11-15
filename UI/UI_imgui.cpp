@@ -259,12 +259,10 @@ bool ImGui_ImplVulkan_CreateFontsTexture(const entt::entity entity) {
     unsigned char *pixels;
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-    size_t upload_size = width * height * 4 * sizeof(char);
-    Picture_parameters picture_parameters;
-    picture_parameters.image_data            = pixels;
-    picture_parameters.width                 = width;
-    picture_parameters.height                = height;
-    picture_parameters.channels              = 4;
+
+
+    auto picture_parameters = std::make_shared<Image>();
+    picture_parameters->init(pixels, width, height, 4);
     std::optional<Texture_parameter> texture = create_2d_texture(picture_parameters);
 
     logic_set_render_parameter(entity, "sTexture", texture);

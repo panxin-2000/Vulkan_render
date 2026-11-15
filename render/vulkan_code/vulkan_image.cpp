@@ -4,7 +4,6 @@
 
 #include "vulkan_image.h"
 #include "shader_common.h"
-#include "stb_image.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_backend.h"
 #include "vulkan_buffer.h"
@@ -242,18 +241,20 @@ VKR_image_ptr create_2d_image_and_view(const Image_and_view_parameters &paramete
 
 VKR_image_ptr createTextureImage_detail(VK_backend &handle,
                                         const VkFormat format,
-                                        const Picture_parameters &picture_parameters,
+                                        const std::shared_ptr<Image> picture_parameters,
                                         const bool have_mip = false) {
-    const VkDeviceSize imageSize = picture_parameters.width * picture_parameters.height * picture_parameters.channels;
+    const VkDeviceSize imageSize = picture_parameters->get_width() *
+                                   picture_parameters->get_height() *
+                                   picture_parameters->get_channels();
 
-    if (picture_parameters.image_data == nullptr) {
+    if (picture_parameters->get_data() == nullptr) {
         return {};
     }
     auto mem_copy_function = [picture_parameters](void *dst) {
-        const VkDeviceSize image_size = picture_parameters.width *
-                                        picture_parameters.height *
-                                        picture_parameters.channels;
-        memcpy(dst, picture_parameters.image_data, image_size);
+        const VkDeviceSize image_size = picture_parameters->get_width() *
+                                        picture_parameters->get_height() *
+                                        picture_parameters->get_channels();
+        memcpy(dst, picture_parameters->get_data(), image_size);
     };
 
     const auto staging_buffer = create_image_stage_buffer(imageSize, mem_copy_function);
@@ -261,8 +262,8 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
 
     Image_and_view_parameters parameters{
         .format = format,
-        .width  = picture_parameters.width,
-        .height = picture_parameters.height,
+        .width  = static_cast<uint32_t>(picture_parameters->get_width()),
+        .height = static_cast<uint32_t>(picture_parameters->get_height()),
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -295,15 +296,9 @@ VKR_image_ptr createTextureImage_detail(VK_backend &handle,
 
 VKR_image_ptr createTextureImage(VK_backend &handle, const std::string &picture_path) {
     assert(!picture_path.empty());
-    Picture_parameters picture_parameters{};
-    picture_parameters.image_data = stbi_load(picture_path.c_str(),
-                                              (int *) &picture_parameters.width,
-                                              (int *) &picture_parameters.height,
-                                              &picture_parameters.channels, STBI_rgb_alpha);
+    auto picture_parameters = std::make_shared<Image>();
+    picture_parameters->init(picture_path);
     auto result = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
-
-    stbi_image_free(picture_parameters.image_data);
-    picture_parameters.image_data = nullptr;
     return result;
 }
 
@@ -408,23 +403,19 @@ void transitionImageLayout(const VKR_image_ptr image_ptr,
 }
 
 
-VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_parameters) {
+VKR_image_ptr create_skybox_texture(std::vector<std::shared_ptr<Image> > &picture_parameters) {
     if (picture_parameters.size() < 6) {
         return {};
     }
 
     auto &handle                 = VK_backend::instance();
-    const VkDeviceSize imageSize = picture_parameters[0].width *
-                                   picture_parameters[0].height *
-                                   picture_parameters[0].channels * picture_parameters.size();
+    const VkDeviceSize imageSize = picture_parameters[0]->get_size() * picture_parameters.size();
 
 
     auto mem_copy_function = [picture_parameters](void *dst) {
         for (const auto &picture_parameter: picture_parameters) {
-            const VkDeviceSize image_size = picture_parameter.width *
-                                            picture_parameter.height *
-                                            picture_parameter.channels;
-            memcpy(dst, picture_parameter.image_data, image_size);
+            const VkDeviceSize image_size = picture_parameter->get_size();
+            memcpy(dst, picture_parameter->get_data(), image_size);
             dst = static_cast<char *>(dst) + image_size;
         }
     };
@@ -432,8 +423,8 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 
     Image_and_view_parameters parameters{
         .format = VK_FORMAT_R8G8B8A8_SRGB,
-        .width  = picture_parameters[0].width,
-        .height = picture_parameters[0].height,
+        .width  = static_cast<uint32_t>(picture_parameters[0]->get_width()),
+        .height = static_cast<uint32_t>(picture_parameters[0]->get_height()),
         .depth  = 1,
         .usage  = static_cast<VkImageUsageFlagBits>(
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -462,48 +453,17 @@ VKR_image_ptr create_skybox_texture(std::vector<Picture_parameters> &picture_par
 
 
 Texture_parameter create_2d_texture(const std::string &picture_path) {
-    Picture_parameters picture_parameters{};
-    picture_parameters.image_data = stbi_load(picture_path.c_str(),
-                                              (int *) &picture_parameters.width,
-                                              (int *) &picture_parameters.height,
-                                              &picture_parameters.channels, STBI_rgb_alpha);
-    picture_parameters.channels = 4;
-    auto result                 = create_2d_texture(picture_parameters);
-    stbi_image_free(picture_parameters.image_data);
-    picture_parameters.image_data = nullptr;
+    auto picture_parameters = std::make_shared<Image>();
+    picture_parameters->init(picture_path);
+    auto result = create_2d_texture(picture_parameters);
     return result;
 }
 
 
 Texture_parameter create_single_color_texture(const uint8_t &R, const uint8_t &G, const uint8_t &B) {
-    Picture_parameters picture_parameters{};
-    picture_parameters.height = 2;
-    picture_parameters.width  = 2;
-    std::array<uint8_t, 2 * 2 * 4> color_array{};
-    for (uint i = 0; i < color_array.size();) {
-        color_array[i]     = R;
-        color_array[i + 1] = G;
-        color_array[i + 2] = B;
-        color_array[i + 3] = 0xFF;
-        i                  += 4;
-    }
-    picture_parameters.image_data = color_array.data();
-    picture_parameters.channels   = 4;
-    auto result                   = create_2d_texture(picture_parameters);
-    return result;
-}
-
-
-Texture_parameter create_texture_from_image(uint8_t *image,
-                                            const int width,
-                                            const int height,
-                                            const int channels) {
-    Picture_parameters picture_parameters{};
-    picture_parameters.height     = height;
-    picture_parameters.width      = width;
-    picture_parameters.image_data = image;
-    picture_parameters.channels   = channels;
-    auto result                   = create_2d_linear_texture(picture_parameters);
+    auto picture_parameters = std::make_shared<Image>();
+    picture_parameters->init_single_color(R, G, B, 0xFF);
+    auto result = create_2d_texture(picture_parameters);
     return result;
 }
 
@@ -511,16 +471,11 @@ Texture_parameter create_texture_from_image(uint8_t *image,
 Texture_parameter create_skybox_texture_all(std::vector<std::string> paths) {
     auto &handle = VK_backend::instance();
 
-    std::vector<Picture_parameters> picture_parameters_vector;
-
-    for (const auto &path: paths) {
-        Picture_parameters picture_parameters{};
-        picture_parameters.image_data = stbi_load(path.c_str(),
-                                                  (int *) &picture_parameters.width,
-                                                  (int *) &picture_parameters.height,
-                                                  &picture_parameters.channels, STBI_rgb_alpha);
-        picture_parameters.channels = 4;
-        picture_parameters_vector.emplace_back(picture_parameters);
+    std::vector<std::shared_ptr<Image> > picture_parameters_vector;
+    picture_parameters_vector.resize(paths.size());
+    for (size_t i = 0; i < paths.size(); ++i) {
+        picture_parameters_vector.at(i) = std::make_shared<Image>();
+        picture_parameters_vector.at(i)->init(paths.at(i));
     }
 
 
@@ -538,16 +493,12 @@ Texture_parameter create_skybox_texture_all(std::vector<std::string> paths) {
         .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     };
 
-
-    for (const auto &picture_parameters: picture_parameters_vector) {
-        stbi_image_free(picture_parameters.image_data);
-    }
     picture_parameters_vector.clear();
     return texture_parameter;
 }
 
 
-Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters) {
+Texture_parameter create_2d_texture(const std::shared_ptr<Image> &picture_parameters) {
     auto &handle   = VK_backend::instance();
     auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 
@@ -565,7 +516,7 @@ Texture_parameter create_2d_texture(const Picture_parameters &picture_parameters
 }
 
 
-Texture_parameter create_2d_linear_texture(const Picture_parameters &picture_parameters) {
+Texture_parameter create_2d_linear_texture(const std::shared_ptr<Image> &picture_parameters) {
     auto &handle   = VK_backend::instance();
     auto image_ptr = createTextureImage_detail(handle, VK_FORMAT_R8G8B8A8_UNORM, picture_parameters);
 

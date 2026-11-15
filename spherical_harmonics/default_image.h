@@ -16,7 +16,7 @@
 #ifndef SH_DEFAULT_IMAGE_H
 #define SH_DEFAULT_IMAGE_H
 
-#include "image.h"
+#include "sh_image.h"
 
 namespace sh {
     class DefaultImage : public Image {

@@ -170,11 +170,6 @@ void Engine::create() {
         };
         pbr_manager_.push({}, ptr);
     }
-    // {
-    //     // std::optional<Texture_parameter> texture = create_texture_from_image( );
-    //     // uint32_t index                           = add_bindless_uniform_sampler2D("default_text_MSDF_texture", texture);
-    //     // assert(index == 1);
-    // }
 
 
     create_command_pool();
