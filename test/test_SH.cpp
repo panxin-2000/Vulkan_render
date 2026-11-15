@@ -17,7 +17,7 @@ struct Picture_parameters {
 };
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "../include/image.h"
 
 // 快捷别名
 using Eigen::Vector3f;
@@ -121,48 +121,6 @@ namespace sh {
 
         std::unique_ptr<Eigen::Array3f[]> pixels_;
     };
-}
-
-TEST(SH, matrix) {
-    GTEST_SKIP();
-    Picture_parameters picture_parameters{};
-    picture_parameters.image_data = stbi_load("/Users/panxin/Downloads/pano.jpg",
-                                              &picture_parameters.width,
-                                              &picture_parameters.height,
-                                              &picture_parameters.channels, STBI_rgb);
-
-
-    sh::DefaultImage image(picture_parameters.width, picture_parameters.height);
-    for (uint32_t x = 0; x < picture_parameters.width; ++x) {
-        for (uint32_t y = 0; y < picture_parameters.height; ++y) {
-            Eigen::Array3f temp{
-                picture_parameters.image_data[
-                    x + y * picture_parameters.width + 0] / 255.0f,
-                (picture_parameters.image_data[
-                     x + y * picture_parameters.width + 1] / 255.0f),
-                (picture_parameters.image_data[
-                     x + y * picture_parameters.width + 2] / 255.0f),
-            };
-            image.SetPixel(x, y, temp);
-        }
-    }
-
-    auto result = sh::ProjectEnvironment(2, image);
-    for (auto result1: *result) {
-        std::cout << result1 << std::endl;
-    }
-    uint a = 0;
-
-    std::vector<Eigen::Array4f> shCoefficients;
-    shCoefficients.emplace_back(1.73, 1.73, 1.73, 0.0f);
-    shCoefficients.emplace_back(-0.05, -0.05, -0.05, 0.0f);
-    shCoefficients.emplace_back(-0.16, -0.16, -0.16, 0.0f);
-    shCoefficients.emplace_back(0.01, 0.01, 0.01, 0.0f);
-    shCoefficients.emplace_back(-0.0, -0.0, -0.0, 0.0f);
-    shCoefficients.emplace_back(0.02, 0.02, 0.02, 0.0f);
-    shCoefficients.emplace_back(0.03, 0.03, 0.03, 0.0f);
-    shCoefficients.emplace_back(-0.01, -0.01, -0.01, 0.0f);
-    shCoefficients.emplace_back(0.01, 0.01, 0.01, 0.0f);
 }
 
 

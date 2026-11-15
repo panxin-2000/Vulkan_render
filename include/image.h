@@ -44,6 +44,7 @@ public:
 
 
     bool init(const size_t width, const size_t height) {
+        // 它申请的，只能由它来释放，如果不是，那么就需要复制一份
         image_data_ = static_cast<uint8_t *>(malloc(width * height * 4));
         width_      = width;
         height_     = height;

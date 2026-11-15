@@ -107,31 +107,6 @@ struct Vertex_imgui {
     uint32_t color;
 };
 
-struct Picture_parameters {
-public:
-    [[nodiscard]] size_t get_width() const {
-        return width;
-    }
-
-    [[nodiscard]] size_t get_height() const {
-        return height;
-    }
-
-    [[nodiscard]] size_t get_channels() const {
-        return channels;
-    }
-
-    uint8_t *get_data() const {
-        return image_data;
-    }
-
-private:
-    uint32_t width      = 0;
-    uint32_t height     = 0;
-    int channels        = 4;
-    uint8_t *image_data = nullptr;
-};
-
 
 template<typename T>
 uint32_t to_u32(T val) {

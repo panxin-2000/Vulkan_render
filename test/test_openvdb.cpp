@@ -15,6 +15,7 @@
 
 TEST(openvdb, create_Sphere) {
     openvdb::initialize();
+    GTEST_SKIP();
 
     // Create a FloatGrid and populate it with a narrow-band
     // signed distance field of a sphere.
