@@ -30,7 +30,7 @@ struct Add_new_model {
 };
 
 
-#include <Eigen/Dense>
+#include "Eigen/Eigen"
 
 inline Eigen::Vector3f InterpolateCubicSplineVector(
     float s,
@@ -57,7 +57,7 @@ inline Eigen::Vector3f InterpolateCubicSplineVector(
     return h00 * v_k + h10 * b_k + h01 * v_kp1 + h11 * a_kp1;
 }
 
-#include <Eigen/Dense>
+#include "Eigen/Eigen"
 
 inline Eigen::Quaternionf InterpolateCubicSplineQuaternion(
     float s,

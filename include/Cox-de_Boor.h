@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_COX_DE_BOOR_H
 #define HELLO_MAC_COX_DE_BOOR_H
 #include <vector>
-#include <Eigen/Dense>
+#include "Eigen/Eigen"
 #include <algorithm>
 
 
