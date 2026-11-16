@@ -5,7 +5,6 @@
 #ifndef HELLO_MAC_COMMAND_CALCULATE_H
 #define HELLO_MAC_COMMAND_CALCULATE_H
 #include "frustum.h"
-#include "vulkan_buffer.h"
 
 struct GPU_frustum_cull {
     FrustumPlanes frustum_planes;
