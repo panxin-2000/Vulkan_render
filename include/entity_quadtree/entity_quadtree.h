@@ -4,6 +4,7 @@
 
 #ifndef HELLO_MAC_ENTITY_QUADTREE_H
 #define HELLO_MAC_ENTITY_QUADTREE_H
+#include <cstdint>
 
 
 /**
@@ -41,10 +42,10 @@ inline uint32_t calculate_level(const float root_size,
 #include <cstddef>
 #include <utility>
 
-#include "Box.h"
+#include "../Box.h"
 #include "entt/entt.hpp"
-#include "base_geometry/base.h"
-#include "base_geometry/intersect_function.h"
+#include "../base_geometry/base.h"
+#include "../base_geometry/intersect_function.h"
 #include "hierarchical_spatial_partitioning_trees.h"
 
 namespace ECS {

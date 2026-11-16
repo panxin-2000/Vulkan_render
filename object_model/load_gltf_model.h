@@ -8,8 +8,8 @@
 #include "global_singleton.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
-#include "../include/scene_component.h"
-#include "../include/transform_component.h"
+#include "../include/component/scene_component.h"
+#include "../include/component/transform_component.h"
 #include "tag_matrix.h"
 
 

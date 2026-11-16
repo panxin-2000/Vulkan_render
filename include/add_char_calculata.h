@@ -4,10 +4,10 @@
 
 #ifndef ADD_CHAR_CALCULATA_H
 #define ADD_CHAR_CALCULATA_H
-#include "binary_Tree_Node.h"
+#include "tree/binary_Tree_Node.h"
 #include <vector>
 
-#include "tree_function.h"
+#include "tree/tree_function.h"
 
 
 int add_function(int left_value, int right_value);

@@ -6,7 +6,7 @@
 #include "input_component.h"
 #include "base_event.h"
 #include "render_component/Geometry_component.h"
-#include "../include/name_component.h"
+#include "name_component.h"
 #include "Rect_2D_component.h"
 #include "render_state.h"
 

@@ -10,7 +10,7 @@ add_executable(hello_test ${LABYRINTH}
         the_centre_of_a_circle.cpp
         segment_end_ponit_and_gradient.cpp
         longest_continuous_sequence.cpp
-        test_delaunay_triangulation.cpp
+        delaunay_triangulation.cpp
         test_tetrahedron.cpp
         convex_hull.cpp
         bracket.cpp

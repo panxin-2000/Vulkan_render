@@ -4,8 +4,8 @@
 
 #include "deferred_pass.h"
 #include "global_singleton.h"
-#include "name_component.h"
-#include "scene_component.h"
+#include "../include/component/name_component.h"
+#include "../include/component/scene_component.h"
 #include "shader_component.h"
 #include "../UI/VKR_proxy_component.h"
 #include "vulkan_sample.h"

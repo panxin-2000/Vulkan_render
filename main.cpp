@@ -6,7 +6,7 @@
 
 #include <thread>
 
-#include "bezier_curve.h"
+#include "include/curve/bezier_curve.h"
 #include "render_thread/render_thread.h"
 #include "vulkan_backend.h"
 #include "event/base_event.h"

@@ -7,8 +7,8 @@
 
 
 #include "global_singleton.h"
-#include "../include/name_component.h"
-#include "../include/scene_component.h"
+#include "name_component.h"
+#include "scene_component.h"
 
 
 class UI_scene_root {

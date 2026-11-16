@@ -12,7 +12,7 @@
 #include "transform_component.h"
 #include <meshoptimizer.h>
 
-#include "B_spline_cureve.h"
+#include "curve/B_spline_cureve.h"
 #include "Geometry_component.h"
 #include "parse_geometry_file.h"
 #include "../render/render_common/render_state.h"

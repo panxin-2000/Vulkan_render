@@ -7,4 +7,5 @@ add_library(project_include INTERFACE)
 target_include_directories(project_include INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/component
+        ${CMAKE_CURRENT_SOURCE_DIR}/tree
 )

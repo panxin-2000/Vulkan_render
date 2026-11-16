@@ -5,9 +5,9 @@
 #ifndef TREE_FUNCTION_H
 #define TREE_FUNCTION_H
 #include "tree_inorder.h"
-#include "tree_level.h"
+#include "../tree_level.h"
 #include "tree_postorder.h"
-#include "tree_preorder.h"
+#include "../tree_preorder.h"
 #include <queue>
 
 namespace BIN_tree {

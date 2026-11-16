@@ -14,7 +14,7 @@
 #include <memory>
 #include <type_traits>
 #include <vector>
-#include "Box.h"
+#include "../Box.h"
 
 namespace quadtree {
     template<typename T_data, typename Float =float>

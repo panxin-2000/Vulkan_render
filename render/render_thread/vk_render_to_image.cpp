@@ -12,7 +12,7 @@
 #include "time_measure.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
-#include "object_ply.h"
+#include "../../object_model/object_ply.h"
 #include "UI/UI_button.h"
 #include "UI/UI_line.h"
 #include "UI/UI_text.h"

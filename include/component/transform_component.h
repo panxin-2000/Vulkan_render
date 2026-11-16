@@ -5,11 +5,11 @@
 #ifndef HELLO_MAC_RENDER_COMPONENT_H
 #define HELLO_MAC_RENDER_COMPONENT_H
 
-#include "base_geometry/base.h"
+#include "../base_geometry/base.h"
 #include <Eigen/Eigen>
 
 #include "AABB_box.h"
-#include "global_singleton.h"
+#include "../global_singleton.h"
 
 
 struct Transform_matrix_dirty {

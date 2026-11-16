@@ -5,11 +5,11 @@
 #ifndef HELLO_MAC_OBJECT_PLY_H
 #define HELLO_MAC_OBJECT_PLY_H
 
-#include "global_singleton.h"
+#include "../include/global_singleton.h"
 #include <Eigen/Eigen>
 
 #include "vulkan_buffer.h"
-#include "UI/base_render_object.h"
+#include "../include/UI/base_render_object.h"
 
 
 class object_3DGS : public logic_render_object {

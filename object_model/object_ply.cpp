@@ -2,17 +2,17 @@
 // Created by 潘鑫 on 2026/8/22.
 //
 
-#include "../include/object_ply.h"
+#include "object_ply.h"
 
-#include "../include/name_component.h"
+#include "../include/component/name_component.h"
 #include "render_component/mesh_component.h"
 #include "render_component/shader_component.h"
 #include <Eigen/Eigen>
 
 #include "base_3d_render_object.h"
-#include "../include/transform_component.h"
+#include "../include/component/transform_component.h"
 
-#include "B_spline_cureve.h"
+#include "../include/curve/B_spline_cureve.h"
 #include "../render/render_component/PBR_component.h"
 #include "world_scene_root.h"
 #include "PLYLoader.h"

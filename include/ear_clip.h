@@ -7,7 +7,7 @@
 
 #include "base_geometry/intersect_function.h"
 
-#include "RB_tree_node.h"
+#include "tree/RB_tree_node.h"
 #include "base_geometry/half_edge/Half_edges.h"
 #include "base_geometry/half_edge/half_edge_vertex.h"
 

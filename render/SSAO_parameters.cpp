@@ -3,7 +3,7 @@
 //
 
 
-#include "scalar.h"
+#include "utils/scalar.h"
 #include "SSAO_parameters.h"
 
 

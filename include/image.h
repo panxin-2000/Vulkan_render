@@ -54,7 +54,7 @@ public:
         return true;
     }
 
-    bool init(uint8_t *image_data, const size_t width, const size_t height, int channels) {
+    bool init(const uint8_t *image_data, const size_t width, const size_t height, int channels) {
         if (image_data != nullptr) {
             image_data_ = static_cast<uint8_t *>(malloc(width * height * channels));
             memcpy(image_data_, image_data, width * height * channels);
@@ -71,8 +71,8 @@ public:
     bool init(const std::string &filename) {
         int temp_channels = 4;
         image_data_       = stbi_load(filename.c_str(),
-                                (int *) &width_,
-                                (int *) &height_,
+                                reinterpret_cast<int *>(&width_),
+                                reinterpret_cast<int *>(&height_),
                                 &temp_channels,
                                 4);
         if (image_data_ == nullptr) {
@@ -86,8 +86,8 @@ public:
         int temp_channels = 4;
         image_data_       = stbi_load_from_memory(buffer,
                                             len,
-                                            (int *) &width_,
-                                            (int *) &height_,
+                                            reinterpret_cast<int *>(&width_),
+                                            reinterpret_cast<int *>(&height_),
                                             &temp_channels,
                                             4);
         if (image_data_ == nullptr) {
@@ -102,7 +102,7 @@ public:
         if (image_data_ != nullptr) free(image_data_);
     }
 
-    uint8_t *get_data() const {
+    [[nodiscard]] uint8_t *get_data() const {
         return image_data_;
     }
 
@@ -123,11 +123,12 @@ public:
     }
 
 
-    bool write(const size_t x, const size_t y, const float r, const float g, const float b, const float a = 0) {
+    bool write(const size_t x, const size_t y, const float r, const float g, const float b, const float a = 0) const {
         return write(x, y, floatToByte(r), floatToByte(g), floatToByte(b), floatToByte(a));
     }
 
-    bool write(const size_t x, const size_t y, const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0) {
+    bool write(const size_t x, const size_t y,
+               const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a = 0) const {
         if (x < width_ && y < height_) {
             *(image_data_ + 4 * (x + width_ * y) + 0) = r;
             *(image_data_ + 4 * (x + width_ * y) + 1) = g;

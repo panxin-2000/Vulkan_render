@@ -3,7 +3,7 @@
 //
 #include "gtest/gtest.h"
 
-#include "test_delaunay_triangulation.h"
+#include "delaunay_triangulation.h"
 
 TEST(delaunay_triangulation, delaunay_triangulation) {
     std::vector<Point_2> input_points;
