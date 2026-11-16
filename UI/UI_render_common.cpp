@@ -5,6 +5,7 @@
 #include "UI_render_common.h"
 
 #include "engine.h"
+#include "font_manager.h"
 #include "scene_component.h"
 #include "UI_manager.h"
 #include "VKR_proxy_component.h"
@@ -39,11 +40,17 @@ void set_render_2D_data_dirty(const entt::entity itself_entity) {
 
 void redraw_render_2D_data(float time_milliseconds) {
     auto UI_root = get_UI_scene_root();
-    auto lambda  = [](const entt::entity entity_temp)-> bool {
+
+    // update_text_timeline // 需要在这里调用 检查全部需要显示的文字
+    // 如果这里搞定，create_text_geometry_data 那么这里就可以少调用一个函数
+
+    auto lambda = [](const entt::entity entity_temp)-> bool {
         if (draw_UI_button(entity_temp)) return true;
         if (draw_UI_text(entity_temp)) return true;
         if (draw_UI_line(entity_temp)) return true;
         return false;
     };
     add_recursion_function_to_children_condition(UI_root, lambda);
+
+    Font_Manager::instance().check_and_update();
 }

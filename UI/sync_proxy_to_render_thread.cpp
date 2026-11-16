@@ -92,7 +92,6 @@ void sync_render_data_to_render_thread(float time_milliseconds) {
     start.try_put(continue_msg());
 
 
-    Font_Manager::instance().check_and_update();
 
 
     g.wait_for_all();

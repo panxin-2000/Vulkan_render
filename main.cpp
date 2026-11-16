@@ -201,6 +201,12 @@ int main(int argc, char *argv[]) {
                     std::filesystem::path filePath = event.drop.data;
                     load_gltf_model(filePath.stem().string(), filePath);
                 }
+                // 文本输入（接收 UTF-8 字符，完美对接你的 Unicode 字体系统！）
+                if (event.type == SDL_EVENT_TEXT_INPUT) {
+                    const char *utf8_text = event.text.text;
+                    // 直接将 UTF-8 字符串解码为 Unicode_value 交给 Font_Manager 渲染
+                    break;
+                }
                 if (event.type == SDL_EVENT_QUIT)
                     done = true;
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&

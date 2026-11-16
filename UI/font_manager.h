@@ -44,8 +44,9 @@ struct Metrics {
 // 字母 “A” 的线条、轮廓和像素图像
 // 字符级别的个体度量
 struct Glyph {
-    uint32_t unicode = 0;
-    float advance    = 0.6f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
+    uint32_t unicode  = 0;
+    uint32_t timeline = 0;    // 添加世界戳，用来执行 LRU
+    float advance     = 0.6f; // 表示渲染完这个字符后，光标应该向右移动多远来放置下一个字符
 
     struct direction {
         float left   = 0.0f;
@@ -122,6 +123,12 @@ public:
         }
     };
 
+    /**
+     * 需要汇总 逻辑线程中 ，当前帧 在 UI 上显示的文字 ， 不在的会在 需要重建字体图集时清除
+     * @param utf8_text
+     * @param font_file
+     */
+    void update_text_timeline(const std::string &utf8_text, const std::string &font_file);
 
     std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
     create_text_geometry_data(const std::string &utf8_text,
@@ -139,23 +146,24 @@ public:
     void destroy();
 
 private:
-    FT_Library library = nullptr;
+    FT_Library library_ = nullptr;
+    uint32_t timeline_  = 0;
     // FT_Library 的 对应封装句柄
 
-    std::vector<Font_File_name_and_FontHandle> fonts;
+    std::vector<Font_File_name_and_FontHandle> fonts_;
 
 
     // LRU_cache<unicode_value, Glyph> unicode_cache;  // 想去添加这个 , 还需要把 字体 unicode_value 这两个作为索引去处理
 
     // 没有 LRU (Least Recently Used)可以考虑之后添加
     // 这三个是用来管理字体的存储在图像的哪里的 , 每次添加一个字都需要在渲染前进行更新
-    Atlas atlas;                           // 纹理图集
-    rbp::MaxRectsBinPack bin_pack_manager; //
+    Atlas atlas_;                           // 纹理图集
+    rbp::MaxRectsBinPack bin_pack_manager_; //
     std::shared_ptr<Image> image_ = nullptr;
 
     absl::flat_hash_map<render_Unicode, Glyph> glyph_map_;
 
-    bool need_update_atlas = false;
+    bool need_update_atlas_ = false;
 
 
     bool add_font(const Font_File_name &file_name);
@@ -185,7 +193,7 @@ private:
     Eigen::Vector4f get_char_uv(const Glyph &glyph) const;
 
 private:
-    static Font_Manager *instance_ptr;
+    static Font_Manager *instance_ptr_;
 
     Font_Manager() = default;
 

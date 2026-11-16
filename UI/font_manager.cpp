@@ -22,30 +22,30 @@ extern "C" {
 #include "Geometry_component.h"
 #include "utf8/checked.h"
 
-Font_Manager *Font_Manager::instance_ptr = nullptr;
+Font_Manager *Font_Manager::instance_ptr_ = nullptr;
 
 
 Font_Manager &Font_Manager::instance() {
     static std::once_flag flag;
     std::call_once(flag, []() {
-        instance_ptr = new Font_Manager();
-        instance_ptr->create();
+        instance_ptr_ = new Font_Manager();
+        instance_ptr_->create();
     });
 
-    return *instance_ptr;
+    return *instance_ptr_;
 }
 
 void Font_Manager::create() {
-    atlas.type                = "msdf";
-    atlas.distanceRange       = 4; // 距离过渡带的像素宽度
-    atlas.distanceRangeMiddle = 0; // • 零交叉阈值（即字体的真实数学边界）。
+    atlas_.type                = "msdf";
+    atlas_.distanceRange       = 4; // 距离过渡带的像素宽度
+    atlas_.distanceRangeMiddle = 0; // • 零交叉阈值（即字体的真实数学边界）。
     // 在采样距离场时，当解码出的数值恰好为 0，就代表这是字符的边缘。
     // 大于 0 的值代表在字形内部，小于 0 的值代表在字形外部。
 
-    atlas.size    = 32;
-    atlas.width   = 512; // 这里是宽度,不能更改了, 高度之后还能更改
-    atlas.height  = 512;
-    atlas.yOrigin = "bottom"; // 定义了纹理坐标的垂直方向
+    atlas_.size    = 32;
+    atlas_.width   = 512; // 这里是宽度,不能更改了, 高度之后还能更改
+    atlas_.height  = 512;
+    atlas_.yOrigin = "bottom"; // 定义了纹理坐标的垂直方向
 
     // msdf_text.metrics.emSize             = 1;
     // msdf_text.metrics.lineHeight         = 1.3200000000000001;
@@ -54,14 +54,14 @@ void Font_Manager::create() {
     // msdf_text.metrics.underlineY         = -0.17999999999999999;
     // msdf_text.metrics.underlineThickness = 0.050000000000000003;
     image_ = std::make_shared<Image>();
-    image_->init(static_cast<size_t>(atlas.width),
-                 static_cast<size_t>(atlas.height));
+    image_->init(static_cast<size_t>(atlas_.width),
+                 static_cast<size_t>(atlas_.height));
 
     // 有些字旋转了 90 度，有些字没有旋转，会导致复杂的 UV 坐标旋转矩阵传递 所以allowFlip 设置为 false
-    bin_pack_manager.Init(static_cast<int>(atlas.width),
-                          static_cast<int>(atlas.height), false);
+    bin_pack_manager_.Init(static_cast<int>(atlas_.width),
+                           static_cast<int>(atlas_.height), false);
 
-    FT_Error error = FT_Init_FreeType(&library);
+    FT_Error error = FT_Init_FreeType(&library_);
     if (error) {
     }
 
@@ -72,23 +72,24 @@ void Font_Manager::create() {
 
 void Font_Manager::destroy() {
     // 先清理掉这个
-    if (nullptr != library)
-        FT_Done_FreeType(library);
-    library = nullptr;
+    if (nullptr != library_)
+        FT_Done_FreeType(library_);
+    library_ = nullptr;
     if (image_ != nullptr)
         image_ = nullptr;
-    delete instance_ptr;
+    delete instance_ptr_;
 }
 
 void Font_Manager::check_and_update() {
-    if (need_update_atlas == true) {
+    if (need_update_atlas_ == true) {
+        timeline_++;
         auto lambda = [](std::optional<Texture_parameter> texture) {
             if (texture.has_value())
                 Engine::instance().get_global_parameters().set_MSDF_texture(texture.value());
         };
         std::optional<Texture_parameter> texture = Font_Manager::instance().create_or_update_texture_from_image();
         vk_render_queue::instance().render_update_entt(lambda, texture);
-        need_update_atlas = false;
+        need_update_atlas_ = false;
         // 需要更新图集 到 GPU , 在本帧开始绘制之前
     }
 }
@@ -151,7 +152,7 @@ std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyp
 
 bool Font_Manager::add_font(const Font_File_name &file_name) { {
         FT_Face face;
-        FT_Error error = FT_New_Face(library, file_name.c_str(), 0, &face);
+        FT_Error error = FT_New_Face(library_, file_name.c_str(), 0, &face);
         if (error) {
             return false;
         }
@@ -182,7 +183,7 @@ bool Font_Manager::add_font(const Font_File_name &file_name) { {
                 metrics_temp.descender          = metrics.descenderY;
                 metrics_temp.underlineY         = metrics.underlineY;
                 metrics_temp.underlineThickness = metrics.underlineThickness;
-                fonts.push_back({file_name.c_str(), metrics_temp, face});
+                fonts_.push_back({file_name.c_str(), metrics_temp, face});
             } else {
                 std::cerr << "获取 Metrics 失败！" << std::endl;
             }
@@ -232,7 +233,7 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
 
     for (auto unicode_point: unicode_points)
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
-        if (glyph_map_.contains({unicode_point, font_name_index}) == false) {
+        if (auto value = glyph_map_.find({unicode_point, font_name_index}); value == glyph_map_.end()) {
             // 不存在,
             msdfgen::Shape shape;
             // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
@@ -241,17 +242,19 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                 shape.orientContours();
                 Glyph glyph;
                 // 临时创建一个 Glyph 用于存储当前这个 字的
-                glyph.unicode = unicode_point;
-                auto bitmap   = generate_sdf_bitmap(glyph, shape);
+                glyph.unicode  = unicode_point;
+                glyph.timeline = timeline_;
+                auto bitmap    = generate_sdf_bitmap(glyph, shape);
                 if (bitmap.has_value()) {
                     auto bit_map      = bitmap.value();
                     const auto width  = bitmap.value().width();
                     const auto height = bitmap.value().height();
                     // 下面一行是从图集中分配一个位置
-                    auto position = bin_pack_manager.Insert(width, height,
-                                                            rbp::MaxRectsBinPack::RectBestShortSideFit);
+                    auto position = bin_pack_manager_.Insert(width, height,
+                                                             rbp::MaxRectsBinPack::RectBestShortSideFit);
+                    assert(position.width > 0 && position.height > 0);
                     // 需要将 bitmap.value() 的内容写入图片 的 position
-                    need_update_atlas = true;
+                    need_update_atlas_ = true;
                     //  这里的代码暂时不能分开, 如果直接申请固定大小的区域的话,是可以分开的
                     if (position.width == width) {
                         // 没有翻转
@@ -270,6 +273,8 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                     glyph_map_.insert({{unicode_point, font_name_index}, glyph});
                 }
             }
+        } else {
+            value->second.timeline = timeline_;
         }
     msdfgen::destroyFont(font_handle);
 
@@ -278,49 +283,59 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
 }
 
 void Font_Manager::clear_fonts() {
-    for (const auto &font: fonts) {
+    for (const auto &font: fonts_) {
         FT_Done_Face(font.font_handle);
     }
-    fonts.clear();
+    fonts_.clear();
 }
 
-void Font_Manager::evict_expired_glyphs() {
-    for (auto it = glyph_map_.begin(); it != glyph_map_.end();)
-        // if (should_remove(it->second)) {
-        // my_map.erase(it++); // 注意：这里是 it++，不能写成 ++it
-        // } else {
-        // ++it;
-        // }
 
+/**
+ * 这里面有好多的选择， UI 很少有大的问题，很少有UV 参数
+ * 最简单的其实是IMGUI的内容， 只渲染我已经缓存好的， 其他的都是设置为空，
+ * 然后是动态字体图集的内容
+ *    第一个是动态中重新刷新每个帧中的内容
+ *
+ *    第二个是只重新绘制改变的内容
+ *
+ */
+void Font_Manager::evict_expired_glyphs() {
+    for (auto it = glyph_map_.begin(); it != glyph_map_.end();) {
+    }
+    // if (should_remove(it->second)) {
+    // my_map.erase(it++); // 注意：这里是 it++，不能写成 ++it
+    // } else {
+    // ++it;
+    // }
 }
 
 
 Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const std::string &font_file_name) {
-    for (auto &font: fonts) {
+    for (auto &font: fonts_) {
         if (font.name.compare(font_file_name) == 0) {
             return font;
         }
     }
     add_font(font_file_name);
-    return fonts.back();
+    return fonts_.back();
 }
 
 Font_Manager::Font_name_index Font_Manager::get_font_name_index(const std::string &font_file_name) {
-    for (size_t i = 0; i < fonts.size(); i++) {
-        if (fonts.at(i).name.compare(font_file_name) == 0) {
+    for (size_t i = 0; i < fonts_.size(); i++) {
+        if (fonts_.at(i).name.compare(font_file_name) == 0) {
             return i;
         }
     }
     add_font(font_file_name);
-    return fonts.size() - 1;
+    return fonts_.size() - 1;
 }
 
 float Font_Manager::get_scale() const {
-    return atlas.size;
+    return atlas_.size;
 }
 
 double Font_Manager::get_distanceRange() const {
-    return static_cast<double>(atlas.distanceRange);
+    return static_cast<double>(atlas_.distanceRange);
 }
 
 
@@ -445,11 +460,26 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
     return {vertices, indices};
 }
 
+
+void Font_Manager::update_text_timeline(const std::string &utf8_text, const std::string &font_file) {
+    std::string font_file_name;
+    if (font_file.empty()) {
+        font_file_name = "default_font";
+    } else {
+        font_file_name = font_file;
+    }
+
+    std::vector<uint32_t> unicode_vector;
+    utf8::utf8to32(utf8_text.begin(), utf8_text.end(), std::back_inserter(unicode_vector));
+    add_text_to_Atlas_and_bin_pack(unicode_vector, font_file_name);
+}
+
+
 Eigen::Vector4f Font_Manager::get_char_uv(const Glyph &glyph) const {
     return {
-        (glyph.atlasBounds.left + 2) / atlas.width,
-        (glyph.atlasBounds.bottom - 2) / atlas.height,
-        (glyph.atlasBounds.right - 2) / atlas.width,
-        (glyph.atlasBounds.top + 2) / atlas.height
+        (glyph.atlasBounds.left + 2) / atlas_.width,
+        (glyph.atlasBounds.bottom - 2) / atlas_.height,
+        (glyph.atlasBounds.right - 2) / atlas_.width,
+        (glyph.atlasBounds.top + 2) / atlas_.height
     };
 }
