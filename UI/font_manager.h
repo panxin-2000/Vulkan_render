@@ -16,6 +16,9 @@
 #include "shader_common.h"
 #include "vulkan_image.h"
 #include "bin_pack/MaxRectsBinPack.h"
+#include "absl/hash/hash.h"
+#include "absl/container/flat_hash_map.h"
+
 
 // 纹理图集 Texture Atlas
 struct Atlas {
@@ -57,14 +60,15 @@ struct Glyph {
 
 
 class Font_Manager {
-    using unicode_value  = uint32_t;
-    using Font_File_name = std::string;
+    using Unicode_value   = uint32_t;
+    using Font_name_index = uint32_t;
+    using Font_File_name  = std::string;
 
     struct Font_File_name_and_FontHandle {
         Font_File_name name;
         Metrics metrics; // 每一个字体的全局 Metrics 全都不一样
         FT_Face font_handle;
-        std::map<unicode_value, Glyph> unicode_value_and_glyphs;
+        // std::map<Unicode_value, Glyph> unicode_value_and_glyphs;
 
         // FT_Face 的对应封装句柄
         // 一个 FT_Face 代表了一个字体文件中的某一个“外观”
@@ -97,6 +101,27 @@ public:
 
     void check_and_update();
 
+    struct render_Unicode {
+        Unicode_value unicode_value;
+        Font_name_index font_name_index;
+
+
+        template<typename H>
+        friend H AbslHashValue(H h, const render_Unicode &info) {
+            return H::combine(std::move(h),
+                              info.font_name_index,
+                              info.unicode_value);
+            // 忽略 sType 和 pNext，因为它们是 Vulkan 链表头，不影响采样器状态
+        }
+
+
+        friend bool operator==(const render_Unicode &lhs, const render_Unicode &rhs) {
+            // 忽略 sType 和 pNext 指针，只比对核心功能字段
+            return lhs.font_name_index == rhs.font_name_index &&
+                   lhs.unicode_value == rhs.unicode_value;
+        }
+    };
+
 
     std::pair<std::shared_ptr<std::vector<Vertex_2D> >, std::shared_ptr<std::vector<unsigned short> > >
     create_text_geometry_data(const std::string &utf8_text,
@@ -128,19 +153,25 @@ private:
     rbp::MaxRectsBinPack bin_pack_manager; //
     std::shared_ptr<Image> image_ = nullptr;
 
+    absl::flat_hash_map<render_Unicode, Glyph> glyph_map_;
+
     bool need_update_atlas = false;
 
 
     bool add_font(const Font_File_name &file_name);
 
-    std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape);
+    std::optional<msdfgen::Bitmap<float, 3> > generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) const;
 
     bool add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &unicode_points,
                                         const std::string &font_file_name);
 
     void clear_fonts();
 
+    void evict_expired_glyphs();
+
     Font_File_name_and_FontHandle &get_font_data(const std::string &font_file_name);
+
+    Font_name_index get_font_name_index(const std::string &font_file_name);
 
     [[nodiscard]] float get_scale() const;
 

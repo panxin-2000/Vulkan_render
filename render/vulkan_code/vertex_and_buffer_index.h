@@ -28,7 +28,6 @@ inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, cons
 inline VKR_buffer_ptr create_base_buffer(const VKR_buffer_ptr &base_buffer, const VK_backend &backend,
                                          VkDeviceSize size,
                                          const std::function<void(void *)> &mem_copy_callback) {
-
     // vmaCopyMemoryToAllocation(allocator, &constantBufferData, alloc, 0, sizeof(ConstantBuffer));
     // 找到了 一个 vma 官方提供的函数, 能够替代我下面写的代码
 
@@ -72,6 +71,7 @@ inline VKR_buffer_ptr create_base_buffer(const VKR_buffer_ptr &base_buffer, cons
  */
 inline VKR_buffer_ptr create_vertex_index_buffer(const VK_backend &backend, VkDeviceSize size,
                                                  const std::function<void(void *)> &mem_copy_callback) {
+    assert(size != 0);
     auto vBuffer = create_vertex_index_buffer(backend, size);
     if (vBuffer != nullptr && vBuffer->empty())
         return {};

@@ -16,9 +16,9 @@ inline EnumType& operator|=(EnumType& a, EnumType b) {                    \
     a = a | b;                                                            \
     return a;                                                             \
 }                                                                         \
-inline EnumType operator&(EnumType a, EnumType b) {                           \
+inline EnumType operator&(EnumType a, EnumType b) {                       \
     using T = std::underlying_type_t<EnumType>;                           \
-    return static_cast<EnumType>(static_cast<T>(a) & static_cast<T>(b));      \
+    return static_cast<EnumType>(static_cast<T>(a) & static_cast<T>(b));  \
 }                                                                         \
 inline EnumType operator~(EnumType a) {                                   \
     using T = std::underlying_type_t<EnumType>;                           \

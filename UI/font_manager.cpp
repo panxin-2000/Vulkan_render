@@ -94,10 +94,10 @@ void Font_Manager::check_and_update() {
 }
 
 Texture_parameter Font_Manager::create_or_update_texture_from_image() {
-    return create_2d_texture(image_);
+    return create_2d_linear_texture(image_);
 }
 
-std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) {
+std::optional<msdfgen::Bitmap<float, 3> > Font_Manager::generate_sdf_bitmap(Glyph &glyph, msdfgen::Shape &shape) const {
     // 预处理：标准化轮廓方向
     if (shape.contours.empty()) {
         return {};
@@ -226,13 +226,13 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
     // }
     // // 需要做的是添加一个缓冲，filename 先查找，如果有的话就添加在第一个，没有的话添加警告，选择其他的font
     // msdf_text_tem.fonts.push_back({font_file_name, font});
-    auto &msdf_text_tem = get_font_data(font_file_name); // 也先空出来, 之后调用一个查找的函数就好
-    auto font_handle    = msdfgen::adoptFreetypeFont(msdf_text_tem.font_handle);
+    auto &msdf_text_tem    = get_font_data(font_file_name); // 也先空出来, 之后调用一个查找的函数就好
+    auto font_name_index   = get_font_name_index(font_file_name);
+    const auto font_handle = msdfgen::adoptFreetypeFont(msdf_text_tem.font_handle);
 
     for (auto unicode_point: unicode_points)
         // 得到了每一个可能需要添加到 Atlas（图集） 中的文字
-        if (msdf_text_tem.unicode_value_and_glyphs.find(unicode_point) == msdf_text_tem.unicode_value_and_glyphs.
-            end()) {
+        if (glyph_map_.contains({unicode_point, font_name_index}) == false) {
             // 不存在,
             msdfgen::Shape shape;
             // 临时创建相应的 msdfgen::Shape 用于存储之后的 Contour（轮廓/闭合曲线）指的是构成一个 Glyph（字形）视觉形状的独立闭合线条回路
@@ -265,9 +265,9 @@ bool Font_Manager::add_text_to_Atlas_and_bin_pack(const std::vector<uint32_t> &u
                     glyph.atlasBounds.right  = (static_cast<float>(position.x + position.width) + 0.5f);
                     glyph.atlasBounds.top    = (static_cast<float>(position.y) + 0.5f);
                     glyph.atlasBounds.bottom = (static_cast<float>(position.y + position.height) + 0.5f);
-                    msdf_text_tem.unicode_value_and_glyphs.insert({unicode_point, glyph});
+                    glyph_map_.insert({{unicode_point, font_name_index}, glyph});
                 } else {
-                    msdf_text_tem.unicode_value_and_glyphs.insert({unicode_point, glyph});
+                    glyph_map_.insert({{unicode_point, font_name_index}, glyph});
                 }
             }
         }
@@ -284,6 +284,17 @@ void Font_Manager::clear_fonts() {
     fonts.clear();
 }
 
+void Font_Manager::evict_expired_glyphs() {
+    for (auto it = glyph_map_.begin(); it != glyph_map_.end();)
+        // if (should_remove(it->second)) {
+        // my_map.erase(it++); // 注意：这里是 it++，不能写成 ++it
+        // } else {
+        // ++it;
+        // }
+
+}
+
+
 Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const std::string &font_file_name) {
     for (auto &font: fonts) {
         if (font.name.compare(font_file_name) == 0) {
@@ -292,6 +303,16 @@ Font_Manager::Font_File_name_and_FontHandle &Font_Manager::get_font_data(const s
     }
     add_font(font_file_name);
     return fonts.back();
+}
+
+Font_Manager::Font_name_index Font_Manager::get_font_name_index(const std::string &font_file_name) {
+    for (size_t i = 0; i < fonts.size(); i++) {
+        if (fonts.at(i).name.compare(font_file_name) == 0) {
+            return i;
+        }
+    }
+    add_font(font_file_name);
+    return fonts.size() - 1;
 }
 
 float Font_Manager::get_scale() const {
@@ -365,6 +386,7 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
     unsigned int x_ppem;
     unsigned int y_ppem;
     hb_font_get_ppem(font, &x_ppem, &y_ppem);
+    auto font_name_index = get_font_name_index(font_file_name);
 
 
     for (unsigned int i = 0; i < unicode_vector.size(); i++) {
@@ -377,8 +399,7 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
         const float y_offset  = static_cast<float>(glyph_pos[i].x_offset) / static_cast<float>(64);
 
 
-        auto &temp_map = get_font_data(font_file_name).unicode_value_and_glyphs;
-        if (auto value = temp_map.find(glyph_id); value != temp_map.end()) {
+        if (auto value = glyph_map_.find({glyph_id, font_name_index}); value != glyph_map_.end()) {
             // 方向可能都稍微有点问题，但是结果是对的
             const auto char_uv = get_char_uv(value->second);
             if (max_position_x < current_x + char_size * value->second.planeBounds.right) {
