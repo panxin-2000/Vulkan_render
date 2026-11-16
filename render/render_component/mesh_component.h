@@ -21,6 +21,23 @@ public:
     Geometry_data add_dirty_;  // 汇总单帧中新增加是
     bool dirty_tag_ = false;   // 是否需要更新
 
+    bool write_bind_command(const VkCommandBuffer &cb, const uint64_t timeline) const {
+        if (vertices_ != nullptr && vertices_->get_buffer_handle() != VK_NULL_HANDLE) {
+            vkCmdBindVertexBuffers(cb, 0, 1,
+                                   vertices_->get_buffer_handle_ptr(timeline),
+                                   &vertices_offset_);
+            if (indices_ != nullptr && indices_->get_buffer_handle() != VK_NULL_HANDLE) {
+                vkCmdBindIndexBuffer(cb,
+                                     indices_->get_buffer_handle(timeline),
+                                     indices_offset_,
+                                     index_type_);
+            }
+            return true;
+        } else if (index_type_ == VK_INDEX_TYPE_MAX_ENUM) {
+            assert(false && " not deal indices empty");
+        }
+        return false;
+    }
 
     [[nodiscard]] bool is_dirty() const {
         return dirty_tag_;
@@ -99,7 +116,8 @@ public:
 
     bool create_mesh_data(const Geometry_data &data);
 
-private:
+private
+:
     absl::flat_hash_map<share_block, size_and_offset> map_;
 
     // 全部搞定之后 上面的增删完成之后, 还需要给出对应的  std::vector<VKR_Primitive> 作为返回值

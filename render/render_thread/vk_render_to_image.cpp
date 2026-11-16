@@ -233,6 +233,7 @@ void render_post_process(VCB &vcb,
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, imgui_draw>();
             for (const auto entity: view) {
+                // 这里有一个稍微奇怪的现象， imgui_draw 有时候会先到来，但是没有任何内容需要绘制
                 vcb.build_draw_command_UI(entity);
             }
         }

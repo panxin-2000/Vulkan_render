@@ -14,16 +14,7 @@
 void VCB::write_draw_command(const Mesh_data &mesh_data,
                              const std::vector<VKR_Primitive> &primitives,
                              const std::vector<VKR_Render_state> &render_states) const {
-    if (mesh_data.vertices_ == nullptr || mesh_data.vertices_->get_buffer_handle() == VK_NULL_HANDLE)
-        return;
-    vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset_);
-    if (mesh_data.indices_ != nullptr && mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
-        vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices_->get_buffer_handle(time_line_),
-                             mesh_data.indices_offset_,
-                             mesh_data.index_type_);
+    if (mesh_data.write_bind_command(command_buffer_, time_line_) == true) {
         for (int i = 0; i < primitives.size(); ++i) {
             if (render_states.empty() == false && primitives.size() == render_states.size()) {
                 render_states.at(i).write_commands(command_buffer_, pass_viewport_, pass_scissor_);
@@ -32,8 +23,6 @@ void VCB::write_draw_command(const Mesh_data &mesh_data,
             }
             primitives.at(i).write_commands(command_buffer_);
         }
-    } else if (mesh_data.index_type_ == VK_INDEX_TYPE_MAX_ENUM) {
-        assert(false && " not deal indices empty");
     }
 }
 
