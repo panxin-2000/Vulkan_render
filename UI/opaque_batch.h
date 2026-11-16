@@ -19,15 +19,16 @@ class VCB;
 class opaque_batch {
 public:
     using RenderableSoa = utils::StructureOfArrays<
-        VKR_Primitive,    //
-        Local_Space_AABB, //
-        World_Space_AABB, //
-        Transform_Matrix, //
+        VKR_Primitive,    // 需要绘制的 单个 primitive 的顶点和索引
+        Local_Space_AABB, // 模型的包围盒
+        World_Space_AABB, // 模型在世界空间的包围盒， 可以交由 GPU 计算 
+        Transform_Matrix, // 模型的 变化矩阵
         uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
-        entt::entity,     //
-        VKR_Primitive,    //
-        VKR_Primitive     //
+        entt::entity,     // 顶点组成的三角形的 实体
+        VKR_Primitive,    //  一个是 太阳光 照射到需要绘制的阴影
+        VKR_Primitive     //  一个是 摄像机 能录制到的物体
     >;
+
 
     // instance 就变成了  SOA 的起始位置,   Transform 就需要去拿 entt 的 偏移了
     enum {

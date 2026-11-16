@@ -1059,7 +1059,7 @@ void combine_geometry(const entt::entity model_entity) {
     add_recursion_function_to_children(model_entity, geometry_function);
 
     logic_update_proxy(model_entity, bindless_Geometry_data);
-    logic_update_add_tag<Mesh_need_create_tag>(model_entity);
+    logic_update_add_tag<Tag_bindless_batch>(model_entity);
 }
 
 void deal_new_add_model(const entt::entity model_entity) {

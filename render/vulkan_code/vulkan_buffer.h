@@ -5,6 +5,7 @@
 #ifndef HELLO_MAC_VULKAN_BUFFER_H
 #define HELLO_MAC_VULKAN_BUFFER_H
 
+#include <cassert>
 #include <functional>
 #include <map>
 #include <memory>
@@ -137,61 +138,116 @@ private:
 class VKR_buffer_pool : public VKR_buffer {
 public:
     VKR_buffer_pool(const VkBuffer buffer_handle,
-                    const VmaAllocation allocation);
+                    const VmaAllocation allocation) : VKR_buffer(buffer_handle, allocation) {
+        VmaVirtualBlockCreateInfo blockCreateInfo = {};
+        blockCreateInfo.size                      = VKR_buffer::get_size();
+        const VkResult res                        = vmaCreateVirtualBlock(&blockCreateInfo, &block_);
+        assert(res == VK_SUCCESS);
+    }
 
-    std::map<VkDeviceSize, size_and_status> &get_offset_and_size_map();;
+    VmaVirtualAllocation alloc(const VkDeviceSize size, const VkDeviceSize alignment) const {
+        assert(size > 0);
+        VmaVirtualAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.size                           = size;
+        allocCreateInfo.alignment                      = alignment;
+        VmaVirtualAllocation allocation_handle;
+        VkDeviceSize offset;
+        const auto res = vmaVirtualAllocate(block_, &allocCreateInfo, &allocation_handle, &offset);
+        if (res == VK_SUCCESS) {
+            return allocation_handle;
+        } else {
+            return VK_NULL_HANDLE;
+        }
+    }
 
-    std::multimap<VkDeviceSize, offset_no_status> &get_size_and_offset_map();;
+    VkDeviceSize get_offset(const VmaVirtualAllocation allocation_handle) const {
+        VmaVirtualAllocationInfo allocInfo;
+        vmaGetVirtualAllocationInfo(block_, allocation_handle, &allocInfo);
+        return allocInfo.offset;
+    }
+
+    VkDeviceSize get_size(const VmaVirtualAllocation allocation_handle) const {
+        VmaVirtualAllocationInfo allocInfo;
+        vmaGetVirtualAllocationInfo(block_, allocation_handle, &allocInfo);
+        return allocInfo.size;
+    }
+
+    void dealloc(const VmaVirtualAllocation allocation_handle) const {
+        vmaVirtualFree(block_, allocation_handle);
+    }
+
+    ~VKR_buffer_pool() {
+        vmaDestroyVirtualBlock(block_);
+    }
 
 private:
-    std::map<VkDeviceSize, size_and_status> offset_and_size_map;
-    std::multimap<VkDeviceSize, offset_no_status> size_and_offset_map;
+    VmaVirtualBlock block_;
 };
+
+
+inline void GPU_pool_free(const VKR_buffer_pool_ptr &buffer, const VmaVirtualAllocation allocation_handle) {
+    buffer->dealloc(allocation_handle);
+}
+
 
 class VKR_buffer_block {
 public:
     VKR_buffer_block(const VKR_buffer_pool_ptr &buffer,
+                     const VmaVirtualAllocation allocation_handle,
                      const VkDeviceSize offset,
                      const VkDeviceSize size) : ptr(buffer) {
-        offset_ = offset;
-        size_   = size;
+        allocation_handle_ = allocation_handle;
+        offset_            = offset;
+        size_              = size;
     }
 
-    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0);
+    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) {
+        if (timeline > block_timeline_) block_timeline_ = timeline;
+        return ptr->get_buffer_handle(timeline);
+    }
 
-    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0);
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0) {
+        if (timeline > block_timeline_) block_timeline_ = timeline;
+        return ptr->get_buffer_handle_ptr(timeline);
+    }
 
-    [[nodiscard]] VkDeviceAddress get_gpu_device_address(const uint64_t timeline = 0);
 
-    [[nodiscard]] const VKR_buffer_block &value() const;
+    [[nodiscard]] VkDeviceAddress get_gpu_device_address(const uint64_t timeline = 0) {
+        if (timeline > block_timeline_) block_timeline_ = timeline;
+        return ptr->get_gpu_device_address() + offset_;
+    }
 
-    bool destroy_buffer();
+    [[nodiscard]] const VKR_buffer_block &value() const {
+        return *this;
+    }
 
     VKR_buffer_block() = default;
 
-    ~VKR_buffer_block();
+    ~VKR_buffer_block() {
+        GPU_pool_free(ptr, allocation_handle_);
+    }
 
-    VKR_buffer_pool_ptr ptr  = nullptr; // 指向 VKR_buffer 的 指针
-    VkDeviceSize offset_     = 0;
-    VkDeviceSize size_       = 0;
-    uint64_t block_timeline_ = 0;
+    VKR_buffer_pool_ptr ptr                 = nullptr; // 指向 VKR_buffer 的 指针
+    VmaVirtualAllocation allocation_handle_ = VK_NULL_HANDLE;
+    VkDeviceSize offset_                    = 0;
+    VkDeviceSize size_                      = 0;
+    uint64_t block_timeline_                = 0;
 };
 
 
-// VKR_buffer_block_ptr 是一个指针 指向了 VKR_buffer_block
-//                                      VKR_buffer_block 中有一个 指针 ，指向了  VKR_buffer
-//    VKR_buffer 中有   VkBuffer        和      VmaAllocation
-//                   VkBuffer是一个句柄        VmaAllocation是一个指针
+inline VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, const uint64_t request_size) {
+    const auto allocation_handle = buffer->alloc(request_size, 16);
+    auto block_ptr               = std::make_shared<VKR_buffer_block>(buffer,
+                                                        allocation_handle,
+                                                        buffer->get_offset(allocation_handle),
+                                                        buffer->get_size(allocation_handle));
+    return block_ptr;
+}
 
-// VKR_buffer_ptr 另外一个方式，不进行池化，直接 通过指向 指向 VKR_buffer
-
-VKR_buffer_block_ptr GPU_pool_alloc(const VKR_buffer_pool_ptr &buffer, uint64_t request_size);
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size,
                                   VkDeviceSize srcOffset = 0,
                                   VkDeviceSize dstOffset = 0);
-
-void end_and_submit_one_command_buffer(VkCommandBuffer commandBuffer);
 
 
 bool copy_mem_from_cpu_to_gpu(const VKR_buffer_ptr &buffer, const std::function<void(void *)> &mem_copy_callback);

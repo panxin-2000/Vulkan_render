@@ -11,8 +11,9 @@
 
 
 void opaque_batch::check_and_update(sets_map &sets_map_in_for,
-                                     std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
-    auto view = Render_entt().view<Geometry_data, Mesh_need_create_tag,
+                                    std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
+    auto view = Render_entt().view<Geometry_data,
+                                   Tag_bindless_batch,
                                    std::vector<World_Space_AABB>,
                                    std::vector<Transform_Matrix>,
                                    Gltf_material_parameters,
@@ -30,7 +31,7 @@ void opaque_batch::check_and_update(sets_map &sets_map_in_for,
             bindless_Geometry_data_.push_indices(index);
         }
         view_has_value = true;
-        Render_entt().remove<Mesh_need_create_tag>(entity);
+        Render_entt().remove<Tag_bindless_batch>(entity);
     }
 
     size_t primitive_size = 0;

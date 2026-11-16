@@ -142,38 +142,6 @@ bool VKR_buffer::empty() const {
     }
 }
 
-VKR_buffer_pool::VKR_buffer_pool(const VkBuffer buffer_handle,
-                                 const VmaAllocation allocation) : VKR_buffer(buffer_handle, allocation) {
-    offset_and_size_map.insert({0, {get_size(), true}});
-    size_and_offset_map.insert({get_size(), {0}});
-}
-
-std::map<VkDeviceSize, size_and_status> &VKR_buffer_pool::get_offset_and_size_map() {
-    return offset_and_size_map;
-}
-
-std::multimap<VkDeviceSize, offset_no_status> &VKR_buffer_pool::get_size_and_offset_map() {
-    return size_and_offset_map;
-}
-
-VkBuffer VKR_buffer_block::get_buffer_handle(const uint64_t timeline) {
-    if (timeline > block_timeline_) block_timeline_ = timeline;
-    return ptr->get_buffer_handle(timeline);
-}
-
-const VkBuffer *VKR_buffer_block::get_buffer_handle_ptr(const uint64_t timeline) {
-    if (timeline > block_timeline_) block_timeline_ = timeline;
-    return ptr->get_buffer_handle_ptr(timeline);
-}
-
-VkDeviceAddress VKR_buffer_block::get_gpu_device_address(const uint64_t timeline) {
-    if (timeline > block_timeline_) block_timeline_ = timeline;
-    return ptr->get_gpu_device_address() + offset_;
-}
-
-const VKR_buffer_block &VKR_buffer_block::value() const {
-    return *this;
-}
 
 const VkBuffer *VKR_buffer::get_buffer_handle_ptr(const uint64_t timeline) {
     if (timeline > timeline_) timeline_ = timeline;
@@ -345,11 +313,8 @@ VKR_buffer::~VKR_buffer() {
 }
 
 
-void discard_buffer_block_map_clean(uint64_t finished_timeline);
-
 void discard_buffer_map_clean(uint64_t finished_timeline) {
     const auto &backend = VK_backend::instance();
-    discard_buffer_block_map_clean(finished_timeline);
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline,

@@ -46,7 +46,7 @@ struct share_block {
 struct Geometry_data_need_copy_tag {
 };
 
-struct Mesh_need_create_tag {
+struct Tag_bindless_batch {
 };
 
 
