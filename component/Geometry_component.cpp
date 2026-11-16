@@ -8,8 +8,8 @@
 
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Point_2 min,
-                               const Point_2 max) {
+                               const Eigen::Vector2f min,
+                               const Eigen::Vector2f max) {
     const auto vertices = std::make_shared<std::vector<Vertex_2D> >(); //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >();  //  2   * 6 = 12
     {
@@ -26,10 +26,10 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex_2D{{min.x, min.y}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex_2D{{max.x, min.y}, {1, 0}});
-        vertices->emplace_back(Vertex_2D{{max.x, max.y}, {1, 1}}); // 2 3 0
-        vertices->emplace_back(Vertex_2D{{min.x, max.y}, {0, 1}});
+        vertices->emplace_back(Vertex_2D{{min.x(), min.y()}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex_2D{{max.x(), min.y()}, {1, 0}});
+        vertices->emplace_back(Vertex_2D{{max.x(), max.y()}, {1, 1}}); // 2 3 0
+        vertices->emplace_back(Vertex_2D{{min.x(), max.y()}, {0, 1}});
     }
     set_geometry_data(entity, vertices, indices);
     return true;
@@ -283,12 +283,12 @@ bool add_box_data(const entt::entity entity,
     return true;
 }
 
-bool add_box_data(const entt::entity entity, const AABB_min_max<Point_3> &bounding_box) {
+bool add_box_data(const entt::entity entity, const AABB_min_max<Eigen::Vector3f> &bounding_box) {
     return add_box_data(entity,
-                        bounding_box.min_point_.x,
-                        bounding_box.min_point_.y,
-                        bounding_box.min_point_.z,
-                        bounding_box.max_point_.x,
-                        bounding_box.max_point_.y,
-                        bounding_box.max_point_.z);
+                        bounding_box.min_point_.x(),
+                        bounding_box.min_point_.y(),
+                        bounding_box.min_point_.z(),
+                        bounding_box.max_point_.x(),
+                        bounding_box.max_point_.y(),
+                        bounding_box.max_point_.z());
 }

@@ -34,7 +34,9 @@ void draw_UI_button_impl(const entt::entity entity) {
     Logic_entt().remove<Geometry_data>(entity); // 这里是很重要的一项，需要清除之前的几何数据
 
     auto box = Logic_entt().get<Bounding_Box_2D>(entity);
-    add_2D_bound_box_geometry(entity, {box.min_x(), box.min_y()}, {box.max_x(), box.max_y()});
+    add_2D_bound_box_geometry(entity,
+                              Eigen::Vector2f{box.min_x(), box.min_y()},
+                              Eigen::Vector2f{box.max_x(), box.max_y()});
     auto RoundRect = Logic_entt().get<UI_Button_data>(entity);
 
     auto shader_path = VKR_shader_paths{

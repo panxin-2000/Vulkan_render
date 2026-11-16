@@ -26,7 +26,7 @@ object_3d::object_3d(const std::string &name) : logic_render_object(name) {
     world_root_add_child(entity);
 }
 
-object_3d &object_3d::object_3d_add_mesh(const AABB_min_max<Point_3> &bounding_box) {
+object_3d &object_3d::object_3d_add_mesh(const AABB_min_max<Eigen::Vector3f> &bounding_box) {
     add_box_data(entity, bounding_box);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));
@@ -43,7 +43,7 @@ object_3d &object_3d::add_mesh(const std::string &mesh_path) {
     return *this;
 }
 
-object_3d &object_3d::add_mesh(const AABB_min_max<Point_3> &bounding_box) {
+object_3d &object_3d::add_mesh(const AABB_min_max<Eigen::Vector3f> &bounding_box) {
     add_box_data(entity, bounding_box);
     logic_update_proxy(entity, get_VKR_mesh(entity));
     logic_update_proxy(entity, create_primitives(entity));

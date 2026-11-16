@@ -31,36 +31,26 @@ void set_geometry_data(const entt::entity entity,
 void clean_geometry_data(const entt::entity entity);
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Point_2 min,
-                               const Point_2 max);
+                               const Eigen::Vector2f min,
+                               const Eigen::Vector2f max);
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Point_3 min,
-                               const Point_3 max);
+                               const Eigen::Vector3f min,
+                               const Eigen::Vector3f max);
 
 bool add_round_box_geometry(entt::entity entity,
-                            Point_3 min,
-                            Point_3 max);
+                            Eigen::Vector3f min,
+                            Eigen::Vector3f max);
 
 bool add_triangle_geometry(entt::entity entity,
-                           Point_3 a,
-                           Point_3 b,
-                           Point_3 c);
-
-void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
-                     const std::shared_ptr<std::vector<unsigned short> > &indices,
-                     Point_2 min, Point_2 max,
-                     float uv_min_x, float uv_min_y, float uv_max_x, float uv_max_y);
-
-void append_text_box(const std::shared_ptr<std::vector<Vertex_2D> > &vertices,
-                     const std::shared_ptr<std::vector<unsigned short> > &indices,
-                     Point_2 min, Point_2 max,
-                     Eigen::Vector4f uv);
+                           Eigen::Vector3f a,
+                           Eigen::Vector3f b,
+                           Eigen::Vector3f c);
 
 
 bool add_path(const entt::entity entity, const std::vector<Eigen::Vector2f> &path, const Color color);
 
-bool add_box_data(const entt::entity entity, const AABB_min_max<Point_3> &bounding_box);
+bool add_box_data(const entt::entity entity, const AABB_min_max<Eigen::Vector3f> &bounding_box);
 
 bool add_box_data(entt::entity entity,
                   float x_min = -0.5,

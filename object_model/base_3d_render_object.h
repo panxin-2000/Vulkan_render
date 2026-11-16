@@ -14,11 +14,12 @@ class object_3d : public logic_render_object {
 public:
     object_3d(const std::string &name);
 
-    object_3d &object_3d_add_mesh(const AABB_min_max<Point_3> &bounding_box);
+    object_3d &object_3d_add_mesh(const AABB_min_max<Eigen::Vector3f> &bounding_box);
 
     object_3d &add_mesh(const std::string &mesh_path);
 
-    object_3d &add_mesh(const AABB_min_max<Point_3> &bounding_box);
+    object_3d &add_mesh(const AABB_min_max<Eigen::Vector3f> &bounding_box);
+
     object_3d &add_postprocess();
 
     object_3d &add_sky_box();
