@@ -28,15 +28,15 @@ void set_geometry_data(const entt::entity entity,
     geometry.push(sp_vertices, sp_indices);
 }
 
-void clean_geometry_data(const entt::entity entity);
+void clean_geometry_data(entt::entity entity);
 
-bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Eigen::Vector2f min,
-                               const Eigen::Vector2f max);
+bool add_2D_bound_box_geometry(entt::entity entity,
+                               Eigen::Vector2f min,
+                               Eigen::Vector2f max);
 
-bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Eigen::Vector3f min,
-                               const Eigen::Vector3f max);
+bool add_2D_bound_box_geometry(entt::entity entity,
+                               Eigen::Vector3f min,
+                               Eigen::Vector3f max);
 
 bool add_round_box_geometry(entt::entity entity,
                             Eigen::Vector3f min,
@@ -48,9 +48,9 @@ bool add_triangle_geometry(entt::entity entity,
                            Eigen::Vector3f c);
 
 
-bool add_path(const entt::entity entity, const std::vector<Eigen::Vector2f> &path, const Color color);
+bool add_path(entt::entity entity, const std::vector<Eigen::Vector2f> &path, Color color);
 
-bool add_box_data(const entt::entity entity, const AABB_min_max<Eigen::Vector3f> &bounding_box);
+bool add_box_data(entt::entity entity, const AABB_min_max<Eigen::Vector3f> &bounding_box);
 
 bool add_box_data(entt::entity entity,
                   float x_min = -0.5,

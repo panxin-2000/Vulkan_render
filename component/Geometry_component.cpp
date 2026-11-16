@@ -4,8 +4,6 @@
 
 #include "Geometry_component.h"
 
-#include "../render/render_component/shader_component.h"
-
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
                                const Eigen::Vector2f min,
@@ -36,8 +34,8 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
 }
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Point_3 min,
-                               const Point_3 max) {
+                               const Eigen::Vector3f min,
+                               const Eigen::Vector3f max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
@@ -55,19 +53,18 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, {0, 0, 0}, {1, 0}});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, {0, 0, 0}, {1, 1}}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, {0, 0, 0}, {0, 1}});
+        vertices->emplace_back(Vertex{{min.x(), min.y(), min.z()}, {0, 0, 0}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x(), min.y(), min.z()}, {0, 0, 0}, {1, 0}});
+        vertices->emplace_back(Vertex{{max.x(), max.y(), max.z()}, {0, 0, 0}, {1, 1}}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x(), max.y(), max.z()}, {0, 0, 0}, {0, 1}});
     }
     add_geometry_data(entity, vertices, indices);
     return true;
 }
 
 bool add_round_box_geometry(const entt::entity entity,
-                            Point_3 min,
-                            Point_3 max) {
-    auto vertex_input   = get_attribute_description(entity);
+                            Eigen::Vector3f min,
+                            Eigen::Vector3f max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
@@ -85,10 +82,10 @@ bool add_round_box_geometry(const entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex{{min.x, min.y, min.z}, {0, 0, 0}, {min.x, min.y}}); //0 1 2
-        vertices->emplace_back(Vertex{{max.x, min.y, min.z}, {0, 0, 0}, {max.x, min.y}});
-        vertices->emplace_back(Vertex{{max.x, max.y, max.z}, {0, 0, 0}, {max.x, max.y}}); // 2 3 0
-        vertices->emplace_back(Vertex{{min.x, max.y, max.z}, {0, 0, 0}, {min.x, max.y}});
+        vertices->emplace_back(Vertex{{min.x(), min.y(), min.z()}, {0, 0, 0}, {min.x(), min.y()}}); //0 1 2
+        vertices->emplace_back(Vertex{{max.x(), min.y(), min.z()}, {0, 0, 0}, {max.x(), min.y()}});
+        vertices->emplace_back(Vertex{{max.x(), max.y(), max.z()}, {0, 0, 0}, {max.x(), max.y()}}); // 2 3 0
+        vertices->emplace_back(Vertex{{min.x(), max.y(), max.z()}, {0, 0, 0}, {min.x(), max.y()}});
     }
 
     add_geometry_data(entity, vertices, indices);
@@ -96,9 +93,9 @@ bool add_round_box_geometry(const entt::entity entity,
 }
 
 bool add_triangle_geometry(const entt::entity entity,
-                           Point_3 a,
-                           Point_3 b,
-                           Point_3 c) {
+                           Eigen::Vector3f a,
+                           Eigen::Vector3f b,
+                           Eigen::Vector3f c) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 3 = 96
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 3 = 6
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。
@@ -106,9 +103,9 @@ bool add_triangle_geometry(const entt::entity entity,
         indices->push_back(vertices->size() + 0);
         indices->push_back(vertices->size() + 1);
         indices->push_back(vertices->size() + 2);
-        vertices->emplace_back(Vertex{{a.x, a.y, a.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex{{b.x, b.y, b.z}, {0, 0, 0}, {0, 0}}); //0 1 2
-        vertices->emplace_back(Vertex{{c.x, c.y, c.z}, {0, 0, 0}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex{{a.x(), a.y(), a.z()}, {0, 0, 0}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex{{b.x(), b.y(), b.z()}, {0, 0, 0}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex{{c.x(), c.y(), c.z()}, {0, 0, 0}, {0, 0}}); //0 1 2
     }
     add_geometry_data(entity, vertices, indices);
     return true;
