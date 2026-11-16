@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/9/23.
 //
 
-#include "opacity_batch.h"
+#include "opaque_batch.h"
 
 #include "mesh_component.h"
 #include "../render/render_component/render_state_component.h"
@@ -10,7 +10,7 @@
 #include "render_thread/VCB_vulkan_command_buffer.h"
 
 
-void opacity_batch::check_and_update(sets_map &sets_map_in_for,
+void opaque_batch::check_and_update(sets_map &sets_map_in_for,
                                      std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
     auto view = Render_entt().view<Geometry_data, Mesh_need_create_tag,
                                    std::vector<World_Space_AABB>,
@@ -116,7 +116,7 @@ void opacity_batch::check_and_update(sets_map &sets_map_in_for,
     }
 }
 
-void opacity_batch::draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_data> &shader_data_ref) {
+void opaque_batch::draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_data> &shader_data_ref) {
     if (mRenderableData_.size() > 0) {
         vcb.bind_pipeline_update_parameter(entt::null, shader_data_ref);
         // 现在绑定的管线是有问题的,
@@ -126,7 +126,7 @@ void opacity_batch::draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_d
     }
 }
 
-void opacity_batch::draw_batch(VCB &vcb) {
+void opaque_batch::draw_batch(VCB &vcb) {
     if (mRenderableData_.size() > 0) {
         auto frustum_culling_buffer = VKR_buffer_offset{
             SOA_buffer_,
@@ -142,7 +142,7 @@ void opacity_batch::draw_batch(VCB &vcb) {
     }
 }
 
-void opacity_batch::draw_shadow(VCB &vcb) {
+void opaque_batch::draw_shadow(VCB &vcb) {
     if (mRenderableData_.size() > 0) {
         auto frustum_culling_buffer = VKR_buffer_offset{
             SOA_buffer_,

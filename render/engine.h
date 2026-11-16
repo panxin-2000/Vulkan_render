@@ -26,7 +26,7 @@
 #include "shader_resolve.h"
 #include "vulkan_execute_command.h"
 #include "utils/StructureOfArrays.h"
-#include "../UI/opacity_batch.h"
+#include "../UI/opaque_batch.h"
 
 struct Engine {
     static Engine *instance_ptr;
@@ -63,7 +63,7 @@ private:
     bool update_frustum_culling = true;
 
     VKR_buffer_ptr CommandCountBuffer_;
-    opacity_batch opacity_batch_;
+    opaque_batch opacity_batch_;
 
 
     struct Static_Model {
@@ -74,7 +74,7 @@ public:
 
     static bool destroy_instance();
 
-    opacity_batch &get_opacity_batch() {
+    opaque_batch &get_opacity_batch() {
         return opacity_batch_;
     }
 

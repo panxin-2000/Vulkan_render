@@ -16,7 +16,7 @@
 
 class VCB;
 
-class opacity_batch {
+class opaque_batch {
 public:
     using RenderableSoa = utils::StructureOfArrays<
         VKR_Primitive,    //
@@ -41,15 +41,15 @@ public:
         SOA_shadow_frustum_culling, //   
     };
 
-    const RenderableSoa &get_renderable_SOA_data() const {
+    [[nodiscard]] const RenderableSoa &get_renderable_SOA_data() const {
         return mRenderableData_;
     }
 
-    const Mesh_data &get_mesh_data() const {
+    [[nodiscard]] const Mesh_data &get_mesh_data() const {
         return mesh_data_;
     }
 
-    const VKR_buffer_ptr &get_SOA_buffer() const {
+    [[nodiscard]] const VKR_buffer_ptr &get_SOA_buffer() const {
         return SOA_buffer_;
     }
 
