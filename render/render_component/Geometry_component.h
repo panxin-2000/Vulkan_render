@@ -7,6 +7,10 @@
 
 
 #include "Geometry_data.h"
+#include "global_singleton.h"
+#include "PBR_base.h"
+#include "base_geometry/base.h"
+
 
 template<typename vertex_t, typename index_t>
 void add_geometry_data(const entt::entity entity,

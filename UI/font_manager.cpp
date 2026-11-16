@@ -5,7 +5,7 @@
 #include "font_manager.h"
 
 #include "engine.h"
-
+#include "Geometry_data.h"
 
 extern "C" {
 #include <hb.h>
@@ -425,11 +425,11 @@ Font_Manager::create_text_geometry_data(const std::string &utf8_text,
                 }
             }
 
-            append_text_box(vertices, indices, {
+            append_text_box(vertices, indices, Eigen::Vector2f{
                                 current_x + char_size * (value->second.planeBounds.left),
                                 current_y - char_size * (value->second.planeBounds.bottom)
                             },
-                            {
+                            Eigen::Vector2f{
                                 current_x + char_size * value->second.planeBounds.right,
                                 current_y - char_size * value->second.planeBounds.top
                             },

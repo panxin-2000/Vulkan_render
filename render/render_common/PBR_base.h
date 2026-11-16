@@ -6,6 +6,7 @@
 #define HELLO_MAC_PBR_BASE_H
 
 #include <vector>
+#include "vulkan_image.h"
 
 struct Color {
     float R         = 1.0f;

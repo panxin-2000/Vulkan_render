@@ -18,6 +18,13 @@
 #include "UI/UI_text.h"
 
 
+void frustum_culling_SOA(Engine &engine, VCB &vcb,
+                         const FrustumPlanes &frustum_planes,
+                         const std::array<FrustumPlanes, 4> &light_frustum_planes,
+                         const VKR_image_ptr &depth,
+                         const opaque_batch &batch);
+
+
 void prepare_pass(VCB &vcb,
                   Engine &engine,
                   VKR_image_ptr depth_AO_image,
@@ -32,8 +39,8 @@ void prepare_pass(VCB &vcb,
     auto light_planes   = engine.get_light_frustum_planes();
     // 视锥裁剪
     if (engine.get_frustum_culling() == true) {
-        vcb.frustum_culling_SOA(engine, frustum_planes, light_planes, depth_AO_copy_image,
-                                engine.get_opacity_batch());
+        frustum_culling_SOA(engine, vcb, frustum_planes, light_planes, depth_AO_copy_image,
+                            engine.get_opacity_batch());
     } {
         vcb.begin_g_buffer_rendering_attachment({entity_image}, depth_AO_image,
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR);

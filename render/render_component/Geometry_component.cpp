@@ -4,7 +4,6 @@
 
 #include "Geometry_component.h"
 
-#include "Geometry_data.h"
 #include "../render_component/shader_component.h"
 
 
@@ -27,10 +26,10 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
         //      *  *       *
         //      ************
         //     0            1
-        vertices->emplace_back(Vertex_2D{{min.x, min.y}, 0, 0}); //0 1 2
-        vertices->emplace_back(Vertex_2D{{max.x, min.y}, 1, 0});
-        vertices->emplace_back(Vertex_2D{{max.x, max.y}, 1, 1}); // 2 3 0
-        vertices->emplace_back(Vertex_2D{{min.x, max.y}, 0, 1});
+        vertices->emplace_back(Vertex_2D{{min.x, min.y}, {0, 0}}); //0 1 2
+        vertices->emplace_back(Vertex_2D{{max.x, min.y}, {1, 0}});
+        vertices->emplace_back(Vertex_2D{{max.x, max.y}, {1, 1}}); // 2 3 0
+        vertices->emplace_back(Vertex_2D{{min.x, max.y}, {0, 1}});
     }
     set_geometry_data(entity, vertices, indices);
     return true;

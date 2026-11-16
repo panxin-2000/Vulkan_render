@@ -314,9 +314,6 @@ set(LIBRARIES "Vulkan::Vulkan")
 #######################################vulkan#####################################
 
 
-
-
-
 #include_directories(/opt/homebrew/include/glm)
 
 add_subdirectory(include)
@@ -341,7 +338,7 @@ add_executable(learn_render main.cpp
         "object_model/parse_geometry_file.cpp"
         "UI/sync_proxy_to_render_thread.cpp"
         "UI/VKR_proxy_component.cpp"
-        "UI/opacity_batch.cpp"
+        "UI/opaque_batch.cpp"
 
         ${imgui_sources}
 )

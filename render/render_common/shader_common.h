@@ -96,16 +96,6 @@ struct Line {
 };
 
 
-struct Vertex_2D {
-    Point_2 pos;
-    uv_struct uv{0, 0};
-};
-
-struct Vertex_imgui {
-    Point_2 pos;
-    uv_struct uv{0, 0};
-    uint32_t color;
-};
 
 
 template<typename T>

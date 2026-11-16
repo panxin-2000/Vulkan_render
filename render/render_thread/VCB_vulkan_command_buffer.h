@@ -14,7 +14,6 @@
 
 class VK_backend;
 class Engine;
-class opaque_batch;
 
 struct G_buffer_image_index {
     uint32_t position_image_index;
@@ -70,8 +69,11 @@ class VCB {
     VkCommandBuffer command_buffer_ = VK_NULL_HANDLE;
     uint64_t time_line_             = 0;
     VkQueryPool query_pool_         = VK_NULL_HANDLE;
-    VkViewport pass_viewport_       = {};
-    VkRect2D pass_scissor_          = {};
+
+    // 下面的是管线的状态，有变更才需要绘制
+    VkViewport pass_viewport_      = {};
+    VkRect2D pass_scissor_         = {};
+    VKR_Render_state render_state_ = {};
 
 public:
     [[nodiscard]] VkCommandBuffer get_command_buffer() const {
@@ -81,9 +83,6 @@ public:
     [[nodiscard]] VkQueryPool get_query_pool() const {
         return query_pool_;
     }
-
-    void CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image);
-
 
     void set_pass_viewport(const uint32_t width, const uint32_t height) {
         pass_viewport_ = VkViewport{
@@ -102,6 +101,8 @@ public:
             .extent = {width, height},
         };
     }
+
+    void CSM_pass(Engine &engine, const VKR_image_ptr &depth_shadow_image);
 
     void reset_current_command_buffer(uint64_t time_line, VkCommandBuffer);
 
@@ -209,14 +210,14 @@ public:
                              uint32_t command_size, VKR_buffer_offset read_buffer);
 
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
-                             VKR_buffer_offset read_buffer);
+                             const VKR_buffer_offset &read_buffer);
 
     void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
                                   VKR_buffer_offset read_buffer, VKR_buffer_offset countBuffer);
 
     void write_draw_command(const Mesh_data &mesh_data,
-              const std::vector<VKR_Primitive> &primitives,
-              const std::vector<VKR_Render_state> &render_states) const;
+                            const std::vector<VKR_Primitive> &primitives,
+                            const std::vector<VKR_Render_state> &render_states) const;
 
 
     void begin_rendering_depth_attachment(
@@ -281,11 +282,6 @@ public:
         vkCmdPushConstants(command_buffer_, layout,
                            stageFlags, offset, size, pValues);
     }
-
-    void frustum_culling_SOA(Engine &engine,
-                             const FrustumPlanes &frustum_planes,
-                             const std::array<FrustumPlanes, 4> &light_frustum_planes,
-                             const VKR_image_ptr &depth, const opaque_batch &batch);
 
 
     void bind_Proxy_descriptor_sets(entt::entity entity,

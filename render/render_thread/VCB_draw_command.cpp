@@ -103,18 +103,12 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
     }
 }
 
-void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
-                              uint32_t command_size, VKR_buffer_offset read_buffer) {
-    vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset_);
-    if (mesh_data.indices_ != nullptr &&
-        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
+void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data,
+                              const VKR_Render_state &render_state,
+                              const uint32_t command_size,
+                              const VKR_buffer_offset &read_buffer) {
+    if (mesh_data.write_bind_command(command_buffer_, time_line_) == true) {
         render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
-        vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices_->get_buffer_handle(),
-                             mesh_data.indices_offset_,
-                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
                                  read_buffer.get_offset(),

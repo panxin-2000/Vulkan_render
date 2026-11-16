@@ -6,7 +6,7 @@
 #define HELLO_MAC_MESH_COMPONENT_H
 #include "global_singleton.h"
 #include "primitive_component.h"
-#include "../render_common/Geometry_data.h"
+#include "Geometry_data.h"
 
 
 /**

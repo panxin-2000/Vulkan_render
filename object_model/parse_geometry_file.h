@@ -6,7 +6,8 @@
 #define HELLO_MAC_PARSE_GEOMETRY_FILE_H
 
 #include <vector>
-#include "../render/render_common/Geometry_data.h"
+#include "base_geometry/base.h"
+#include "global_singleton.h"
 
 std::optional<AABB_min_max<Point_3> > load_model(const entt::entity entity, const std::string &path);
 

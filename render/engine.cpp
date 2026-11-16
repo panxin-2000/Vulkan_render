@@ -399,6 +399,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     }
 
 
+    // 这个， 看看应该怎么改呢 ？？
+    // 其实问题是什么呢？ 上传给GPU的是什么？ 应该怎么处理呢？
     opacity_batch_.check_and_update(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets);
 
     update_global_pbr_parameter(update_global_descriptor_sets);
