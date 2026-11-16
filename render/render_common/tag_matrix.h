@@ -59,14 +59,12 @@ inline Eigen::Vector3f InterpolateCubicSplineVector(
 
 #include "Eigen/Eigen"
 
-inline Eigen::Quaternionf InterpolateCubicSplineQuaternion(
-    float s,
-    const Eigen::Quaternionf &v_k,
-    const Eigen::Quaternionf &out_tan_k,
-    const Eigen::Quaternionf &in_tan_kp1,
-    const Eigen::Quaternionf &v_kp1,
-    float deltaTime = 1.0f
-) {
+inline Eigen::Quaternionf InterpolateCubicSplineQuaternion(float s,
+                                                           const Eigen::Quaternionf &v_k,
+                                                           const Eigen::Quaternionf &out_tan_k,
+                                                           const Eigen::Quaternionf &in_tan_kp1,
+                                                           const Eigen::Quaternionf &v_kp1,
+                                                           float deltaTime = 1.0f) {
     float s2 = s * s;
     float s3 = s2 * s;
 

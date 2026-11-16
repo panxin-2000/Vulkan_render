@@ -5,7 +5,7 @@
 #include "opacity_batch.h"
 
 #include "mesh_component.h"
-#include "render_state.h"
+#include "../render/render_component/render_state_component.h"
 #include "tag_matrix.h"
 #include "render_thread/VCB_vulkan_command_buffer.h"
 

@@ -5,7 +5,7 @@
 #ifndef HELLO_MAC_MESH_COMPONENT_H
 #define HELLO_MAC_MESH_COMPONENT_H
 #include "global_singleton.h"
-#include "../render_common/render_mesh.h"
+#include "primitive_component.h"
 #include "../render_common/Geometry_data.h"
 
 
@@ -113,8 +113,5 @@ private:
  */
 Mesh_data get_VKR_mesh(entt::entity entity);
 
-std::vector<VKR_Primitive> create_primitives(entt::entity entity);
-
-std::vector<VKR_Primitive> create_primitives(const Geometry_data &data);
 
 #endif //HELLO_MAC_MESH_COMPONENT_H

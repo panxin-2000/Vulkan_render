@@ -4,7 +4,7 @@
 
 
 #include "engine.h"
-#include "../render_common/render_state.h"
+#include "../render_component/render_state_component.h"
 #include "VCB_vulkan_command_buffer.h"
 
 void VCB::begin_rendering_depth_attachment(VKR_image_ptr depth,

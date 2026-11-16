@@ -7,7 +7,7 @@
 #include "mesh_component.h"
 #include "name_component.h"
 #include "render_component/Geometry_component.h"
-#include "render_state.h"
+#include "../render/render_component/render_state_component.h"
 #include "scene_component.h"
 #include "UI/UI_line.h"
 #include "UI_render_common.h"

@@ -7,7 +7,7 @@
 #include <volk.h>
 #include <absl/container/flat_hash_map.h>
 
-#include "Geometry_data.h"
+#include "../render_common/Geometry_data.h"
 #include "vertex_and_buffer_index.h"
 #include "vulkan_buffer.h"
 
@@ -23,7 +23,6 @@ public:
 };
 
 
-
 struct Draw_command {
     union {
         VkDrawIndexedIndirectCommand indexed_command = {};
@@ -36,6 +35,11 @@ struct Draw_command {
         //
     };
 };
+
+
+std::vector<VKR_Primitive> create_primitives(entt::entity entity);
+
+std::vector<VKR_Primitive> create_primitives(const Geometry_data &data);
 
 
 #endif //HELLO_MAC_RENDER_MESH_H

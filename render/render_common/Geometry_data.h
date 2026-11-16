@@ -7,9 +7,7 @@
 #include <oneapi/tbb.h>
 
 #include <vector>
-#include "global_singleton.h"
-#include "../render_component/PBR_component.h"
-// #include "shader_common.h"
+#include "PBR_component.h"
 #include "AABB_box.h"
 
 struct share_block {

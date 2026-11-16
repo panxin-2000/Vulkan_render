@@ -5,8 +5,8 @@
 #ifndef HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #define HELLO_MAC_VULKAN_BUILD_COMMAND_BUFFER_H
 #include "frustum.h"
-#include "render_mesh.h"
-#include "render_state.h"
+#include "../render_component/primitive_component.h"
+#include "../render_component/render_state_component.h"
 #include "vulkan_image.h"
 #include "global_singleton.h"
 #include "mesh_component.h"

@@ -20,7 +20,7 @@
 #include "render_component/PBR_component.h"
 #include "pbr_manager.h"
 #include "render_image_manager.h"
-#include "render_mesh.h"
+#include "render_component/primitive_component.h"
 #include "Shader_manager.h"
 #include "vulkan_code/vulkan_buffer.h"
 #include "vulkan_code/vulkan_image.h"

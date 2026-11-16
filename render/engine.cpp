@@ -5,7 +5,7 @@
 
 #include <sys/stat.h>
 
-#include "render_mesh.h"
+#include "render_component/primitive_component.h"
 #include "vulkan_code/sets_and_bindings_layout.h"
 #include "shader_component.h"
 #include "transform_component.h"

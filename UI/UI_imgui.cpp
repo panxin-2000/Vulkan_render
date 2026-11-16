@@ -12,7 +12,7 @@
 #include "load_gltf_model.h"
 #include "move_speed.h"
 #include "name_component.h"
-#include "render_common/render_state.h"
+#include "../render/render_component/render_state_component.h"
 #include "scene_component.h"
 #include "select_component.h"
 #include "render_component/shader_component.h"
