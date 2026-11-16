@@ -207,13 +207,13 @@ public:
 
 
     void DrawIndexedIndirect(entt::entity entity,
-                             uint32_t command_size, VKR_buffer_offset read_buffer);
+                             uint32_t command_size, const VKR_buffer_offset &read_buffer) const;
 
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
-                             const VKR_buffer_offset &read_buffer);
+                             const VKR_buffer_offset &read_buffer) const;
 
     void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
-                                  VKR_buffer_offset read_buffer, VKR_buffer_offset countBuffer);
+                               const   VKR_buffer_offset &read_buffer,const VKR_buffer_offset &countBuffer) const;
 
     void write_draw_command(const Mesh_data &mesh_data,
                             const std::vector<VKR_Primitive> &primitives,

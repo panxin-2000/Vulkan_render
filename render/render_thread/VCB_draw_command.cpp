@@ -53,7 +53,7 @@ void VCB::draw_entity(const entt::entity entity) {
     }
 }
 
-void VCB::build_draw_command_UI(entt::entity entity) {
+void VCB::build_draw_command_UI(const entt::entity entity) {
     const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
 
     bind_pipeline_update_parameter(entity, shader_data_ref);
@@ -81,20 +81,13 @@ void VCB::build_draw_command_UI(entt::entity entity) {
 }
 
 
-void VCB::DrawIndexedIndirect(entt::entity entity,
-                              uint32_t command_size, VKR_buffer_offset read_buffer) {
+void VCB::DrawIndexedIndirect(const entt::entity entity,
+                              const uint32_t command_size,
+                              const VKR_buffer_offset &read_buffer) const {
     const auto mesh_data = Render_entt().get<Mesh_data>(entity);
-    vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset_);
-    if (mesh_data.indices_ != nullptr &&
-        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
+    if (mesh_data.write_bind_command(command_buffer_, time_line_) == true) {
         VKR_Render_state temp;
         temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
-        vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices_->get_buffer_handle(),
-                             mesh_data.indices_offset_,
-                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
                                  read_buffer.get_offset(),
@@ -106,7 +99,7 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
 void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data,
                               const VKR_Render_state &render_state,
                               const uint32_t command_size,
-                              const VKR_buffer_offset &read_buffer) {
+                              const VKR_buffer_offset &read_buffer) const {
     if (mesh_data.write_bind_command(command_buffer_, time_line_) == true) {
         render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdDrawIndexedIndirect(command_buffer_,
@@ -121,18 +114,10 @@ void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data,
 // 这里是什么意思呢?  多批次物体剔除或大规模场景渲染 , 不是一个 批次 就完成了的
 void VCB::DrawIndexedIndirectCount(const Mesh_data &mesh_data,
                                    const VKR_Render_state &render_state,
-                                   VKR_buffer_offset read_buffer,
-                                   VKR_buffer_offset countBuffer) {
-    vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset_);
-    if (mesh_data.indices_ != nullptr &&
-        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
+                                   const VKR_buffer_offset &read_buffer,
+                                   const VKR_buffer_offset &countBuffer) const {
+    if (mesh_data.write_bind_command(command_buffer_, time_line_) == true) {
         render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
-        vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices_->get_buffer_handle(),
-                             mesh_data.indices_offset_,
-                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirectCount(
                                       command_buffer_,
                                       read_buffer.get_buffer_handle(time_line_), // 包含 draw_commands[] 的缓冲区
