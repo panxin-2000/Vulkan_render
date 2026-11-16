@@ -4,7 +4,7 @@
 
 #include "Geometry_component.h"
 
-#include "../render_component/shader_component.h"
+#include "../render/render_component/shader_component.h"
 
 
 bool add_2D_bound_box_geometry(const entt::entity entity,

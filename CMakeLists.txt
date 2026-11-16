@@ -253,6 +253,7 @@ file(GLOB_RECURSE component
         "component/UI_manager.cpp"
         "component/input_component.cpp"
         "component/world_scene_root.cpp"
+        "component/Geometry_component.cpp"
 )
 
 

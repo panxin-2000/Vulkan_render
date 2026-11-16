@@ -57,7 +57,6 @@ file(GLOB_RECURSE render_code
         "vulkan_code/vulkan_update_descriptor.cpp"
         "vulkan_code/updata_push_constants_data.cpp"
 
-        "render_component/Geometry_component.cpp"
         "render_thread/render_thread.cpp"
         "render_thread/VCB_SOA_batch.cpp"
         "render_component/PBR_component.cpp"

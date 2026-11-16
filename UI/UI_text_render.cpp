@@ -8,7 +8,7 @@
 #include "engine.h"
 #include "font_manager.h"
 #include "name_component.h"
-#include "render_component/Geometry_component.h"
+#include "Geometry_component.h"
 #include "../render/render_component/render_state_component.h"
 #include "scene_component.h"
 #include "UI_render_common.h"

@@ -6,7 +6,7 @@
 #include "engine.h"
 #include "mesh_component.h"
 #include "name_component.h"
-#include "render_component/Geometry_component.h"
+#include "Geometry_component.h"
 #include "../render/render_component/render_state_component.h"
 #include "scene_component.h"
 #include "UI/UI_line.h"
