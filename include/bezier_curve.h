@@ -4,7 +4,7 @@
 
 #ifndef HELLO_MAC_BEZIER_CURVE_H
 #define HELLO_MAC_BEZIER_CURVE_H
-#include <Eigen/Dense>
+#include "Eigen/Eigen"
 #include <vector>
 
 
@@ -34,14 +34,26 @@ bool need_tessellation(const T &p1, const T &p2, const T &p3, const T &p4, float
     T d41 = p4 - p1;
     // tess_tol 与像素相关的一个参数
 
+
+    Eigen::Matrix2f mat;
+    mat << (p2 - p4), d41;
+
+    const float d2 = (mat.determinant());
+
+    Eigen::Matrix2f mat2;
+    mat2 << (p2 - p4), d41;
+
+
+    const float d3 = (mat2.determinant());
+
+
     // 2. 利用二维向量叉乘（Cross Product）计算控制点到端点连线的距离关系
     // Eigen 的 cross 在 2D 中返回标量：a.x() * b.y() - a.y() * b.x()
-    float d2 = std::abs((p2 - p4).cross(d41));
-    float d3 = std::abs((p3 - p4).cross(d41));
     // 两个向量的叉乘（Cross Product）的绝对值，代表它们组成的平行四边形的面积
 
+    auto d23 = std::abs(d2) + std::abs(d3);
     // 3. 误差平直度检查 (Flatness test) // 中间的控制点，偏离“起点到终点的连线”有多远
-    if ((d2 + d3) * (d2 + d3) < tess_tol * d41.squaredNorm()) {
+    if ((d23) * (d23) < tess_tol * d41.squaredNorm()) {
         return false;
     }
     return true;
@@ -153,11 +165,21 @@ public:
 
         // 2. 利用二维向量叉乘（Cross Product）计算控制点到端点连线的距离关系
         // Eigen 的 cross 在 2D 中返回标量：a.x() * b.y() - a.y() * b.x()
-        const float d2 = std::abs((p2_ - p4_).cross(d41));
-        const float d3 = std::abs((p3_ - p4_).cross(d41));
+
+        Eigen::Matrix2f mat;
+        mat << (p2_ - p4_), d41;
+
+        const float d2 = (mat.determinant());
+
+        Eigen::Matrix2f mat2;
+        mat2 << (p2_ - p4_), d41;
+
+
+        const float d3 = (mat2.determinant());
+        auto d23       = std::abs(d2) + std::abs(d3);
 
         // 3. 误差平直度检查 (Flatness test)
-        if ((d2 + d3) * (d2 + d3) < tess_tol_ * d41.squaredNorm()) {
+        if ((d23) * (d23) < tess_tol_ * d41.squaredNorm()) {
             path->push_back(p4_);
         }
         // 4. 递归细分

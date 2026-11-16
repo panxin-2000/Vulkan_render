@@ -3,7 +3,8 @@
 //
 
 #include <gtest/gtest.h>
-#include "spherical_SH.h"
+#include "./../spherical_harmonics/spherical_harmonics.h"
+#include "./../spherical_harmonics/spherical_SH.h"
 #include <Eigen/Dense>
 #include <vector>
 #include <cmath>

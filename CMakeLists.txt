@@ -89,6 +89,7 @@ add_subdirectory(external/readerwriterqueue)
 add_subdirectory(external/libccd)
 add_subdirectory(external/entt)
 add_subdirectory(external/absl)
+add_subdirectory(external/eigen)
 
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(spirv_cross_core REQUIRED)
@@ -118,6 +119,7 @@ option(TRACY_ENABLE "Enable Tracy profiling" OFF)
 
 
 add_subdirectory(tracy)
+add_subdirectory(test)
 # 优先级从高到低为：
 # 局部变量 set(VAR ...) > 命令行 -DVAR=... > CMakeCache.txt 中的缓存值 > option(VAR ... DEFAULT) 源码默认值
 
@@ -309,99 +311,11 @@ set(LIBRARIES "Vulkan::Vulkan")
 #######################################vulkan#####################################
 
 
-enable_testing()
-
-add_executable(cache_time
-        test/hello_test.cpp
-)
-
-add_executable(hello_test ${LABYRINTH}
-        #        spherical_harmonics/spherical_harmonics_test.cpp
-        test/add_char_calculata.cpp
-        test/test_openvdb.cpp
-        test/test_add_char_calculata.cpp
-        test/the_centre_of_a_circle.cpp
-        test/segment_end_ponit_and_gradient.cpp
-        test/longest_continuous_sequence.cpp
-        test/test_delaunay_triangulation.cpp
-        test/test_tetrahedron.cpp
-        test/convex_hull.cpp
-        test/bracket.cpp
-        test/test_QEM.cpp
-        test/test_factory.cpp
-        test/cut_rod.cpp
-        test/test_tree_node.cpp
-        test/test_class.cpp
-        test/test_SH.cpp
-        test/knapsack.cpp
-        test/test_template.cpp
-        test/test_plane_sweep.cpp
-        test/ear_clip.cpp
-        test/test_Tent_Filter.cpp
-        test/test_ear_clip.cpp
-        test/test_mutex.cpp
-        test/test_best-fit.cpp
-        test/test_occt.cpp
-        test/test_quadtree.cpp
-        test/test_particle.cpp
-        test/test_intersect.cpp
-        test/test_reader_writer_queue.cpp
-        test/test_lazy_Evaluation.cpp
-        test/test_signed_area.cpp
-        test/test_conveyor_belt.cpp
-        test/test_cut_rod.cpp)
-
-
 include_directories(/opt/homebrew/include/glm)
-include(GoogleTest)
-gtest_discover_tests(hello_test DISCOVERY_TIMEOUT 30)
-gtest_discover_tests(cache_time)
-target_link_libraries(hello_test  PRIVATE ccd hwy readerwriterqueue OpenVDB::openvdb GTest::gtest_main TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
-target_compile_definitions(hello_test PRIVATE VK_NO_PROTOTYPES)
-target_link_libraries(hello_test PRIVATE project_include)
 
-target_compile_options(hello_test PRIVATE -g)
-#target_compile_options(hello_test PRIVATE -fsanitize=thread) // 需要开另一个 gtest 程序，不能和另外两个一起使用
-target_compile_options(hello_test PRIVATE -fno-omit-frame-pointer)
-#target_compile_options(hello_test PRIVATE -fsanitize=address,undefined)
-#target_link_options(hello_test PRIVATE -fsanitize=address,undefined)
-
-# mac 上不支持leak ,在linux上是可以开启的, mac 上 Instruments，选择 Allocations 或 Leaks 模板，直接录制你的可执行程序
-#target_compile_options(hello_test PRIVATE -fsanitize=address,undefined,leak)
-#target_link_options(hello_test PRIVATE -fsanitize=address,undefined,leak)
-
-target_compile_definitions(hello_test PRIVATE NDEBUG)
-
-add_executable(test_mutex
-        #        test_curve.cpp
-        test/test_thread_fibonacci.cpp
-        test/test_dot_product.cpp
-        test/test_matrix_view_model_projection.cpp
-        test/test_mutex.cpp)
-gtest_discover_tests(test_mutex)
-target_link_libraries(test_mutex GTest::gtest_main)
-
-add_executable(fixture test/sample3.cpp include/sample3.h)
-gtest_discover_tests(fixture)
-target_link_libraries(fixture GTest::gtest_main)
 
 add_subdirectory(include)
 
-include_directories(/opt/homebrew/Cellar/eigen/3.4.0_1/include/eigen3)
-add_executable(hello_mac
-        include/run_time.cpp
-        test/make_heap.cpp
-        test/thread.cpp
-        test/cut_rod.cpp
-        test/run_priority_queue.cpp
-        test/run_queue.cpp
-        test/longest_continuous_sequence.cpp
-        test/set_graph.cpp)
-target_link_libraries(hello_mac ${CURSES_LIBRARIES} EnTT::EnTT quill::quill)
-
-
-#find_library(TCMALLOC_LIB NAMES tcmalloc_minimal tcmalloc)
-#target_link_libraries(my_program PRIVATE ${TCMALLOC_LIB})
 
 # 主要用于解决 Windows 平台上的命名冲突和数学常量支持问题
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNOMINMAX -D_USE_MATH_DEFINES")

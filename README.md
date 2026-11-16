@@ -27,6 +27,7 @@ git clone --depth 1 --branch  v4.4.2       https://github.com/KhronosGroup/KTX-S
 git clone --depth 1 --branch  v3.3.1       https://github.com/jarro2783/cxxopts.git                              external/cxxopts
 git clone --depth 1 --branch  v1.0.7       https://github.com/cameron314/readerwriterqueue.git                   external/readerwriterqueue
 git clone --depth 1 --branch  20260107.1   https://github.com/abseil/abseil-cpp.git                              external/absl
+git clone --depth 1 --branch  3.4.1        https://gitlab.com/libeigen/eigen.git                                 external/eigen
 wget -P external/tinyobj/  https://github.com/tinyobjloader/tinyobjloader/releases/download/v1.0.6/tiny_obj_loader.h 
 ```
 
