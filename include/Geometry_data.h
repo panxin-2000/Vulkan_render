@@ -4,21 +4,19 @@
 
 #ifndef HELLO_MAC_GEOMETRY_DATA_H
 #define HELLO_MAC_GEOMETRY_DATA_H
-#include <oneapi/tbb.h>
-
 #include <vector>
 #include "AABB_box.h"
 #include "Eigen/Eigen"
 
 struct Vertex_2D {
-    Eigen::Vector2f pos;
+    Eigen::Vector2f pos{0, 0};
     Eigen::Vector2f uv{0, 0};
 };
 
 struct Vertex_imgui {
-    Eigen::Vector2f pos;
+    Eigen::Vector2f pos{0, 0};
     Eigen::Vector2f uv{0, 0};
-    uint32_t color;
+    uint32_t color = 0xffffffff;
 };
 
 
@@ -52,7 +50,6 @@ struct Mesh_need_create_tag {
 };
 
 
-Render_AABB find_min_max_point(const share_block &vertex);
 
 class Geometry {
     share_block vertices_;

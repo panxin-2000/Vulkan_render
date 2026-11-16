@@ -34,8 +34,8 @@ bool add_2D_bound_box_geometry(const entt::entity entity,
 }
 
 bool add_2D_bound_box_geometry(const entt::entity entity,
-                               const Eigen::Vector3f min,
-                               const Eigen::Vector3f max) {
+                               const Eigen::Vector3f &min,
+                               const Eigen::Vector3f &max) {
     const auto vertices = std::make_shared<std::vector<Vertex> >();   //  32  * 4 = 128
     const auto indices  = std::make_shared<std::vector<uint16_t> >(); //  2   * 6 = 12
     // 要改这里，需要改的内容似乎就有点说了，之后再看看怎么改吧。

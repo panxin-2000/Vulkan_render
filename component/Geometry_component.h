@@ -9,7 +9,6 @@
 #include "Geometry_data.h"
 #include "global_singleton.h"
 #include "PBR_base.h"
-#include "base_geometry/base.h"
 
 
 template<typename vertex_t, typename index_t>
@@ -35,8 +34,8 @@ bool add_2D_bound_box_geometry(entt::entity entity,
                                Eigen::Vector2f max);
 
 bool add_2D_bound_box_geometry(entt::entity entity,
-                               Eigen::Vector3f min,
-                               Eigen::Vector3f max);
+                               const Eigen::Vector3f &min,
+                               const Eigen::Vector3f &max);
 
 bool add_round_box_geometry(entt::entity entity,
                             Eigen::Vector3f min,

@@ -2,7 +2,7 @@
 // Created by 潘鑫 on 2026/5/24.
 //
 
-
+#include <oneapi/tbb.h>
 #include "Geometry_data.h"
 #include "AABB_box.h"
 

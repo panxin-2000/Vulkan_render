@@ -961,6 +961,9 @@ entt::entity load_gltf_model(const std::string &name, const std::filesystem::pat
     return entt::null;
 }
 
+Render_AABB find_min_max_point(const share_block &vertex);
+
+
 void combine_geometry_data(const entt::entity model_entity) {
     std::vector<entt::entity> temp;
     auto generate_aabb = [&](const entt::entity entity) {
