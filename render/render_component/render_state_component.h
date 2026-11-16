@@ -36,9 +36,9 @@ public:
         pipelineRasterizationState.cullMode_ = cullMode;
     }
 
-    void set_render_state_command(const VkCommandBuffer &cb,
-                                  const VkViewport pass_viewport,
-                                  const VkRect2D pass_scissor) const {
+    void write_commands(const VkCommandBuffer &cb,
+                        const VkViewport &pass_viewport,
+                        const VkRect2D &pass_scissor) const {
         if (viewport.x == 0 && viewport.y == 0 &&
             viewport.width == 0 && viewport.height == 0 &&
             viewport.minDepth == 0 && viewport.maxDepth == 1.0f) {

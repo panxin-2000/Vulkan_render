@@ -172,7 +172,7 @@ public:
 
     void compute_write_init_barrier(const VKR_image_ptr &compute_write_finish_image);
 
-    void end_command_buffer(VK_backend &backend, Engine &engine , const VKR_image_ptr &screen_image);
+    void end_command_buffer(VK_backend &backend, Engine &engine, const VKR_image_ptr &screen_image);
 
 
     G_buffer_image_index begin_g_buffer_rendering_attachment(
@@ -197,7 +197,7 @@ public:
                                    command_shader->pipeline_layout,
                                    VK_PIPELINE_BIND_POINT_GRAPHICS);
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdSetCullMode(command_buffer_, VK_CULL_MODE_NONE);
         vkCmdSetDepthTestEnable(command_buffer_, VK_FALSE);
 
@@ -214,10 +214,9 @@ public:
     void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
                                   VKR_buffer_offset read_buffer, VKR_buffer_offset countBuffer);
 
-    inline void draw(
-        const Mesh_data &mesh_data,
-        const std::vector<VKR_Primitive> &primitives,
-        const std::vector<VKR_Render_state> *render_states);
+    void draw(const Mesh_data &mesh_data,
+              const std::vector<VKR_Primitive> &primitives,
+              const std::vector<VKR_Render_state> *render_states);
 
 
     void begin_rendering_depth_attachment(
@@ -271,7 +270,7 @@ public:
 
     void default_status() const {
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
     }
 
     void PushConstants(VkPipelineLayout layout,

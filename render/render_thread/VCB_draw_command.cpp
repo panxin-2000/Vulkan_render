@@ -31,7 +31,7 @@ void VCB::draw(const Mesh_data &mesh_data,
         for (int i = 0; i < primitives.size(); ++i) {
             if (render_states != nullptr && primitives.size() == render_states->size()) {
                 auto render_state = render_states->at(i);
-                render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+                render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
             }
             const auto primitive = primitives.at(i);
             // vertexOffset 只会影响最终传给顶点属性读取的顶点索引（即 Index + vertexOffset），
@@ -61,7 +61,7 @@ void VCB::build_draw_command(entt::entity entity) {
         draw(mesh_data, primitives, render_states);
     } else if (!primitives.empty() && render_states == nullptr) {
         constexpr VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
 
         draw(mesh_data, primitives, render_states);
     } else {
@@ -87,7 +87,7 @@ void VCB::build_draw_command_UI(entt::entity entity) {
     } else if (!primitives.empty() && render_states == nullptr) {
         VKR_Render_state temp;
         temp.set_depthTest_disable();
-        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
 
         draw(mesh_data, primitives, render_states);
     } else {
@@ -109,7 +109,7 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
     if (mesh_data.indices_ != nullptr &&
         mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
         VKR_Render_state temp;
-        temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        temp.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
                              mesh_data.indices_->get_buffer_handle(),
                              mesh_data.indices_offset_,
@@ -129,7 +129,7 @@ void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state
                            &mesh_data.vertices_offset_);
     if (mesh_data.indices_ != nullptr &&
         mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
-        render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
                              mesh_data.indices_->get_buffer_handle(),
                              mesh_data.indices_offset_,
@@ -153,7 +153,7 @@ void VCB::DrawIndexedIndirectCount(const Mesh_data &mesh_data,
                            &mesh_data.vertices_offset_);
     if (mesh_data.indices_ != nullptr &&
         mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
-        render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
+        render_state.write_commands(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
                              mesh_data.indices_->get_buffer_handle(),
                              mesh_data.indices_offset_,
