@@ -65,7 +65,7 @@ file(GLOB_RECURSE render_code
         "render_component/shader_component.cpp"
         "render_component/mesh_component.cpp"
         "render_component/primitive_component.cpp"
-        "render_common/Geometry_data.cpp"
+        "render_common/AABB_operate.cpp"
 )
 
 
