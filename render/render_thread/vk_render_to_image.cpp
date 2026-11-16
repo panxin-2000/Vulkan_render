@@ -121,13 +121,13 @@ void render_different_pass(VCB &vcb,
             // g_buffer_image_indices 这是需要看看怎么传递进入其中
             auto view = Render_entt().view<deferred_pass_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.draw_entity(entity);
             }
         } {
             // 按照常理来说，包围盒的时候 深度比较出问题了，所以会覆盖
             auto view = Render_entt().view<std::vector<VKR_Primitive>, skybox_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.draw_entity(entity);
             }
         }
         vcb.bind_pipeline_update_parameter(entt::null, engine.get_shader_manager().get_gltf_shader_data());
@@ -144,12 +144,12 @@ void render_different_pass(VCB &vcb,
         } {
             auto view = Render_entt().view<std::vector<VKR_Primitive>, translate_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.draw_entity(entity);
             }
         } {
             auto view = Render_entt().view<volume_pass_tag>();
             for (const auto entity: view) {
-                vcb.build_draw_command(entity);
+                vcb.draw_entity(entity);
             }
         }
         vcb.end_rendering();

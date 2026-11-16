@@ -20,6 +20,15 @@ public:
     int32_t vertexOffset   = 0;
     uint32_t firstInstance = 0;
     // uint32_t material_index_ = 0;
+
+
+    void write_commands(const VkCommandBuffer &cb) const {
+        vkCmdDrawIndexed(cb, indexCount,
+                         instanceCount,
+                         firstIndex,
+                         vertexOffset,
+                         firstInstance);
+    }
 };
 
 

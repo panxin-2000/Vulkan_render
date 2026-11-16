@@ -186,7 +186,7 @@ public:
     void current_frag_write_next_compute_read_image(const std::vector<VKR_image_ptr> &images);
 
 
-    void build_draw_command(entt::entity entity);
+    void draw_entity(entt::entity entity);
 
     void build_draw_command_UI(entt::entity entity);
 
@@ -214,9 +214,9 @@ public:
     void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
                                   VKR_buffer_offset read_buffer, VKR_buffer_offset countBuffer);
 
-    void draw(const Mesh_data &mesh_data,
+    void write_draw_command(const Mesh_data &mesh_data,
               const std::vector<VKR_Primitive> &primitives,
-              const std::vector<VKR_Render_state> *render_states);
+              const std::vector<VKR_Render_state> &render_states) const;
 
 
     void begin_rendering_depth_attachment(
