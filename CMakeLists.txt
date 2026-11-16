@@ -97,6 +97,7 @@ find_package(spirv_cross_glsl REQUIRED)
 find_package(spirv_cross_cpp REQUIRED)
 find_package(TBB REQUIRED)
 #find_package(realsense2 REQUIRED)
+
 if (APPLE)
     list(APPEND CMAKE_MODULE_PATH "/opt/homebrew/lib/cmake/OpenVDB")
 elseif (LINUX)
@@ -230,14 +231,16 @@ file(GLOB_RECURSE component
         "UI/bin_pack/Rect.cpp"
         "UI/bin_pack/MaxRectBinPact.cpp"
         "UI/bin_pack/ShelfBinPack.cpp"
+        "UI/base_2d_render_object.cpp"
         "UI/bin_pack/SkylineBinPack.cpp"
         "UI/bin_pack/GuillotineBinPack.cpp"
+
         "object_model/base_render_object.cpp"
         "object_model/base_3d_render_object.cpp"
-        "UI/base_2d_render_object.cpp"
         "object_model/object_line.cpp"
         "object_model/object_ply.cpp"
         "object_model/PLYLoader.cpp"
+
         "component/scene_component.cpp"
         "component/camera_optical_component.cpp"
         "component/transform_component.cpp"
@@ -311,8 +314,10 @@ set(LIBRARIES "Vulkan::Vulkan")
 #######################################vulkan#####################################
 
 
-include_directories(/opt/homebrew/include/glm)
 
+
+
+#include_directories(/opt/homebrew/include/glm)
 
 add_subdirectory(include)
 
@@ -349,8 +354,10 @@ target_compile_definitions(learn_render PRIVATE VK_NO_PROTOTYPES)
 set_target_properties(${NAME} PROPERTIES DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 
-target_link_libraries(learn_render PRIVATE TBB::tbb Eigen3::Eigen EnTT::EnTT quill::quill)
-
+target_link_libraries(learn_render PRIVATE TBB::tbb)
+target_link_libraries(learn_render PRIVATE Eigen3::Eigen)
+target_link_libraries(learn_render PRIVATE EnTT::EnTT)
+target_link_libraries(learn_render PRIVATE quill::quill)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3)
 target_link_libraries(learn_render PRIVATE SDL3::SDL3-shared)
 target_link_libraries(learn_render PRIVATE OpenVDB::openvdb)
