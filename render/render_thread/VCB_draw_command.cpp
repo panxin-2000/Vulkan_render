@@ -14,19 +14,19 @@
 void VCB::draw(const Mesh_data &mesh_data,
                const std::vector<VKR_Primitive> &primitives,
                const std::vector<VKR_Render_state> *render_states) {
-    if (mesh_data.vertices == nullptr || mesh_data.vertices->get_buffer_handle() == VK_NULL_HANDLE)
+    if (mesh_data.vertices_ == nullptr || mesh_data.vertices_->get_buffer_handle() == VK_NULL_HANDLE)
         return;
     // 这里有一个 可以优化的点 vkCmdBindVertexBuffers 的  vertices_offset
     // 和 draw_command.indexed_command.vertexOffset 如果设置这个,那么可以少绑定一次内容
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset);
-    if (mesh_data.indices != nullptr &&
-        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
+                           &mesh_data.vertices_offset_);
+    if (mesh_data.indices_ != nullptr &&
+        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
         vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices->get_buffer_handle(),
-                             mesh_data.indices_offset,
-                             mesh_data.index_type);
+                             mesh_data.indices_->get_buffer_handle(),
+                             mesh_data.indices_offset_,
+                             mesh_data.index_type_);
 
         for (int i = 0; i < primitives.size(); ++i) {
             if (render_states != nullptr && primitives.size() == render_states->size()) {
@@ -42,7 +42,7 @@ void VCB::draw(const Mesh_data &mesh_data,
                              primitive.vertexOffset,
                              primitive.firstInstance);
         }
-    } else if (mesh_data.index_type == VK_INDEX_TYPE_MAX_ENUM) {
+    } else if (mesh_data.index_type_ == VK_INDEX_TYPE_MAX_ENUM) {
         assert(false && " not deal indices empty");
     }
 }
@@ -104,16 +104,16 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
                               uint32_t command_size, VKR_buffer_offset read_buffer) {
     const auto mesh_data = Render_entt().get<Mesh_data>(entity);
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset);
-    if (mesh_data.indices != nullptr &&
-        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
+                           &mesh_data.vertices_offset_);
+    if (mesh_data.indices_ != nullptr &&
+        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
         VKR_Render_state temp;
         temp.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices->get_buffer_handle(),
-                             mesh_data.indices_offset,
-                             mesh_data.index_type);
+                             mesh_data.indices_->get_buffer_handle(),
+                             mesh_data.indices_offset_,
+                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
                                  read_buffer.get_offset(),
@@ -125,15 +125,15 @@ void VCB::DrawIndexedIndirect(entt::entity entity,
 void VCB::DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
                               uint32_t command_size, VKR_buffer_offset read_buffer) {
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset);
-    if (mesh_data.indices != nullptr &&
-        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
+                           &mesh_data.vertices_offset_);
+    if (mesh_data.indices_ != nullptr &&
+        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
         render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices->get_buffer_handle(),
-                             mesh_data.indices_offset,
-                             mesh_data.index_type);
+                             mesh_data.indices_->get_buffer_handle(),
+                             mesh_data.indices_offset_,
+                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirect(command_buffer_,
                                  read_buffer.get_buffer_handle(time_line_),
                                  read_buffer.get_offset(),
@@ -149,15 +149,15 @@ void VCB::DrawIndexedIndirectCount(const Mesh_data &mesh_data,
                                    VKR_buffer_offset read_buffer,
                                    VKR_buffer_offset countBuffer) {
     vkCmdBindVertexBuffers(command_buffer_, 0, 1,
-                           mesh_data.vertices->get_buffer_handle_ptr(time_line_),
-                           &mesh_data.vertices_offset);
-    if (mesh_data.indices != nullptr &&
-        mesh_data.indices->get_buffer_handle() != VK_NULL_HANDLE) {
+                           mesh_data.vertices_->get_buffer_handle_ptr(time_line_),
+                           &mesh_data.vertices_offset_);
+    if (mesh_data.indices_ != nullptr &&
+        mesh_data.indices_->get_buffer_handle() != VK_NULL_HANDLE) {
         render_state.set_render_state_command(command_buffer_, pass_viewport_, pass_scissor_);
         vkCmdBindIndexBuffer(command_buffer_,
-                             mesh_data.indices->get_buffer_handle(),
-                             mesh_data.indices_offset,
-                             mesh_data.index_type);
+                             mesh_data.indices_->get_buffer_handle(),
+                             mesh_data.indices_offset_,
+                             mesh_data.index_type_);
         vkCmdDrawIndexedIndirectCount(
                                       command_buffer_,
                                       read_buffer.get_buffer_handle(time_line_), // 包含 draw_commands[] 的缓冲区

@@ -6,6 +6,7 @@
 #define HELLO_MAC_OPACITY_BATCH_H
 #include "AABB_box.h"
 #include "Geometry_data.h"
+#include "mesh_component.h"
 #include "../render/render_common/GPU_frustum_cull.h"
 #include "render_mesh.h"
 #include "../render/render_component/shader_component.h"
@@ -72,10 +73,10 @@ public:
 
 
     void destroy() {
-        SOA_buffer_         = nullptr;
-        mesh_data_.vertices = nullptr;
-        mesh_data_.indices  = nullptr;
-        mesh_data_          = {};
+        SOA_buffer_          = nullptr;
+        mesh_data_.vertices_ = nullptr;
+        mesh_data_.indices_  = nullptr;
+        mesh_data_           = {};
     }
 
 private:
@@ -90,7 +91,6 @@ private:
     // 理论上两个是能够对比的,但是实际上还是有问题, 比如一个新插入的, 是直接写入到哪里呢?
     // 找一个最后的, 先写到最后面? 之后呢?
     // 另一个,如果中间某个删除呢? 那块位置是空闲呢? 还是 之后的内存整体进行一次搬运呢?
-
 };
 
 

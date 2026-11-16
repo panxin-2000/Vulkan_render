@@ -9,6 +9,7 @@
 #include "render_state.h"
 #include "vulkan_image.h"
 #include "global_singleton.h"
+#include "mesh_component.h"
 #include "shader_resolve.h"
 
 class VK_backend;

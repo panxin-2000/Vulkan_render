@@ -7,54 +7,6 @@
 #include "vulkan_backend.h"
 
 
-Mesh_data copy_mesh_data_to_gpu(const VK_backend &backend,
-                                const std::vector<share_block> &vertices,
-                                const std::vector<share_block> &indices) {
-    VkDeviceSize vBufSize = 0;
-    Mesh_data mesh_data;
-
-    for (const auto vertex: vertices) {
-        vBufSize += vertex.total_size;
-    }
-    VkDeviceSize iBufSize = 0;
-    for (const auto index: indices) {
-        iBufSize += index.total_size;
-        if (index.single_size == 2) {
-            mesh_data.index_type = VK_INDEX_TYPE_UINT16;
-        } else if (index.single_size == 4) {
-            mesh_data.index_type = VK_INDEX_TYPE_UINT32;
-        }
-    }
-    mesh_data.vertices_offset = 0;
-    mesh_data.indices_offset  = vBufSize;
-
-    // 具体的复制函数
-    auto mem_copy_function = [vertices,indices](void *dst) {
-        auto calculation_dst = static_cast<char *>(dst);
-        for (const auto vertex: vertices) {
-            memcpy(calculation_dst, vertex.data, vertex.total_size);
-            calculation_dst += vertex.total_size;
-        }
-        for (const auto index: indices) {
-            memcpy(calculation_dst, index.data, index.total_size);
-            calculation_dst += index.total_size;
-        }
-    };
-
-    const auto vertices_buffer =
-            create_vertex_index_buffer(backend, vBufSize + iBufSize, mem_copy_function);
-    if (!indices.empty()) {
-        mesh_data.vertices = vertices_buffer;
-        mesh_data.indices  = vertices_buffer;
-        return mesh_data;
-    } else {
-        mesh_data.index_type = VK_INDEX_TYPE_MAX_ENUM;
-        mesh_data.vertices   = vertices_buffer;
-        return mesh_data;
-    }
-}
-
-
 std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
     std::vector<VKR_Primitive> primitives;
     const std::vector<share_block> &vertices = data.get_vertices();
@@ -87,9 +39,54 @@ std::vector<VKR_Primitive> create_primitives(const Geometry_data &data) {
     return primitives;
 }
 
-Mesh_data create_mesh_data(const Geometry_data &data) {
-    return copy_mesh_data_to_gpu(VK_backend::instance(), data.get_vertices(), data.get_indices());
+bool Mesh_data::create_mesh_data(const Geometry_data &data) { {
+        VkDeviceSize vBufSize                    = 0;
+        const std::vector<share_block> &vertices = data.get_vertices();
+        const std::vector<share_block> &indices  = data.get_indices();
+
+        for (const auto vertex: vertices) {
+            vBufSize += vertex.total_size;
+        }
+        VkDeviceSize iBufSize = 0;
+        for (const auto index: indices) {
+            iBufSize += index.total_size;
+            if (index.single_size == 2) {
+                index_type_ = VK_INDEX_TYPE_UINT16;
+            } else if (index.single_size == 4) {
+                index_type_ = VK_INDEX_TYPE_UINT32;
+            }
+        }
+        vertices_offset_ = 0;
+        indices_offset_  = vBufSize;
+
+        // 具体的复制函数
+        auto mem_copy_function = [vertices,indices](void *dst) {
+            auto calculation_dst = static_cast<char *>(dst);
+            for (const auto vertex: vertices) {
+                memcpy(calculation_dst, vertex.data, vertex.total_size);
+                calculation_dst += vertex.total_size;
+            }
+            for (const auto index: indices) {
+                memcpy(calculation_dst, index.data, index.total_size);
+                calculation_dst += index.total_size;
+            }
+        };
+
+        const auto vertices_buffer =
+                create_vertex_index_buffer(VK_backend::instance(), vBufSize + iBufSize, mem_copy_function);
+        if (!indices.empty()) {
+            vertices_ = vertices_buffer;
+            indices_  = vertices_buffer;
+            return true;
+        } else {
+            index_type_ = VK_INDEX_TYPE_MAX_ENUM;
+            vertices_   = vertices_buffer;
+            return true;
+        }
+    }
+    return false;
 }
+
 
 std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
@@ -102,7 +99,9 @@ std::vector<VKR_Primitive> create_primitives(const entt::entity entity) {
 Mesh_data get_VKR_mesh(const entt::entity entity) {
     if (const auto data = Logic_entt().try_get<Geometry_data>(entity)) {
         // todo : 这里的逻辑还是有问题的
-        return create_mesh_data(*data);
+        auto &temp = Logic_entt().emplace_or_replace<Mesh_data>(entity);
+        temp.create_mesh_data(*data);
+        return temp;
     }
     return {};
 }

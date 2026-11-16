@@ -13,10 +13,10 @@
 void opacity_batch::check_and_update(sets_map &sets_map_in_for,
                                      std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
     auto view = Render_entt().view<Geometry_data, Mesh_need_create_tag,
-        std::vector<World_Space_AABB>,
-        std::vector<Transform_Matrix>,
-        Gltf_material_parameters,
-        screen_pick_entity>();
+                                   std::vector<World_Space_AABB>,
+                                   std::vector<Transform_Matrix>,
+                                   Gltf_material_parameters,
+                                   screen_pick_entity>();
 
     bool view_has_value = false;
     for (const auto entity: view) {
@@ -36,10 +36,10 @@ void opacity_batch::check_and_update(sets_map &sets_map_in_for,
     size_t primitive_size = 0;
 
     auto view_2 = Render_entt().view<Geometry_data,
-        std::vector<World_Space_AABB>,
-        std::vector<Transform_Matrix>,
-        Gltf_material_parameters,
-        screen_pick_entity>();
+                                     std::vector<World_Space_AABB>,
+                                     std::vector<Transform_Matrix>,
+                                     Gltf_material_parameters,
+                                     screen_pick_entity>();
 
 
     for (const auto entity: view_2) {
@@ -70,7 +70,7 @@ void opacity_batch::check_and_update(sets_map &sets_map_in_for,
 
 
         if (view_has_value == true) {
-            mesh_data_      = create_mesh_data(bindless_Geometry_data_);
+            mesh_data_.create_mesh_data(bindless_Geometry_data_);
             auto primitives = create_primitives(bindless_Geometry_data_);
             if (primitives.size() == mRenderableData_.size()) {
                 for (size_t i = 0; i < mRenderableData_.size(); ++i) {
