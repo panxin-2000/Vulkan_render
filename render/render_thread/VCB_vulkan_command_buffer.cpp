@@ -118,11 +118,11 @@ void VCB::SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_imag
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_depth_texture",
-                        offscreen);
+                                  "input_depth_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -157,11 +157,11 @@ void VCB::blur_SSAO(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     constexpr size_t kernelArraySize = 16; // limited by bilateralBlur.mat
     auto gaussianKernel              =
             [kernelArraySize](float *outKernel, size_t const gaussianWidth, float const stdDev) -> uint32_t {
@@ -225,11 +225,11 @@ void VCB::only_image_compute(Engine &engine, VKR_image_ptr input_image, VKR_imag
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -253,11 +253,11 @@ void VCB::CAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out_image
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "imgSrc",
-                        offscreen);
+                                  "imgSrc",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "imgDst",
-                        compute_texture);
+                                  "imgDst",
+                                  compute_texture);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -330,14 +330,14 @@ void VCB::FSR1_EASU(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "InputSampler",
-                        offscreen);
+                                  "InputSampler",
+                                  offscreen);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -380,14 +380,14 @@ void VCB::FSR1_RCAS(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr out
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "InputSampler",
-                        offscreen);
+                                  "InputSampler",
+                                  offscreen);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -495,11 +495,11 @@ void VCB::down_sample(Engine &engine, const VKR_image_ptr image_ptr, const std::
             // 逻辑还是看起来都差不多 , 但是最好能再上面的时候添加一个 总的汇总
             shader_need_parameter parameter;
             parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                                 "input_texture",
-                                offscreen);
+                                          "input_texture",
+                                          offscreen);
             parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                                 "output_texture",
-                                compute_texture);
+                                          "output_texture",
+                                          compute_texture);
             allocate_descriptor_sets(parameter, compute_shader, time_line_); // 暂时碰到这里的问题了
             auto temp = get_descriptor_sets(parameter, compute_shader);
             update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -596,14 +596,14 @@ void VCB::tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr 
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
-    // VK_update_parameter(compute_shader->object_sets_bindings,
-    //                     parameter.update_object_descriptor_sets, "tone_parameters",
-    //                     config_gen); // TODO :
+                                  "output_texture",
+                                  compute_texture);
+    auto ptr = engine.copy_data_to_gpu_buffer(config_gen);
+    parameter.VK_update_parameter(compute_shader->object_sets_bindings,
+                                  "tone_parameters", ptr);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);
@@ -633,11 +633,11 @@ void VCB::dof_composite(Engine &engine,
 
     shader_need_parameter parameter;
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "input_texture",
-                        offscreen);
+                                  "input_texture",
+                                  offscreen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
-                         "output_texture",
-                        compute_texture);
+                                  "output_texture",
+                                  compute_texture);
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     update_descriptor_sets(parameter.update_object_descriptor_sets, parameter.object_descriptor_sets);
     vkCmdBindPipeline(command_buffer_, VK_PIPELINE_BIND_POINT_COMPUTE, compute_shader->pipeline_t);

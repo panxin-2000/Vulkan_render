@@ -12,6 +12,7 @@
 #include "../render/render_component/render_state_component.h"
 #include "scene_component.h"
 #include "UI_render_common.h"
+#include "VKR_proxy_component.h"
 
 void update_UI_button_render_para(const entt::entity entity);
 

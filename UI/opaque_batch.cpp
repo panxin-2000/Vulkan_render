@@ -7,6 +7,7 @@
 #include "mesh_component.h"
 #include "../render/render_component/render_state_component.h"
 #include "tag_matrix.h"
+#include "update_push_constants_data.h"
 #include "render_thread/VCB_vulkan_command_buffer.h"
 
 

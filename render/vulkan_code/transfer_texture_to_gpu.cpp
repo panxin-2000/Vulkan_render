@@ -16,6 +16,7 @@
 #include "vulkan_buffer.h"
 #include "vulkan_execute_command.h"
 #include "vulkan_sample.h"
+#include "render_thread/vulkan_render_manage.h"
 
 
 // std::array<Texture_parameter, 3> textures{};

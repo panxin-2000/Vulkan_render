@@ -6,6 +6,7 @@
 
 #include "engine.h"
 #include "Geometry_data.h"
+#include "render_thread/vulkan_render_manage.h"
 
 extern "C" {
 #include <hb.h>

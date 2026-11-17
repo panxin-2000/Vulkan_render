@@ -8,6 +8,7 @@
 #include <global_singleton.h>
 
 #include "descriptor.h"
+#include "engine.h"
 #include "../../UI/sync_proxy_to_render_thread.h"
 #include "vulkan_buffer.h"
 #include "update_push_constants_data.h"
@@ -46,10 +47,11 @@ template<typename T1>
 bool render_render_parameter(const entt::entity entity, const std::string &binding_name, const T1 &binding_data) {
     auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
     auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
+    auto ptr              = Engine::instance().copy_data_to_gpu_buffer(binding_data);
 
-    // VK_update_parameter(shader_data_ref->object_sets_bindings,
-    //                     parameter.update_object_descriptor_sets, binding_name,
-    //                     binding_data);  // TODO :
+
+    parameter.VK_update_parameter(shader_data_ref->object_sets_bindings, binding_name,
+                                  ptr);
     Render_entt().emplace_or_replace<uniform_buffer_update>(entity);
     return true;
 }
@@ -87,7 +89,7 @@ bool render_push_constant_parameter(const entt::entity entity, const std::string
                                     const T1 &binding_data) {
     const auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
     // 一个细节的问题,导致有时候会出现entt错误
-    auto &parameter             = Render_entt().get_or_emplace<shader_constant_parameter>(entity);
+    auto &parameter = Render_entt().get_or_emplace<shader_constant_parameter>(entity);
     for (auto &[name,value]: shader_data_ref->push_constant_map) {
         if (name == binding_name && sizeof(T1) <= value.size) {
             memcpy(parameter.push_constant_pool + value.offset, &binding_data, sizeof(T1));

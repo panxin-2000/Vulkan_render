@@ -5,6 +5,7 @@
 #include "../render_common/GPU_frustum_cull.h"
 #include "engine.h"
 #include "global_singleton.h"
+#include "shader_component.h"
 #include "../../object_model/object_ply.h"
 #include "VCB_vulkan_command_buffer.h"
 

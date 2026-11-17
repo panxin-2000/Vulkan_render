@@ -39,6 +39,7 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
             buffer_info->range                       = binding_update.SSBO_bufferInfo.get_size();
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
         } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                   descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
                    descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
                    descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
             const auto image_info = reinterpret_cast<VkDescriptorImageInfo *>(alloc.
@@ -57,3 +58,31 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
                            0,
                            nullptr);
 }
+
+// Validation Error: [ VUID-VkWriteDescriptorSet-descriptorType-00319 ] | MessageID = 0xe7d2bdda
+// vkUpdateDescriptorSets(): pDescriptorWrites[0].descriptorType (VK_DESCRIPTOR_TYPE_SAMPLER) is different from pBindings[0].descriptorType (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) of VkDescriptorSetLayout 0x170000000017.
+// The VkDescriptorSetLayout was used to allocate VkDescriptorSet 0x1c000000001c.
+// The Vulkan spec states: descriptorType must match the type of dstBinding within dstSet (https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#VUID-VkWriteDescriptorSet-descriptorType-00319)
+// Objects: 1
+//     [0] VkDescriptorSetLayout 0x170000000017
+//
+// Validation Error: [ VUID-VkWriteDescriptorSet-descriptorType-00319 ] | MessageID = 0xe7d2bdda
+// vkUpdateDescriptorSets(): pDescriptorWrites[2].descriptorType (VK_DESCRIPTOR_TYPE_SAMPLER) is different from pBindings[0].descriptorType (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) of VkDescriptorSetLayout 0x170000000017.
+// The VkDescriptorSetLayout was used to allocate VkDescriptorSet 0x1c000000001c.
+// The Vulkan spec states: descriptorType must match the type of dstBinding within dstSet (https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#VUID-VkWriteDescriptorSet-descriptorType-00319)
+// Objects: 1
+//     [0] VkDescriptorSetLayout 0x170000000017
+//
+// Validation Error: [ VUID-VkWriteDescriptorSet-descriptorType-00319 ] | MessageID = 0xe7d2bdda
+// vkUpdateDescriptorSets(): pDescriptorWrites[3].descriptorType (VK_DESCRIPTOR_TYPE_SAMPLER) is different from pBindings[0].descriptorType (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) of VkDescriptorSetLayout 0x170000000017.
+// The VkDescriptorSetLayout was used to allocate VkDescriptorSet 0x1c000000001c.
+// The Vulkan spec states: descriptorType must match the type of dstBinding within dstSet (https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#VUID-VkWriteDescriptorSet-descriptorType-00319)
+// Objects: 1
+//     [0] VkDescriptorSetLayout 0x170000000017
+//
+// Validation Error: [ VUID-VkWriteDescriptorSet-descriptorType-00319 ] | MessageID = 0xe7d2bdda
+// vkUpdateDescriptorSets(): pDescriptorWrites[5].descriptorType (VK_DESCRIPTOR_TYPE_SAMPLER) is different from pBindings[0].descriptorType (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) of VkDescriptorSetLayout 0x170000000017.
+// The VkDescriptorSetLayout was used to allocate VkDescriptorSet 0x1c000000001c.
+// The Vulkan spec states: descriptorType must match the type of dstBinding within dstSet (https://docs.vulkan.org/spec/latest/chapters/descriptorsets.html#VUID-VkWriteDescriptorSet-descriptorType-00319)
+// Objects: 1
+//     [0] VkDescriptorSetLayout 0x170000000017
