@@ -47,11 +47,18 @@ template<typename T1>
 bool render_render_parameter(const entt::entity entity, const std::string &binding_name, const T1 &binding_data) {
     auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
     auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
-    auto ptr              = Engine::instance().copy_data_to_gpu_buffer(binding_data);
 
+    if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_ptr> ||
+                  std::is_same_v<std::decay_t<T1>, VKR_buffer_offset> ||
+                  std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> > ||
+                  std::is_same_v<std::decay_t<T1>, VKR_buffer_block_ptr>) {
+        parameter.VK_update_parameter(shader_data_ref->object_sets_bindings, binding_name,
+                                      binding_data);
+    } else {
+        auto ptr = Engine::instance().copy_data_to_gpu_buffer(binding_data);
+        parameter.VK_update_parameter(shader_data_ref->object_sets_bindings, binding_name, ptr);
+    }
 
-    parameter.VK_update_parameter(shader_data_ref->object_sets_bindings, binding_name,
-                                  ptr);
     Render_entt().emplace_or_replace<uniform_buffer_update>(entity);
     return true;
 }

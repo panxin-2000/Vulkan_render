@@ -411,7 +411,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
 
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
-    auto ptr = copy_data_to_gpu_buffer(uniform_buffer_);
+    auto ptr = copy_data_to_gpu_buffer(global_parameters_); //  这里还是有问题，逻辑不算很准确
     gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
                                              "global_parameters", ptr);
     gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,

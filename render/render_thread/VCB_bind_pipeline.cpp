@@ -64,7 +64,7 @@ void VCB::bind_pipeline_update_parameter(entt::entity entity, const Shader_data 
     // VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT 允许不绑定部分描述符，只要不犯法就是允许的
     // 访问的时候不在也是可以的，不会出现明显的死机，只是内容没有绘制
 
-    //  shader_data 还没有传送过来
+    //  shader_data 还没有传送过来 // 这里有问题
     if (const auto parameter = Render_entt().try_get<shader_constant_parameter>(entity))
         for (auto &[name,value]: shader_data_ref->push_constant_map) {
             // 我的建议是 每次 直接全部复制 128 字节，哪怕全部都是空的占位符 也是 如此

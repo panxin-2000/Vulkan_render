@@ -135,6 +135,8 @@ public:
     bool need_update_CSM = false;
 
     Texture_parameter MSDF_texture_;
+    VKR_buffer_block_ptr ptr_;
+
 
     float &get_fxaaQualitySubpix() {
         return fxaaQualitySubpix;

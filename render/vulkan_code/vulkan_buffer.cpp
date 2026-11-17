@@ -313,8 +313,11 @@ VKR_buffer::~VKR_buffer() {
 }
 
 
+// void discard_buffer_block_map_clean(uint64_t finished_timeline);
+
 void discard_buffer_map_clean(uint64_t finished_timeline) {
     const auto &backend = VK_backend::instance();
+    // discard_buffer_block_map_clean(finished_timeline);
     for (auto it = discard_buffer_map.begin(); it != discard_buffer_map.end(); /* 后面不加 ++ */) {
         const auto &[buffer, timeline] = *it;
         LOG_DEBUG(g_log(), "finished timeline {}  , timeline {} ", finished_timeline,

@@ -36,7 +36,7 @@ void VCB::draw_entity(const entt::entity entity) {
         const auto mesh_data     = Render_entt().get<Mesh_data>(entity);
         const auto primitives    = Render_entt().get<std::vector<VKR_Primitive> >(entity);
         const auto render_states = Render_entt().get<std::vector<VKR_Render_state> >(entity);
-        write_draw_command(mesh_data, primitives, render_states);
+        write_draw_command(mesh_data, primitives, render_states); // 简单确定问题在这里了
     } else if (Render_entt().all_of<Mesh_data, std::vector<VKR_Primitive> >(entity) &&
                !Render_entt().any_of<std::vector<VKR_Render_state> >(entity)) {
         const auto mesh_data  = Render_entt().get<Mesh_data>(entity);
