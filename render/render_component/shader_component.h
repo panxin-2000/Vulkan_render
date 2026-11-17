@@ -47,9 +47,9 @@ bool render_render_parameter(const entt::entity entity, const std::string &bindi
     auto &shader_data_ref = Render_entt().get<Shader_data>(entity);
     auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
 
-    VK_update_parameter(shader_data_ref->object_sets_bindings,
-                        parameter.update_object_descriptor_sets, binding_name,
-                        binding_data);
+    // VK_update_parameter(shader_data_ref->object_sets_bindings,
+    //                     parameter.update_object_descriptor_sets, binding_name,
+    //                     binding_data);  // TODO :
     Render_entt().emplace_or_replace<uniform_buffer_update>(entity);
     return true;
 }

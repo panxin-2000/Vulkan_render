@@ -148,6 +148,39 @@ public:
 
     void destroy_command_pool();
 
+    VKR_buffer_pool_ptr uniform_buffer_;
+
+    template<typename... Args>
+    VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
+        uint32_t memory_size = 0;
+        ([&] {
+            memory_size += sizeof(args);
+        }(), ...);
+        // 从内存中分配
+        // 16字节对齐
+        const size_t aligned_size = (memory_size + 15) & ~static_cast<size_t>(15);
+
+        // 有几种不同的 办法 来更改这个函数
+        // 第一个办法是 创建一个 可变的CPU 上的内存,之后更新时 都放到CPU 上, 之后再考虑 如何进行复制到,
+        const auto return_value = GPU_pool_alloc(uniform_buffer_, aligned_size);
+        // auto complete_size        = return_value->complete_size();
+        auto buffer_start_address = uniform_buffer_->mapped_address();
+        if (return_value) {
+            buffer_start_address   = static_cast<char *>(buffer_start_address) + return_value->offset_;
+            uint64_t memory_offset = 0;
+            ([&] {
+                std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args),
+                            static_cast<char *>(buffer_start_address) + memory_offset);
+                memory_offset += sizeof(args);
+            }(), ...);
+            uniform_buffer_->flush(); // 这里的代码可以改改
+            return return_value;
+        } else {
+            return {};
+        }
+    }
+
+
     std::vector<DescriptorSet_ptr> get_bindless_descriptor_set(const uint index = 0);
 
     std::vector<DescriptorSet_ptr> get_global_descriptor_set(const uint index = 0);
@@ -174,7 +207,7 @@ public:
         return global_parameters_.world_camera_pos;
     }
 
-    void update_global_pbr_parameter(std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets);
+    void update_global_pbr_parameter(shader_need_parameter &parameter);
 
     void update_SOA();
 

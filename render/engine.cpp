@@ -197,7 +197,7 @@ void Engine::add_bindless_texture(const std::optional<Texture_parameter> &textur
                 temp.descriptor_write_binding.pImageInfo                = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView          = nullptr;
                 temp.descriptor_write_binding.descriptorType            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                temp.texture_info                                       = {true, texture.value()};
+                temp.texture_info                                       = {texture.value()};
                 update_bindless_descriptor_sets_[std::to_string(index)] = temp;
                 // 多线程的情况下 偶现 出现问题
             }
@@ -223,7 +223,7 @@ void Engine::add_bindless_sampler(const std::optional<Texture_parameter> &textur
                 temp.descriptor_write_binding.pImageInfo             = nullptr;
                 temp.descriptor_write_binding.pTexelBufferView       = nullptr;
                 temp.descriptor_write_binding.descriptorType         = VK_DESCRIPTOR_TYPE_SAMPLER;
-                temp.texture_info                                    = {true, texture.value()};
+                temp.texture_info                                    = {texture.value()};
                 update_bindless_sampler_sets_[std::to_string(index)] = temp; // 这一行 还是有问题的
             }
         }
@@ -303,7 +303,7 @@ void Engine::create_command_pool() {
 
 
 void Engine::update_global_pbr_parameter(
-    std::map<std::string, Update_descriptor_binding> &update_global_descriptor_sets) {
+    shader_need_parameter &parameter) {
     auto size = pbr_manager_.size() * sizeof(PBR_component);
     if (size > 0) {
         auto src = pbr_manager_.data();
@@ -321,8 +321,8 @@ void Engine::update_global_pbr_parameter(
 
         copy_mem_from_cpu_to_gpu(pbr_components_buffer_, mem_copy_function);
         auto gltf_shader_data = shader_manager_.get_gltf_shader_data();
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_PBR_parameters", pbr_components_buffer_);
+        parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                      "global_PBR_parameters", pbr_components_buffer_);
     }
 }
 
@@ -345,7 +345,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     auto gltf_shader_data        = shader_manager_.get_gltf_shader_data();
     global_descriptor_sets_index = (global_descriptor_sets_index + 1) % 3;
     const auto extent            = VK_backend::instance().get_current_extent();
-    std::map<std::string, Update_descriptor_binding> update_global_descriptor_sets;
+    shader_need_parameter gpu_global_parameter;
 
     global_parameters_.screen_size = {
         static_cast<float>(extent.width), static_cast<float>(extent.height), 0, 0
@@ -382,28 +382,28 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
 
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                        "global_parameters", global_parameters_);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                        "global_offscreen", offscreen);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                        "global_depth", depth);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                        "global_Blur_SSAO", blur_SSAO);
-    VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                        "global_shadow_texture", shadow_texture);
+    // VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
+    //                     "global_parameters", global_parameters_); // TODO:
+    gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                             "global_offscreen", offscreen);
+    gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                             "global_depth", depth);
+    gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                             "global_Blur_SSAO", blur_SSAO);
+    gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                             "global_shadow_texture", shadow_texture);
     if (global_parameters_.MSDF_texture_.image != nullptr) {
         std::optional<Texture_parameter> temp = global_parameters_.MSDF_texture_;
-        VK_update_parameter(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets,
-                            "global_MSDF_texture", temp);
+        gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
+                                                 "global_MSDF_texture", temp);
     }
 
 
     // 这个， 看看应该怎么改呢 ？？
     // 其实问题是什么呢？ 上传给GPU的是什么？ 应该怎么处理呢？
-    opacity_batch_.check_and_update(gltf_shader_data->global_sets_bindings, update_global_descriptor_sets);
+    opacity_batch_.check_and_update(gltf_shader_data->global_sets_bindings, gpu_global_parameter);
 
-    update_global_pbr_parameter(update_global_descriptor_sets);
+    update_global_pbr_parameter(gpu_global_parameter);
     Proxy_descriptor_sets descriptor_sets; // 这里是需要按照顺序的
     auto bindless_descriptor_sets = get_bindless_descriptor_set();
     auto global_descriptor_sets   = get_global_descriptor_set();
@@ -417,7 +417,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     descriptor_sets.insert(descriptor_sets.end(),
                            global_descriptor_sets.begin(),
                            global_descriptor_sets.end());
-    update_descriptor_sets(update_global_descriptor_sets, descriptor_sets);
+    update_descriptor_sets(gpu_global_parameter.update_object_descriptor_sets, descriptor_sets);
 }
 
 void Engine::update_bindless_parameter() {

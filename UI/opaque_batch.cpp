@@ -11,7 +11,7 @@
 
 
 void opaque_batch::check_and_update(sets_map &sets_map_in_for,
-                                    std::map<std::string, Update_descriptor_binding> &update_descriptor_write) {
+                                    shader_need_parameter &parameter) {
     auto view = Render_entt().view<Geometry_data,
                                    Tag_bindless_batch,
                                    std::vector<World_Space_AABB>,
@@ -108,12 +108,12 @@ void opaque_batch::check_and_update(sets_map &sets_map_in_for,
             RenderableSoa::getOffset(SOA_entity, mRenderableData_.capacity())
         };
 
-        VK_update_parameter(sets_map_in_for, update_descriptor_write,
-                            "global_model_matrix", global_model_matrix);
-        VK_update_parameter(sets_map_in_for, update_descriptor_write,
-                            "global_entity_to_screen", global_entity_to_screen);
-        VK_update_parameter(sets_map_in_for, update_descriptor_write,
-                            "global_material_parameters", global_material_parameters);
+        parameter.VK_update_parameter(sets_map_in_for,
+                                      "global_model_matrix", global_model_matrix);
+        parameter.VK_update_parameter(sets_map_in_for,
+                                      "global_entity_to_screen", global_entity_to_screen);
+        parameter.VK_update_parameter(sets_map_in_for,
+                                      "global_material_parameters", global_material_parameters);
     }
 }
 

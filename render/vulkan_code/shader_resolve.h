@@ -51,18 +51,14 @@ struct Update_descriptor_binding {
     uint32_t dstSet                               = 0;
     VkWriteDescriptorSet descriptor_write_binding = {};
 
-    std::pair<bool, VKR_buffer_block_ptr> bufferInfo = {};
+    VKR_buffer_block_ptr bufferInfo = {};
     VKR_buffer_offset SSBO_bufferInfo;
-    std::pair<bool, Texture_parameter> texture_info;
+    Texture_parameter texture_info;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
-    std::pair<bool, VkBufferView> TexelBufferView;
+    VkBufferView TexelBufferView;
 };
 
 
-struct shader_need_parameter {
-    std::vector<DescriptorSet_ptr> object_descriptor_sets; // descriptor_set 的 共享指针保存点
-    std::map<std::string, Update_descriptor_binding> update_object_descriptor_sets;
-};
 
 struct shader_constant_parameter {
     std::byte push_constant_pool[128];

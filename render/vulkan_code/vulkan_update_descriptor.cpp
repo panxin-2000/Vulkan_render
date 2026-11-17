@@ -24,28 +24,30 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
     for (auto &[name,binding_update]: update_descriptor_sets) {
         descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
         descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet]->get_descriptor_set();
-        if (binding_update.bufferInfo.first) {
+        if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                 allocate(sizeof(VkDescriptorBufferInfo)));
-            buffer_info->buffer                      = binding_update.bufferInfo.second->get_buffer_handle();
-            buffer_info->offset                      = binding_update.bufferInfo.second->offset_;
-            buffer_info->range                       = binding_update.bufferInfo.second->size_;
+            buffer_info->buffer                      = binding_update.bufferInfo->get_buffer_handle();
+            buffer_info->offset                      = binding_update.bufferInfo->offset_;
+            buffer_info->range                       = binding_update.bufferInfo->size_;
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
-        } else if (binding_update.SSBO_bufferInfo.get_size()) {
+        } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                 allocate(sizeof(VkDescriptorBufferInfo)));
             buffer_info->buffer                      = binding_update.SSBO_bufferInfo.get_buffer_handle();
             buffer_info->offset                      = binding_update.SSBO_bufferInfo.get_offset();
             buffer_info->range                       = binding_update.SSBO_bufferInfo.get_size();
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
-        } else if (binding_update.texture_info.first) {
+        } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+                   descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLER ||
+                   descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE) {
             const auto image_info = reinterpret_cast<VkDescriptorImageInfo *>(alloc.
                 allocate(sizeof(VkDescriptorImageInfo)));
-            *image_info                             = binding_update.texture_info.second.get_descriptor_image_info();
+            *image_info                             = binding_update.texture_info.get_descriptor_image_info();
             descriptor_write_bindings[i].pImageInfo = image_info;
-            //
-        } else if (binding_update.TexelBufferView.first) {
-            descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView.second;
+        } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER ||
+                   descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+            descriptor_write_bindings[i].pTexelBufferView = &binding_update.TexelBufferView;
         }
         ++i;
     }

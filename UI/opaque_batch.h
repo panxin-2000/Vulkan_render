@@ -21,7 +21,7 @@ public:
     using RenderableSoa = utils::StructureOfArrays<
         VKR_Primitive,    // 需要绘制的 单个 primitive 的顶点和索引
         Local_Space_AABB, // 模型的包围盒
-        World_Space_AABB, // 模型在世界空间的包围盒， 可以交由 GPU 计算 
+        World_Space_AABB, // 模型在世界空间的包围盒， 可以交由 GPU 计算
         Transform_Matrix, // 模型的 变化矩阵
         uint32_t,         // material_index 这里是索引,那么就应该去拿全局的 material
         entt::entity,     // 顶点组成的三角形的 实体
@@ -56,7 +56,7 @@ public:
 
 
     void check_and_update(sets_map &sets_map_in_for,
-                          std::map<std::string, Update_descriptor_binding> &update_descriptor_write);
+                          shader_need_parameter &parameter);
 
 
     void frustum_cull(VCB &vcb, const std::shared_ptr<vk_shader_data> &compute_shader,
