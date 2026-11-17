@@ -604,6 +604,8 @@ void VCB::tone_mapping(Engine &engine, VKR_image_ptr input_image, VKR_image_ptr 
     auto ptr = engine.copy_data_to_gpu_buffer(config_gen);
     parameter.VK_update_parameter(compute_shader->object_sets_bindings,
                                   "tone_parameters", ptr);
+
+
     allocate_descriptor_sets(parameter, compute_shader, time_line_);
     auto temp = get_descriptor_sets(parameter, compute_shader);
     update_descriptor_sets(parameter.update_object_descriptor_sets, temp);

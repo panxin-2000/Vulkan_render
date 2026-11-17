@@ -57,7 +57,7 @@ struct shader_need_parameter {
 
     bool VK_update_parameter(sets_map &sets_map_in_for,
                              const std::string &binding_name,
-                             const VKR_buffer_block_ptr &binding_data) {
+                             const VKR_buffer_block &binding_data) {
         for (auto const &[set_value, bindings_map]: sets_map_in_for) {
             for (const auto &[binding_value, info]: bindings_map) {
                 if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {

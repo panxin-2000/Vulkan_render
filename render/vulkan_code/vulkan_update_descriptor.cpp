@@ -27,9 +27,9 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
         if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                 allocate(sizeof(VkDescriptorBufferInfo)));
-            buffer_info->buffer                      = binding_update.bufferInfo->get_buffer_handle();
-            buffer_info->offset                      = binding_update.bufferInfo->offset_;
-            buffer_info->range                       = binding_update.bufferInfo->size_;
+            buffer_info->buffer                      = binding_update.bufferInfo.get_buffer_handle();
+            buffer_info->offset                      = binding_update.bufferInfo.get_offset();
+            buffer_info->range                       = binding_update.bufferInfo.get_size();
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
         } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.

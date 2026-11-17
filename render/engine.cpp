@@ -122,33 +122,6 @@ void Engine::create() {
 
     CommandCountBuffer_ = create_SSBO_buffer(1024, nullptr);
 
-    if (uniform_buffer_ == nullptr) {
-        VkBuffer vBuffer{VK_NULL_HANDLE};
-        VmaAllocation vBufferAllocation{VK_NULL_HANDLE};
-
-        VkBufferCreateInfo uBufferCI{
-            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-            .size  = 1024 * 1024, // 1M 需要申请1M 之前的时候应该是 128K 就能够存储完成的
-            .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
-        };
-        VmaAllocationCreateInfo uBufferAllocCI{
-            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                     VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                     VMA_ALLOCATION_CREATE_MAPPED_BIT,
-            .usage = VMA_MEMORY_USAGE_AUTO
-        };
-        // 这里也是稍微有点问题的 ,
-        auto &handle = VK_backend::instance();
-        VK_CHECK_RESULT_NOT_EXIT(
-                                 vmaCreateBuffer(handle.get_allocator(),
-                                     &uBufferCI,
-                                     &uBufferAllocCI,
-                                     &vBuffer,
-                                     &vBufferAllocation,
-                                     nullptr));
-        uniform_buffer_ = std::make_shared<VKR_buffer_pool>(vBuffer, vBufferAllocation);
-    }
-
 
     for (auto i = 0; i < maxFramesInFlight; i++) {
         pickup_buffers_[i] = create_vma_buffer(ALIGN_256(11 * 11 * 4), VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -267,7 +240,6 @@ void Engine::update_bindless_descriptor_sets_function() {
 
 
 void Engine::destroy() {
-    uniform_buffer_ = nullptr;
     opacity_batch_.destroy();
     CommandCountBuffer_ = nullptr;
     shader_manager_destroy();
@@ -288,6 +260,7 @@ void Engine::destroy() {
 
     // 这里的顺序不对
     render_image_manager_.destroy();
+    uniform_buffer_.~VKR_buffer_pool();
 
     // 需要强制清除
     constexpr uint64_t finished_timeline = std::numeric_limits<uint64_t>::max();
@@ -412,6 +385,7 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
     global_parameters_.update_directional_light(get_current_CSM());
     global_parameters_.set_render_timeline(0);
     auto ptr = copy_data_to_gpu_buffer(global_parameters_); //  这里还是有问题，逻辑不算很准确
+
     gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
                                              "global_parameters", ptr);
     gpu_global_parameter.VK_update_parameter(gltf_shader_data->global_sets_bindings,
@@ -448,6 +422,8 @@ void Engine::update_global_parameter(std::optional<Texture_parameter> offscreen,
                            global_descriptor_sets.begin(),
                            global_descriptor_sets.end());
     update_descriptor_sets(gpu_global_parameter.update_object_descriptor_sets, descriptor_sets);
+
+    uniform_buffer_.free(ptr.get_virtual_allocation_()); // 临时清除
 }
 
 void Engine::update_bindless_parameter() {

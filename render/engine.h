@@ -148,35 +148,27 @@ public:
 
     void destroy_command_pool();
 
-    VKR_buffer_pool_ptr uniform_buffer_;
+    VKR_buffer_pool uniform_buffer_{
+        1024 * 1024,
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+        VMA_ALLOCATION_CREATE_MAPPED_BIT
+    };
 
-    template<typename... Args>
-    VKR_buffer_block_ptr copy_data_to_gpu_buffer(Args... args) {
-        uint32_t memory_size = 0;
-        ([&] {
-            memory_size += sizeof(args);
-        }(), ...);
-        // 从内存中分配
-        // 16字节对齐
-        const size_t aligned_size = (memory_size + 15) & ~static_cast<size_t>(15);
-
-        // 有几种不同的 办法 来更改这个函数
-        // 第一个办法是 创建一个 可变的CPU 上的内存,之后更新时 都放到CPU 上, 之后再考虑 如何进行复制到,
-        const auto return_value = GPU_pool_alloc(uniform_buffer_, aligned_size);
-        // auto complete_size        = return_value->complete_size();
-        auto buffer_start_address = uniform_buffer_->mapped_address();
-        if (return_value) {
-            buffer_start_address   = static_cast<char *>(buffer_start_address) + return_value->offset_;
-            uint64_t memory_offset = 0;
-            ([&] {
-                std::copy_n(reinterpret_cast<const char *>(&args), sizeof(args),
-                            static_cast<char *>(buffer_start_address) + memory_offset);
-                memory_offset += sizeof(args);
-            }(), ...);
-            uniform_buffer_->flush(); // 这里的代码可以改改
+    template<typename T>
+    VKR_buffer_block copy_data_to_gpu_buffer(T args) {
+        const uint32_t memory_size = sizeof(args);
+        const auto return_value    = uniform_buffer_.alloc(memory_size, 16);
+        auto result                = vmaCopyMemoryToAllocation(VK_backend::instance().get_allocator(),
+                                                               &args,
+                                                               return_value.get_allocation_handle(),
+                                                               return_value.get_offset(),
+                                                               memory_size);
+        if (result == VK_SUCCESS) {
             return return_value;
         } else {
-            return {};
+            return {VK_NULL_HANDLE,VK_NULL_HANDLE,VK_NULL_HANDLE, 0, 0};
         }
     }
 

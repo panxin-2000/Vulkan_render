@@ -306,6 +306,7 @@ void vk_render_GPU::render_once(VK_backend &backend, Engine &engine) {
     engine.update_bindless_descriptor_sets_function();
     object_parameter_update();
     descriptor_set_update_function();
+    engine.uniform_buffer_.clean_free_blocks();
 
 
     const uint64_t time_line             = Engine::get_current_submit_timeline();

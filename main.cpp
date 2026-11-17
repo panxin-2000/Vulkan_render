@@ -251,9 +251,6 @@ int main(int argc, char *argv[]) {
         // vk_render_GPU::instance().exit_and_clean(backend);
         render_thread_stop_and_wait();
 
-        // 全局的 push_constants 的 buffer ,最后在这里销毁稍微有点不太好。
-        auto &buffer = get_uniform_buffer();
-        buffer->destroy_buffer();
 
         Font_Manager::instance().destroy();
         engine.destroy();

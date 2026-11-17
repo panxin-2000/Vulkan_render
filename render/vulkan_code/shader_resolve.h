@@ -51,13 +51,12 @@ struct Update_descriptor_binding {
     uint32_t dstSet                               = 0;
     VkWriteDescriptorSet descriptor_write_binding = {};
 
-    VKR_buffer_block_ptr bufferInfo = {};
+    VKR_buffer_block bufferInfo;
     VKR_buffer_offset SSBO_bufferInfo;
     Texture_parameter texture_info;
     // Texel Buffer 本质上是 Buffer，但它像 Image 一样拥有 格式（Format） 信息
     VkBufferView TexelBufferView;
 };
-
 
 
 struct shader_constant_parameter {
