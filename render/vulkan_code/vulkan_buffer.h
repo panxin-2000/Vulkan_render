@@ -28,6 +28,68 @@ using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
 class VKR_buffer_block;
 using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
 
+
+class VKR_buffer_block {
+public:
+    VKR_buffer_block(const VkBuffer buffer,
+                     const VmaAllocation allocation_handle,
+                     const VmaVirtualAllocation virtual_allocation,
+                     const VkDeviceSize offset,
+                     const VkDeviceSize size) {
+        buffer_handle_      = buffer;
+        allocation_         = allocation_handle;
+        virtual_allocation_ = virtual_allocation;
+        offset_             = offset;
+        size_               = size;
+    }
+
+
+    [[nodiscard]] VkDeviceSize get_offset() const {
+        return offset_;
+    }
+
+    [[nodiscard]] VkDeviceSize get_size() const {
+        return size_;
+    }
+
+    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
+        return buffer_handle_;
+    }
+
+    [[nodiscard]] VmaAllocation get_allocation_handle(const uint64_t timeline = 0) const {
+        return allocation_;
+    }
+
+    [[nodiscard]] VmaVirtualAllocation get_virtual_allocation_(const uint64_t timeline = 0) const {
+        return virtual_allocation_;
+    }
+
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0) const {
+        return &buffer_handle_;
+    }
+
+    bool empty() const {
+        if (buffer_handle_ == VK_NULL_HANDLE ||
+            virtual_allocation_ == VK_NULL_HANDLE ||
+            allocation_ == VK_NULL_HANDLE) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    VKR_buffer_block() = default;
+
+
+    VkBuffer buffer_handle_                  = VK_NULL_HANDLE;
+    VmaAllocation allocation_                = VK_NULL_HANDLE;
+    VmaVirtualAllocation virtual_allocation_ = VK_NULL_HANDLE;
+    VkDeviceSize offset_                     = 0;
+    VkDeviceSize size_                       = 0;
+};
+
+
 class VKR_buffer : public NonCopyable {
 protected:
     VkBuffer buffer_handle_   = VK_NULL_HANDLE;
@@ -47,11 +109,6 @@ public:
 
     [[nodiscard]] bool need_flush() const;
 
-    [[nodiscard]] const VkBuffer get_buffer_handle(const uint64_t timeline = 0);
-
-    [[nodiscard]] const VmaAllocation get_allocation_handle(const uint64_t timeline = 0);
-
-    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0);
 
     [[nodiscard]] const VKR_buffer &value() const {
         return *this;
@@ -68,6 +125,12 @@ public:
     [[nodiscard]] bool unmap_memory() const;
 
     [[nodiscard]] void *map_memory() const;
+
+    [[nodiscard]] const VkBuffer get_buffer_handle(const uint64_t timeline = 0);
+
+    [[nodiscard]] const VmaAllocation get_allocation_handle(const uint64_t timeline = 0);
+
+    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0);
 
     [[nodiscard]] VkDeviceSize get_size() const;
 
@@ -137,58 +200,9 @@ private:
 };
 
 
-// 这里才是最基础的
-class VKR_buffer_block {
-public:
-    VKR_buffer_block(const VkBuffer buffer,
-                     const VmaAllocation allocation_handle,
-                     const VmaVirtualAllocation virtual_allocation,
-                     const VkDeviceSize offset,
-                     const VkDeviceSize size) {
-        buffer_handle_      = buffer;
-        allocation_         = allocation_handle;
-        virtual_allocation_ = virtual_allocation;
-        offset_             = offset;
-        size_               = size;
-    }
-
-
-    [[nodiscard]] VkDeviceSize get_offset() const {
-        return offset_;
-    }
-
-    [[nodiscard]] VkDeviceSize get_size() const {
-        return size_;
-    }
-
-    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
-        return buffer_handle_;
-    }
-
-    [[nodiscard]] VmaAllocation get_allocation_handle(const uint64_t timeline = 0) const {
-        return allocation_;
-    }
-
-    [[nodiscard]] VmaVirtualAllocation get_virtual_allocation_(const uint64_t timeline = 0) const {
-        return virtual_allocation_;
-    }
-
-    [[nodiscard]] const VkBuffer *get_buffer_handle_ptr(const uint64_t timeline = 0) const {
-        return &buffer_handle_;
-    }
-
-    VKR_buffer_block() = default;
-
-
-    VkBuffer buffer_handle_                  = VK_NULL_HANDLE;
-    VmaAllocation allocation_                = VK_NULL_HANDLE;
-    VmaVirtualAllocation virtual_allocation_ = VK_NULL_HANDLE;
-    VkDeviceSize offset_                     = 0;
-    VkDeviceSize size_                       = 0;
-};
-
-
-void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer, const VKR_buffer_ptr &dstBuffer, VkDeviceSize size,
+void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
+                                  const VKR_buffer_ptr &dstBuffer,
+                                  VkDeviceSize size,
                                   VkDeviceSize srcOffset = 0,
                                   VkDeviceSize dstOffset = 0);
 

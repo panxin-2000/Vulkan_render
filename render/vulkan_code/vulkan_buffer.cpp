@@ -153,6 +153,7 @@ const VkBuffer VKR_buffer::get_buffer_handle(const uint64_t timeline) {
     if (timeline > timeline_) timeline_ = timeline;
     return buffer_handle_;
 }
+
 const VmaAllocation VKR_buffer::get_allocation_handle(const uint64_t timeline) {
     if (timeline > timeline_) timeline_ = timeline;
     return allocation_;
