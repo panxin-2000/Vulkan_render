@@ -375,10 +375,10 @@ void VCB::calculate_frustum_cull(Engine &engine,
                                  const FrustumPlanes &frustum_planes,
                                  const std::array<FrustumPlanes, 4> &light_frustum_planes,
                                  const VKR_image_ptr &depth, uint32_t command_size,
-                                 VKR_buffer_block frustum_culling_buffer,
-                                 VKR_buffer_block Primitives_buffer,
-                                 VKR_buffer_block world_space_aabb_buffer,
-                                 VKR_buffer_block shadow_frustum_culling_buffer) {
+                                 VKR_buffer_base frustum_culling_buffer,
+                                 VKR_buffer_base Primitives_buffer,
+                                 VKR_buffer_base world_space_aabb_buffer,
+                                 VKR_buffer_base shadow_frustum_culling_buffer) {
     {
         auto compute_shader = Engine::instance().get_shader_manager().get_frustum_cull_shader_data();
 

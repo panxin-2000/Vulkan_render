@@ -14,8 +14,8 @@
 
 std::vector<bool> image_index;
 
-std::atomic<uint32_t> VKR_image_date::max_index = 0;
-oneapi::tbb::concurrent_queue<uint32_t> VKR_image_date::free_index;
+std::atomic<uint32_t> VK_image_base::max_index = 0;
+oneapi::tbb::concurrent_queue<uint32_t> VK_image_base::free_index;
 
 
 VKR_buffer_ptr create_image_stage_buffer(const VkDeviceSize size,

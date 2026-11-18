@@ -9,6 +9,9 @@
 #include <volk.h>
 
 
+/**
+ * 不删除，只创建，重复的参数会从已经创建好的中查找，应用关闭时会全部释放
+ */
 class VKR_Sampler {
     VkSampler sampler = VK_NULL_HANDLE;
     uint32_t index_   = 0;

@@ -157,7 +157,7 @@ public:
     };
 
     template<typename T>
-    VKR_buffer_block copy_data_to_gpu_buffer(T args) {
+    VKR_buffer_base copy_data_to_gpu_buffer(T args) {
         const uint32_t memory_size = sizeof(args);
         const auto return_value    = uniform_buffer_.alloc(memory_size, 16);
         auto result                = vmaCopyMemoryToAllocation(VK_backend::instance().get_allocator(),

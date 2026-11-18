@@ -57,7 +57,7 @@ struct shader_need_parameter {
 
     bool VK_update_parameter(sets_map &sets_map_in_for,
                              const std::string &binding_name,
-                             const VKR_buffer_block &binding_data) {
+                             const VKR_buffer_base &binding_data) {
         for (auto const &[set_value, bindings_map]: sets_map_in_for) {
             for (const auto &[binding_value, info]: bindings_map) {
                 if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
@@ -90,7 +90,7 @@ struct shader_need_parameter {
                         {
                             Update_descriptor_binding_fixed_temp;
                             temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                            temp.buffer_info                         = VKR_buffer_block{
+                            temp.buffer_info                         = VKR_buffer_base{
                                 binding_data->get_buffer_handle(), 0, binding_data->get_size()
                             };
                             update_object_descriptor_sets[binding_name] = temp;

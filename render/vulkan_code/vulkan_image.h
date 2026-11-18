@@ -18,7 +18,7 @@
 #include <oneapi/tbb.h>
 
 
-class VKR_image_date : public NonCopyable {
+class VK_image_base : public NonCopyable {
     VkImage image_handle_     = VK_NULL_HANDLE;
     VmaAllocation allocation_ = VK_NULL_HANDLE;
     VkImageView image_view_   = VK_NULL_HANDLE;
@@ -27,7 +27,7 @@ class VKR_image_date : public NonCopyable {
     Image_and_view_parameters parameters_;
 
 public:
-    VKR_image_date(const VkImage &image_handle,
+    VK_image_base(const VkImage &image_handle,
                    const VmaAllocation &allocation,
                    const uint32_t index,
                    const VkImageView &image_view,
@@ -122,13 +122,13 @@ private:
     }
 };
 
-class VKR_image : public VKR_image_date {
+class VKR_image : public VK_image_base {
 public:
     VKR_image(const VkImage &image_handle,
               const VmaAllocation &allocation,
               const uint32_t index,
               const VkImageView &image_view,
-              const Image_and_view_parameters &parameters) : VKR_image_date(image_handle, allocation, index, image_view,
+              const Image_and_view_parameters &parameters) : VK_image_base(image_handle, allocation, index, image_view,
                                                                             parameters) {
     }
 

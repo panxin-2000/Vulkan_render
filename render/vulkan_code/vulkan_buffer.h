@@ -25,13 +25,15 @@ struct offset_no_status {
 
 class VKR_buffer;
 using VKR_buffer_ptr = std::shared_ptr<VKR_buffer>;
-class VKR_buffer_block;
-using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
+class VKR_buffer_base;
+using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_base>;
 
-
-class VKR_buffer_block {
+/**
+ * 只是负责记录数据，不负责 vk_buffer 的创建和申请
+ */
+class VKR_buffer_base {
 public:
-    VKR_buffer_block(const VkBuffer buffer,
+    VKR_buffer_base(const VkBuffer buffer,
                      const VkDeviceSize offset,
                      const VkDeviceSize size,
                      const VmaAllocation allocation_handle         = VK_NULL_HANDLE,
@@ -81,7 +83,7 @@ public:
     }
 
 
-    VKR_buffer_block() = default;
+    VKR_buffer_base() = default;
 
 
     VkBuffer buffer_handle_                  = VK_NULL_HANDLE;
@@ -186,7 +188,7 @@ public:
 
     VKR_buffer_pool() = default;
 
-    VKR_buffer_block alloc(const VkDeviceSize size, const VkDeviceSize alignment) {
+    VKR_buffer_base alloc(const VkDeviceSize size, const VkDeviceSize alignment) {
         assert(size > 0);
         VmaVirtualAllocationCreateInfo allocCreateInfo = {};
         allocCreateInfo.size                           = size;
