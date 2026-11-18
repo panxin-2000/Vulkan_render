@@ -143,7 +143,7 @@ public:
     void dof_composite(Engine &engine, VKR_image_ptr dof_image, VKR_image_ptr color_image,
                        VKR_image_ptr compute_write_image);
 
-    void add_buffer_barrier(const VKR_buffer_offset &buffer, VkPipelineStageFlags srcStageMask,
+    void add_buffer_barrier(const VKR_buffer_block &buffer, VkPipelineStageFlags srcStageMask,
                             VkAccessFlags srcAccessMask,
                             VkPipelineStageFlags dstStageMask, VkAccessFlags dstAccessMask);
 
@@ -207,13 +207,13 @@ public:
 
 
     void DrawIndexedIndirect(entt::entity entity,
-                             uint32_t command_size, const VKR_buffer_offset &read_buffer) const;
+                             uint32_t command_size, const VKR_buffer_block &read_buffer) const;
 
     void DrawIndexedIndirect(const Mesh_data &mesh_data, const VKR_Render_state &render_state, uint32_t command_size,
-                             const VKR_buffer_offset &read_buffer) const;
+                             const VKR_buffer_block &read_buffer) const;
 
     void DrawIndexedIndirectCount(const Mesh_data &mesh_data, const VKR_Render_state &render_state,
-                               const   VKR_buffer_offset &read_buffer,const VKR_buffer_offset &countBuffer) const;
+                               const   VKR_buffer_block &read_buffer,const VKR_buffer_block &countBuffer) const;
 
     void write_draw_command(const Mesh_data &mesh_data,
                             const std::vector<VKR_Primitive> &primitives,
@@ -264,10 +264,10 @@ public:
                                 const FrustumPlanes &frustum_planes,
                                 const std::array<FrustumPlanes, 4> &light_frustum_planes,
                                 const VKR_image_ptr &depth, uint32_t command_size,
-                                VKR_buffer_offset frustum_culling_buffer,
-                                VKR_buffer_offset Primitives_buffer,
-                                VKR_buffer_offset world_space_aabb_buffer,
-                                VKR_buffer_offset shadow_frustum_culling_buffer);
+                                VKR_buffer_block frustum_culling_buffer,
+                                VKR_buffer_block Primitives_buffer,
+                                VKR_buffer_block world_space_aabb_buffer,
+                                VKR_buffer_block shadow_frustum_culling_buffer);
 
     void default_status() const {
         constexpr VKR_Render_state temp;

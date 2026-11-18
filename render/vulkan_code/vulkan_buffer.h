@@ -32,10 +32,10 @@ using VKR_buffer_block_ptr = std::shared_ptr<VKR_buffer_block>;
 class VKR_buffer_block {
 public:
     VKR_buffer_block(const VkBuffer buffer,
-                     const VmaAllocation allocation_handle,
-                     const VmaVirtualAllocation virtual_allocation,
                      const VkDeviceSize offset,
-                     const VkDeviceSize size) {
+                     const VkDeviceSize size,
+                     const VmaAllocation allocation_handle         = VK_NULL_HANDLE,
+                     const VmaVirtualAllocation virtual_allocation = VK_NULL_HANDLE) {
         buffer_handle_      = buffer;
         allocation_         = allocation_handle;
         virtual_allocation_ = virtual_allocation;
@@ -51,6 +51,8 @@ public:
     [[nodiscard]] VkDeviceSize get_size() const {
         return size_;
     }
+
+    [[nodiscard]] VkDeviceAddress get_gpu_device_address() const;
 
     [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
         return buffer_handle_;
@@ -155,50 +157,6 @@ public:
                                const std::function<void(void *)> &mem_copy_callback,
                                const VkDeviceSize append_size);
 
-class VKR_buffer_offset {
-public:
-    VKR_buffer_offset() {
-    };
-
-    VKR_buffer_offset(const VKR_buffer_ptr &buffer_ptr,
-                      const VkDeviceSize size,
-                      const VkDeviceSize offset = 0) : buffer_ptr_(buffer_ptr),
-                                                       offset_(offset), size_(size) {
-    }
-
-    VKR_buffer_offset(const VKR_buffer_ptr &buffer_ptr) : buffer_ptr_(buffer_ptr) {
-        offset_ = 0;
-        size_   = buffer_ptr->get_size();
-    }
-
-    [[nodiscard]] VkDeviceAddress get_gpu_device_address() const {
-        return buffer_ptr_->get_gpu_device_address() + offset_;
-    }
-
-    [[nodiscard]] VkBuffer get_buffer_handle(const uint64_t timeline = 0) const {
-        return buffer_ptr_->get_buffer_handle(timeline);
-    }
-
-    [[nodiscard]] VkDeviceSize get_offset() const {
-        return offset_;
-    }
-
-    [[nodiscard]] VkDeviceSize get_size() const {
-        return size_;
-    }
-
-    void clear() {
-        buffer_ptr_ = nullptr;
-        offset_     = 0;
-        size_       = 0;
-    }
-
-private:
-    VKR_buffer_ptr buffer_ptr_ = nullptr;
-    VkDeviceSize offset_       = 0;
-    VkDeviceSize size_         = 0;
-};
-
 
 void copy_vk_buffer_and_execution(const VKR_buffer_ptr &srcBuffer,
                                   const VKR_buffer_ptr &dstBuffer,
@@ -240,13 +198,13 @@ public:
             allocations_.emplace(allocation_handle);
             return {
                 buffer_->get_buffer_handle(),
-                buffer_->get_allocation_handle(),
-                allocation_handle,
                 get_offset(allocation_handle),
-                get_size(allocation_handle)
+                get_size(allocation_handle),
+                buffer_->get_allocation_handle(),
+                allocation_handle
             };
         } else {
-            return {VK_NULL_HANDLE,VK_NULL_HANDLE,VK_NULL_HANDLE, 0, 0};
+            return {VK_NULL_HANDLE, 0, 0,VK_NULL_HANDLE,VK_NULL_HANDLE};
         }
     }
 

@@ -88,25 +88,31 @@ void opaque_batch::check_and_update(sets_map &sets_map_in_for,
     if (primitive_size > 0) {
         auto buffer_size          = RenderableSoa::getNeededSize(mRenderableData_.capacity());
         SOA_buffer_               = create_SSBO_buffer(buffer_size, mRenderableData_.data<0>());
-        auto vkr_primitive_buffer = VKR_buffer_offset{
-            SOA_buffer_, mRenderableData_.capacity() * sizeof(VKR_Primitive),
-            RenderableSoa::getOffset(SOA_Primitive, mRenderableData_.capacity())
+        auto vkr_primitive_buffer = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
+            RenderableSoa::getOffset(SOA_Primitive, mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(VKR_Primitive)
         };
-        auto world_space_aabb_buffer = VKR_buffer_offset{
-            SOA_buffer_, mRenderableData_.capacity() * sizeof(World_Space_AABB),
-            RenderableSoa::getOffset(SOA_World_Space_AABB, mRenderableData_.capacity())
+        auto world_space_aabb_buffer = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
+            RenderableSoa::getOffset(SOA_World_Space_AABB, mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(World_Space_AABB)
         };
-        auto global_model_matrix = VKR_buffer_offset{
-            SOA_buffer_, mRenderableData_.capacity() * sizeof(Transform_Matrix),
-            RenderableSoa::getOffset(SOA_Transform_Matrix, mRenderableData_.capacity())
+        auto global_model_matrix = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
+
+            RenderableSoa::getOffset(SOA_Transform_Matrix, mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(Transform_Matrix),
         };
-        auto global_material_parameters = VKR_buffer_offset{
-            SOA_buffer_, mRenderableData_.capacity() * sizeof(uint32_t),
-            RenderableSoa::getOffset(SOA_material_index, mRenderableData_.capacity())
+        auto global_material_parameters = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
+            RenderableSoa::getOffset(SOA_material_index, mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(uint32_t)
         };
-        auto global_entity_to_screen = VKR_buffer_offset{
-            SOA_buffer_, mRenderableData_.capacity() * sizeof(entt::entity),
-            RenderableSoa::getOffset(SOA_entity, mRenderableData_.capacity())
+        auto global_entity_to_screen = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
+            RenderableSoa::getOffset(SOA_entity, mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(entt::entity)
         };
 
         parameter.VK_update_parameter(sets_map_in_for,
@@ -130,11 +136,12 @@ void opaque_batch::draw_depth_batch(VCB &vcb, const std::shared_ptr<vk_shader_da
 
 void opaque_batch::draw_batch(VCB &vcb) {
     if (mRenderableData_.size() > 0) {
-        auto frustum_culling_buffer = VKR_buffer_offset{
-            SOA_buffer_,
-            mRenderableData_.capacity() * sizeof(VKR_Primitive),
+        auto frustum_culling_buffer = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
             RenderableSoa::getOffset(SOA_frustum_culling,
-                                     mRenderableData_.capacity())
+                                     mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(VKR_Primitive),
+
         };
         VKR_Render_state render_state; // 这个还算比较好解决
         vcb.DrawIndexedIndirect(mesh_data_,
@@ -146,11 +153,11 @@ void opaque_batch::draw_batch(VCB &vcb) {
 
 void opaque_batch::draw_shadow(VCB &vcb) {
     if (mRenderableData_.size() > 0) {
-        auto frustum_culling_buffer = VKR_buffer_offset{
-            SOA_buffer_,
-            mRenderableData_.capacity() * sizeof(VKR_Primitive),
+        auto frustum_culling_buffer = VKR_buffer_block{
+            SOA_buffer_->get_buffer_handle(),
             RenderableSoa::getOffset(SOA_shadow_frustum_culling,
-                                     mRenderableData_.capacity())
+                                     mRenderableData_.capacity()),
+            mRenderableData_.capacity() * sizeof(VKR_Primitive)
         };
         VKR_Render_state render_state; // 这个还算比较好解决
         vcb.DrawIndexedIndirect(mesh_data_,

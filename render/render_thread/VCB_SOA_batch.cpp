@@ -12,25 +12,29 @@ void frustum_culling_SOA(Engine &engine,
                          const VKR_image_ptr &depth,
                          const opaque_batch &SOA_opacity) {
     if (SOA_opacity.get_renderable_SOA_data().size() > 0) {
-        auto frustum_culling_buffer = VKR_buffer_offset{
-            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+        auto frustum_culling_buffer = VKR_buffer_block{
+            SOA_opacity.get_SOA_buffer()->get_buffer_handle(),
             opaque_batch::RenderableSoa::getOffset(opaque_batch::SOA_frustum_culling,
-                                                   SOA_opacity.get_renderable_SOA_data().capacity())
+                                                   SOA_opacity.get_renderable_SOA_data().capacity()),
+            SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive)
         };
-        auto shadow_frustum_culling_buffer = VKR_buffer_offset{
-            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+        auto shadow_frustum_culling_buffer = VKR_buffer_block{
+            SOA_opacity.get_SOA_buffer()->get_buffer_handle(),
             opaque_batch::RenderableSoa::getOffset(opaque_batch::SOA_shadow_frustum_culling,
-                                                   SOA_opacity.get_renderable_SOA_data().capacity())
+                                                   SOA_opacity.get_renderable_SOA_data().capacity()),
+            SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive)
         };
-        auto world_space_aabb_buffer = VKR_buffer_offset{
-            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB),
+        auto world_space_aabb_buffer = VKR_buffer_block{
+            SOA_opacity.get_SOA_buffer()->get_buffer_handle(),
             opaque_batch::RenderableSoa::getOffset(opaque_batch::SOA_World_Space_AABB,
-                                                   SOA_opacity.get_renderable_SOA_data().capacity())
+                                                   SOA_opacity.get_renderable_SOA_data().capacity()),
+            SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(World_Space_AABB)
         };
-        auto Primitives_buffer = VKR_buffer_offset{
-            SOA_opacity.get_SOA_buffer(), SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive),
+        auto Primitives_buffer = VKR_buffer_block{
+            SOA_opacity.get_SOA_buffer()->get_buffer_handle(),
             opaque_batch::RenderableSoa::getOffset(opaque_batch::SOA_Primitive,
-                                                   SOA_opacity.get_renderable_SOA_data().capacity())
+                                                   SOA_opacity.get_renderable_SOA_data().capacity()),
+            SOA_opacity.get_renderable_SOA_data().capacity() * sizeof(VKR_Primitive)
         };
 
         vcb.calculate_frustum_cull(engine, frustum_planes, light_frustum_planes, depth,

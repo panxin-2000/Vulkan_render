@@ -6,7 +6,6 @@
 #define HELLO_MAC_3D_MODEL_DISPLAY_H
 
 #include "global_singleton.h"
-#include "shader_component.h"
 #include "base_geometry/base.h"
 #include "UI/base_render_object.h"
 
@@ -26,19 +25,6 @@ public:
 
     object_3d &set_transform(const Eigen::Vector3f offset     = Eigen::Vector3f::Zero(),
                              const Eigen::Quaternionf &rotate = Eigen::Quaternionf::Identity());
-
-    template<typename T1>
-
-    object_3d &add_render_parameter(const std::string &binding_name, T1 &binding_data) {
-        logic_set_render_parameter(entity, binding_name, binding_data);
-        return *this;
-    }
-
-    template<typename T1>
-    object_3d &add_push_constant_parameter(const std::string &binding_name, T1 &binding_data) {
-        set_push_constant_parameter(entity, binding_name, binding_data);
-        return *this;
-    }
 };
 
 inline object_3d create_object_3d(const std::string &name) {

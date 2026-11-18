@@ -45,6 +45,6 @@ void add_skybox_entity() {
         }
 
         result.add_sky_box();
-        result.add_render_parameter("sampler_skybox", sampler_skybox);
+        logic_set_render_parameter(entity, "sampler_skybox", sampler_skybox);
     }
 }

@@ -49,7 +49,7 @@ bool render_render_parameter(const entt::entity entity, const std::string &bindi
     auto &parameter       = Render_entt().get_or_emplace<shader_need_parameter>(entity);
 
     if constexpr (std::is_same_v<std::decay_t<T1>, VKR_buffer_ptr> ||
-                  std::is_same_v<std::decay_t<T1>, VKR_buffer_offset> ||
+                  std::is_same_v<std::decay_t<T1>, VKR_buffer_block> ||
                   std::is_same_v<std::decay_t<T1>, std::optional<Texture_parameter> > ||
                   std::is_same_v<std::decay_t<T1>, VKR_buffer_block_ptr>) {
         parameter.VK_update_parameter(shader_data_ref->object_sets_bindings, binding_name,

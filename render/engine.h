@@ -161,14 +161,14 @@ public:
         const uint32_t memory_size = sizeof(args);
         const auto return_value    = uniform_buffer_.alloc(memory_size, 16);
         auto result                = vmaCopyMemoryToAllocation(VK_backend::instance().get_allocator(),
-                                                               &args,
-                                                               return_value.get_allocation_handle(),
-                                                               return_value.get_offset(),
-                                                               memory_size);
+                                                &args,
+                                                return_value.get_allocation_handle(),
+                                                return_value.get_offset(),
+                                                memory_size);
         if (result == VK_SUCCESS) {
             return return_value;
         } else {
-            return {VK_NULL_HANDLE,VK_NULL_HANDLE,VK_NULL_HANDLE, 0, 0};
+            return {VK_NULL_HANDLE, 0, 0};
         }
     }
 

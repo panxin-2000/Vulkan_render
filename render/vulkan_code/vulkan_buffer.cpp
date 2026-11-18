@@ -92,6 +92,16 @@ bool VKR_buffer::copy_mem_from_cpu_to_gpu(const std::function<void(void *)> &mem
 }
 
 
+[[nodiscard]] VkDeviceAddress VKR_buffer_block::get_gpu_device_address() const {
+    const auto &backend = VK_backend::instance();
+    const VkBufferDeviceAddressInfo vk_buffer_device_address_info{
+        .sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = buffer_handle_
+    };
+    const auto deviceAddress = vkGetBufferDeviceAddress(backend.get_device(), &vk_buffer_device_address_info);
+    return deviceAddress + offset_;
+}
+
 [[nodiscard]] VkDeviceAddress VKR_buffer::get_gpu_device_address() const {
     const auto &backend = VK_backend::instance();
     const VkBufferDeviceAddressInfo vk_buffer_device_address_info{

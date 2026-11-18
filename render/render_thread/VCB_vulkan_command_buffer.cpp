@@ -651,7 +651,7 @@ void VCB::dof_composite(Engine &engine,
 }
 
 
-void VCB::add_buffer_barrier(const VKR_buffer_offset &buffer,
+void VCB::add_buffer_barrier(const VKR_buffer_block &buffer,
                              const VkPipelineStageFlags srcStageMask,
                              const VkAccessFlags srcAccessMask,
                              const VkPipelineStageFlags dstStageMask,
