@@ -63,14 +63,14 @@ struct shader_need_parameter {
                 if (info.binding_name == binding_name && info.resource_type == "uniform buffer") {
                     Update_descriptor_binding_fixed_temp;
                     temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    temp.bufferInfo                              = {binding_data};
+                    temp.buffer_info                              = {binding_data};
                     update_object_descriptor_sets[binding_name]  = temp;
                     return true;
                 } else if (info.binding_name == binding_name && info.resource_type == "storage buffer") {
                     {
                         Update_descriptor_binding_fixed_temp;
                         temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                        temp.SSBO_bufferInfo                         = binding_data;
+                        temp.buffer_info                         = binding_data;
                         update_object_descriptor_sets[binding_name]  = temp;
                         return true;
                     }
@@ -90,7 +90,7 @@ struct shader_need_parameter {
                         {
                             Update_descriptor_binding_fixed_temp;
                             temp.descriptor_write_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                            temp.SSBO_bufferInfo                         = VKR_buffer_block{
+                            temp.buffer_info                         = VKR_buffer_block{
                                 binding_data->get_buffer_handle(), 0, binding_data->get_size()
                             };
                             update_object_descriptor_sets[binding_name] = temp;

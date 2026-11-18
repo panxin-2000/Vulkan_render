@@ -24,19 +24,13 @@ void update_descriptor_sets(std::map<std::string, Update_descriptor_binding> &up
     for (auto &[name,binding_update]: update_descriptor_sets) {
         descriptor_write_bindings[i]        = binding_update.descriptor_write_binding;
         descriptor_write_bindings[i].dstSet = descriptor_sets[binding_update.dstSet]->get_descriptor_set();
-        if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+            descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
             const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
                 allocate(sizeof(VkDescriptorBufferInfo)));
-            buffer_info->buffer                      = binding_update.bufferInfo.get_buffer_handle();
-            buffer_info->offset                      = binding_update.bufferInfo.get_offset();
-            buffer_info->range                       = binding_update.bufferInfo.get_size();
-            descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
-        } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
-            const auto buffer_info = reinterpret_cast<VkDescriptorBufferInfo *>(alloc.
-                allocate(sizeof(VkDescriptorBufferInfo)));
-            buffer_info->buffer                      = binding_update.SSBO_bufferInfo.get_buffer_handle();
-            buffer_info->offset                      = binding_update.SSBO_bufferInfo.get_offset();
-            buffer_info->range                       = binding_update.SSBO_bufferInfo.get_size();
+            buffer_info->buffer                      = binding_update.buffer_info.get_buffer_handle();
+            buffer_info->offset                      = binding_update.buffer_info.get_offset();
+            buffer_info->range                       = binding_update.buffer_info.get_size();
             descriptor_write_bindings[i].pBufferInfo = buffer_info; // 一个需要转换的问题
         } else if (descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
                    descriptor_write_bindings[i].descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE ||
